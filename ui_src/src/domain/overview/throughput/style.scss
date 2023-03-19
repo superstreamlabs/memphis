@@ -36,6 +36,39 @@
     canvas {
         height: 100% !important;
     }
+    .failed-socket {
+        height: 100%;
+        background: #edf0f8;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        img {
+            height: 80px;
+            margin: 20px;
+        }
+        p {
+            margin: 0;
+        }
+        .title {
+            color: #444444;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .reload {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: #6557ff;
+            font-size: 14px;
+            font-weight: 600;
+            svg {
+                font-size: 14px;
+                font-weight: 600;
+            }
+        }
+    }
 }
 
 .throughput-header {
@@ -45,11 +78,11 @@
         display: flex;
         align-items: center;
     }
-    .throughput-actions{
+    .throughput-actions {
         display: flex;
         align-items: center;
-        .play-pause-btn{
-            border: 1px solid #EFEFEF;
+        .play-pause-btn {
+            border: 1px solid #efefef;
             cursor: pointer;
             background-color: white;
             border-radius: 4px;
@@ -59,15 +92,15 @@
             align-items: center;
             justify-content: center;
             margin-right: 10px;
-            svg{
+            svg {
                 color: var(--purple);
                 animation-name: example;
                 animation-duration: 3s;
             }
         }
-        .play-pause-btn:hover{
-            background: #DEDBFF;
-            border: 1px solid #A199FF;
+        .play-pause-btn:hover {
+            background: #dedbff;
+            border: 1px solid #a199ff;
         }
     }
 
@@ -78,9 +111,13 @@
 }
 
 @keyframes example {
-    from {opacity: 0.5;}
-    to {opacity: 1;}
-  }
+    from {
+        opacity: 0.5;
+    }
+    to {
+        opacity: 1;
+    }
+}
 
 .throughput-interval-containter {
     height: 350px;

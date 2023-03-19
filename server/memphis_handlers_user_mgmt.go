@@ -14,7 +14,6 @@ package server
 import (
 	"encoding/base64"
 	"errors"
-	"io/ioutil"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -187,7 +186,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 }
 
 func imageToBase64(imagePath string) (string, error) {
-	bytes, err := ioutil.ReadFile(imagePath)
+	bytes, err := os.ReadFile(imagePath)
 	if err != nil {
 		return "", err
 	}
@@ -368,6 +367,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"ws_port":                 configuration.WS_PORT,
+		"http_port":               configuration.HTTP_PORT,
+		"clients_port":            configuration.CLIENTS_PORT,
+		"rest_gw_port":            configuration.REST_GW_PORT,
 	})
 }
 
@@ -426,6 +429,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 		"rest_gw_host":            REST_GW_HOST,
 		// 		"ui_host":                 UI_HOST,
 		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		// "ws_port":                 configuration.WS_PORT,
+		// 		"http_port":               configuration.HTTP_PORT,
+		// 		"clients_port":            configuration.CLIENTS_PORT,
+		// 		"rest_gw_port":            configuration.REST_GW_PORT,
 		// 	})
 		// 	return
 		// }
@@ -438,11 +445,23 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
+	brokerHost := BROKER_HOST
+	restGWHost := REST_GW_HOST
+	uiHost := UI_HOST
 	var env string
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	} else {
 		env = "K8S"
+		if BROKER_HOST == "" {
+			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if UI_HOST == "" {
+			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if REST_GW_HOST == "" {
+			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
 	}
 
 	domain := ""
@@ -462,10 +481,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"namespace":               configuration.K8S_NAMESPACE,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
-		"broker_host":             BROKER_HOST,
-		"rest_gw_host":            REST_GW_HOST,
-		"ui_host":                 UI_HOST,
+		"broker_host":             brokerHost,
+		"rest_gw_host":            restGWHost,
+		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"ws_port":                 configuration.WS_PORT,
+		"http_port":               configuration.HTTP_PORT,
+		"clients_port":            configuration.CLIENTS_PORT,
+		"rest_gw_port":            configuration.REST_GW_PORT,
 	})
 }
 
@@ -527,11 +550,24 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	brokerHost := BROKER_HOST
+	restGWHost := REST_GW_HOST
+	uiHost := UI_HOST
 	var env string
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	} else {
 		env = "K8S"
+		if BROKER_HOST == "" {
+			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if UI_HOST == "" {
+			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
+		if REST_GW_HOST == "" {
+			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -552,18 +588,27 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	secure := false
 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
-		"jwt":               token,
-		"expires_in":        configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		"user_id":           newUser.ID,
-		"username":          newUser.Username,
-		"user_type":         newUser.UserType,
-		"created_at":        newUser.CreatedAt,
-		"already_logged_in": newUser.AlreadyLoggedIn,
-		"avatar_id":         newUser.AvatarId,
-		"send_analytics":    shouldSendAnalytics,
-		"env":               env,
-		"namespace":         configuration.K8S_NAMESPACE,
-		"full_name":         newUser.FullName,
+		"jwt":                     token,
+		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":                 newUser.ID,
+		"username":                newUser.Username,
+		"user_type":               newUser.UserType,
+		"created_at":              newUser.CreatedAt,
+		"already_logged_in":       newUser.AlreadyLoggedIn,
+		"avatar_id":               newUser.AvatarId,
+		"send_analytics":          shouldSendAnalytics,
+		"env":                     env,
+		"namespace":               configuration.K8S_NAMESPACE,
+		"full_name":               newUser.FullName,
+		"skip_get_started":        newUser.SkipGetStarted,
+		"broker_host":             brokerHost,
+		"rest_gw_host":            restGWHost,
+		"ui_host":                 uiHost,
+		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"ws_port":                 configuration.WS_PORT,
+		"http_port":               configuration.HTTP_PORT,
+		"clients_port":            configuration.CLIENTS_PORT,
+		"rest_gw_port":            configuration.REST_GW_PORT,
 	})
 }
 

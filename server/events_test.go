@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2018-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,12 +10,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -28,6 +31,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
+	"github.com/nats-io/nuid"
 )
 
 func createAccount(s *Server) (*Account, nkeys.KeyPair) {
@@ -422,13 +426,13 @@ func runSolicitWithCredentials(t *testing.T, opts *Options, creds string) (*Serv
 }
 
 // Helper function to check that a leaf node has connected to our server.
-func checkLeafNodeConnected(t *testing.T, s *Server) {
+func checkLeafNodeConnected(t testing.TB, s *Server) {
 	t.Helper()
 	checkLeafNodeConnectedCount(t, s, 1)
 }
 
 // Helper function to check that a leaf node has connected to n server.
-func checkLeafNodeConnectedCount(t *testing.T, s *Server, lnCons int) {
+func checkLeafNodeConnectedCount(t testing.TB, s *Server, lnCons int) {
 	t.Helper()
 	checkFor(t, 5*time.Second, 15*time.Millisecond, func() error {
 		if nln := s.NumLeafNodes(); nln != lnCons {
@@ -469,11 +473,9 @@ func TestSystemAccountingWithLeafNodes(t *testing.T) {
 	}
 	seed, _ := kp.Seed()
 	mycreds := genCredsFile(t, ujwt, seed)
-	defer removeFile(t, mycreds)
 
 	// Create a server that solicits a leafnode connection.
-	sl, slopts, lnconf := runSolicitWithCredentials(t, opts, mycreds)
-	defer removeFile(t, lnconf)
+	sl, slopts, _ := runSolicitWithCredentials(t, opts, mycreds)
 	defer sl.Shutdown()
 
 	checkLeafNodeConnected(t, s)
@@ -782,6 +784,7 @@ func TestSystemAccountConnectionUpdatesStopAfterNoLocal(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error on connect: %v", err)
 		}
+		defer nc.Close()
 		clients = append(clients, nc)
 	}
 
@@ -1164,7 +1167,6 @@ func TestSystemAccountFromConfig(t *testing.T) {
     `
 
 	conf := createConfFile(t, []byte(fmt.Sprintf(confTemplate, opub, apub, ts.URL)))
-	defer removeFile(t, conf)
 
 	s, _ := RunServerWithConfig(conf)
 	defer s.Shutdown()
@@ -1588,11 +1590,15 @@ func TestAccountConnsLimitExceededAfterUpdateDisconnectNewOnly(t *testing.T) {
 	newConns := make([]*nats.Conn, 0, 5)
 	url := fmt.Sprintf("nats://%s:%d", opts.Host, opts.Port)
 	for i := 0; i < 5; i++ {
-		nats.Connect(url, nats.NoReconnect(), createUserCreds(t, s, akp))
+		nc, err := nats.Connect(url, nats.NoReconnect(), createUserCreds(t, s, akp))
+		require_NoError(t, err)
+		defer nc.Close()
 	}
 	time.Sleep(500 * time.Millisecond)
 	for i := 0; i < 5; i++ {
-		nc, _ := nats.Connect(url, nats.NoReconnect(), createUserCreds(t, s, akp))
+		nc, err := nats.Connect(url, nats.NoReconnect(), createUserCreds(t, s, akp))
+		require_NoError(t, err)
+		defer nc.Close()
 		newConns = append(newConns, nc)
 	}
 
@@ -1781,7 +1787,6 @@ func TestServerAccountConns(t *testing.T) {
 			   SYS: {users: [{user: s, password: s}]}
 			   ACC: {users: [{user: a, password: a}]}
 	   }`))
-	defer removeFile(t, conf)
 	s, _ := RunServerWithConfig(conf)
 	defer s.Shutdown()
 
@@ -2169,6 +2174,8 @@ func TestServerEventsPingMonitorz(t *testing.T) {
 		{"JSZ", nil, &JSzOptions{}, []string{"now", "disabled"}},
 
 		{"HEALTHZ", nil, &JSzOptions{}, []string{"status"}},
+		{"HEALTHZ", &HealthzOptions{JSEnabledOnly: true}, &JSzOptions{}, []string{"status"}},
+		{"HEALTHZ", &HealthzOptions{JSServerOnly: true}, &JSzOptions{}, []string{"status"}},
 	}
 
 	for i, test := range tests {
@@ -2401,7 +2408,6 @@ func TestServerEventsFilteredByTag(t *testing.T) {
 		}
 		no_auth_user: b
     `))
-	defer removeFile(t, confA)
 	sA, _ := RunServerWithConfig(confA)
 	defer sA.Shutdown()
 	confB := createConfFile(t, []byte(fmt.Sprintf(`
@@ -2426,7 +2432,6 @@ func TestServerEventsFilteredByTag(t *testing.T) {
 		}
 		no_auth_user: b
     `, sA.opts.Cluster.Port)))
-	defer removeFile(t, confB)
 	sB, _ := RunServerWithConfig(confB)
 	defer sB.Shutdown()
 	checkClusterFormed(t, sA, sB)
@@ -2489,4 +2494,45 @@ func TestServerEventsAndDQSubscribers(t *testing.T) {
 	}
 
 	checkSubsPending(t, sub, 10)
+}
+
+func Benchmark_GetHash(b *testing.B) {
+	b.StopTimer()
+	// Get 100 random names
+	names := make([]string, 0, 100)
+	for i := 0; i < 100; i++ {
+		names = append(names, nuid.Next())
+	}
+	hashes := make([]string, 0, 100)
+	for j := 0; j < 100; j++ {
+		sha := sha256.New()
+		sha.Write([]byte(names[j]))
+		b := sha.Sum(nil)
+		for i := 0; i < 8; i++ {
+			b[i] = digits[int(b[i]%base)]
+		}
+		hashes = append(hashes, string(b[:8]))
+	}
+	wg := sync.WaitGroup{}
+	wg.Add(8)
+	errCh := make(chan error, 8)
+	b.StartTimer()
+	for i := 0; i < 8; i++ {
+		go func() {
+			defer wg.Done()
+			for i := 0; i < b.N; i++ {
+				idx := rand.Intn(100)
+				if h := getHash(names[idx]); h != hashes[idx] {
+					errCh <- fmt.Errorf("Hash for name %q was %q, but should be %q", names[idx], h, hashes[idx])
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	select {
+	case err := <-errCh:
+		b.Fatal(err.Error())
+	default:
+	}
 }

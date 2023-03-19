@@ -19,13 +19,17 @@ integ-item{
         position:absolute;
         margin: 10px;
         box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
-        border-radius: 32px;
+        border-radius: 8px;
         background: var(--purple);
-        width: 40px;
-        height: 25px;
+        padding: 3px 7px;
+        color: white;
         img{
-           width: 25px; 
-        }  
+           width: 18px; 
+        }
+        p{
+            margin-left: 5px;
+            font-family: 'InterMedium';
+        }
 
     }
     .integration-name{

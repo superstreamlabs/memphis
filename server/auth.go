@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -27,9 +28,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis/internal/ldap"
-
 	"github.com/nats-io/jwt/v2"
+	"memphis/internal/ldap"
 	"github.com/nats-io/nkeys"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -371,6 +371,173 @@ func (c *client) matchesPinnedCert(tlsPinnedCerts PinnedCertSet) bool {
 	return true
 }
 
+func processUserPermissionsTemplate(lim jwt.UserPermissionLimits, ujwt *jwt.UserClaims, acc *Account) (jwt.UserPermissionLimits, error) {
+	nArrayCartesianProduct := func(a ...[]string) [][]string {
+		c := 1
+		for _, a := range a {
+			c *= len(a)
+		}
+		if c == 0 {
+			return nil
+		}
+		p := make([][]string, c)
+		b := make([]string, c*len(a))
+		n := make([]int, len(a))
+		s := 0
+		for i := range p {
+			e := s + len(a)
+			pi := b[s:e]
+			p[i] = pi
+			s = e
+			for j, n := range n {
+				pi[j] = a[j][n]
+			}
+			for j := len(n) - 1; j >= 0; j-- {
+				n[j]++
+				if n[j] < len(a[j]) {
+					break
+				}
+				n[j] = 0
+			}
+		}
+		return p
+	}
+	applyTemplate := func(list jwt.StringList, failOnBadSubject bool) (jwt.StringList, error) {
+		found := false
+	FOR_FIND:
+		for i := 0; i < len(list); i++ {
+			// check if templates are present
+			for _, tk := range strings.Split(list[i], tsep) {
+				if strings.HasPrefix(tk, "{{") && strings.HasSuffix(tk, "}}") {
+					found = true
+					break FOR_FIND
+				}
+			}
+		}
+		if !found {
+			return list, nil
+		}
+		// process the templates
+		emittedList := make([]string, 0, len(list))
+		for i := 0; i < len(list); i++ {
+			tokens := strings.Split(list[i], tsep)
+
+			newTokens := make([]string, len(tokens))
+			tagValues := [][]string{}
+
+			for tokenNum, tk := range tokens {
+				if strings.HasPrefix(tk, "{{") && strings.HasSuffix(tk, "}}") {
+					op := strings.ToLower(strings.TrimSuffix(strings.TrimPrefix(tk, "{{"), "}}"))
+					switch {
+					case op == "name()":
+						tk = ujwt.Name
+					case op == "subject()":
+						tk = ujwt.Subject
+					case op == "account-name()":
+						acc.mu.RLock()
+						name := acc.nameTag
+						acc.mu.RUnlock()
+						tk = name
+					case op == "account-subject()":
+						tk = ujwt.IssuerAccount
+					case (strings.HasPrefix(op, "tag(") || strings.HasPrefix(op, "account-tag(")) &&
+						strings.HasSuffix(op, ")"):
+						// insert dummy tav value that will throw of subject validation (in case nothing is found)
+						tk = _EMPTY_
+						// collect list of matching tag values
+
+						var tags jwt.TagList
+						var tagPrefix string
+						if strings.HasPrefix(op, "account-tag(") {
+							acc.mu.RLock()
+							tags = acc.tags
+							acc.mu.RUnlock()
+							tagPrefix = fmt.Sprintf("%s:", strings.ToLower(
+								strings.TrimSuffix(strings.TrimPrefix(op, "account-tag("), ")")))
+						} else {
+							tags = ujwt.Tags
+							tagPrefix = fmt.Sprintf("%s:", strings.ToLower(
+								strings.TrimSuffix(strings.TrimPrefix(op, "tag("), ")")))
+						}
+
+						valueList := []string{}
+						for _, tag := range tags {
+							if strings.HasPrefix(tag, tagPrefix) {
+								tagValue := strings.TrimPrefix(tag, tagPrefix)
+								valueList = append(valueList, tagValue)
+							}
+						}
+						if len(valueList) != 0 {
+							tagValues = append(tagValues, valueList)
+						}
+					default:
+						// if macro is not recognized, throw off subject check on purpose
+						tk = " "
+					}
+				}
+				newTokens[tokenNum] = tk
+			}
+			// fill in tag value placeholders
+			if len(tagValues) == 0 {
+				emitSubj := strings.Join(newTokens, tsep)
+				if IsValidSubject(emitSubj) {
+					emittedList = append(emittedList, emitSubj)
+				} else if failOnBadSubject {
+					return nil, fmt.Errorf("generated invalid subject")
+				}
+				// else skip emitting
+			} else {
+				// compute the cartesian product and compute subject to emit for each combination
+				for _, valueList := range nArrayCartesianProduct(tagValues...) {
+					b := strings.Builder{}
+					for i, token := range newTokens {
+						if token == _EMPTY_ {
+							b.WriteString(valueList[0])
+							valueList = valueList[1:]
+						} else {
+							b.WriteString(token)
+						}
+						if i != len(newTokens)-1 {
+							b.WriteString(tsep)
+						}
+					}
+					emitSubj := b.String()
+					if IsValidSubject(emitSubj) {
+						emittedList = append(emittedList, emitSubj)
+					} else if failOnBadSubject {
+						return nil, fmt.Errorf("generated invalid subject")
+					}
+					// else skip emitting
+				}
+			}
+		}
+		return emittedList, nil
+	}
+
+	subAllowWasNotEmpty := len(lim.Permissions.Sub.Allow) > 0
+	pubAllowWasNotEmpty := len(lim.Permissions.Pub.Allow) > 0
+
+	var err error
+	if lim.Permissions.Sub.Allow, err = applyTemplate(lim.Permissions.Sub.Allow, false); err != nil {
+		return jwt.UserPermissionLimits{}, err
+	} else if lim.Permissions.Sub.Deny, err = applyTemplate(lim.Permissions.Sub.Deny, true); err != nil {
+		return jwt.UserPermissionLimits{}, err
+	} else if lim.Permissions.Pub.Allow, err = applyTemplate(lim.Permissions.Pub.Allow, false); err != nil {
+		return jwt.UserPermissionLimits{}, err
+	} else if lim.Permissions.Pub.Deny, err = applyTemplate(lim.Permissions.Pub.Deny, true); err != nil {
+		return jwt.UserPermissionLimits{}, err
+	}
+
+	// if pub/sub allow were not empty, but are empty post template processing, add in a "deny >" to compensate
+	if subAllowWasNotEmpty && len(lim.Permissions.Sub.Allow) == 0 {
+		lim.Permissions.Sub.Deny.Add(">")
+	}
+	if pubAllowWasNotEmpty && len(lim.Permissions.Pub.Allow) == 0 {
+		lim.Permissions.Pub.Deny.Add(">")
+	}
+	return lim, nil
+}
+
 func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) bool {
 	var (
 		nkey *NkeyUser
@@ -441,6 +608,11 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 
 	if !ao {
 		noAuthUser = opts.NoAuthUser
+		// If a leaf connects using websocket, and websocket{} block has a no_auth_user
+		// use that one instead.
+		if c.kind == LEAF && c.isWebsocket() && opts.Websocket.NoAuthUser != _EMPTY_ {
+			noAuthUser = opts.Websocket.NoAuthUser
+		}
 		username = opts.Username
 		password = opts.Password
 		token = opts.Authorization
@@ -586,7 +758,6 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 			if len(allowedConnTypes) == 0 {
 				return false
 			}
-			err = nil
 		}
 		if !c.connectionTypeAllowed(allowedConnTypes) {
 			c.Debugf("Connection type not allowed")
@@ -621,8 +792,9 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 			} else if uSc, ok := scope.(*jwt.UserScope); !ok {
 				c.Debugf("User JWT is not valid")
 				return false
-			} else {
-				juc.UserPermissionLimits = uSc.Template
+			} else if juc.UserPermissionLimits, err = processUserPermissionsTemplate(uSc.Template, juc, acc); err != nil {
+				c.Debugf("User JWT generated invalid permissions")
+				return false
 			}
 		}
 		if acc.IsExpired() {
@@ -914,7 +1086,7 @@ URLS:
 		}
 		hostLabels := strings.Split(strings.ToLower(url.Hostname()), ".")
 		// Following https://tools.ietf.org/html/rfc6125#section-6.4.3, should not => will not, may => will not
-		// The wilcard * never matches multiple label and only matches the left most label.
+		// The wildcard * never matches multiple label and only matches the left most label.
 		if len(hostLabels) != len(dnsAltNameLabels) {
 			continue URLS
 		}

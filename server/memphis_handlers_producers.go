@@ -164,7 +164,10 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-producer-sdk")
+			analytics.SendEventWithParams(connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
+			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
+				analytics.SendEvent(connection.CreatedByUsername, "user-send-messages-via-rest-gw")
+			}
 		}
 	}
 	shouldSendNotifications, err := IsSlackEnabled()

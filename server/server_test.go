@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -21,7 +22,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/url"
 	"os"
@@ -50,7 +50,7 @@ func checkForErr(totalWait, sleepDur time.Duration, f func() error) error {
 	return err
 }
 
-func checkFor(t *testing.T, totalWait, sleepDur time.Duration, f func() error) {
+func checkFor(t testing.TB, totalWait, sleepDur time.Duration, f func() error) {
 	t.Helper()
 	err := checkForErr(totalWait, sleepDur, f)
 	if err != nil {
@@ -1603,10 +1603,9 @@ func TestConnectErrorReports(t *testing.T) {
 		t.Fatalf("Expected default value to be %v, got %v", DEFAULT_CONNECT_ERROR_REPORTS, ra)
 	}
 
-	tmpFile := createFile(t, "")
+	tmpFile := createTempFile(t, "")
 	log := tmpFile.Name()
 	tmpFile.Close()
-	defer removeFile(t, log)
 
 	remoteURLs := RoutesFromStr("nats://127.0.0.1:1234")
 
@@ -1624,7 +1623,7 @@ func TestConnectErrorReports(t *testing.T) {
 	checkContent := func(t *testing.T, txt string, attempt int, shouldBeThere bool) {
 		t.Helper()
 		checkFor(t, 2*time.Second, 15*time.Millisecond, func() error {
-			content, err := ioutil.ReadFile(log)
+			content, err := os.ReadFile(log)
 			if err != nil {
 				return fmt.Errorf("Error reading log file: %v", err)
 			}
@@ -1672,7 +1671,7 @@ func TestConnectErrorReports(t *testing.T) {
 	checkLeafContent := func(t *testing.T, txt, host string, attempt int, shouldBeThere bool) {
 		t.Helper()
 		checkFor(t, 2*time.Second, 15*time.Millisecond, func() error {
-			content, err := ioutil.ReadFile(log)
+			content, err := os.ReadFile(log)
 			if err != nil {
 				return fmt.Errorf("Error reading log file: %v", err)
 			}
@@ -1755,10 +1754,9 @@ func TestReconnectErrorReports(t *testing.T) {
 		t.Fatalf("Expected default value to be %v, got %v", DEFAULT_RECONNECT_ERROR_REPORTS, ra)
 	}
 
-	tmpFile := createFile(t, "")
+	tmpFile := createTempFile(t, "")
 	log := tmpFile.Name()
 	tmpFile.Close()
-	defer removeFile(t, log)
 
 	csOpts := DefaultOptions()
 	csOpts.Cluster.Port = -1
@@ -1788,7 +1786,7 @@ func TestReconnectErrorReports(t *testing.T) {
 	checkContent := func(t *testing.T, txt string, attempt int, shouldBeThere bool) {
 		t.Helper()
 		checkFor(t, 2*time.Second, 15*time.Millisecond, func() error {
-			content, err := ioutil.ReadFile(log)
+			content, err := os.ReadFile(log)
 			if err != nil {
 				return fmt.Errorf("Error reading log file: %v", err)
 			}
@@ -1851,7 +1849,7 @@ func TestReconnectErrorReports(t *testing.T) {
 	checkLeafContent := func(t *testing.T, txt, host string, attempt int, shouldBeThere bool) {
 		t.Helper()
 		checkFor(t, 2*time.Second, 15*time.Millisecond, func() error {
-			content, err := ioutil.ReadFile(log)
+			content, err := os.ReadFile(log)
 			if err != nil {
 				return fmt.Errorf("Error reading log file: %v", err)
 			}
@@ -1941,17 +1939,13 @@ func TestReconnectErrorReports(t *testing.T) {
 }
 
 func TestServerLogsConfigurationFile(t *testing.T) {
-	tmpDir := createDir(t, "_nats-server")
-	defer removeDir(t, tmpDir)
-
-	file := createFileAtDir(t, tmpDir, "nats_server_log_")
+	file := createTempFile(t, "nats_server_log_")
 	file.Close()
 
 	conf := createConfFile(t, []byte(fmt.Sprintf(`
 	port: -1
 	logfile: '%s'
 	`, file.Name())))
-	defer removeFile(t, conf)
 
 	o := LoadConfig(conf)
 	o.ConfigFile = file.Name()
@@ -1959,7 +1953,7 @@ func TestServerLogsConfigurationFile(t *testing.T) {
 	s := RunServer(o)
 	s.Shutdown()
 
-	log, err := ioutil.ReadFile(file.Name())
+	log, err := os.ReadFile(file.Name())
 	if err != nil {
 		t.Fatalf("Error reading log file: %v", err)
 	}

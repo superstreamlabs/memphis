@@ -18,7 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"memphis/analytics"
 	"memphis/db"
@@ -144,12 +144,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis",
 				Components:  cpuComps,
 				Status:      checkCompStatus(cpuComps),
-				Ports:       []int{9000, 6666, 7770, 8222},
+				Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 				DesiredPods: 1,
 				ActualPods:  1,
 				Hosts:       hosts,
 			})
-			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
+			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 			healthy := false
 			restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 			if err == nil {
@@ -191,7 +191,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis-rest-gateway",
 				Components:  restGwComps,
 				Status:      checkCompStatus(restGwComps),
-				Ports:       []int{4444},
+				Ports:       []int{configuration.REST_GW_PORT},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
 				Hosts:       hosts,
@@ -225,7 +225,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			defer containerStats.Body.Close()
 
-			body, err := ioutil.ReadAll(containerStats.Body) // TODO replace ioutil
+			body, err := io.ReadAll(containerStats.Body)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -352,12 +352,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis",
 			Components:  cpuComps,
 			Status:      checkCompStatus(cpuComps),
-			Ports:       []int{9000, 6666, 7770, 8222},
+			Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 			DesiredPods: 1,
 			ActualPods:  1,
 			Hosts:       hosts,
 		})
-		resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 		healthy := false
 		restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 		if err == nil {
@@ -399,7 +399,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis-rest-gateway",
 			Components:  restGwComps,
 			Status:      checkCompStatus(restGwComps),
-			Ports:       []int{4444},
+			Ports:       []int{configuration.REST_GW_PORT},
 			DesiredPods: 1,
 			ActualPods:  actualRestGw,
 			Hosts:       hosts,
@@ -432,7 +432,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			defer containerStats.Body.Close()
 
-			body, err := ioutil.ReadAll(containerStats.Body) // TODO replace ioutil
+			body, err := io.ReadAll(containerStats.Body)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -787,7 +787,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 }
 
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
-	fileContent, err := ioutil.ReadFile("version.conf")
+	fileContent, err := os.ReadFile("version.conf")
 	if err != nil {
 		serv.Errorf("GetClusterInfo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -817,6 +817,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(throughputStreamNameV1, &cc)
@@ -1697,6 +1698,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	if filterSubject != _EMPTY_ {

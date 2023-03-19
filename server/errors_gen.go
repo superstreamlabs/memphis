@@ -18,7 +18,6 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -46,7 +45,7 @@ const (
 {{- else }}
 	// {{ .Constant }} {{ .Description | print }}
 {{- end }}
-	{{ .Constant }} ErrorIdentifier = {{ .ErrCode }}  
+	{{ .Constant }} ErrorIdentifier = {{ .ErrCode }}
 {{ end }}
 )
 
@@ -241,7 +240,7 @@ func main() {
 	p, err := t.Parse(templ)
 	panicIfErr(err)
 
-	tf, err := ioutil.TempFile("", "")
+	tf, err := os.CreateTemp("", "")
 	panicIfErr(err)
 	defer tf.Close()
 

@@ -113,9 +113,9 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			UI_HOST = "http://localhost:9000"
+			UI_HOST = fmt.Sprintf("http://localhost:%v", configuration.HTTP_PORT)
 		} else {
-			UI_HOST = "http://memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local:9000"
+			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, configuration.HTTP_PORT)
 		}
 		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
@@ -130,9 +130,9 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			REST_GW_HOST = "http://localhost:4444"
+			REST_GW_HOST = fmt.Sprintf("http://localhost:%v", configuration.REST_GW_PORT)
 		} else {
-			REST_GW_HOST = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local:4444"
+			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, configuration.REST_GW_PORT)
 		}
 		restGWHost = models.ConfigurationsValue{
 			Key:   "rest_gw_host",

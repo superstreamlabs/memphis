@@ -1073,7 +1073,7 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMessageJourneyDetails(dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
+func (sh StationsHandler) GetDlsMsgDetails(dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
 	var dlsMessage models.DlsMessageResponse
 	splitId := strings.Split(dlsMsgId, dlsMsgSep)
 	stationName := splitId[0]
@@ -1099,7 +1099,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMessageJourneyDetails(body.MessageId, "poison")
+	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1297,14 +1297,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msgId := body.MessageId
 
 	if body.IsDls {
-		poisonMessage, err := sh.GetDlsMessageJourneyDetails(msgId, body.DlsType)
+		dlsMessage, err := sh.GetDlsMsgDetails(msgId, body.DlsType)
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		c.IndentedJSON(200, poisonMessage)
+		c.IndentedJSON(200, dlsMessage)
 		return
 	}
 

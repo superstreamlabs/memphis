@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,13 +10,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
+	"os"
 	"runtime"
 	"strconv"
 	"sync"
@@ -25,7 +27,6 @@ import (
 
 	"memphis/internal/testhelper"
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 )
 
@@ -450,11 +451,11 @@ func TestMultipleRoutesSameId(t *testing.T) {
 	// We should only receive on one route, not both.
 	// Check both manually.
 	route1.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-	buf, _ := ioutil.ReadAll(route1)
+	buf, _ := io.ReadAll(route1)
 	route1.SetReadDeadline(time.Time{})
 	if len(buf) <= 0 {
 		route2.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
-		buf, _ = ioutil.ReadAll(route2)
+		buf, _ = io.ReadAll(route2)
 		route2.SetReadDeadline(time.Time{})
 		if len(buf) <= 0 {
 			t.Fatal("Expected to get one message on a route, received none.")
@@ -1098,13 +1099,12 @@ func TestRouteBasicPermissions(t *testing.T) {
 	}
 }
 
-func createConfFile(t *testing.T, content []byte) string {
+func createConfFile(t testing.TB, content []byte) string {
 	t.Helper()
-	conf := createFile(t, "")
+	conf := createTempFile(t, "")
 	fName := conf.Name()
 	conf.Close()
-	if err := ioutil.WriteFile(fName, content, 0666); err != nil {
-		removeFile(t, fName)
+	if err := os.WriteFile(fName, content, 0666); err != nil {
 		t.Fatalf("Error writing conf file: %v", err)
 	}
 	return fName
@@ -1150,7 +1150,6 @@ func TestRoutesOnlyImportOrExport(t *testing.T) {
 				}
 			}
 		`, c)))
-		defer removeFile(t, cf)
 		s, _ := RunServerWithConfig(cf)
 		s.Shutdown()
 	}

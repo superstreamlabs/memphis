@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2022 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -21,9 +22,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
+	"memphis/logger"
 	"net"
 	"net/http"
 	"regexp"
@@ -39,8 +40,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"memphis/logger"
 
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
@@ -91,6 +90,7 @@ type Info struct {
 	LNOC          bool               `json:"lnoc,omitempty"`
 	InfoOnConnect bool               `json:"info_on_connect,omitempty"` // When true the server will respond to CONNECT with an INFO
 	ConnectInfo   bool               `json:"connect_info,omitempty"`    // When true this is the server INFO response to CONNECT
+
 	// Gateways Specific
 	Gateway           string   `json:"gateway,omitempty"`             // Name of the origin Gateway (sent by gateway's INFO)
 	GatewayURLs       []string `json:"gateway_urls,omitempty"`        // Gateway URLs in the originating cluster (sent by gateway's INFO)
@@ -98,6 +98,7 @@ type Info struct {
 	GatewayCmd        byte     `json:"gateway_cmd,omitempty"`         // Command code for the receiving server to know what to do
 	GatewayCmdPayload []byte   `json:"gateway_cmd_payload,omitempty"` // Command payload when needed
 	GatewayNRP        bool     `json:"gateway_nrp,omitempty"`         // Uses new $GNR. prefix for mapped replies
+	GatewayIOM        bool     `json:"gateway_iom,omitempty"`         // Indicate that all accounts will be switched to InterestOnly mode "right away"
 
 	// LeafNode Specific
 	LeafNodeURLs  []string `json:"leafnode_urls,omitempty"`  // LeafNode URLs that the server can reconnect to.
@@ -113,7 +114,6 @@ type Server struct {
 	stats
 	mu                  sync.RWMutex
 	kp                  nkeys.KeyPair
-	prand               *rand.Rand
 	info                Info
 	configFile          string
 	optsMu              sync.RWMutex
@@ -152,6 +152,7 @@ type Server struct {
 	routeInfoJSON       []byte
 	routeResolver       netResolver
 	routesToSelf        map[string]struct{}
+	routeTLSName        string
 	leafNodeListener    net.Listener
 	leafNodeListenerErr error
 	leafNodeInfo        Info
@@ -164,6 +165,7 @@ type Server struct {
 	leafRemoteCfgs     []*leafNodeCfg
 	leafRemoteAccounts sync.Map
 	leafNodeEnabled    bool
+	leafDisableConnect bool // Used in test only
 
 	quitCh           chan struct{}
 	startupComplete  chan struct{}
@@ -278,8 +280,9 @@ type Server struct {
 	rateLimitLoggingCh chan time.Duration
 
 	// Total outstanding catchup bytes in flight.
-	gcbMu  sync.RWMutex
-	gcbOut int64
+	gcbMu     sync.RWMutex
+	gcbOut    int64
+	gcbOutMax int64 // Taken from JetStreamMaxCatchup or defaultMaxTotalCatchupOutBytes
 	// A global chanel to kick out stalled catchup sequences.
 	gcbKick chan struct{}
 
@@ -287,7 +290,7 @@ type Server struct {
 	syncOutSem chan struct{}
 
 	// Queue to process JS API requests that come from routes (or gateways)
-	jsAPIRoutedReqs *ipQueue
+	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
 
 	memphis srvMemphis
 }
@@ -379,7 +382,6 @@ func NewServer(opts *Options) (*Server, error) {
 		kp:                 kp,
 		configFile:         opts.ConfigFile,
 		info:               info,
-		prand:              rand.New(rand.NewSource(time.Now().UnixNano())),
 		opts:               opts,
 		done:               make(chan bool, 1),
 		start:              now,
@@ -427,7 +429,7 @@ func NewServer(opts *Options) (*Server, error) {
 
 	// Place ourselves in the JetStream nodeInfo if needed.
 	if opts.JetStream {
-		ourNode := string(getHash(serverName))
+		ourNode := getHash(serverName)
 		s.nodeToInfo.Store(ourNode, nodeInfo{
 			serverName,
 			VERSION,
@@ -435,7 +437,7 @@ func NewServer(opts *Options) (*Server, error) {
 			opts.JetStreamDomain,
 			info.ID,
 			opts.Tags,
-			&JetStreamConfig{MaxMemory: opts.JetStreamMaxMemory, MaxStore: opts.JetStreamMaxStore},
+			&JetStreamConfig{MaxMemory: opts.JetStreamMaxMemory, MaxStore: opts.JetStreamMaxStore, CompressOK: true},
 			nil,
 			false, true,
 		})
@@ -455,7 +457,7 @@ func NewServer(opts *Options) (*Server, error) {
 	s.setLeafNodeNonExportedOptions()
 
 	// Setup OCSP Stapling. This will abort server from starting if there
-	// are no valid staples and OCSP policy is to Always or MustStaple.
+	// are no valid staples and OCSP policy is set to Always or MustStaple.
 	if err := s.enableOCSP(); err != nil {
 		return nil, err
 	}
@@ -517,7 +519,7 @@ func NewServer(opts *Options) (*Server, error) {
 	// If there is an URL account resolver, do basic test to see if anyone is home.
 	if ar := opts.AccountResolver; ar != nil {
 		if ur, ok := ar.(*URLAccResolver); ok {
-			if _, err := ur.Fetch(""); err != nil {
+			if _, err := ur.Fetch(_EMPTY_); err != nil {
 				return nil, err
 			}
 		}
@@ -852,7 +854,8 @@ func (s *Server) configureAccounts() error {
 		// If we have defined a system account here check to see if its just us and the $G account.
 		// We would do this to add user/pass to the system account. If this is the case add in
 		// no-auth-user for $G.
-		if numAccounts == 2 && s.opts.NoAuthUser == _EMPTY_ {
+		// Only do this if non-operator mode.
+		if len(opts.TrustedOperators) == 0 && numAccounts == 2 && s.opts.NoAuthUser == _EMPTY_ {
 			// If we come here from config reload, let's not recreate the fake user name otherwise
 			// it will cause currently clients to be disconnected.
 			uname := s.sysAccOnlyNoAuthUser
@@ -1001,7 +1004,7 @@ func (s *Server) isTrustedIssuer(issuer string) bool {
 // options-based trusted nkeys. Returns success.
 func (s *Server) processTrustedKeys() bool {
 	s.strictSigningKeyUsage = map[string]struct{}{}
-	if trustedKeys != "" && !s.initStampedTrustedKeys() {
+	if trustedKeys != _EMPTY_ && !s.initStampedTrustedKeys() {
 		return false
 	} else if s.opts.TrustedKeys != nil {
 		for _, key := range s.opts.TrustedKeys {
@@ -1100,7 +1103,7 @@ func (s *Server) isRunning() bool {
 
 func (s *Server) logPid() error {
 	pidStr := strconv.Itoa(os.Getpid())
-	return ioutil.WriteFile(s.getOpts().PidFile, []byte(pidStr), 0660)
+	return os.WriteFile(s.getOpts().PidFile, []byte(pidStr), 0660)
 }
 
 // numReservedAccounts will return the number of reserved accounts configured in the server.
@@ -1258,7 +1261,7 @@ func (s *Server) setSystemAccount(acc *Account) error {
 		sid:     1,
 		servers: make(map[string]*serverUpdate),
 		replies: make(map[string]msgHandler),
-		sendq:   s.newIPQueue("System sendQ"), // of *pubMsg
+		sendq:   newIPQueue[*pubMsg](s, "System sendQ"),
 		resetCh: make(chan struct{}),
 		sq:      s.newSendQ(),
 		statsz:  eventsHBInterval,
@@ -1416,6 +1419,12 @@ func (s *Server) registerAccountNoLock(acc *Account) *Account {
 	// Can not have server lock here.
 	s.mu.Unlock()
 	s.registerSystemImports(acc)
+	// Starting 2.9.0, we are phasing out the optimistic mode, so change
+	// the account to interest-only mode (except if instructed not to do
+	// it in some tests).
+	if s.gateway.enabled && !gwDoNotForceInterestOnlyMode {
+		s.switchAccountToInterestMode(acc.GetName())
+	}
 	s.mu.Lock()
 
 	return nil
@@ -1596,9 +1605,7 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
-// func (s *Server) Start(handleClient func(net.Conn, error, string, string, string)) {
 func (s *Server) Start() {
-
 	s.Noticef("Starting Memphis{dev} broker")
 
 	gc := gitCommit
@@ -1621,6 +1628,11 @@ func (s *Server) Start() {
 	// Avoid RACE between Start() and Shutdown()
 	s.mu.Lock()
 	s.running = true
+	// Update leafNodeEnabled in case options have changed post NewServer()
+	// and before Start() (we should not be able to allow that, but server has
+	// direct reference to user-provided options - at least before a Reload() is
+	// performed.
+	s.leafNodeEnabled = opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0
 	s.mu.Unlock()
 
 	s.grMu.Lock()
@@ -1646,7 +1658,12 @@ func (s *Server) Start() {
 		s.Noticef("  System  : %q", opc.Audience)
 		s.Noticef("  Operator: %q", opc.Name)
 		s.Noticef("  Issued  : %v", time.Unix(opc.IssuedAt, 0))
-		s.Noticef("  Expires : %v", time.Unix(opc.Expires, 0))
+		switch opc.Expires {
+		case 0:
+			s.Noticef("  Expires : Never")
+		default:
+			s.Noticef("  Expires : %v", time.Unix(opc.Expires, 0))
+		}
 	}
 	if hasOperators && opts.SystemAccount == _EMPTY_ {
 		s.Warnf("Trusted Operators should utilize a System Account")
@@ -1741,10 +1758,11 @@ func (s *Server) Start() {
 			s.Fatalf("Not allowed to enable JetStream on the system account")
 		}
 		cfg := &JetStreamConfig{
-			StoreDir:  opts.StoreDir,
-			MaxMemory: opts.JetStreamMaxMemory,
-			MaxStore:  opts.JetStreamMaxStore,
-			Domain:    opts.JetStreamDomain,
+			StoreDir:   opts.StoreDir,
+			MaxMemory:  opts.JetStreamMaxMemory,
+			MaxStore:   opts.JetStreamMaxStore,
+			Domain:     opts.JetStreamDomain,
+			CompressOK: true,
 		}
 		if err := s.EnableJetStream(cfg); err != nil {
 			s.Fatalf("Can't start JetStream: %v", err)
@@ -1863,12 +1881,12 @@ func (s *Server) Shutdown() {
 	if s == nil {
 		return
 	}
-	// Transfer off any raft nodes that we are a leader by shutting them all down.
-	s.shutdownRaftNodes()
+	// This is for JetStream R1 Pull Consumers to allow signaling
+	// that pending pull requests are invalid.
+	s.signalPullConsumers()
 
-	// This is for clustered JetStream and ephemeral consumers.
-	// No-op if not clustered or not running JetStream.
-	s.migrateEphemerals()
+	// Transfer off any raft nodes that we are a leader by stepping them down.
+	s.stepdownRaftNodes()
 
 	// Shutdown the eventing system as needed.
 	// This is done first to send out any messages for
@@ -1901,6 +1919,9 @@ func (s *Server) Shutdown() {
 
 	// Now check jetstream.
 	s.shutdownJetStream()
+
+	// Now shutdown the nodes
+	s.shutdownRaftNodes()
 
 	s.mu.Lock()
 	conns := make(map[uint64]*client)
@@ -2351,9 +2372,6 @@ func (s *Server) startMonitoring(secure bool) error {
 		return fmt.Errorf("can't listen to the monitor port: %v", err)
 	}
 
-	rport := httpListener.Addr().(*net.TCPAddr).Port
-	s.Noticef("Starting %s monitor on %s", monitorProtocol, net.JoinHostPort(opts.HTTPHost, strconv.Itoa(rport)))
-
 	mux := http.NewServeMux()
 
 	// Root
@@ -2497,6 +2515,12 @@ func (s *Server) createClient(conn net.Conn) *client {
 	c.nonce = []byte(info.Nonce)
 	authRequired = info.AuthRequired
 
+	// Check to see if we have auth_required set but we also have a no_auth_user.
+	// If so set back to false.
+	if info.AuthRequired && opts.NoAuthUser != _EMPTY_ && opts.NoAuthUser != s.sysAccOnlyNoAuthUser {
+		info.AuthRequired = false
+	}
+
 	s.totalClients++
 	s.mu.Unlock()
 
@@ -2555,8 +2579,8 @@ func (s *Server) createClient(conn net.Conn) *client {
 
 	// Connection could have been closed while sending the INFO proto.
 	isClosed := c.isClosed()
-	var pre []byte
 
+	var pre []byte
 	// If we have both TLS and non-TLS allowed we need to see which
 	// one the client wants.
 	if !isClosed && opts.TLSConfig != nil && opts.AllowNonTLS {
@@ -2645,7 +2669,7 @@ func (s *Server) saveClosedClient(c *client, nc net.Conn, reason ClosedState) {
 	c.mu.Lock()
 
 	cc := &closedClient{}
-	cc.fill(c, nc, now)
+	cc.fill(c, nc, now, false)
 	cc.Stop = &now
 	cc.Reason = reason.String()
 
@@ -2887,9 +2911,7 @@ func (s *Server) numSubscriptions() uint32 {
 	var subs int
 	s.accounts.Range(func(k, v interface{}) bool {
 		acc := v.(*Account)
-		if acc.sl != nil {
-			subs += acc.TotalSubs()
-		}
+		subs += acc.TotalSubs()
 		return true
 	})
 	return uint32(subs)
@@ -3033,7 +3055,7 @@ func (s *Server) ID() string {
 
 // NodeName returns the node name for this server.
 func (s *Server) NodeName() string {
-	return string(getHash(s.info.Name))
+	return getHash(s.info.Name)
 }
 
 // Name returns the server's name. This will be the same as the ID if it was not set.
@@ -3319,7 +3341,7 @@ func (s *Server) logPorts() {
 				s.Errorf("Error marshaling ports file: %v", err)
 				return
 			}
-			if err := ioutil.WriteFile(portsFile, data, 0666); err != nil {
+			if err := os.WriteFile(portsFile, data, 0666); err != nil {
 				s.Errorf("Error writing ports file (%s): %v", portsFile, err)
 				return
 			}
@@ -3567,7 +3589,7 @@ func (s *Server) acceptError(acceptName string, err error, tmpDelay time.Duratio
 		return -1
 	}
 	//lint:ignore SA1019 We want to retry on a bunch of errors here.
-	if ne, ok := err.(net.Error); ok && ne.Temporary() {
+	if ne, ok := err.(net.Error); ok && ne.Temporary() { // nolint:staticcheck
 		s.Errorf("Temporary %s Accept Error(%v), sleeping %dms", acceptName, ne, tmpDelay/time.Millisecond)
 		select {
 		case <-time.After(tmpDelay):

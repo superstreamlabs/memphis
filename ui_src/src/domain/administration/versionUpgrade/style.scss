@@ -1,0 +1,90 @@
+.version-upgrade-container{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    p{
+        margin: 0;
+    }
+    .banner-section{
+        display: flex;
+        margin: 5% 0% 2% 5%;
+        align-items:center;
+    
+        .actions{
+            margin-left:5%;
+            position: absolute;
+            .logo{
+                display: flex;
+                align-items:center;
+                .version-wrapper{
+                    margin-left: 15px;
+                    background: var(--purple);
+                    color: white;
+                    border-radius: 27px;
+                    font-family: 'InterMedium';
+                    font-size: 16px;
+                    padding: 5px;
+                }
+            }
+            .desc-vers{
+                font-family: 'InterMedium';
+                font-size: 16px;
+                color: #2E2C34;
+            }
+            .button-container{
+                margin-top: 10px;
+                button{
+                    border-color: #D1CFF0 !important;
+                }
+            }
+        }
+    }
+    .feature-list{
+        margin-left: 5%;
+        display: flex;
+        height: calc(53%);
+        position: relative;
+        flex-wrap: wrap;
+        gap: 20px;
+        overflow: auto;
+        .loading{
+            display: contents;
+            .loader-container {
+                height: calc(100%);
+                width: 95%;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                .memphis-gif{
+                    top: unset !important;
+                    transform: unset !important;
+                    left: unset !important;
+                }
+            }
+        }
+    }
+    .uptodate-section{
+        width: 90%;
+        border: 1px solid;
+        margin-left: 5%;
+        margin-top: 5%;
+        display: flex;
+        padding: 20px;
+        border: 1px solid #E6E6E6;
+        box-shadow: 0px 0px 2px rgba(24, 24, 28, 0.02), 0px 1px 2px rgba(24, 24, 28, 0.06);
+        border-radius: 8px;
+        align-items:center;
+        .content{
+            p{
+                font-family: 'InterSemiBold';
+                font-size: 28px;
+                color: #27AE60;
+            }
+            span{
+                color: #818181;
+                font-size: 14px;
+            }
+        }
+    }
+}

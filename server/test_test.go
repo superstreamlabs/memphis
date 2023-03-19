@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2019-2021 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -56,7 +57,7 @@ type cluster struct {
 	servers []*Server
 	opts    []*Options
 	name    string
-	t       *testing.T
+	t       testing.TB
 }
 
 func require_True(t *testing.T, b bool) {
@@ -69,7 +70,7 @@ func require_True(t *testing.T, b bool) {
 func require_False(t *testing.T, b bool) {
 	t.Helper()
 	if b {
-		t.Fatalf("require no false, but got true")
+		t.Fatalf("require false, but got true")
 	}
 }
 
@@ -77,6 +78,13 @@ func require_NoError(t testing.TB, err error) {
 	t.Helper()
 	if err != nil {
 		t.Fatalf("require no error, but got: %v", err)
+	}
+}
+
+func require_NotNil(t testing.TB, v any) {
+	t.Helper()
+	if v == nil {
+		t.Fatalf("require not nil, but got: %v", v)
 	}
 }
 
@@ -97,12 +105,19 @@ func require_Error(t *testing.T, err error, expected ...error) {
 	if len(expected) == 0 {
 		return
 	}
+	// Try to strip nats prefix from Go library if present.
+	const natsErrPre = "nats: "
+	eStr := err.Error()
+	if strings.HasPrefix(eStr, natsErrPre) {
+		eStr = strings.Replace(eStr, natsErrPre, _EMPTY_, 1)
+	}
+
 	for _, e := range expected {
-		if err == e || strings.Contains(e.Error(), err.Error()) {
+		if err == e || strings.Contains(eStr, e.Error()) || strings.Contains(e.Error(), eStr) {
 			return
 		}
 	}
-	t.Fatalf("Expected one of %+v, got '%v'", expected, err)
+	t.Fatalf("Expected one of %v, got '%v'", expected, err)
 }
 
 func require_Equal(t *testing.T, a, b string) {
