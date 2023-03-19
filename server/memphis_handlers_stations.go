@@ -118,35 +118,34 @@ func validateIdempotencyWindow(retentionType string, retentionValue int, idempot
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station, shouldDeleteStream bool) error {
-	//	stationName, err := StationNameFromStr(station.Name)
-	_, err := StationNameFromStr(station.Name)
+	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
 		return err
 	}
 
-	// if shouldDeleteStream {
-	// 	err = s.RemoveStream(stationName.Intern())
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
+	if shouldDeleteStream {
+		err = s.RemoveStream(stationName.Intern())
+		if err != nil {
+			return err
+		}
+	}
 
-	// err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	// if err != nil {
-	// 	return err
-	// }
+	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
+	if err != nil {
+		return err
+	}
 
-	// DeleteTagsFromStation(station.ID)
+	DeleteTagsFromStation(station.ID)
 
-	// err = db.DeleteProducersByStationID(station.ID)
-	// if err != nil {
-	// 	return err
-	// }
+	err = db.DeleteProducersByStationID(station.ID)
+	if err != nil {
+		return err
+	}
 
-	// err = db.DeleteConsumersByStationID(station.ID)
-	// if err != nil {
-	// 	return err
-	// }
+	err = db.DeleteConsumersByStationID(station.ID)
+	if err != nil {
+		return err
+	}
 
 	err = RemoveAllAuditLogsByStation(station.Name)
 	if err != nil {
