@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form } from 'antd';
+import { Form, message } from 'antd';
 
 import { INTEGRATION_LIST, REGIONS_OPTIONS } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
