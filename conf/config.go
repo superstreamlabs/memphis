@@ -22,7 +22,9 @@ type Configuration struct {
 	MEMPHIS_VERSION                string
 	DEV_ENV                        string
 	LOCAL_CLUSTER_ENV              bool
-	HTTP_PORT                      string
+	HTTP_PORT                      int
+	REST_GW_PORT                   int
+	CLIENTS_PORT                   int
 	WS_PORT                        int
 	WS_TLS                         bool
 	WS_TOKEN                       string
@@ -60,7 +62,7 @@ type Configuration struct {
 	POSTGRESQL_USER                string
 	POSTGRESQL_PASS                string
 	POSTGRESQL_DBNAME              string
-	POSTGRESQL_HOST             string
+	POSTGRESQL_HOST                string
 	POSTGRESQL_PORT                string
 	POSTGRESQL_TLS_ENABLED         bool
 	POSTGRESQL_TLS_KEY             string

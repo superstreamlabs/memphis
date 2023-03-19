@@ -18,6 +18,10 @@
             "env": {
                 "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
+                "HTTP_PORT": "9000",
+                "REST_GW_PORT": "4444",
+                "CLIENTS_PORT": "6666",
+                "WS_PORT": "7770",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "ROOT_PASSWORD": "memphis",
                 "CONNECTION_TOKEN": "memphis",
@@ -56,6 +60,8 @@
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
                 "HTTP_PORT": "9000",
+                "REST_GW_PORT": "4444",
+                "CLIENTS_PORT": "6666",
                 "WS_PORT": "7770",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "ROOT_PASSWORD": "memphis",
@@ -73,7 +79,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-0"
+                "SERVER_NAME": "memphis-0",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {
@@ -91,6 +102,8 @@
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
                 "HTTP_PORT": "9001",
+                "REST_GW_PORT": "4444",
+                "CLIENTS_PORT": "6667",
                 "WS_PORT": "7771",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "ROOT_PASSWORD": "memphis",
@@ -108,7 +121,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-1"
+                "SERVER_NAME": "memphis-1",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         },
         {
@@ -126,6 +144,8 @@
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
                 "HTTP_PORT": "9002",
+                "REST_GW_PORT": "4444",
+                "CLIENTS_PORT": "6668",
                 "WS_PORT": "7772",
                 "MONGO_URL": "mongodb://localhost:27017/maindb?retryWrites=true&w=majority",
                 "ROOT_PASSWORD": "memphis",
@@ -143,7 +163,12 @@
                 "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-2"
+                "SERVER_NAME": "memphis-2",
+                "POSTGRESQL_USER": "memphis" ,
+	            "POSTGRESQL_PASS": "memphis",
+	            "POSTGRESQL_DBNAME": "memphis",
+	            "POSTGRESQL_HOST": "localhost", 
+	            "POSTGRESQL_PORT": "5005", 
             }
         }
     ]

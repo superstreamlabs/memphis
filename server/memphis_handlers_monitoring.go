@@ -145,12 +145,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis",
 				Components:  cpuComps,
 				Status:      checkCompStatus(cpuComps),
-				Ports:       []int{9000, 6666, 7770, 8222},
+				Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 				DesiredPods: 1,
 				ActualPods:  1,
 				Hosts:       hosts,
 			})
-			resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
+			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 			healthy := false
 			restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 			if err == nil {
@@ -192,7 +192,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis-rest-gateway",
 				Components:  restGwComps,
 				Status:      checkCompStatus(restGwComps),
-				Ports:       []int{4444},
+				Ports:       []int{configuration.REST_GW_PORT},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
 				Hosts:       hosts,
@@ -353,12 +353,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis",
 			Components:  cpuComps,
 			Status:      checkCompStatus(cpuComps),
-			Ports:       []int{9000, 6666, 7770, 8222},
+			Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 			DesiredPods: 1,
 			ActualPods:  1,
 			Hosts:       hosts,
 		})
-		resp, err := http.Get("http://localhost:4444/monitoring/getResourcesUtilization")
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 		healthy := false
 		restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 		if err == nil {
@@ -400,7 +400,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis-rest-gateway",
 			Components:  restGwComps,
 			Status:      checkCompStatus(restGwComps),
-			Ports:       []int{4444},
+			Ports:       []int{configuration.REST_GW_PORT},
 			DesiredPods: 1,
 			ActualPods:  actualRestGw,
 			Hosts:       hosts,
