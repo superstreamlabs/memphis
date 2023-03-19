@@ -957,7 +957,8 @@ func UpsertNewStation(
 	retentionValue int,
 	storageType string,
 	replicas int,
-	schemaDetails models.SchemaDetails,
+	schemaName string,
+	schemaVersionUpdate int,
 	idempotencyWindow int64,
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
@@ -1003,7 +1004,7 @@ func UpsertNewStation(
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaDetails.SchemaName, schemaDetails.VersionNumber, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1043,8 +1044,8 @@ func UpsertNewStation(
 		StorageType:                 storageType,
 		Replicas:                    replicas,
 		UpdatedAt:                   updatedAt,
-		SchemaName:                  schemaDetails.SchemaName,
-		SchemaVersionNumber:         schemaDetails.VersionNumber,
+		SchemaName:                  schemaName,
+		SchemaVersionNumber:         schemaVersionUpdate,
 		IdempotencyWindow:           idempotencyWindow,
 		IsNative:                    isNative,
 		DlsConfigurationPoison:      dlsConfiguration.Poison,
@@ -1286,7 +1287,7 @@ func DetachSchemaFromStation(stationName string) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET schema_name = '', schema_version_number = ''
+	query := `UPDATE stations SET schema_name = '', schema_version_number = 0
 	WHERE name = $1 AND is_deleted = false`
 	stmt, err := conn.Conn().Prepare(ctx, "detach_schema_from_station", query)
 	if err != nil {

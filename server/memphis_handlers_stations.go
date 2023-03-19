@@ -315,7 +315,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(s, reply, err)
 	}
-	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -650,9 +650,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
+	var schemaVersionNumber int
 	schemaName := body.SchemaName
-	var schemaDetails models.SchemaDetails
-	var schemaDetailsResponse models.StationOverviewSchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName)
@@ -675,15 +674,10 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		schemaDetailsResponse = models.StationOverviewSchemaDetails{
-			SchemaName:       schemaName,
-			VersionNumber:    schemaVersion.VersionNumber,
-			UpdatesAvailable: true,
-			SchemaType:       schema.Type,
-		}
-		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+		schemaVersionNumber = schemaVersion.VersionNumber
 	} else {
-		schemaDetails = models.SchemaDetails{SchemaName: "", VersionNumber: 0}
+		schemaName = ""
+		schemaVersionNumber = 0
 	}
 
 	var retentionType string
@@ -760,7 +754,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -774,14 +768,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	// if len(body.Tags) > 0 {
-	// 	err = AddTagsToEntity(body.Tags, "station", newStation.ID)
-	// 	if err != nil {
-	// 		serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
-	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-	// 		return
-	// 	}
-	// }
+	if len(body.Tags) > 0 {
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+		if err != nil {
+			serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
 	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
@@ -809,8 +803,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
 		}
 		analyticsParams := []analytics.EventParam{param1, param2}
-		//TODO: replace 1 to user.Username
-		analytics.SendEventWithParams("1", analyticsParams, "user-create-station")
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 
 	if schemaName != "" {
@@ -825,27 +818,27 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"created_at":                    time.Now(),
 			"last_update":                   time.Now(),
 			"is_deleted":                    false,
-			"schema":                        schemaDetailsResponse,
+			"schema_name":                   schemaName,
+			"schema_version_number":         schemaVersionNumber,
 			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
 		})
 	} else {
-		var emptySchemaDetailsResponse struct{}
 		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_username":           user.Username,
-			"created_at":                    time.Now(),
-			"last_update":                   time.Now(),
-			"is_deleted":                    false,
-			"schema":                        emptySchemaDetailsResponse,
-			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
+			"id":                    newStation.ID,
+			"name":                  stationName.Ext(),
+			"retention_type":        retentionType,
+			"retention_value":       body.RetentionValue,
+			"storage_type":          storageTypeForResponse,
+			"replicas":              body.Replicas,
+			"created_by_username":   user.Username,
+			"created_at":            time.Now(),
+			"last_update":           time.Now(),
+			"is_deleted":            false,
+			"schema_name":           schemaName,
+			"schema_version_number": schemaVersionNumber, "idempotency_window_in_ms": newStation.IdempotencyWindow,
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
