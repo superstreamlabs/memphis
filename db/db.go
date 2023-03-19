@@ -28,6 +28,7 @@ import (
 	"time"
 
 	// "github.com/jackc/pgx/pgtype"
+	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -3327,8 +3328,12 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	defer conn.Release()
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return []models.Tag{}, err
+	}
 	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `)`
-	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id"+uid.String(), query)
 	if err != nil {
 		return []models.Tag{}, err
 	}
