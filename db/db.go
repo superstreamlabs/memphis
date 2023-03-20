@@ -1448,7 +1448,6 @@ func UpdateProducersConnection(connectionId string, isActive bool) error {
 }
 
 func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
-	var producer models.Producer
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := PostgresConnection.Client.Acquire(ctx)
@@ -1461,15 +1460,19 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	err = conn.QueryRow(ctx, stmt.Name, name, connectionId).Scan(&producer)
-	if err == pgx.ErrNoRows {
-		return false, models.Producer{}, nil
-	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, connectionId)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-
-	return true, producer, nil
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
