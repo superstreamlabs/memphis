@@ -32,7 +32,20 @@ type SchemaVersion struct {
 	SchemaContent     string    `json:"schema_content"`
 	SchemaId          int       `json:"schema_id"`
 	MessageStructName string    `json:"message_struct_name"`
-	Descriptor        string    `json:"-"`
+	Descriptor        string    `json:"descriptor"`
+}
+
+type SchemaVersionResponse struct {
+	ID                int       `json:"id" `
+	VersionNumber     int       `json:"version_number"`
+	Active            bool      `json:"active"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	CreatedAt         time.Time `json:"created_at"`
+	SchemaContent     string    `json:"schema_content"`
+	SchemaId          int       `json:"schema_id"`
+	MessageStructName string    `json:"message_struct_name"`
+	Descriptor        []byte    `json:"descriptor"`
 }
 
 type CreateNewSchema struct {

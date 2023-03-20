@@ -212,7 +212,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
-		descriptor TEXT,
+		descriptor bytea,
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
@@ -2314,12 +2314,29 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 		return []models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemaVersions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemaVersionsRes, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return []models.SchemaVersion{}, err
 	}
-	if len(schemaVersions) == 0 {
+	if len(schemaVersionsRes) == 0 {
 		return []models.SchemaVersion{}, nil
+	}
+	schemaVersions := []models.SchemaVersion{}
+	for _, v := range schemaVersionsRes {
+		version := models.SchemaVersion{
+			ID:                v.ID,
+			VersionNumber:     v.VersionNumber,
+			Active:            v.Active,
+			CreatedBy:         v.CreatedBy,
+			CreatedByUsername: v.CreatedByUsername,
+			CreatedAt:         v.CreatedAt,
+			SchemaContent:     v.SchemaContent,
+			SchemaId:          v.SchemaId,
+			MessageStructName: v.MessageStructName,
+			Descriptor:        string(v.Descriptor),
+		}
+
+		schemaVersions = append(schemaVersions, version)
 	}
 	return schemaVersions, nil
 }
@@ -2342,14 +2359,27 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		return models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
 	if len(schemas) == 0 {
 		return models.SchemaVersion{}, nil
 	}
-	return schemas[0], nil
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
+	}
+
+	return schemaVersion, nil
 }
 
 func UpdateSchemasOfDeletedUser(userId int) error {
@@ -2414,14 +2444,26 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		return true, models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
 	if len(schemas) == 0 {
 		return false, models.SchemaVersion{}, nil
 	}
-	return true, schemas[0], nil
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
+	}
+	return true, schemaVersion, nil
 }
 
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
@@ -2639,7 +2681,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	var schemaVersionId int
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor))
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
