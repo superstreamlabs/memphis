@@ -2113,7 +2113,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	query := `
 		SELECT
 			c.name,
-			con.client_address
+			con.client_address,
 			c.is_active,
 			c.is_deleted,
 			c.created_by,
