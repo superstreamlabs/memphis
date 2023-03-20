@@ -1518,6 +1518,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 			"total_dls_messages":            totalDlsAmount,
 			"tiered_storage_enabled":        station.TieredStorageEnabled,
+			"created_by_username":           station.CreatedByUsername,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -1545,6 +1546,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 				"total_dls_messages":            totalDlsAmount,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
 			}
 		} else {
 			response = gin.H{
@@ -1569,6 +1571,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 				"total_dls_messages":            totalDlsAmount,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
 			}
 		}
 	}

@@ -161,11 +161,12 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
-				StationName: stationName.Ext(),
-				Message:     message,
-				CreatedBy:   connection.CreatedBy,
-				CreatedAt:   time.Now(),
-				UserType:    "application",
+				StationName:       stationName.Ext(),
+				Message:           message,
+				CreatedBy:         connection.CreatedBy,
+				CreatedByUsername: connection.CreatedByUsername,
+				CreatedAt:         time.Now(),
+				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -253,11 +254,12 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		}
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName: stationName.Ext(),
-			Message:     message,
-			CreatedBy:   connection.CreatedBy,
-			CreatedAt:   time.Now(),
-			UserType:    "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         connection.CreatedBy,
+			CreatedByUsername: connection.CreatedByUsername,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -563,11 +565,12 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName: stationName.Ext(),
-			Message:     message,
-			CreatedBy:   user.ID,
-			CreatedAt:   time.Now(),
-			UserType:    "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)

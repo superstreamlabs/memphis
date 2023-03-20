@@ -115,6 +115,11 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
+	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID)
+	if err != nil {
+		return err
+	}
+
 	err = db.UpdateAuditLogsOfDeletedUser(user.ID)
 	if err != nil {
 		return err

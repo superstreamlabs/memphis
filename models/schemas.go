@@ -27,6 +27,7 @@ type SchemaVersion struct {
 	VersionNumber     int       `json:"version_number"`
 	Active            bool      `json:"active"`
 	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
 	CreatedAt         time.Time `json:"created_at"`
 	SchemaContent     string    `json:"schema_content"`
 	SchemaId          int       `json:"schema_id"`
@@ -55,12 +56,13 @@ type ExtendedSchema struct {
 }
 
 type ExtendedSchemaDetails struct {
-	ID           int             `json:"id"`
-	SchemaName   string          `json:"schema_name"`
-	Type         string          `json:"type"`
-	Versions     []SchemaVersion `json:"versions"`
-	UsedStations []string        `json:"used_stations"`
-	Tags         []CreateTag     `json:"tags"`
+	ID                int             `json:"id"`
+	SchemaName        string          `json:"schema_name"`
+	Type              string          `json:"type"`
+	Versions          []SchemaVersion `json:"versions"`
+	UsedStations      []string        `json:"used_stations"`
+	Tags              []CreateTag     `json:"tags"`
+	CreatedByUsername string          `json:"created_by_username"`
 }
 
 type ProducerSchemaUpdateType int

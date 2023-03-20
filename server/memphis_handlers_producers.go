@@ -101,11 +101,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
-				StationName: pStationName.Ext(),
-				Message:     message,
-				CreatedBy:   connection.CreatedBy,
-				CreatedAt:   time.Now(),
-				UserType:    "application",
+				StationName:       pStationName.Ext(),
+				Message:           message,
+				CreatedBy:         connection.CreatedBy,
+				CreatedByUsername: connection.CreatedByUsername,
+				CreatedAt:         time.Now(),
+				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -145,11 +146,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName: pStationName.Ext(),
-			Message:     message,
-			CreatedBy:   connection.CreatedBy,
-			CreatedAt:   time.Now(),
-			UserType:    "application",
+			StationName:       pStationName.Ext(),
+			Message:           message,
+			CreatedBy:         connection.CreatedBy,
+			CreatedByUsername: connection.CreatedByUsername,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -380,11 +382,12 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		StationName: stationName.Ext(),
-		Message:     message,
-		CreatedBy:   user.ID,
-		CreatedAt:   time.Now(),
-		UserType:    "application",
+		StationName:       stationName.Ext(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		UserType:          "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

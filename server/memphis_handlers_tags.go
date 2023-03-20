@@ -46,8 +46,8 @@ func CreateTag(name string, entity_type string, entity_id int, color string) err
 		stationArr = append(stationArr, entity_id)
 	case "schema":
 		schemaArr = append(schemaArr, entity_id)
-		case "user":
-			userArr = append(userArr, entity_id)
+	case "user":
+		userArr = append(userArr, entity_id)
 	}
 	_, err := db.UpsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
@@ -227,7 +227,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			c.IndentedJSON(200, []string{})
 			return
 		}
-	entity_id = user.ID
+		entity_id = user.ID
 
 	default:
 		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": unsupported entity type")
@@ -246,11 +246,12 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	if entity == "station" {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			StationName: stationName,
-			Message:     message,
-			CreatedBy:   user.ID,
-			CreatedAt:   time.Now(),
-			UserType:    user.UserType,
+			StationName:       stationName,
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -324,7 +325,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			c.IndentedJSON(200, []string{})
 			return
 		}
-	entity_id = user.ID
+		entity_id = user.ID
 
 	default:
 		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": unsupported entity type")
@@ -369,11 +370,12 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					StationName: stationName.Intern(),
-					Message:     message,
-					CreatedBy:   user.ID,
-					CreatedAt:   time.Now(),
-					UserType:    user.UserType,
+					StationName:       stationName.Intern(),
+					Message:           message,
+					CreatedBy:         user.ID,
+					CreatedByUsername: user.Username,
+					CreatedAt:         time.Now(),
+					UserType:          user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -426,11 +428,12 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 				var auditLogs []interface{}
 				newAuditLog := models.AuditLog{
-					StationName: stationName.Intern(),
-					Message:     message,
-					CreatedBy:   user.ID,
-					CreatedAt:   time.Now(),
-					UserType:    user.UserType,
+					StationName:       stationName.Intern(),
+					Message:           message,
+					CreatedBy:         user.ID,
+					CreatedByUsername: user.Username,
+					CreatedAt:         time.Now(),
+					UserType:          user.UserType,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)

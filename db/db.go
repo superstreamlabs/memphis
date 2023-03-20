@@ -81,11 +81,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);
+		PRIMARY KEY (id));
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
 
@@ -102,36 +98,29 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
 		id VARCHAR NOT NULL,
-		created_by INTEGER NOT NULL,
+		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
 		client_address VARCHAR NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);`
+		PRIMARY KEY (id));`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	schemasTable := `
 	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
@@ -168,7 +157,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		connection_id VARCHAR NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
-		created_by INTEGER NOT NULL,
+		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
@@ -177,9 +166,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
@@ -213,11 +199,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		dls_configuration_poison BOOL NOT NULL DEFAULT true,
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);
+		PRIMARY KEY (id));
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
@@ -225,6 +207,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		version_number SERIAL NOT NULL,
 		active BOOL NOT NULL DEFAULT false,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
@@ -232,9 +215,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		descriptor TEXT,
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
 		CONSTRAINT fk_schema_id
 			FOREIGN KEY(schema_id)
 			REFERENCES schemas(id)
@@ -254,9 +234,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		created_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
@@ -675,7 +652,7 @@ func UpdateConncetionsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE connections SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -774,6 +751,9 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	var auditLog []models.AuditLog
 
 	b, err := json.Marshal(auditLogs)
+	if err != nil {
+		return err
+	}
 	err = json.Unmarshal(b, &auditLog)
 	if err != nil {
 		return err
@@ -879,7 +859,7 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE audit_logs SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := `UPDATE audit_logs SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -1322,7 +1302,7 @@ func UpdateStationsOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -1777,7 +1757,7 @@ func UpdateProducersOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE stations SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -2254,7 +2234,7 @@ func UpdateConsumersOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE consumers SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	query := `UPDATE consumers SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -2374,7 +2354,6 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	// query := `UPDATE schemas SET created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	query := ` UPDATE schemas
 	SET created_by_username = CONCAT(created_by_username, '(deleted)')
 	WHERE created_by_username = (
@@ -2382,6 +2361,28 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 	)
 	AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_schemas_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateSchemaVersionsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := ` UPDATE schema_versions
+	SET created_by_username = CONCAT(created_by_username, '(deleted)')
+	WHERE created_by_username = (
+		SELECT username FROM users WHERE id = $1
+	)
+	AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schema_versions_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
@@ -2605,7 +2606,7 @@ func UpsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+func UpsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2619,12 +2620,13 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 		version_number,
 		active,
 		created_by,
+		created_by_username,
 		created_at,
 		schema_content,
 		schema_id,
 		msg_struct_name,
 		descriptor)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema_version", query)
 	if err != nil {
@@ -2634,7 +2636,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 	var schemaVersionId int
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -2668,7 +2670,8 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, username int, schemaContent
 		ID:                schemaVersionId,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
-		CreatedBy:         username,
+		CreatedBy:         userId,
+		CreatedByUsername: username,
 		CreatedAt:         time.Now(),
 		SchemaContent:     schemaContent,
 		SchemaId:          schemaId,
