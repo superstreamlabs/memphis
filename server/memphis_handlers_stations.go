@@ -314,7 +314,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(s, reply, err)
 	}
-	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -580,8 +580,6 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 				stations[i].TieredStorageEnabled = false
 			}
 
-			// stations[i].Producers = []models.Producer{}
-			// stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
@@ -755,7 +753,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

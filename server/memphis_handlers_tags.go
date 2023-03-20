@@ -49,7 +49,7 @@ func CreateTag(name string, entity_type string, entity_id int, color string) err
 	case "user":
 		userArr = append(userArr, entity_id)
 	}
-	_, err := db.UpsertNewTag(name, color, stationArr, schemaArr, userArr)
+	_, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
 		return err
 	}
@@ -76,7 +76,7 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id int)
 				return err
 			}
 		} else {
-			err = db.UpsertEntityToTag(tagToCreate.Name, entity_type, entity_id)
+			err = db.InsertEntityToTag(tagToCreate.Name, entity_type, entity_id)
 			if err != nil {
 				return err
 			}
@@ -139,7 +139,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	stationArr := []int{}
 	schemaArr := []int{}
 	userArr := []int{}
-	newTag, err := db.UpsertNewTag(name, color, stationArr, schemaArr, userArr)
+	newTag, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -356,7 +356,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					return
 				}
 			} else {
-				err = db.UpsertEntityToTag(tag.Name, entity, entity_id)
+				err = db.InsertEntityToTag(tag.Name, entity, entity_id)
 				if err != nil {
 					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -416,7 +416,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				return
 			}
 			if exist {
-				err = db.UpsertEntityToTag(tag.Name, entity, entity_id)
+				err = db.InsertEntityToTag(tag.Name, entity, entity_id)
 				if err != nil {
 					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
