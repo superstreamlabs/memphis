@@ -50,7 +50,6 @@ function VersionUpgrade() {
             const mdFile = mdFiles[0];
             setversionUrl(`${RELEASE_DOCS_URL}${mdFile.name.replace('.md', '')}`);
             const file = await GithubRequest(mdFile.download_url);
-            console.log(file);
             const addedFeatures = ExtractAddedFeatures(file);
             setFeatures(addedFeatures);
         } catch (err) {
