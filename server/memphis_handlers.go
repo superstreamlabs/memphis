@@ -62,11 +62,7 @@ type memphisWS struct {
 
 func (s *Server) InitializeMemphisHandlers() {
 	serv = s
-	// s.memphis.dbClient = dbInstance.Client
-	// s.memphis.dbCtx = dbInstance.Ctx
-	// s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
-	// s.memphis.serverID is initialized earlier, when logger is configured
 
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
