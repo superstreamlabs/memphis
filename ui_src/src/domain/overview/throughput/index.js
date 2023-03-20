@@ -195,7 +195,7 @@ function Throughput() {
         legend: { display: false },
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
-        hover: { mode: 'nearest', intersect: true },
+        hover: { mode: 'top', intersect: true },
         tooltips: {
             mode: 'index',
             intersect: false,

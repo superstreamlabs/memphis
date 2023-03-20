@@ -48,8 +48,9 @@ const Messages = () => {
     const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
-    const [tabValue, setTabValue] = useState('All');
+    const [tabValue, setTabValue] = useState('Messages');
     const [loader, setLoader] = useState(false);
+    const [purgeData, setPurgeData] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
@@ -76,7 +77,7 @@ const Messages = () => {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
         }
-        if (subTabValue === 'Unacked') {
+        if (subTabValue === subTabs[0].name) {
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
         } else {
             setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.schema_failed_messages?.length);
@@ -112,7 +113,7 @@ const Messages = () => {
         setIgnoreProcced(true);
         let messages;
         try {
-            if (tabValue === 'All') {
+            if (tabValue === tabs[0]) {
                 await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
                 messages = stationState?.stationSocketData?.messages;
                 isCheck.map((messageId, index) => {
@@ -121,8 +122,11 @@ const Messages = () => {
                     });
                 });
             } else {
-                await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: subTabValue === 'Unacked' ? 'poison' : 'schema', dls_message_ids: isCheck });
-                messages = subTabValue === 'Unacked' ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, {
+                    dls_type: subTabValue === subTabs[0].name ? 'poison' : 'schema',
+                    dls_message_ids: isCheck
+                });
+                messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item._id !== messageId;
@@ -131,7 +135,7 @@ const Messages = () => {
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === 'Unacked'
+                subTabValue === subTabs[0].name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -144,25 +148,36 @@ const Messages = () => {
         }
     };
 
+    useEffect(() => {
+        if (
+            (stationState?.stationSocketData?.total_messages === 0 && purgeData.purge_station) ||
+            (stationState?.stationSocketData?.total_dls_messages === 0 && purgeData.purge_dls)
+        ) {
+            modalPurgeFlip(false);
+            setLoader(false);
+            setPurgeData({});
+        }
+    }, [stationState?.stationSocketData]);
+
     const handlePurge = async (purgeData) => {
         setLoader(true);
         setIgnoreProcced(true);
         try {
             let purgeDataPayload = purgeData;
-            purgeData['station_name'] = stationName;
+            purgeDataPayload['station_name'] = stationName;
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
-            setTimeout(() => {
-                setIgnoreProcced(false);
-                stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
-                setSelectedRowIndex(null);
-                setIsCheck([]);
-                setIndeterminate(false);
-            }, 1500);
-            modalPurgeFlip(false);
-        } catch (error) {
             setIgnoreProcced(false);
-        } finally {
+            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+            let data = stationState?.stationSocketData;
+            if (purgeDataPayload['purge_station']) data['total_messages'] = 0;
+            if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
+            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            setSelectedRowIndex(null);
+            setIsCheck([]);
+            setIndeterminate(false);
+        } catch (error) {
             setLoader(false);
+            setIgnoreProcced(false);
         }
     };
 
@@ -238,9 +253,9 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
@@ -266,9 +281,10 @@ const Messages = () => {
                     {showLastMsg()}
                 </div>
                 <div className="right-side">
-                    {(tabValue === 'All' ||
-                        (tabValue === 'Dead-letter' &&
-                            (stationState?.stationSocketData?.poison_messages?.length > 0 || stationState?.stationSocketData?.schema_failed_messages?.length > 0))) && (
+                    {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
+                        (tabValue === tabs[1] &&
+                            ((subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
+                                (subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
                         <Button
                             width="80px"
                             height="32px"
@@ -283,7 +299,7 @@ const Messages = () => {
                             onClick={() => handleDrop()}
                         />
                     )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && (
+                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <Button
                             width="80px"
                             height="32px"
@@ -306,7 +322,8 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.total_dls_messages || null, null]}
+                    length={[null, stationState?.stationSocketData?.poison_messages?.length || null, null]}
+                    icon
                 />
             </div>
             {tabValue === tabs[1] && (
@@ -316,13 +333,17 @@ const Messages = () => {
                         value={subTabValue}
                         onChange={handleChangeSubMenuItem}
                         tabs={subTabs}
+                        length={[
+                            stationState?.stationSocketData?.poison_messages?.length || null,
+                            stationState?.stationSocketData?.schema_failed_messages?.length || null
+                        ]}
                         tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
                     />
                 </div>
             )}
             {tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === tabs[1] && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
-            {tabValue === tabs[1] && subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+            {tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
 
             {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
@@ -346,6 +367,31 @@ const Messages = () => {
                 )}
             {tabValue === tabs[2] && (
                 <div className="details">
+                    <DetailBox
+                        img={dlsEnableIcon}
+                        title={'Dead-letter station configuration'}
+                        desc="Triggers for storing messages in the dead-letter station."
+                        rightSection={false}
+                    >
+                        <DlsConfig />
+                    </DetailBox>
+                    <DetailBox img={purge} title={'Purge'}>
+                        <div className="purge-container">
+                            <label>Clean station from messages.</label>
+                            <Button
+                                width="80px"
+                                height="32px"
+                                placeholder="Purge"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontWeight="600"
+                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
+                                onClick={() => modalPurgeFlip(true)}
+                            />
+                        </div>
+                    </DetailBox>
                     <DetailBox
                         img={leaderImg}
                         title={'Leader'}
@@ -374,14 +420,7 @@ const Messages = () => {
                             data={stationState?.stationSocketData?.followers}
                         />
                     )}
-                    <DetailBox
-                        img={dlsEnableIcon}
-                        title={'Dead-letter station configuration'}
-                        desc="Triggers for storing messages in the dead-letter station."
-                        rightSection={false}
-                    >
-                        <DlsConfig />
-                    </DetailBox>
+
                     <DetailBox
                         img={idempotencyIcon}
                         title={'Idempotency'}
@@ -394,25 +433,6 @@ const Messages = () => {
                             </span>
                         }
                         data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
-                    />
-                    <DetailBox
-                        img={purge}
-                        title={'Purge'}
-                        desc={<span>Clean station from messages.</span>}
-                        data={[
-                            <Button
-                                width="80px"
-                                height="32px"
-                                placeholder="Purge"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
-                                onClick={() => modalPurgeFlip(true)}
-                            />
-                        ]}
                     />
                 </div>
             )}
@@ -429,6 +449,7 @@ const Messages = () => {
                     desc="This action will clean the station from messages."
                     handlePurgeSelected={(purgeData) => {
                         handlePurge(purgeData);
+                        setPurgeData(purgeData);
                     }}
                     cancel={() => modalPurgeFlip(false)}
                     loader={loader}
