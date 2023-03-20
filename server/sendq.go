@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2020-2021 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -26,12 +27,12 @@ type outMsg struct {
 
 type sendq struct {
 	mu sync.Mutex
-	q  *ipQueue // of *outMsg
+	q  *ipQueue[*outMsg]
 	s  *Server
 }
 
 func (s *Server) newSendQ() *sendq {
-	sq := &sendq{s: s, q: s.newIPQueue("SendQ")}
+	sq := &sendq{s: s, q: newIPQueue[*outMsg](s, "SendQ")}
 	s.startGoRoutine(sq.internalLoop)
 	return sq
 }
@@ -55,8 +56,7 @@ func (sq *sendq) internalLoop() {
 			return
 		case <-q.ch:
 			pms := q.pop()
-			for _, pmi := range pms {
-				pm := pmi.(*outMsg)
+			for _, pm := range pms {
 				c.pa.subject = []byte(pm.subj)
 				c.pa.size = len(pm.msg) + len(pm.hdr)
 				c.pa.szb = []byte(strconv.Itoa(c.pa.size))

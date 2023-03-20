@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2015-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
@@ -18,17 +19,17 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"memphis/server"
-
 	"github.com/nats-io/nats.go"
+
+	"memphis/server"
 )
 
 var noOpErrHandler = func(_ *nats.Conn, _ *nats.Subscription, _ error) {}
@@ -91,7 +92,7 @@ func TestTLSClientCertificate(t *testing.T) {
 	}
 
 	// Load in root CA for server verification
-	rootPEM, err := ioutil.ReadFile("./configs/certs/ca.pem")
+	rootPEM, err := os.ReadFile("./configs/certs/ca.pem")
 	if err != nil || rootPEM == nil {
 		t.Fatalf("failed to read root certificate")
 	}
@@ -151,7 +152,6 @@ func TestTLSClientCertificateCheckWithAllowedConnectionTypes(t *testing.T) {
 			]
 		}
 	`))
-	defer removeFile(t, conf)
 	s, o := RunServerWithConfig(conf)
 	defer s.Shutdown()
 
@@ -1180,7 +1180,6 @@ func TestTLSHandshakeFailureMemUsage(t *testing.T) {
 				}
 			`)
 			conf := createConfFile(t, []byte(content))
-			defer removeFile(t, conf)
 			s, opts := RunServerWithConfig(conf)
 			defer s.Shutdown()
 
@@ -1228,6 +1227,7 @@ func TestTLSClientAuthWithRDNSequence(t *testing.T) {
 		rerr   error
 	}{
 		// To generate certs for these tests:
+		// USE `regenerate_rdns_svid.sh` TO REGENERATE
 		//
 		// ```
 		// openssl req -newkey rsa:2048  -nodes -keyout client-$CLIENT_ID.key -subj "/C=US/ST=CA/L=Los Angeles/OU=NATS/O=NATS/CN=*.example.com/DC=example/DC=com" -addext extendedKeyUsage=clientAuth -out client-$CLIENT_ID.csr
@@ -1455,7 +1455,7 @@ func TestTLSClientAuthWithRDNSequence(t *testing.T) {
 				}
 			`,
 			//
-			// OpenSSL: -subj "/DC=org/DC=OpenSSL/DC=DEV+O=users/CN=John Doe"
+			// OpenSSL: -subj "/DC=org/DC=OpenSSL/DC=DEV+O=users/CN=John Doe" -multivalue-rdn
 			// Go:       CN=John Doe,O=users
 			// RFC2253:  CN=John Doe,DC=DEV+O=users,DC=OpenSSL,DC=org
 			//
@@ -1517,7 +1517,6 @@ func TestTLSClientAuthWithRDNSequence(t *testing.T) {
 				}
 			`)
 			conf := createConfFile(t, []byte(content))
-			defer removeFile(t, conf)
 			s, opts := RunServerWithConfig(conf)
 			defer s.Shutdown()
 
@@ -1637,7 +1636,6 @@ func TestTLSClientAuthWithRDNSequenceReordered(t *testing.T) {
 				}
 			`)
 			conf := createConfFile(t, []byte(content))
-			defer removeFile(t, conf)
 			s, opts := RunServerWithConfig(conf)
 			defer s.Shutdown()
 
@@ -1770,7 +1768,6 @@ func TestTLSClientSVIDAuth(t *testing.T) {
 				}
 			`)
 			conf := createConfFile(t, []byte(content))
-			defer removeFile(t, conf)
 			s, opts := RunServerWithConfig(conf)
 			defer s.Shutdown()
 
@@ -1821,7 +1818,6 @@ func TestTLSPinnedCertsClient(t *testing.T) {
 	}`
 
 	confFileName := createConfFile(t, []byte(fmt.Sprintf(tmpl, "aaaaaaaa09fde09451411ba3b42c0f74727d61a974c69fd3cf5257f39c75f0e9")))
-	defer removeFile(t, confFileName)
 	srv, o := RunServerWithConfig(confFileName)
 	defer srv.Shutdown()
 
@@ -1840,7 +1836,7 @@ func TestTLSPinnedCertsClient(t *testing.T) {
 		t.Fatalf("Expected error trying to connect without a certificate in pinned_certs")
 	}
 
-	ioutil.WriteFile(confFileName, []byte(fmt.Sprintf(tmpl, "bf6f821f09fde09451411ba3b42c0f74727d61a974c69fd3cf5257f39c75f0e9")), 0660)
+	os.WriteFile(confFileName, []byte(fmt.Sprintf(tmpl, "bf6f821f09fde09451411ba3b42c0f74727d61a974c69fd3cf5257f39c75f0e9")), 0660)
 	if err := srv.Reload(); err != nil {
 		t.Fatalf("on Reload got %v", err)
 	}
@@ -1891,7 +1887,6 @@ func TestTLSConnectionRate(t *testing.T) {
 	`
 
 	confFileName := createConfFile(t, []byte(config))
-	defer removeFile(t, confFileName)
 
 	srv, _ := RunServerWithConfig(confFileName)
 	logger := newCaptureWarnLogger()
@@ -1951,23 +1946,57 @@ func TestTLSPinnedCertsRoute(t *testing.T) {
 	}`
 
 	confSeed := createConfFile(t, []byte(tmplSeed))
-	defer removeFile(t, confSeed)
 	srvSeed, o := RunServerWithConfig(confSeed)
 	defer srvSeed.Shutdown()
 
 	confSrv := createConfFile(t, []byte(fmt.Sprintf(tmplSrv, o.Cluster.Port, "89386860ea1222698ea676fc97310bdf2bff6f7e2b0420fac3b3f8f5a08fede5")))
-	defer removeFile(t, confSrv)
 	srv, _ := RunServerWithConfig(confSrv)
 	defer srv.Shutdown()
 
 	checkClusterFormed(t, srvSeed, srv)
 
 	// this change will result in the server being and remaining disconnected
-	ioutil.WriteFile(confSrv, []byte(fmt.Sprintf(tmplSrv, o.Cluster.Port, "aaaaaaaa09fde09451411ba3b42c0f74727d61a974c69fd3cf5257f39c75f0e9")), 0660)
+	os.WriteFile(confSrv, []byte(fmt.Sprintf(tmplSrv, o.Cluster.Port, "aaaaaaaa09fde09451411ba3b42c0f74727d61a974c69fd3cf5257f39c75f0e9")), 0660)
 	if err := srv.Reload(); err != nil {
 		t.Fatalf("on Reload got %v", err)
 	}
 
 	checkNumRoutes(t, srvSeed, 0)
 	checkNumRoutes(t, srv, 0)
+}
+
+func TestAllowNonTLSReload(t *testing.T) {
+	tmpl := `
+		listen: "127.0.0.1:-1"
+		ping_interval: "%s"
+		tls {
+			ca_file: "configs/certs/ca.pem"
+			cert_file: "configs/certs/server-cert.pem"
+			key_file: "configs/certs/server-key.pem"
+		}
+		allow_non_tls: true
+	`
+	conf := createConfFile(t, []byte(fmt.Sprintf(tmpl, "10s")))
+	s, o := RunServerWithConfig(conf)
+	defer s.Shutdown()
+
+	check := func() {
+		t.Helper()
+		nc := createClientConn(t, "127.0.0.1", o.Port)
+		defer nc.Close()
+		info := checkInfoMsg(t, nc)
+		if !info.TLSAvailable {
+			t.Fatal("TLSAvailable should be true, was false")
+		}
+		if info.TLSRequired {
+			t.Fatal("TLSRequired should be false, was true")
+		}
+	}
+	check()
+
+	os.WriteFile(conf, []byte(fmt.Sprintf(tmpl, "20s")), 0660)
+	if err := s.Reload(); err != nil {
+		t.Fatalf("Error on reload: %v", err)
+	}
+	check()
 }

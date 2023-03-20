@@ -1,0 +1,21 @@
+.feature-container{
+    height: 145px;
+    width: 300px;
+    border: 1px solid #E6E6E6;
+    box-shadow: 0px 0px 2px rgba(24, 24, 28, 0.02), 0px 1px 2px rgba(24, 24, 28, 0.06);
+    border-radius: 8px;
+    padding: 10px;
+    padding-right:1px;
+    .markdown{
+        font-family: 'InterMedium';
+        font-size: 16px;
+        height: calc(100% - 20px);
+        overflow: auto;
+        position: relative;
+        overflow-wrap: break-word;
+        margin-top: 5px;
+        a {color: var(--purple) !important;}
+
+    }
+   
+}

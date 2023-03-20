@@ -33,3 +33,9 @@ export const REDIRECT_URI = environment === 'production' ? 'https://sandbox.memp
 export const GITHUB_CLIENT_ID = environment === 'production' ? '4dc1b3238c4d7563e426' : '51b0330eb3b34bc8f641';
 export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
 export const CONNECT_CLI_VIDEO = 'https://www.youtube.com/watch?v=awXwaU4rBBQ';
+
+export const RELEASE_NOTES_URL = 'https://api.github.com/repos/Memphisdev/gitbook-backup/contents/release-notes/releases';
+export const LATEST_RELEASE_URL = 'https://api.github.com/repos/Memphisdev/memphis/releases';
+export const RELEASE_DOCS_URL = 'https://docs.memphis.dev/memphis/release-notes/releases/';
+export const DOCKER_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/docker-compose#how-to-upgrade';
+export const K8S_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/kubernetes/how-to-upgrade';

@@ -72,10 +72,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
             p {
                 margin: 0;
                 font-size: 12px;
                 font-family: 'InterSemiBold';
+            }
+            .update-note{
+                width: 7px;
+                height: 7px;
+                background: #FC3400;
+                border-radius: 9px;
+                position: absolute;
+                top: -2px;
+                right: -2px;
+            
             }
         }
     }

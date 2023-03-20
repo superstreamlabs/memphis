@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2019 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -19,23 +19,20 @@ package server
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	"memphis/logger"
-
 	"github.com/nats-io/nats.go"
+	"memphis/logger"
 )
 
 func TestSignalToReOpenLogFile(t *testing.T) {
-	logFile := "test.log"
-	defer removeFile(t, logFile)
-	defer removeFile(t, logFile+".bak")
+	logFile := filepath.Join(t.TempDir(), "test.log")
 	opts := &Options{
 		Host:    "127.0.0.1",
 		Port:    -1,
@@ -53,7 +50,7 @@ func TestSignalToReOpenLogFile(t *testing.T) {
 	// Add a trace
 	expectedStr := "This is a Notice"
 	s.Noticef(expectedStr)
-	buf, err := ioutil.ReadFile(logFile)
+	buf, err := os.ReadFile(logFile)
 	if err != nil {
 		t.Fatalf("Error reading file: %v", err)
 	}
@@ -68,7 +65,7 @@ func TestSignalToReOpenLogFile(t *testing.T) {
 	syscall.Kill(syscall.Getpid(), syscall.SIGUSR1)
 	// Wait a bit for action to be performed
 	time.Sleep(500 * time.Millisecond)
-	buf, err = ioutil.ReadFile(logFile)
+	buf, err = os.ReadFile(logFile)
 	if err != nil {
 		t.Fatalf("Error reading file: %v", err)
 	}

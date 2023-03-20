@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2012-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -43,7 +44,7 @@ const (
 	VERSION = "1.0.0"
 
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
-	COMP_WITH_NATS_VERSION = "2.9.0"
+	COMP_WITH_NATS_VERSION = "2.9.15"
 
 	// PROTO is the currently supported protocol.
 	// 0 was the original

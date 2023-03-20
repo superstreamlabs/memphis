@@ -81,6 +81,10 @@ And the list continues...<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Kubernetes-native<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
 
+<div align="center">
+<img src="https://user-images.githubusercontent.com/70286779/225559098-726d57bd-96f6-40d4-bc35-c2648a5c463a.png" style="width:800px;">
+</div>
+
 ## 🚀 Getting Started
 Helm for Kubernetes☸
 ```shell

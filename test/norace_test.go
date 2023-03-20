@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2019-2020 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,10 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/url"
+	"os"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -32,7 +32,6 @@ import (
 	"time"
 
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nuid"
 )
@@ -52,7 +51,6 @@ func TestNoRaceRouteSendSubs(t *testing.T) {
 			no_sys_acc: true
 	`
 	cfa := createConfFile(t, []byte(fmt.Sprintf(template, "")))
-	defer removeFile(t, cfa)
 	srvA, optsA := RunServerWithConfig(cfa)
 	srvA.Shutdown()
 	optsA.DisableShortFirstPing = true
@@ -104,7 +102,7 @@ func TestNoRaceRouteSendSubs(t *testing.T) {
 			"nats://%s:%d"
 		]
 	`, optsA.Cluster.Host, optsA.Cluster.Port)
-	if err := ioutil.WriteFile(cfb, []byte(fmt.Sprintf(template, routes)), 0600); err != nil {
+	if err := os.WriteFile(cfb, []byte(fmt.Sprintf(template, routes)), 0600); err != nil {
 		t.Fatalf("Error rewriting B's config file: %v", err)
 	}
 	if err := srvB.Reload(); err != nil {
@@ -221,7 +219,7 @@ func TestNoRaceRouteSendSubs(t *testing.T) {
 	// Otherwise, on test shutdown the client close
 	// will cause the server to try to send unsubs and
 	// this can delay the test.
-	if err := ioutil.WriteFile(cfb, []byte(fmt.Sprintf(template, "")), 0600); err != nil {
+	if err := os.WriteFile(cfb, []byte(fmt.Sprintf(template, "")), 0600); err != nil {
 		t.Fatalf("Error rewriting B's config file: %v", err)
 	}
 	if err := srvB.Reload(); err != nil {
@@ -452,8 +450,10 @@ func TestNoRaceClusterLeaksSubscriptions(t *testing.T) {
 	// Create 100 repliers
 	for i := 0; i < 50; i++ {
 		nc1, _ := nats.Connect(urlA)
+		defer nc1.Close()
 		nc1.SetErrorHandler(noOpErrHandler)
 		nc2, _ := nats.Connect(urlB)
+		defer nc2.Close()
 		nc2.SetErrorHandler(noOpErrHandler)
 		repliers = append(repliers, nc1, nc2)
 		nc1.Subscribe("test.reply", func(m *nats.Msg) {

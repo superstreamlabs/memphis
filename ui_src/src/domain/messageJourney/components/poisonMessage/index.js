@@ -20,7 +20,7 @@ import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { message as messageAnt } from 'antd';
 
-const PoisonMessage = ({ stationName, messageId, details, message, headers, processing, returnBack }) => {
+const PoisonMessage = ({ messageId, details, message, headers, processing, returnBack, schemaType }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
 
@@ -94,7 +94,7 @@ const PoisonMessage = ({ stationName, messageId, details, message, headers, proc
                 <Space direction="vertical">
                     <CustomCollapse status={false} header="Metadata" defaultOpen={true} data={details} />
                     <CustomCollapse status={false} header="Headers" defaultOpen={true} data={headers} message={true} />
-                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={message} message={true} />
+                    <CustomCollapse status={false} header="Payload" defaultOpen={true} data={message} message={true} schemaType={schemaType} />
                 </Space>
             </div>
         </div>

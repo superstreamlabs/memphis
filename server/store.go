@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2019-2023 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,6 +10,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package server
 
 import (
@@ -94,6 +95,8 @@ type StreamStore interface {
 	GetSeqFromTime(t time.Time) uint64
 	FilteredState(seq uint64, subject string) SimpleState
 	SubjectsState(filterSubject string) map[string]SimpleState
+	SubjectsTotals(filterSubject string) map[string]uint64
+	NumPending(sseq uint64, filter string, lastPerSubject bool) (total, validThrough uint64)
 	State() StreamState
 	FastState(*StreamState)
 	Type() StorageType
@@ -176,6 +179,7 @@ type ConsumerStore interface {
 	UpdateConfig(cfg *ConsumerConfig) error
 	Update(*ConsumerState) error
 	State() (*ConsumerState, error)
+	BorrowState() (*ConsumerState, error)
 	EncodedState() ([]byte, error)
 	Type() StorageType
 	Stop() error
@@ -203,6 +207,7 @@ type ConsumerState struct {
 	Redelivered map[uint64]uint64 `json:"redelivered,omitempty"`
 }
 
+// Encode consumer state.
 func encodeConsumerState(state *ConsumerState) []byte {
 	var hdr [seqsHdrSize]byte
 	var buf []byte
@@ -236,7 +241,7 @@ func encodeConsumerState(state *ConsumerState) []byte {
 
 	// These are optional, but always write len. This is to avoid a truncate inline.
 	if len(state.Pending) > 0 {
-		// To save space we will use now rounded to seconds to be base timestamp.
+		// To save space we will use now rounded to seconds to be our base timestamp.
 		mints := time.Now().Round(time.Second).Unix()
 		// Write minimum timestamp we found from above.
 		n += binary.PutVarint(buf[n:], mints)
@@ -246,7 +251,7 @@ func encodeConsumerState(state *ConsumerState) []byte {
 			n += binary.PutUvarint(buf[n:], v.Sequence-adflr)
 			// Downsample to seconds to save on space.
 			// Subsecond resolution not needed for recovery etc.
-			ts := v.Timestamp / 1_000_000_000
+			ts := v.Timestamp / int64(time.Second)
 			n += binary.PutVarint(buf[n:], mints-ts)
 		}
 	}

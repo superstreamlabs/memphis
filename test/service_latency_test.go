@@ -1,4 +1,4 @@
-// Copyright 2012-2018 The NATS Authors
+// Copyright 2019-2021 The NATS Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -10,14 +10,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 package test
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -25,9 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
-
 	"github.com/nats-io/jwt/v2"
+	"memphis/server"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 )
@@ -584,6 +584,7 @@ func TestServiceLatencyNoSubsLeak(t *testing.T) {
 
 	for i := 0; i < 100; i++ {
 		nc := clientConnect(t, sc.clusters[1].opts[1], "bar")
+		defer nc.Close()
 		if _, err := nc.Request("ngs.usage", []byte("1h"), time.Second); err != nil {
 			t.Fatalf("Error on request: %v", err)
 		}
@@ -744,7 +745,6 @@ func TestServiceLatencyWithJWT(t *testing.T) {
 	`
 	contents := strings.Replace(fmt.Sprintf(cf, "", sysPub, sysPub, sysJWT, svcPub, svcJWT, accPub, accJWT), "\n\t", "\n", -1)
 	conf := createConfFile(t, []byte(contents))
-	defer removeFile(t, conf)
 
 	s, opts := RunServerWithConfig(conf)
 	defer s.Shutdown()
@@ -754,7 +754,6 @@ func TestServiceLatencyWithJWT(t *testing.T) {
 	contents2 := strings.Replace(fmt.Sprintf(cf, routeStr, sysPub, sysPub, sysJWT, svcPub, svcJWT, accPub, accJWT), "\n\t", "\n", -1)
 
 	conf2 := createConfFile(t, []byte(contents2))
-	defer removeFile(t, conf2)
 
 	s2, opts2 := RunServerWithConfig(conf2)
 	defer s2.Shutdown()
@@ -1178,7 +1177,6 @@ func TestServiceLatencyOldRequestStyleSingleServer(t *testing.T) {
 
 		system_account: SYS
 	`))
-	defer removeFile(t, conf)
 
 	srv, opts := RunServerWithConfig(conf)
 	defer srv.Shutdown()
@@ -1244,7 +1242,6 @@ func TestServiceAndStreamStackOverflow(t *testing.T) {
 		  }
 		}
 	`))
-	defer removeFile(t, conf)
 
 	srv, opts := RunServerWithConfig(conf)
 	defer srv.Shutdown()
@@ -1423,7 +1420,6 @@ func TestServiceLatencyRequestorSharesConfig(t *testing.T) {
 
 		system_account: SYS
 	`))
-	defer removeFile(t, conf)
 
 	srv, opts := RunServerWithConfig(conf)
 	defer srv.Shutdown()
@@ -1492,7 +1488,7 @@ func TestServiceLatencyRequestorSharesConfig(t *testing.T) {
 
 		system_account: SYS
 	`)
-	if err := ioutil.WriteFile(conf, newConf, 0600); err != nil {
+	if err := os.WriteFile(conf, newConf, 0600); err != nil {
 		t.Fatalf("Error rewriting server's config file: %v", err)
 	}
 	if err := srv.Reload(); err != nil {
@@ -1534,7 +1530,6 @@ func TestServiceLatencyLossTest(t *testing.T) {
 		}
 		system_account: SYS
 	`))
-	defer removeFile(t, conf)
 	srv, opts := RunServerWithConfig(conf)
 	defer srv.Shutdown()
 
@@ -1721,7 +1716,6 @@ func TestServiceLatencyHeaderTriggered(t *testing.T) {
 
 				system_account: SYS
 			`, v.shared)))
-			defer removeFile(t, conf)
 			srv, opts := RunServerWithConfig(conf)
 			defer srv.Shutdown()
 
@@ -1807,7 +1801,6 @@ func TestServiceLatencyMissingResults(t *testing.T) {
 		  }
 		}
 	`))
-	defer removeFile(t, accConf)
 
 	s1Conf := createConfFile(t, []byte(fmt.Sprintf(`
 		listen: 127.0.0.1:-1
@@ -1815,7 +1808,9 @@ func TestServiceLatencyMissingResults(t *testing.T) {
 		cluster { port: -1 }
 		include %q
 	`, filepath.Base(accConf))))
-	defer removeFile(t, s1Conf)
+
+	// Link accConf for relative import from s1Conf
+	os.Link(accConf, filepath.Join(filepath.Dir(s1Conf), filepath.Base(accConf)))
 
 	s1, opts1 := RunServerWithConfig(s1Conf)
 	defer s1.Shutdown()
@@ -1829,7 +1824,9 @@ func TestServiceLatencyMissingResults(t *testing.T) {
 		}
 		include %q
 	`, opts1.Cluster.Port, filepath.Base(accConf))))
-	defer removeFile(t, s2Conf)
+
+	// Link accConf for relative import from s2Conf
+	os.Link(accConf, filepath.Join(filepath.Dir(s2Conf), filepath.Base(accConf)))
 
 	s2, opts2 := RunServerWithConfig(s2Conf)
 	defer s2.Shutdown()

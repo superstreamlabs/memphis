@@ -205,6 +205,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -417,8 +418,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			}
 
 			if msgType == "schema" {
-				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
-				dlsMsg.Message.Size = size
+				dlsMsg.Message.Size = len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 				if dlsMsg.CreationDate.IsZero() {
 					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
@@ -437,9 +437,22 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	sort.Slice(poisonedCgs, func(i, j int) bool {
 		return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
 	})
+
+	schemaType := ""
+	if station.Schema.SchemaName != "" {
+		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+		if err != nil {
+			return models.DlsMessageResponse{}, err
+		}
+		if exist {
+			schemaType = schema.Type
+		}
+	}
+
 	result := models.DlsMessageResponse{
 		ID:          dlsMsgId,
 		StationName: dlsMsg.StationName,
+		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
 		Producer: models.ProducerDetails{
 			Name:          producer.Name,
@@ -449,9 +462,10 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},
-		Message:      dlsMsg.Message,
-		CreationDate: dlsMsg.CreationDate,
-		PoisonedCgs:  poisonedCgs,
+		Message:         dlsMsg.Message,
+		CreationDate:    dlsMsg.CreationDate,
+		PoisonedCgs:     poisonedCgs,
+		ValidationError: dlsMsg.ValidationError,
 	}
 
 	return result, nil
@@ -488,6 +502,7 @@ func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (i
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)
@@ -591,6 +606,7 @@ func RemovePoisonedCg(stationName StationName, cgName string) error {
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
 		Durable:       durableName,
+		Replicas:      1,
 	}
 
 	err = serv.memphisAddConsumer(streamName, &cc)

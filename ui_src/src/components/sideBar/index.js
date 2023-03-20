@@ -28,18 +28,20 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
+import { GithubRequest } from '../../services/githubRequests';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
-import Logo from '../../assets/images/logo.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import TooltipComponent from '../tooltip/tooltip';
+import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { DOC_URL } from '../../config';
-import TooltipComponent from '../tooltip/tooltip';
+import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
+import { compareVersions } from '../../services/valueConvertor';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -69,6 +71,9 @@ function SideBar() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
             if (data) {
+                const latest = await GithubRequest(LATEST_RELEASE_URL);
+                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', ''));
+                dispatch({ type: 'IS_LATEST', payload: is_latest });
                 setSystemVersion(data.version);
             }
         } catch (error) {}
@@ -237,7 +242,12 @@ function SideBar() {
                         ></img>
                     </div>
                 </Popover>
-                <version is="x3d">
+                <version
+                    is="x3d"
+                    style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
+                    onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
+                >
+                    {!state.isLatest && <div className="update-note" />}
                     <p>v{systemVersion}</p>
                 </version>
             </div>

@@ -16,13 +16,13 @@ import React, { useEffect, useState, useContext } from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
+import DataNotFound from '../../../assets/images/dataNotFound.svg';
 import { Context } from '../../../hooks/store';
-import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
+import { PauseRounded, PlayArrowRounded, Replay } from '@material-ui/icons';
 
 const yAxesOptions = [
     {
@@ -75,6 +75,7 @@ function Throughput() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
+    const [socketFailIndicator, setSocketFailIndicator] = useState(false);
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -108,8 +109,8 @@ function Throughput() {
         if (Object.keys(dataSamples).length > 0) {
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 let updatedDataSamples = { ...dataSamples };
-                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name].read, ...component.read];
-                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name].write, ...component.write];
+                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
+                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
                 setDataSamples(updatedDataSamples);
             });
         } else {
@@ -145,11 +146,14 @@ function Throughput() {
         let updatedDataSamples = { ...dataSamples };
         let value;
         if (type === 'write') {
-            value = dataSamples[select].write[0].write;
-            updatedDataSamples[select].write.shift();
+            value = dataSamples[select]?.write[0]?.write;
+            updatedDataSamples[select]?.write.shift();
         } else {
-            value = dataSamples[select].read[0].read;
-            updatedDataSamples[select].read.shift();
+            value = dataSamples[select]?.read[0]?.read;
+            updatedDataSamples[select]?.read.shift();
+        }
+        if (value === undefined) {
+            setSocketFailIndicator(true);
         }
         setDataSamples(updatedDataSamples);
         return value;
@@ -258,7 +262,19 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                <Line id="test" data={data} options={options} />
+
+                {socketFailIndicator ? (
+                    <div className="failed-socket">
+                        <img src={DataNotFound} alt="Data not found" />
+                        <p className="title">No data found</p>
+                        <div className="reload" onClick={() => setSocketFailIndicator(false)}>
+                            <Replay />
+                            <p>Reload Data</p>
+                        </div>
+                    </div>
+                ) : (
+                    <Line id="test" data={data} options={options} />
+                )}
             </div>
         </div>
     );
