@@ -560,7 +560,7 @@ func UpdateConfiguration(key string, value string) error {
 	defer cancelfunc()
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
-	query := `UPDATE users SET value = $2 WHERE key = $1`
+	query := `UPDATE configurations SET value = $2 WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
 	if err != nil {
 		return err
@@ -2406,7 +2406,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, version, schemaId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaId, version)
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
