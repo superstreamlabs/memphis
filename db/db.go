@@ -2119,7 +2119,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.created_by,
 			c.created_by_username,
 			c.max_ack_time_ms,
-			c.max_msg_deliveries,
+			c.max_msg_deliveries
 		FROM
 			consumers AS c
 			INNER JOIN connections AS con ON c.connection_id = con.id
