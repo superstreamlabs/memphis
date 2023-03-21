@@ -55,6 +55,13 @@ var config *rest.Config
 var noMetricsInstalledLog bool
 var noMetricsPermissionLog bool
 
+const (
+	healthyStatus   = "healthy"
+	unhealthyStatus = "unhealthy"
+	dangerousStatus = "dangerous"
+	riskyStatus     = "risky"
+)
+
 func clientSetClusterConfig() error {
 	var err error
 	// in cluster config
@@ -125,7 +132,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 			}
 			memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
-			cpuComps := []models.SysComponent{{
+			comp := models.SysComponent{
 				Name: "memphis-0",
 				CPU: models.CompStats{
 					Total:      shortenFloat(maxCpu),
@@ -139,19 +146,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Storage: storageComp,
 				Healthy: true,
-			}}
+			}
+			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
 			components = append(components, models.SystemComponents{
 				Name:        "memphis",
-				Components:  cpuComps,
-				Status:      checkCompStatus(cpuComps),
+				Components:  getComponentsStructByOneComp(comp),
+				Status:      comp.Status,
 				Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 				DesiredPods: 1,
 				ActualPods:  1,
 				Hosts:       hosts,
 			})
-			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 			healthy := false
-			restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
+			restGwComp := defaultSystemComp("memphis-rest-gateway", healthy)
+			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 			if err == nil {
 				healthy = true
 				var restGwMonitorInfo models.RestGwMonitoringResponse
@@ -167,7 +175,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
 					}
 				}
-				restGwComps = []models.SysComponent{{
+				restGwComp = models.SysComponent{
 					Name: "memphis-rest-gateway",
 					CPU: models.CompStats{
 						Total:      shortenFloat(maxCpu),
@@ -181,7 +189,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					},
 					Storage: storageComp,
 					Healthy: healthy,
-				}}
+				}
+				restGwComp.Status = checkPodStatus(restGwComp.CPU.Percentage, restGwComp.Memory.Percentage, restGwComp.Storage.Percentage)
 			}
 			actualRestGw := 1
 			if !healthy {
@@ -189,8 +198,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			components = append(components, models.SystemComponents{
 				Name:        "memphis-rest-gateway",
-				Components:  restGwComps,
-				Status:      checkCompStatus(restGwComps),
+				Components:  getComponentsStructByOneComp(restGwComp),
+				Status:      restGwComp.Status,
 				Ports:       []int{configuration.REST_GW_PORT},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
@@ -256,7 +265,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			storageStat := defaultStat
 			dockerPorts := []int{}
-			if strings.Contains(containerName, "mongo") {
+			if strings.Contains(containerName, "metadata") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, metricsEnabled, err
@@ -266,7 +275,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					Current:    shortenFloat(dbStorageSize),
 					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
 				}
-
+				containerName = strings.TrimPrefix(containerName, "memphis-")
 			} else if strings.Contains(containerName, "cluster") {
 				v, err := serv.Varz(nil)
 				if err != nil {
@@ -283,17 +292,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					dockerPorts = append(dockerPorts, int(port.PublicPort))
 				}
 			}
-			comps := []models.SysComponent{{
+			comp := models.SysComponent{
 				Name:    containerName,
 				CPU:     cpuStat,
 				Memory:  memoryStat,
 				Storage: storageStat,
 				Healthy: true,
-			}}
+			}
+			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
 			components = append(components, models.SystemComponents{
-				Name:        containerName,
-				Components:  comps,
-				Status:      checkCompStatus(comps),
+				Name:        strings.TrimSuffix(containerName, "-1"),
+				Components:  getComponentsStructByOneComp(comp),
+				Status:      comp.Status,
 				Ports:       dockerPorts,
 				DesiredPods: 1,
 				ActualPods:  1,
@@ -333,7 +343,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 		}
 		memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
-		cpuComps := []models.SysComponent{{
+		comp := models.SysComponent{
 			Name: "memphis-0",
 			CPU: models.CompStats{
 				Total:      shortenFloat(maxCpu),
@@ -347,11 +357,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			},
 			Storage: storageComp,
 			Healthy: true,
-		}}
+		}
+		comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
 		components = append(components, models.SystemComponents{
 			Name:        "memphis",
-			Components:  cpuComps,
-			Status:      checkCompStatus(cpuComps),
+			Components:  getComponentsStructByOneComp(comp),
+			Status:      comp.Status,
 			Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
 			DesiredPods: 1,
 			ActualPods:  1,
@@ -359,7 +370,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		})
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
 		healthy := false
-		restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
+		restGwComp := defaultSystemComp("memphis-rest-gateway", healthy)
 		if err == nil {
 			healthy = true
 			var restGwMonitorInfo models.RestGwMonitoringResponse
@@ -375,7 +386,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
 				}
 			}
-			restGwComps = []models.SysComponent{{
+			restGwComp := models.SysComponent{
 				Name: "memphis-rest-gateway",
 				CPU: models.CompStats{
 					Total:      shortenFloat(maxCpu),
@@ -389,7 +400,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Storage: storageComp,
 				Healthy: healthy,
-			}}
+			}
+			restGwComp.Status = checkPodStatus(restGwComp.CPU.Percentage, restGwComp.Memory.Percentage, restGwComp.Storage.Percentage)
 		}
 		actualRestGw := 1
 		if !healthy {
@@ -397,8 +409,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		}
 		components = append(components, models.SystemComponents{
 			Name:        "memphis-rest-gateway",
-			Components:  restGwComps,
-			Status:      checkCompStatus(restGwComps),
+			Components:  getComponentsStructByOneComp(restGwComp),
+			Status:      restGwComp.Status,
 			Ports:       []int{configuration.REST_GW_PORT},
 			DesiredPods: 1,
 			ActualPods:  actualRestGw,
@@ -463,7 +475,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			storageStat := defaultStat
 			dockerPorts := []int{}
-			if strings.Contains(containerName, "mongo") {
+			if strings.Contains(containerName, "metadata") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, metricsEnabled, err
@@ -490,17 +502,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					dockerPorts = append(dockerPorts, int(port.PublicPort))
 				}
 			}
-			comps := []models.SysComponent{{
+			comp := models.SysComponent{
 				Name:    containerName,
 				CPU:     cpuStat,
 				Memory:  memoryStat,
 				Storage: storageStat,
 				Healthy: true,
-			}}
+			}
+			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
 			components = append(components, models.SystemComponents{
 				Name:        containerName,
-				Components:  comps,
-				Status:      checkCompStatus(comps),
+				Components:  getComponentsStructByOneComp(comp),
+				Status:      comp.Status,
 				Ports:       dockerPorts,
 				DesiredPods: 1,
 				ActualPods:  1,
@@ -604,7 +617,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				if err != nil {
 					return components, metricsEnabled, err
 				}
-				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "mongo") {
+				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "metadata") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
@@ -624,7 +637,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 
 			storageUsage := float64(0)
 			if isMinikube {
-				if strings.Contains(strings.ToLower(pod.Name), "mongo") {
+				if strings.Contains(strings.ToLower(pod.Name), "metadata") {
 					storageUsage, _, err = getDbStorageSize()
 					if err != nil {
 						return components, metricsEnabled, err
@@ -666,6 +679,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				},
 				Healthy: true,
 			}
+			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
 			allComponents = append(allComponents, comp)
 			portsMap[pod.Name] = ports
 		}
@@ -688,9 +702,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 				if desired == actual {
-					status = "healthy"
+					status = healthyStatus
 				} else {
-					status = "unhealthy"
+					status = unhealthyStatus
 				}
 			}
 			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
@@ -710,7 +724,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				if REST_GW_HOST != "" {
 					hosts = []string{REST_GW_HOST}
 				}
-			} else if strings.Contains(d.Name, "mongo") {
+			} else if strings.Contains(d.Name, "metadata") {
 				hosts = []string{}
 			}
 			components = append(components, models.SystemComponents{
@@ -747,9 +761,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 				if desired == actual {
-					status = "healthy"
+					status = healthyStatus
 				} else {
-					status = "unhealthy"
+					status = unhealthyStatus
 				}
 			}
 			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
@@ -769,7 +783,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				if REST_GW_HOST != "" {
 					hosts = []string{REST_GW_HOST}
 				}
-			} else if strings.Contains(s.Name, "mongo") {
+			} else if strings.Contains(s.Name, "metadata") {
 				hosts = []string{}
 			}
 			components = append(components, models.SystemComponents{
@@ -1815,46 +1829,17 @@ cleanup:
 	return models.SystemLogsResponse{Logs: resMsgs}, nil
 }
 
-func checkCompStatus(components []models.SysComponent) string {
-	status := "healthy"
-	yellowCount := 0
-	redCount := 0
-	for _, component := range components {
-		if !component.Healthy {
-			redCount++
-			continue
-		}
-		compRedCount := 0
-		compYellowCount := 0
-		if component.CPU.Percentage > 66 {
-			compRedCount++
-		} else if component.CPU.Percentage > 33 {
-			compYellowCount++
-		}
-		if component.Memory.Percentage > 66 {
-			compRedCount++
-		} else if component.Memory.Percentage > 33 {
-			compYellowCount++
-		}
-		if component.Storage.Percentage > 66 {
-			compRedCount++
-		} else if component.Storage.Percentage > 33 {
-			compYellowCount++
-		}
-		if compRedCount >= 1 {
-			redCount++
-		} else if compYellowCount > 0 {
-			yellowCount++
-		}
+func checkCompStatus(components models.Components) string {
+	if len(components.UnhealthyComponents) > 0 {
+		return unhealthyStatus
 	}
-	redStatus := float64(redCount) / float64(len(components))
-	if redStatus >= 0.66 {
-		status = "unhealthy"
-	} else if redStatus >= 0.33 || yellowCount > 0 {
-		status = "risky"
+	if len(components.DangerousComponents) > 0 {
+		return dangerousStatus
 	}
-
-	return status
+	if len(components.RiskyComponents) > 0 {
+		return riskyStatus
+	}
+	return healthyStatus
 }
 
 func getDbStorageSize() (float64, float64, error) {
@@ -1869,7 +1854,7 @@ func getDbStorageSize() (float64, float64, error) {
 	query := `SELECT pg_database_size($1) AS db_size,
 	(SELECT coalesce(sum(pg_total_relation_size(relid)), 0) 
 	 FROM pg_catalog.pg_statio_all_tables) AS total_size`
-	stmt, err := conn.Conn().Prepare(ctx, "get_db_storagr_size", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_db_storage_size", query)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1926,35 +1911,65 @@ func defaultSystemComp(compName string, healthy bool) models.SysComponent {
 		Current:    0,
 		Percentage: 0,
 	}
-
+	status := healthyStatus
+	if !healthy {
+		status = unhealthyStatus
+	}
 	return models.SysComponent{
 		Name:    compName,
 		CPU:     defaultStat,
 		Memory:  defaultStat,
 		Storage: defaultStat,
 		Healthy: healthy,
+		Status:  status,
 	}
 }
 
-func getRelevantComponents(name string, components []models.SysComponent, desired int) []models.SysComponent {
-	res := []models.SysComponent{}
+func getRelevantComponents(name string, components []models.SysComponent, desired int) models.Components {
+	healthyComps := []models.SysComponent{}
+	unhealthyComps := []models.SysComponent{}
+	dangerousComps := []models.SysComponent{}
+	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
 		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
 		if regexMatch {
-			res = append(res, comp)
+			switch comp.Status {
+			case unhealthyStatus:
+				unhealthyComps = append(unhealthyComps, comp)
+			case dangerousStatus:
+				dangerousComps = append(dangerousComps, comp)
+			case riskyStatus:
+				riskyComps = append(riskyComps, comp)
+			default:
+				healthyComps = append(healthyComps, comp)
+			}
 		} else if name == "memphis-rest-gateway" {
 			if strings.Contains(comp.Name, name) {
-				res = append(res, comp)
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
 			}
 		}
 	}
-	missingComps := desired - len(res)
+	missingComps := desired - (len(unhealthyComps) + len(dangerousComps) + len(riskyComps) + len(healthyComps))
 	if missingComps > 0 {
 		for i := 0; i < missingComps; i++ {
-			res = append(res, defaultSystemComp(name, false))
+			unhealthyComps = append(unhealthyComps, defaultSystemComp(name, false))
 		}
 	}
-	return res
+	return models.Components{
+		UnhealthyComponents: unhealthyComps,
+		DangerousComponents: dangerousComps,
+		RiskyComponents:     riskyComps,
+		HealthyComponents:   healthyComps,
+	}
 }
 
 func getRelevantPorts(name string, portsMap map[string][]int) []int {
@@ -2046,4 +2061,38 @@ func checkIsMinikube(labels map[string]string) bool {
 		}
 	}
 	return false
+}
+
+func checkPodStatus(cpu int, memory int, storage int) string {
+	if cpu > 99 || memory > 99 || storage > 99 {
+		return unhealthyStatus
+	}
+	if cpu > 94 || memory > 94 || storage > 94 {
+		return dangerousStatus
+	}
+	if cpu > 84 || memory > 84 || storage > 84 {
+		return riskyStatus
+	}
+	return healthyStatus
+}
+
+func getComponentsStructByOneComp(comp models.SysComponent) models.Components {
+	if comp.Status == unhealthyStatus {
+		return models.Components{
+			UnhealthyComponents: []models.SysComponent{comp},
+		}
+	}
+	if comp.Status == dangerousStatus {
+		return models.Components{
+			DangerousComponents: []models.SysComponent{comp},
+		}
+	}
+	if comp.Status == riskyStatus {
+		return models.Components{
+			RiskyComponents: []models.SysComponent{comp},
+		}
+	}
+	return models.Components{
+		HealthyComponents: []models.SysComponent{comp},
+	}
 }

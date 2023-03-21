@@ -19,6 +19,7 @@ type SysComponent struct {
 	Memory  CompStats `json:"memory"`
 	Storage CompStats `json:"storage"`
 	Healthy bool      `json:"healthy"`
+	Status  string    `json:"status"`
 }
 
 type CompStats struct {
@@ -27,14 +28,28 @@ type CompStats struct {
 	Percentage int     `json:"percentage"`
 }
 
+type Components struct {
+	UnhealthyComponents []SysComponent `json:"unhealthy_components"`
+	DangerousComponents []SysComponent `json:"dangerous_components"`
+	RiskyComponents     []SysComponent `json:"risky_components"`
+	HealthyComponents   []SysComponent `json:"healthy_components"`
+}
 type SystemComponents struct {
-	Name        string         `json:"name"`
-	Components  []SysComponent `json:"components"`
-	Status      string         `json:"status"`
-	Ports       []int          `json:"ports"`
-	DesiredPods int            `json:"desired_pods"`
-	ActualPods  int            `json:"actual_pods"`
-	Hosts       []string       `json:"hosts"`
+	Name        string     `json:"name"`
+	Components  Components `json:"components"`
+	Status      string     `json:"status"`
+	Ports       []int      `json:"ports"`
+	DesiredPods int        `json:"desired_pods"`
+	ActualPods  int        `json:"actual_pods"`
+	Hosts       []string   `json:"hosts"`
+}
+
+type SystemComponentsStatus struct {
+	Status         string `json:"status"`
+	HealthyCount   int    `json:"healthy_count"`
+	UnhealthyCount int    `json:"unhealthy_count"`
+	DangerousCount int    `json:"dangerous_count"`
+	RiskyCount     int    `json:"risky_count"`
 }
 
 type MainOverviewData struct {
