@@ -197,6 +197,6 @@ func main() {
 
 	dbPostgresSql := runMemphis(s)
 	defer db.ClosePostgresSql(dbPostgresSql, s)
-	// defer analytics.Close()
+	defer analytics.Close()
 	s.WaitForShutdown()
 }
