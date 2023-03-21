@@ -100,6 +100,14 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
                         )}
+                        {header === 'Validation Error' && (
+                            <div className="copy-section">
+                                <Copy data={data}></Copy>
+                                <OverflowTip text={data} width={'calc(100% - 10px)'}>
+                                    {data}
+                                </OverflowTip>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <>
