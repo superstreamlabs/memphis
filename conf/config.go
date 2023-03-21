@@ -37,15 +37,15 @@ type Configuration struct {
 	// SANDBOX_UI_URL                 string
 	TIERED_STORAGE_TIME_FRAME_SEC  int
 	EXPORTER                       bool
-	POSTGRESQL_USER                string
-	POSTGRESQL_PASS                string
-	POSTGRESQL_DBNAME              string
-	POSTGRESQL_HOST                string
-	POSTGRESQL_PORT                string
-	POSTGRESQL_TLS_ENABLED         bool
-	POSTGRESQL_TLS_KEY             string
-	POSTGRESQL_TLS_CRT             string
-	POSTGRESQL_TLS_CA              string
+	METADATA_DB_USER                string
+	METADATA_DB_PASS                string
+	METADATA_DB_DBNAME              string
+	METADATA_DB_HOST                string
+	METADATA_DB_PORT                string
+	METADATA_DB_TLS_ENABLED         bool
+	METADATA_DB_TLS_KEY             string
+	METADATA_DB_TLS_CRT             string
+	METADATA_DB_TLS_CA              string
 }
 
 func GetConfig() Configuration {

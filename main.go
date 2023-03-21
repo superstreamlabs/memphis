@@ -95,14 +95,14 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
+func runMemphis(s *server.Server) db.MetadataStorage {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
+	metadataDb, err := db.InitalizeMetadataDbConnection(s)
 	if err != nil {
-		s.Errorf("Failed initializing PostgreSQL db connection: " + err.Error())
+		s.Errorf("Failed initializing connection with the metadata db: " + err.Error())
 		os.Exit(1)
 	}
 
@@ -149,7 +149,7 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbPostgresSql
+	return metadataDb
 }
 
 func main() {
@@ -195,8 +195,8 @@ func main() {
 		server.SnapshotMonitorInfo()
 	}
 
-	dbPostgresSql := runMemphis(s)
-	defer db.ClosePostgresSql(dbPostgresSql, s)
+	metadataDb := runMemphis(s)
+	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
 }

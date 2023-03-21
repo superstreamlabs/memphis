@@ -1860,7 +1860,7 @@ func checkCompStatus(components []models.SysComponent) string {
 func getDbStorageSize() (float64, float64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := db.PostgresConnection.Client.Acquire(ctx)
+	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -1873,7 +1873,7 @@ func getDbStorageSize() (float64, float64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.POSTGRESQL_DBNAME).Scan(&dbStorageSize, &totalSize)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.METADATA_DB_DBNAME).Scan(&dbStorageSize, &totalSize)
 	if err != nil {
 		return 0, 0, err
 	}

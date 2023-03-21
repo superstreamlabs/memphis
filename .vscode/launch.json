@@ -24,11 +24,11 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "POSTGRESQL_USER": "memphis" ,
-	            "POSTGRESQL_PASS": "memphis",
-	            "POSTGRESQL_DBNAME": "memphis",
-	            "POSTGRESQL_HOST": "localhost", 
-	            "POSTGRESQL_PORT": "5005", 
+                "METADATA_DB_USER": "memphis" ,
+	            "METADATA_DB_PASS": "memphis",
+	            "METADATA_DB_DBNAME": "memphis",
+	            "METADATA_DB_HOST": "localhost", 
+	            "METADATA_DB_PORT": "5005", 
             }
         },
         {
@@ -54,11 +54,11 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "POSTGRESQL_USER": "memphis" ,
-	            "POSTGRESQL_PASS": "memphis",
-	            "POSTGRESQL_DBNAME": "memphis",
-	            "POSTGRESQL_HOST": "localhost", 
-	            "POSTGRESQL_PORT": "5005", 
+                "METADATA_DB_USER": "memphis" ,
+	            "METADATA_DB_PASS": "memphis",
+	            "METADATA_DB_DBNAME": "memphis",
+	            "METADATA_DB_HOST": "localhost", 
+	            "METADATA_DB_PORT": "5005", 
             }
         },
         {
@@ -84,11 +84,11 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "POSTGRESQL_USER": "memphis" ,
-	            "POSTGRESQL_PASS": "memphis",
-	            "POSTGRESQL_DBNAME": "memphis",
-	            "POSTGRESQL_HOST": "localhost", 
-	            "POSTGRESQL_PORT": "5005", 
+                "METADATA_DB_USER": "memphis" ,
+	            "METADATA_DB_PASS": "memphis",
+	            "METADATA_DB_DBNAME": "memphis",
+	            "METADATA_DB_HOST": "localhost", 
+	            "METADATA_DB_PORT": "5005", 
             }
         },
         {
@@ -115,11 +115,11 @@
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
 
-                "POSTGRESQL_USER": "memphis" ,
-	            "POSTGRESQL_PASS": "memphis",
-	            "POSTGRESQL_DBNAME": "memphis",
-	            "POSTGRESQL_HOST": "localhost", 
-	            "POSTGRESQL_PORT": "5005", 
+                "METADATA_DB_USER": "memphis" ,
+	            "METADATA_DB_PASS": "memphis",
+	            "METADATA_DB_DBNAME": "memphis",
+	            "METADATA_DB_HOST": "localhost", 
+	            "METADATA_DB_PORT": "5005", 
             }
         }
     ]
