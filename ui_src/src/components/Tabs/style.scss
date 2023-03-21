@@ -1,27 +1,26 @@
 .tabs-container {
-    .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn{
+    .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
         color: var(--purple) !important;
     }
-    .ant-tabs-ink-bar{
+    .ant-tabs-ink-bar {
         background: transparent !important;
-        border: 1px solid  var(--purple);;
+        border: 1px solid var(--purple);
         border-radius: 2px 2px 0px 0px;
     }
     .ant-tabs-tab .tabs-name {
         cursor: pointer;
         font-family: 'InterMedium';
-
     }
     .ant-tabs-tab-disabled {
         .tabs-name {
-            cursor:not-allowed
+            cursor: not-allowed;
         }
     }
-    .tabs-name{
+    .tabs-name {
         display: flex;
-        align-items:center;
+        align-items: center;
         gap: 4px;
-        .error-icon{
+        .error-icon {
             background-color: rgba(217, 45, 32, 0.1);
             border-radius: 63%;
             width: 24px;
@@ -30,7 +29,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            div{
+            div {
                 width: 14px;
                 height: 14px;
                 position: relative;
@@ -39,20 +38,25 @@
                 justify-content: center;
                 background-color: rgba(217, 45, 32, 0.8);
                 border-radius: 50%;
-                svg{
+                svg {
                     width: 12px;
                     color: white;
                 }
             }
         }
-        .ant-checkbox-inner{
+        .dls-size {
+            font-size: 10px;
+            color: #ffffff;
+            background: #f7685b;
+            border-radius: 32px;
+            padding: 1px 5px 1px 5px;
+        }
+        .ant-checkbox-inner {
             border-radius: 50%;
         }
     }
-
 }
 
-.hover .ant-tabs-tab:hover{
+.hover .ant-tabs-tab:hover {
     color: var(--purple) !important;
 }
-

@@ -346,3 +346,21 @@ export const messageParser = (type, data) => {
             return hex_to_ascii(data);
     }
 };
+
+export const compareVersions = (a, b) => {
+    const versionA = a.split('.');
+    const versionB = b.split('.');
+
+    for (let i = 0; i < versionA.length; i++) {
+        const numberA = parseInt(versionA[i]);
+        const numberB = parseInt(versionB[i]);
+
+        if (numberA > numberB) {
+            return true;
+        } else if (numberA < numberB) {
+            return false;
+        }
+    }
+
+    return true;
+};

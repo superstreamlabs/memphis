@@ -17,7 +17,7 @@ import React, { useEffect, useState } from 'react';
 import * as monaco from 'monaco-editor';
 
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
-import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import noCodeExample from '../../assets/images/noCodeExample.svg';
 import refresh from '../../assets/images/refresh.svg';
@@ -45,7 +45,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const restGWHost = process.env.REACT_APP_SANDBOX_ENV
         ? 'https://restgw.sandbox.memphis.dev'
         : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-        ? 'http://localhost:4444'
+        ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
         : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
 
     const changeDynamicCode = (lang) => {

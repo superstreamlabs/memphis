@@ -22,9 +22,8 @@ import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import NoteItem from './components/noteItem';
 import Loader from '../../../components/loader';
-
-const releaseNotes = 'https://api.github.com/repos/Memphisdev/gitbook-backup/contents/release-notes/releases';
-const latestRelease = 'https://api.github.com/repos/Memphisdev/memphis/releases';
+import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
+import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
 
 function VersionUpgrade() {
     const [state, dispatch] = useContext(Context);
@@ -39,17 +38,17 @@ function VersionUpgrade() {
 
     const getConfigurationValue = async () => {
         try {
-            const latest = await GithubRequest(latestRelease);
+            const latest = await GithubRequest(LATEST_RELEASE_URL);
             const version = latest[0].name;
             setVersion(version);
-            const data = await GithubRequest(releaseNotes);
+            const data = await GithubRequest(RELEASE_NOTES_URL);
             const mdFiles = data.filter((file) => file.name.endsWith('.md') && file.name !== 'README.md' && file.name.includes(version));
             if (mdFiles.length === 0) {
                 console.log('No matching files found');
                 return;
             }
             const mdFile = mdFiles[0];
-            setversionUrl(`https://docs.memphis.dev/memphis/release-notes/releases/${mdFile.name.replace('.md', '')}`);
+            setversionUrl(`${RELEASE_DOCS_URL}${mdFile.name.replace('.md', '')}`);
             const file = await GithubRequest(mdFile.download_url);
             const addedFeatures = ExtractAddedFeatures(file);
             setFeatures(addedFeatures);
@@ -57,6 +56,10 @@ function VersionUpgrade() {
             setIsLoading(false);
             return;
         }
+    };
+
+    const howToUpgrade = () => {
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' ? window.open(DOCKER_UPGRADE_URL, '_blank') : window.open(K8S_UPGRADE_URL, '_blank');
     };
 
     return (
@@ -68,7 +71,6 @@ function VersionUpgrade() {
                         <img src={uptodateIcon} alt="uptodateIcon" />
                         <div className="content">
                             <p>You are up to date</p>
-
                             <span>Memphis version {version} is currently the newest version available.</span>
                         </div>
                     </div>
@@ -85,17 +87,30 @@ function VersionUpgrade() {
                                 </div>
                             </div>
                             <p className="desc-vers">A New Version is available to download</p>
-                            <Button
-                                width="180px"
-                                height="45px"
-                                placeholder="View Full Changes"
-                                colorType="black"
-                                radiusType="circle"
-                                backgroundColorType="white"
-                                fontSize="14px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => window.open(versionUrl, '_blank')}
-                            />
+                            <div className="buttons">
+                                <Button
+                                    width="180px"
+                                    height="45px"
+                                    placeholder="View Full Changes"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => window.open(versionUrl, '_blank')}
+                                />
+                                <Button
+                                    width="180px"
+                                    height="45px"
+                                    placeholder="How to upgrade"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => howToUpgrade()}
+                                />
+                            </div>
                         </div>
                     </div>
 

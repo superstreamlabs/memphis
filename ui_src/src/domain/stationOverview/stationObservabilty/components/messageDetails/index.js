@@ -95,6 +95,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                         }
                     ]
                 };
+
                 poisonedCGs.push(cg);
             });
             let messageDetails = {
@@ -130,7 +131,8 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers || {},
-                poisonedCGs: poisonedCGs
+                poisonedCGs: poisonedCGs,
+                validationError: data.validation_error
             };
             setMessageDetails(messageDetails);
         }
@@ -170,8 +172,18 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                     />
                                 )}
                                 <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
+                                {messageDetails?.validationError !== '' && (
+                                    <CustomCollapse status={false} header="Validation Error" data={messageDetails?.validationError} message={true} />
+                                )}
                                 <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
-                                <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
+                                <CustomCollapse
+                                    status={false}
+                                    header="Payload"
+                                    defaultOpen={true}
+                                    data={messageDetails?.message}
+                                    message={true}
+                                    schemaType={stationState?.schemaType}
+                                />
                             </Space>
                         </div>
                         {isDls && !isFailedSchemaMessage && (

@@ -258,7 +258,8 @@ const MessageJourney = () => {
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
-                poisonedCGs: poisonedCGs
+                poisonedCGs: poisonedCGs,
+                schemaType: data?.schema_type
             };
             setMessageData(messageDetails);
             setEdges(edgesList);
@@ -308,6 +309,7 @@ const MessageJourney = () => {
                                                     details={messageData.details}
                                                     processing={(status) => setProcessing(status)}
                                                     returnBack={() => returnBack()}
+                                                    schemaType={messageData.schemaType}
                                                 />
                                             )}
                                             {event.node.data.value === 'consumer' && (
