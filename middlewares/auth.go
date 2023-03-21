@@ -23,7 +23,6 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var noNeedAuthRoutes = []string{
@@ -32,7 +31,7 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/addusersignup",
 	"/api/usermgmt/getsignupflag",
 	"/api/status",
-	"/api/sandbox/login",
+	// "/api/sandbox/login",
 	"/api/monitoring/getclusterinfo",
 }
 
@@ -80,13 +79,13 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return models.User{}, errors.New("f")
 	}
 
-	userId, _ := primitive.ObjectIDFromHex(claims["user_id"].(string))
+	userId := int(claims["user_id"].(float64))
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
 	user := models.User{
 		ID:              userId,
 		Username:        claims["username"].(string),
 		UserType:        claims["user_type"].(string),
-		CreationDate:    creationDate,
+		CreatedAt:       creationDate,
 		AlreadyLoggedIn: claims["already_logged_in"].(bool),
 		AvatarId:        int(claims["avatar_id"].(float64)),
 	}

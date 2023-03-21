@@ -13,91 +13,94 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Message struct {
-	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
-	Producer    ProducerDetails `json:"producer" bson:"producer"`
-	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs" bson:"poisoned_cgs"`
-	Message     MessagePayload  `json:"message" bson:"message"`
+	MessageSeq  int             `json:"message_seq"`
+	Producer    ProducerDetails `json:"producer"`
+	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs"`
+	Message     MessagePayload  `json:"message"`
 }
 
 type MessageResponse struct {
-	MessageSeq  int             `json:"message_seq" bson:"message_seq"`
-	Producer    ProducerDetails `json:"producer" bson:"producer"`
-	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs" bson:"poisoned_cgs"`
-	Message     MessagePayload  `json:"message" bson:"message"`
+	MessageSeq  int             `json:"message_seq"`
+	Producer    ProducerDetails `json:"producer"`
+	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs"`
+	Message     MessagePayload  `json:"message"`
 }
 
 type MessageDetails struct {
-	MessageSeq   int               `json:"message_seq" bson:"message_seq"`
-	ProducedBy   string            `json:"produced_by" bson:"produced_by"`
-	Data         string            `json:"data" bson:"data"`
-	TimeSent     time.Time         `json:"creation_date" bson:"creation_date"`
-	ConnectionId string            `json:"connection_id" bson:"connection_id"`
-	Size         int               `json:"size" bson:"size"`
-	Headers      map[string]string `json:"headers" bson:"headers"`
+	MessageSeq   int               `json:"message_seq"`
+	ProducedBy   string            `json:"produced_by"`
+	Data         string            `json:"data"`
+	TimeSent     time.Time         `json:"created_at"`
+	ConnectionId string            `json:"connection_id" `
+	Size         int               `json:"size"`
+	Headers      map[string]string `json:"headers"`
 }
 
 type Station struct {
-	ID                   primitive.ObjectID `json:"id" bson:"_id"`
-	Name                 string             `json:"name" bson:"name"`
-	RetentionType        string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
-	StorageType          string             `json:"storage_type" bson:"storage_type"`
-	Replicas             int                `json:"replicas" bson:"replicas"`
-	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
-	Schema               SchemaDetails      `json:"schema" bson:"schema"`
-	IdempotencyWindow    int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative             bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
-	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	ID                          int       `json:"id"`
+	Name                        string    `json:"name"`
+	RetentionType               string    `json:"retention_type"`
+	RetentionValue              int       `json:"retention_value"`
+	StorageType                 string    `json:"storage_type"`
+	Replicas                    int       `json:"replicas"`
+	CreatedBy                   int       `json:"created_by"`
+	CreatedByUsername           string    `json:"created_by_username"`
+	CreatedAt                   time.Time `json:"created_at"`
+	UpdatedAt                   time.Time `json:"updated_at"`
+	IsDeleted                   bool      `json:"is_deleted"`
+	SchemaName                  string    `json:"schema_name"`
+	SchemaVersionNumber         int       `json:"schema_vesrion_number"`
+	IdempotencyWindow           int64     `json:"idempotency_window_in_ms"`
+	IsNative                    bool      `json:"is_native"`
+	DlsConfigurationPoison      bool      `json:"dls_configuration_poison"`
+	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse"`
+	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 }
 
 type GetStationResponseSchema struct {
-	ID                   primitive.ObjectID `json:"id" bson:"_id"`
-	Name                 string             `json:"name" bson:"name"`
-	RetentionType        string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
-	StorageType          string             `json:"storage_type" bson:"storage_type"`
-	Replicas             int                `json:"replicas" bson:"replicas"`
-	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	IsDeleted            bool               `json:"is_deleted" bson:"is_deleted"`
-	Tags                 []CreateTag        `json:"tags"`
-	IdempotencyWindow    int64              `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative             bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
-	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	ID                   int              `json:"id"`
+	Name                 string           `json:"name"`
+	RetentionType        string           `json:"retention_type"`
+	RetentionValue       int              `json:"retention_value"`
+	StorageType          string           `json:"storage_type"`
+	Replicas             int              `json:"replicas"`
+	CreatedBy            int              `json:"created_by"`
+	CreatedByUsername    string           `json:"created_by_username"`
+	CreatedAt            time.Time        `json:"created_at"`
+	LastUpdate           time.Time        `json:"last_update"`
+	IsDeleted            bool             `json:"is_deleted"`
+	Tags                 []CreateTag      `json:"tags"`
+	IdempotencyWindow    int64            `json:"idempotency_window_in_ms" `
+	IsNative             bool             `json:"is_native"`
+	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
+	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 }
 
 type ExtendedStation struct {
-	ID                   primitive.ObjectID `json:"id" bson:"_id"`
-	Name                 string             `json:"name" bson:"name"`
-	RetentionType        string             `json:"retention_type" bson:"retention_type"`
-	RetentionValue       int                `json:"retention_value" bson:"retention_value"`
-	StorageType          string             `json:"storage_type" bson:"storage_type"`
-	Replicas             int                `json:"replicas" bson:"replicas"`
-	CreatedByUser        string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate         time.Time          `json:"creation_date" bson:"creation_date"`
-	LastUpdate           time.Time          `json:"last_update" bson:"last_update"`
-	TotalMessages        int                `json:"total_messages"`
-	PoisonMessages       int                `json:"posion_messages"`
-	Tags                 []CreateTag        `json:"tags"`
-	IdempotencyWindow    int                `json:"idempotency_window_in_ms" bson:"idempotency_window_in_ms"`
-	IsNative             bool               `json:"is_native" bson:"is_native"`
-	DlsConfiguration     DlsConfiguration   `json:"dls_configuration" bson:"dls_configuration"`
-	HasDlsMsgs           bool               `json:"has_dls_messages"`
-	Activity             bool               `json:"activity"`
-	Producers            []Producer         `json:"producers"`
-	Consumers            []Consumer         `json:"consumers"`
-	TieredStorageEnabled bool               `json:"tiered_storage_enabled" bson:"tiered_storage_enabled"`
+	ID                          int         `json:"id"`
+	Name                        string      `json:"name"`
+	RetentionType               string      `json:"retention_type"`
+	RetentionValue              int         `json:"retention_value"`
+	StorageType                 string      `json:"storage_type"`
+	Replicas                    int         `json:"replicas"`
+	CreatedBy                   int         `json:"created_by"`
+	CreatedAt                   time.Time   `json:"created_at"`
+	UpdatedAt                   time.Time   `json:"last_update"`
+	TotalMessages               int         `json:"total_messages"`
+	PoisonMessages              int         `json:"posion_messages"`
+	Tags                        []CreateTag `json:"tags"`
+	IdempotencyWindow           int64       `json:"idempotency_window_in_ms"`
+	IsNative                    bool        `json:"is_native"`
+	DlsConfigurationPoison      bool        `json:"dls_configuration_poison"`
+	DlsConfigurationSchemaverse bool        `json:"dls_configuration_schemaverse"`
+	HasDlsMsgs                  bool        `json:"has_dls_messages"`
+	Activity                    bool        `json:"activity"`
+	Producers                   []Producer  `json:"producers"`
+	Consumers                   []Consumer  `json:"consumers"`
+	TieredStorageEnabled        bool        `json:"tiered_storage_enabled"`
 }
 
 type ExtendedStationDetails struct {
@@ -127,8 +130,8 @@ type CreateStationSchema struct {
 }
 
 type DlsConfiguration struct {
-	Poison      bool `json:"poison" bson:"poison"`
-	Schemaverse bool `json:"schemaverse" bson:"schemaverse"`
+	Poison      bool `json:"poison"`
+	Schemaverse bool `json:"schemaverse"`
 }
 
 type UpdateDlsConfigSchema struct {
@@ -183,14 +186,14 @@ type RemoveSchemaFromStation struct {
 }
 
 type SchemaDetails struct {
-	SchemaName    string `json:"name" bson:"name"`
-	VersionNumber int    `json:"version_number" bson:"version_number"`
+	SchemaName    string `json:"name"`
+	VersionNumber int    `json:"version_number"`
 }
 
 type StationOverviewSchemaDetails struct {
-	SchemaName       string `json:"name" bson:"name"`
-	SchemaType       string `json:"schema_type" bson:"schema_type"`
-	VersionNumber    int    `json:"version_number" bson:"version_number"`
+	SchemaName       string `json:"name"`
+	SchemaType       string `json:"schema_type"`
+	VersionNumber    int    `json:"version_number"`
 	UpdatesAvailable bool   `json:"updates_available"`
 }
 

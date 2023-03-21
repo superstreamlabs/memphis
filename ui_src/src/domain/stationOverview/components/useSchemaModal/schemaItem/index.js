@@ -32,7 +32,7 @@ const SchemaItem = ({ schema, handleSelectedItem, selected, handleStopUseSchema 
                 <div className="details">
                     <p className="type">{schema?.type}</p>
                     <FiberManualRecord />
-                    <p className="date">{parsingDate(schema?.creation_date)}</p>
+                    <p className="date">{parsingDate(schema?.created_at)}</p>
                 </div>
             </div>
         </div>

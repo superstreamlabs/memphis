@@ -12,13 +12,13 @@
 package routes
 
 import (
-	"memphis/server"
+	// "memphis/server"
 
-	"github.com/gin-gonic/gin"
+	// "github.com/gin-gonic/gin"
 )
 
-func InitializeSandboxRoutes(router *gin.RouterGroup) {
-	sandboxHandler := server.SandboxHandler{}
-	sandboxRoutes := router.Group("/sandbox")
-	sandboxRoutes.POST("/login", sandboxHandler.Login)
-}
+// func InitializeSandboxRoutes(router *gin.RouterGroup) {
+	// sandboxHandler := server.SandboxHandler{}
+	// sandboxRoutes := router.Group("/sandbox")
+	// sandboxRoutes.POST("/login", sandboxHandler.Login)
+// }

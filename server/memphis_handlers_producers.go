@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -59,12 +58,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 
-	connectionIdObj, err := primitive.ObjectIDFromHex(pConnectionId)
-	if err != nil {
-		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": Connection ID " + pConnectionId + " is not valid")
-		return false, false, err
-	}
-	exist, connection, err := db.GetConnectionByID(connectionIdObj)
+	exist, connection, err := db.GetConnectionByID(pConnectionId)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -80,6 +74,16 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, errors.New("memphis: " + errMsg)
 	}
 
+	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
+	if err != nil {
+		serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
+		return false, false, err
+	}
+	if !exist {
+		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		return false, false, err
+	}
+
 	exist, station, err := db.GetStationByName(pStationName.Ext())
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
@@ -87,23 +91,22 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedByUser)
+		station, created, err = CreateDefaultStation(s, pStationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 			return false, false, err
 		}
-
 		if created {
-			message := "Station " + pStationName.Ext() + " has been created by user " + connection.CreatedByUser
+			message := "Station " + pStationName.Ext() + " has been created by user " + user.Username
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   pStationName.Ext(),
-				Message:       message,
-				CreatedByUser: connection.CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      "application",
+				StationName:       pStationName.Ext(),
+				Message:           message,
+				CreatedBy:         connection.CreatedBy,
+				CreatedByUsername: connection.CreatedByUsername,
+				CreatedAt:         time.Now(),
+				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -118,7 +121,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 					Value: pStationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
+				analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -133,18 +136,22 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-	newProducer, rowsUpdated, err := db.UpsertNewProducer(name, station.ID, producerType, connectionIdObj, connection.CreatedByUser)
-	if rowsUpdated == 0 {
-		message := "Producer " + name + " has been created by user " + connection.CreatedByUser
+	newProducer, rowsUpdated, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy, user.Username)
+	if err != nil {
+		serv.Warnf("createProducerDirectCommon: " + err.Error())
+		return false, false, err
+	}
+	if rowsUpdated == 1 {
+		message := "Producer " + name + " has been created by user " + user.Username
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   pStationName.Ext(),
-			Message:       message,
-			CreatedByUser: connection.CreatedByUser,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+			StationName:       pStationName.Ext(),
+			Message:           message,
+			CreatedBy:         connection.CreatedBy,
+			CreatedByUsername: connection.CreatedByUsername,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -159,9 +166,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-producer-sdk")
+			analytics.SendEventWithParams(connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
 			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
-				analytics.SendEvent(connection.CreatedByUser, "user-send-messages-via-rest-gw")
+				analytics.SendEvent(connection.CreatedByUsername, "user-send-messages-via-rest-gw")
 			}
 		}
 	}
@@ -170,7 +177,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 	}
 
-	return shouldSendNotifications, station.DlsConfiguration.Schemaverse, nil
+	return shouldSendNotifications, station.DlsConfigurationSchemaverse, nil
 }
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
@@ -244,15 +251,15 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.Producer, []models.Producer, []models.Producer, error) { // for socket io endpoint
 	producers, err := db.GetProducersByStationID(station.ID)
 	if err != nil {
 		return producers, producers, producers, err
 	}
 
-	var connectedProducers []models.ExtendedProducer
-	var disconnectedProducers []models.ExtendedProducer
-	var deletedProducers []models.ExtendedProducer
+	var connectedProducers []models.Producer
+	var disconnectedProducers []models.Producer
+	var deletedProducers []models.Producer
 	producersNames := []string{}
 
 	for _, producer := range producers {
@@ -271,25 +278,25 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	}
 
 	if len(connectedProducers) == 0 {
-		connectedProducers = []models.ExtendedProducer{}
+		connectedProducers = []models.Producer{}
 	}
 
 	if len(disconnectedProducers) == 0 {
-		disconnectedProducers = []models.ExtendedProducer{}
+		disconnectedProducers = []models.Producer{}
 	}
 
 	if len(deletedProducers) == 0 {
-		deletedProducers = []models.ExtendedProducer{}
+		deletedProducers = []models.Producer{}
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool {
-		return connectedProducers[j].CreationDate.Before(connectedProducers[i].CreationDate)
+		return connectedProducers[j].CreatedAt.Before(connectedProducers[i].CreatedAt)
 	})
 	sort.Slice(disconnectedProducers, func(i, j int) bool {
-		return disconnectedProducers[j].CreationDate.Before(disconnectedProducers[i].CreationDate)
+		return disconnectedProducers[j].CreatedAt.Before(disconnectedProducers[i].CreatedAt)
 	})
 	sort.Slice(deletedProducers, func(i, j int) bool {
-		return deletedProducers[j].CreationDate.Before(deletedProducers[i].CreationDate)
+		return deletedProducers[j].CreatedAt.Before(deletedProducers[i].CreatedAt)
 	})
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
@@ -367,17 +374,20 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	if username == "" {
 		username = dpr.Username
 	}
-
+	_, user, err := db.GetUserByUsername(username)
+	if err != nil {
+		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
+	}
 	message := "Producer " + name + " has been deleted by user " + username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "application",
+		StationName:       stationName.Ext(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		UserType:          "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -393,7 +403,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	respondWithErr(s, reply, nil)
 }
 
-func (ph ProducersHandler) ReliveProducers(connectionId primitive.ObjectID) error {
+func (ph ProducersHandler) ReliveProducers(connectionId string) error {
 	err := db.UpdateProducersConnection(connectionId, true)
 	if err != nil {
 		serv.Errorf("ReliveProducers: " + err.Error())

@@ -36,7 +36,7 @@ const LogContent = ({ displayedLog }) => {
                     </div>
                     <div className="date">
                         <p className="title">Time</p>
-                        <span className="des">{parsingDate(displayedLog?.creation_date)}</span>
+                        <span className="des">{parsingDate(displayedLog?.created_at)}</span>
                     </div>
                 </div>
                 <div></div>

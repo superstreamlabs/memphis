@@ -13,22 +13,20 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type ProducerDetails struct {
-	Name          string             `json:"name" bson:"name"`
-	ClientAddress string             `json:"client_address" bson:"client_address"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
+	Name          string `json:"name"`
+	ClientAddress string `json:"client_address"`
+	ConnectionId  string `json:"connection_id"`
+	CreatedBy     int    `json:"created_by"`
+	IsActive      bool   `json:"is_active"`
+	IsDeleted     bool   `json:"is_deleted"`
 }
 
 type MsgHeader struct {
-	HeaderKey   string `json:"header_key" bson:"header_key"`
-	HeaderValue string `json:"header_value" bson:"header_value"`
+	HeaderKey   string `json:"header_key"`
+	HeaderValue string `json:"header_value"`
 }
 
 type MessagePayload struct {
@@ -46,17 +44,17 @@ type MessagePayloadDls struct {
 }
 
 type PoisonedCg struct {
-	CgName              string     `json:"cg_name" bson:"cg_name"`
-	PoisoningTime       time.Time  `json:"poisoning_time" bson:"poisoning_time"`
-	DeliveriesCount     int        `json:"deliveries_count" bson:"deliveries_count"`
-	UnprocessedMessages int        `json:"unprocessed_messages" bson:"unprocessed_messages"`
-	MaxAckTimeMs        int64      `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	InProcessMessages   int        `json:"in_process_messages" bson:"in_process_messages"`
-	TotalPoisonMessages int        `json:"total_poison_messages" bson:"total_poison_messages"`
-	MaxMsgDeliveries    int        `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	CgMembers           []CgMember `json:"cg_members" bson:"cg_members"`
-	IsActive            bool       `json:"is_active" bson:"is_active"`
-	IsDeleted           bool       `json:"is_deleted" bson:"is_deleted"`
+	CgName              string     `json:"cg_name"`
+	PoisoningTime       time.Time  `json:"poisoning_time"`
+	DeliveriesCount     int        `json:"deliveries_count"`
+	UnprocessedMessages int        `json:"unprocessed_messages"`
+	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
+	InProcessMessages   int        `json:"in_process_messages"`
+	TotalPoisonMessages int        `json:"total_poison_messages"`
+	MaxMsgDeliveries    int        `json:"max_msg_deliveries"`
+	CgMembers           []CgMember `json:"cg_members"`
+	IsActive            bool       `json:"is_active"`
+	IsDeleted           bool       `json:"is_deleted"`
 }
 
 type DlsMessage struct {
@@ -66,7 +64,7 @@ type DlsMessage struct {
 	Producer        ProducerDetails   `json:"producer"`
 	PoisonedCg      PoisonedCg        `json:"poisoned_cg"`
 	Message         MessagePayloadDls `json:"message"`
-	CreationDate    time.Time         `json:"creation_date"`
+	CreatedAt       time.Time         `json:"created_at"`
 	CreationUnix    int64             `json:"creation_unix"`
 	ValidationError string            `json:"validation_error"`
 }
@@ -79,7 +77,7 @@ type DlsMessageResponse struct {
 	Producer        ProducerDetails   `json:"producer"`
 	PoisonedCgs     []PoisonedCg      `json:"poisoned_cgs"`
 	Message         MessagePayloadDls `json:"message"`
-	CreationDate    time.Time         `json:"creation_date"`
+	CreatedAt       time.Time         `json:"created_at"`
 	ValidationError string            `json:"validation_error"`
 }
 
@@ -92,7 +90,7 @@ type PmAckMsg struct {
 type LightDlsMessage struct {
 	MessageSeq int               `json:"message_seq"`
 	ID         string            `json:"_id"`
-	Message    MessagePayloadDls `json:"message" bson:"message"`
+	Message    MessagePayloadDls `json:"message"`
 }
 
 type LightDlsMessageResponse struct {

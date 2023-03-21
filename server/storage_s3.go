@@ -254,7 +254,6 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		err = errors.New("Could not upload objects - " + err.Error())
 		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
 	}
-	//delete the object
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String("memphis")})
 	if err != nil {
 		err = errors.New("Could not upload objects - " + err.Error())

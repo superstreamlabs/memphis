@@ -90,7 +90,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                         (async () => {
                             for await (const msg of sub) {
                                 let data = jc.decode(msg.data);
-                                data?.sort((a, b) => new Date(b.station.creation_date) - new Date(a.station.creation_date));
+                                data?.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
                                 dispatch({ type: 'SET_STATION_LIST', payload: data });
                             }
                         })();
@@ -280,7 +280,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 if (filterTerms?.find((o) => o?.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
                     stationData = stationData?.filter((item) =>
-                        objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_user) : !objCreated?.includes(item.station.created_by_user)
+                        objCreated?.length > 0 ? objCreated?.includes(item.station.created_by_username) : !objCreated?.includes(item.station.created_by_username)
                     );
                 }
                 if (filterTerms?.find((o) => o?.name === 'storage')) {
@@ -304,7 +304,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 }
                 if (filterTerms?.find((o) => o?.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
-                    data = data?.filter((item) => (objCreated?.length > 0 ? objCreated?.includes(item.created_by_user) : !objCreated?.includes(item.created_by_user)));
+                    data = data?.filter((item) => (objCreated?.length > 0 ? objCreated?.includes(item.created_by_username) : !objCreated?.includes(item.created_by_username)));
                 }
                 if (filterTerms?.find((o) => o?.name === 'type')) {
                     objType = filterTerms?.find((o) => o?.name === 'type')?.fields[0];

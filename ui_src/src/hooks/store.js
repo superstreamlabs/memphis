@@ -18,7 +18,7 @@ const initialState = {
     userData: {
         user_id: '',
         already_logged_in: false,
-        creation_date: '',
+        created_at: '',
         user_type: '',
         avatar_id: 1
     },

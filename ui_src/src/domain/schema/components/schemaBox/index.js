@@ -68,8 +68,8 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         </div>
                         <div className="field-wrapper">
                             <p>Created by : </p>
-                            <OverflowTip text={schema.created_by_user} maxWidth={'70px'}>
-                                <span>{capitalizeFirst(schema.created_by_user)}</span>
+                            <OverflowTip text={schema.created_by_username} maxWidth={'70px'}>
+                                <span>{capitalizeFirst(schema.created_by_username)}</span>
                             </OverflowTip>
                         </div>
                     </type>
@@ -78,7 +78,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                     </tags>
                     <date is="x3d">
                         <img src={createdDateIcon} alt="createdDateIcon" />
-                        <p>{parsingDate(schema.creation_date)}</p>
+                        <p>{parsingDate(schema.created_at)}</p>
                     </date>
                 </div>
             </div>

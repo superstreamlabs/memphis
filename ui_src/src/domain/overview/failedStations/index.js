@@ -63,8 +63,8 @@ const FailedStations = ({ createStationTrigger }) => {
                                             <OverflowTip className="station-details station-name" text={station.name}>
                                                 {station.name}
                                             </OverflowTip>
-                                            <OverflowTip className="station-creation" text={parsingDate(station.creation_date)}>
-                                                {parsingDate(station.creation_date)}
+                                            <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
+                                                {parsingDate(station.created_at)}
                                             </OverflowTip>
                                             <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
                                                 <span className="centered">{numberWithCommas(station.total_messages)}</span>

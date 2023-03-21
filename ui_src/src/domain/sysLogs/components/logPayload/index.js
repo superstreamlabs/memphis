@@ -23,7 +23,7 @@ const LogPayload = ({ value, onSelected, selectedRow }) => {
         <div className={selectedRow === value?.message_seq ? 'log-payload log-selected' : 'log-payload'} onClick={() => onSelected(value?.message_seq)}>
             {selectedRow === value?.message_seq && <div className="selected"></div>}
             <p className="title">{value?.data}</p>
-            <p className="created-date">{parsingDate(value?.creation_date)}</p>
+            <p className="created-date">{parsingDate(value?.created_at)}</p>
             <div className="log-info">
                 <div className="source">
                     <img src={sourceIcon} alt="sourceIcon" />

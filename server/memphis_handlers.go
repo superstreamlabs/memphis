@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"memphis/conf"
@@ -24,7 +23,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Handlers struct {
@@ -46,9 +44,6 @@ var configuration = conf.GetConfig()
 type srvMemphis struct {
 	serverID               string
 	nuid                   *nuid.NUID
-	dbClient               *mongo.Client
-	dbCtx                  context.Context
-	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
 	jsApiMu                sync.Mutex
@@ -60,13 +55,9 @@ type memphisWS struct {
 	quitCh        chan struct{}
 }
 
-func (s *Server) InitializeMemphisHandlers(dbInstance db.DbInstance) {
+func (s *Server) InitializeMemphisHandlers() {
 	serv = s
-	s.memphis.dbClient = dbInstance.Client
-	s.memphis.dbCtx = dbInstance.Ctx
-	s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
-	// s.memphis.serverID is initialized earlier, when logger is configured
 
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
@@ -82,7 +73,7 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(s *Server, sn StationName, username string) (models.Station, bool, error) {
+func CreateDefaultStation(s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
 	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false)
 	if err != nil {
@@ -93,11 +84,13 @@ func CreateDefaultStation(s *Server, sn StationName, username string) (models.St
 	if err != nil {
 		return models.Station{}, false, err
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName, username, "message_age_sec", 604800, "file", 1, models.SchemaDetails{}, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+	schemaName := ""
+	schemaVersionNumber := 0
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}
-	if rowsUpdated > 0 {
+	if rowsUpdated == 0 {
 		return models.Station{}, false, nil
 	}
 

@@ -40,21 +40,21 @@ const StationOverview = () => {
     const [isLoading, setisLoading] = useState(false);
 
     const sortData = (data) => {
-        data.audit_logs?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.messages?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.active_producers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.active_consumers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.destroyed_consumers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.destroyed_producers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.killed_consumers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
-        data.killed_producers?.sort((a, b) => new Date(b.creation_date) - new Date(a.creation_date));
+        data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.messages?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.active_producers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.active_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.destroyed_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.destroyed_producers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.killed_consumers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.killed_producers?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         return data;
     };
 
     const getStaionMetaData = async () => {
         try {
             let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
-            data.creation_date = await parsingDate(data.creation_date);
+            data.created_at = await parsingDate(data.created_at);
             stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
         } catch (error) {
             if (error.status === 404) {

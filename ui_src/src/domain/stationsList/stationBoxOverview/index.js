@@ -69,7 +69,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </OverflowTip>
                         </div>
                         <label className="data-labels date">
-                            Created by {station?.station?.created_by_user} at {parsingDate(station?.station?.creation_date)}{' '}
+                            Created by {station?.station?.created_by_username} at {parsingDate(station?.station?.created_at)}{' '}
                         </label>
                     </div>
                     <div className="middle-section">
@@ -77,10 +77,10 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             <label className="data-labels attached">Attached Schema</label>
                             <OverflowTip
                                 className="data-info"
-                                text={station?.station?.schema?.name === '' ? <MinusOutlined /> : station?.station?.schema?.name}
+                                text={station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
                                 width={'90px'}
                             >
-                                {station?.station?.schema?.name === '' ? <MinusOutlined /> : station?.station?.schema?.name}
+                                {station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
                             </OverflowTip>
                         </div>
                         <div className="station-created">

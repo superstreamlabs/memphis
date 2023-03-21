@@ -95,15 +95,9 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
+func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
-	}
-
-	dbInstance, err := db.InitializeDbConnection(s)
-	if err != nil {
-		s.Errorf("Failed initializing db connection: " + err.Error())
-		os.Exit(1)
 	}
 
 	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
@@ -117,7 +111,7 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
-	s.InitializeMemphisHandlers(dbInstance)
+	s.InitializeMemphisHandlers()
 
 	err = server.InitializeIntegrations()
 	if err != nil {
@@ -129,7 +123,6 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
 		s.Errorf("Failed to create root user: " + err.Error())
-		db.Close(dbInstance, s)
 		os.Exit(1)
 	}
 
@@ -156,7 +149,7 @@ func runMemphis(s *server.Server) (db.DbInstance, db.DbPostgreSQLInstance) {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbInstance, dbPostgresSql
+	return dbPostgresSql
 }
 
 func main() {
@@ -202,8 +195,7 @@ func main() {
 		server.SnapshotMonitorInfo()
 	}
 
-	dbConnection, dbPostgresSql := runMemphis(s)
-	defer db.Close(dbConnection, s)
+	dbPostgresSql := runMemphis(s)
 	defer db.ClosePostgresSql(dbPostgresSql, s)
 	defer analytics.Close()
 	s.WaitForShutdown()

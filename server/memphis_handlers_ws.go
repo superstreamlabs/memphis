@@ -235,7 +235,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, errors.New("Station " + stationName + " does not exist")
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.Producer, 0), make([]models.Producer, 0), make([]models.Producer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
 		if err != nil {
@@ -297,85 +297,88 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		if !station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
 			response = map[string]any{
-				"connected_producers":      cp,
-				"disconnected_producers":   dp,
-				"deleted_producers":        deletedProducers,
-				"connected_cgs":            cc,
-				"disconnected_cgs":         disconnectedCgs,
-				"deleted_cgs":              dc,
-				"total_messages":           totalMessages,
-				"average_message_size":     avgMsgSize,
-				"audit_logs":               auditLogs,
-				"messages":                 messages,
-				"poison_messages":          poisonMessages,
-				"schema_failed_messages":   schemaFailMessages,
-				"tags":                     tags,
-				"leader":                   leader,
-				"followers":                followers,
-				"schema":                   struct{}{},
-				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dls_configuration":        station.DlsConfiguration,
-				"total_dls_messages":       totalDlsAmount,
+				"connected_producers":           cp,
+				"disconnected_producers":        dp,
+				"deleted_producers":             deletedProducers,
+				"connected_cgs":                 cc,
+				"disconnected_cgs":              disconnectedCgs,
+				"deleted_cgs":                   dc,
+				"total_messages":                totalMessages,
+				"average_message_size":          avgMsgSize,
+				"audit_logs":                    auditLogs,
+				"messages":                      messages,
+				"poison_messages":               poisonMessages,
+				"schema_failed_messages":        schemaFailMessages,
+				"tags":                          tags,
+				"leader":                        leader,
+				"followers":                     followers,
+				"schema":                        struct{}{},
+				"idempotency_window_in_ms":      station.IdempotencyWindow,
+				"dls_configuration_poison":      station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            totalDlsAmount,
 			}
 		} else {
 			response = map[string]any{
-				"connected_producers":      connectedProducers,
-				"disconnected_producers":   disconnectedProducers,
-				"deleted_producers":        deletedProducers,
-				"connected_cgs":            connectedCgs,
-				"disconnected_cgs":         disconnectedCgs,
-				"deleted_cgs":              deletedCgs,
-				"total_messages":           totalMessages,
-				"average_message_size":     avgMsgSize,
-				"audit_logs":               auditLogs,
-				"messages":                 messages,
-				"poison_messages":          poisonMessages,
-				"schema_failed_messages":   schemaFailMessages,
-				"tags":                     tags,
-				"leader":                   leader,
-				"followers":                followers,
-				"schema":                   struct{}{},
-				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dls_configuration":        station.DlsConfiguration,
-				"total_dls_messages":       totalDlsAmount,
+				"connected_producers":           connectedProducers,
+				"disconnected_producers":        disconnectedProducers,
+				"deleted_producers":             deletedProducers,
+				"connected_cgs":                 connectedCgs,
+				"disconnected_cgs":              disconnectedCgs,
+				"deleted_cgs":                   deletedCgs,
+				"total_messages":                totalMessages,
+				"average_message_size":          avgMsgSize,
+				"audit_logs":                    auditLogs,
+				"messages":                      messages,
+				"poison_messages":               poisonMessages,
+				"schema_failed_messages":        schemaFailMessages,
+				"tags":                          tags,
+				"leader":                        leader,
+				"followers":                     followers,
+				"schema":                        struct{}{},
+				"idempotency_window_in_ms":      station.IdempotencyWindow,
+				"dls_configuration_poison":      station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            totalDlsAmount,
 			}
 		}
 
 		return response, nil
 	}
 
-	_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.Schema.VersionNumber, schema.ID)
+	_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 	if err != nil {
 		return map[string]any{}, err
 	}
 	updatesAvailable := !schemaVersion.Active
 	schemaDetails := models.StationOverviewSchemaDetails{
 		SchemaName:       schema.Name,
-		VersionNumber:    station.Schema.VersionNumber,
+		VersionNumber:    station.SchemaVersionNumber,
 		UpdatesAvailable: updatesAvailable,
 		SchemaType:       schema.Type,
 	}
 
 	response = map[string]any{
-		"connected_producers":      connectedProducers,
-		"disconnected_producers":   disconnectedProducers,
-		"deleted_producers":        deletedProducers,
-		"connected_cgs":            connectedCgs,
-		"disconnected_cgs":         disconnectedCgs,
-		"deleted_cgs":              deletedCgs,
-		"total_messages":           totalMessages,
-		"average_message_size":     avgMsgSize,
-		"audit_logs":               auditLogs,
-		"messages":                 messages,
-		"poison_messages":          poisonMessages,
-		"schema_failed_messages":   schemaFailMessages,
-		"tags":                     tags,
-		"leader":                   leader,
-		"followers":                followers,
-		"schema":                   schemaDetails,
-		"idempotency_window_in_ms": station.IdempotencyWindow,
-		"dls_configuration":        station.DlsConfiguration,
-		"total_dls_messages":       totalDlsAmount,
+		"connected_producers":           connectedProducers,
+		"disconnected_producers":        disconnectedProducers,
+		"deleted_producers":             deletedProducers,
+		"connected_cgs":                 connectedCgs,
+		"disconnected_cgs":              disconnectedCgs,
+		"deleted_cgs":                   deletedCgs,
+		"total_messages":                totalMessages,
+		"average_message_size":          avgMsgSize,
+		"audit_logs":                    auditLogs,
+		"messages":                      messages,
+		"poison_messages":               poisonMessages,
+		"schema_failed_messages":        schemaFailMessages,
+		"tags":                          tags,
+		"leader":                        leader,
+		"followers":                     followers,
+		"schema":                        schemaDetails,
+		"idempotency_window_in_ms":      station.IdempotencyWindow,
+		"dls_configuration_poison":      station.DlsConfigurationPoison,
+		"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+		"total_dls_messages":            totalDlsAmount,
 	}
 
 	return response, nil
