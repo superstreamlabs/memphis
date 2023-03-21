@@ -1873,7 +1873,7 @@ func getDbStorageSize() (float64, float64, error) {
 	if err != nil {
 		return 0, 0, err
 	}
-	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.DB_NAME).Scan(&dbStorageSize, &totalSize)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.POSTGRESQL_DBNAME).Scan(&dbStorageSize, &totalSize)
 	if err != nil {
 		return 0, 0, err
 	}

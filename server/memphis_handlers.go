@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"memphis/conf"
@@ -24,7 +23,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Handlers struct {
@@ -46,9 +44,6 @@ var configuration = conf.GetConfig()
 type srvMemphis struct {
 	serverID               string
 	nuid                   *nuid.NUID
-	dbClient               *mongo.Client
-	dbCtx                  context.Context
-	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
 	jsApiMu                sync.Mutex

@@ -39,10 +39,10 @@ func InitializeIntegrations() error {
 		return err
 	}
 
-	if configuration.SANDBOX_ENV == "true" {
-		keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
-		createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
-	}
+	// if configuration.SANDBOX_ENV == "true" {
+	// 	keys, properties := createIntegrationsKeysAndProperties("slack", configuration.SANDBOX_SLACK_BOT_TOKEN, configuration.SANDBOX_SLACK_CHANNEL_ID, true, true, true, "", "", "", "")
+	// 	createSlackIntegration(keys, properties, configuration.SANDBOX_UI_URL)
+	// }
 	return nil
 }
 

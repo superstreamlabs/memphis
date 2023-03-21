@@ -3510,17 +3510,17 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 }
 
 // Sandbox Functions
-func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	user := models.SandboxUser{}
-	return user, nil
-}
+// func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
+	// user := models.SandboxUser{}
+	// return user, nil
+// }
 
-func UpdateSandboxUserAlreadyLoggedIn(userId int) {
+// func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 	// sandboxUsersCollection.UpdateOne(context.TODO(),
 	// 	bson.M{"_id": userId},
 	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
 	// )
-}
+// }
 
 // func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 // 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -3550,7 +3550,7 @@ func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 // 	return true, users[0], nil
 // }
 
-func UpdateSkipGetStartedSandbox(username string) error {
+// func UpdateSkipGetStartedSandbox(username string) error {
 	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
 	// 	bson.M{"username": username},
 	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
@@ -3558,8 +3558,8 @@ func UpdateSkipGetStartedSandbox(username string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	return nil
-}
+// 	return nil
+// }
 
 // Image Functions
 func InsertImage(name string, base64Encoding string) error {

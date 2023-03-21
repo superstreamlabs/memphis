@@ -568,9 +568,9 @@ func deleteSchemaFromStations(s *Server, schemaName string) error {
 }
 
 func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.RemoveSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

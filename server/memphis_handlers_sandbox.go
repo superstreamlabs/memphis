@@ -26,22 +26,22 @@ import (
 	// 	"strings"
 	// 	"time"
 
-	"errors"
+	// "errors"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
+	// "github.com/dgrijalva/jwt-go"
+	// "github.com/gin-gonic/gin"
 )
 
-type SandboxHandler struct{}
+// type SandboxHandler struct{}
 
-type googleClaims struct {
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	FirstName     string `json:"given_name"`
-	LastName      string `json:"family_name"`
-	Picture       string `json:"picture"`
-	jwt.StandardClaims
-}
+// type googleClaims struct {
+// 	Email         string `json:"email"`
+// 	EmailVerified bool   `json:"email_verified"`
+// 	FirstName     string `json:"given_name"`
+// 	LastName      string `json:"family_name"`
+// 	Picture       string `json:"picture"`
+// 	jwt.StandardClaims
+// }
 
 // type googleOauthToken struct {
 // 	Access_token string
@@ -360,18 +360,18 @@ type googleClaims struct {
 // 	return data, nil
 // }
 
-func DenyForSandboxEnv(c *gin.Context) error {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("DenyForSandboxEnv: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return err
-	}
+// func DenyForSandboxEnv(c *gin.Context) error {
+// 	user, err := getUserDetailsFromMiddleware(c)
+// 	if err != nil {
+// 		serv.Errorf("DenyForSandboxEnv: " + err.Error())
+// 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+// 		return err
+// 	}
 
-	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {
-		sandboxErrCode := 665
-		c.AbortWithStatusJSON(sandboxErrCode, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
-		return errors.New("Sandbox environment")
-	}
-	return nil
-}
+// 	if configuration.SANDBOX_ENV == "true" && user.UserType != "root" {
+// 		sandboxErrCode := 665
+// 		c.AbortWithStatusJSON(sandboxErrCode, gin.H{"message": "You are in a sandbox environment, this operation is not allowed"})
+// 		return errors.New("Sandbox environment")
+// 	}
+// 	return nil
+// }
