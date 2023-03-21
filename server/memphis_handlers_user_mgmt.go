@@ -31,6 +31,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	REFRESH_JWT_EXPIRES_IN_MINUTES = 2880
+	JWT_EXPIRES_IN_MINUTES         = 15
+)
+
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
@@ -166,7 +171,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["creation_date"] = u.CreatedAt
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
-		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 		// case models.SandboxUser:
 		// 	atClaims["user_id"] = u.ID
@@ -175,7 +180,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		// 	atClaims["creation_date"] = u.CreatedAt
 		// 	atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		// 	atClaims["avatar_id"] = u.AvatarId
-		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
@@ -183,7 +188,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		return "", "", err
 	}
 
-	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
+	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
 
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))
@@ -358,10 +363,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
@@ -420,10 +425,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 	}
 		// 	domain := ""
 		// 	secure := true
-		// 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+		// 	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 		// 	c.IndentedJSON(200, gin.H{
 		// 		"jwt":                     token,
-		// 		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		// 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		// 		"user_id":                 sandboxUser.ID,
 		// 		"username":                sandboxUser.Username,
 		// 		"user_type":               sandboxUser.UserType,
@@ -475,10 +480,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 
 	domain := ""
 	secure := true
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
@@ -595,10 +600,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 newUser.ID,
 		"username":                newUser.Username,
 		"user_type":               newUser.UserType,

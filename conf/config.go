@@ -22,9 +22,7 @@ type Configuration struct {
 	DEV_ENV                        string
 	LOCAL_CLUSTER_ENV              bool
 	JWT_SECRET                     string
-	JWT_EXPIRES_IN_MINUTES         int
 	REFRESH_JWT_SECRET             string
-	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
 	DOCKER_ENV                     string
 	ANALYTICS                      string
