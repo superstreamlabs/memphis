@@ -608,6 +608,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			mountpath := ""
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
+				fmt.Println(container.Name)
 				for _, port := range container.Ports {
 					if int(port.ContainerPort) != 0 {
 						ports = append(ports, int(port.ContainerPort))
