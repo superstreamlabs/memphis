@@ -11,6 +11,11 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import gcpIcon from '../assets/images/gcpIcon.svg';
 import awsIcon from '../assets/images/awsIcon.svg';
+import { LOCAL_STORAGE_CLIENTS_PORT, LOCAL_STORAGE_HTTP_PORT, LOCAL_STORAGE_WS_PORT } from './localStorageConsts';
+
+const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
+const clients_port = localStorage.getItem(LOCAL_STORAGE_CLIENTS_PORT);
+const http_port = localStorage.getItem(LOCAL_STORAGE_HTTP_PORT);
 
 export const INSTALLATION_GUIDE = {
     Main: {
@@ -35,21 +40,21 @@ export const INSTALLATION_GUIDE = {
             },
             {
                 title: 'Step 2 - Expose memphis to your localhost',
-                command: `kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &`,
+                command: `kubectl port-forward service/memphis ${clients_port}:${clients_port} ${http_port}:${http_port} ${ws_port}:${ws_port} --namespace memphis > /dev/null &`,
                 icon: 'copy'
             },
             {
                 title: (
                     <span>
                         Step 3 - Open memphis{' '}
-                        <a href="http://localhost:9000" target="_blank">
+                        <a href={`http://localhost:${http_port}`} target="_blank">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href="http://localhost:9000" target="_blank">
-                        http://localhost:9000
+                    <a href={`http://localhost:${http_port}`} target="_blank">
+                        http://localhost:{http_port}
                     </a>
                 ),
                 icon: 'link'
@@ -72,14 +77,14 @@ export const INSTALLATION_GUIDE = {
                 title: (
                     <span>
                         Step 2 - Open memphis{' '}
-                        <a href="http://localhost:9000" target="_blank">
+                        <a href={`http://localhost:${http_port}`} target="_blank">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href="http://localhost:9000" target="_blank">
-                        http://localhost:9000
+                    <a href={`http://localhost:${http_port}`} target="_blank">
+                        http://localhost:{http_port}
                     </a>
                 ),
                 icon: 'link'
