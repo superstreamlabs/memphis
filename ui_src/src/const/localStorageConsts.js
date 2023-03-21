@@ -28,3 +28,7 @@ export const LOCAL_STORAGE_BROKER_HOST = 'broker_host';
 export const LOCAL_STORAGE_REST_GW_HOST = 'rest_gw_host';
 export const LOCAL_STORAGE_UI_HOST = 'ui_host';
 export const LOCAL_STORAGE_TIERED_STORAGE_TIME = 'tiered_storage_time_sec';
+export const LOCAL_STORAGE_WS_PORT = 'ws_port';
+export const LOCAL_STORAGE_CLIENTS_PORT = 'client_port';
+export const LOCAL_STORAGE_HTTP_PORT = 'http_port';
+export const LOCAL_STORAGE_REST_GW_PORT = 'rest_gw_port';
