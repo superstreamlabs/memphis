@@ -37,7 +37,7 @@ go get -d -v .
 &#x20; 6\. Run Memphis in debug mode (If you're using vscode, click F5) or run via terminal via:
 
 ```
-DEV_ENV="true" DOCKER_ENV="true" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" go run main.go
+DEV_ENV="true" DOCKER_ENV="true" ANALYTICS="false" go run main.go
 ```
 
 ### Frontend Contributions

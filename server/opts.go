@@ -292,6 +292,7 @@ type Options struct {
 	MemphisHttpJwtSecret        string `json:"-"`
 	MemphisHttpRefreshJwtSecret string `json:"-"`
 	K8sNamespace                string `json:"-"`
+	LogsRetentionDays           int    `json:"-"`
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -1412,6 +1413,8 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			return
 		}
 		o.K8sNamespace = value
+	case "logs_retention_days":
+		o.LogsRetentionDays = int(v.(int64))
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -4693,6 +4696,9 @@ func setBaselineOptions(opts *Options) {
 	}
 	if opts.MemphisHttpRefreshJwtSecret == _EMPTY_ {
 		opts.MemphisHttpRefreshJwtSecret = DEFAULT_REFRESH_JWT_SECRET
+	}
+	if opts.LogsRetentionDays == 0 {
+		opts.LogsRetentionDays = 7
 	}
 }
 

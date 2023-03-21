@@ -50,11 +50,7 @@ func (s *Server) initializeConfigurations() {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		LOGS_RETENTION_IN_DAYS, err = strconv.Atoi(configuration.LOGS_RETENTION_IN_DAYS)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-			LOGS_RETENTION_IN_DAYS = 30 //default
-		}
+		LOGS_RETENTION_IN_DAYS = s.opts.LogsRetentionDays
 		err = db.InsertConfiguration("logs_retention", strconv.Itoa(LOGS_RETENTION_IN_DAYS))
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())

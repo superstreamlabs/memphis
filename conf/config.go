@@ -23,7 +23,6 @@ type Configuration struct {
 	LOCAL_CLUSTER_ENV              bool
 	DOCKER_ENV                     string
 	ANALYTICS                      string
-	LOGS_RETENTION_IN_DAYS         string
 	POISON_MSGS_RETENTION_IN_HOURS int
 	TIERED_STORAGE_TIME_FRAME_SEC  int
 	EXPORTER                       bool
