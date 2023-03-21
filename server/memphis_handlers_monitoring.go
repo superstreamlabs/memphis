@@ -614,11 +614,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
-				brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
+				// brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
+				brokerMatch := false
+				if "memphis" == container.Name {
+					brokerMatch = true
+				}
 				if err != nil {
 					return components, metricsEnabled, err
 				}
-				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "metadata") {
+				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "postgresql") || strings.Contains(container.Name, "pgpool") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						fmt.Println("name: " + mount.Name)
 						fmt.Println("mount: " + mountpath)
