@@ -316,7 +316,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	}
 	if !exist {
 		serv.Warnf("GetAllProducersByStation: Station " + body.StationName + " does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
 		return
 	}
 

@@ -128,7 +128,7 @@ func (s *Server) getJsApiReplySubject() string {
 }
 
 func AddUser(username string) (string, error) {
-	return configuration.CONNECTION_TOKEN, nil
+	return serv.opts.Authorization, nil
 }
 
 func RemoveUser(username string) error {
@@ -184,7 +184,6 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 			Discard:              DiscardOld,
 			MaxAge:               maxAge,
 			MaxMsgsPer:           -1,
-			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:              storage,
 			Replicas:             replicas,
 			NoAck:                false,
@@ -218,7 +217,6 @@ func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas in
 			Discard:      DiscardOld,
 			MaxAge:       maxAge,
 			MaxMsgsPer:   -1,
-			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:      storage,
 			Replicas:     replicas,
 			NoAck:        false,
@@ -355,7 +353,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		MaxBytes:     int64(-1),
 		Discard:      DiscardOld,
 		MaxMsgsPer:   ws_updates_interval_sec,
-		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:      FileStorage,
 		Replicas:     replicas,
 		NoAck:        false,
@@ -584,6 +581,10 @@ func (s *Server) PurgeStream(streamName string) error {
 	}
 
 	return resp.ToError()
+}
+
+func (s *Server) Opts() *Options {
+	return s.opts
 }
 
 func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {

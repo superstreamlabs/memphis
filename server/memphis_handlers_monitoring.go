@@ -144,12 +144,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis",
 				Components:  cpuComps,
 				Status:      checkCompStatus(cpuComps),
-				Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
+				Ports:       []int{mh.S.opts.UiPort, mh.S.opts.Port, mh.S.opts.Websocket.Port, mh.S.opts.HTTPPort},
 				DesiredPods: 1,
 				ActualPods:  1,
 				Hosts:       hosts,
 			})
-			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
+			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", mh.S.opts.RestGwPort))
 			healthy := false
 			restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 			if err == nil {
@@ -191,7 +191,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				Name:        "memphis-rest-gateway",
 				Components:  restGwComps,
 				Status:      checkCompStatus(restGwComps),
-				Ports:       []int{configuration.REST_GW_PORT},
+				Ports:       []int{mh.S.opts.RestGwPort},
 				DesiredPods: 1,
 				ActualPods:  actualRestGw,
 				Hosts:       hosts,
@@ -352,12 +352,12 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis",
 			Components:  cpuComps,
 			Status:      checkCompStatus(cpuComps),
-			Ports:       []int{configuration.HTTP_PORT, configuration.CLIENTS_PORT, configuration.WS_PORT, 8222},
+			Ports:       []int{mh.S.opts.UiPort, mh.S.opts.Port, mh.S.opts.Websocket.Port, mh.S.opts.HTTPPort},
 			DesiredPods: 1,
 			ActualPods:  1,
 			Hosts:       hosts,
 		})
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", configuration.REST_GW_PORT))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", mh.S.opts.RestGwPort))
 		healthy := false
 		restGwComps := []models.SysComponent{defaultSystemComp("memphis-rest-gateway", healthy)}
 		if err == nil {
@@ -399,7 +399,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			Name:        "memphis-rest-gateway",
 			Components:  restGwComps,
 			Status:      checkCompStatus(restGwComps),
-			Ports:       []int{configuration.REST_GW_PORT},
+			Ports:       []int{mh.S.opts.RestGwPort},
 			DesiredPods: 1,
 			ActualPods:  actualRestGw,
 			Hosts:       hosts,
@@ -939,7 +939,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
 			serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

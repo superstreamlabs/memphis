@@ -279,12 +279,12 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	if username == "root" && user.UserType != "root" {
 		errMsg := "Change root password: This operation can be done only by the root user"
 		serv.Warnf("EditPassword: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != "root" {
 		errMsg := "Change user password: This operation can be done only by the user or the root user"
 		serv.Warnf("EditPassword: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
@@ -376,10 +376,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -438,10 +438,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 		"rest_gw_host":            REST_GW_HOST,
 		// 		"ui_host":                 UI_HOST,
 		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		// "ws_port":                 configuration.WS_PORT,
-		// 		"http_port":               configuration.HTTP_PORT,
-		// 		"clients_port":            configuration.CLIENTS_PORT,
-		// 		"rest_gw_port":            configuration.REST_GW_PORT,
+		// "ws_port":                 serv.opts.Websocket.Port,
+		// 		"http_port":               serv.opts.UiPort,
+		// 		"clients_port":            serv.opts.Port,
+		// 		"rest_gw_port":            serv.opts.RestGwPort,
 		// 	})
 		// 	return
 		// }
@@ -494,10 +494,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -531,7 +531,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	usernameError := validateEmail(username)
 	if usernameError != nil {
 		serv.Warnf(usernameError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 	fullName := strings.ToLower(body.FullName)
@@ -614,10 +614,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -638,7 +638,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if exist {
 		errMsg := "A user with the name " + body.Username + " already exists"
 		serv.Warnf("CreateUser: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -646,14 +646,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
 		serv.Warnf("CreateUser: " + userTypeError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
 		serv.Warnf("CreateUser: " + usernameError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 
@@ -662,7 +662,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userType == "management" {
 		if body.Password == "" {
 			serv.Warnf("CreateUser: Password was not provided for user " + username)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
@@ -768,7 +768,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 	if user.Username == username {
 		serv.Warnf("RemoveUser: You can not remove your own user")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
 
@@ -780,12 +780,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 	if !exist {
 		serv.Warnf("RemoveUser: User does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
 		serv.Warnf("RemoveUser: You can not remove the root user")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 

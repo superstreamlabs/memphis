@@ -46,8 +46,8 @@ func CreateTag(name string, entity_type string, entity_id int, color string) err
 		stationArr = append(stationArr, entity_id)
 	case "schema":
 		schemaArr = append(schemaArr, entity_id)
-	// case "user":
-	// 	userArr = append(userArr, entity_id)
+		// case "user":
+		// 	userArr = append(userArr, entity_id)
 	}
 	_, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
@@ -127,7 +127,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	if exist {
 		errMsg := "Tag with the name " + body.Name + " already exists"
 		serv.Warnf("CreateNewTag: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	var color string
@@ -168,7 +168,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	err := validateEntityType(entity)
 	if err != nil {
 		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 	var entity_id int
@@ -185,7 +185,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
 			serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 		exist, station, err := db.GetStationByName(station_name.Ext())
@@ -231,7 +231,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 
 	default:
 		serv.Warnf("RemoveTag: Tag " + body.Name + " at " + entity + " " + body.EntityName + ": unsupported entity type")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tag " + body.Name + ", unsupported entity type"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tag " + body.Name + ", unsupported entity type"})
 		return
 	}
 
@@ -274,7 +274,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	var entity_id int
 	if err != nil {
 		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 	var stationName StationName
@@ -284,7 +284,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		station_name, err := StationNameFromStr(body.EntityName)
 		if err != nil {
 			serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 		exist, station, err := db.GetStationByName(station_name.Ext())
@@ -329,7 +329,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 	default:
 		serv.Warnf("UpdateTagsForEntity: " + entity + " " + body.EntityName + ": unsupported entity type")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Could not remove tags, unsupported entity type"})
 		return
 	}
 	var message string
@@ -488,7 +488,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 		err := validateEntityType(entity)
 		if err != nil {
 			serv.Warnf("GetTags: " + body.EntityType + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	}

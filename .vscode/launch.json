@@ -8,22 +8,13 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--js",
-                "--auth",
-                "memphis",
-                "--websocket_no_tls",
-                "-m",
-                "8222"
+                "-c",
+                "conf/debug/stand-alone.conf"
             ],
             "env": {
                 "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
-                "HTTP_PORT": "9000",
-                "REST_GW_PORT": "4444",
-                "CLIENTS_PORT": "6666",
-                "WS_PORT": "7770",
                 "ROOT_PASSWORD": "memphis",
-                "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
                 "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
                 "K8S_NAMESPACE": "memphis",
@@ -51,19 +42,13 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--websocket_no_tls",
                 "-c",
-                "debug/memphis-0.conf"
+                "conf/debug/memphis-0.conf"
             ],
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "HTTP_PORT": "9000",
-                "REST_GW_PORT": "4444",
-                "CLIENTS_PORT": "6666",
-                "WS_PORT": "7770",
                 "ROOT_PASSWORD": "memphis",
-                "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
                 "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
                 "K8S_NAMESPACE": "memphis",
@@ -77,7 +62,6 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-0",
                 "POSTGRESQL_USER": "memphis" ,
 	            "POSTGRESQL_PASS": "memphis",
 	            "POSTGRESQL_DBNAME": "memphis",
@@ -92,19 +76,13 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--websocket_no_tls",
                 "-c",
-                "debug/memphis-1.conf"
+                "conf/debug/memphis-1.conf"
             ],
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "HTTP_PORT": "9001",
-                "REST_GW_PORT": "4444",
-                "CLIENTS_PORT": "6667",
-                "WS_PORT": "7771",
                 "ROOT_PASSWORD": "memphis",
-                "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
                 "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
                 "K8S_NAMESPACE": "memphis",
@@ -118,7 +96,6 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-1",
                 "POSTGRESQL_USER": "memphis" ,
 	            "POSTGRESQL_PASS": "memphis",
 	            "POSTGRESQL_DBNAME": "memphis",
@@ -133,19 +110,13 @@
             "mode": "auto",
             "program": "${workspaceFolder}/main.go",
             "args": [
-                "--websocket_no_tls",
                 "-c",
-                "debug/memphis-2.conf"
+                "conf/debug/memphis-2.conf"
             ],
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "HTTP_PORT": "9002",
-                "REST_GW_PORT": "4444",
-                "CLIENTS_PORT": "6668",
-                "WS_PORT": "7772",
                 "ROOT_PASSWORD": "memphis",
-                "CONNECTION_TOKEN": "memphis",
                 "ANALYTICS": "false",
                 "ANALYTICS_TOKEN": "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm",
                 "K8S_NAMESPACE": "memphis",
@@ -159,7 +130,7 @@
                 // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
                 // "SANDBOX_ENV": "false",
                 "EXPORTER": "false",
-                "SERVER_NAME": "memphis-2",
+
                 "POSTGRESQL_USER": "memphis" ,
 	            "POSTGRESQL_PASS": "memphis",
 	            "POSTGRESQL_DBNAME": "memphis",

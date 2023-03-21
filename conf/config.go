@@ -22,20 +22,11 @@ type Configuration struct {
 	MEMPHIS_VERSION                string
 	DEV_ENV                        string
 	LOCAL_CLUSTER_ENV              bool
-	HTTP_PORT                      int
-	REST_GW_PORT                   int
-	CLIENTS_PORT                   int
-	WS_PORT                        int
-	WS_TLS                         bool
-	WS_TOKEN                       string
 	JWT_SECRET                     string
 	JWT_EXPIRES_IN_MINUTES         int
 	REFRESH_JWT_SECRET             string
 	REFRESH_JWT_EXPIRES_IN_MINUTES int
 	ROOT_PASSWORD                  string
-	CONNECTION_TOKEN               string
-	MAX_MESSAGE_SIZE_MB            int
-	SHOWABLE_ERROR_STATUS_CODE     int
 	DOCKER_ENV                     string
 	ANALYTICS                      string
 	ANALYTICS_TOKEN                string
@@ -48,7 +39,6 @@ type Configuration struct {
 	// GITHUB_CLIENT_SECRET           string
 	// SANDBOX_REDIRECT_URI           string
 	POISON_MSGS_RETENTION_IN_HOURS int
-	SERVER_NAME                    string
 	// SANDBOX_SLACK_BOT_TOKEN        string
 	// SANDBOX_SLACK_CHANNEL_ID       string
 	// SANDBOX_UI_URL                 string

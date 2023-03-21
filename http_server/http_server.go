@@ -13,14 +13,11 @@ package http_server
 
 import (
 	"fmt"
-	"memphis/conf"
 	"memphis/http_server/routes"
 	"memphis/server"
 )
 
 func InitializeHttpServer(s *server.Server) {
-	configuration := conf.GetConfig()
-
 	handlers := server.Handlers{
 		Producers:  server.ProducersHandler{S: s},
 		Consumers:  server.ConsumersHandler{S: s},
@@ -32,5 +29,5 @@ func InitializeHttpServer(s *server.Server) {
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)
-	httpServer.Run(fmt.Sprintf("0.0.0.0:%v", configuration.HTTP_PORT))
+	httpServer.Run(fmt.Sprintf("0.0.0.0:%v", s.Opts().UiPort))
 }

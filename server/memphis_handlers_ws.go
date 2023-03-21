@@ -66,7 +66,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 			keys, values := subs.Array()
 			for i, updateFiller := range values {
 				k := keys[i]
-				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+configuration.SERVER_NAME)
+				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+s.opts.ServerName)
 				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
 					subs.Delete(k)
@@ -74,7 +74,9 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 				}
 				update, err := updateFiller()
 				if err != nil {
-					s.Errorf("memphisWSLoop: " + err.Error())
+					if !IsNatsErr(err, JSStreamNotFoundErr) {
+						s.Errorf("memphisWSLoop: " + err.Error())
+					}
 					continue
 				}
 				updateRaw, err := json.Marshal(update)
@@ -134,7 +136,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			Name string `json:"name"`
 		}
 
-		broName := brokerName{configuration.SERVER_NAME}
+		broName := brokerName{s.opts.ServerName}
 		serverName, err := json.Marshal(broName)
 
 		if err != nil {

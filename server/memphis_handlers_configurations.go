@@ -113,9 +113,9 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			UI_HOST = fmt.Sprintf("http://localhost:%v", configuration.HTTP_PORT)
+			UI_HOST = fmt.Sprintf("http://localhost:%v", s.opts.UiPort)
 		} else {
-			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, configuration.HTTP_PORT)
+			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, s.opts.UiPort)
 		}
 		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
@@ -130,9 +130,9 @@ func (s *Server) initializeConfigurations() {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			REST_GW_HOST = fmt.Sprintf("http://localhost:%v", configuration.REST_GW_PORT)
+			REST_GW_HOST = fmt.Sprintf("http://localhost:%v", s.opts.RestGwPort)
 		} else {
-			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, configuration.REST_GW_PORT)
+			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, s.opts.RestGwPort)
 		}
 		restGWHost = models.ConfigurationsValue{
 			Key:   "rest_gw_host",
@@ -176,7 +176,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 	if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
 		serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
 	} else {
 		err := changeTSTime(body.TSTimeSec)
 		if err != nil {

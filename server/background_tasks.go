@@ -271,7 +271,7 @@ func (s *Server) CalculateSelfThroughput() error {
 			Bytes:       v.OutBytes,
 			BytesPerSec: currentRead,
 		}
-		serverName := configuration.SERVER_NAME
+		serverName := s.opts.ServerName
 		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
 			Name:  serverName,

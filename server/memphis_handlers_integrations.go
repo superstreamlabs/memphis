@@ -71,7 +71,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		integration = s3Integration
 	default:
 		serv.Warnf("CreateIntegration: Unsupported integration type - " + integrationType)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
 		return
 	}
 
@@ -127,7 +127,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 
 	default:
 		serv.Warnf("UpdateIntegration: Unsupported integration type - " + body.Name)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
 		return
 	}
 
