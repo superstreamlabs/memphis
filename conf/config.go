@@ -41,8 +41,8 @@ type Configuration struct {
 	ANALYTICS_TOKEN                string
 	K8S_NAMESPACE                  string
 	LOGS_RETENTION_IN_DAYS         string
-	GOOGLE_CLIENT_ID               string
-	GOOGLE_CLIENT_SECRET           string
+	// GOOGLE_CLIENT_ID               string
+	// GOOGLE_CLIENT_SECRET           string
 	// SANDBOX_ENV                    string
 	// GITHUB_CLIENT_ID               string
 	// GITHUB_CLIENT_SECRET           string
