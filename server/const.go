@@ -49,6 +49,7 @@ const (
 	DEFAULT_REST_GW_PORT       = 4444
 	DEFAULT_WS_TOKEN           = "memphis"
 	DEFAULT_CLIENTS_TOKEN      = "memphis"
+	DEFAULT_ROOT_PASSWORD      = "memphis"
 	SHOWABLE_ERROR_STATUS_CODE = 666
 
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with

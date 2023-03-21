@@ -14,7 +14,6 @@
             "env": {
                 "DEV_ENV": "true",
                 "DOCKER_ENV": "true",
-                "ROOT_PASSWORD": "memphis",
                 "ANALYTICS": "false",
                 "K8S_NAMESPACE": "memphis",
                 "LOGS_RETENTION_IN_DAYS": "30",
@@ -47,7 +46,6 @@
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "ROOT_PASSWORD": "memphis",
                 "ANALYTICS": "false",
                 "K8S_NAMESPACE": "memphis",
                 "LOGS_RETENTION_IN_DAYS": "30",
@@ -80,7 +78,6 @@
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "ROOT_PASSWORD": "memphis",
                 "ANALYTICS": "false",
                 "K8S_NAMESPACE": "memphis",
                 "LOGS_RETENTION_IN_DAYS": "30",
@@ -113,7 +110,6 @@
             "env": {
                 "DEV_ENV": "true",
                 "LOCAL_CLUSTER_ENV": "true",
-                "ROOT_PASSWORD": "memphis",
                 "ANALYTICS": "false",
                 "K8S_NAMESPACE": "memphis",
                 "LOGS_RETENTION_IN_DAYS": "30",

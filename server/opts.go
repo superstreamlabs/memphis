@@ -1381,6 +1381,13 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 		o.UiPort = int(v.(int64))
 	case "rest_gw_port":
 		o.RestGwPort = int(v.(int64))
+	case "root_password":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error root_password config: can not be empty"})
+			return
+		}
+		o.RootPassword = value
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -4653,6 +4660,9 @@ func setBaselineOptions(opts *Options) {
 		opts.Websocket.SameOrigin = false
 		opts.Websocket.NoTLS = true
 		opts.Websocket.Token = DEFAULT_WS_TOKEN
+	}
+	if opts.RootPassword == _EMPTY_ {
+		opts.RootPassword = DEFAULT_ROOT_PASSWORD
 	}
 }
 

@@ -23,7 +23,6 @@ type Configuration struct {
 	LOCAL_CLUSTER_ENV              bool
 	JWT_SECRET                     string
 	REFRESH_JWT_SECRET             string
-	ROOT_PASSWORD                  string
 	DOCKER_ENV                     string
 	ANALYTICS                      string
 	K8S_NAMESPACE                  string
