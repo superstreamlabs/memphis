@@ -704,17 +704,9 @@ func KillRelevantConnections(ids []string) error {
 	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, ids)
 	if err != nil {
-		return []models.Connection{}, err
+		return err
 	}
-	defer rows.Close()
-	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
-	if err != nil {
-		return []models.Connection{}, err
-	}
-	if len(connections) == 0 {
-		return []models.Connection{}, nil
-	}
-	return connections, nil
+	return nil
 }
 
 func GetActiveConnections() ([]models.Connection, error) {
@@ -859,6 +851,7 @@ func RemoveAllAuditLogsByStation(name string) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 func UpdateAuditLogsOfDeletedUser(userId int) error {
@@ -2000,7 +1993,7 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
-		return true, models.SchemaVersion{}, err
+		return true, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
 	if err != nil {
@@ -2493,6 +2486,8 @@ func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
 func GetShcemaVersionsCount(schemaId int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -2573,7 +2568,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions", removeSchemaVersionsQuery)
 	if err != nil {
-		return models.Schema{}, 0, err
+		return err
 	}
 
 	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
@@ -2593,7 +2588,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	if err != nil {
 		return err
 	}
-	return newSchema, rowsAffected, nil
+	return nil
 }
 
 func InsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
