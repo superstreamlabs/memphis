@@ -619,6 +619,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "metadata") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
+						fmt.Println("name: " + mount.Name)
+						fmt.Println("mount: " + mountpath)
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
 							fmt.Println(mount.Name)
