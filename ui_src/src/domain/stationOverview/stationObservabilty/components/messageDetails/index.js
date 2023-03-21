@@ -132,7 +132,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 message: data.message?.data,
                 headers: data.message?.headers || {},
                 poisonedCGs: poisonedCGs,
-                validationError: data.validation_error
+                validationError: data.validation_error || ''
             };
             setMessageDetails(messageDetails);
         }
@@ -148,13 +148,16 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
 
     return (
         <>
-            <div className={`message-wrapper ${isDls && 'message-wrapper-dls'}`}>
+            <div className={`message-wrapper ${isDls && !isFailedSchemaMessage && 'message-wrapper-dls'}`}>
                 {loadMessageData ? (
                     loader()
                 ) : stationState?.selectedRowId && Object.keys(messageDetails).length > 0 ? (
                     <>
                         <div className="row-data">
                             <Space direction="vertical">
+                                {messageDetails?.validationError !== '' && (
+                                    <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
+                                )}
                                 <CustomCollapse
                                     collapsible={!stationState?.stationMetaData?.is_native}
                                     tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
@@ -172,9 +175,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                     />
                                 )}
                                 <CustomCollapse status={false} header="Metadata" data={messageDetails?.details} />
-                                {messageDetails?.validationError !== '' && (
-                                    <CustomCollapse status={false} header="Validation Error" data={messageDetails?.validationError} message={true} />
-                                )}
+
                                 <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
                                 <CustomCollapse
                                     status={false}

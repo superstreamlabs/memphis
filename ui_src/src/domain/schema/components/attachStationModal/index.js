@@ -71,7 +71,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
             let native_staion = res.filter((station) => station.is_native);
             if (update) {
                 let attachedStation = native_staion.filter((station) => {
-                    return attachedStations.includes(station.name);
+                    return attachedStations?.includes(station.name);
                 });
                 setAllStations(attachedStation);
             } else {
@@ -130,11 +130,11 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                                 <div
                                     key={station.name}
                                     className="station-row"
-                                    onClick={() => handleCheckedClick(station.name, isCheck.includes(station.name) ? false : true)}
+                                    onClick={() => handleCheckedClick(station.name, isCheck?.includes(station.name) ? false : true)}
                                 >
                                     <CheckboxComponent
                                         disabled={!update && attachedStations?.includes(station.name)}
-                                        checked={isCheck.includes(station.name) || (!update && attachedStations.includes(station.name))}
+                                        checked={isCheck?.includes(station.name) || (!update && attachedStations?.includes(station.name))}
                                         id={station.name}
                                         onChange={(e) => handleCheckedClick(e.target.id, e.target.checked)}
                                         name={station.name}

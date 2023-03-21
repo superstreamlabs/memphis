@@ -209,7 +209,7 @@ const Messages = () => {
         const id = tabValue === tabs[1] ? message?._id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                <CheckboxComponent className="check-box-message" checked={isCheck.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+                <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
 
                 <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
                     {selectedRowIndex === id && <div className="hr-selected"></div>}

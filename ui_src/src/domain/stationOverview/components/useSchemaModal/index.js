@@ -59,7 +59,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
 
     useEffect(() => {
         if (searchInput.length > 1) {
-            const results = schemaList.filter((schema) => schema?.name?.toLowerCase().includes(searchInput));
+            const results = schemaList.filter((schema) => schema?.name?.toLowerCase()?.includes(searchInput));
             setSchemasList(results);
         } else {
             setSchemasList(copyOfSchemaList);

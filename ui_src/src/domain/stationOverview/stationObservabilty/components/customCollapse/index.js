@@ -11,17 +11,17 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import warningCircle from '../../../../../assets/images/warningCircle.svg';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
 import { messageParser } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
-import { StationStoreContext } from '../../..';
 
 const { Panel } = Collapse;
 
@@ -71,6 +71,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 <p className="title">
                                     {header}
                                     {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
+                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} />}
                                 </p>
                                 <status is="x3d">
                                     <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
@@ -100,12 +101,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 {parser === 'json' || parser === 'protobuf' ? <pre>{payload}</pre> : <p>{payload}</p>}
                             </>
                         )}
-                        {header === 'Validation Error' && (
-                            <div className="copy-section">
-                                <Copy data={data}></Copy>
-                                <OverflowTip text={data} width={'calc(100% - 10px)'}>
-                                    {data}
-                                </OverflowTip>
+                        {header === 'Validation error' && (
+                            <div className="message">
+                                <p>{data}</p>
                             </div>
                         )}
                     </div>

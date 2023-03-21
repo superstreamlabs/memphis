@@ -290,7 +290,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     );
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
-                    stationData = stationData.filter((station) => station.station?.name.includes(searchInput));
+                    stationData = stationData.filter((station) => station.station?.name?.includes(searchInput));
                 }
                 dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: stationData });
                 return;
@@ -304,7 +304,9 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 }
                 if (filterTerms?.find((o) => o?.name === 'created')) {
                     objCreated = filterTerms?.find((o) => o?.name === 'created')?.fields?.map((element) => element?.toLowerCase());
-                    data = data?.filter((item) => (objCreated?.length > 0 ? objCreated?.includes(item.created_by_username) : !objCreated?.includes(item.created_by_username)));
+                    data = data?.filter((item) =>
+                        objCreated?.length > 0 ? objCreated?.includes(item.created_by_username) : !objCreated?.includes(item.created_by_username)
+                    );
                 }
                 if (filterTerms?.find((o) => o?.name === 'type')) {
                     objType = filterTerms?.find((o) => o?.name === 'type')?.fields[0];
@@ -315,7 +317,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     data = data.filter((item) => item.used === objUsage);
                 }
                 if (searchInput !== '' && searchInput?.length >= 2) {
-                    data = data.filter((schema) => schema?.name.includes(searchInput));
+                    data = data.filter((schema) => schema?.name?.includes(searchInput));
                 }
                 dispatch({ type: 'SET_SCHEMA_FILTERED_LIST', payload: data });
                 return;

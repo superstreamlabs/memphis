@@ -25,6 +25,9 @@
             justify-content: space-between;
             .title {
                 display: flex;
+                .validation-image{
+                    width: 20px !important;
+                }
             }
         }
 
@@ -60,7 +63,7 @@
     }
 
     .message {
-        font-size: 11px;
+        font-size: 12px;
         color: #84818a;
         font-family: 'Inter';
         max-height: 190px;

@@ -56,8 +56,8 @@ function Users() {
 
     useEffect(() => {
         if (searchInput.length > 1) {
-            const results = userList.filter(
-                (userData) => userData?.username?.toLowerCase().includes(searchInput) || userData?.user_type?.toLowerCase().includes(searchInput)
+            const results = userList?.filter(
+                (userData) => userData?.username?.toLowerCase()?.includes(searchInput) || userData?.user_type?.toLowerCase()?.includes(searchInput)
             );
             setUsersList(results);
         } else {

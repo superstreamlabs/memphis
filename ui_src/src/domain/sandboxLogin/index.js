@@ -54,8 +54,8 @@ const SandboxLogin = (props) => {
             history.push(referer);
         }
         const url = window.location.href;
-        const shouldSigninWithGoogle = url.includes('?code=') && url.includes('&scope=email');
-        const shouldSigninWithGithub = url.includes('?code=');
+        const shouldSigninWithGoogle = url?.includes('?code=') && url?.includes('&scope=email');
+        const shouldSigninWithGithub = url?.includes('?code=');
         if (shouldSigninWithGoogle) {
             splittedUrl = url.split('?code=');
             window.history.pushState({}, null, splittedUrl[0]);

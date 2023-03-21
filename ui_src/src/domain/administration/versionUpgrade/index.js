@@ -42,7 +42,7 @@ function VersionUpgrade() {
             const version = latest[0].name;
             setVersion(version);
             const data = await GithubRequest(RELEASE_NOTES_URL);
-            const mdFiles = data.filter((file) => file.name.endsWith('.md') && file.name !== 'README.md' && file.name.includes(version));
+            const mdFiles = data.filter((file) => file?.name.endsWith('.md') && file?.name !== 'README.md' && file?.name?.includes(version));
             if (mdFiles.length === 0) {
                 console.log('No matching files found');
                 return;

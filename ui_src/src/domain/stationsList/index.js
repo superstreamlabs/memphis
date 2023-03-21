@@ -86,7 +86,7 @@ const StationsList = () => {
                         {state.stationFilteredList?.map((station) => (
                             <StationBoxOverview
                                 key={station?.station?.id}
-                                isCheck={isCheck.includes(station?.station?.name)}
+                                isCheck={isCheck?.includes(station?.station?.name)}
                                 handleCheckedClick={handleCheckedClick}
                                 station={station}
                             />
@@ -102,7 +102,7 @@ const StationsList = () => {
                     itemContent={(index, station) => (
                         <StationBoxOverview
                             key={station?.station?.id}
-                            isCheck={isCheck.includes(station?.station?.name)}
+                            isCheck={isCheck?.includes(station?.station?.name)}
                             handleCheckedClick={handleCheckedClick}
                             station={station}
                         />
