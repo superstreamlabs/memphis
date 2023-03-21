@@ -21,8 +21,6 @@ import (
 type Configuration struct {
 	DEV_ENV                        string
 	LOCAL_CLUSTER_ENV              bool
-	JWT_SECRET                     string
-	REFRESH_JWT_SECRET             string
 	DOCKER_ENV                     string
 	ANALYTICS                      string
 	K8S_NAMESPACE                  string

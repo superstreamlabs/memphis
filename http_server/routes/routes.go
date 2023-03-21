@@ -37,6 +37,10 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 		AllowFiles:       true,
 	}))
 	mainRouter := router.Group("/api")
+	mainRouter.Use(func(c *gin.Context) {
+		c.Set("server", handlers.Consumers.S)
+		c.Next()
+	})
 	mainRouter.Use(middlewares.Authenticate)
 
 	utils.InitializeValidations()

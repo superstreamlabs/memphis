@@ -183,7 +183,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
-	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
+	token, err := at.SignedString([]byte(serv.opts.MemphisHttpJwtSecret))
 	if err != nil {
 		return "", "", err
 	}
@@ -191,7 +191,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
 
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))
+	refreshToken, err := at.SignedString([]byte(serv.opts.MemphisHttpRefreshJwtSecret))
 	if err != nil {
 		return "", "", err
 	}
