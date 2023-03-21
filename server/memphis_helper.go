@@ -587,6 +587,14 @@ func (s *Server) Opts() *Options {
 	return s.opts
 }
 
+func (s *Server) AnalyticsToken() string {
+	return ANALYTICS_TOKEN
+}
+
+func (s *Server) MemphisVersion() string {
+	return VERSION
+}
+
 func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
 	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
 

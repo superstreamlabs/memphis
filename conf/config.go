@@ -19,7 +19,6 @@ import (
 )
 
 type Configuration struct {
-	MEMPHIS_VERSION                string
 	DEV_ENV                        string
 	LOCAL_CLUSTER_ENV              bool
 	JWT_SECRET                     string
@@ -29,7 +28,6 @@ type Configuration struct {
 	ROOT_PASSWORD                  string
 	DOCKER_ENV                     string
 	ANALYTICS                      string
-	ANALYTICS_TOKEN                string
 	K8S_NAMESPACE                  string
 	LOGS_RETENTION_IN_DAYS         string
 	// GOOGLE_CLIENT_ID               string

@@ -106,7 +106,7 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 		os.Exit(1)
 	}
 
-	err = analytics.InitializeAnalytics()
+	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}

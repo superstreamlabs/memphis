@@ -53,6 +53,7 @@ const (
 
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
 	COMP_WITH_NATS_VERSION = "2.9.15"
+	ANALYTICS_TOKEN        = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
 
 	// PROTO is the currently supported protocol.
 	// 0 was the original
