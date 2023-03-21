@@ -440,7 +440,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType, user.Username)
+	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -448,7 +448,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if rowsUpdated == 1 {
-		_, _, err = db.UpsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
+		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -682,7 +682,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			return
 		}
 	}
-	newSchemaVersion, rowsUpdated, err := db.UpsertNewSchemaVersion(versionNumber, user.ID, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
+	newSchemaVersion, rowsUpdated, err := db.InsertNewSchemaVersion(versionNumber, user.ID, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
 	if err != nil {
 		serv.Warnf("CreateNewVersion: " + err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})

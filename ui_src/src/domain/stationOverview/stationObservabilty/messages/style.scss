@@ -273,5 +273,13 @@
         gap: 20px;
         height: calc(100% - 100px);
         overflow: scroll;
+        .purge-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Inter';
+            font-size: 12px;
+            color: rgba(74, 73, 92, 0.8);
+        }
     }
 }

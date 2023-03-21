@@ -40,7 +40,8 @@ import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { DOC_URL } from '../../config';
+import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
+import { compareVersions } from '../../services/valueConvertor';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -48,8 +49,6 @@ const overlayStyles = {
     paddingTop: '5px',
     paddingBottom: '5px'
 };
-
-const latestRelease = 'https://api.github.com/repos/Memphisdev/memphis/releases';
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
@@ -72,8 +71,9 @@ function SideBar() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
             if (data) {
-                const latest = await GithubRequest(latestRelease);
-                dispatch({ type: 'IS_LATEST', payload: latest[0].name.replace('v', '').replace('-beta', '') >= data.version });
+                const latest = await GithubRequest(LATEST_RELEASE_URL);
+                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', ''));
+                dispatch({ type: 'IS_LATEST', payload: is_latest });
                 setSystemVersion(data.version);
             }
         } catch (error) {}

@@ -100,12 +100,6 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	// dbInstance, err := db.InitializeDbConnection(s)
-	// if err != nil {
-	// 	s.Errorf("Failed initializing db connection: " + err.Error())
-	// 	os.Exit(1)
-	// }
-
 	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
 	if err != nil {
 		s.Errorf("Failed initializing PostgreSQL db connection: " + err.Error())
@@ -129,7 +123,6 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
 		s.Errorf("Failed to create root user: " + err.Error())
-		// db.Close(dbInstance, s)
 		os.Exit(1)
 	}
 
@@ -203,7 +196,6 @@ func main() {
 	}
 
 	dbPostgresSql := runMemphis(s)
-	// defer db.Close(dbConnection, s)
 	defer db.ClosePostgresSql(dbPostgresSql, s)
 	// defer analytics.Close()
 	s.WaitForShutdown()

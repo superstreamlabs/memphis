@@ -1858,7 +1858,6 @@ func checkCompStatus(components []models.SysComponent) string {
 }
 
 func getDbStorageSize() (float64, float64, error) {
-	// var configuration = conf.GetConfig()
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := db.PostgresConnection.Client.Acquire(ctx)
@@ -1870,12 +1869,11 @@ func getDbStorageSize() (float64, float64, error) {
 	query := `SELECT pg_database_size($1) AS db_size,
 	(SELECT coalesce(sum(pg_total_relation_size(relid)), 0) 
 	 FROM pg_catalog.pg_statio_all_tables) AS total_size`
-	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_using_schema", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_db_storagr_size", query)
 	if err != nil {
 		return 0, 0, err
 	}
-	// TODO: change "memphis" to configuration.DB_NAME
-	err = conn.Conn().QueryRow(ctx, stmt.Name, "memphis").Scan(&dbStorageSize, &totalSize)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.POSTGRESQL_DBNAME).Scan(&dbStorageSize, &totalSize)
 	if err != nil {
 		return 0, 0, err
 	}

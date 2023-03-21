@@ -212,7 +212,7 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
-		descriptor TEXT,
+		descriptor bytea,
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
@@ -704,9 +704,17 @@ func KillRelevantConnections(ids []string) error {
 	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, ids)
 	if err != nil {
-		return err
+		return []models.Connection{}, err
 	}
-	return nil
+	defer rows.Close()
+	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
+	if err != nil {
+		return []models.Connection{}, err
+	}
+	if len(connections) == 0 {
+		return []models.Connection{}, nil
+	}
+	return connections, nil
 }
 
 func GetActiveConnections() ([]models.Connection, error) {
@@ -851,7 +859,6 @@ func RemoveAllAuditLogsByStation(name string) error {
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 func UpdateAuditLogsOfDeletedUser(userId int) error {
@@ -928,7 +935,7 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, stations[0], nil
 }
 
-func UpsertNewStation(
+func InsertNewStation(
 	stationName string,
 	userId int,
 	username string,
@@ -972,7 +979,7 @@ func UpsertNewStation(
 		) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_station", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_station", query)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1448,7 +1455,6 @@ func UpdateProducersConnection(connectionId string, isActive bool) error {
 }
 
 func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
-	var producer models.Producer
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := PostgresConnection.Client.Acquire(ctx)
@@ -1461,15 +1467,19 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	err = conn.QueryRow(ctx, stmt.Name, name, connectionId).Scan(&producer)
-	if err == pgx.ErrNoRows {
-		return false, models.Producer{}, nil
-	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, connectionId)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-
-	return true, producer, nil
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
@@ -1529,7 +1539,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string) (models.Producer, int64, error) {
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string) (models.Producer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1551,7 +1561,7 @@ func UpsertNewProducer(name string, stationId int, producerType string, connecti
 		type) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_producer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
@@ -1816,7 +1826,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	return true, consumers[0], nil
 }
 
-func UpsertNewConsumer(name string,
+func InsertNewConsumer(name string,
 	stationId int,
 	consumerType string,
 	connectionIdObj string,
@@ -1854,7 +1864,7 @@ func UpsertNewConsumer(name string,
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
 	RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_consumer", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
 	if err != nil {
 		return models.Consumer{}, 0, err
 	}
@@ -1924,7 +1934,7 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON c.station_id = s.id
 		LEFT JOIN connections AS con ON c.connection_id = con.id
@@ -1990,7 +2000,7 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return true, models.SchemaVersion{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
 	if err != nil {
@@ -2110,13 +2120,13 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	query := `
 		SELECT
 			c.name,
-			con.client_address
+			con.client_address,
 			c.is_active,
 			c.is_deleted,
 			c.created_by,
 			c.created_by_username,
 			c.max_ack_time_ms,
-			c.max_msg_deliveries,
+			c.max_msg_deliveries
 		FROM
 			consumers AS c
 			INNER JOIN connections AS con ON c.connection_id = con.id
@@ -2311,12 +2321,29 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 		return []models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemaVersions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemaVersionsRes, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return []models.SchemaVersion{}, err
 	}
-	if len(schemaVersions) == 0 {
+	if len(schemaVersionsRes) == 0 {
 		return []models.SchemaVersion{}, nil
+	}
+	schemaVersions := []models.SchemaVersion{}
+	for _, v := range schemaVersionsRes {
+		version := models.SchemaVersion{
+			ID:                v.ID,
+			VersionNumber:     v.VersionNumber,
+			Active:            v.Active,
+			CreatedBy:         v.CreatedBy,
+			CreatedByUsername: v.CreatedByUsername,
+			CreatedAt:         v.CreatedAt,
+			SchemaContent:     v.SchemaContent,
+			SchemaId:          v.SchemaId,
+			MessageStructName: v.MessageStructName,
+			Descriptor:        string(v.Descriptor),
+		}
+
+		schemaVersions = append(schemaVersions, version)
 	}
 	return schemaVersions, nil
 }
@@ -2339,14 +2366,27 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		return models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
 	if len(schemas) == 0 {
 		return models.SchemaVersion{}, nil
 	}
-	return schemas[0], nil
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
+	}
+
+	return schemaVersion, nil
 }
 
 func UpdateSchemasOfDeletedUser(userId int) error {
@@ -2411,14 +2451,26 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		return true, models.SchemaVersion{}, err
 	}
 	defer rows.Close()
-	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersion])
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
 	if len(schemas) == 0 {
 		return false, models.SchemaVersion{}, nil
 	}
-	return true, schemas[0], nil
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
+	}
+	return true, schemaVersion, nil
 }
 
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
@@ -2441,8 +2493,6 @@ func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
 func GetShcemaVersionsCount(schemaId int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -2523,7 +2573,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions", removeSchemaVersionsQuery)
 	if err != nil {
-		return err
+		return models.Schema{}, 0, err
 	}
 
 	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
@@ -2543,10 +2593,10 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
+func InsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2562,7 +2612,7 @@ func UpsertNewSchema(schemaName string, schemaType string, createdByUsername str
 		created_by_username) 
     VALUES($1, $2, $3) RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema", query)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -2606,7 +2656,7 @@ func UpsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2628,7 +2678,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 		descriptor)
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_schema_version", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema_version", query)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -2636,7 +2686,7 @@ func UpsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	var schemaVersionId int
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, descriptor)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor))
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -3186,7 +3236,7 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) {
 }
 
 // Tags Functions
-func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.Tag, error) {
+func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.Tag, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3204,7 +3254,7 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		schemas) 
     VALUES($1, $2, $3, $4, $5) RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_tag", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_tag", query)
 	if err != nil {
 		return models.Tag{}, err
 	}
@@ -3250,7 +3300,7 @@ func UpsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 
 }
 
-func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
+func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -3265,7 +3315,7 @@ func UpsertEntityToTag(tagName string, entity string, entity_id int) error {
 	conn, _ := PostgresConnection.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
-	stmt, err := conn.Conn().Prepare(ctx, "upsert_entity_to_tag", query)
+	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
 	if err != nil {
 		return err
 	}
@@ -3465,17 +3515,17 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 }
 
 // Sandbox Functions
-func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	user := models.SandboxUser{}
-	return user, nil
-}
+// func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
+	// user := models.SandboxUser{}
+	// return user, nil
+// }
 
-func UpdateSandboxUserAlreadyLoggedIn(userId int) {
+// func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 	// sandboxUsersCollection.UpdateOne(context.TODO(),
 	// 	bson.M{"_id": userId},
 	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
 	// )
-}
+// }
 
 // func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 // 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -3505,7 +3555,7 @@ func UpdateSandboxUserAlreadyLoggedIn(userId int) {
 // 	return true, users[0], nil
 // }
 
-func UpdateSkipGetStartedSandbox(username string) error {
+// func UpdateSkipGetStartedSandbox(username string) error {
 	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
 	// 	bson.M{"username": username},
 	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
@@ -3513,8 +3563,8 @@ func UpdateSkipGetStartedSandbox(username string) error {
 	// if err != nil {
 	// 	return err
 	// }
-	return nil
-}
+// 	return nil
+// }
 
 // Image Functions
 func InsertImage(name string, base64Encoding string) error {

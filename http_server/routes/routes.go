@@ -47,7 +47,7 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeTagsRoutes(mainRouter, handlers)
 	InitializeSchemasRoutes(mainRouter, handlers)
-	InitializeSandboxRoutes(mainRouter)
+	// InitializeSandboxRoutes(mainRouter)
 	InitializeIntegrationsRoutes(mainRouter, handlers)
 	InitializeConfigurationsRoutes(mainRouter, handlers)
 	ui.InitializeUIRoutes(router)

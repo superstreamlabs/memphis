@@ -66,7 +66,7 @@ func handleConnectMessage(client *client) error {
 	var (
 		isNativeMemphisClient bool
 		username              string
-		objID                 string
+		connectionId          string
 	)
 	switch len(splittedMemphisInfo) {
 	case 2:
@@ -104,9 +104,9 @@ func handleConnectMessage(client *client) error {
 	}
 
 	if isNativeMemphisClient {
-		objID := splittedMemphisInfo[0]
+		connectionId := splittedMemphisInfo[0]
 
-		exist, _, err = db.GetConnectionByID(objID)
+		exist, _, err = db.GetConnectionByID(connectionId)
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
 			client.Errorf("handleConnectMessage: " + errMsg)
@@ -114,19 +114,19 @@ func handleConnectMessage(client *client) error {
 		}
 
 		if exist {
-			err = connectionsHandler.ReliveConnection(objID)
+			err = connectionsHandler.ReliveConnection(connectionId)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
-			err = producersHandler.ReliveProducers(objID)
+			err = producersHandler.ReliveProducers(connectionId)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
-			err = consumersHandler.ReliveConsumers(objID)
+			err = consumersHandler.ReliveConsumers(connectionId)
 			if err != nil {
 
 				errMsg := "User " + username + ": " + err.Error()
@@ -134,17 +134,17 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		} else {
-			err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), objID, user.Username)
+			err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
 				return err
 			}
 		}
-		updateNewClientWithConfig(client, objID)
+		updateNewClientWithConfig(client, connectionId)
 	}
 
-	client.memphisInfo = memphisClientInfo{username: username, connectionId: objID, isNative: isNativeMemphisClient}
+	client.memphisInfo = memphisClientInfo{username: username, connectionId: connectionId, isNative: isNativeMemphisClient}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if !exist && shouldSendAnalytics { // exist indicates it is a reconnect
 		splitted := strings.Split(client.opts.Lang, ".")

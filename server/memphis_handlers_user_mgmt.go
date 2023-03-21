@@ -147,8 +147,12 @@ func validateEmail(email string) error {
 	return nil
 }
 
+// type userToTokens interface {
+// 	models.User | models.SandboxUser
+// }
+
 type userToTokens interface {
-	models.User | models.SandboxUser
+	models.User
 }
 
 func CreateTokens[U userToTokens](user U) (string, string, error) {
@@ -164,15 +168,15 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	case models.SandboxUser:
-		atClaims["user_id"] = u.ID
-		atClaims["username"] = u.Username
-		atClaims["user_type"] = u.UserType
-		atClaims["creation_date"] = u.CreatedAt
-		atClaims["already_logged_in"] = u.AlreadyLoggedIn
-		atClaims["avatar_id"] = u.AvatarId
-		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
-		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+		// case models.SandboxUser:
+		// 	atClaims["user_id"] = u.ID
+		// 	atClaims["username"] = u.Username
+		// 	atClaims["user_type"] = u.UserType
+		// 	atClaims["creation_date"] = u.CreatedAt
+		// 	atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		// 	atClaims["avatar_id"] = u.AvatarId
+		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
@@ -498,10 +502,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
-	if configuration.SANDBOX_ENV == "true" {
-		c.IndentedJSON(200, gin.H{"show_signup": false})
-		return
-	}
+	// if configuration.SANDBOX_ENV == "true" {
+	// 	c.IndentedJSON(200, gin.H{"show_signup": false})
+	// 	return
+	// }
 
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
@@ -987,12 +991,15 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	username := strings.ToLower(user.Username)
 	err = db.UpdateSkipGetStarted(username)
 	if err != nil {
-		err2 := db.UpdateSkipGetStartedSandbox(username)
-		if err2 != nil {
-			serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+		// err2 := db.UpdateSkipGetStartedSandbox(username)
+		// if err2 != nil {
+		// 	serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 	return
+		// }
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

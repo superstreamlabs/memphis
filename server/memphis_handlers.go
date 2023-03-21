@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"memphis/conf"
@@ -24,7 +23,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Handlers struct {
@@ -46,9 +44,6 @@ var configuration = conf.GetConfig()
 type srvMemphis struct {
 	serverID               string
 	nuid                   *nuid.NUID
-	dbClient               *mongo.Client
-	dbCtx                  context.Context
-	dbCancel               context.CancelFunc
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
 	jsApiMu                sync.Mutex
@@ -62,11 +57,7 @@ type memphisWS struct {
 
 func (s *Server) InitializeMemphisHandlers() {
 	serv = s
-	// s.memphis.dbClient = dbInstance.Client
-	// s.memphis.dbCtx = dbInstance.Ctx
-	// s.memphis.dbCancel = dbInstance.Cancel
 	s.memphis.nuid = nuid.New()
-	// s.memphis.serverID is initialized earlier, when logger is configured
 
 	s.initializeSDKHandlers()
 	s.initializeConfigurations()
@@ -95,7 +86,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 	}
 	schemaName := ""
 	schemaVersionNumber := 0
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}

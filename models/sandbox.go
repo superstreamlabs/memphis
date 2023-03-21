@@ -11,26 +11,24 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
-import (
-	"time"
-)
+// "time"
 
-type SandboxUser struct {
-	ID              int       `json:"id" bson:"_id"`
-	Username        string    `json:"username" bson:"username"`
-	Email           string    `json:"email" bson:"email"`
-	FirstName       string    `json:"first_name" bson:"first_name"`
-	LastName        string    `json:"last_name" bson:"last_name"`
-	Password        string    `json:"password" bson:"password"`
-	UserType        string    `json:"user_type" bson:"user_type"`
-	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
-	CreatedAt       time.Time `json:"created_at" bson:"created_at"`
-	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
-	ProfilePic      string    `json:"profile_pic" bson:"profile_pic"`
-	SkipGetStarted  bool      `json:"skip_get_started" bson:"skip_get_started"`
-}
+// type SandboxUser struct {
+// 	ID              int       `json:"id" bson:"_id"`
+// 	Username        string    `json:"username" bson:"username"`
+// 	Email           string    `json:"email" bson:"email"`
+// 	FirstName       string    `json:"first_name" bson:"first_name"`
+// 	LastName        string    `json:"last_name" bson:"last_name"`
+// 	Password        string    `json:"password" bson:"password"`
+// 	UserType        string    `json:"user_type" bson:"user_type"`
+// 	AlreadyLoggedIn bool      `json:"already_logged_in" bson:"already_logged_in"`
+// 	CreatedAt       time.Time `json:"created_at" bson:"created_at"`
+// 	AvatarId        int       `json:"avatar_id" bson:"avatar_id"`
+// 	ProfilePic      string    `json:"profile_pic" bson:"profile_pic"`
+// 	SkipGetStarted  bool      `json:"skip_get_started" bson:"skip_get_started"`
+// }
 
-type SandboxLoginSchema struct {
-	LoginType string `json:"login_type" binding:"required"`
-	Token     string `json:"token" binding:"required"`
-}
+// type SandboxLoginSchema struct {
+// 	LoginType string `json:"login_type" binding:"required"`
+// 	Token     string `json:"token" binding:"required"`
+// }

@@ -176,7 +176,14 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                     <CustomCollapse status={false} header="Validation Error" data={messageDetails?.validationError} message={true} />
                                 )}
                                 <CustomCollapse status={false} header="Headers" defaultOpen={false} data={messageDetails?.headers} message={true} />
-                                <CustomCollapse status={false} header="Payload" defaultOpen={true} data={messageDetails?.message} message={true} />
+                                <CustomCollapse
+                                    status={false}
+                                    header="Payload"
+                                    defaultOpen={true}
+                                    data={messageDetails?.message}
+                                    message={true}
+                                    schemaType={stationState?.schemaType}
+                                />
                             </Space>
                         </div>
                         {isDls && !isFailedSchemaMessage && (
