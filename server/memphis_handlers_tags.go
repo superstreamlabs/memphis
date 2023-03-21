@@ -46,8 +46,8 @@ func CreateTag(name string, entity_type string, entity_id int, color string) err
 		stationArr = append(stationArr, entity_id)
 	case "schema":
 		schemaArr = append(schemaArr, entity_id)
-	// case "user":
-	// 	userArr = append(userArr, entity_id)
+		// case "user":
+		// 	userArr = append(userArr, entity_id)
 	}
 	_, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr)
 	if err != nil {
