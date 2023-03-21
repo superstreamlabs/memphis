@@ -13,37 +13,37 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Producer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	StationId     primitive.ObjectID `json:"station_id" bson:"station_id"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	StationId         int       `json:"station_id"`
+	Type              string    `json:"type"`
+	ConnectionId      string    `json:"connection_id"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	IsActive          bool      `json:"is_active"`
+	CreatedAt         time.Time `json:"created_at"`
+	IsDeleted         bool      `json:"is_deleted"`
 }
 
 type ExtendedProducer struct {
-	ID            primitive.ObjectID `json:"id" bson:"_id"`
-	Name          string             `json:"name" bson:"name"`
-	Type          string             `json:"type" bson:"type"`
-	ConnectionId  primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	CreatedByUser string             `json:"created_by_user" bson:"created_by_user"`
-	CreationDate  time.Time          `json:"creation_date" bson:"creation_date"`
-	StationName   string             `json:"station_name" bson:"station_name"`
-	IsActive      bool               `json:"is_active" bson:"is_active"`
-	IsDeleted     bool               `json:"is_deleted" bson:"is_deleted"`
-	ClientAddress string             `json:"client_address" bson:"client_address"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	Type              string    `json:"type"`
+	ConnectionId      string    `json:"connection_id"`
+	CreatedBy         int       `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	CreatedAt         time.Time `json:"created_at"`
+	StationName       string    `json:"station_name"`
+	IsActive          bool      `json:"is_active"`
+	IsDeleted         bool      `json:"is_deleted"`
+	ClientAddress     string    `json:"client_address"`
 }
 
 type GetAllProducersByStationSchema struct {
-	StationName string `form:"station_name" binding:"required" bson:"station_name"`
+	StationName string `form:"station_name" binding:"required"`
 }
 
 type CreateProducerSchema struct {

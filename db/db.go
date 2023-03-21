@@ -14,7 +14,9 @@ package db
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 
 	"memphis/conf"
@@ -25,34 +27,18 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-
+	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var configuration = conf.GetConfig()
-var usersCollection *mongo.Collection
-var imagesCollection *mongo.Collection
-var stationsCollection *mongo.Collection
-var connectionsCollection *mongo.Collection
-var producersCollection *mongo.Collection
-var consumersCollection *mongo.Collection
-var systemKeysCollection *mongo.Collection
-var auditLogsCollection *mongo.Collection
-var tagsCollection *mongo.Collection
-var schemasCollection *mongo.Collection
-var schemaVersionCollection *mongo.Collection
-var sandboxUsersCollection *mongo.Collection
-var integrationsCollection *mongo.Collection
-var configurationsCollection *mongo.Collection
+
+var PostgresConnection DbPostgreSQLInstance
 
 const (
-	dbOperationTimeout = 20
+	DbOperationTimeout = 20
 )
 
 type logger interface {
@@ -60,82 +46,10 @@ type logger interface {
 	Errorf(string, ...interface{})
 }
 
-type DbInstance struct {
-	Client *mongo.Client
-	Ctx    context.Context
-	Cancel context.CancelFunc
-}
-
 type DbPostgreSQLInstance struct {
 	Client *pgxpool.Pool
 	Ctx    context.Context
 	Cancel context.CancelFunc
-}
-
-func InitializeDbConnection(l logger) (DbInstance, error) {
-	ctx, cancel := context.WithTimeout(context.TODO(), dbOperationTimeout*time.Second)
-
-	var clientOptions *options.ClientOptions
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetConnectTimeout(dbOperationTimeout * time.Second)
-	} else {
-		auth := options.Credential{
-			Username: configuration.MONGO_USER,
-			Password: configuration.MONGO_PASS,
-		}
-		if !configuration.EXTERNAL_MONGO {
-			auth.AuthSource = configuration.DB_NAME
-		}
-
-		clientOptions = options.Client().ApplyURI(configuration.MONGO_URL).SetAuth(auth).SetConnectTimeout(dbOperationTimeout * time.Second)
-	}
-
-	client, err := mongo.Connect(ctx, clientOptions)
-	if err != nil {
-		cancel()
-		return DbInstance{}, err
-	}
-
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		cancel()
-		return DbInstance{}, err
-	}
-	usersCollection = GetCollection("users", client)
-	imagesCollection = GetCollection("images", client)
-	stationsCollection = GetCollection("stations", client)
-	connectionsCollection = GetCollection("connections", client)
-	producersCollection = GetCollection("producers", client)
-	consumersCollection = GetCollection("consumers", client)
-	systemKeysCollection = GetCollection("system_keys", client)
-	auditLogsCollection = GetCollection("audit_logs", client)
-	tagsCollection = GetCollection("tags", client)
-	schemasCollection = GetCollection("schemas", client)
-	schemaVersionCollection = GetCollection("schema_versions", client)
-	sandboxUsersCollection = GetCollection("sandbox_users", client)
-	integrationsCollection = GetCollection("integrations", client)
-	configurationsCollection = GetCollection("configurations", client)
-
-	l.Noticef("Established connection with the DB")
-	return DbInstance{Client: client, Ctx: ctx, Cancel: cancel}, nil
-}
-
-func GetCollection(collectionName string, dbClient *mongo.Client) *mongo.Collection {
-	dbName := configuration.DB_NAME
-	if configuration.EXTERNAL_MONGO {
-		dbName = "memphis-db"
-	}
-	var collection *mongo.Collection = dbClient.Database(dbName).Collection(collectionName)
-	return collection
-}
-
-func Close(dbi DbInstance, l logger) {
-	defer dbi.Cancel()
-	defer func() {
-		if err := dbi.Client.Disconnect(dbi.Ctx); err != nil {
-			l.Errorf("Failed to close Mongodb client: " + err.Error())
-		}
-	}()
 }
 
 func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
@@ -145,174 +59,8 @@ func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
 	}()
 }
 
-func JoinTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-	query := `SELECT users
-    FROM users AS q
-    JOIN tags AS a ON q.id = a.users
-    WHERE q.id = $1`
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-
-	defer conn.Release()
-	_, err = conn.Conn().Prepare(ctx, "join", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, "join", 1)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func InsertToTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-	defer conn.Release()
-	query := `INSERT INTO tags (name, color, users, stations, schemas) 
-    VALUES($1, $2, $3, $4, $5);`
-	_, err = conn.Conn().Prepare(ctx, "insert into", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, "insert into", "sname", "red", "{1}", "{}", "{}")
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func SelectFromTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-	defer conn.Release()
-	query := `SELECT username FROM users WHERE username = $1`
-	_, err = conn.Conn().Prepare(ctx, "select from", query)
-	if err != nil {
-		return err
-	}
-	var username string
-	rows := conn.Conn().QueryRow(ctx, "select from", "test")
-
-	err = rows.Scan(&username)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return err
-		}
-		return err
-	}
-
-	return nil
-
-}
-
-func updateFieldInTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-	defer conn.Release()
-	query := `UPDATE users
-	SET username = $2
-	WHERE id = $1
-	RETURNING id, username;`
-	_, err = conn.Conn().Prepare(ctx, "update", query)
-	if err != nil {
-		return err
-	}
-	var username string
-	var id int
-	rows := conn.Conn().QueryRow(ctx, "update", 7, "test")
-	err = rows.Scan(&id, &username)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func dropRowInTable(dbPostgreSQL *pgxpool.Pool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := dbPostgreSQL.Acquire(ctx)
-	if err != nil {
-		cancelfunc()
-		return err
-	}
-	defer conn.Release()
-	query := `DELETE FROM users WHERE id = $1;`
-	_, err = conn.Conn().Prepare(ctx, "drop", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, "drop", 7)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// System Keys Functions
-func GetSystemKey(key string) (bool, models.SystemKey, error) {
-	filter := bson.M{"key": key}
-	var systemKey models.SystemKey
-	err := systemKeysCollection.FindOne(context.TODO(), filter).Decode(&systemKey)
-	if err == mongo.ErrNoDocuments {
-		return false, models.SystemKey{}, nil
-	}
-	if err != nil {
-		return true, models.SystemKey{}, err
-	}
-	return true, systemKey, nil
-}
-
-func InsertSystemKey(key string, value string) error {
-	systemKey := models.SystemKey{
-		ID:    primitive.NewObjectID(),
-		Key:   key,
-		Value: value,
-	}
-	_, err := systemKeysCollection.InsertOne(context.TODO(), systemKey)
-	return err
-}
-
-func EditSystemKey(key string, value string) error {
-	_, err := systemKeysCollection.UpdateOne(context.TODO(),
-		bson.M{"key": "analytics"},
-		bson.M{"$set": bson.M{"value": value}},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	addIndexQuery := "CREATE INDEX" + pgx.Identifier{indexName}.Sanitize() + "ON" + pgx.Identifier{tableName}.Sanitize() + "(" + pgx.Identifier{field}.Sanitize() + ")"
 	db := dbPostgreSQL.Client
@@ -324,17 +72,16 @@ func AddInexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQ
 }
 
 func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
+	cancelfunc := dbPostgreSQL.Cancel
+	defer cancelfunc()
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
 		station_name VARCHAR NOT NULL,
 		message TEXT NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);
+		PRIMARY KEY (id));
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
 
@@ -351,35 +98,29 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
-		id SERIAL NOT NULL,
-		created_by INTEGER NOT NULL,
+		id VARCHAR NOT NULL,
+		created_by INTEGER,
+		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMP NOT NULL,
 		client_address VARCHAR NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);`
+		PRIMARY KEY (id));`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
-		PRIMARY KEY (id)
-		);`
+		PRIMARY KEY (id));`
 
 	schemasTable := `
 	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
@@ -387,14 +128,16 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
-		PRIMARY KEY (id)
+		created_by_username VARCHAR NOT NULL,
+		PRIMARY KEY (id),
+		UNIQUE(name)
 		);
 		CREATE INDEX name
 		ON schemas (name);`
 
 	tagsTable := `CREATE TABLE IF NOT EXISTS tags(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
 		color VARCHAR NOT NULL,
 		users INTEGER[] ,
 		stations INTEGER[],
@@ -410,21 +153,19 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
-		connection_id INTEGER NOT NULL,
+		type enum_type_consumer NOT NULL DEFAULT 'application',
+		connection_id VARCHAR NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
-		created_by INTEGER NOT NULL,
-		is_active BOOL NOT NULL DEFAULT false,
-		is_deleted BOOL NOT NULL DEFAULT false,
+		created_by INTEGER,
+		created_by_username VARCHAR NOT NULL,
+		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMP NOT NULL,
+		is_deleted BOOL NOT NULL DEFAULT false,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
-		type enum_type_consumer NOT NULL DEFAULT 'application',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
@@ -433,7 +174,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES stations(id)
 		);
 		CREATE INDEX station_id
-		ON consumers (station_id);`
+		ON consumers (station_id);
+		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
 	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
@@ -442,39 +184,37 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		retention_type enum_retention_type NOT NULL DEFAULT 'message_age_sec',
+		retention_value SERIAL NOT NULL,
 		storage_type enum_storage_type NOT NULL DEFAULT 'file',
 		replicas SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		updated_at TIMESTAMP NOT NULL,
 		is_deleted BOOL NOT NULL,
-		idempotency_window_ms SERIAL NOT NULL,
-		is_native BOOL NOT NULL ,
-		tiered_storage_enabled BOOL NOT NULL,
-		dls_config JSON NOT NULL DEFAULT '{}',
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id)
-		);
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations (name, is_deleted) WHERE is_deleted = false;`
+		idempotency_window_ms SERIAL NOT NULL,
+		is_native BOOL NOT NULL ,
+		dls_configuration_poison BOOL NOT NULL DEFAULT true,
+		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
+		tiered_storage_enabled BOOL NOT NULL,
+		PRIMARY KEY (id));
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
 		version_number SERIAL NOT NULL,
-		active BOOL NOT NULL,
+		active BOOL NOT NULL DEFAULT false,
 		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMP NOT NULL,
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
-		descriptor TEXT,
+		descriptor bytea,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
+		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
 			FOREIGN KEY(schema_id)
 			REFERENCES schemas(id)
@@ -486,16 +226,14 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
 		station_id INTEGER NOT NULL,
-		connection_id INTEGER NOT NULL,	
-		created_by INTEGER NOT NULL,
-		is_active BOOL NOT NULL DEFAULT false,
-		is_deleted BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
 		type enum_producer_type NOT NULL DEFAULT 'application',
+		connection_id VARCHAR NOT NULL,	
+		created_by INTEGER NOT NULL,
+		created_by_username VARCHAR NOT NULL,
+		is_active BOOL NOT NULL DEFAULT true,
+		created_at TIMESTAMP NOT NULL,
+		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_created_by
-			FOREIGN KEY(created_by)
-			REFERENCES users(id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
@@ -504,18 +242,17 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 			REFERENCES connections(id)
 		);
 		CREATE INDEX producer_station_id
-		ON producers(station_id);`
+		ON producers(station_id);
+		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
 	db := dbPostgreSQL.Client
 	ctx := dbPostgreSQL.Ctx
-	cancelfunc := dbPostgreSQL.Cancel
 
 	_, err := db.Exec(ctx, usersTable)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -525,7 +262,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -535,7 +271,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -545,7 +280,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -555,7 +289,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -565,7 +298,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -575,7 +307,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -585,7 +316,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -594,7 +324,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -604,7 +333,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -613,7 +341,6 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
 		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			cancelfunc()
 			return err
 		}
 	}
@@ -622,8 +349,9 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 }
 
 func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), dbOperationTimeout*time.Second)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 
+	defer cancelfunc()
 	postgreSqlUser := configuration.POSTGRESQL_USER
 	postgreSqlPassword := configuration.POSTGRESQL_PASS
 	postgreSqlDbName := configuration.POSTGRESQL_DBNAME
@@ -637,18 +365,19 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 	}
 
 	config, err := pgxpool.ParseConfig(postgreSqlUrl)
+	if err != nil {
+		return DbPostgreSQLInstance{}, err
+	}
 	config.MaxConns = 5
 
 	if configuration.POSTGRESQL_TLS_ENABLED {
 		cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
 		if err != nil {
-			cancelfunc()
 			return DbPostgreSQLInstance{}, err
 		}
 
 		CACert, err := os.ReadFile(configuration.POSTGRESQL_TLS_CA)
 		if err != nil {
-			cancelfunc()
 			return DbPostgreSQLInstance{}, err
 		}
 
@@ -659,95 +388,184 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 
 	dbPostgreSQL, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 
 	err = dbPostgreSQL.Ping(ctx)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
 	l.Noticef("Established connection with the meta-data storage")
 	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
 	err = createTables(dbPostgre)
 	if err != nil {
-		cancelfunc()
 		return DbPostgreSQLInstance{}, err
 	}
-
-	return DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}, nil
+	PostgresConnection = DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}
+	return PostgresConnection, nil
 }
 
-// Configuration Functions
-func GetConfiguration(key string, isString bool) (bool, models.ConfigurationsStringValue, models.ConfigurationsIntValue, error) {
-	var configurationsStringValue models.ConfigurationsStringValue
-	var configurationsIntValue models.ConfigurationsIntValue
-	filter := bson.M{"key": key}
-	if isString {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsStringValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, configurationsStringValue, models.ConfigurationsIntValue{}, err
-	} else {
-		err := configurationsCollection.FindOne(context.TODO(), filter).Decode(&configurationsIntValue)
-		if err == mongo.ErrNoDocuments {
-			return false, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, nil
-		}
-		if err != nil {
-			return true, models.ConfigurationsStringValue{}, models.ConfigurationsIntValue{}, err
-		}
-		return true, models.ConfigurationsStringValue{}, configurationsIntValue, err
+// System Keys Functions
+func GetSystemKey(key string) (bool, models.SystemKey, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.SystemKey{}, err
 	}
+	defer conn.Release()
+	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_system_key", query)
+	if err != nil {
+		return true, models.SystemKey{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
+	if err != nil {
+		return true, models.SystemKey{}, err
+	}
+	defer rows.Close()
+	systemKeys, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SystemKey])
+	if err != nil {
+		return true, models.SystemKey{}, err
+	}
+	if len(systemKeys) == 0 {
+		return false, models.SystemKey{}, nil
+	}
+	return true, systemKeys[0], nil
 }
 
-func InsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
-	if isString {
-		config := models.ConfigurationsStringValue{
-			ID:    primitive.NewObjectID(),
-			Key:   key,
-			Value: stringValue,
-		}
-		_, err := configurationsCollection.InsertOne(context.TODO(), config)
-		if err != nil {
-			return err
-		}
-	} else {
-		config := models.ConfigurationsIntValue{
-			ID:    primitive.NewObjectID(),
-			Key:   key,
-			Value: intValue,
-		}
-		_, err := configurationsCollection.InsertOne(context.TODO(), config)
-		if err != nil {
-			return err
-		}
+func InsertSystemKey(key string, value string) error {
+	err := InsertConfiguration(key, value)
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func UpsertConfiguration(key string, stringValue string, intValue int, isString bool) error {
-	filter := bson.M{"key": key}
-	opts := options.Update().SetUpsert(true)
-	var update primitive.M
-	if isString {
-		update = bson.M{
-			"$set": bson.M{
-				"value": stringValue,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$set": bson.M{
-				"value": intValue,
-			},
+func EditConfigurationValue(key string, value string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE configurations SET value = $2 WHERE key = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_configuration_value", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// Configuration Functions
+func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.ConfigurationsValue{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_configuration", query)
+	if err != nil {
+		return true, models.ConfigurationsValue{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
+	if err != nil {
+		return true, models.ConfigurationsValue{}, err
+	}
+	defer rows.Close()
+	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsValue])
+	if err != nil {
+		return true, models.ConfigurationsValue{}, err
+	}
+	if len(configurations) == 0 {
+		return false, models.ConfigurationsValue{}, nil
+	}
+	if configurations[0].Value == "" {
+		return false, models.ConfigurationsValue{}, nil
+	}
+	return true, configurations[0], nil
+}
+
+func InsertConfiguration(key string, value string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO configurations( 
+			key, 
+			value) 
+		VALUES($1, $2) 
+		RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_configuration", query)
+	if err != nil {
+		return err
+	}
+
+	newConfiguration := models.ConfigurationsValue{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		key, value)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConfiguration.ID)
+		if err != nil {
+			return err
 		}
 	}
-	_, err := configurationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newConfiguration.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return errors.New("configuration" + key + " already exists")
+				} else {
+					return errors.New(pgErr.Detail)
+				}
+			} else {
+				return errors.New(pgErr.Message)
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func UpdateConfiguration(key string, value string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE configurations SET value = $2 WHERE key = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value)
 	if err != nil {
 		return err
 	}
@@ -756,104 +574,297 @@ func UpsertConfiguration(key string, stringValue string, intValue int, isString 
 
 // Connection Functions
 func InsertConnection(connection models.Connection) error {
-	_, err := connectionsCollection.InsertOne(context.TODO(), connection)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
-	return err
+	defer conn.Release()
+
+	query := `INSERT INTO connections ( 
+		id,
+		created_by, 
+		created_by_username,
+		is_active, 
+		created_at,
+		client_address) 
+    VALUES($1, $2, $3, $4, $5, $6) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_connection", query)
+	if err != nil {
+		return err
+	}
+
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
+		connection.CreatedBy, connection.CreatedByUsername, connection.IsActive, createdAt, connection.ClientAddress)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&connection.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return errors.New("connection " + connection.ID + " already exists")
+				} else {
+					return errors.New(pgErr.Detail)
+				}
+			} else {
+				return errors.New(pgErr.Message)
+			}
+		} else {
+			return err
+		}
+	}
+	return nil
 }
 
-func UpdateConnection(connectionId primitive.ObjectID, isActive bool) error {
-	_, err := connectionsCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
+func UpdateConnection(connectionId string, isActive bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET is_active = $1 WHERE id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateConncetionsOfDeletedUser(username string) error {
-	_, err := connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	)
+func UpdateConncetionsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetConnectionByID(connectionId primitive.ObjectID) (bool, models.Connection, error) {
-	filter := bson.M{"_id": connectionId}
-	var connection models.Connection
-	err := connectionsCollection.FindOne(context.TODO(), filter).Decode(&connection)
-	if err == mongo.ErrNoDocuments {
-		return false, connection, nil
-	} else if err != nil {
-		return true, connection, err
+func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Connection{}, err
 	}
-	return true, connection, nil
+	defer conn.Release()
+	query := `SELECT * FROM connections AS c WHERE id = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_connection_by_id", query)
+	if err != nil {
+		return true, models.Connection{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	if err != nil {
+		return true, models.Connection{}, err
+	}
+	defer rows.Close()
+	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
+	if err != nil {
+		return true, models.Connection{}, err
+	}
+	if len(connections) == 0 {
+		return false, models.Connection{}, nil
+	}
+	return true, connections[0], nil
 }
 
-func KillRelevantConnections(ids []primitive.ObjectID) error {
-	_, err := connectionsCollection.UpdateMany(context.TODO(),
-		bson.M{"_id": bson.M{"$in": ids}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+func KillRelevantConnections(ids []string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "kill_relevant_connections", query)
 	if err != nil {
 		return err
 	}
-
+	_, err = conn.Conn().Query(ctx, stmt.Name, ids)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func GetActiveConnections() ([]models.Connection, error) {
-	var connections []models.Connection
-	cursor, err := connectionsCollection.Find(context.TODO(), bson.M{"is_active": true})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return connections, err
+		return []models.Connection{}, err
 	}
-	if err = cursor.All(context.TODO(), &connections); err != nil {
-		return connections, err
+	defer conn.Release()
+	query := `SELECT * FROM connections WHERE is_active = true`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_connection", query)
+	if err != nil {
+		return []models.Connection{}, err
 	}
-
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Connection{}, err
+	}
+	defer rows.Close()
+	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
+	if err != nil {
+		return []models.Connection{}, err
+	}
+	if len(connections) == 0 {
+		return []models.Connection{}, nil
+	}
 	return connections, nil
 }
 
 // Audit Logs Functions
 func InsertAuditLogs(auditLogs []interface{}) error {
-	_, err := auditLogsCollection.InsertMany(context.TODO(), auditLogs)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+
+	defer conn.Release()
+	var auditLog []models.AuditLog
+
+	b, err := json.Marshal(auditLogs)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(b, &auditLog)
+	if err != nil {
+		return err
+	}
+
+	stationName := auditLog[0].StationName
+	message := auditLog[0].Message
+	createdBy := auditLog[0].CreatedBy
+	createdAt := auditLog[0].CreatedAt
+	createdByUserName := auditLog[0].CreatedByUsername
+
+	query := `INSERT INTO audit_logs ( 
+		station_name, 
+		message, 
+		created_by,
+		created_by_username,
+		created_at
+		) 
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_audit_logs", query)
+	if err != nil {
+		return err
+	}
+
+	newAuditLog := models.AuditLog{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		stationName, message, createdBy, createdByUserName, createdAt)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		err := rows.Scan(&newAuditLog.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
-	var auditLogs []models.AuditLog
-
-	cursor, err := auditLogsCollection.Find(context.TODO(), bson.M{"station_name": name, "creation_date": bson.M{
-		"$gte": (time.Now().AddDate(0, 0, -5)),
-	}})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.AuditLog{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &auditLogs); err != nil {
+	defer conn.Release()
+	query := `SELECT a.id, a.station_name, a.message, a.created_by, a.created_by_username, u.type, a.created_at FROM audit_logs AS a 
+		LEFT JOIN users AS u ON u.id = a.created_by 
+		WHERE a.station_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
+	if err != nil {
 		return []models.AuditLog{}, err
 	}
-
-	if len(auditLogs) == 0 {
-		auditLogs = []models.AuditLog{}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return []models.AuditLog{}, err
 	}
-
+	defer rows.Close()
+	auditLogs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AuditLog])
+	if err != nil {
+		return []models.AuditLog{}, err
+	}
+	if len(auditLogs) == 0 {
+		return []models.AuditLog{}, nil
+	}
 	return auditLogs, nil
 }
 
 func RemoveAllAuditLogsByStation(name string) error {
-	_, err := auditLogsCollection.DeleteMany(context.TODO(), bson.M{"station_name": name})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeAuditLogs := `DELETE FROM audit_logs
+	WHERE station_name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_station", removeAuditLogs)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func UpdateAuditLogsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE audit_logs SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -862,141 +873,350 @@ func RemoveAllAuditLogsByStation(name string) error {
 
 // Station Functions
 func GetActiveStations() ([]models.Station, error) {
-	var stations []models.Station
-	cursor, err := stationsCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Station{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
+	defer conn.Release()
+	query := `SELECT * FROM stations AS s WHERE s.is_deleted = false OR s.is_deleted IS NULL`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations", query)
+	if err != nil {
 		return []models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, nil
 	}
 	return stations, nil
 }
 
 func GetStationByName(name string) (bool, models.Station, error) {
-	var station models.Station
-	err := stationsCollection.FindOne(context.TODO(), bson.M{
-		"name": name,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		},
-	}).Decode(&station)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Station{}, nil
-	} else if err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
 		return true, models.Station{}, err
 	}
-	return true, station, nil
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false OR is_deleted IS NULL) LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_name", query)
+	if err != nil {
+		return true, models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return true, models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return false, models.Station{}, nil
+	}
+	return true, stations[0], nil
 }
 
-func UpsertNewStation(stationName string, username string, retentionType string, retentionValue int, storageType string, replicas int, schemaDetails models.SchemaDetails, idempotencyWindow int64, isNative bool, dlsConfiguration models.DlsConfiguration, tieredStorageEnabled bool) (models.Station, int64, error) {
-	var update bson.M
-	var emptySchemaDetailsResponse struct{}
-	newStation := models.Station{
-		ID:                   primitive.NewObjectID(),
-		Name:                 stationName,
-		CreatedByUser:        username,
-		CreationDate:         time.Now(),
-		IsDeleted:            false,
-		RetentionType:        retentionType,
-		RetentionValue:       retentionValue,
-		StorageType:          storageType,
-		Replicas:             replicas,
-		LastUpdate:           time.Now(),
-		Schema:               schemaDetails,
-		IdempotencyWindow:    idempotencyWindow,
-		IsNative:             isNative,
-		DlsConfiguration:     dlsConfiguration,
-		TieredStorageEnabled: tieredStorageEnabled,
-	}
-	if schemaDetails.SchemaName != "" {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"schema":                   newStation.Schema,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"is_native":                newStation.IsNative,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	} else {
-		update = bson.M{
-			"$setOnInsert": bson.M{
-				"_id":                      newStation.ID,
-				"retention_type":           newStation.RetentionType,
-				"retention_value":          newStation.RetentionValue,
-				"storage_type":             newStation.StorageType,
-				"replicas":                 newStation.Replicas,
-				"created_by_user":          newStation.CreatedByUser,
-				"creation_date":            newStation.CreationDate,
-				"last_update":              newStation.LastUpdate,
-				"schema":                   emptySchemaDetailsResponse,
-				"idempotency_window_in_ms": newStation.IdempotencyWindow,
-				"dls_configuration":        newStation.DlsConfiguration,
-				"is_native":                newStation.IsNative,
-				"tiered_storage_enabled":   newStation.TieredStorageEnabled,
-			},
-		}
-	}
-	filter := bson.M{"name": newStation.Name, "is_deleted": false}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+func InsertNewStation(
+	stationName string,
+	userId int,
+	username string,
+	retentionType string,
+	retentionValue int,
+	storageType string,
+	replicas int,
+	schemaName string,
+	schemaVersionUpdate int,
+	idempotencyWindow int64,
+	isNative bool,
+	dlsConfiguration models.DlsConfiguration,
+	tieredStorageEnabled bool) (models.Station, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
-	return newStation, updateResults.MatchedCount, nil
+	defer conn.Release()
+
+	query := `INSERT INTO stations ( 
+		name, 
+		retention_type, 
+		retention_value,
+		storage_type, 
+		replicas, 
+		created_by, 
+		created_by_username,
+		created_at, 
+		updated_at, 
+		is_deleted, 
+		schema_name,
+		schema_version_number,
+		idempotency_window_ms, 
+		is_native, 
+		dls_configuration_poison, 
+		dls_configuration_schemaverse,
+		tiered_storage_enabled
+		) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_station", query)
+	if err != nil {
+		return models.Station{}, 0, err
+	}
+
+	createAt := time.Now()
+	updatedAt := time.Now()
+	var stationId int
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled)
+	if err != nil {
+		return models.Station{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&stationId)
+		if err != nil {
+			return models.Station{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Station{}, 0, errors.New("Station" + stationName + " already exists")
+				} else {
+					return models.Station{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Station{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Station{}, 0, err
+		}
+	}
+
+	newStation := models.Station{
+		ID:                          stationId,
+		Name:                        stationName,
+		CreatedBy:                   userId,
+		CreatedByUsername:           username,
+		CreatedAt:                   createAt,
+		IsDeleted:                   false,
+		RetentionType:               retentionType,
+		RetentionValue:              retentionValue,
+		StorageType:                 storageType,
+		Replicas:                    replicas,
+		UpdatedAt:                   updatedAt,
+		SchemaName:                  schemaName,
+		SchemaVersionNumber:         schemaVersionUpdate,
+		IdempotencyWindow:           idempotencyWindow,
+		IsNative:                    isNative,
+		DlsConfigurationPoison:      dlsConfiguration.Poison,
+		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
+		TieredStorageEnabled:        tieredStorageEnabled,
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	return newStation, rowsAffected, nil
 }
 
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
-	var stations []models.ExtendedStation
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{
-			bson.D{{"is_deleted", false}},
-			bson.D{{"is_deleted", bson.D{{"$exists", false}}}},
-		}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "producers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "producers"}}}},
-		bson.D{{"$lookup", bson.D{{"from", "consumers"}, {"localField", "_id"}, {"foreignField", "station_id"}, {"as", "consumers"}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"retention_type", 1}, {"retention_value", 1}, {"storage_type", 1}, {"replicas", 1}, {"idempotency_window_in_ms", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"last_update", 1}, {"dls_configuration", 1}, {"is_native", 1}, {"producers", 1}, {"consumers", 1}, {"tiered_storage_enabled", 1}}}},
-	})
-	if err == mongo.ErrNoDocuments {
-		return []models.ExtendedStation{}, nil
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ExtendedStation{}, err
 	}
+	defer conn.Release()
+	query := `
+	SELECT s.*, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, ''), COALESCE(p.created_by, 0), COALESCE(p.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, ''),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(c.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
+	FROM stations AS s
+	LEFT JOIN producers AS p
+	ON s.id = p.station_id 
+	LEFT JOIN consumers AS c 
+	ON s.id = c.station_id
+	WHERE s.is_deleted = false
+	GROUP BY s.id,p.id,c.id`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
 
-	if err = cursor.All(context.TODO(), &stations); err != nil {
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
+	if err == pgx.ErrNoRows {
+		return []models.ExtendedStation{}, nil
+	}
+	defer rows.Close()
+	stationsMap := map[int]models.ExtendedStation{}
+	for rows.Next() {
+		var stationRes models.Station
+		var producer models.Producer
+		var consumer models.Consumer
+		if err := rows.Scan(
+			&stationRes.ID,
+			&stationRes.Name,
+			&stationRes.RetentionType,
+			&stationRes.RetentionValue,
+			&stationRes.StorageType,
+			&stationRes.Replicas,
+			&stationRes.CreatedBy,
+			&stationRes.CreatedByUsername,
+			&stationRes.CreatedAt,
+			&stationRes.UpdatedAt,
+			&stationRes.IsDeleted,
+			&stationRes.SchemaName,
+			&stationRes.SchemaVersionNumber,
+			&stationRes.IdempotencyWindow,
+			&stationRes.IsNative,
+			&stationRes.DlsConfigurationPoison,
+			&stationRes.DlsConfigurationSchemaverse,
+			&stationRes.TieredStorageEnabled,
+			&producer.ID,
+			&producer.Name,
+			&producer.StationId,
+			&producer.Type,
+			&producer.ConnectionId,
+			&producer.CreatedBy,
+			&producer.CreatedByUsername,
+			&producer.IsActive,
+			&producer.CreatedAt,
+			&producer.IsDeleted,
+			&consumer.ID,
+			&consumer.Name,
+			&consumer.StationId,
+			&consumer.Type,
+			&consumer.ConnectionId,
+			&consumer.ConsumersGroup,
+			&consumer.MaxAckTimeMs,
+			&consumer.CreatedBy,
+			&consumer.CreatedByUsername,
+			&consumer.IsActive,
+			&consumer.CreatedAt,
+			&consumer.IsDeleted,
+			&consumer.MaxMsgDeliveries,
+			&consumer.StartConsumeFromSeq,
+			&consumer.LastMessages,
+		); err != nil {
+			return []models.ExtendedStation{}, err
+		}
+		if _, ok := stationsMap[stationRes.ID]; ok {
+			tempStation := stationsMap[stationRes.ID]
+			if producer.ID != 0 {
+				tempStation.Producers = append(tempStation.Producers, producer)
+			}
+			if consumer.ID != 0 {
+				tempStation.Consumers = append(tempStation.Consumers, consumer)
+			}
+			stationsMap[stationRes.ID] = tempStation
+		} else {
+			producers := []models.Producer{}
+			consumers := []models.Consumer{}
+			if producer.ID != 0 {
+				producers = append(producers, producer)
+			}
+			if consumer.ID != 0 {
+				consumers = append(consumers, consumer)
+			}
+			station := models.ExtendedStation{
+				ID:                          stationRes.ID,
+				Name:                        stationRes.Name,
+				RetentionType:               stationRes.RetentionType,
+				RetentionValue:              stationRes.RetentionValue,
+				StorageType:                 stationRes.StorageType,
+				Replicas:                    stationRes.Replicas,
+				CreatedBy:                   stationRes.CreatedBy,
+				CreatedAt:                   stationRes.CreatedAt,
+				UpdatedAt:                   stationRes.UpdatedAt,
+				IdempotencyWindow:           stationRes.IdempotencyWindow,
+				IsNative:                    stationRes.IsNative,
+				DlsConfigurationPoison:      stationRes.DlsConfigurationPoison,
+				DlsConfigurationSchemaverse: stationRes.DlsConfigurationSchemaverse,
+				Producers:                   producers,
+				Consumers:                   consumers,
+				TieredStorageEnabled:        stationRes.TieredStorageEnabled,
+			}
+			stationsMap[station.ID] = station
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return []models.ExtendedStation{}, err
+	}
+	stations := getFilteredExtendedStations(stationsMap)
 	return stations, nil
 }
 
+func getFilteredExtendedStations(stationsMap map[int]models.ExtendedStation) []models.ExtendedStation {
+	stations := []models.ExtendedStation{}
+	for _, station := range stationsMap {
+		producersMap := map[string]models.Producer{}
+		for _, p := range station.Producers {
+			if _, ok := producersMap[p.Name]; ok {
+				if producersMap[p.Name].CreatedAt.Before(p.CreatedAt) {
+					producersMap[p.Name] = p
+				}
+			} else {
+				producersMap[p.Name] = p
+			}
+		}
+		producers := []models.Producer{}
+		for _, p := range producersMap {
+			producers = append(producers, p)
+		}
+
+		consumersMap := map[string]models.Consumer{}
+		for _, c := range station.Consumers {
+			if _, ok := consumersMap[c.Name]; ok {
+				if consumersMap[c.Name].CreatedAt.Before(c.CreatedAt) {
+					consumersMap[c.Name] = c
+				}
+			} else {
+				consumersMap[c.Name] = c
+			}
+		}
+		consumers := []models.Consumer{}
+		for _, c := range consumersMap {
+			consumers = append(consumers, c)
+		}
+		station.Consumers = consumers
+		station.Producers = producers
+		stations = append(stations, station)
+	}
+	return stations
+}
+
 func DeleteStationsByNames(stationNames []string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{
-			"name": bson.M{"$in": stationNames},
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations
+	SET is_deleted = true
+	WHERE name = ANY($1)
+	AND (is_deleted = false)`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_stations_by_names", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames)
 	if err != nil {
 		return err
 	}
@@ -1004,24 +1224,37 @@ func DeleteStationsByNames(stationNames []string) error {
 }
 
 func DeleteStation(name string) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": name,
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"is_deleted": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations
+	SET is_deleted = true
+	WHERE name = $1
+	AND (is_deleted = false)`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func AttachSchemaToStation(stationName string, schemaDetails models.SchemaDetails) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(), bson.M{"name": stationName, "is_deleted": false}, bson.M{"$set": bson.M{"schema": schemaDetails}})
+func AttachSchemaToStation(stationName string, schemaName string, versionNumber int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = $2, schema_version_number = $3
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "attach_schema_to_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, schemaName, versionNumber)
 	if err != nil {
 		return err
 	}
@@ -1029,60 +1262,52 @@ func AttachSchemaToStation(stationName string, schemaDetails models.SchemaDetail
 }
 
 func DetachSchemaFromStation(stationName string) error {
-	_, err := stationsCollection.UpdateOne(context.TODO(),
-		bson.M{
-			"name": stationName,
-			"$or": []interface{}{
-				bson.M{"is_deleted": false},
-				bson.M{"is_deleted": bson.M{"$exists": false}},
-			},
-		},
-		bson.M{"$set": bson.M{"schema": bson.M{}}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = '', schema_version_number = 0
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "detach_schema_from_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpsertStationDlsConfig(stationName string, dlsConfiguration models.DlsConfiguration) error {
-	filter := bson.M{
-		"name": stationName,
-		"$or": []interface{}{
-			bson.M{"is_deleted": false},
-			bson.M{"is_deleted": bson.M{"$exists": false}},
-		}}
-
-	update := bson.M{
-		"$set": bson.M{
-			"dls_configuration": dlsConfiguration,
-		},
+func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET dls_configuration_poison = $2, dls_configuration_schemaverse = $3
+	WHERE name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "update_station_dls_config", query)
+	if err != nil {
+		return err
 	}
-	opts := options.Update().SetUpsert(true)
-
-	_, err := stationsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, poison, schemaverse)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateIsNativeOldStations() error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"is_native": bson.M{"$exists": false}},
-		bson.M{"$set": bson.M{"is_native": true}},
-	)
+func UpdateStationsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	return nil
-}
-
-func UpdateStationsOfDeletedUser(username string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
-	)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
@@ -1090,48 +1315,79 @@ func UpdateStationsOfDeletedUser(username string) error {
 }
 
 func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
-	var stations []models.Station
-	cursor, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$unwind", bson.D{{"path", "$schema"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"schema.name", schemaName}, {"is_deleted", false}}}},
-		bson.D{{"$project", bson.D{{"name", 1}}}},
-	})
-	if err != nil {
-		return []string{}, err
-	}
-
-	if err = cursor.All(context.TODO(), &stations); err != nil {
-		return []string{}, err
-	}
-	if len(stations) == 0 {
-		return []string{}, nil
-	}
-
 	var stationNames []string
-	for _, station := range stations {
-		stationNames = append(stationNames, station.Name)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `
+		SELECT name FROM stations
+		WHERE schema_name = $1 AND is_deleted = false
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_names_using_schema", query)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var stationName string
+		err := rows.Scan(&stationName)
+		if err != nil {
+			return nil, err
+		}
+		stationNames = append(stationNames, stationName)
+	}
+
+	if rows.Err() != nil {
+		return nil, err
 	}
 
 	return stationNames, nil
+
 }
 
 func GetCountStationsUsingSchema(schemaName string) (int, error) {
-	filter := bson.M{"schema.name": schemaName, "is_deleted": false}
-	countStations, err := stationsCollection.CountDocuments(context.TODO(), filter)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM stations WHERE schema_name = $1 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_using_schema", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
 
-	return int(countStations), nil
+	return count, nil
 }
 
 func RemoveSchemaFromAllUsingStations(schemaName string) error {
-	_, err := stationsCollection.UpdateMany(context.TODO(),
-		bson.M{
-			"schema.name": schemaName,
-		},
-		bson.M{"$set": bson.M{"schema": bson.M{}}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_from_all_using_stations", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, schemaName)
 	if err != nil {
 		return err
 	}
@@ -1139,739 +1395,1595 @@ func RemoveSchemaFromAllUsingStations(schemaName string) error {
 }
 
 // Producer Functions
-func GetProducersByConnectionIDWithStationDetails(connectionId primitive.ObjectID) ([]models.ExtendedProducer, error) {
-	var producers []models.ExtendedProducer
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedProducer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
 	}
-	if err = cursor.All(context.TODO(), &producers); err != nil {
+	defer conn.Release()
+	query := `
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.is_active, p.created_at, p.is_deleted, s.name,
+	FROM producers AS p
+	LEFT JOIN stations AS s
+	ON s.id = p.station_id
+	WHERE p.connection_id = $1 AND p.is_active = true
+	GROUP BY p.id, s.id`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
+	if err != nil {
 		return []models.ExtendedProducer{}, err
 	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ExtendedProducer{}, nil
+	}
 	return producers, nil
+
 }
 
-func UpdateProducersConnection(connectionId primitive.ObjectID, isActive bool) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
+func UpdateProducersConnection(connectionId string, isActive bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = $1 WHERE connection_id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_producers_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetProducerByNameAndConnectionID(name string, connectionId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": name, "connection_id": connectionId}
-	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, err
-	}
+func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
-}
-
-func GetProducerByStationIDAndUsername(username string, stationId primitive.ObjectID, connectionId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": username, "station_id": stationId, "connection_id": connectionId}
-	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, err
-	}
+	defer conn.Release()
+	query := `SELECT * FROM producers WHERE name = $1 AND connection_id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_name_and_connection_id", query)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
-}
-
-func GetActiveProducerByStationID(producerName string, stationId primitive.ObjectID) (bool, models.Producer, error) {
-	filter := bson.M{"name": producerName, "station_id": stationId, "is_active": true}
-	var producer models.Producer
-	err := producersCollection.FindOne(context.TODO(), filter).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, producer, nil
-	} else if err != nil {
-		return true, producer, err
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, connectionId)
+	if err != nil {
+		return true, models.Producer{}, err
 	}
-	return true, producer, nil
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
-func UpsertNewProducer(name string, stationId primitive.ObjectID, producerType string, connectionIdObj primitive.ObjectID, createdByUser string) (models.Producer, int64, error) {
+func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_username", query)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, stationId, connectionId)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
+}
+
+func GetActiveProducerByStationID(producerName string, stationId int) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_producer_by_station_id", query)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, producerName, stationId)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return true, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
+}
+
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string) (models.Producer, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.Producer{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO producers ( 
+		name, 
+		station_id, 
+		connection_id,
+		created_by, 
+		created_by_username,
+		is_active, 
+		is_deleted, 
+		created_at, 
+		type) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
+	if err != nil {
+		return models.Producer{}, 0, err
+	}
+
+	var producerId int
+	createAt := time.Now()
+	isActive := true
+	isDeleted := false
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType)
+	if err != nil {
+		return models.Producer{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&producerId)
+		if err != nil {
+			return models.Producer{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.Producer{}, 0, err
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				return models.Producer{}, 0, errors.New(pgErr.Detail)
+			} else {
+				return models.Producer{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Producer{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
 	newProducer := models.Producer{
-		ID:            primitive.NewObjectID(),
-		Name:          name,
-		StationId:     stationId,
-		Type:          producerType,
-		ConnectionId:  connectionIdObj,
-		CreatedByUser: createdByUser,
-		IsActive:      true,
-		CreationDate:  time.Now(),
-		IsDeleted:     false,
+		ID:                producerId,
+		Name:              name,
+		StationId:         stationId,
+		Type:              producerType,
+		ConnectionId:      connectionIdObj,
+		CreatedBy:         createdByUser,
+		CreatedByUsername: createdByUsername,
+		IsActive:          isActive,
+		CreatedAt:         time.Now(),
+		IsDeleted:         isDeleted,
 	}
-
-	filter := bson.M{"name": newProducer.Name, "station_id": stationId, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":             newProducer.ID,
-			"type":            newProducer.Type,
-			"connection_id":   newProducer.ConnectionId,
-			"created_by_user": newProducer.CreatedByUser,
-			"creation_date":   newProducer.CreationDate,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := producersCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return newProducer, 0, err
-	}
-	return newProducer, updateResults.MatchedCount, nil
+	return newProducer, rowsAffected, nil
 }
 
 func GetAllProducers() ([]models.ExtendedProducer, error) {
-	var producers []models.ExtendedProducer
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &producers); err != nil {
+	defer conn.Release()
+	query := `
+		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted , c.client_address
+		FROM producers AS p
+		LEFT JOIN stations AS s ON p.station_id = s.id
+		LEFT JOIN connections AS c ON p.connection_id = c.id
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_producers", query)
+	if err != nil {
 		return []models.ExtendedProducer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ExtendedProducer{}, nil
 	}
 	return producers, nil
 }
 
-func GetProducersByStationID(stationId primitive.ObjectID) ([]models.ExtendedProducer, error) {
-	var producers []models.ExtendedProducer
-
-	cursor, err := producersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", stationId}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
-
+func GetProducersByStationID(stationId int) ([]models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.Producer{}, err
 	}
+	defer conn.Release()
 
-	if err = cursor.All(context.TODO(), &producers); err != nil {
-		return []models.ExtendedProducer{}, err
+	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
+	if err != nil {
+		return []models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return []models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.Producer{}, nil
 	}
 	return producers, nil
 }
 
-func DeleteProducerByNameAndStationID(name string, stationId primitive.ObjectID) (bool, models.Producer, error) {
-	var producer models.Producer
-	err := producersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": stationId, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&producer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Producer{}, nil
+func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
+	if err != nil {
+		return true, models.Producer{}, nil
 	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Producer{}, nil
+	}
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
 		return true, models.Producer{}, err
 	}
-	return true, producer, nil
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
-func DeleteProducersByStationID(stationId primitive.ObjectID) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+func DeleteProducersByStationID(stationId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CountActiveProudcersByStationID(stationId primitive.ObjectID) (int64, error) {
-	activeCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
+func CountActiveProudcersByStationID(stationId int) (int64, error) {
+	var activeCount int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM producers WHERE station_id = $1 AND is_active = true`
+	stmt, err := conn.Conn().Prepare(ctx, "count_active_producers_by_station_id", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&activeCount)
+	if err != nil {
+		return 0, err
+	}
+
 	return activeCount, nil
 }
 
 func CountAllActiveProudcers() (int64, error) {
-	producersCount, err := producersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	var producersCount int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM producers WHERE is_active = true`
+	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_producers", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&producersCount)
+	if err != nil {
+		return 0, err
+	}
+
 	return producersCount, nil
 }
 
-func UpdateProducersOfDeletedUser(username string) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	)
+func UpdateProducersOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func KillProducersByConnections(connectionIds []primitive.ObjectID) error {
-	_, err := producersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": bson.M{"$in": connectionIds}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+func KillProducersByConnections(connectionIds []string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE producers SET is_active = false WHERE connection_id = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "kill_producers_by_connections", query)
 	if err != nil {
 		return err
 	}
-
+	_, err = conn.Conn().Query(ctx, stmt.Name, connectionIds)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // Consumer Functions
-func GetActiveConsumerByCG(consumersGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"consumers_group": consumersGroup, "station_id": stationId, "is_deleted": false}
-	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Consumer{}, nil
-	}
+func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	return true, consumer, nil
+	defer conn.Release()
+
+	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND is_deleted = false LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, consumersGroup, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, nil
+	}
+	return true, consumers[0], nil
 }
 
-func UpsertNewConsumer(name string, stationId primitive.ObjectID, consumerType string, connectionIdObj primitive.ObjectID, createdByUser string, cgName string, maxAckTime int, maxMsgDeliveries int, startConsumeFromSequence uint64, lastMessages int64) (models.Consumer, int64, error) {
-	newConsumer := models.Consumer{
-		ID:                       primitive.NewObjectID(),
-		Name:                     name,
-		StationId:                stationId,
-		Type:                     consumerType,
-		ConnectionId:             connectionIdObj,
-		CreatedByUser:            createdByUser,
-		ConsumersGroup:           cgName,
-		IsActive:                 true,
-		CreationDate:             time.Now(),
-		IsDeleted:                false,
-		MaxAckTimeMs:             int64(maxAckTime),
-		MaxMsgDeliveries:         maxMsgDeliveries,
-		StartConsumeFromSequence: startConsumeFromSequence,
-		LastMessages:             lastMessages,
-	}
-	filter := bson.M{"name": newConsumer.Name, "station_id": stationId, "is_active": true, "is_deleted": false}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                         newConsumer.ID,
-			"type":                        newConsumer.Type,
-			"connection_id":               newConsumer.ConnectionId,
-			"created_by_user":             newConsumer.CreatedByUser,
-			"consumers_group":             newConsumer.ConsumersGroup,
-			"creation_date":               newConsumer.CreationDate,
-			"max_ack_time_ms":             newConsumer.MaxAckTimeMs,
-			"max_msg_deliveries":          newConsumer.MaxMsgDeliveries,
-			"start_consume_from_sequence": newConsumer.StartConsumeFromSequence,
-			"last_messages":               newConsumer.LastMessages,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := consumersCollection.UpdateOne(context.TODO(), filter, update, opts)
+func InsertNewConsumer(name string,
+	stationId int,
+	consumerType string,
+	connectionIdObj string,
+	createdBy int,
+	createdByUsername string,
+	cgName string,
+	maxAckTime int,
+	maxMsgDeliveries int,
+	startConsumeFromSequence uint64,
+	lastMessages int64) (models.Consumer, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
-		return newConsumer, 0, err
+		return models.Consumer{}, 0, err
 	}
-	return newConsumer, updateResults.MatchedCount, nil
+	defer conn.Release()
+
+	query := `INSERT INTO consumers ( 
+		name, 
+		station_id,
+		connection_id,
+		consumers_group,
+		max_ack_time_ms,
+		created_by,
+		created_by_username,
+		is_active, 
+		is_deleted, 
+		created_at,
+		max_msg_deliveries,
+		start_consume_from_seq,
+		last_msgs,
+		type) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+	RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
+	if err != nil {
+		return models.Consumer{}, 0, err
+	}
+
+	var consumerId int
+	createdAt := time.Now()
+	isActive := true
+	isDeleted := false
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name,
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+	if err != nil {
+		return models.Consumer{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&consumerId)
+		if err != nil {
+			return models.Consumer{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return models.Consumer{}, 0, err
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			fmt.Println(pgErr.Detail)
+			if pgErr.Detail != "" {
+				return models.Consumer{}, 0, errors.New(pgErr.Detail)
+			} else {
+				return models.Consumer{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Consumer{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newConsumer := models.Consumer{
+		ID:                  consumerId,
+		Name:                name,
+		StationId:           stationId,
+		Type:                consumerType,
+		ConnectionId:        connectionIdObj,
+		CreatedBy:           createdBy,
+		CreatedByUsername:   createdByUsername,
+		ConsumersGroup:      cgName,
+		IsActive:            isActive,
+		CreatedAt:           time.Now(),
+		IsDeleted:           isDeleted,
+		MaxAckTimeMs:        int64(maxAckTime),
+		MaxMsgDeliveries:    maxMsgDeliveries,
+		StartConsumeFromSeq: startConsumeFromSequence,
+		LastMessages:        lastMessages,
+	}
+	return newConsumer, rowsAffected, nil
 }
 
 func GetAllConsumers() ([]models.ExtendedConsumer, error) {
-	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-	})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
+	defer conn.Release()
+	query := `
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
+		FROM consumers AS c
+		LEFT JOIN stations AS s ON c.station_id = s.id
+		LEFT JOIN connections AS con ON c.connection_id = con.id
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers", query)
+	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
 
-func GetAllConsumersByStation(stationId primitive.ObjectID) ([]models.ExtendedConsumer, error) {
-	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"station_id", stationId}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"consumers_group", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"station_name", "$station.name"}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
+	defer conn.Release()
+	query := `
+		SELECT c.name, c.created_by, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
+		LEFT JOIN stations AS s ON s.id = c.station_id
+		LEFT JOIN connections AS con ON con.id = c.connection_id
+	WHERE
+		c.station_id = $1
+`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
+	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
 
-func DeleteConsumer(name string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	var consumer models.Consumer
-	err := consumersCollection.FindOneAndUpdate(context.TODO(),
-		bson.M{"name": name, "station_id": stationId, "is_active": true},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Consumer{}, nil
-	}
+func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
+	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	_, err = consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"name": name, "station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
-	if err == mongo.ErrNoDocuments {
+	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
 		return false, models.Consumer{}, err
 	}
+	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
+	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
-	return true, consumer, nil
+	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	return true, consumers[0], nil
 }
 
-func DeleteConsumersByStationID(stationId primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"station_id": stationId},
-		bson.M{"$set": bson.M{"is_active": false, "is_deleted": true}},
-	)
+func DeleteConsumersByStationID(stationId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func CountActiveConsumersInCG(consumersGroup string, stationId primitive.ObjectID) (int64, error) {
-	count, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "consumers_group": consumersGroup, "is_deleted": false})
+func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_deleted = false`
+	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId, consumersGroup).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
 	return count, nil
+
 }
 
-func CountActiveConsumersByStationID(stationId primitive.ObjectID) (int64, error) {
-	activeCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"station_id": stationId, "is_active": true})
+func CountActiveConsumersByStationID(stationId int) (int64, error) {
+	var activeCount int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND is_active = true`
+	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_by_station_id", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&activeCount)
+	if err != nil {
+		return 0, err
+	}
+
 	return activeCount, nil
 }
 
 func CountAllActiveConsumers() (int64, error) {
-	consumersCount, err := consumersCollection.CountDocuments(context.TODO(), bson.M{"is_active": true})
+	var consumersCount int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM consumers WHERE is_active = true`
+	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_producers", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&consumersCount)
+	if err != nil {
+		return 0, err
+	}
+
 	return consumersCount, nil
 }
 
-func GetConsumerGroupMembers(cgName string, stationId primitive.ObjectID) ([]models.CgMember, error) {
-	var consumers []models.CgMember
-
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"consumers_group", cgName}, {"station_id", stationId}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "connections"}, {"localField", "connection_id"}, {"foreignField", "_id"}, {"as", "connection"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$connection"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"name", 1}, {"created_by_user", 1}, {"is_active", 1}, {"is_deleted", 1}, {"max_ack_time_ms", 1}, {"max_msg_deliveries", 1}, {"client_address", "$connection.client_address"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}},
-	})
+func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.CgMember{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
+	query := `
+		SELECT
+			c.name,
+			con.client_address,
+			c.is_active,
+			c.is_deleted,
+			c.created_by,
+			c.created_by_username,
+			c.max_ack_time_ms,
+			c.max_msg_deliveries
+		FROM
+			consumers AS c
+			INNER JOIN connections AS con ON c.connection_id = con.id
+		WHERE
+			c.consumers_group = $1
+			AND c.station_id = $2
+		ORDER BY
+			c.created_at DESC
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_consumer_group_members", query)
+	if err != nil {
 		return []models.CgMember{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
+	if err != nil {
+		return []models.CgMember{}, err
+	}
+	defer rows.Close()
+
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.CgMember])
+	if err != nil {
+		return []models.CgMember{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.CgMember{}, nil
 	}
 	return consumers, nil
 }
 
-func GetConsumersByConnectionIDWithStationDetails(connectionId primitive.ObjectID) ([]models.ExtendedConsumer, error) {
-	var consumers []models.ExtendedConsumer
-	cursor, err := consumersCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"connection_id", connectionId}, {"is_active", true}}}},
-		bson.D{{"$lookup", bson.D{{"from", "stations"}, {"localField", "station_id"}, {"foreignField", "_id"}, {"as", "station"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$station"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"connection_id", 1}, {"created_by_user", 1}, {"creation_date", 1}, {"is_active", 1}, {"is_deleted", 1}, {"station_name", "$station.name"}}}},
-		bson.D{{"$project", bson.D{{"station", 0}, {"connection", 0}}}}})
+func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedConsumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
-	if err = cursor.All(context.TODO(), &consumers); err != nil {
+	defer conn.Release()
+	query := `
+		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		FROM consumers AS c
+		FROM
+		consumers AS c
+		LEFT JOIN stations AS s ON s.id = c.station_id
+		LEFT JOIN connections AS con ON con.id = c.connection_id
+	WHERE
+		c.connection_id = $1
+`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
+	if err != nil {
 		return []models.ExtendedConsumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
 }
 
-func GetActiveConsumerByStationID(consumerName string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
-	filter := bson.M{"name": consumerName, "station_id": stationId, "is_active": true}
-	var consumer models.Consumer
-	err := consumersCollection.FindOne(context.TODO(), filter).Decode(&consumer)
-	if err == mongo.ErrNoDocuments {
-		return false, consumer, nil
-	} else if err != nil {
-		return true, consumer, err
+func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Consumer{}, nil
 	}
-	return true, consumer, nil
+	defer conn.Release()
+	query := `SELECT * FROM consumers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_station_id", query)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, consumerName, stationId)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, nil
+	}
+	return true, consumers[0], nil
 }
 
-func UpdateConsumersConnection(connectionId primitive.ObjectID, isActive bool) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": connectionId},
-		bson.M{"$set": bson.M{"is_active": isActive}},
-	)
+func UpdateConsumersConnection(connectionId string, isActive bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = $1 WHERE connection_id = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, isActive, connectionId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateConsumersOfDeletedUser(username string) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)", "is_active": false}},
-	)
+func UpdateConsumersOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func KillConsumersByConnections(connectionIds []primitive.ObjectID) error {
-	_, err := consumersCollection.UpdateMany(context.TODO(),
-		bson.M{"connection_id": bson.M{"$in": connectionIds}},
-		bson.M{"$set": bson.M{"is_active": false}},
-	)
+func KillConsumersByConnections(connectionIds []string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE consumers SET is_active = false WHERE connection_id = ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "kill_consumers_by_connections", query)
 	if err != nil {
 		return err
 	}
-
+	_, err = conn.Conn().Query(ctx, stmt.Name, connectionIds)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // Schema Functions
 func GetSchemaByName(name string) (bool, models.Schema, error) {
-	var schema models.Schema
-	err := schemasCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&schema)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Schema{}, nil
-	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Schema{}, err
 	}
-	return true, schema, nil
+	defer conn.Release()
+	query := `SELECT * FROM schemas WHERE name = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_schema_by_name", query)
+	if err != nil {
+		return true, models.Schema{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Schema{}, err
+	}
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Schema])
+	if err != nil {
+		return true, models.Schema{}, err
+	}
+	if len(schemas) == 0 {
+		return false, models.Schema{}, nil
+	}
+	return true, schemas[0], nil
 }
 
-func GetSchemaVersionsBySchemaID(id primitive.ObjectID) ([]models.SchemaVersion, error) {
-	var schemaVersions []models.SchemaVersion
-	filter := bson.M{"schema_id": id}
-	findOptions := options.Find()
-	findOptions.SetSort(bson.M{"creation_date": -1})
-
-	cursor, err := schemaVersionCollection.Find(context.TODO(), filter, findOptions)
+func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.SchemaVersion{}, err
 	}
-	if err = cursor.All(context.TODO(), &schemaVersions); err != nil {
+	defer conn.Release()
+	query := `SELECT * FROM schema_versions WHERE schema_id=$1 ORDER BY created_at DESC`
+	stmt, err := conn.Conn().Prepare(ctx, "get_schema_versions_by_schema_id", query)
+	if err != nil {
+		cancelfunc()
 		return []models.SchemaVersion{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return []models.SchemaVersion{}, err
+	}
+	defer rows.Close()
+	schemaVersionsRes, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
+	if err != nil {
+		return []models.SchemaVersion{}, err
+	}
+	if len(schemaVersionsRes) == 0 {
+		return []models.SchemaVersion{}, nil
+	}
+	schemaVersions := []models.SchemaVersion{}
+	for _, v := range schemaVersionsRes {
+		version := models.SchemaVersion{
+			ID:                v.ID,
+			VersionNumber:     v.VersionNumber,
+			Active:            v.Active,
+			CreatedBy:         v.CreatedBy,
+			CreatedByUsername: v.CreatedByUsername,
+			CreatedAt:         v.CreatedAt,
+			SchemaContent:     v.SchemaContent,
+			SchemaId:          v.SchemaId,
+			MessageStructName: v.MessageStructName,
+			Descriptor:        string(v.Descriptor),
+		}
+
+		schemaVersions = append(schemaVersions, version)
 	}
 	return schemaVersions, nil
 }
 
-func GetActiveVersionBySchemaID(id primitive.ObjectID) (models.SchemaVersion, error) {
-	var schemaVersion models.SchemaVersion
-	err := schemaVersionCollection.FindOne(context.TODO(), bson.M{"schema_id": id, "active": true}).Decode(&schemaVersion)
+func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
+	defer conn.Release()
+	query := `SELECT * FROM schema_versions WHERE schema_id=$1 AND active=true LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_version_by_schema_id", query)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
+	if err != nil {
+		return models.SchemaVersion{}, err
+	}
+	if len(schemas) == 0 {
+		return models.SchemaVersion{}, nil
+	}
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
+	}
+
 	return schemaVersion, nil
 }
 
-func UpdateSchemasOfDeletedUser(username string) error {
-	_, err := schemasCollection.UpdateMany(context.TODO(),
-		bson.M{"created_by_user": username},
-		bson.M{"$set": bson.M{"created_by_user": username + "(deleted)"}},
+func UpdateSchemasOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := ` UPDATE schemas
+	SET created_by_username = CONCAT(created_by_username, '(deleted)')
+	WHERE created_by_username = (
+		SELECT username FROM users WHERE id = $1
 	)
+	AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schemas_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetSchemaVersionByNumberAndID(version int, schemaId primitive.ObjectID) (bool, models.SchemaVersion, error) {
-	var schemaVersion models.SchemaVersion
-	filter := bson.M{"schema_id": schemaId, "version_number": version}
-	err := schemaVersionCollection.FindOne(context.TODO(), filter).Decode(&schemaVersion)
-	if err == mongo.ErrNoDocuments {
-		return false, schemaVersion, nil
-	} else if err != nil {
-		return true, schemaVersion, err
+func UpdateSchemaVersionsOfDeletedUser(userId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := ` UPDATE schema_versions
+	SET created_by_username = CONCAT(created_by_username, '(deleted)')
+	WHERE created_by_username = (
+		SELECT username FROM users WHERE id = $1
+	)
+	AND created_by_username NOT LIKE '%(deleted)'`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schema_versions_of_deleted_user", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.SchemaVersion, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.SchemaVersion{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM schema_versions WHERE schema_id=$1 AND version_number=$2 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_version_by_number_and_id", query)
+	if err != nil {
+		return true, models.SchemaVersion{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaId, version)
+	if err != nil {
+		return true, models.SchemaVersion{}, err
+	}
+	defer rows.Close()
+	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
+	if err != nil {
+		return true, models.SchemaVersion{}, err
+	}
+	if len(schemas) == 0 {
+		return false, models.SchemaVersion{}, nil
+	}
+	schemaVersion := models.SchemaVersion{
+		ID:                schemas[0].ID,
+		VersionNumber:     schemas[0].VersionNumber,
+		Active:            schemas[0].Active,
+		CreatedBy:         schemas[0].CreatedBy,
+		CreatedByUsername: schemas[0].CreatedByUsername,
+		CreatedAt:         schemas[0].CreatedAt,
+		SchemaContent:     schemas[0].SchemaContent,
+		SchemaId:          schemas[0].SchemaId,
+		MessageStructName: schemas[0].MessageStructName,
+		Descriptor:        string(schemas[0].Descriptor),
 	}
 	return true, schemaVersion, nil
 }
 
-func UpdateSchemaActiveVersion(schemaId primitive.ObjectID, versionNumber int) error {
-	_, err := schemaVersionCollection.UpdateMany(context.TODO(),
-		bson.M{"schema_id": schemaId},
-		bson.M{"$set": bson.M{"active": false}},
-	)
+func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE schema_versions
+		SET active = CASE
+		WHEN version_number = $2 THEN true
+		ELSE false
+		END
+	WHERE schema_id = $1
+`
+	stmt, err := conn.Conn().Prepare(ctx, "update_schema_active_version", query)
 	if err != nil {
 		return err
 	}
-
-	_, err = schemaVersionCollection.UpdateOne(context.TODO(), bson.M{"schema_id": schemaId, "version_number": versionNumber}, bson.M{"$set": bson.M{"active": true}})
+	_, err = conn.Conn().Query(ctx, stmt.Name, schemaId, versionNumber)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetShcemaVersionsCount(schemaId primitive.ObjectID) (int, error) {
-	countVersions, err := schemaVersionCollection.CountDocuments(context.TODO(), bson.M{"schema_id": schemaId})
+func GetShcemaVersionsCount(schemaId int) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM schema_versions WHERE schema_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_schema_versions_count", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
 
-	return int(countVersions), err
+	return count, nil
 }
 
 func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
-	var schemas []models.ExtendedSchema
-	cursor, err := schemasCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "extendedSchema"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$extendedSchema"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"extendedSchema.version_number", 1}}}},
-		bson.D{{"$lookup", bson.D{{"from", "schema_versions"}, {"localField", "_id"}, {"foreignField", "schema_id"}, {"as", "activeVersion"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$activeVersion"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$match", bson.D{{"activeVersion.active", true}}}},
-		bson.D{{"$project", bson.D{{"_id", 1}, {"name", 1}, {"type", 1}, {"created_by_user", "$extendedSchema.created_by_user"}, {"creation_date", "$extendedSchema.creation_date"}, {"version_number", "$activeVersion.version_number"}}}},
-		bson.D{{"$sort", bson.D{{"creation_date", -1}}}},
-	})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-	if err = cursor.All(context.TODO(), &schemas); err != nil {
+	defer conn.Release()
+	query := `SELECT s.id, s.name, s.type, sv.created_by, s.created_by_username, sv.created_at, asv.version_number
+	          FROM schemas AS s
+	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
+	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
+	          WHERE asv.id IS NOT NULL
+	          ORDER BY sv.created_at DESC`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_schemas_details", query)
+	if err != nil {
 		return []models.ExtendedSchema{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.ExtendedSchema{}, err
+	}
+	if err == pgx.ErrNoRows {
+		return []models.ExtendedSchema{}, nil
+	}
+	defer rows.Close()
+	schemas := []models.ExtendedSchema{}
+	for rows.Next() {
+		var sc models.ExtendedSchema
+		err := rows.Scan(&sc.ID, &sc.Name, &sc.Type, &sc.CreatedBy, &sc.CreatedByUsername, &sc.CreatedAt, &sc.ActiveVersionNumber)
+		if err != nil {
+			return []models.ExtendedSchema{}, err
+		}
+		schemas = append(schemas, sc)
+	}
+	if len(schemas) == 0 {
+		return []models.ExtendedSchema{}, nil
 	}
 	return schemas, nil
 }
 
-func FindAndDeleteSchema(schemaIds []primitive.ObjectID) error {
-	filter := bson.M{"schema_id": bson.M{"$in": schemaIds}}
-	_, err := schemaVersionCollection.DeleteMany(context.TODO(), filter)
+func FindAndDeleteSchema(schemaIds []int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeSchemaVersionsQuery := `DELETE FROM schema_versions
+	WHERE schema_id = ANY($1)`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions", removeSchemaVersionsQuery)
 	if err != nil {
 		return err
 	}
 
-	filter = bson.M{"_id": bson.M{"$in": schemaIds}}
-	_, err = schemasCollection.DeleteMany(context.TODO(), filter)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
+	if err != nil {
+		return err
+	}
+
+	removeSchemasQuery := `DELETE FROM schemas
+	WHERE id = ANY($1)`
+
+	stmt, err = conn.Conn().Prepare(ctx, "remove_schemas", removeSchemasQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaIds)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpsertNewSchema(schemaName string, schemaType string) (models.Schema, int64, error) {
-	newSchema := models.Schema{
-		ID:   primitive.NewObjectID(),
-		Name: schemaName,
-		Type: schemaType,
-	}
-	filter := bson.M{"name": newSchema.Name}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":  newSchema.ID,
-			"type": newSchema.Type,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := schemasCollection.UpdateOne(context.TODO(), filter, update, opts)
+func InsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
-	return newSchema, updateResults.MatchedCount, nil
+	defer conn.Release()
+
+	query := `INSERT INTO schemas ( 
+		name, 
+		type,
+		created_by_username) 
+    VALUES($1, $2, $3) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema", query)
+	if err != nil {
+		return models.Schema{}, 0, err
+	}
+
+	var schemaId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername)
+	if err != nil {
+		return models.Schema{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&schemaId)
+		if err != nil {
+			return models.Schema{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Schema{}, 0, errors.New("Schema" + schemaName + " already exists")
+				} else {
+					return models.Schema{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Schema{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Schema{}, 0, err
+		}
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
+	newSchema := models.Schema{
+		ID:                schemaId,
+		Name:              schemaName,
+		Type:              schemaType,
+		CreatedByUsername: createdByUsername,
+	}
+	return newSchema, rowsAffected, nil
 }
 
-func UpsertNewSchemaVersion(schemaVersionNumber int, username string, schemaContent string, schemaId primitive.ObjectID, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.SchemaVersion{}, 0, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO schema_versions ( 
+		version_number,
+		active,
+		created_by,
+		created_by_username,
+		created_at,
+		schema_content,
+		schema_id,
+		msg_struct_name,
+		descriptor)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema_version", query)
+	if err != nil {
+		return models.SchemaVersion{}, 0, err
+	}
+
+	var schemaVersionId int
+	createdAt := time.Now()
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor))
+	if err != nil {
+		return models.SchemaVersion{}, 0, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&schemaVersionId)
+		if err != nil {
+			return models.SchemaVersion{}, 0, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.SchemaVersion{}, 0, errors.New("version already exists")
+				} else {
+					return models.SchemaVersion{}, 0, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.SchemaVersion{}, 0, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.SchemaVersion{}, 0, err
+		}
+
+	}
+
+	rowsAffected := rows.CommandTag().RowsAffected()
 	newSchemaVersion := models.SchemaVersion{
-		ID:                primitive.NewObjectID(),
+		ID:                schemaVersionId,
 		VersionNumber:     schemaVersionNumber,
 		Active:            active,
-		CreatedByUser:     username,
-		CreationDate:      time.Now(),
+		CreatedBy:         userId,
+		CreatedByUsername: username,
+		CreatedAt:         time.Now(),
 		SchemaContent:     schemaContent,
 		SchemaId:          schemaId,
 		MessageStructName: messageStructName,
 		Descriptor:        descriptor,
 	}
-	filter := bson.M{"schema_id": schemaId, "version_number": schemaVersionNumber}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":                 newSchemaVersion.ID,
-			"active":              newSchemaVersion.Active,
-			"created_by_user":     newSchemaVersion.CreatedByUser,
-			"creation_date":       newSchemaVersion.CreationDate,
-			"schema_content":      newSchemaVersion.SchemaContent,
-			"message_struct_name": newSchemaVersion.MessageStructName,
-			"descriptor":          newSchemaVersion.Descriptor,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	updateResults, err := schemaVersionCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.SchemaVersion{}, 0, err
-	}
-	return newSchemaVersion, updateResults.MatchedCount, nil
+	return newSchemaVersion, rowsAffected, nil
 }
 
 // Integration Functions
 func GetIntegration(name string) (bool, models.Integration, error) {
-	filter := bson.M{"name": name}
-	var integration models.Integration
-	err := integrationsCollection.FindOne(context.TODO(),
-		filter).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Integration{}, nil
-	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Integration{}, err
 	}
-	return true, integration, err
+	defer conn.Release()
+	defer conn.Release()
+	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
+	if err != nil {
+		return true, models.Integration{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Integration{}, err
+	}
+	defer rows.Close()
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err != nil {
+		return true, models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return false, models.Integration{}, nil
+	}
+	return true, integrations[0], nil
 }
 
 func GetAllIntegrations() (bool, []models.Integration, error) {
-	var integrations []models.Integration
-	cursor, err := integrationsCollection.Find(context.TODO(), bson.M{})
-	if err == mongo.ErrNoDocuments {
-		return false, []models.Integration{}, nil
-	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return true, []models.Integration{}, err
 	}
-	if err = cursor.All(context.TODO(), &integrations); err != nil {
+	defer conn.Release()
+	query := `SELECT * FROM integrations`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_integrations", query)
+	if err != nil {
 		return true, []models.Integration{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return true, []models.Integration{}, err
+	}
+	defer rows.Close()
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err != nil {
+		return true, []models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return false, []models.Integration{}, nil
 	}
 	return true, integrations, nil
 }
 
 func DeleteIntegration(name string) error {
-	filter := bson.M{"name": name}
-	_, err := integrationsCollection.DeleteOne(context.TODO(), filter)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.Release()
+
+	removeIntegrationQuery := `DELETE FROM integrations
+	WHERE name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_integration", removeIntegrationQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	if err != nil {
+		return err
+	}
+
 	return nil
+
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	integration := models.Integration{
-		ID:         primitive.NewObjectID(),
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO integrations ( 
+		name, 
+		keys,
+		properties) 
+    VALUES($1, $2, $3) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
+	if err != nil {
+		return models.Integration{}, err
+	}
+
+	var integrationId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&integrationId)
+		if err != nil {
+			return models.Integration{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Integration{}, errors.New("Integration" + name + " already exists")
+				} else {
+					return models.Integration{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Integration{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Integration{}, err
+		}
+	}
+	newIntegration := models.Integration{
+		ID:         integrationId,
 		Name:       name,
 		Keys:       keys,
 		Properties: properties,
 	}
-	_, err := integrationsCollection.InsertOne(context.TODO(), integration)
-	if err != nil {
-		return models.Integration{}, err
-	}
-	return integration, nil
+	return newIntegration, nil
 }
 
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var integration models.Integration
-	filter := bson.M{"name": name}
-	err := integrationsCollection.FindOneAndUpdate(context.TODO(),
-		filter,
-		bson.M{"$set": bson.M{"keys": keys, "properties": properties}}).Decode(&integration)
-	if err == mongo.ErrNoDocuments {
-		integration = models.Integration{
-			ID:         primitive.NewObjectID(),
-			Name:       name,
-			Keys:       keys,
-			Properties: properties,
-		}
-		_, err = integrationsCollection.InsertOne(context.TODO(), integration)
-		if err != nil {
-			return models.Integration{}, err
-		}
-	} else if err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `
+	INSERT INTO integrations(name, keys, properties)
+	VALUES($1, $2, $3)
+	ON CONFLICT(name) DO UPDATE
+	SET keys = excluded.keys, properties = excluded.properties
+	RETURNING id, name, keys, properties
+`
+	stmt, err := conn.Conn().Prepare(ctx, "update_integration", query)
+	if err != nil {
 		return models.Integration{}, err
 	}
-	return integration, nil
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err != nil {
+		return models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return models.Integration{}, err
+	}
+	return integrations[0], nil
 }
 
 // User Functions
 func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int) (models.User, error) {
-	var id primitive.ObjectID
-	if userType == "root" {
-		id, _ = primitive.ObjectIDFromHex("6314c8f7ef142f3f04fccdc3") // default root user id
-	} else {
-		id = primitive.NewObjectID()
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.User{}, err
 	}
+	defer conn.Release()
+
+	query := `INSERT INTO users ( 
+		username,
+		password,
+		type,
+		already_logged_in,
+		created_at,
+		avatar_id,
+		full_name, 
+		subscription,
+		skip_get_started) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
+	if err != nil {
+		return models.User{}, err
+	}
+	createdAt := time.Now()
+	skipGetStarted := false
+	alreadyLoggedIn := false
+
+	var userId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted)
+	if err != nil {
+		return models.User{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.User{}, errors.New("User " + username + " already exists")
+				} else {
+					return models.User{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.User{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.User{}, err
+		}
+	}
+
 	newUser := models.User{
-		ID:              id,
+		ID:              userId,
 		Username:        username,
 		Password:        hashedPassword,
 		FullName:        fullName,
 		Subscribtion:    subscription,
 		UserType:        userType,
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
+		CreatedAt:       createdAt,
+		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
-	}
-	_, err := usersCollection.InsertOne(context.TODO(), newUser)
-	if err != nil {
-		if userType == "root" {
-			if mongo.IsDuplicateKeyError(err) {
-				return newUser, nil
-			}
-		}
-		return models.User{}, err
 	}
 	return newUser, nil
 }
 
 func ChangeUserPassword(username string, hashedPassword string) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"password": hashedPassword}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET password = $2 WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword)
 	if err != nil {
 		return err
 	}
@@ -1879,74 +2991,166 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 }
 
 func GetRootUser() (bool, models.User, error) {
-	filter := bson.M{"user_type": "root"}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, models.User{}, nil
-	} else if err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
 		return true, models.User{}, err
 	}
-	return true, user, nil
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
 }
 
 func GetUserByUsername(username string) (bool, models.User, error) {
-	filter := bson.M{"username": username}
-	var user models.User
-	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, models.User{}, nil
-	} else if err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
 		return true, models.User{}, err
 	}
-	return true, user, nil
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
+func GetUserByUserId(userId int) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE id = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_id", query)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userId)
+	if err != nil {
+		return true, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return true, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
 }
 
 func GetAllUsers() ([]models.FilteredGenericUser, error) {
-	var users []models.FilteredGenericUser
-
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &users); err != nil {
+	defer conn.Release()
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.already_logged_in, s.avatar_id FROM users AS s`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
+	if err != nil {
 		return []models.FilteredGenericUser{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.FilteredGenericUser{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredGenericUser])
+	if err != nil {
+		return []models.FilteredGenericUser{}, err
+	}
+	if len(users) == 0 {
+		return []models.FilteredGenericUser{}, nil
 	}
 	return users, nil
 }
 
 func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
-	var users []models.FilteredApplicationUser
-
-	cursor, err := usersCollection.Find(context.TODO(), bson.M{
-		"$or": []interface{}{
-			bson.M{"user_type": "application"},
-			bson.M{"user_type": "root"},
-		},
-	})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredApplicationUser{}, err
 	}
-
-	if err = cursor.All(context.TODO(), &users); err != nil {
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE user_type='application'`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
+	if err != nil {
 		return []models.FilteredApplicationUser{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.FilteredApplicationUser{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
+	if err != nil {
+		return []models.FilteredApplicationUser{}, err
+	}
+	if len(users) == 0 {
+		return []models.FilteredApplicationUser{}, nil
 	}
 	return users, nil
 }
 
-func UpdateUserAlreadyLoggedIn(userId primitive.ObjectID) {
-	usersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": userId},
-		bson.M{"$set": bson.M{"already_logged_in": true}},
-	)
+func UpdateUserAlreadyLoggedIn(userId int) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET already_logged_in = true WHERE id = $1`
+	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
+	conn.Conn().Query(ctx, stmt.Name, userId)
 }
 
 func UpdateSkipGetStarted(username string) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET skip_get_started = true WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username)
 	if err != nil {
 		return err
 	}
@@ -1954,73 +3158,144 @@ func UpdateSkipGetStarted(username string) error {
 }
 
 func DeleteUser(username string) error {
-	_, err := usersCollection.DeleteOne(context.TODO(), bson.M{"username": username})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.Release()
+
+	removeUserQuery := `DELETE FROM users WHERE username = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, username)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func EditAvatar(username string, avatarId int) error {
-	_, err := usersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"avatar_id": avatarId}},
-	)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE users SET avatar_id = $2 WHERE username = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_avatar", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetAllActiveUsers() ([]models.FilteredUser, error) { // This function executed on stations collection
-	var userList []models.FilteredUser
-
-	cursorUsers, err := stationsCollection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{"$match", bson.D{{"$or", []interface{}{bson.D{{"is_deleted", false}}, bson.D{{"is_deleted", bson.D{{"$exists", false}}}}}}}}},
-		bson.D{{"$lookup", bson.D{{"from", "users"}, {"localField", "created_by_user"}, {"foreignField", "username"}, {"as", "usersList"}}}},
-		bson.D{{"$unwind", bson.D{{"path", "$usersList"}, {"preserveNullAndEmptyArrays", true}}}},
-		bson.D{{"$group", bson.D{{"_id", "$usersList.username"}, {"items", bson.D{{"$addToSet", bson.D{{"name", "$usersList.username"}}}}}}}},
-	})
+func GetAllActiveUsers() ([]models.FilteredUser, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-
-	if err = cursorUsers.All(context.TODO(), &userList); err != nil {
+	query := `
+	SELECT DISTINCT u.username
+	FROM users u
+	JOIN stations s ON u.id = s.created_by
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users", query)
+	if err != nil {
 		return []models.FilteredUser{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	defer rows.Close()
+	userList, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredUser])
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	if len(userList) == 0 {
+		return []models.FilteredUser{}, nil
 	}
 	return userList, nil
 }
 
 // Tags Functions
-func UpsertNewTag(name string, color string, stationArr []primitive.ObjectID, schemaArr []primitive.ObjectID, userArr []primitive.ObjectID) (models.Tag, error) {
+func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, userArr []int) (models.Tag, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return models.Tag{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tags ( 
+		name,
+		color,
+		users,
+		stations,
+		schemas) 
+    VALUES($1, $2, $3, $4, $5) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_tag", query)
+	if err != nil {
+		return models.Tag{}, err
+	}
+
+	var tagId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr)
+	if err != nil {
+		return models.Tag{}, err
+	}
+	for rows.Next() {
+		err := rows.Scan(&tagId)
+		if err != nil {
+			return models.Tag{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tag{}, errors.New("Tag" + name + " already exists")
+				} else {
+					return models.Tag{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tag{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tag{}, err
+		}
+	}
+
 	newTag := models.Tag{
-		ID:   primitive.NewObjectID(),
-		Name: name, Color: color,
+		ID:       tagId,
+		Name:     name,
+		Color:    color,
 		Stations: stationArr,
 		Schemas:  schemaArr,
 		Users:    userArr,
 	}
-
-	filter := bson.M{"name": newTag.Name}
-	update := bson.M{
-		"$setOnInsert": bson.M{
-			"_id":      newTag.ID,
-			"name":     newTag.Name,
-			"color":    newTag.Color,
-			"stations": newTag.Stations,
-			"schemas":  newTag.Schemas,
-			"users":    newTag.Users,
-		},
-	}
-	opts := options.Update().SetUpsert(true)
-	_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
-	if err != nil {
-		return models.Tag{}, err
-	}
 	return newTag, nil
+
 }
 
-func UpsertEntityToTag(tagName string, entity string, entity_id primitive.ObjectID) error {
+func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -2030,27 +3305,40 @@ func UpsertEntityToTag(tagName string, entity string, entity_id primitive.Object
 	case "user":
 		entityDBList = "users"
 	}
-	filter := bson.M{"name": tagName}
-	update := bson.M{
-		"$addToSet": bson.M{entityDBList: entity_id},
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
+	if err != nil {
+		return err
 	}
-	opts := options.Update().SetUpsert(true)
-	_, err := tagsCollection.UpdateOne(context.TODO(), filter, update, opts)
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RemoveAllTagsFromEntity(entity string, entity_id primitive.ObjectID) error {
-	_, err := tagsCollection.UpdateMany(context.TODO(), bson.M{}, bson.M{"$pull": bson.M{entity: entity_id}})
+func RemoveAllTagsFromEntity(entity string, entity_id int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET ` + entity + ` = ARRAY_REMOVE(` + entity + `, $1) WHERE $1 = ANY(` + entity + `)`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_all_tags_from_entity", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RemoveTagFromEntity(tagName string, entity string, entity_id primitive.ObjectID) error {
+func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -2060,15 +3348,23 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id primitive.Obje
 	case "user":
 		entityDBList = "users"
 	}
-	_, err := tagsCollection.UpdateOne(context.TODO(), bson.M{"name": tagName},
-		bson.M{"$pull": bson.M{entityDBList: entity_id}})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	defer conn.Release()
+	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_REMOVE(` + entityDBList + `, $2) WHERE name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_tag_from_entity", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tagName, entity_id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetTagsByEntityID(entity string, id primitive.ObjectID) ([]models.Tag, error) {
+func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -2078,19 +3374,39 @@ func GetTagsByEntityID(entity string, id primitive.ObjectID) ([]models.Tag, erro
 	case "user":
 		entityDBList = "users"
 	}
-	var tags []models.Tag
-	cursor, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: id})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	if err = cursor.All(context.TODO(), &tags); err != nil {
+	defer conn.Release()
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `)`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id"+uid.String(), query)
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
 		return []models.Tag{}, err
 	}
 	return tags, nil
 }
 
 func GetTagsByEntityType(entity string) ([]models.Tag, error) {
-	var tags []models.Tag
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -2102,116 +3418,152 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 	default:
 		entityDBList = ""
 	}
-	var cursor *mongo.Cursor
-	if entityDBList == "" { // Get All
-		cur, err := tagsCollection.Find(context.TODO(), bson.M{})
-		if err != nil {
-			return []models.Tag{}, err
-		}
-		cursor = cur
-	} else {
-		cur, err := tagsCollection.Find(context.TODO(), bson.M{entityDBList: bson.M{"$not": bson.M{"$size": 0}}})
-		if err != nil {
-			return []models.Tag{}, err
-		}
-		cursor = cur
-	}
 
-	if err := cursor.All(context.TODO(), &tags); err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
 		return []models.Tag{}, err
+	}
+	defer conn.Release()
+	var query string
+	if entityDBList == "" { // Get All
+		query = `SELECT * FROM tags`
+	} else {
+		query = fmt.Sprintf(`SELECT * FROM tags WHERE %s IS NOT NULL AND array_length(%s, 1) > 0`, entityDBList, entityDBList)
+	}
+	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_type", query)
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
 	}
 	return tags, nil
 }
 
 func GetAllUsedTags() ([]models.Tag, error) {
-	var tags []models.Tag
-	filter := bson.M{"$or": []interface{}{bson.M{"schemas": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"stations": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}, bson.M{"users": bson.M{"$exists": true, "$not": bson.M{"$size": 0}}}}}
-	cursor, err := tagsCollection.Find(context.TODO(), filter)
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE ARRAY_LENGTH(schemas, 1) > 0 OR ARRAY_LENGTH(stations, 1) > 0 OR ARRAY_LENGTH(users, 1) > 0`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_tags", query)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	if err = cursor.All(context.TODO(), &tags); err != nil {
-		return []models.Tag{}, err
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
 	}
 	return tags, nil
 }
 
 func GetTagByName(name string) (bool, models.Tag, error) {
-	filter := bson.M{
-		"name": name,
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Tag{}, err
 	}
-	var tag models.Tag
-	err := tagsCollection.FindOne(context.TODO(), filter).Decode(&tag)
-	if err == mongo.ErrNoDocuments {
-		return false, tag, nil
-	} else if err != nil {
-		return true, tag, err
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE name=$1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tag_by_name", query)
+	if err != nil {
+		return true, models.Tag{}, err
 	}
-	return true, tag, nil
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Tag{}, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return true, models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return false, models.Tag{}, nil
+	}
+	return true, tags[0], nil
 }
 
 // Sandbox Functions
-func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	user := models.SandboxUser{
-		ID:              primitive.NewObjectID(),
-		Username:        username,
-		Email:           email,
-		Password:        "",
-		FirstName:       firstName,
-		LastName:        lastName,
-		UserType:        "",
-		CreationDate:    time.Now(),
-		AlreadyLoggedIn: false,
-		AvatarId:        1,
-		ProfilePic:      profilePic,
-	}
+// func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
+	// user := models.SandboxUser{}
+	// return user, nil
+// }
 
-	_, err := sandboxUsersCollection.InsertOne(context.TODO(), user)
-	if err != nil {
-		return models.SandboxUser{}, err
-	}
-	return user, nil
-}
+// func UpdateSandboxUserAlreadyLoggedIn(userId int) {
+	// sandboxUsersCollection.UpdateOne(context.TODO(),
+	// 	bson.M{"_id": userId},
+	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
+	// )
+// }
 
-func UpdateSandboxUserAlreadyLoggedIn(userId primitive.ObjectID) {
-	sandboxUsersCollection.UpdateOne(context.TODO(),
-		bson.M{"_id": userId},
-		bson.M{"$set": bson.M{"already_logged_in": true}},
-	)
-}
+// func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
+// 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+// 	defer cancelfunc()
+// 	conn, err := PostgresConnection.Client.Acquire(ctx)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	defer conn.Release()
+// 	query := `SELECT * FROM sandbox_users WHERE username = $1 LIMIT 1`
+// 	stmt, err := conn.Conn().Prepare(ctx, "get_sandbox_user", query)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	defer rows.Close()
+// 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
+// 	if err != nil {
+// 		return true, models.SandboxUser{}, err
+// 	}
+// 	if len(users) == 0 {
+// 		return false, models.SandboxUser{}, nil
+// 	}
+// 	return true, users[0], nil
+// }
 
-func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
-	filter := bson.M{"username": username}
-	var user models.SandboxUser
-	err := sandboxUsersCollection.FindOne(context.TODO(), filter).Decode(&user)
-	if err == mongo.ErrNoDocuments {
-		return false, user, nil
-	}
-	if err != nil {
-		return true, models.SandboxUser{}, err
-	}
-	return true, user, nil
-}
-
-func UpdateSkipGetStartedSandbox(username string) error {
-	_, err := sandboxUsersCollection.UpdateOne(context.TODO(),
-		bson.M{"username": username},
-		bson.M{"$set": bson.M{"skip_get_started": true}},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// func UpdateSkipGetStartedSandbox(username string) error {
+	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
+	// 	bson.M{"username": username},
+	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
+	// )
+	// if err != nil {
+	// 	return err
+	// }
+// 	return nil
+// }
 
 // Image Functions
 func InsertImage(name string, base64Encoding string) error {
-	newImage := models.Image{
-		ID:    primitive.NewObjectID(),
-		Name:  name,
-		Image: base64Encoding,
-	}
-	_, err := imagesCollection.InsertOne(context.TODO(), newImage)
+	err := InsertConfiguration(name, base64Encoding)
 	if err != nil {
 		return err
 	}
@@ -2219,7 +3571,24 @@ func InsertImage(name string, base64Encoding string) error {
 }
 
 func DeleteImage(name string) error {
-	_, err := imagesCollection.DeleteOne(context.TODO(), bson.M{"name": name})
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeImageQuery := `DELETE FROM configurations
+	WHERE key = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_image", removeImageQuery)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
 	if err != nil {
 		return err
 	}
@@ -2227,12 +3596,29 @@ func DeleteImage(name string) error {
 }
 
 func GetImage(name string) (bool, models.Image, error) {
-	var image models.Image
-	err := imagesCollection.FindOne(context.TODO(), bson.M{"name": name}).Decode(&image)
-	if err == mongo.ErrNoDocuments {
-		return false, models.Image{}, nil
-	} else if err != nil {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
 		return true, models.Image{}, err
 	}
-	return true, image, nil
+	defer conn.Release()
+	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_image", query)
+	if err != nil {
+		return true, models.Image{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return true, models.Image{}, err
+	}
+	defer rows.Close()
+	images, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Image])
+	if err != nil {
+		return true, models.Image{}, err
+	}
+	if len(images) == 0 {
+		return false, models.Image{}, nil
+	}
+	return true, images[0], nil
 }

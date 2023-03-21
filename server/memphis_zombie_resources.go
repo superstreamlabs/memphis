@@ -19,8 +19,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (srv *Server) removeStaleStations() {
@@ -130,14 +128,14 @@ func killFunc(s *Server) {
 	}
 
 	if len(connections) > 0 {
-		var zombieConnections []primitive.ObjectID
+		var zombieConnections []string
 		clientConnectionIds, err := aggregateClientConnections(s)
 		if err != nil {
 			serv.Errorf("killFunc: aggregateClientConnections: " + err.Error())
 			return
 		}
 		for _, conn := range connections {
-			if _, exist := clientConnectionIds[(conn.ID).Hex()]; exist { // existence check
+			if _, exist := clientConnectionIds[conn.ID]; exist { // existence check
 				continue
 			} else {
 				zombieConnections = append(zombieConnections, conn.ID)

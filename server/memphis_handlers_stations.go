@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type StationsHandler struct{ S *Server }
@@ -309,7 +308,13 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), username, retentionType, retentionValue, storageType, replicas, schemaDetails, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+
+	_, user, err := db.GetUserByUsername(username)
+	if err != nil {
+		serv.Warnf("createStationDirect: " + err.Error())
+		respondWithErr(s, reply, err)
+	}
+	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -318,15 +323,14 @@ func (s *Server) createStationDirectIntern(c *client,
 	if rowsUpdated > 0 {
 		message := "Station " + stationName.Ext() + " has been created by user " + username
 		serv.Noticef(message)
-
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -393,13 +397,14 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		RetentionValue:       station.RetentionValue,
 		StorageType:          station.StorageType,
 		Replicas:             station.Replicas,
-		CreatedByUser:        station.CreatedByUser,
-		CreationDate:         station.CreationDate,
-		LastUpdate:           station.LastUpdate,
+		CreatedBy:            station.CreatedBy,
+		CreatedByUsername:    station.CreatedByUsername,
+		CreatedAt:            station.CreatedAt,
+		LastUpdate:           station.UpdatedAt,
 		IsDeleted:            station.IsDeleted,
 		IdempotencyWindow:    station.IdempotencyWindow,
 		IsNative:             station.IsNative,
-		DlsConfiguration:     station.DlsConfiguration,
+		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
 	}
@@ -575,8 +580,6 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 				stations[i].TieredStorageEnabled = false
 			}
 
-			stations[i].Producers = []models.Producer{}
-			stations[i].Consumers = []models.Consumer{}
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
@@ -646,9 +649,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
+	var schemaVersionNumber int
 	schemaName := body.SchemaName
-	var schemaDetails models.SchemaDetails
-	var schemaDetailsResponse models.StationOverviewSchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
 		exist, schema, err := db.GetSchemaByName(schemaName)
@@ -671,15 +673,10 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		schemaDetailsResponse = models.StationOverviewSchemaDetails{
-			SchemaName:       schemaName,
-			VersionNumber:    schemaVersion.VersionNumber,
-			UpdatesAvailable: true,
-			SchemaType:       schema.Type,
-		}
-		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+		schemaVersionNumber = schemaVersion.VersionNumber
 	} else {
-		schemaDetails = models.SchemaDetails{SchemaName: "", VersionNumber: 0}
+		schemaName = ""
+		schemaVersionNumber = 0
 	}
 
 	var retentionType string
@@ -756,13 +753,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	newStation, rowsUpdated, err := db.UpsertNewStation(stationName.Ext(), user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaDetails, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if rowsUpdated > 0 {
+	//rowsUpdated == 0 means that the row already exists
+	if rowsUpdated == 0 {
 		errMsg := "Station " + newStation.Name + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -777,17 +775,16 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 	}
-
 	message := "Station " + stationName.Ext() + " has been created by " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Ext(),
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+		StationName:       stationName.Ext(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		UserType:          user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -811,46 +808,48 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	if schemaName != "" {
 		c.IndentedJSON(200, gin.H{
-			"id":                       newStation.ID,
-			"name":                     stationName.Ext(),
-			"retention_type":           retentionType,
-			"retention_value":          body.RetentionValue,
-			"storage_type":             storageTypeForResponse,
-			"replicas":                 body.Replicas,
-			"created_by_user":          user.Username,
-			"creation_date":            time.Now(),
-			"last_update":              time.Now(),
-			"is_deleted":               false,
-			"schema":                   schemaDetailsResponse,
-			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dls_configuration":        newStation.DlsConfiguration,
-			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+			"id":                            newStation.ID,
+			"name":                          stationName.Ext(),
+			"retention_type":                retentionType,
+			"retention_value":               body.RetentionValue,
+			"storage_type":                  storageTypeForResponse,
+			"replicas":                      body.Replicas,
+			"created_by_username":           user.Username,
+			"created_at":                    time.Now(),
+			"last_update":                   time.Now(),
+			"is_deleted":                    false,
+			"schema_name":                   schemaName,
+			"schema_version_number":         schemaVersionNumber,
+			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
+			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
+			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
+			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
 		})
 	} else {
-		var emptySchemaDetailsResponse struct{}
 		c.IndentedJSON(200, gin.H{
-			"id":                       newStation.ID,
-			"name":                     stationName.Ext(),
-			"retention_type":           retentionType,
-			"retention_value":          body.RetentionValue,
-			"storage_type":             storageTypeForResponse,
-			"replicas":                 body.Replicas,
-			"created_by_user":          user.Username,
-			"creation_date":            time.Now(),
-			"last_update":              time.Now(),
-			"is_deleted":               false,
-			"schema":                   emptySchemaDetailsResponse,
-			"idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dls_configuration":        newStation.DlsConfiguration,
-			"tiered_storage_enabled":   newStation.TieredStorageEnabled,
+			"id":                    newStation.ID,
+			"name":                  stationName.Ext(),
+			"retention_type":        retentionType,
+			"retention_value":       body.RetentionValue,
+			"storage_type":          storageTypeForResponse,
+			"replicas":              body.Replicas,
+			"created_by_username":   user.Username,
+			"created_at":            time.Now(),
+			"last_update":           time.Now(),
+			"is_deleted":            false,
+			"schema_name":           schemaName,
+			"schema_version_number": schemaVersionNumber, "idempotency_window_in_ms": newStation.IdempotencyWindow,
+			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
+			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
+			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
 		})
 	}
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -980,18 +979,23 @@ func (s *Server) removeStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-
+	_, user, err := db.GetUserByUsername(dsr.Username)
+	if err != nil {
+		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
 	serv.Noticef(message)
 	if isNative {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: dsr.Username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1347,9 +1351,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			},
 			Producer: models.ProducerDetails{
 				Name:          "",
-				ConnectionId:  primitive.ObjectID{},
 				ClientAddress: "",
-				CreatedByUser: "",
 				IsActive:      false,
 				IsDeleted:     false,
 			},
@@ -1379,7 +1381,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 	}
 
-	connectionId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
+	connectionId := connectionIdHeader
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
@@ -1452,7 +1454,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Name:          producedByHeader,
 			ConnectionId:  connectionId,
 			ClientAddress: conn.ClientAddress,
-			CreatedByUser: producer.CreatedByUser,
+			CreatedBy:     producer.CreatedBy,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},
@@ -1494,7 +1496,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		UpdatesAvailable: false,
 		SchemaType:       schema.Type,
 	}
-	schemaDetails := models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -1524,7 +1525,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
+		err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1536,12 +1537,12 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Intern(),
-			Message:       message,
-			CreatedByUser: user.Username,
-			CreationDate:  time.Now(),
-			UserType:      user.UserType,
+			StationName:       stationName.Intern(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1606,8 +1607,6 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, errors.New("memphis: "+errMsg))
 		return
 	}
-
-	var schemaDetails models.SchemaDetails
 	schemaName := strings.ToLower(asr.Name)
 	exist, schema, err := db.GetSchemaByName(schemaName)
 	if err != nil {
@@ -1628,9 +1627,8 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-	schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
 
-	err = db.AttachSchemaToStation(stationName.Ext(), schemaDetails)
+	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1640,15 +1638,20 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
 	serv.Noticef(message)
-
+	_, user, err := db.GetUserByUsername(username)
+	if err != nil {
+		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Intern(),
-		Message:       message,
-		CreatedByUser: username,
-		CreationDate:  time.Now(),
-		UserType:      "sdk",
+		StationName:       stationName.Intern(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		UserType:          "sdk",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1739,9 +1742,9 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.RemoveSchemaFromStation
 	ok := utils.Validate(c, &body, false, nil)
@@ -1780,16 +1783,16 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	message := "Schema " + station.Schema.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
+	message := "Schema " + station.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
 	serv.Noticef(message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
-		ID:            primitive.NewObjectID(),
-		StationName:   stationName.Intern(),
-		Message:       message,
-		CreatedByUser: user.Username,
-		CreationDate:  time.Now(),
-		UserType:      user.UserType,
+		StationName:       stationName.Intern(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		UserType:          user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1832,9 +1835,9 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+	exist, schema, err := db.GetSchemaByName(station.SchemaName)
 	if !exist {
-		errMsg := "Schema " + station.Schema.SchemaName + " does not exist"
+		errMsg := "Schema " + station.SchemaName + " does not exist"
 		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
 		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
@@ -1846,7 +1849,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	schemasHandler := SchemasHandler{S: sh.S}
-	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.Schema.VersionNumber, schema)
+	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.SchemaVersionNumber, schema)
 
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
@@ -1900,14 +1903,10 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 		return
 	}
 
-	poisonConfigChanged := station.DlsConfiguration.Poison != body.Poison
-	schemaverseConfigChanged := station.DlsConfiguration.Schemaverse != body.Schemaverse
+	poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
+	schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
 	if poisonConfigChanged || schemaverseConfigChanged {
-		dlsConfigurationNew := models.DlsConfiguration{
-			Poison:      body.Poison,
-			Schemaverse: body.Schemaverse,
-		}
-		err = db.UpsertStationDlsConfig(body.StationName, dlsConfigurationNew)
+		err = db.UpdateStationDlsConfig(body.StationName, body.Poison, body.Schemaverse)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1917,7 +1916,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	configUpdate := models.SdkClientsUpdates{
 		StationName: stationName.Intern(),
 		Type:        schemaToDlsUpdateType,
-		Update:      station.DlsConfiguration.Schemaverse,
+		Update:      station.DlsConfigurationSchemaverse,
 	}
 	serv.SendUpdateToClients(configUpdate)
 
@@ -1925,9 +1924,9 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 }
 
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.PurgeStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1983,9 +1982,9 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveMessages(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 
 	var body models.RemoveMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)

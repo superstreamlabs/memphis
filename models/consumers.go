@@ -13,57 +13,56 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Consumer struct {
-	ID                       primitive.ObjectID `json:"id" bson:"_id"`
-	Name                     string             `json:"name" bson:"name"`
-	StationId                primitive.ObjectID `json:"station_id" bson:"station_id"`
-	Type                     string             `json:"type" bson:"type"`
-	ConnectionId             primitive.ObjectID `json:"connection_id" bson:"connection_id"`
-	ConsumersGroup           string             `json:"consumers_group" bson:"consumers_group"`
-	MaxAckTimeMs             int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	CreatedByUser            string             `json:"created_by_user" bson:"created_by_user"`
-	IsActive                 bool               `json:"is_active" bson:"is_active"`
-	CreationDate             time.Time          `json:"creation_date" bson:"creation_date"`
-	IsDeleted                bool               `json:"is_deleted" bson:"is_deleted"`
-	MaxMsgDeliveries         int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	StartConsumeFromSequence uint64             `json:"start_consume_from_sequence" bson:"start_consume_from_sequence"`
-	LastMessages             int64              `json:"last_messages" bson:"last_messages"`
+	ID                  int       `json:"id"`
+	Name                string    `json:"name"`
+	StationId           int       `json:"station_id"`
+	Type                string    `json:"type"`
+	ConnectionId        string    `json:"connection_id"`
+	ConsumersGroup      string    `json:"consumers_group"`
+	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
+	CreatedBy           int       `json:"created_by"`
+	CreatedByUsername   string    `json:"created_by_username"`
+	IsActive            bool      `json:"is_active"`
+	CreatedAt           time.Time `json:"created_at" `
+	IsDeleted           bool      `json:"is_deleted"`
+	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
+	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
+	LastMessages        int64     `json:"last_messages"`
 }
 
 type ExtendedConsumer struct {
-	Name             string    `json:"name" bson:"name"`
-	CreatedByUser    string    `json:"created_by_user" bson:"created_by_user"`
-	CreationDate     time.Time `json:"creation_date" bson:"creation_date"`
-	IsActive         bool      `json:"is_active" bson:"is_active"`
-	IsDeleted        bool      `json:"is_deleted" bson:"is_deleted"`
-	ClientAddress    string    `json:"client_address" bson:"client_address"`
-	ConsumersGroup   string    `json:"consumers_group" bson:"consumers_group"`
-	MaxAckTimeMs     int64     `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	MaxMsgDeliveries int       `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	StationName      string    `json:"station_name" bson:"station_name"`
+	Name             string    `json:"name"`
+	CreatedBy        string    `json:"created_by"`
+	CreatedAt        time.Time `json:"created_at"`
+	IsActive         bool      `json:"is_active"`
+	IsDeleted        bool      `json:"is_deleted"`
+	ClientAddress    string    `json:"client_address"`
+	ConsumersGroup   string    `json:"consumers_group"`
+	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
+	StationName      string    `json:"station_name"`
 }
 
 type Cg struct {
-	Name                  string             `json:"name" bson:"name"`
-	UnprocessedMessages   int                `json:"unprocessed_messages" bson:"unprocessed_messages"`
-	PoisonMessages        int                `json:"poison_messages" bson:"poison_messages"`
-	IsActive              bool               `json:"is_active" bson:"is_active"`
-	IsDeleted             bool               `json:"is_deleted" bson:"is_deleted"`
-	InProcessMessages     int                `json:"in_process_messages" bson:"in_process_messages"`
-	MaxAckTimeMs          int64              `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
-	MaxMsgDeliveries      int                `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	ConnectedConsumers    []ExtendedConsumer `json:"connected_consumers" bson:"connected_consumers"`
-	DisconnectedConsumers []ExtendedConsumer `json:"disconnected_consumers" bson:"disconnected_consumers"`
-	DeletedConsumers      []ExtendedConsumer `json:"deleted_consumers" bson:"deleted_consumers"`
-	LastStatusChangeDate  time.Time          `json:"last_status_change_date" bson:"last_status_change_date"`
+	Name                  string             `json:"name"`
+	UnprocessedMessages   int                `json:"unprocessed_messages"`
+	PoisonMessages        int                `json:"poison_messages"`
+	IsActive              bool               `json:"is_active"`
+	IsDeleted             bool               `json:"is_deleted"`
+	InProcessMessages     int                `json:"in_process_messages"`
+	MaxAckTimeMs          int64              `json:"max_ack_time_ms"`
+	MaxMsgDeliveries      int                `json:"max_msg_deliveries"`
+	ConnectedConsumers    []ExtendedConsumer `json:"connected_consumers"`
+	DisconnectedConsumers []ExtendedConsumer `json:"disconnected_consumers"`
+	DeletedConsumers      []ExtendedConsumer `json:"deleted_consumers"`
+	LastStatusChangeDate  time.Time          `json:"last_status_change_date"`
 }
 
 type GetAllConsumersByStationSchema struct {
-	StationName string `form:"station_name" binding:"required" bson:"station_name"`
+	StationName string `form:"station_name" binding:"required"`
 }
 
 type CreateConsumerSchema struct {
@@ -82,11 +81,12 @@ type DestroyConsumerSchema struct {
 }
 
 type CgMember struct {
-	Name             string `json:"name" bson:"name"`
-	ClientAddress    string `json:"client_address" bson:"client_address"`
-	IsActive         bool   `json:"is_active" bson:"is_active"`
-	IsDeleted        bool   `json:"is_deleted" bson:"is_deleted"`
-	CreatedByUser    string `json:"created_by_user" bson:"created_by_user"`
-	MaxMsgDeliveries int    `json:"max_msg_deliveries" bson:"max_msg_deliveries"`
-	MaxAckTimeMs     int64  `json:"max_ack_time_ms" bson:"max_ack_time_ms"`
+	Name              string `json:"name"`
+	ClientAddress     string `json:"client_address"`
+	IsActive          bool   `json:"is_active"`
+	IsDeleted         bool   `json:"is_deleted"`
+	CreatedBy         int    `json:"created_by"`
+	CreatedByUsername string `json:"created_by_username"`
+	MaxMsgDeliveries  int    `json:"max_msg_deliveries"`
+	MaxAckTimeMs      int64  `json:"max_ack_time_ms"`
 }

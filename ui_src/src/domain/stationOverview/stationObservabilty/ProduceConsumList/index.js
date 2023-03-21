@@ -97,7 +97,7 @@ const ProduceConsumList = ({ producer }) => {
                 },
                 {
                     name: 'User',
-                    value: producersList[rowIndex]?.created_by_user
+                    value: producersList[rowIndex]?.created_by_username
                 },
                 {
                     name: 'IP',
@@ -116,7 +116,7 @@ const ProduceConsumList = ({ producer }) => {
                     details: [
                         {
                             name: 'User',
-                            value: row.created_by_user
+                            value: row.created_by_username
                         },
                         {
                             name: 'IP',
@@ -209,8 +209,8 @@ const ProduceConsumList = ({ producer }) => {
                                             <OverflowTip text={row.name} width={'100px'}>
                                                 {row.name}
                                             </OverflowTip>
-                                            <OverflowTip text={row.created_by_user} width={'80px'}>
-                                                {row.created_by_user}
+                                            <OverflowTip text={row.created_by_username} width={'80px'}>
+                                                {row.created_by_username}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '38px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />

@@ -21,7 +21,6 @@ import (
 	"io"
 	"math"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -1369,7 +1368,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+	connectedProducers, disconnectedProducers, deletedProducers := make([]models.Producer, 0), make([]models.Producer, 0), make([]models.Producer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
@@ -1467,14 +1466,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if !ok {
 		station.TieredStorageEnabled = false
 	}
-	var emptySchemaDetailsObj models.SchemaDetails
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
-	if station.Schema != emptySchemaDetailsObj {
+	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName)
 		if !exist {
 			schemaDetails = models.StationOverviewSchemaDetails{}
 		} else {
@@ -1484,7 +1482,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				return
 			}
 
-			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.Schema.VersionNumber, schema.ID)
+			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1493,81 +1491,87 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			updatesAvailable := !schemaVersion.Active
 			schemaDetails = models.StationOverviewSchemaDetails{
 				SchemaName:       schema.Name,
-				VersionNumber:    station.Schema.VersionNumber,
+				VersionNumber:    station.SchemaVersionNumber,
 				UpdatesAvailable: updatesAvailable,
 				SchemaType:       schema.Type,
 			}
 		}
 		response = gin.H{
-			"connected_producers":      connectedProducers,
-			"disconnected_producers":   disconnectedProducers,
-			"deleted_producers":        deletedProducers,
-			"connected_cgs":            connectedCgs,
-			"disconnected_cgs":         disconnectedCgs,
-			"deleted_cgs":              deletedCgs,
-			"total_messages":           totalMessages,
-			"average_message_size":     avgMsgSize,
-			"audit_logs":               auditLogs,
-			"messages":                 messages,
-			"poison_messages":          poisonMessages,
-			"schema_failed_messages":   schemaFailedMessages,
-			"tags":                     tags,
-			"leader":                   leader,
-			"followers":                followers,
-			"schema":                   schemaDetails,
-			"idempotency_window_in_ms": station.IdempotencyWindow,
-			"dls_configuration":        station.DlsConfiguration,
-			"total_dls_messages":       totalDlsAmount,
-			"tiered_storage_enabled":   station.TieredStorageEnabled,
+			"connected_producers":           connectedProducers,
+			"disconnected_producers":        disconnectedProducers,
+			"deleted_producers":             deletedProducers,
+			"connected_cgs":                 connectedCgs,
+			"disconnected_cgs":              disconnectedCgs,
+			"deleted_cgs":                   deletedCgs,
+			"total_messages":                totalMessages,
+			"average_message_size":          avgMsgSize,
+			"audit_logs":                    auditLogs,
+			"messages":                      messages,
+			"poison_messages":               poisonMessages,
+			"schema_failed_messages":        schemaFailedMessages,
+			"tags":                          tags,
+			"leader":                        leader,
+			"followers":                     followers,
+			"schema":                        schemaDetails,
+			"idempotency_window_in_ms":      station.IdempotencyWindow,
+			"dls_configuration_poison":      station.DlsConfigurationPoison,
+			"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+			"total_dls_messages":            totalDlsAmount,
+			"tiered_storage_enabled":        station.TieredStorageEnabled,
+			"created_by_username":           station.CreatedByUsername,
 		}
 	} else {
 		var emptyResponse struct{}
 		if !station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
 			response = gin.H{
-				"connected_producers":      cp,
-				"disconnected_producers":   dp,
-				"deleted_producers":        deletedProducers,
-				"connected_cgs":            cc,
-				"disconnected_cgs":         dc,
-				"deleted_cgs":              deletedCgs,
-				"total_messages":           totalMessages,
-				"average_message_size":     avgMsgSize,
-				"audit_logs":               auditLogs,
-				"messages":                 messages,
-				"poison_messages":          poisonMessages,
-				"schema_failed_messages":   schemaFailedMessages,
-				"tags":                     tags,
-				"leader":                   leader,
-				"followers":                followers,
-				"schema":                   emptyResponse,
-				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dls_configuration":        station.DlsConfiguration,
-				"total_dls_messages":       totalDlsAmount,
-				"tiered_storage_enabled":   station.TieredStorageEnabled,
+				"connected_producers":           cp,
+				"disconnected_producers":        dp,
+				"deleted_producers":             deletedProducers,
+				"connected_cgs":                 cc,
+				"disconnected_cgs":              dc,
+				"deleted_cgs":                   deletedCgs,
+				"total_messages":                totalMessages,
+				"average_message_size":          avgMsgSize,
+				"audit_logs":                    auditLogs,
+				"messages":                      messages,
+				"poison_messages":               poisonMessages,
+				"schema_failed_messages":        schemaFailedMessages,
+				"tags":                          tags,
+				"leader":                        leader,
+				"followers":                     followers,
+				"schema":                        emptyResponse,
+				"idempotency_window_in_ms":      station.IdempotencyWindow,
+				"dls_configuration_poison":      station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            totalDlsAmount,
+				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
 			}
 		} else {
 			response = gin.H{
-				"connected_producers":      connectedProducers,
-				"disconnected_producers":   disconnectedProducers,
-				"deleted_producers":        deletedProducers,
-				"connected_cgs":            connectedCgs,
-				"disconnected_cgs":         disconnectedCgs,
-				"deleted_cgs":              deletedCgs,
-				"total_messages":           totalMessages,
-				"average_message_size":     avgMsgSize,
-				"audit_logs":               auditLogs,
-				"messages":                 messages,
-				"poison_messages":          poisonMessages,
-				"schema_failed_messages":   schemaFailedMessages,
-				"tags":                     tags,
-				"leader":                   leader,
-				"followers":                followers,
-				"schema":                   emptyResponse,
-				"idempotency_window_in_ms": station.IdempotencyWindow,
-				"dls_configuration":        station.DlsConfiguration,
-				"total_dls_messages":       totalDlsAmount,
-				"tiered_storage_enabled":   station.TieredStorageEnabled,
+				"connected_producers":           connectedProducers,
+				"disconnected_producers":        disconnectedProducers,
+				"deleted_producers":             deletedProducers,
+				"connected_cgs":                 connectedCgs,
+				"disconnected_cgs":              disconnectedCgs,
+				"deleted_cgs":                   deletedCgs,
+				"total_messages":                totalMessages,
+				"average_message_size":          avgMsgSize,
+				"audit_logs":                    auditLogs,
+				"messages":                      messages,
+				"poison_messages":               poisonMessages,
+				"schema_failed_messages":        schemaFailedMessages,
+				"tags":                          tags,
+				"leader":                        leader,
+				"followers":                     followers,
+				"schema":                        emptyResponse,
+				"idempotency_window_in_ms":      station.IdempotencyWindow,
+				"dls_configuration_poison":      station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            totalDlsAmount,
+				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
 			}
 		}
 	}
@@ -1854,16 +1858,26 @@ func checkCompStatus(components []models.SysComponent) string {
 }
 
 func getDbStorageSize() (float64, float64, error) {
-	var configuration = conf.GetConfig()
-	sbStats, err := serv.memphis.dbClient.Database(configuration.DB_NAME).RunCommand(context.TODO(), map[string]interface{}{
-		"dbStats": 1,
-	}).DecodeBytes()
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.PostgresConnection.Client.Acquire(ctx)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer conn.Release()
+	var dbStorageSize, totalSize float64
+	query := `SELECT pg_database_size($1) AS db_size,
+	(SELECT coalesce(sum(pg_total_relation_size(relid)), 0) 
+	 FROM pg_catalog.pg_statio_all_tables) AS total_size`
+	stmt, err := conn.Conn().Prepare(ctx, "get_db_storagr_size", query)
+	if err != nil {
+		return 0, 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.POSTGRESQL_DBNAME).Scan(&dbStorageSize, &totalSize)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	dbStorageSize := sbStats.Lookup("dataSize").Double() + sbStats.Lookup("indexSize").Double()
-	totalSize := sbStats.Lookup("fsTotalSize").Double()
 	return dbStorageSize, totalSize, nil
 }
 

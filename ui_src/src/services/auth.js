@@ -37,7 +37,7 @@ const AuthService = (function () {
 
         localStorage.setItem(LOCAL_STORAGE_ALREADY_LOGGED_IN, userData.already_logged_in);
         localStorage.setItem(LOCAL_STORAGE_AVATAR_ID, userData.avatar_id);
-        localStorage.setItem(LOCAL_STORAGE_CREATION_DATE, userData.creation_date);
+        localStorage.setItem(LOCAL_STORAGE_CREATION_DATE, userData.created_at);
         localStorage.setItem(LOCAL_STORAGE_TOKEN, userData.jwt);
         localStorage.setItem(LOCAL_STORAGE_USER_ID, userData.user_id);
         localStorage.setItem(LOCAL_STORAGE_USER_NAME, userData.username);

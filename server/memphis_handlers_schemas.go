@@ -29,7 +29,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type SchemasHandler struct{ S *Server }
@@ -212,7 +211,7 @@ func (s *Server) updateStationProducersOfSchemaChange(sn StationName, schemaUpda
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }
 
-func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion, error) {
+func getSchemaVersionsBySchemaId(id int) ([]models.SchemaVersion, error) {
 	schemaVersions, err := db.GetSchemaVersionsBySchemaID(id)
 	if err != nil {
 		return []models.SchemaVersion{}, err
@@ -220,7 +219,7 @@ func getSchemaVersionsBySchemaId(id primitive.ObjectID) ([]models.SchemaVersion,
 	return schemaVersions, nil
 }
 
-func getActiveVersionBySchemaId(id primitive.ObjectID) (models.SchemaVersion, error) {
+func getActiveVersionBySchemaId(id int) (models.SchemaVersion, error) {
 	schemaVersion, err := db.GetActiveVersionBySchemaID(id)
 	if err != nil {
 		return models.SchemaVersion{}, err
@@ -240,17 +239,17 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 		serv.Warnf("getSchemaByStation: " + errMsg)
 		return models.Schema{}, errors.New(errMsg)
 	}
-	if station.Schema.SchemaName == "" {
+	if station.SchemaName == "" {
 		return models.Schema{}, ErrNoSchema
 	}
 
-	exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+	exist, schema, err := db.GetSchemaByName(station.SchemaName)
 	if !exist {
-		serv.Warnf("getSchemaByStation: Schema " + station.Schema.SchemaName + " does not exist")
+		serv.Warnf("getSchemaByStation: Schema " + station.SchemaName + " does not exist")
 		return models.Schema{}, ErrNoSchema
 	}
 	if err != nil {
-		serv.Errorf("getSchemaByStation: Schema" + station.Schema.SchemaName + "at station " + station.Name + err.Error())
+		serv.Errorf("getSchemaByStation: Schema" + station.SchemaName + "at station " + station.Name + err.Error())
 		return models.Schema{}, err
 	}
 
@@ -261,7 +260,7 @@ func (sh SchemasHandler) GetSchemaByStationName(stationName StationName) (models
 	return getSchemaByStationName(stationName)
 }
 
-func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId primitive.ObjectID) ([]models.SchemaVersion, error) {
+func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId int) ([]models.SchemaVersion, error) {
 	return getSchemaVersionsBySchemaId(schemaId)
 }
 
@@ -299,12 +298,13 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion i
 	}
 
 	extedndedSchemaDetails = models.ExtendedSchemaDetails{
-		ID:           schema.ID,
-		SchemaName:   schema.Name,
-		Type:         schema.Type,
-		Versions:     schemaVersions,
-		UsedStations: stations,
-		Tags:         tags,
+		ID:                schema.ID,
+		SchemaName:        schema.Name,
+		Type:              schema.Type,
+		Versions:          schemaVersions,
+		UsedStations:      stations,
+		Tags:              tags,
+		CreatedByUsername: schema.CreatedByUsername,
 	}
 
 	return extedndedSchemaDetails, nil
@@ -329,12 +329,13 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 	}
 
 	extedndedSchemaDetails = models.ExtendedSchemaDetails{
-		ID:           schema.ID,
-		SchemaName:   schema.Name,
-		Type:         schema.Type,
-		Versions:     schemaVersions,
-		UsedStations: stations,
-		Tags:         tags,
+		ID:                schema.ID,
+		SchemaName:        schema.Name,
+		Type:              schema.Type,
+		Versions:          schemaVersions,
+		UsedStations:      stations,
+		Tags:              tags,
+		CreatedByUsername: schema.CreatedByUsername,
 	}
 
 	return extedndedSchemaDetails, nil
@@ -439,16 +440,17 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, rowsUpdated, err := db.UpsertNewSchema(schemaName, schemaType)
+	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if rowsUpdated == 0 {
-		_, _, err = db.UpsertNewSchemaVersion(schemaVersionNumber, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
+
+	if rowsUpdated == 1 {
+		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
 		if err != nil {
-			serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
+			serv.Errorf("CreateNewSchema: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -566,16 +568,15 @@ func deleteSchemaFromStations(s *Server, schemaName string) error {
 }
 
 func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
-
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.RemoveSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	var schemaIds []primitive.ObjectID
+	var schemaIds []int
 
 	for _, name := range body.SchemaNames {
 		schemaName := strings.ToLower(name)
@@ -681,8 +682,13 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			return
 		}
 	}
-	newSchemaVersion, rowsUpdated, err := db.UpsertNewSchemaVersion(versionNumber, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
-	if rowsUpdated == 0 {
+	newSchemaVersion, rowsUpdated, err := db.InsertNewSchemaVersion(versionNumber, user.ID, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
+	if err != nil {
+		serv.Warnf("CreateNewVersion: " + err.Error())
+		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+	if rowsUpdated == 1 {
 		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created by " + user.Username
 		serv.Noticef(message)
 	} else {
@@ -704,6 +710,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
+
 }
 
 func (sh SchemasHandler) RollBackVersion(c *gin.Context) {

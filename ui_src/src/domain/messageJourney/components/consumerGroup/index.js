@@ -26,7 +26,7 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                 details: [
                     {
                         name: 'User',
-                        value: row.created_by_user
+                        value: row.created_by_username
                     },
                     {
                         name: 'IP',

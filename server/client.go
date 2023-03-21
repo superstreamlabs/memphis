@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Type of client connection.
@@ -284,7 +283,7 @@ type client struct {
 
 type memphisClientInfo struct {
 	username     string
-	connectionId primitive.ObjectID `json:"connection_id,omitempty"`
+	connectionId string `json:"connection_id,omitempty"`
 	isNative     bool
 }
 

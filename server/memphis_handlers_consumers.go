@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strconv"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -24,7 +25,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -45,7 +45,7 @@ func validateConsumerType(consumerType string) error {
 	return nil
 }
 
-func isConsumerGroupExist(consumerGroup string, stationId primitive.ObjectID) (bool, models.Consumer, error) {
+func isConsumerGroupExist(consumerGroup string, stationId int) (bool, models.Consumer, error) {
 	exist, consumer, err := db.GetActiveConsumerByCG(consumerGroup, stationId)
 	if !exist {
 		return false, models.Consumer{}, nil
@@ -106,12 +106,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	connectionIdObj, err := primitive.ObjectIDFromHex(connectionId)
-	if err != nil {
-		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection ID is not valid")
-		return err
-	}
-	exist, connection, err := db.GetConnectionByID(connectionIdObj)
+	exist, connection, err := db.GetConnectionByID(connectionId)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -134,15 +129,27 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
+	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
+	if err != nil {
+		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		serv.Errorf("createConsumerDirectCommon: " + errMsg)
+		return err
+	}
+	if !exist {
+		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		return err
+	}
+
 	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
+
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedByUser)
+		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 			serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -150,16 +157,16 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		}
 
 		if created {
-			message := "Station " + stationName.Ext() + " has been created by user " + connection.CreatedByUser
+			message := "Station " + stationName.Ext() + " has been created by user " + user.Username
 			serv.Noticef(message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
-				ID:            primitive.NewObjectID(),
-				StationName:   stationName.Ext(),
-				Message:       message,
-				CreatedByUser: connection.CreatedByUser,
-				CreationDate:  time.Now(),
-				UserType:      "application",
+				StationName:       stationName.Ext(),
+				Message:           message,
+				CreatedBy:         connection.CreatedBy,
+				CreatedByUsername: connection.CreatedByUsername,
+				CreatedAt:         time.Now(),
+				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -175,17 +182,18 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 					Value: stationName.Ext(),
 				}
 				analyticsParams := []analytics.EventParam{param}
-				analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-station-sdk")
+				analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
 
 	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
 	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
+
 	if exist {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
@@ -199,19 +207,19 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer, rowsUpdated, err := db.UpsertNewConsumer(name, station.ID, consumerType, connectionIdObj, connection.CreatedByUser, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
 
-	if rowsUpdated == 0 {
-		message := "Consumer " + name + " has been created by user " + connection.CreatedByUser
+	if rowsUpdated == 1 {
+		message := "Consumer " + name + " has been created by user " + user.Username
 		serv.Noticef(message)
 		if consumerGroupExist {
 			if requestVersion == 1 {
-				if newConsumer.StartConsumeFromSequence != consumerFromGroup.StartConsumeFromSequence || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+				if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {
 					errMsg := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
 					serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
 					return errMsg
@@ -246,12 +254,12 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		}
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: connection.CreatedByUser,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         connection.CreatedBy,
+			CreatedByUsername: connection.CreatedByUsername,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -267,7 +275,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				Value: newConsumer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(connection.CreatedByUser, analyticsParams, "user-create-consumer-sdk")
+			analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-consumer-sdk")
 		}
 	}
 	return nil
@@ -358,7 +366,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				DeletedConsumers:      []models.ExtendedConsumer{},
 				IsActive:              consumer.IsActive,
 				IsDeleted:             consumer.IsDeleted,
-				LastStatusChangeDate:  consumer.CreationDate,
+				LastStatusChangeDate:  consumer.CreatedAt,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -546,17 +554,23 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if username == "" {
 			username = dcr.Username
 		}
-
+		_, user, err := db.GetUserByUsername(username)
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
+			serv.Errorf("DestroyConsumer: " + errMsg)
+			respondWithErr(s, reply, err)
+			return
+		}
 		message := "Consumer " + name + " has been deleted by user " + username
 		serv.Noticef(message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
-			ID:            primitive.NewObjectID(),
-			StationName:   stationName.Ext(),
-			Message:       message,
-			CreatedByUser: username,
-			CreationDate:  time.Now(),
-			UserType:      "application",
+			StationName:       stationName.Ext(),
+			Message:           message,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
+			CreatedAt:         time.Now(),
+			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -574,7 +588,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	respondWithErr(s, reply, nil)
 }
 
-func (ch ConsumersHandler) ReliveConsumers(connectionId primitive.ObjectID) error {
+func (ch ConsumersHandler) ReliveConsumers(connectionId string) error {
 	err := db.UpdateConsumersConnection(connectionId, false)
 	if err != nil {
 		serv.Errorf("ReliveConsumers: " + err.Error())

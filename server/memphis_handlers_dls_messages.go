@@ -23,8 +23,6 @@ import (
 	"strings"
 
 	"time"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -61,7 +59,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
 	}
-	if !station.DlsConfiguration.Poison {
+	if !station.DlsConfigurationPoison {
 		return
 	}
 
@@ -113,7 +111,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			return
 		}
 
-		connId, _ := primitive.ObjectIDFromHex(connectionIdHeader)
+		connId := connectionIdHeader
 		_, conn, err := db.GetConnectionByID(connId)
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
@@ -133,7 +131,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			Name:          producedByHeader,
 			ClientAddress: conn.ClientAddress,
 			ConnectionId:  connId,
-			CreatedByUser: producer.CreatedByUser,
+			CreatedBy:     producer.CreatedBy,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		}
@@ -147,13 +145,13 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	id := GetDlsMsgId(stationName.Intern(), int(messageSeq), producedByHeader, poisonMessageContent.Time.String())
 	pmMessage := models.DlsMessage{
-		ID:           id,
-		StationName:  stationName.Ext(),
-		MessageSeq:   int(messageSeq),
-		Producer:     producerDetails,
-		PoisonedCg:   poisonedCg,
-		Message:      messagePayload,
-		CreationDate: time.Now(),
+		ID:          id,
+		StationName: stationName.Ext(),
+		MessageSeq:  int(messageSeq),
+		Producer:    producerDetails,
+		PoisonedCg:  poisonedCg,
+		Message:     messagePayload,
+		CreatedAt:   time.Now(),
 	}
 	internalCgName := replaceDelimiters(cgName)
 	poisonSubjectName := GetDlsSubject("poison", stationName.Intern(), id, internalCgName)
@@ -286,10 +284,10 @@ cleanup:
 			if _, value := idCheck[msgId]; !value {
 				idCheck[msgId] = true
 				message := dlsMsg.Message
-				if dlsMsg.CreationDate.IsZero() {
+				if dlsMsg.CreatedAt.IsZero() {
 					message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
-					message.TimeSent = dlsMsg.CreationDate
+					message.TimeSent = dlsMsg.CreatedAt
 				}
 				message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
 				schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: message})
@@ -361,7 +359,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	var producer models.Producer
 	var dlsMsg models.DlsMessage
 	var clientAddress string
-	var connectionId primitive.ObjectID
+	var connectionId string
 
 	for i, msg := range msgs {
 		err = json.Unmarshal(msg.Data, &dlsMsg)
@@ -379,7 +377,7 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 						return models.DlsMessageResponse{}, err
 					}
 				}
-				connectionId, _ = primitive.ObjectIDFromHex(connectionIdHeader)
+				connectionId = connectionIdHeader
 				_, conn, err := db.GetConnectionByID(connectionId)
 				if err != nil {
 					return models.DlsMessageResponse{}, err
@@ -418,11 +416,12 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			}
 
 			if msgType == "schema" {
-				dlsMsg.Message.Size = len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
-				if dlsMsg.CreationDate.IsZero() {
+				size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
+				dlsMsg.Message.Size = size
+				if dlsMsg.CreatedAt.IsZero() {
 					dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
 				} else {
-					dlsMsg.Message.TimeSent = dlsMsg.CreationDate
+					dlsMsg.Message.TimeSent = dlsMsg.CreatedAt
 				}
 			}
 
@@ -439,8 +438,8 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 	})
 
 	schemaType := ""
-	if station.Schema.SchemaName != "" {
-		exist, schema, err := db.GetSchemaByName(station.Schema.SchemaName)
+	if station.SchemaName != "" {
+		exist, schema, err := db.GetSchemaByName(station.SchemaName)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}
@@ -458,12 +457,12 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 			Name:          producer.Name,
 			ConnectionId:  producer.ConnectionId,
 			ClientAddress: clientAddress,
-			CreatedByUser: producer.CreatedByUser,
+			CreatedBy:     producer.CreatedBy,
 			IsActive:      producer.IsActive,
 			IsDeleted:     producer.IsDeleted,
 		},
 		Message:         dlsMsg.Message,
-		CreationDate:    dlsMsg.CreationDate,
+		CreatedAt:       dlsMsg.CreatedAt,
 		PoisonedCgs:     poisonedCgs,
 		ValidationError: dlsMsg.ValidationError,
 	}

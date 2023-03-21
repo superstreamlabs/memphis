@@ -46,7 +46,7 @@ function Users() {
             setIsLoading(true);
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_USERS);
             if (data) {
-                data.sort((a, b) => new Date(a.creation_date) - new Date(b.creation_date));
+                data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 setUsersList(data);
                 setCopyOfUserList(data);
             }

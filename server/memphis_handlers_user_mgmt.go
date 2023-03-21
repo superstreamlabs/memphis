@@ -90,27 +90,37 @@ func updateDeletedUserResources(user models.User) error {
 		}
 	}
 
-	err := db.UpdateStationsOfDeletedUser(user.Username)
+	err := db.UpdateStationsOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.Username)
+	err = db.UpdateConncetionsOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateProducersOfDeletedUser(user.Username)
+	err = db.UpdateProducersOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConsumersOfDeletedUser(user.Username)
+	err = db.UpdateConsumersOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateSchemasOfDeletedUser(user.Username)
+	err = db.UpdateSchemasOfDeletedUser(user.ID)
+	if err != nil {
+		return err
+	}
+
+	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID)
+	if err != nil {
+		return err
+	}
+
+	err = db.UpdateAuditLogsOfDeletedUser(user.ID)
 	if err != nil {
 		return err
 	}
@@ -137,8 +147,12 @@ func validateEmail(email string) error {
 	return nil
 }
 
+// type userToTokens interface {
+// 	models.User | models.SandboxUser
+// }
+
 type userToTokens interface {
-	models.User | models.SandboxUser
+	models.User
 }
 
 func CreateTokens[U userToTokens](user U) (string, string, error) {
@@ -146,23 +160,23 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 	var at *jwt.Token
 	switch u := any(user).(type) {
 	case models.User:
-		atClaims["user_id"] = u.ID.Hex()
+		atClaims["user_id"] = u.ID
 		atClaims["username"] = u.Username
 		atClaims["user_type"] = u.UserType
-		atClaims["creation_date"] = u.CreationDate
+		atClaims["creation_date"] = u.CreatedAt
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	case models.SandboxUser:
-		atClaims["user_id"] = u.ID.Hex()
-		atClaims["username"] = u.Username
-		atClaims["user_type"] = u.UserType
-		atClaims["creation_date"] = u.CreationDate
-		atClaims["already_logged_in"] = u.AlreadyLoggedIn
-		atClaims["avatar_id"] = u.AvatarId
-		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
-		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
+		// case models.SandboxUser:
+		// 	atClaims["user_id"] = u.ID
+		// 	atClaims["username"] = u.Username
+		// 	atClaims["user_type"] = u.UserType
+		// 	atClaims["creation_date"] = u.CreatedAt
+		// 	atClaims["already_logged_in"] = u.AlreadyLoggedIn
+		// 	atClaims["avatar_id"] = u.AvatarId
+		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
@@ -207,7 +221,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 	if err != nil {
 		return err
 	}
-
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -352,7 +365,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreationDate,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
@@ -391,47 +404,47 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		exist, sandboxUser, err := IsSandboxUserExist(username)
-		if exist {
-			if err != nil {
-				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+		// exist, sandboxUser, err := IsSandboxUserExist(username)
+		// if exist {
+		// 	if err != nil {
+		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 		return
+		// 	}
 
-			token, refreshToken, err := CreateTokens(sandboxUser)
-			if err != nil {
-				serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			domain := ""
-			secure := true
-			c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-			c.IndentedJSON(200, gin.H{
-				"jwt":                     token,
-				"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-				"user_id":                 sandboxUser.ID,
-				"username":                sandboxUser.Username,
-				"user_type":               sandboxUser.UserType,
-				"creation_date":           sandboxUser.CreationDate,
-				"already_logged_in":       sandboxUser.AlreadyLoggedIn,
-				"avatar_id":               sandboxUser.AvatarId,
-				"send_analytics":          true,
-				"env":                     "K8S",
-				"namespace":               configuration.K8S_NAMESPACE,
-				"skip_get_started":        sandboxUser.SkipGetStarted,
-				"broker_host":             BROKER_HOST,
-				"rest_gw_host":            REST_GW_HOST,
-				"ui_host":                 UI_HOST,
-				"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-				"ws_port":                 configuration.WS_PORT,
-				"http_port":               configuration.HTTP_PORT,
-				"clients_port":            configuration.CLIENTS_PORT,
-				"rest_gw_port":            configuration.REST_GW_PORT,
-			})
-			return
-		}
+		// 	token, refreshToken, err := CreateTokens(sandboxUser)
+		// 	if err != nil {
+		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 		return
+		// 	}
+		// 	domain := ""
+		// 	secure := true
+		// 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+		// 	c.IndentedJSON(200, gin.H{
+		// 		"jwt":                     token,
+		// 		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		// 		"user_id":                 sandboxUser.ID,
+		// 		"username":                sandboxUser.Username,
+		// 		"user_type":               sandboxUser.UserType,
+		// 		"creation_date":           sandboxUser.CreationDate,
+		// 		"already_logged_in":       sandboxUser.AlreadyLoggedIn,
+		// 		"avatar_id":               sandboxUser.AvatarId,
+		// 		"send_analytics":          true,
+		// 		"env":                     "K8S",
+		// 		"namespace":               configuration.K8S_NAMESPACE,
+		// 		"skip_get_started":        sandboxUser.SkipGetStarted,
+		// 		"broker_host":             BROKER_HOST,
+		// 		"rest_gw_host":            REST_GW_HOST,
+		// 		"ui_host":                 UI_HOST,
+		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		// "ws_port":                 configuration.WS_PORT,
+		// 		"http_port":               configuration.HTTP_PORT,
+		// 		"clients_port":            configuration.CLIENTS_PORT,
+		// 		"rest_gw_port":            configuration.REST_GW_PORT,
+		// 	})
+		// 	return
+		// }
 	}
 
 	token, refreshToken, err := CreateTokens(user)
@@ -469,7 +482,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
-		"creation_date":           user.CreationDate,
+		"created_at":              user.CreatedAt,
 		"already_logged_in":       user.AlreadyLoggedIn,
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
@@ -489,10 +502,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
-	if configuration.SANDBOX_ENV == "true" {
-		c.IndentedJSON(200, gin.H{"show_signup": false})
-		return
-	}
+	// if configuration.SANDBOX_ENV == "true" {
+	// 	c.IndentedJSON(200, gin.H{"show_signup": false})
+	// 	return
+	// }
 
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
@@ -570,14 +583,14 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	if shouldSendAnalytics {
 		param1 := analytics.EventParam{
 			Name:  "email",
-			Value: newUser.Username,
+			Value: username,
 		}
 		param2 := analytics.EventParam{
 			Name:  "newsletter",
 			Value: strconv.FormatBool(subscription),
 		}
 		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(newUser.Username, analyticsParams, "user-signup")
+		analytics.SendEventWithParams(username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
@@ -589,7 +602,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"user_id":                 newUser.ID,
 		"username":                newUser.Username,
 		"user_type":               newUser.UserType,
-		"creation_date":           newUser.CreationDate,
+		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       newUser.AlreadyLoggedIn,
 		"avatar_id":               newUser.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
@@ -694,7 +707,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"id":                      newUser.ID,
 		"username":                username,
 		"user_type":               userType,
-		"creation_date":           newUser.CreationDate,
+		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
 		"avatar_id":               body.AvatarId,
 		"broker_connection_creds": brokerConnectionCreds,
@@ -738,9 +751,9 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -863,7 +876,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		"id":                user.ID,
 		"username":          user.Username,
 		"user_type":         user.UserType,
-		"creation_date":     user.CreationDate,
+		"created_at":        user.CreatedAt,
 		"already_logged_in": user.AlreadyLoggedIn,
 		"avatar_id":         avatarId,
 	})
@@ -929,9 +942,9 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	if err := DenyForSandboxEnv(c); err != nil {
-		return
-	}
+	// if err := DenyForSandboxEnv(c); err != nil {
+	// 	return
+	// }
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -943,7 +956,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditSystemKey("analytics", flag)
+	err := db.EditConfigurationValue("analytics", flag)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -978,12 +991,15 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	username := strings.ToLower(user.Username)
 	err = db.UpdateSkipGetStarted(username)
 	if err != nil {
-		err2 := db.UpdateSkipGetStartedSandbox(username)
-		if err2 != nil {
-			serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+		// err2 := db.UpdateSkipGetStartedSandbox(username)
+		// if err2 != nil {
+		// 	serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 	return
+		// }
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

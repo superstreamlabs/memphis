@@ -62,7 +62,7 @@ type Log struct {
 	Type       string    `json:"type"`
 	Source     string    `json:"source"`
 	Data       string    `json:"data"`
-	TimeSent   time.Time `json:"creation_date"`
+	TimeSent   time.Time `json:"created_at"`
 }
 
 type SystemLogsResponse struct {
