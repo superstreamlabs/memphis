@@ -22,10 +22,10 @@ Whether it’s coding, user interface design, graphic design, writing, or organi
 
 &#x20; 3\. Clone the forked repo to your local station
 
-&#x20; 4\. Run a local memphis-mongodb using docker
+&#x20; 4\. Run a local memphis-metadata db using docker
 
 ```
-curl -s https://memphisdev.github.io/memphis-docker/docker-compose-mongo.yml -o docker-compose-mongo.yml && docker compose -f docker-compose-mongo.yml -p memphis up
+curl -s https://memphisdev.github.io/memphis-docker/docker-compose-dev-env.yml -o docker-compose-dev-env.yml && docker compose -f docker-compose-dev-env.yml -p memphis up
 ```
 
 &#x20; 5\. Install Memphis dependencies - enter the cloned directory and run
@@ -37,7 +37,7 @@ go get -d -v .
 &#x20; 6\. Run Memphis in debug mode (If you're using vscode, click F5) or run via terminal via:
 
 ```
-DEV_ENV="true" DOCKER_ENV="true" MONGO_URL="mongodb://localhost:27017/maindb?retryWrites=true&w=majority" ROOT_PASSWORD="memphis" CONNECTION_TOKEN="memphis" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" JWT_SECRET="JWT_TEST_PURPOSE" REFRESH_JWT_SECRET="REFRESH_JWT_TEST_PURPOSE" go run main.go --js --auth memphis --websocket_no_tls
+DEV_ENV="true" DOCKER_ENV="true" ANALYTICS="false" LOGS_RETENTION_IN_DAYS="30" go run main.go
 ```
 
 ### Frontend Contributions

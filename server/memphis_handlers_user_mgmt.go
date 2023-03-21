@@ -352,13 +352,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
@@ -438,7 +438,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 		"avatar_id":               sandboxUser.AvatarId,
 		// 		"send_analytics":          true,
 		// 		"env":                     "K8S",
-		// 		"namespace":               configuration.K8S_NAMESPACE,
+		// 		"namespace":               serv.opts.K8sNamespace,
 		// 		"skip_get_started":        sandboxUser.SkipGetStarted,
 		// 		"broker_host":             BROKER_HOST,
 		// 		"rest_gw_host":            REST_GW_HOST,
@@ -469,13 +469,13 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
@@ -493,7 +493,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
 		"env":                     env,
-		"namespace":               configuration.K8S_NAMESPACE,
+		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
 		"broker_host":             brokerHost,
@@ -575,13 +575,13 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
@@ -613,7 +613,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"avatar_id":               newUser.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
 		"env":                     env,
-		"namespace":               configuration.K8S_NAMESPACE,
+		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               newUser.FullName,
 		"skip_get_started":        newUser.SkipGetStarted,
 		"broker_host":             brokerHost,

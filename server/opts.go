@@ -286,11 +286,12 @@ type Options struct {
 	LameDuckGracePeriod   time.Duration     `json:"-"`
 
 	// memphis options
-	UiPort       int    `json:"-"`
-	RestGwPort   int    `json:"-"`
-	RootPassword string `json:"-"`
-	MemphisHttpJwtSecret           string `json:"-"`
-	MemphisHttpRefreshJwtSecret    string `json:"-"`
+	UiPort                      int    `json:"-"`
+	RestGwPort                  int    `json:"-"`
+	RootPassword                string `json:"-"`
+	MemphisHttpJwtSecret        string `json:"-"`
+	MemphisHttpRefreshJwtSecret string `json:"-"`
+	K8sNamespace                string `json:"-"`
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -1404,6 +1405,13 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			return
 		}
 		o.MemphisHttpRefreshJwtSecret = value
+	case "k8s_namespace":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error k8s_namespace config: can not be empty"})
+			return
+		}
+		o.K8sNamespace = value
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{

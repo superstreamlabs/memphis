@@ -514,13 +514,13 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				return components, metricsEnabled, err
 			}
 		}
-		deploymentsClient := clientset.AppsV1().Deployments(configuration.K8S_NAMESPACE)
+		deploymentsClient := clientset.AppsV1().Deployments(mh.S.opts.K8sNamespace)
 		deploymentsList, err := deploymentsClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return components, metricsEnabled, err
 		}
 
-		pods, err := clientset.CoreV1().Pods(configuration.K8S_NAMESPACE).List(context.TODO(), metav1.ListOptions{})
+		pods, err := clientset.CoreV1().Pods(mh.S.opts.K8sNamespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return components, metricsEnabled, err
 		}
@@ -532,7 +532,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				continue
 			}
 			var ports []int
-			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(configuration.K8S_NAMESPACE).Get(context.TODO(), pod.Name, metav1.GetOptions{})
+			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(mh.S.opts.K8sNamespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
 			if err != nil {
 				if strings.Contains(err.Error(), "could not find the requested resource") {
 					metricsEnabled = false
@@ -560,7 +560,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if !minikubeCheck {
 				isMinikube = checkIsMinikube(node.Labels)
 			}
-			pvcClient := clientset.CoreV1().PersistentVolumeClaims(configuration.K8S_NAMESPACE)
+			pvcClient := clientset.CoreV1().PersistentVolumeClaims(mh.S.opts.K8sNamespace)
 			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
 			if err != nil {
 				return components, metricsEnabled, err
@@ -637,7 +637,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					storageUsage = shortenFloat(float64(v.JetStream.Stats.Store))
 				}
 			} else if containerForExec != "" && mountpath != "" {
-				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name)
+				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name, mh.S.opts.K8sNamespace)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
@@ -724,7 +724,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			})
 		}
 
-		statefulsetsClient := clientset.AppsV1().StatefulSets(configuration.K8S_NAMESPACE)
+		statefulsetsClient := clientset.AppsV1().StatefulSets(mh.S.opts.K8sNamespace)
 		statefulsetsList, err := statefulsetsClient.List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return components, metricsEnabled, err
@@ -1973,12 +1973,12 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	return res
 }
 
-func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string) (float64, error) {
+func getContainerStorageUsage(config *rest.Config, mountPath string, container string, pod string, namespace string) (float64, error) {
 	usage := float64(0)
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod).
-		Namespace(configuration.K8S_NAMESPACE).
+		Namespace(namespace).
 		SubResource("exec")
 	req.VersionedParams(&v1.PodExecOptions{
 		Container: container,

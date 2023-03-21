@@ -23,35 +23,52 @@ type Configuration struct {
 	LOCAL_CLUSTER_ENV              bool
 	DOCKER_ENV                     string
 	ANALYTICS                      string
-	K8S_NAMESPACE                  string
 	LOGS_RETENTION_IN_DAYS         string
+	POISON_MSGS_RETENTION_IN_HOURS int
+	TIERED_STORAGE_TIME_FRAME_SEC  int
+	EXPORTER                       bool
+	METADATA_DB_USER               string
+	METADATA_DB_PASS               string
+	METADATA_DB_DBNAME             string
+	METADATA_DB_HOST               string
+	METADATA_DB_PORT               string
+	METADATA_DB_TLS_ENABLED        bool
+	METADATA_DB_TLS_KEY            string
+	METADATA_DB_TLS_CRT            string
+	METADATA_DB_TLS_CA             string
+	// SANDBOX_SLACK_BOT_TOKEN        string
+	// SANDBOX_SLACK_CHANNEL_ID       string
+	// SANDBOX_UI_URL                 string
 	// GOOGLE_CLIENT_ID               string
 	// GOOGLE_CLIENT_SECRET           string
 	// SANDBOX_ENV                    string
 	// GITHUB_CLIENT_ID               string
 	// GITHUB_CLIENT_SECRET           string
 	// SANDBOX_REDIRECT_URI           string
-	POISON_MSGS_RETENTION_IN_HOURS int
-	// SANDBOX_SLACK_BOT_TOKEN        string
-	// SANDBOX_SLACK_CHANNEL_ID       string
-	// SANDBOX_UI_URL                 string
-	TIERED_STORAGE_TIME_FRAME_SEC  int
-	EXPORTER                       bool
-	METADATA_DB_USER                string
-	METADATA_DB_PASS                string
-	METADATA_DB_DBNAME              string
-	METADATA_DB_HOST                string
-	METADATA_DB_PORT                string
-	METADATA_DB_TLS_ENABLED         bool
-	METADATA_DB_TLS_KEY             string
-	METADATA_DB_TLS_CRT             string
-	METADATA_DB_TLS_CA              string
 }
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
 	if os.Getenv("DOCKER_ENV") != "" || os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		gonfig.GetConf("./conf/docker-config.json", &configuration)
+		if configuration.METADATA_DB_USER == "" {
+			configuration.METADATA_DB_USER = "memphis"
+		}
+		if configuration.METADATA_DB_PASS == "" {
+			configuration.METADATA_DB_PASS = "memphis"
+		}
+		if configuration.METADATA_DB_DBNAME == "" {
+			configuration.METADATA_DB_DBNAME = "memphis"
+		}
+		if configuration.METADATA_DB_HOST == "" {
+			configuration.METADATA_DB_HOST = "localhost"
+		}
+		if configuration.METADATA_DB_PASS == "" {
+			configuration.METADATA_DB_PASS = "memphis"
+		}
+		if configuration.METADATA_DB_PORT == "" {
+			configuration.METADATA_DB_PORT = "5005"
+		}
 	} else {
 		gonfig.GetConf("./conf/config.json", &configuration)
 	}

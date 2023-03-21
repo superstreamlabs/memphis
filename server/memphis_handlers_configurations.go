@@ -98,7 +98,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			BROKER_HOST = "localhost"
 		} else {
-			BROKER_HOST = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			BROKER_HOST = "memphis." + s.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		err = db.InsertConfiguration("broker_host", BROKER_HOST)
 		if err != nil {
@@ -115,7 +115,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			UI_HOST = fmt.Sprintf("http://localhost:%v", s.opts.UiPort)
 		} else {
-			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, s.opts.UiPort)
+			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", s.opts.K8sNamespace, s.opts.UiPort)
 		}
 		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
@@ -132,7 +132,7 @@ func (s *Server) initializeConfigurations() {
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 			REST_GW_HOST = fmt.Sprintf("http://localhost:%v", s.opts.RestGwPort)
 		} else {
-			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", configuration.K8S_NAMESPACE, s.opts.RestGwPort)
+			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", s.opts.K8sNamespace, s.opts.RestGwPort)
 		}
 		restGWHost = models.ConfigurationsValue{
 			Key:   "rest_gw_host",
