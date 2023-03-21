@@ -615,10 +615,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 				// brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
-				brokerMatch := false
-				if "memphis" == container.Name {
-					brokerMatch = true
-				}
+				brokerMatch := (container.Name == "memphis")
 				if err != nil {
 					return components, metricsEnabled, err
 				}
