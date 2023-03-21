@@ -43,17 +43,19 @@ const (
 	// VERSION is the current version for the memphis.
 	VERSION = "1.0.0"
 
-	DEFAULT_SERVER_NAME        = "memphis-0"
-	DEFAULT_WS_PORT            = 7770
-	DEFAULT_UI_PORT            = 9000
-	DEFAULT_REST_GW_PORT       = 4444
-	DEFAULT_WS_TOKEN           = "memphis"
-	DEFAULT_CLIENTS_TOKEN      = "memphis"
-	DEFAULT_ROOT_PASSWORD      = "memphis"
-	SHOWABLE_ERROR_STATUS_CODE = 666
-	ANALYTICS_TOKEN            = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
-	DEFAULT_JWT_SECRET         = "jwt_test_purpose"
-	DEFAULT_REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
+	DEFAULT_SERVER_NAME                        = "memphis-0"
+	DEFAULT_WS_PORT                            = 7770
+	DEFAULT_UI_PORT                            = 9000
+	DEFAULT_REST_GW_PORT                       = 4444
+	DEFAULT_WS_TOKEN                           = "memphis"
+	DEFAULT_CLIENTS_TOKEN                      = "memphis"
+	DEFAULT_ROOT_PASSWORD                      = "memphis"
+	SHOWABLE_ERROR_STATUS_CODE                 = 666
+	ANALYTICS_TOKEN                            = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
+	DEFAULT_JWT_SECRET                         = "jwt_test_purpose"
+	DEFAULT_REFRESH_JWT_SECRET                 = "refresh_jwt_test_purpose"
+	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
+	DEFAULT_DLS_RETENTION_HOURS                = 3
 
 	// COMP_WITH_NATS_VERSION is the NATS version Memphis is compatible with
 	COMP_WITH_NATS_VERSION = "2.9.15"

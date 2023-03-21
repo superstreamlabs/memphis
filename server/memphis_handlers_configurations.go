@@ -33,8 +33,8 @@ func (s *Server) initializeConfigurations() {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		POISON_MSGS_RETENTION_IN_HOURS = configuration.POISON_MSGS_RETENTION_IN_HOURS
-		err = db.InsertConfiguration("pm_retention", strconv.Itoa(POISON_MSGS_RETENTION_IN_HOURS))
+		DLS_RETENTION_HOURS = s.opts.DlsRetentionHours
+		err = db.InsertConfiguration("pm_retention", strconv.Itoa(DLS_RETENTION_HOURS))
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
@@ -43,7 +43,7 @@ func (s *Server) initializeConfigurations() {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		POISON_MSGS_RETENTION_IN_HOURS = pmRetention
+		DLS_RETENTION_HOURS = pmRetention
 	}
 	exist, logsRetentionRes, err := db.GetConfiguration("logs_retention")
 	if err != nil || !exist {
@@ -68,11 +68,11 @@ func (s *Server) initializeConfigurations() {
 		if err != nil {
 			s.Errorf("initializeConfigurations: " + err.Error())
 		}
-		if configuration.TIERED_STORAGE_TIME_FRAME_SEC > 3600 || configuration.TIERED_STORAGE_TIME_FRAME_SEC < 5 {
+		if s.opts.TieredStorageUploadIntervalSec > 3600 || s.opts.TieredStorageUploadIntervalSec < 5 {
 			s.Warnf("initializeConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes - using default 8 seconds")
 			TIERED_STORAGE_TIME_FRAME_SEC = 8
 		} else {
-			TIERED_STORAGE_TIME_FRAME_SEC = configuration.TIERED_STORAGE_TIME_FRAME_SEC
+			TIERED_STORAGE_TIME_FRAME_SEC = s.opts.TieredStorageUploadIntervalSec
 		}
 		err = db.InsertConfiguration("tiered_storage_time_sec", strconv.Itoa(TIERED_STORAGE_TIME_FRAME_SEC))
 		if err != nil {
@@ -153,7 +153,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if POISON_MSGS_RETENTION_IN_HOURS != body.PMRetention {
+	if DLS_RETENTION_HOURS != body.PMRetention {
 		err := changePMRetention(body.PMRetention)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
@@ -218,12 +218,12 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-update-cluster-config")
 	}
 
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
+	c.IndentedJSON(200, gin.H{"pm_retention": DLS_RETENTION_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
 }
 
 func changePMRetention(pmRetention int) error {
-	POISON_MSGS_RETENTION_IN_HOURS = pmRetention
-	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "pm_retention", Update: POISON_MSGS_RETENTION_IN_HOURS})
+	DLS_RETENTION_HOURS = pmRetention
+	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "pm_retention", Update: DLS_RETENTION_HOURS})
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
-	err = db.UpdateConfiguration("pm_retention", strconv.Itoa(POISON_MSGS_RETENTION_IN_HOURS))
+	err = db.UpdateConfiguration("pm_retention", strconv.Itoa(DLS_RETENTION_HOURS))
 	if err != nil {
 		return err
 	}
@@ -239,7 +239,7 @@ func changePMRetention(pmRetention int) error {
 	if err != nil {
 		return err
 	}
-	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+	maxAge := time.Duration(DLS_RETENTION_HOURS) * time.Hour
 	for _, station := range stations {
 		sn, err := StationNameFromStr(station.Name)
 		if err != nil {
@@ -295,7 +295,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": POISON_MSGS_RETENTION_IN_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
+	c.IndentedJSON(200, gin.H{"pm_retention": DLS_RETENTION_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
 }
 
 func changeTSTime(tsTime int) error {

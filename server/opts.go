@@ -286,13 +286,15 @@ type Options struct {
 	LameDuckGracePeriod   time.Duration     `json:"-"`
 
 	// memphis options
-	UiPort                      int    `json:"-"`
-	RestGwPort                  int    `json:"-"`
-	RootPassword                string `json:"-"`
-	MemphisHttpJwtSecret        string `json:"-"`
-	MemphisHttpRefreshJwtSecret string `json:"-"`
-	K8sNamespace                string `json:"-"`
-	LogsRetentionDays           int    `json:"-"`
+	UiPort                         int    `json:"-"`
+	RestGwPort                     int    `json:"-"`
+	RootPassword                   string `json:"-"`
+	MemphisHttpJwtSecret           string `json:"-"`
+	MemphisHttpRefreshJwtSecret    string `json:"-"`
+	K8sNamespace                   string `json:"-"`
+	LogsRetentionDays              int    `json:"-"`
+	TieredStorageUploadIntervalSec int    `json:"-"`
+	DlsRetentionHours              int    `json:"-"`
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -1414,7 +1416,26 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 		}
 		o.K8sNamespace = value
 	case "logs_retention_days":
-		o.LogsRetentionDays = int(v.(int64))
+		value := int(v.(int64))
+		if value < 1 || value > 100 {
+			*errors = append(*errors, &configErr{tk, "error logs_retention_days config: has to be positive and not more than 100"})
+			return
+		}
+		o.LogsRetentionDays = value
+	case "tiered_storage_upload_interval_seconds":
+		value := int(v.(int64))
+		if value < 1 || value > 3600 {
+			*errors = append(*errors, &configErr{tk, "error tiered_storage_upload_interval_seconds config: has to be positive and not more than 3600 (1 hour)"})
+			return
+		}
+		o.TieredStorageUploadIntervalSec = value
+	case "dls_retention_hours":
+		value := int(v.(int64))
+		if value < 1 || value > 30 {
+			*errors = append(*errors, &configErr{tk, "error dls_retention_hours config: has to be positive and not more than 30"})
+			return
+		}
+		o.DlsRetentionHours = value
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -4699,6 +4720,12 @@ func setBaselineOptions(opts *Options) {
 	}
 	if opts.LogsRetentionDays == 0 {
 		opts.LogsRetentionDays = 7
+	}
+	if opts.TieredStorageUploadIntervalSec == 0 {
+		opts.TieredStorageUploadIntervalSec = DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC
+	}
+	if opts.DlsRetentionHours == 0 {
+		opts.DlsRetentionHours = DEFAULT_DLS_RETENTION_HOURS
 	}
 }
 

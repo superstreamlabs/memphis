@@ -70,7 +70,7 @@ const (
 var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS          int
-	POISON_MSGS_RETENTION_IN_HOURS  int
+	DLS_RETENTION_HOURS  int
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
 	BROKER_HOST                     string
@@ -193,7 +193,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 }
 
 func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
-	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+	maxAge := time.Duration(DLS_RETENTION_HOURS) * time.Hour
 
 	var storage StorageType
 	if storageType == "memory" {
