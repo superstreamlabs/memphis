@@ -28,7 +28,7 @@ import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
 import pathDomains from '../../router';
 import { connect } from 'nats.ws';
-import { SOCKET_URL } from '../../config';
+import { ENVIRONMENT, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from '../../config';
 
 const Login = (props) => {
     const [state, dispatch] = useContext(Context);
@@ -87,6 +87,8 @@ const Login = (props) => {
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
+                        const ws_port = data.ws_port;
+                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
                         const conn = await connect({
                             servers: [SOCKET_URL],
                             token: '::memphis',
@@ -194,8 +196,8 @@ const Login = (props) => {
                                                 colorType="white"
                                                 radiusType="circle"
                                                 backgroundColorType="purple"
-                                                fontSize="12px"
-                                                fontWeight="600"
+                                                fontSize="14px"
+                                                fontFamily="InterBold"
                                                 isLoading={loadingSubmit}
                                                 onClick={handleSubmit}
                                             />
