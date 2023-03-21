@@ -1649,8 +1649,9 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 		return []models.Producer{}, err
 	}
 	defer conn.Release()
-
-	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false LIMIT 1`
+	query := `SELECT p.*, c.client_address FROM producers AS p 
+			LEFT JOIN connections as c ON c.id = p.connection_id
+			WHERE p.station_id = $1 AND p.is_deleted = false LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
 		return []models.Producer{}, err
@@ -3511,15 +3512,15 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 
 // Sandbox Functions
 // func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	// user := models.SandboxUser{}
-	// return user, nil
+// user := models.SandboxUser{}
+// return user, nil
 // }
 
 // func UpdateSandboxUserAlreadyLoggedIn(userId int) {
-	// sandboxUsersCollection.UpdateOne(context.TODO(),
-	// 	bson.M{"_id": userId},
-	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
-	// )
+// sandboxUsersCollection.UpdateOne(context.TODO(),
+// 	bson.M{"_id": userId},
+// 	bson.M{"$set": bson.M{"already_logged_in": true}},
+// )
 // }
 
 // func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
@@ -3551,13 +3552,13 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 // }
 
 // func UpdateSkipGetStartedSandbox(username string) error {
-	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
-	// 	bson.M{"username": username},
-	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
+// 	bson.M{"username": username},
+// 	bson.M{"$set": bson.M{"skip_get_started": true}},
+// )
+// if err != nil {
+// 	return err
+// }
 // 	return nil
 // }
 
