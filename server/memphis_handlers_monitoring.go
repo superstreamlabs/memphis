@@ -621,6 +621,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
 						if strings.Contains(mount.Name, "memphis") {
 							mountpath = mount.MountPath
+							fmt.Println(mount.Name)
+							fmt.Println(mountpath)
 							break
 						}
 					}
