@@ -187,17 +187,15 @@ const GetStarted = ({ username, dataSentence, skip }) => {
         getStartedDispatch({ type: 'SET_CURRENT_STEP', payload: getStartedState?.currentStep - 1 });
     };
 
-    const getOverviewData = async () => {
+    const getAvailableReplicas = async () => {
         try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
-            let indexOfBrokerComponent = data?.system_components.findIndex((item) => item.component === 'memphis');
-            indexOfBrokerComponent = indexOfBrokerComponent !== -1 ? indexOfBrokerComponent : 1;
-            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: data?.system_components[indexOfBrokerComponent]?.actual_pods });
+            const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
+            getStartedDispatch({ type: 'SET_ACTUAL_PODS', payload: Array.from({ length: data?.available_replicas }, (_, i) => i + 1) });
         } catch (error) {}
     };
 
     useEffect(() => {
-        getOverviewData();
+        getAvailableReplicas();
         return () => {
             getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
         };

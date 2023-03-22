@@ -15,7 +15,7 @@ import './style.scss';
 
 import React, { useContext, useState, useEffect } from 'react';
 import SysContainers from './sysContainers';
-import Component from './component';
+import Component from './components/component';
 import { Context } from '../../../hooks/store';
 import { Tree } from 'antd';
 import CollapseArrow from '../../../assets/images/collapseArrow.svg';
@@ -23,6 +23,32 @@ import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
     const [expandedNodes, setExpandedNodes] = useState(['0-0']);
+
+    const getBrokers = (comp) => {
+        const children = [];
+
+        ['unhealthy_components', 'dangerous_components', 'risky_components', 'healthy_components'].forEach((type) => {
+            const typeComponents = comp.components[type];
+            if (typeComponents) {
+                children.push(
+                    ...typeComponents.map((component, index) => ({
+                        title: (
+                            <SysContainers
+                                key={`0-${type}-${index}`}
+                                component={component}
+                                k8sEnv={state?.monitor_data?.k8s_env}
+                                metricsEnabled={state?.monitor_data?.metrics_enabled}
+                                index={index}
+                            />
+                        ),
+                        key: `0-${type}-${index}`,
+                        selectable: false
+                    }))
+                );
+            }
+        });
+        return children;
+    };
 
     return (
         <div className="overview-components-wrapper system-components-wrapper">
@@ -57,20 +83,7 @@ const SysComponents = () => {
                                     {
                                         title: <Component comp={comp} i={i} />,
                                         key: `0-${i}`,
-                                        children: comp?.components?.map((component, index) => {
-                                            return {
-                                                title: (
-                                                    <SysContainers
-                                                        component={component}
-                                                        k8sEnv={state?.monitor_data?.k8s_env}
-                                                        metricsEnabled={state?.monitor_data?.metrics_enabled}
-                                                        index={index}
-                                                    />
-                                                ),
-                                                key: `0-${i}-${index}`,
-                                                selectable: false
-                                            };
-                                        })
+                                        children: getBrokers(comp)
                                     }
                                 ]}
                             />

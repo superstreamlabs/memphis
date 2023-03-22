@@ -88,7 +88,7 @@ function OverView() {
 
     const arrangeData = (data) => {
         data.stations?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        data.system_components.sort(function (a, b) {
+        data.system_components?.sort(function (a, b) {
             let nameA = a.name.toUpperCase();
             let nameB = b.name.toUpperCase();
             if (nameA < nameB) {
@@ -99,7 +99,7 @@ function OverView() {
             }
             return 0;
         });
-        data.system_components.map((a) => {
+        data.system_components?.map((a) => {
             a.ports?.sort(function (a, b) {
                 if (a < b) {
                     return -1;
