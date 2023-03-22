@@ -411,22 +411,22 @@ func GetSystemKey(key string) (bool, models.SystemKey, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.SystemKey{}, err
+		return false, models.SystemKey{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_system_key", query)
 	if err != nil {
-		return true, models.SystemKey{}, err
+		return false, models.SystemKey{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
 	if err != nil {
-		return true, models.SystemKey{}, err
+		return false, models.SystemKey{}, err
 	}
 	defer rows.Close()
 	systemKeys, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SystemKey])
 	if err != nil {
-		return true, models.SystemKey{}, err
+		return false, models.SystemKey{}, err
 	}
 	if len(systemKeys) == 0 {
 		return false, models.SystemKey{}, nil
@@ -468,22 +468,22 @@ func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.ConfigurationsValue{}, err
+		return false, models.ConfigurationsValue{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_configuration", query)
 	if err != nil {
-		return true, models.ConfigurationsValue{}, err
+		return false, models.ConfigurationsValue{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, key)
 	if err != nil {
-		return true, models.ConfigurationsValue{}, err
+		return false, models.ConfigurationsValue{}, err
 	}
 	defer rows.Close()
 	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsValue])
 	if err != nil {
-		return true, models.ConfigurationsValue{}, err
+		return false, models.ConfigurationsValue{}, err
 	}
 	if len(configurations) == 0 {
 		return false, models.ConfigurationsValue{}, nil
@@ -683,22 +683,22 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Connection{}, err
+		return false, models.Connection{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM connections AS c WHERE id = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_connection_by_id", query)
 	if err != nil {
-		return true, models.Connection{}, err
+		return false, models.Connection{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
 	if err != nil {
-		return true, models.Connection{}, err
+		return false, models.Connection{}, err
 	}
 	defer rows.Close()
 	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
 	if err != nil {
-		return true, models.Connection{}, err
+		return false, models.Connection{}, err
 	}
 	if len(connections) == 0 {
 		return false, models.Connection{}, nil
@@ -926,22 +926,22 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Station{}, err
+		return false, models.Station{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false OR is_deleted IS NULL) LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_name", query)
 	if err != nil {
-		return true, models.Station{}, err
+		return false, models.Station{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
-		return true, models.Station{}, err
+		return false, models.Station{}, err
 	}
 	defer rows.Close()
 	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
 	if err != nil {
-		return true, models.Station{}, err
+		return false, models.Station{}, err
 	}
 	if len(stations) == 0 {
 		return false, models.Station{}, nil
@@ -1499,22 +1499,22 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM producers WHERE name = $1 AND connection_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_name_and_connection_id", query)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, connectionId)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	if len(producers) == 0 {
 		return false, models.Producer{}, nil
@@ -1527,22 +1527,22 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_username", query)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, stationId, connectionId)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	if len(producers) == 0 {
 		return false, models.Producer{}, nil
@@ -1555,23 +1555,23 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer conn.Release()
 
 	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_producer_by_station_id", query)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, producerName, stationId)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	if len(producers) == 0 {
 		return false, models.Producer{}, nil
@@ -1758,22 +1758,22 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
-		return true, models.Producer{}, err
+		return false, models.Producer{}, err
 	}
 	if len(producers) == 0 {
 		return false, models.Producer{}, nil
@@ -1891,23 +1891,23 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
 
 	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND is_deleted = false LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, consumersGroup, stationId)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
 		return false, models.Consumer{}, nil
@@ -2085,22 +2085,22 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
 	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
 		return false, models.Consumer{}, err
@@ -2108,11 +2108,11 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
 	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	return true, consumers[0], nil
 }
@@ -2293,22 +2293,22 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM consumers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_station_id", query)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, consumerName, stationId)
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err != nil {
-		return true, models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
 		return false, models.Consumer{}, nil
@@ -2382,22 +2382,22 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Schema{}, err
+		return false, models.Schema{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM schemas WHERE name = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_schema_by_name", query)
 	if err != nil {
-		return true, models.Schema{}, err
+		return false, models.Schema{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
-		return true, models.Schema{}, err
+		return false, models.Schema{}, err
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Schema])
 	if err != nil {
-		return true, models.Schema{}, err
+		return false, models.Schema{}, err
 	}
 	if len(schemas) == 0 {
 		return false, models.Schema{}, nil
@@ -2547,22 +2547,22 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.SchemaVersion{}, err
+		return false, models.SchemaVersion{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM schema_versions WHERE schema_id=$1 AND version_number=$2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_version_by_number_and_id", query)
 	if err != nil {
-		return true, models.SchemaVersion{}, err
+		return false, models.SchemaVersion{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaId, version)
 	if err != nil {
-		return true, models.SchemaVersion{}, err
+		return false, models.SchemaVersion{}, err
 	}
 	defer rows.Close()
 	schemas, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SchemaVersionResponse])
 	if err != nil {
-		return true, models.SchemaVersion{}, err
+		return false, models.SchemaVersion{}, err
 	}
 	if len(schemas) == 0 {
 		return false, models.SchemaVersion{}, nil
@@ -2853,22 +2853,22 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Integration{}, err
+		return false, models.Integration{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
 	if err != nil {
-		return true, models.Integration{}, err
+		return false, models.Integration{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
-		return true, models.Integration{}, err
+		return false, models.Integration{}, err
 	}
 	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
 	if err != nil {
-		return true, models.Integration{}, err
+		return false, models.Integration{}, err
 	}
 	if len(integrations) == 0 {
 		return false, models.Integration{}, nil
@@ -2881,22 +2881,22 @@ func GetAllIntegrations() (bool, []models.Integration, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, []models.Integration{}, err
+		return false, []models.Integration{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM integrations`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_integrations", query)
 	if err != nil {
-		return true, []models.Integration{}, err
+		return false, []models.Integration{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name)
 	if err != nil {
-		return true, []models.Integration{}, err
+		return false, []models.Integration{}, err
 	}
 	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
 	if err != nil {
-		return true, []models.Integration{}, err
+		return false, []models.Integration{}, err
 	}
 	if len(integrations) == 0 {
 		return false, []models.Integration{}, nil
@@ -3124,22 +3124,22 @@ func GetRootUser() (bool, models.User, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	if len(users) == 0 {
 		return false, models.User{}, nil
@@ -3152,22 +3152,22 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	if len(users) == 0 {
 		return false, models.User{}, nil
@@ -3180,22 +3180,22 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM users WHERE id = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_id", query)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, userId)
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	defer rows.Close()
 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err != nil {
-		return true, models.User{}, err
+		return false, models.User{}, err
 	}
 	if len(users) == 0 {
 		return false, models.User{}, nil
@@ -3633,22 +3633,22 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Tag{}, err
+		return false, models.Tag{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tags WHERE name=$1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_tag_by_name", query)
 	if err != nil {
-		return true, models.Tag{}, err
+		return false, models.Tag{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
-		return true, models.Tag{}, err
+		return false, models.Tag{}, err
 	}
 	defer rows.Close()
 	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
 	if err != nil {
-		return true, models.Tag{}, err
+		return false, models.Tag{}, err
 	}
 	if len(tags) == 0 {
 		return false, models.Tag{}, nil
@@ -3747,22 +3747,22 @@ func GetImage(name string) (bool, models.Image, error) {
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Image{}, err
+		return false, models.Image{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM configurations WHERE key = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_image", query)
 	if err != nil {
-		return true, models.Image{}, err
+		return false, models.Image{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
-		return true, models.Image{}, err
+		return false, models.Image{}, err
 	}
 	defer rows.Close()
 	images, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Image])
 	if err != nil {
-		return true, models.Image{}, err
+		return false, models.Image{}, err
 	}
 	if len(images) == 0 {
 		return false, models.Image{}, nil

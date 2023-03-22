@@ -369,14 +369,14 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	tagsHandler := TagsHandler{S: sh.S}
 
 	exist, station, err := db.GetStationByName(body.StationName)
-	if !exist {
+	if err != nil {
+		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	} else if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetStation: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	} else if err != nil {
-		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
@@ -1310,15 +1310,16 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext())
+	if err != nil {
+		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("GetMessageDetails: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1423,15 +1424,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 
 	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	if err != nil {
+		serv.Errorf("GetMessageDetails: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 	if !exist {
 		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
 		serv.Warnf("GetMessageDetails: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-	if err != nil {
-		serv.Errorf("GetMessageDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1837,15 +1838,16 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	exist, schema, err := db.GetSchemaByName(station.SchemaName)
+	if err != nil {
+		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	if !exist {
 		errMsg := "Schema " + station.SchemaName + " does not exist"
 		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-	if err != nil {
-		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 

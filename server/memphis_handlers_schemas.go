@@ -244,13 +244,13 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 	}
 
 	exist, schema, err := db.GetSchemaByName(station.SchemaName)
-	if !exist {
-		serv.Warnf("getSchemaByStation: Schema " + station.SchemaName + " does not exist")
-		return models.Schema{}, ErrNoSchema
-	}
 	if err != nil {
 		serv.Errorf("getSchemaByStation: Schema" + station.SchemaName + "at station " + station.Name + err.Error())
 		return models.Schema{}, err
+	}
+	if !exist {
+		serv.Warnf("getSchemaByStation: Schema " + station.SchemaName + " does not exist")
+		return models.Schema{}, ErrNoSchema
 	}
 
 	return schema, nil
@@ -739,7 +739,6 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	schemaVersion := body.VersionNumber
 	exist, _, err = db.GetSchemaVersionByNumberAndID(schemaVersion, schema.ID)
-
 	if err != nil {
 		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + " version " + strconv.Itoa(schemaVersion) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

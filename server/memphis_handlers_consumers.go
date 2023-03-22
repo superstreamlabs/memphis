@@ -47,10 +47,10 @@ func validateConsumerType(consumerType string) error {
 
 func isConsumerGroupExist(consumerGroup string, stationId int) (bool, models.Consumer, error) {
 	exist, consumer, err := db.GetActiveConsumerByCG(consumerGroup, stationId)
-	if !exist {
-		return false, models.Consumer{}, nil
-	} else if err != nil {
+	if err != nil {
 		return false, models.Consumer{}, err
+	} else if !exist {
+		return false, models.Consumer{}, nil
 	}
 	return true, consumer, nil
 }

@@ -23,14 +23,16 @@ import (
 
 func IsSlackEnabled() (bool, error) {
 	exist, _, err := db.GetIntegration("slack")
+	if err != nil {
+		return false, err
+	}
+
 	if !exist {
 		return false, nil
 	}
-	if err == nil {
-		return true, nil
-	}
 
-	return false, err
+	// if err == nil
+	return true, nil
 }
 
 func sendMessageToSlackChannel(integration models.SlackIntegration, title string, message string) error {
@@ -180,7 +182,9 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType strin
 func createSlackIntegration(keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	exist, slackIntegration, err := db.GetIntegration("slack")
-	if !exist {
+	if err != nil {
+		return slackIntegration, err
+	} else if !exist {
 		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
 		if err != nil {
 			return slackIntegration, err
@@ -211,8 +215,6 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		serv.SendUpdateToClients(update)
 		slackIntegration.Keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
 		return slackIntegration, nil
-	} else if err != nil {
-		return slackIntegration, err
 	}
 	return slackIntegration, errors.New("Slack integration already exists")
 }

@@ -301,7 +301,7 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	return connectedProducers, disconnectedProducers, deletedProducers, nil
 }
 
-func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint
+func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the REST endpoint (using cli)
 	var body models.GetAllProducersByStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -358,15 +358,15 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
+	if err != nil {
+		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
+		respondWithErr(s, reply, err)
+		return
+	}
 	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)
 		respondWithErr(s, reply, errors.New(errMsg))
-		return
-	}
-	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
 		return
 	}
 

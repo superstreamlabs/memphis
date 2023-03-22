@@ -384,11 +384,11 @@ func getDlsMessageById(station models.Station, sn StationName, dlsMsgId, dlsType
 				}
 				clientAddress = conn.ClientAddress
 				exist, prod, err := db.GetProducerByNameAndConnectionID(dlsMsg.Producer.Name, connectionId)
-				if !exist {
-					return models.DlsMessageResponse{}, errors.New("Producer " + dlsMsg.Producer.Name + " does not exist")
-				}
 				if err != nil {
 					return models.DlsMessageResponse{}, err
+				}
+				if !exist {
+					return models.DlsMessageResponse{}, errors.New("Producer " + dlsMsg.Producer.Name + " does not exist")
 				}
 				producer = prod
 			}

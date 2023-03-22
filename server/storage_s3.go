@@ -137,7 +137,9 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 
 func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	exist, s3Integration, err := db.GetIntegration("s3")
-	if !exist {
+	if err != nil {
+		return models.Integration{}, err
+	} else if !exist {
 		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
@@ -158,8 +160,6 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		}
 		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
 		return s3Integration, nil
-	} else if err != nil {
-		return models.Integration{}, err
 	}
 	return models.Integration{}, errors.New("S3 integration already exists")
 

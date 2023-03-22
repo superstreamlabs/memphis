@@ -33,7 +33,9 @@ var AnalyticsClient posthog.Client
 func InitializeAnalytics(analyticsToken, memphisV string) error {
 	memphisVersion = memphisV
 	exist, deployment, err := db.GetSystemKey("deployment_id")
-	if !exist {
+	if err != nil {
+		return err
+	} else if !exist {
 		uid, err := uuid.NewV4()
 		if err != nil {
 			return err
@@ -43,14 +45,14 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		if err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	} else {
 		deploymentId = deployment.Value
 	}
 
 	exist, _, err = db.GetSystemKey("analytics")
-	if !exist {
+	if err != nil {
+		return err
+	} else if !exist {
 		value := ""
 		if configuration.ANALYTICS == "true" {
 			value = "true"
@@ -62,8 +64,6 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		if err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	}
 
 	client, err := posthog.NewWithConfig(analyticsToken, posthog.Config{Endpoint: "https://app.posthog.com"})

@@ -322,14 +322,14 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.uploadMsgsToTier2Storage()
 
 	exist, ui_host, err := db.GetConfiguration("ui_host")
-	if !exist {
+	if err != nil {
+		return err
+	} else if !exist {
 		UI_HOST = ""
 		err = db.InsertConfiguration("ui_host", UI_HOST)
 		if err != nil {
 			return err
 		}
-	} else if err != nil {
-		return err
 	} else {
 		UI_HOST = ui_host.Value
 	}
