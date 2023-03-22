@@ -34,16 +34,18 @@ type Consumer struct {
 }
 
 type ExtendedConsumer struct {
-	Name             string    `json:"name"`
-	CreatedBy        string    `json:"created_by"`
-	CreatedAt        time.Time `json:"created_at"`
-	IsActive         bool      `json:"is_active"`
-	IsDeleted        bool      `json:"is_deleted"`
-	ClientAddress    string    `json:"client_address"`
-	ConsumersGroup   string    `json:"consumers_group"`
-	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
-	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
-	StationName      string    `json:"station_name"`
+	ID                int       `json:"id"`
+	Name              string    `json:"name"`
+	CreatedBy         string    `json:"created_by"`
+	CreatedByUsername string    `json:"created_by_username"`
+	CreatedAt         time.Time `json:"created_at"`
+	IsActive          bool      `json:"is_active"`
+	IsDeleted         bool      `json:"is_deleted"`
+	ClientAddress     string    `json:"client_address"`
+	ConsumersGroup    string    `json:"consumers_group"`
+	MaxAckTimeMs      int64     `json:"max_ack_time_ms"`
+	MaxMsgDeliveries  int       `json:"max_msg_deliveries"`
+	StationName       string    `json:"station_name"`
 }
 
 type Cg struct {

@@ -335,7 +335,12 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	if !user.AlreadyLoggedIn {
-		db.UpdateUserAlreadyLoggedIn(user.ID)
+		err = db.UpdateUserAlreadyLoggedIn(user.ID)
+		if err != nil {
+			serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
