@@ -251,15 +251,15 @@ func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
 	}
 }
 
-func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.Producer, []models.Producer, []models.Producer, error) { // for socket io endpoint
-	producers, err := db.GetProducersByStationID(station.ID)
+func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]models.ExtendedProducer, []models.ExtendedProducer, []models.ExtendedProducer, error) { // for socket io endpoint
+	producers, err := db.GetAllProducersByStationID(station.ID)
 	if err != nil {
 		return producers, producers, producers, err
 	}
 
-	var connectedProducers []models.Producer
-	var disconnectedProducers []models.Producer
-	var deletedProducers []models.Producer
+	var connectedProducers []models.ExtendedProducer
+	var disconnectedProducers []models.ExtendedProducer
+	var deletedProducers []models.ExtendedProducer
 	producersNames := []string{}
 
 	for _, producer := range producers {
@@ -278,15 +278,15 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 	}
 
 	if len(connectedProducers) == 0 {
-		connectedProducers = []models.Producer{}
+		connectedProducers = []models.ExtendedProducer{}
 	}
 
 	if len(disconnectedProducers) == 0 {
-		disconnectedProducers = []models.Producer{}
+		disconnectedProducers = []models.ExtendedProducer{}
 	}
 
 	if len(deletedProducers) == 0 {
-		deletedProducers = []models.Producer{}
+		deletedProducers = []models.ExtendedProducer{}
 	}
 
 	sort.Slice(connectedProducers, func(i, j int) bool {
@@ -320,7 +320,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
-	producers, err := db.GetProducersByStationID(station.ID)
+	producers, err := db.GetNotDeletedProducersByStationID(station.ID)
 	if err != nil {
 		serv.Errorf("GetAllProducersByStation: Station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
