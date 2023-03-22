@@ -49,11 +49,8 @@ const (
 	DEFAULT_REST_GW_PORT                       = 4444
 	DEFAULT_WS_TOKEN                           = "memphis"
 	DEFAULT_CLIENTS_TOKEN                      = "memphis"
-	DEFAULT_ROOT_PASSWORD                      = "memphis"
 	SHOWABLE_ERROR_STATUS_CODE                 = 666
 	ANALYTICS_TOKEN                            = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
-	DEFAULT_JWT_SECRET                         = "jwt_test_purpose"
-	DEFAULT_REFRESH_JWT_SECRET                 = "refresh_jwt_test_purpose"
 	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
 	DEFAULT_DLS_RETENTION_HOURS                = 3
 

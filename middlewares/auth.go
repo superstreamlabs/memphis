@@ -17,7 +17,6 @@ import (
 
 	"memphis/conf"
 	"memphis/models"
-	"memphis/server"
 
 	"strings"
 	"time"
@@ -95,8 +94,6 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 }
 
 func Authenticate(c *gin.Context) {
-	serv, _ := c.Get("server")
-	s := serv.(*server.Server)
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
 	if needToAuthenticate {
@@ -109,7 +106,7 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		user, err := verifyToken(tokenString, s.Opts().MemphisHttpJwtSecret)
+		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
@@ -123,7 +120,7 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		user, err := verifyToken(tokenString, s.Opts().MemphisHttpRefreshJwtSecret)
+		user, err := verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return

@@ -20,7 +20,10 @@ type Configuration struct {
 	DEV_ENV                 string
 	LOCAL_CLUSTER_ENV       bool
 	DOCKER_ENV              string
+	ROOT_PASSWORD           string
 	ANALYTICS               string
+	JWT_SECRET              string
+	REFRESH_JWT_SECRET      string
 	EXPORTER                bool
 	METADATA_DB_USER        string
 	METADATA_DB_PASS        string
@@ -62,6 +65,15 @@ func GetConfig() Configuration {
 	}
 	if configuration.METADATA_DB_PORT == "" {
 		configuration.METADATA_DB_PORT = "5005"
+	}
+	if configuration.ROOT_PASSWORD == "" {
+		configuration.ROOT_PASSWORD = "memphis"
+	}
+	if configuration.JWT_SECRET == "" {
+		configuration.JWT_SECRET = "jwt_test_purpose"
+	}
+	if configuration.REFRESH_JWT_SECRET == "" {
+		configuration.REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
 	}
 
 	gin.SetMode(gin.ReleaseMode)

@@ -288,9 +288,6 @@ type Options struct {
 	// memphis options
 	UiPort                         int    `json:"-"`
 	RestGwPort                     int    `json:"-"`
-	RootPassword                   string `json:"-"`
-	MemphisHttpJwtSecret           string `json:"-"`
-	MemphisHttpRefreshJwtSecret    string `json:"-"`
 	K8sNamespace                   string `json:"-"`
 	LogsRetentionDays              int    `json:"-"`
 	TieredStorageUploadIntervalSec int    `json:"-"`
@@ -1387,27 +1384,6 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 		o.UiPort = int(v.(int64))
 	case "rest_gw_port":
 		o.RestGwPort = int(v.(int64))
-	case "root_password":
-		value := v.(string)
-		if value == _EMPTY_ {
-			*errors = append(*errors, &configErr{tk, "error root_password config: can not be empty"})
-			return
-		}
-		o.RootPassword = value
-	case "memphis_http_jwt_secret":
-		value := v.(string)
-		if value == _EMPTY_ {
-			*errors = append(*errors, &configErr{tk, "error memphis_http_jwt_secret config: can not be empty"})
-			return
-		}
-		o.MemphisHttpJwtSecret = value
-	case "memphis_http_refresh_jwt_secret":
-		value := v.(string)
-		if value == _EMPTY_ {
-			*errors = append(*errors, &configErr{tk, "error memphis_http_refresh_jwt_secret config: can not be empty"})
-			return
-		}
-		o.MemphisHttpRefreshJwtSecret = value
 	case "k8s_namespace":
 		value := v.(string)
 		if value == _EMPTY_ {
@@ -4708,15 +4684,6 @@ func setBaselineOptions(opts *Options) {
 		opts.Websocket.SameOrigin = false
 		opts.Websocket.NoTLS = true
 		opts.Websocket.Token = DEFAULT_WS_TOKEN
-	}
-	if opts.RootPassword == _EMPTY_ {
-		opts.RootPassword = DEFAULT_ROOT_PASSWORD
-	}
-	if opts.MemphisHttpJwtSecret == _EMPTY_ {
-		opts.MemphisHttpJwtSecret = DEFAULT_JWT_SECRET
-	}
-	if opts.MemphisHttpRefreshJwtSecret == _EMPTY_ {
-		opts.MemphisHttpRefreshJwtSecret = DEFAULT_REFRESH_JWT_SECRET
 	}
 	if opts.LogsRetentionDays == 0 {
 		opts.LogsRetentionDays = 7
