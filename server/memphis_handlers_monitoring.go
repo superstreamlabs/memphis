@@ -608,25 +608,20 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			mountpath := ""
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
-				fmt.Println(container.Name)
 				for _, port := range container.Ports {
 					if int(port.ContainerPort) != 0 {
 						ports = append(ports, int(port.ContainerPort))
 					}
 				}
 				// brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, container.Name)
-				brokerMatch := (container.Name == "memphis")
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				if brokerMatch || strings.Contains(container.Name, "memphis-rest-gateway") || strings.Contains(container.Name, "postgresql") || strings.Contains(container.Name, "pgpool") {
+				// brokerMatch := (container.Name == "memphis")
+				// if err != nil {
+				// 	return components, metricsEnabled, err
+				// }
+				if strings.Contains(container.Name, "memphis") || strings.Contains(container.Name, "postgresql") {
 					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
-						fmt.Println("name: " + mount.Name)
-						fmt.Println("mount: " + mountpath)
-						if strings.Contains(mount.Name, "memphis") {
+						if strings.Contains(mount.Name, "memphis") || strings.Contains(mount.Name, "data") {
 							mountpath = mount.MountPath
-							fmt.Println(mount.Name)
-							fmt.Println(mountpath)
 							break
 						}
 					}
