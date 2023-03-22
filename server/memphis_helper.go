@@ -70,7 +70,7 @@ const (
 var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS          int
-	POISON_MSGS_RETENTION_IN_HOURS  int
+	DLS_RETENTION_HOURS             int
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
 	BROKER_HOST                     string
@@ -128,7 +128,7 @@ func (s *Server) getJsApiReplySubject() string {
 }
 
 func AddUser(username string) (string, error) {
-	return configuration.CONNECTION_TOKEN, nil
+	return serv.opts.Authorization, nil
 }
 
 func RemoveUser(username string) error {
@@ -184,7 +184,6 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 			Discard:              DiscardOld,
 			MaxAge:               maxAge,
 			MaxMsgsPer:           -1,
-			MaxMsgSize:           int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:              storage,
 			Replicas:             replicas,
 			NoAck:                false,
@@ -194,7 +193,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 }
 
 func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
-	maxAge := time.Duration(POISON_MSGS_RETENTION_IN_HOURS) * time.Hour
+	maxAge := time.Duration(DLS_RETENTION_HOURS) * time.Hour
 
 	var storage StorageType
 	if storageType == "memory" {
@@ -218,7 +217,6 @@ func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas in
 			Discard:      DiscardOld,
 			MaxAge:       maxAge,
 			MaxMsgsPer:   -1,
-			MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 			Storage:      storage,
 			Replicas:     replicas,
 			NoAck:        false,
@@ -355,7 +353,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		MaxBytes:     int64(-1),
 		Discard:      DiscardOld,
 		MaxMsgsPer:   ws_updates_interval_sec,
-		MaxMsgSize:   int32(configuration.MAX_MESSAGE_SIZE_MB) * 1024 * 1024,
 		Storage:      FileStorage,
 		Replicas:     replicas,
 		NoAck:        false,
@@ -584,6 +581,18 @@ func (s *Server) PurgeStream(streamName string) error {
 	}
 
 	return resp.ToError()
+}
+
+func (s *Server) Opts() *Options {
+	return s.opts
+}
+
+func (s *Server) AnalyticsToken() string {
+	return ANALYTICS_TOKEN
+}
+
+func (s *Server) MemphisVersion() string {
+	return VERSION
 }
 
 func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {

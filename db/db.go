@@ -35,7 +35,7 @@ import (
 
 var configuration = conf.GetConfig()
 
-var PostgresConnection DbPostgreSQLInstance
+var MetadataDbClient MetadataStorage
 
 const (
 	DbOperationTimeout = 20
@@ -46,24 +46,24 @@ type logger interface {
 	Errorf(string, ...interface{})
 }
 
-type DbPostgreSQLInstance struct {
+type MetadataStorage struct {
 	Client *pgxpool.Pool
 	Ctx    context.Context
 	Cancel context.CancelFunc
 }
 
-func ClosePostgresSql(db DbPostgreSQLInstance, l logger) {
+func CloseMetadataDb(db MetadataStorage, l logger) {
 	defer db.Cancel()
 	defer func() {
 		db.Client.Close()
 	}()
 }
 
-func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreSQLInstance) error {
+func AddIndexToTable(indexName, tableName, field string, MetadataDbClient MetadataStorage) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	addIndexQuery := "CREATE INDEX" + pgx.Identifier{indexName}.Sanitize() + "ON" + pgx.Identifier{tableName}.Sanitize() + "(" + pgx.Identifier{field}.Sanitize() + ")"
-	db := dbPostgreSQL.Client
+	db := MetadataDbClient.Client
 	_, err := db.Exec(ctx, addIndexQuery)
 	if err != nil {
 		return err
@@ -71,8 +71,8 @@ func AddIndexToTable(indexName, tableName, field string, dbPostgreSQL DbPostgreS
 	return nil
 }
 
-func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
-	cancelfunc := dbPostgreSQL.Cancel
+func createTables(MetadataDbClient MetadataStorage) error {
+	cancelfunc := MetadataDbClient.Cancel
 	defer cancelfunc()
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
@@ -245,8 +245,8 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 		ON producers(station_id);
 		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
-	db := dbPostgreSQL.Client
-	ctx := dbPostgreSQL.Ctx
+	db := MetadataDbClient.Client
+	ctx := MetadataDbClient.Ctx
 
 	_, err := db.Exec(ctx, usersTable)
 	if err != nil {
@@ -348,37 +348,37 @@ func createTables(dbPostgreSQL DbPostgreSQLInstance) error {
 	return nil
 }
 
-func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
+func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 
 	defer cancelfunc()
-	postgreSqlUser := configuration.POSTGRESQL_USER
-	postgreSqlPassword := configuration.POSTGRESQL_PASS
-	postgreSqlDbName := configuration.POSTGRESQL_DBNAME
-	postgreSqlHost := configuration.POSTGRESQL_HOST
-	postgreSqlPort := configuration.POSTGRESQL_PORT
-	var postgreSqlUrl string
-	if configuration.POSTGRESQL_TLS_ENABLED {
-		postgreSqlUrl = "postgres://" + postgreSqlUser + "@" + postgreSqlHost + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=verify-full"
+	metadataDbUser := configuration.METADATA_DB_USER
+	metadataDbPassword := configuration.METADATA_DB_PASS
+	metadataDbName := configuration.METADATA_DB_DBNAME
+	metadataDbHost := configuration.METADATA_DB_HOST
+	metadataDbPort := configuration.METADATA_DB_PORT
+	var metadataDbUrl string
+	if configuration.METADATA_DB_TLS_ENABLED {
+		metadataDbUrl = "postgres://" + metadataDbUser + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=verify-full"
 	} else {
-		postgreSqlUrl = "postgres://" + postgreSqlUser + ":" + postgreSqlPassword + "@" + postgreSqlHost + ":" + postgreSqlPort + "/" + postgreSqlDbName + "?sslmode=disable"
+		metadataDbUrl = "postgres://" + metadataDbUser + ":" + metadataDbPassword + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=disable"
 	}
 
-	config, err := pgxpool.ParseConfig(postgreSqlUrl)
+	config, err := pgxpool.ParseConfig(metadataDbUrl)
 	if err != nil {
-		return DbPostgreSQLInstance{}, err
+		return MetadataStorage{}, err
 	}
 	config.MaxConns = 5
 
-	if configuration.POSTGRESQL_TLS_ENABLED {
-		cert, err := tls.LoadX509KeyPair(configuration.POSTGRESQL_TLS_CRT, configuration.POSTGRESQL_TLS_KEY)
+	if configuration.METADATA_DB_TLS_ENABLED {
+		cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
 		if err != nil {
-			return DbPostgreSQLInstance{}, err
+			return MetadataStorage{}, err
 		}
 
-		CACert, err := os.ReadFile(configuration.POSTGRESQL_TLS_CA)
+		CACert, err := os.ReadFile(configuration.METADATA_DB_TLS_CA)
 		if err != nil {
-			return DbPostgreSQLInstance{}, err
+			return MetadataStorage{}, err
 		}
 
 		CACertPool := x509.NewCertPool()
@@ -386,30 +386,30 @@ func InitalizePostgreSQLDbConnection(l logger) (DbPostgreSQLInstance, error) {
 		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
 	}
 
-	dbPostgreSQL, err := pgxpool.NewWithConfig(ctx, config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
-		return DbPostgreSQLInstance{}, err
+		return MetadataStorage{}, err
 	}
 
-	err = dbPostgreSQL.Ping(ctx)
+	err = pool.Ping(ctx)
 	if err != nil {
-		return DbPostgreSQLInstance{}, err
+		return MetadataStorage{}, err
 	}
 	l.Noticef("Established connection with the meta-data storage")
-	dbPostgre := DbPostgreSQLInstance{Ctx: ctx, Cancel: cancelfunc, Client: dbPostgreSQL}
-	err = createTables(dbPostgre)
+	client := MetadataStorage{Ctx: ctx, Cancel: cancelfunc, Client: pool}
+	err = createTables(client)
 	if err != nil {
-		return DbPostgreSQLInstance{}, err
+		return MetadataStorage{}, err
 	}
-	PostgresConnection = DbPostgreSQLInstance{Client: dbPostgreSQL, Ctx: ctx, Cancel: cancelfunc}
-	return PostgresConnection, nil
+	MetadataDbClient = MetadataStorage{Client: pool, Ctx: ctx, Cancel: cancelfunc}
+	return MetadataDbClient, nil
 }
 
 // System Keys Functions
 func GetSystemKey(key string) (bool, models.SystemKey, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.SystemKey{}, err
 	}
@@ -445,7 +445,7 @@ func InsertSystemKey(key string, value string) error {
 func EditConfigurationValue(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE configurations SET value = $2 WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_configuration_value", query)
@@ -463,7 +463,7 @@ func EditConfigurationValue(key string, value string) error {
 func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.ConfigurationsValue{}, err
 	}
@@ -495,7 +495,7 @@ func InsertConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -558,7 +558,7 @@ func InsertConfiguration(key string, value string) error {
 func UpdateConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE configurations SET value = $2 WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
@@ -577,7 +577,7 @@ func InsertConnection(connection models.Connection) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -633,7 +633,7 @@ func InsertConnection(connection models.Connection) error {
 func UpdateConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE connections SET is_active = $1 WHERE id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
@@ -650,7 +650,7 @@ func UpdateConnection(connectionId string, isActive bool) error {
 func UpdateConncetionsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
@@ -667,7 +667,7 @@ func UpdateConncetionsOfDeletedUser(userId int) error {
 func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Connection{}, err
 	}
@@ -695,7 +695,7 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 func KillRelevantConnections(ids []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_relevant_connections", query)
@@ -712,7 +712,7 @@ func KillRelevantConnections(ids []string) error {
 func GetActiveConnections() ([]models.Connection, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Connection{}, err
 	}
@@ -742,7 +742,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -802,7 +802,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.AuditLog{}, err
 	}
@@ -833,7 +833,7 @@ func RemoveAllAuditLogsByStation(name string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -857,7 +857,7 @@ func RemoveAllAuditLogsByStation(name string) error {
 func UpdateAuditLogsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE audit_logs SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
@@ -875,7 +875,7 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 func GetActiveStations() ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Station{}, err
 	}
@@ -903,7 +903,7 @@ func GetActiveStations() ([]models.Station, error) {
 func GetStationByName(name string) (bool, models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Station{}, err
 	}
@@ -945,7 +945,7 @@ func InsertNewStation(
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1039,7 +1039,7 @@ func InsertNewStation(
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
@@ -1206,7 +1206,7 @@ func getFilteredExtendedStations(stationsMap map[int]models.ExtendedStation) []m
 func DeleteStationsByNames(stationNames []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations
 	SET is_deleted = true
@@ -1226,7 +1226,7 @@ func DeleteStationsByNames(stationNames []string) error {
 func DeleteStation(name string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations
 	SET is_deleted = true
@@ -1246,7 +1246,7 @@ func DeleteStation(name string) error {
 func AttachSchemaToStation(stationName string, schemaName string, versionNumber int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = $2, schema_version_number = $3
 	WHERE name = $1 AND is_deleted = false`
@@ -1264,7 +1264,7 @@ func AttachSchemaToStation(stationName string, schemaName string, versionNumber 
 func DetachSchemaFromStation(stationName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '', schema_version_number = 0
 	WHERE name = $1 AND is_deleted = false`
@@ -1282,7 +1282,7 @@ func DetachSchemaFromStation(stationName string) error {
 func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET dls_configuration_poison = $2, dls_configuration_schemaverse = $3
 	WHERE name = $1 AND is_deleted = false`
@@ -1300,7 +1300,7 @@ func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) e
 func UpdateStationsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
@@ -1318,7 +1318,7 @@ func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
 	var stationNames []string
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1358,7 +1358,7 @@ func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
 func GetCountStationsUsingSchema(schemaName string) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -1380,7 +1380,7 @@ func GetCountStationsUsingSchema(schemaName string) (int, error) {
 func RemoveSchemaFromAllUsingStations(schemaName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_from_all_using_stations", query)
@@ -1398,7 +1398,7 @@ func RemoveSchemaFromAllUsingStations(schemaName string) error {
 func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
 	}
@@ -1433,7 +1433,7 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 func UpdateProducersConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = $1 WHERE connection_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_connection", query)
@@ -1450,7 +1450,7 @@ func UpdateProducersConnection(connectionId string, isActive bool) error {
 func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
@@ -1478,7 +1478,7 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
@@ -1506,7 +1506,7 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 func GetActiveProducerByStationID(producerName string, stationId int) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Producer{}, err
 	}
@@ -1536,7 +1536,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
@@ -1611,7 +1611,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 func GetAllProducers() ([]models.ExtendedProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
 	}
@@ -1644,7 +1644,7 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Producer{}, err
 	}
@@ -1673,7 +1673,7 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
@@ -1697,7 +1697,7 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.
 func DeleteProducersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
@@ -1715,7 +1715,7 @@ func CountActiveProudcersByStationID(stationId int) (int64, error) {
 	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -1737,7 +1737,7 @@ func CountAllActiveProudcers() (int64, error) {
 	var producersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -1758,7 +1758,7 @@ func CountAllActiveProudcers() (int64, error) {
 func UpdateProducersOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
@@ -1775,7 +1775,7 @@ func UpdateProducersOfDeletedUser(userId int) error {
 func KillProducersByConnections(connectionIds []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false WHERE connection_id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_producers_by_connections", query)
@@ -1793,7 +1793,7 @@ func KillProducersByConnections(connectionIds []string) error {
 func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Consumer{}, err
 	}
@@ -1833,7 +1833,7 @@ func InsertNewConsumer(name string,
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Consumer{}, 0, err
 	}
@@ -1921,7 +1921,7 @@ func InsertNewConsumer(name string,
 func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
@@ -1954,7 +1954,7 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
@@ -1988,7 +1988,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
@@ -2022,7 +2022,7 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 func DeleteConsumersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
@@ -2040,7 +2040,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 	var count int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -2063,7 +2063,7 @@ func CountActiveConsumersByStationID(stationId int) (int64, error) {
 	var activeCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -2085,7 +2085,7 @@ func CountAllActiveConsumers() (int64, error) {
 	var consumersCount int64
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -2106,7 +2106,7 @@ func CountAllActiveConsumers() (int64, error) {
 func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.CgMember{}, err
 	}
@@ -2153,7 +2153,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedConsumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
@@ -2190,7 +2190,7 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Consumer{}, nil
 	}
@@ -2218,7 +2218,7 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 func UpdateConsumersConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = $1 WHERE connection_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
@@ -2235,7 +2235,7 @@ func UpdateConsumersConnection(connectionId string, isActive bool) error {
 func UpdateConsumersOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE consumers SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
@@ -2252,7 +2252,7 @@ func UpdateConsumersOfDeletedUser(userId int) error {
 func KillConsumersByConnections(connectionIds []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = false WHERE connection_id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_consumers_by_connections", query)
@@ -2270,7 +2270,7 @@ func KillConsumersByConnections(connectionIds []string) error {
 func GetSchemaByName(name string) (bool, models.Schema, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Schema{}, err
 	}
@@ -2298,7 +2298,7 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.SchemaVersion{}, err
 	}
@@ -2344,7 +2344,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.SchemaVersion{}, err
 	}
@@ -2385,7 +2385,7 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 func UpdateSchemasOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := ` UPDATE schemas
 	SET created_by_username = CONCAT(created_by_username, '(deleted)')
@@ -2407,7 +2407,7 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 func UpdateSchemaVersionsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := ` UPDATE schema_versions
 	SET created_by_username = CONCAT(created_by_username, '(deleted)')
@@ -2429,7 +2429,7 @@ func UpdateSchemaVersionsOfDeletedUser(userId int) error {
 func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.SchemaVersion, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.SchemaVersion{}, err
 	}
@@ -2469,7 +2469,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE schema_versions
 		SET active = CASE
@@ -2492,7 +2492,7 @@ func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 func GetShcemaVersionsCount(schemaId int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -2514,7 +2514,7 @@ func GetShcemaVersionsCount(schemaId int) (int, error) {
 func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -2557,7 +2557,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -2595,7 +2595,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -2655,7 +2655,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -2730,7 +2730,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 func GetIntegration(name string) (bool, models.Integration, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Integration{}, err
 	}
@@ -2759,7 +2759,7 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 func GetAllIntegrations() (bool, []models.Integration, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, []models.Integration{}, err
 	}
@@ -2788,7 +2788,7 @@ func DeleteIntegration(name string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -2815,7 +2815,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -2872,7 +2872,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `
 	INSERT INTO integrations(name, keys, properties)
@@ -2904,7 +2904,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -2976,7 +2976,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 func ChangeUserPassword(username string, hashedPassword string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE users SET password = $2 WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
@@ -2993,7 +2993,7 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 func GetRootUser() (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.User{}, err
 	}
@@ -3021,7 +3021,7 @@ func GetRootUser() (bool, models.User, error) {
 func GetUserByUsername(username string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.User{}, err
 	}
@@ -3049,7 +3049,7 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 func GetUserByUserId(userId int) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.User{}, err
 	}
@@ -3077,7 +3077,7 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
@@ -3105,7 +3105,7 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredApplicationUser{}, err
 	}
@@ -3133,7 +3133,7 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 func UpdateUserAlreadyLoggedIn(userId int) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE users SET already_logged_in = true WHERE id = $1`
 	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
@@ -3143,7 +3143,7 @@ func UpdateUserAlreadyLoggedIn(userId int) {
 func UpdateSkipGetStarted(username string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE users SET skip_get_started = true WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
@@ -3161,7 +3161,7 @@ func DeleteUser(username string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -3185,7 +3185,7 @@ func DeleteUser(username string) error {
 func EditAvatar(username string, avatarId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE users SET avatar_id = $2 WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_avatar", query)
@@ -3202,7 +3202,7 @@ func EditAvatar(username string, avatarId int) error {
 func GetAllActiveUsers() ([]models.FilteredUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
@@ -3235,7 +3235,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.Tag{}, err
 	}
@@ -3307,7 +3307,7 @@ func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
@@ -3324,7 +3324,7 @@ func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 func RemoveAllTagsFromEntity(entity string, entity_id int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entity + ` = ARRAY_REMOVE(` + entity + `, $1) WHERE $1 = ANY(` + entity + `)`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_all_tags_from_entity", query)
@@ -3350,7 +3350,7 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := PostgresConnection.Client.Acquire(ctx)
+	conn, _ := MetadataDbClient.Client.Acquire(ctx)
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_REMOVE(` + entityDBList + `, $2) WHERE name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_tag_from_entity", query)
@@ -3376,7 +3376,7 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Tag{}, err
 	}
@@ -3421,7 +3421,7 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return []models.Tag{}, err
 	}
@@ -3455,7 +3455,7 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 func GetAllUsedTags() ([]models.Tag, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -3484,7 +3484,7 @@ func GetAllUsedTags() ([]models.Tag, error) {
 func GetTagByName(name string) (bool, models.Tag, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Tag{}, err
 	}
@@ -3511,21 +3511,21 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 
 // Sandbox Functions
 // func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-	// user := models.SandboxUser{}
-	// return user, nil
+// user := models.SandboxUser{}
+// return user, nil
 // }
 
 // func UpdateSandboxUserAlreadyLoggedIn(userId int) {
-	// sandboxUsersCollection.UpdateOne(context.TODO(),
-	// 	bson.M{"_id": userId},
-	// 	bson.M{"$set": bson.M{"already_logged_in": true}},
-	// )
+// sandboxUsersCollection.UpdateOne(context.TODO(),
+// 	bson.M{"_id": userId},
+// 	bson.M{"$set": bson.M{"already_logged_in": true}},
+// )
 // }
 
 // func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
 // 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 // 	defer cancelfunc()
-// 	conn, err := PostgresConnection.Client.Acquire(ctx)
+// 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 // 	if err != nil {
 // 		return true, models.SandboxUser{}, err
 // 	}
@@ -3551,13 +3551,13 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 // }
 
 // func UpdateSkipGetStartedSandbox(username string) error {
-	// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
-	// 	bson.M{"username": username},
-	// 	bson.M{"$set": bson.M{"skip_get_started": true}},
-	// )
-	// if err != nil {
-	// 	return err
-	// }
+// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
+// 	bson.M{"username": username},
+// 	bson.M{"$set": bson.M{"skip_get_started": true}},
+// )
+// if err != nil {
+// 	return err
+// }
 // 	return nil
 // }
 
@@ -3574,7 +3574,7 @@ func DeleteImage(name string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
@@ -3598,7 +3598,7 @@ func DeleteImage(name string) error {
 func GetImage(name string) (bool, models.Image, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, err := PostgresConnection.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return true, models.Image{}, err
 	}

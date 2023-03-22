@@ -106,7 +106,7 @@ func (s *Server) ListenForConfigurationsUpdateEvents() error {
 			}
 			switch strings.ToLower(configurationsUpdate.Type) {
 			case "pm_retention":
-				POISON_MSGS_RETENTION_IN_HOURS = int(configurationsUpdate.Update.(float64))
+				DLS_RETENTION_HOURS = int(configurationsUpdate.Update.(float64))
 			case "tiered_storage_time_sec":
 				TIERED_STORAGE_TIME_FRAME_SEC = int(configurationsUpdate.Update.(float64))
 			case "broker_host":
@@ -271,7 +271,7 @@ func (s *Server) CalculateSelfThroughput() error {
 			Bytes:       v.OutBytes,
 			BytesPerSec: currentRead,
 		}
-		serverName := configuration.SERVER_NAME
+		serverName := s.opts.ServerName
 		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
 			Name:  serverName,
@@ -348,7 +348,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		if TIERED_STORAGE_TIME_FRAME_SEC != currentTimeFrame {
 			currentTimeFrame = TIERED_STORAGE_TIME_FRAME_SEC
 			ticker.Reset(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
-			//update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
+			// update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
 			durableName := TIERED_STORAGE_CONSUMER
 			tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
 			filterSubject := tieredStorageStream + ".>"

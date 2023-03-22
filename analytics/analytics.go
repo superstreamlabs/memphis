@@ -27,10 +27,11 @@ type EventParam struct {
 
 var configuration = conf.GetConfig()
 var deploymentId string
-var analyticsFlag string
+var memphisVersion string
 var AnalyticsClient posthog.Client
 
-func InitializeAnalytics() error {
+func InitializeAnalytics(analyticsToken, memphisV string) error {
+	memphisVersion = memphisV
 	exist, deployment, err := db.GetSystemKey("deployment_id")
 	if !exist {
 		uid, err := uuid.NewV4()
@@ -48,7 +49,7 @@ func InitializeAnalytics() error {
 		deploymentId = deployment.Value
 	}
 
-	exist, analytics, err := db.GetSystemKey("analytics")
+	exist, _, err = db.GetSystemKey("analytics")
 	if !exist {
 		value := ""
 		if configuration.ANALYTICS == "true" {
@@ -61,14 +62,11 @@ func InitializeAnalytics() error {
 		if err != nil {
 			return err
 		}
-		analyticsFlag = configuration.ANALYTICS
 	} else if err != nil {
 		return err
-	} else {
-		analyticsFlag = analytics.Value
 	}
 
-	client, err := posthog.NewWithConfig(configuration.ANALYTICS_TOKEN, posthog.Config{Endpoint: "https://app.posthog.com"})
+	client, err := posthog.NewWithConfig(analyticsToken, posthog.Config{Endpoint: "https://app.posthog.com"})
 	if err != nil {
 		return err
 	}
@@ -88,15 +86,15 @@ func SendEvent(userId, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-	// } else if configuration.SANDBOX_ENV == "true" {
-	// 	distinctId = "sandbox" + "-" + userId
+		// } else if configuration.SANDBOX_ENV == "true" {
+		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
 	distinctId = strings.TrimSuffix(distinctId, "-")
 
 	p := posthog.NewProperties()
-	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
+	p.Set("memphis-version", memphisVersion)
 
 	go AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
@@ -109,8 +107,8 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-	// } else if configuration.SANDBOX_ENV == "true" {
-	// 	distinctId = "sandbox" + "-" + userId
+		// } else if configuration.SANDBOX_ENV == "true" {
+		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
@@ -120,7 +118,7 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	for _, param := range params {
 		p.Set(param.Name, param.Value)
 	}
-	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
+	p.Set("memphis-version", memphisVersion)
 
 	go AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
@@ -141,7 +139,7 @@ func SendErrEvent(origin, errMsg string) {
 	p := posthog.NewProperties()
 	p.Set("err_log", errMsg)
 	p.Set("err_source", origin)
-	p.Set("memphis-version", configuration.MEMPHIS_VERSION)
+	p.Set("memphis-version", memphisVersion)
 	AnalyticsClient.Enqueue(posthog.Capture{
 		DistinctId: distinctId,
 		Event:      "error",

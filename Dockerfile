@@ -16,7 +16,7 @@ RUN apk update && apk add --no-cache make protobuf-dev
 RUN apk add --update ca-certificates && mkdir -p /nats/bin && mkdir /nats/conf
 
 COPY --from=build $GOPATH/memphis/memphis /bin/nats-server
-COPY --from=build $GOPATH/memphis/conf/* conf/
+# COPY --from=build $GOPATH/memphis/conf/* conf/
 COPY --from=build $GOPATH/memphis/version.conf .
 
 ENTRYPOINT ["/bin/nats-server"]

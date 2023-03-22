@@ -64,7 +64,7 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 	s3Integration, err := createS3Integration(keys, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
-			return models.Integration{}, configuration.SHOWABLE_ERROR_STATUS_CODE, err
+			return models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
 			return models.Integration{}, 500, err
 		}
@@ -98,7 +98,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 			return 500, map[string]string{}, err
 		}
 		if !exist {
-			return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
+			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
 		secretKey = integrationFromDb.Keys["secret_key"]
 		keys["secret_key"] = secretKey
@@ -111,7 +111,7 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	_, err := provider.Retrieve()
 	if err != nil {
 		if strings.Contains(err.Error(), "static credentials are empty") {
-			return configuration.SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("credentials are empty")
+			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("credentials are empty")
 		} else {
 			return 500, map[string]string{}, err
 		}
@@ -200,24 +200,24 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	if err != nil {
 		if strings.Contains(err.Error(), "Forbidden") {
 			err = errors.New("Invalid access key or secret key")
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "NotFound: Not Found") {
 			err = errors.New("Bucket name is not exists")
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "send request failed") {
 			err = errors.New("Invalid region name")
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "could not find region configuration") {
 			awsErr := err.(awserr.Error)
 			err = errors.New(awsErr.Message() + " : region name is empty")
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "validation error(s) found") || strings.Contains(err.Error(), "BadRequest: Bad Request") {
 			err = errors.New("Invalid bucket name")
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "incorrect region") {
 			awsErr := err.(awserr.Error)
 			err = errors.New(awsErr.Message())
-			statusCode = configuration.SHOWABLE_ERROR_STATUS_CODE
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
 		}
@@ -238,7 +238,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 
 	if permissionValue != "FULL_CONTROL" {
 		err = errors.New("Creds should have full access on this bucket")
-		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
 	uploader := s3manager.NewUploader(sess)
@@ -252,12 +252,12 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	if err != nil {
 
 		err = errors.New("Could not upload objects - " + err.Error())
-		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String("memphis")})
 	if err != nil {
 		err = errors.New("Could not upload objects - " + err.Error())
-		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(bucketName),
@@ -265,7 +265,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 	})
 	if err != nil {
 		err = errors.New("Error occurred while waiting for object to be deleted - " + err.Error())
-		return configuration.SHOWABLE_ERROR_STATUS_CODE, err
+		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	return 0, nil
 }

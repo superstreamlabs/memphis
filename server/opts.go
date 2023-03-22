@@ -285,6 +285,14 @@ type Options struct {
 	LameDuckDuration      time.Duration     `json:"-"`
 	LameDuckGracePeriod   time.Duration     `json:"-"`
 
+	// memphis options
+	UiPort                         int    `json:"-"`
+	RestGwPort                     int    `json:"-"`
+	K8sNamespace                   string `json:"-"`
+	LogsRetentionDays              int    `json:"-"`
+	TieredStorageUploadIntervalSec int    `json:"-"`
+	DlsRetentionHours              int    `json:"-"`
+
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
 
@@ -1372,6 +1380,38 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			m[kk] = v.(string)
 		}
 		o.JsAccDefaultDomain = m
+	case "ui_port":
+		o.UiPort = int(v.(int64))
+	case "rest_gw_port":
+		o.RestGwPort = int(v.(int64))
+	case "k8s_namespace":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error k8s_namespace config: can not be empty"})
+			return
+		}
+		o.K8sNamespace = value
+	case "logs_retention_days":
+		value := int(v.(int64))
+		if value < 1 || value > 100 {
+			*errors = append(*errors, &configErr{tk, "error logs_retention_days config: has to be positive and not more than 100"})
+			return
+		}
+		o.LogsRetentionDays = value
+	case "tiered_storage_upload_interval_seconds":
+		value := int(v.(int64))
+		if value < 1 || value > 3600 {
+			*errors = append(*errors, &configErr{tk, "error tiered_storage_upload_interval_seconds config: has to be positive and not more than 3600 (1 hour)"})
+			return
+		}
+		o.TieredStorageUploadIntervalSec = value
+	case "dls_retention_hours":
+		value := int(v.(int64))
+		if value < 1 || value > 30 {
+			*errors = append(*errors, &configErr{tk, "error dls_retention_hours config: has to be positive and not more than 30"})
+			return
+		}
+		o.DlsRetentionHours = value
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -4619,6 +4659,41 @@ func setBaselineOptions(opts *Options) {
 	if opts.JetStreamMaxStore == 0 && !opts.maxStoreSet {
 		opts.JetStreamMaxStore = -1
 	}
+
+	// Memphis
+	if !opts.JetStream { // enable JS by default
+		opts.JetStream = true
+	}
+	if opts.ServerName == _EMPTY_ { // default server name
+		opts.ServerName = DEFAULT_SERVER_NAME
+	}
+	if opts.HTTPPort == 0 { // default http monitoring port
+		opts.HTTPPort = DEFAULT_HTTP_PORT
+	}
+	if opts.UiPort == 0 {
+		opts.UiPort = DEFAULT_UI_PORT
+	}
+	if opts.RestGwPort == 0 {
+		opts.RestGwPort = DEFAULT_REST_GW_PORT
+	}
+	if opts.Authorization == _EMPTY_ { // default auth - token based
+		opts.Authorization = DEFAULT_CLIENTS_TOKEN
+	}
+	if opts.Websocket.Port == 0 { // default ws config
+		opts.Websocket.Port = DEFAULT_WS_PORT
+		opts.Websocket.SameOrigin = false
+		opts.Websocket.NoTLS = true
+		opts.Websocket.Token = DEFAULT_WS_TOKEN
+	}
+	if opts.LogsRetentionDays == 0 {
+		opts.LogsRetentionDays = 7
+	}
+	if opts.TieredStorageUploadIntervalSec == 0 {
+		opts.TieredStorageUploadIntervalSec = DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC
+	}
+	if opts.DlsRetentionHours == 0 {
+		opts.DlsRetentionHours = DEFAULT_DLS_RETENTION_HOURS
+	}
 }
 
 func getDefaultAuthTimeout(tls *tls.Config, tlsTimeout float64) float64 {
@@ -4712,9 +4787,6 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	fs.BoolVar(&opts.JetStream, "jetstream", false, "Enable JetStream.")
 	fs.StringVar(&opts.StoreDir, "sd", "", "Storage directory.")
 	fs.StringVar(&opts.StoreDir, "store_dir", "", "Storage directory.")
-	fs.IntVar(&opts.Websocket.Port, "websocket_port", configuration.WS_PORT, "Websocket port")
-	fs.StringVar(&opts.Websocket.Token, "websocket_token", configuration.WS_TOKEN, "Websocket token")
-	fs.BoolVar(&opts.Websocket.NoTLS, "websocket_no_tls", false, "Websocket no-tls")
 
 	// The flags definition above set "default" values to some of the options.
 	// Calling Parse() here will override the default options with any value
