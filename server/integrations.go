@@ -48,10 +48,10 @@ func InitializeIntegrations() error {
 
 func InitializeConnection(integrationsType string) error {
 	exist, integration, err := db.GetIntegration(integrationsType)
-	if !exist {
-		return nil
-	} else if err != nil {
+	if err != nil {
 		return err
+	} else if !exist {
+		return nil
 	}
 	CacheDetails(integrationsType, integration.Keys, integration.Properties)
 	return nil

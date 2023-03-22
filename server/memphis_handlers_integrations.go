@@ -161,12 +161,12 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		return
 	}
 	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name))
-	if !exist {
-		c.IndentedJSON(200, nil)
-		return
-	} else if err != nil {
+	if err != nil {
 		serv.Errorf("GetIntegrationDetails: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	} else if !exist {
+		c.IndentedJSON(200, nil)
 		return
 	}
 

@@ -1482,15 +1482,14 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 		var schemaDetails models.StationOverviewSchemaDetails
 		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		if err != nil {
+			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 		if !exist {
 			schemaDetails = models.StationOverviewSchemaDetails{}
 		} else {
-			if err != nil {
-				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
 			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())

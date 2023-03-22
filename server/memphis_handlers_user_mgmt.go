@@ -40,20 +40,20 @@ type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
 	exist, _, err := db.GetRootUser()
-	if !exist {
-		return false, nil
-	} else if err != nil {
+	if err != nil {
 		return false, err
+	} else if !exist {
+		return false, nil
 	}
 	return true, nil
 }
 
 func isRootUserLoggedIn() (bool, error) {
 	exist, user, err := db.GetRootUser()
-	if !exist {
-		return false, errors.New("Root user does not exist")
-	} else if err != nil {
+	if err != nil {
 		return false, err
+	} else if !exist {
+		return false, errors.New("Root user does not exist")
 	}
 
 	if user.AlreadyLoggedIn {
@@ -65,10 +65,10 @@ func isRootUserLoggedIn() (bool, error) {
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
 	exist, user, err := db.GetUserByUsername(username)
-	if !exist {
-		return false, models.User{}, nil
-	} else if err != nil {
+	if err != nil {
 		return false, models.User{}, err
+	} else if !exist {
+		return false, models.User{}, nil
 	}
 
 	hashedPwd := []byte(user.Password)
@@ -939,13 +939,13 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	exist, image, err := db.GetImage("company_logo")
-	if !exist {
-		c.IndentedJSON(200, gin.H{"image": ""})
-		return
-	}
 	if err != nil {
 		serv.Errorf("GetCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		c.IndentedJSON(200, gin.H{"image": ""})
 		return
 	}
 
