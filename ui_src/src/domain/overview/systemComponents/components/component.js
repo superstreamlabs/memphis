@@ -11,17 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.package server
 
-import './style.scss';
+import './../style.scss';
 
-import React from 'react';
-import { PieChart, Pie } from 'recharts';
-import OverflowTip from '../../../components/tooltip/overflowtip';
 import { Add } from '@material-ui/icons';
 import { Popover, Divider } from 'antd';
-import ComponentIcon from '../../../assets/images/componentIcon.svg';
-import HealthyBadge from '../../../components/healthyBadge';
+import React from 'react';
 
-const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '12px', border: '1px solid #f0f0f0' };
+import { PieChart, Pie } from 'recharts';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
+import ComponentIcon from '../../../../assets/images/componentIcon.svg';
+import SysCompInfo from './sysCompInfo';
+
+const remainingPorstPopInnerStyle = { padding: '5px', borderRadius: '4px', boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 23px 44px rgba(176, 183, 195, 0.14)' };
 
 const Component = ({ comp, i }) => {
     const getData = (comp) => {
@@ -45,7 +46,7 @@ const Component = ({ comp, i }) => {
                         <label className="component-name">{comp?.name}</label>
                     </OverflowTip>
                     <div className="pie-status-component">
-                        <HealthyBadge status={comp?.status} />
+                        <SysCompInfo status={comp?.status} components={comp?.components} />
                         <div className="pie-status">
                             <PieChart height={30} width={30}>
                                 <Pie dataKey="value" data={getData(comp)} startAngle={-270}></Pie>

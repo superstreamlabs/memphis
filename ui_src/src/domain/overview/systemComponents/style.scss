@@ -61,6 +61,31 @@
                         display: flex;
                         align-items: center;
                         filter: drop-shadow(1px 1px 1px #ececec);
+                        .sys-components-info{
+                            width: 26px;
+                            height: 25px;
+                            display: flex;
+                            border-radius: 4px;
+                            justify-content:center;
+                            align-items:center;
+                            img {
+                                width: 16px;
+                            }
+                            .error-icon {
+                                    width: 14px;
+                                    height: 14px;
+                                    position: relative;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    border-radius: 50%;
+                                    svg {
+                                        width: 12px;
+                                        color: white;
+                                    }
+                                
+                            }
+                        }
                         .pie-status {
                             display: flex;
                             height: 25px;
@@ -72,6 +97,7 @@
                             font-size: 12px;
                             margin-left: 5px;
                         }
+
                     }
                 }
                 .pods-container {
@@ -262,4 +288,65 @@
 }
 .comp-plus-popover {
     margin: 3px 0px 3px 0px;
+}
+.comp-list-wrapper{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    .comp-length{
+        display: flex;
+        height: 30px;
+        border-radius: 4px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 10px;
+        gap: 10px;
+        p{
+            margin: 0;
+            font-family: 'InterMedium';
+        }
+        .number-wrapper{
+            min-width: 20px;
+            min-height: 20px;
+            background: #FC3400;
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            font-size: 12px;
+            align-items: center;
+            justify-content: center;
+        }
+        span{
+            line-height: 12px;
+            font-family: 'InterSemiBold';
+        }
+    }
+    .unhealthy{
+        background: #FFEBE6;
+        color: #FC3400;
+        .number-wrapper{
+            background: #FC3400;
+        }
+    }
+    .risky{
+        background: #FFF6ED;
+        color: #FFA043;
+        .number-wrapper{
+            background: #FFA043;
+        }
+    }
+    .dangerous{
+        background: #FFF6E0;
+        color: #FFC633;
+        .number-wrapper{
+            background: #FFC633;
+        }
+    }
+    .healthy{
+        background: #E0F1EE;
+        color: #20C9AC;
+        .number-wrapper{
+            background: #20C9AC;
+        }
+    }
 }
