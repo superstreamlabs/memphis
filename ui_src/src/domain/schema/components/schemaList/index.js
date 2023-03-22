@@ -161,7 +161,7 @@ function SchemaList({ createNew }) {
                 )}
                 {!isLoading &&
                     state.schemaFilteredList?.map((schema, index) => {
-                        return <SchemaBox key={index} schema={schema} isCheck={isCheck.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
+                        return <SchemaBox key={index} schema={schema} isCheck={isCheck?.includes(schema.name)} handleCheckedClick={handleCheckedClick} />;
                     })}
                 {!isLoading && state.schemaList?.length === 0 && (
                     <div className="no-schema-to-display">

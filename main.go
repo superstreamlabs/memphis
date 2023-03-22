@@ -95,18 +95,18 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
+func runMemphis(s *server.Server) db.MetadataStorage {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
 
-	dbPostgresSql, err := db.InitalizePostgreSQLDbConnection(s)
+	metadataDb, err := db.InitalizeMetadataDbConnection(s)
 	if err != nil {
-		s.Errorf("Failed initializing PostgreSQL db connection: " + err.Error())
+		s.Errorf("Failed initializing connection with the metadata db: " + err.Error())
 		os.Exit(1)
 	}
 
-	err = analytics.InitializeAnalytics()
+	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
@@ -140,16 +140,16 @@ func runMemphis(s *server.Server) db.DbPostgreSQLInstance {
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
-		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:" + os.Getenv("HTTP_PORT") + "\nBroker: localhost:" + os.Getenv("CLIENTS_PORT") + " (client connections)\nREST gateway: localhost:" + os.Getenv("REST_GW_PORT") + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:" + fmt.Sprint(s.Opts().UiPort) + "\nBroker: localhost:" + fmt.Sprint(s.Opts().Port) + " (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
 	} else if os.Getenv("LOCAL_CLUSTER_ENV") != "" {
 		env = "Local cluster"
-		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + os.Getenv("REST_GW_PORT") + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
+		s.Noticef("\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********")
 	} else {
 		env = "K8S"
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return dbPostgresSql
+	return metadataDb
 }
 
 func main() {
@@ -195,8 +195,8 @@ func main() {
 		server.SnapshotMonitorInfo()
 	}
 
-	dbPostgresSql := runMemphis(s)
-	defer db.ClosePostgresSql(dbPostgresSql, s)
+	metadataDb := runMemphis(s)
+	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
 }

@@ -12,65 +12,68 @@
 package conf
 
 import (
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/tkanos/gonfig"
 )
 
 type Configuration struct {
-	MEMPHIS_VERSION                string
-	DEV_ENV                        string
-	LOCAL_CLUSTER_ENV              bool
-	HTTP_PORT                      int
-	REST_GW_PORT                   int
-	CLIENTS_PORT                   int
-	WS_PORT                        int
-	WS_TLS                         bool
-	WS_TOKEN                       string
-	JWT_SECRET                     string
-	JWT_EXPIRES_IN_MINUTES         int
-	REFRESH_JWT_SECRET             string
-	REFRESH_JWT_EXPIRES_IN_MINUTES int
-	ROOT_PASSWORD                  string
-	CONNECTION_TOKEN               string
-	MAX_MESSAGE_SIZE_MB            int
-	SHOWABLE_ERROR_STATUS_CODE     int
-	DOCKER_ENV                     string
-	ANALYTICS                      string
-	ANALYTICS_TOKEN                string
-	K8S_NAMESPACE                  string
-	LOGS_RETENTION_IN_DAYS         string
+	DEV_ENV                 string
+	LOCAL_CLUSTER_ENV       bool
+	DOCKER_ENV              string
+	ROOT_PASSWORD           string
+	ANALYTICS               string
+	JWT_SECRET              string
+	REFRESH_JWT_SECRET      string
+	EXPORTER                bool
+	METADATA_DB_USER        string
+	METADATA_DB_PASS        string
+	METADATA_DB_DBNAME      string
+	METADATA_DB_HOST        string
+	METADATA_DB_PORT        string
+	METADATA_DB_TLS_ENABLED bool
+	METADATA_DB_TLS_KEY     string
+	METADATA_DB_TLS_CRT     string
+	METADATA_DB_TLS_CA      string
+	// SANDBOX_SLACK_BOT_TOKEN        string
+	// SANDBOX_SLACK_CHANNEL_ID       string
+	// SANDBOX_UI_URL                 string
 	// GOOGLE_CLIENT_ID               string
 	// GOOGLE_CLIENT_SECRET           string
 	// SANDBOX_ENV                    string
 	// GITHUB_CLIENT_ID               string
 	// GITHUB_CLIENT_SECRET           string
 	// SANDBOX_REDIRECT_URI           string
-	POISON_MSGS_RETENTION_IN_HOURS int
-	SERVER_NAME                    string
-	// SANDBOX_SLACK_BOT_TOKEN        string
-	// SANDBOX_SLACK_CHANNEL_ID       string
-	// SANDBOX_UI_URL                 string
-	TIERED_STORAGE_TIME_FRAME_SEC  int
-	EXPORTER                       bool
-	POSTGRESQL_USER                string
-	POSTGRESQL_PASS                string
-	POSTGRESQL_DBNAME              string
-	POSTGRESQL_HOST                string
-	POSTGRESQL_PORT                string
-	POSTGRESQL_TLS_ENABLED         bool
-	POSTGRESQL_TLS_KEY             string
-	POSTGRESQL_TLS_CRT             string
-	POSTGRESQL_TLS_CA              string
 }
 
 func GetConfig() Configuration {
 	configuration := Configuration{}
-	if os.Getenv("DOCKER_ENV") != "" || os.Getenv("LOCAL_CLUSTER_ENV") != "" {
-		gonfig.GetConf("./conf/docker-config.json", &configuration)
-	} else {
-		gonfig.GetConf("./conf/config.json", &configuration)
+	gonfig.GetConf("", &configuration)
+	if configuration.METADATA_DB_USER == "" {
+		configuration.METADATA_DB_USER = "memphis"
+	}
+	if configuration.METADATA_DB_PASS == "" {
+		configuration.METADATA_DB_PASS = "memphis"
+	}
+	if configuration.METADATA_DB_DBNAME == "" {
+		configuration.METADATA_DB_DBNAME = "memphis"
+	}
+	if configuration.METADATA_DB_HOST == "" {
+		configuration.METADATA_DB_HOST = "localhost"
+	}
+	if configuration.METADATA_DB_PASS == "" {
+		configuration.METADATA_DB_PASS = "memphis"
+	}
+	if configuration.METADATA_DB_PORT == "" {
+		configuration.METADATA_DB_PORT = "5005"
+	}
+	if configuration.ROOT_PASSWORD == "" {
+		configuration.ROOT_PASSWORD = "memphis"
+	}
+	if configuration.JWT_SECRET == "" {
+		configuration.JWT_SECRET = "jwt_test_purpose"
+	}
+	if configuration.REFRESH_JWT_SECRET == "" {
+		configuration.REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
 	}
 
 	gin.SetMode(gin.ReleaseMode)

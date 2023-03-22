@@ -484,8 +484,8 @@ function CreateSchema({ createNew }) {
                                         fontFamily="InterSemiBold"
                                         disabled={
                                             formFields?.schema_content === '' ||
-                                            formFields?.schema_content.includes('type') ||
-                                            formFields?.schema_content.includes('properties')
+                                            formFields?.schema_content?.includes('type') ||
+                                            formFields?.schema_content?.includes('properties')
                                         }
                                         onClick={() => handleConvetJsonToJsonSchema(formFields?.schema_content)}
                                     />

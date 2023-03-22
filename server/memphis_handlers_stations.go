@@ -125,13 +125,13 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 	if shouldDeleteStream {
 		err = s.RemoveStream(stationName.Intern())
-		if err != nil {
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			return err
 		}
 	}
 
 	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	if err != nil {
+	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		return err
 	}
 
@@ -372,7 +372,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	} else if err != nil {
 		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
@@ -626,7 +626,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
 		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -639,7 +639,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if exist {
 		errMsg := "Station " + stationName.external + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -662,7 +662,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		if !exist {
 			errMsg := "Schema " + schemaName + " does not exist"
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + errMsg)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 
@@ -685,7 +685,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -698,7 +698,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -714,7 +714,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		err = validateReplicas(body.Replicas)
 		if err != nil {
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 	} else {
@@ -724,7 +724,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)
 	if err != nil {
 		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -738,7 +738,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSInsufficientResourcesErr) {
 			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
 			return
 		}
 
@@ -763,7 +763,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if rowsUpdated == 0 {
 		errMsg := "Station " + newStation.Name + " already exists"
 		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -861,7 +861,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		stationName, err := StationNameFromStr(name)
 		if err != nil {
 			serv.Warnf("RemoveStation: Station " + name + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 
@@ -876,7 +876,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		if !exist {
 			errMsg := "Station " + name + " does not exist"
 			serv.Warnf("RemoveStation: " + errMsg)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 
@@ -1305,7 +1305,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -1313,7 +1313,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("GetMessageDetails: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	if err != nil {
@@ -1376,7 +1376,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
 		if connectionIdHeader == "" || producedByHeader == "" {
 			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
 		}
 	}
@@ -1426,7 +1426,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if !exist {
 		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
 		serv.Warnf("GetMessageDetails: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	if err != nil {
@@ -1480,7 +1480,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	if !exist {
 		errMsg := "Schema " + schemaName + " does not exist"
 		serv.Warnf("UseSchema: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1508,7 +1508,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		stationName, err := StationNameFromStr(stationName)
 		if err != nil {
 			serv.Warnf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 
@@ -1521,7 +1521,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		if !exist {
 			errMsg := "Station " + station.Name + " does not exist"
 			serv.Warnf("UseSchema: Schema " + body.SchemaName + ": " + errMsg)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
 
@@ -1755,7 +1755,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext())
@@ -1767,7 +1767,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("RemoveSchemaFromStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1818,7 +1818,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -1831,7 +1831,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1839,7 +1839,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	if !exist {
 		errMsg := "Schema " + station.SchemaName + " does not exist"
 		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	if err != nil {
@@ -1886,7 +1886,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -1899,7 +1899,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("DlsConfiguration: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1937,7 +1937,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("PurgeStation: station name: " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -1950,7 +1950,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("PurgeStation: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1995,7 +1995,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
 		serv.Warnf("RemoveMessages: station name: " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -2008,7 +2008,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("RemoveMessages: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 

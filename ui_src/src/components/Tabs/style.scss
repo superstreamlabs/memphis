@@ -48,8 +48,11 @@
             font-size: 10px;
             color: #ffffff;
             background: #f7685b;
-            border-radius: 32px;
-            padding: 1px 5px 1px 5px;
+            border-radius: 33px;
+            padding: 0px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .ant-checkbox-inner {
             border-radius: 50%;

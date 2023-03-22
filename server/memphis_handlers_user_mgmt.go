@@ -31,6 +31,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const (
+	REFRESH_JWT_EXPIRES_IN_MINUTES = 2880
+	JWT_EXPIRES_IN_MINUTES         = 15
+)
+
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
@@ -166,7 +171,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["creation_date"] = u.CreatedAt
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
-		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 		// case models.SandboxUser:
 		// 	atClaims["user_id"] = u.ID
@@ -175,7 +180,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		// 	atClaims["creation_date"] = u.CreatedAt
 		// 	atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		// 	atClaims["avatar_id"] = u.AvatarId
-		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.JWT_EXPIRES_IN_MINUTES)).Unix()
+		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
@@ -183,7 +188,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		return "", "", err
 	}
 
-	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(configuration.REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
+	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(REFRESH_JWT_EXPIRES_IN_MINUTES)).Unix()
 
 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	refreshToken, err := at.SignedString([]byte(configuration.REFRESH_JWT_SECRET))
@@ -221,6 +226,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	if err != nil {
 		return err
 	}
+
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -279,12 +285,12 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	if username == "root" && user.UserType != "root" {
 		errMsg := "Change root password: This operation can be done only by the root user"
 		serv.Warnf("EditPassword: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != "root" {
 		errMsg := "Change user password: This operation can be done only by the user or the root user"
 		serv.Warnf("EditPassword: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
@@ -346,22 +352,22 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
@@ -376,10 +382,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -420,10 +426,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 	}
 		// 	domain := ""
 		// 	secure := true
-		// 	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+		// 	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 		// 	c.IndentedJSON(200, gin.H{
 		// 		"jwt":                     token,
-		// 		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		// 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		// 		"user_id":                 sandboxUser.ID,
 		// 		"username":                sandboxUser.Username,
 		// 		"user_type":               sandboxUser.UserType,
@@ -432,16 +438,16 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		// 		"avatar_id":               sandboxUser.AvatarId,
 		// 		"send_analytics":          true,
 		// 		"env":                     "K8S",
-		// 		"namespace":               configuration.K8S_NAMESPACE,
+		// 		"namespace":               serv.opts.K8sNamespace,
 		// 		"skip_get_started":        sandboxUser.SkipGetStarted,
 		// 		"broker_host":             BROKER_HOST,
 		// 		"rest_gw_host":            REST_GW_HOST,
 		// 		"ui_host":                 UI_HOST,
 		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		// "ws_port":                 configuration.WS_PORT,
-		// 		"http_port":               configuration.HTTP_PORT,
-		// 		"clients_port":            configuration.CLIENTS_PORT,
-		// 		"rest_gw_port":            configuration.REST_GW_PORT,
+		// "ws_port":                 serv.opts.Websocket.Port,
+		// 		"http_port":               serv.opts.UiPort,
+		// 		"clients_port":            serv.opts.Port,
+		// 		"rest_gw_port":            serv.opts.RestGwPort,
 		// 	})
 		// 	return
 		// }
@@ -463,22 +469,22 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
 	domain := ""
 	secure := true
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 user.ID,
 		"username":                user.Username,
 		"user_type":               user.UserType,
@@ -487,17 +493,17 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"avatar_id":               user.AvatarId,
 		"send_analytics":          sendAnalytics,
 		"env":                     env,
-		"namespace":               configuration.K8S_NAMESPACE,
+		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
 		"broker_host":             brokerHost,
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -531,7 +537,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	usernameError := validateEmail(username)
 	if usernameError != nil {
 		serv.Warnf(usernameError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 	fullName := strings.ToLower(body.FullName)
@@ -569,13 +575,13 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	} else {
 		env = "K8S"
 		if BROKER_HOST == "" {
-			brokerHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if UI_HOST == "" {
-			uiHost = "memphis." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + configuration.K8S_NAMESPACE + ".svc.cluster.local"
+			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
 		}
 	}
 
@@ -595,10 +601,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, configuration.REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
-		"expires_in":              configuration.JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
 		"user_id":                 newUser.ID,
 		"username":                newUser.Username,
 		"user_type":               newUser.UserType,
@@ -607,17 +613,17 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"avatar_id":               newUser.AvatarId,
 		"send_analytics":          shouldSendAnalytics,
 		"env":                     env,
-		"namespace":               configuration.K8S_NAMESPACE,
+		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               newUser.FullName,
 		"skip_get_started":        newUser.SkipGetStarted,
 		"broker_host":             brokerHost,
 		"rest_gw_host":            restGWHost,
 		"ui_host":                 uiHost,
 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		"ws_port":                 configuration.WS_PORT,
-		"http_port":               configuration.HTTP_PORT,
-		"clients_port":            configuration.CLIENTS_PORT,
-		"rest_gw_port":            configuration.REST_GW_PORT,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
 	})
 }
 
@@ -638,7 +644,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if exist {
 		errMsg := "A user with the name " + body.Username + " already exists"
 		serv.Warnf("CreateUser: " + errMsg)
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -646,14 +652,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
 		serv.Warnf("CreateUser: " + userTypeError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
 		serv.Warnf("CreateUser: " + usernameError.Error())
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 
@@ -662,7 +668,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userType == "management" {
 		if body.Password == "" {
 			serv.Warnf("CreateUser: Password was not provided for user " + username)
-			c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
@@ -768,7 +774,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 	if user.Username == username {
 		serv.Warnf("RemoveUser: You can not remove your own user")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
 
@@ -780,12 +786,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 	if !exist {
 		serv.Warnf("RemoveUser: User does not exist")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
 		serv.Warnf("RemoveUser: You can not remove the root user")
-		c.AbortWithStatusJSON(configuration.SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 

@@ -171,8 +171,8 @@ export const isThereDiff = (s1, s2) => {
 export const getUnique = (obj) => {
     const uniqueIds = [];
 
-    const unique = obj.filter((element) => {
-        const isDuplicate = uniqueIds.includes(element.name);
+    const unique = obj?.filter((element) => {
+        const isDuplicate = uniqueIds?.includes(element.name);
 
         if (!isDuplicate) {
             uniqueIds.push(element.name);

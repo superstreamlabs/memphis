@@ -18,8 +18,8 @@ import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN } from './const/localStorageConsts';
-import { HANDLE_REFRESH_INTERVAL, SOCKET_URL } from './config';
+import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
+import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
 import MessageJourney from './domain/messageJourney';
@@ -78,6 +78,8 @@ const App = withRouter(() => {
         if (window.location.pathname === pathDomains.login) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+            const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
+            const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
             const handleRefreshStatus = await handleRefreshTokenRequest();
             if (handleRefreshStatus) {
                 if (firstTime) {

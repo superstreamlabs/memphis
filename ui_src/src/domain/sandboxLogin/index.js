@@ -28,7 +28,7 @@ import GitHubLogo from '../../assets/images/githubLogo.svg';
 import GoogleLogo from '../../assets/images/GoogleLogo.png';
 import { Context } from '../../hooks/store';
 import Input from '../../components/Input';
-import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, SOCKET_URL } from '../../config';
+import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, ENVIRONMENT, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from '../../config';
 import { connect } from 'nats.ws';
 
 const SandboxLogin = (props) => {
@@ -54,8 +54,8 @@ const SandboxLogin = (props) => {
             history.push(referer);
         }
         const url = window.location.href;
-        const shouldSigninWithGoogle = url.includes('?code=') && url.includes('&scope=email');
-        const shouldSigninWithGithub = url.includes('?code=');
+        const shouldSigninWithGoogle = url?.includes('?code=') && url?.includes('&scope=email');
+        const shouldSigninWithGithub = url?.includes('?code=');
         if (shouldSigninWithGoogle) {
             splittedUrl = url.split('?code=');
             window.history.pushState({}, null, splittedUrl[0]);
@@ -124,6 +124,8 @@ const SandboxLogin = (props) => {
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
+                        const ws_port = data.ws_port;
+                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
                         const conn = await connect({
                             servers: [SOCKET_URL],
                             token: '::memphis',
@@ -159,6 +161,8 @@ const SandboxLogin = (props) => {
                 AuthService.saveToLocalStorage(data);
                 localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
                 try {
+                    const ws_port = data.ws_port;
+                    const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
                     const conn = await connect({
                         servers: [SOCKET_URL],
                         token: '::memphis',
@@ -194,6 +198,8 @@ const SandboxLogin = (props) => {
                 AuthService.saveToLocalStorage(data);
                 localStorage.setItem('profile_pic', data.profile_pic); // profile_pic is available only in sandbox env
                 try {
+                    const ws_port = data.ws_port;
+                    const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
                     const conn = await connect({
                         servers: [SOCKET_URL],
                         token: '::memphis',
@@ -330,8 +336,8 @@ const SandboxLogin = (props) => {
                                                 colorType="white"
                                                 radiusType="circle"
                                                 backgroundColorType="purple"
-                                                fontSize="12px"
-                                                fontWeight="600"
+                                                fontSize="14px"
+                                                fontFamily="InterBold"
                                                 isLoading={loadingSubmit}
                                                 onClick={handleSubmit}
                                             />
