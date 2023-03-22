@@ -445,7 +445,10 @@ func InsertSystemKey(key string, value string) error {
 func EditConfigurationValue(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE configurations SET value = $2 WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_configuration_value", query)
@@ -518,6 +521,7 @@ func InsertConfiguration(key string, value string) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&newConfiguration.ID)
 		if err != nil {
@@ -558,7 +562,10 @@ func InsertConfiguration(key string, value string) error {
 func UpdateConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE configurations SET value = $2 WHERE key = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
@@ -604,6 +611,7 @@ func InsertConnection(connection models.Connection) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&connection.ID)
 		if err != nil {
@@ -633,7 +641,10 @@ func InsertConnection(connection models.Connection) error {
 func UpdateConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE connections SET is_active = $1 WHERE id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
@@ -650,7 +661,10 @@ func UpdateConnection(connectionId string, isActive bool) error {
 func UpdateConncetionsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
@@ -695,7 +709,10 @@ func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
 func KillRelevantConnections(ids []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_relevant_connections", query)
@@ -785,6 +802,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&newAuditLog.ID)
 		if err != nil {
@@ -857,7 +875,10 @@ func RemoveAllAuditLogsByStation(name string) error {
 func UpdateAuditLogsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE audit_logs SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_audit_logs_of_deleted_user", query)
@@ -987,6 +1008,7 @@ func InsertNewStation(
 	if err != nil {
 		return models.Station{}, 0, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&stationId)
 		if err != nil {
@@ -1206,7 +1228,10 @@ func getFilteredExtendedStations(stationsMap map[int]models.ExtendedStation) []m
 func DeleteStationsByNames(stationNames []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations
 	SET is_deleted = true
@@ -1226,7 +1251,10 @@ func DeleteStationsByNames(stationNames []string) error {
 func DeleteStation(name string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations
 	SET is_deleted = true
@@ -1246,7 +1274,10 @@ func DeleteStation(name string) error {
 func AttachSchemaToStation(stationName string, schemaName string, versionNumber int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = $2, schema_version_number = $3
 	WHERE name = $1 AND is_deleted = false`
@@ -1264,7 +1295,10 @@ func AttachSchemaToStation(stationName string, schemaName string, versionNumber 
 func DetachSchemaFromStation(stationName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '', schema_version_number = 0
 	WHERE name = $1 AND is_deleted = false`
@@ -1282,7 +1316,10 @@ func DetachSchemaFromStation(stationName string) error {
 func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET dls_configuration_poison = $2, dls_configuration_schemaverse = $3
 	WHERE name = $1 AND is_deleted = false`
@@ -1300,7 +1337,10 @@ func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool) e
 func UpdateStationsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_stations_of_deleted_user", query)
@@ -1332,7 +1372,6 @@ func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
 		return nil, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName)
-
 	if err != nil {
 		return nil, err
 	}
@@ -1380,7 +1419,10 @@ func GetCountStationsUsingSchema(schemaName string) (int, error) {
 func RemoveSchemaFromAllUsingStations(schemaName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_from_all_using_stations", query)
@@ -1435,7 +1477,10 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 func UpdateProducersConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = $1 WHERE connection_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_connection", query)
@@ -1570,6 +1615,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&producerId)
 		if err != nil {
@@ -1710,17 +1756,21 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
 func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Producer{}, err
+	}
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
-		return true, models.Producer{}, nil
+		return true, models.Producer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
 	if err != nil {
-		return true, models.Producer{}, nil
+		return true, models.Producer{}, err
 	}
+	defer rows.Close()
 	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
 	if err != nil {
 		return true, models.Producer{}, err
@@ -1734,7 +1784,10 @@ func DeleteProducerByNameAndStationID(name string, stationId int) (bool, models.
 func DeleteProducersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
@@ -1795,7 +1848,10 @@ func CountAllActiveProudcers() (int64, error) {
 func UpdateProducersOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE stations SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_producers_of_deleted_user", query)
@@ -1812,7 +1868,10 @@ func UpdateProducersOfDeletedUser(userId int) error {
 func KillProducersByConnections(connectionIds []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE producers SET is_active = false WHERE connection_id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_producers_by_connections", query)
@@ -1909,6 +1968,7 @@ func InsertNewConsumer(name string,
 	if err != nil {
 		return models.Consumer{}, 0, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&consumerId)
 		if err != nil {
@@ -2023,7 +2083,10 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return true, models.Consumer{}, err
+	}
 	defer conn.Release()
 	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
 	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
@@ -2057,7 +2120,10 @@ func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 func DeleteConsumersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
@@ -2175,7 +2241,6 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	}
 	defer rows.Close()
 
-	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.CgMember])
 	if err != nil {
 		return []models.CgMember{}, err
@@ -2228,7 +2293,7 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return true, models.Consumer{}, nil
+		return true, models.Consumer{}, err
 	}
 	defer conn.Release()
 	query := `SELECT * FROM consumers WHERE name = $1 AND station_id = $2 AND is_active = true LIMIT 1`
@@ -2254,7 +2319,10 @@ func GetActiveConsumerByStationID(consumerName string, stationId int) (bool, mod
 func UpdateConsumersConnection(connectionId string, isActive bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = $1 WHERE connection_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_connection", query)
@@ -2271,7 +2339,10 @@ func UpdateConsumersConnection(connectionId string, isActive bool) error {
 func UpdateConsumersOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE consumers SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)'`
 	stmt, err := conn.Conn().Prepare(ctx, "update_consumers_of_deleted_user", query)
@@ -2288,7 +2359,10 @@ func UpdateConsumersOfDeletedUser(userId int) error {
 func KillConsumersByConnections(connectionIds []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE consumers SET is_active = false WHERE connection_id = ANY($1)`
 	stmt, err := conn.Conn().Prepare(ctx, "kill_consumers_by_connections", query)
@@ -2421,7 +2495,10 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 func UpdateSchemasOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := ` UPDATE schemas
 	SET created_by_username = CONCAT(created_by_username, '(deleted)')
@@ -2443,7 +2520,10 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 func UpdateSchemaVersionsOfDeletedUser(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := ` UPDATE schema_versions
 	SET created_by_username = CONCAT(created_by_username, '(deleted)')
@@ -2505,7 +2585,10 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE schema_versions
 		SET active = CASE
@@ -2653,6 +2736,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&schemaId)
 		if err != nil {
@@ -2721,6 +2805,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&schemaVersionId)
 		if err != nil {
@@ -2872,6 +2957,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 	if err != nil {
 		return models.Integration{}, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&integrationId)
 		if err != nil {
@@ -2907,7 +2993,10 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.Integration{}, err
+	}
 	defer conn.Release()
 	query := `
 	INSERT INTO integrations(name, keys, properties)
@@ -2924,6 +3013,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 	if err != nil {
 		return models.Integration{}, err
 	}
+	defer rows.Close()
 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
 	if err != nil {
 		return models.Integration{}, err
@@ -2970,6 +3060,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	if err != nil {
 		return models.User{}, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&userId)
 		if err != nil {
@@ -3011,7 +3102,10 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 func ChangeUserPassword(username string, hashedPassword string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE users SET password = $2 WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
@@ -3165,20 +3259,27 @@ func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
 	return users, nil
 }
 
-func UpdateUserAlreadyLoggedIn(userId int) {
+func UpdateUserAlreadyLoggedIn(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE users SET already_logged_in = true WHERE id = $1`
 	stmt, _ := conn.Conn().Prepare(ctx, "update_user_already_logged_in", query)
 	conn.Conn().Query(ctx, stmt.Name, userId)
+	return nil
 }
 
 func UpdateSkipGetStarted(username string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE users SET skip_get_started = true WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
@@ -3220,7 +3321,10 @@ func DeleteUser(username string) error {
 func EditAvatar(username string, avatarId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE users SET avatar_id = $2 WHERE username = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_avatar", query)
@@ -3295,6 +3399,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	if err != nil {
 		return models.Tag{}, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&tagId)
 		if err != nil {
@@ -3343,7 +3448,10 @@ func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
@@ -3360,7 +3468,10 @@ func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 func RemoveAllTagsFromEntity(entity string, entity_id int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entity + ` = ARRAY_REMOVE(` + entity + `, $1) WHERE $1 = ANY(` + entity + `)`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_all_tags_from_entity", query)
@@ -3386,7 +3497,10 @@ func RemoveTagFromEntity(tagName string, entity string, entity_id int) error {
 	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-	conn, _ := MetadataDbClient.Client.Acquire(ctx)
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_REMOVE(` + entityDBList + `, $2) WHERE name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_tag_from_entity", query)
@@ -3427,7 +3541,6 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
-
 	if err != nil {
 		return nil, err
 	}
@@ -3473,7 +3586,6 @@ func GetTagsByEntityType(entity string) ([]models.Tag, error) {
 		return []models.Tag{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name)
-
 	if err != nil {
 		return nil, err
 	}
@@ -3502,7 +3614,6 @@ func GetAllUsedTags() ([]models.Tag, error) {
 		return nil, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name)
-
 	if err != nil {
 		return nil, err
 	}
