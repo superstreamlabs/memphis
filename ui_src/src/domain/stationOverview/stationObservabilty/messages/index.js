@@ -322,7 +322,11 @@ const Messages = () => {
                     value={tabValue}
                     onChange={handleChangeMenuItem}
                     tabs={tabs}
-                    length={[null, stationState?.stationSocketData?.poison_messages?.length || null, null]}
+                    length={[
+                        null,
+                        stationState?.stationSocketData?.poison_messages?.length || stationState?.stationSocketData?.schema_failed_messages?.length || null,
+                        null
+                    ]}
                     icon
                 />
             </div>
