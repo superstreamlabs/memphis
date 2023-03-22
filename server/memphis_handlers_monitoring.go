@@ -1951,6 +1951,8 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 		if regexMatch {
 			switch comp.Status {
 			case unhealthyStatus:
+				fmt.Println("unhealthy: ")
+				fmt.Println(comp)
 				unhealthyComps = append(unhealthyComps, comp)
 			case dangerousStatus:
 				dangerousComps = append(dangerousComps, comp)
@@ -1959,7 +1961,7 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 			default:
 				healthyComps = append(healthyComps, comp)
 			}
-		} else if name == "memphis-rest-gateway" {
+		} else if name == "memphis-rest-gateway" || name == "memphis-metadata-coordinator" {
 			if strings.Contains(comp.Name, name) {
 				switch comp.Status {
 				case unhealthyStatus:
