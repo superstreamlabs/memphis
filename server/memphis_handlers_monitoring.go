@@ -475,7 +475,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			storageStat := defaultStat
 			dockerPorts := []int{}
-			if strings.Contains(containerName, "metadata") {
+			if strings.Contains(containerName, "metadata") && !strings.Contains(containerName, "coordinator") {
 				dbStorageSize, totalSize, err := getDbStorageSize()
 				if err != nil {
 					return components, metricsEnabled, err
