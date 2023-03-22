@@ -31,7 +31,6 @@ func IsSlackEnabled() (bool, error) {
 		return false, nil
 	}
 
-	// if err == nil
 	return true, nil
 }
 
