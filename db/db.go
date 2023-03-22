@@ -1404,10 +1404,12 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.is_active, p.created_at, p.is_deleted, s.name,
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, s.name, p.created_at, p.is_active, p.is_deleted, c.client_address
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
+	LEFT JOIN connections AS c
+	ON c.id = p.connection_id
 	WHERE p.connection_id = $1 AND p.is_active = true
 	GROUP BY p.id, s.id`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
@@ -1641,7 +1643,7 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	return producers, nil
 }
 
-func GetProducersByStationID(stationId int) ([]models.Producer, error) {
+func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1650,7 +1652,7 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false LIMIT 1`
+	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
 		return []models.Producer{}, err
@@ -1666,6 +1668,41 @@ func GetProducersByStationID(stationId int) ([]models.Producer, error) {
 	}
 	if len(producers) == 0 {
 		return []models.Producer{}, nil
+	}
+	return producers, nil
+}
+func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	defer conn.Release()
+	query := `
+	SELECT DISTINCT ON (p.name) p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name, p.is_active, p.is_deleted, c.client_address 
+	FROM producers AS p 
+	LEFT JOIN stations AS s
+	ON s.id = p.station_id
+	LEFT JOIN connections AS c
+	ON c.id = p.connection_id
+	WHERE p.station_id = $1 ORDER BY p.name, p.created_at DESC`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	defer rows.Close()
+
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
+	if err != nil {
+		return []models.ExtendedProducer{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ExtendedProducer{}, nil
 	}
 	return producers, nil
 }
@@ -1960,12 +1997,10 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
+		SELECT DISTINCT ON (c.name) c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE
-		c.station_id = $1
-`
+	WHERE c.station_id = $1 ORDER BY c.name, c.created_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
@@ -2110,6 +2145,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	if err != nil {
 		return []models.CgMember{}, err
 	}
+	defer conn.Release()
 	query := `
 		SELECT
 			c.name,
@@ -2735,7 +2771,6 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 		return true, models.Integration{}, err
 	}
 	defer conn.Release()
-	defer conn.Release()
 	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
 	if err != nil {
@@ -3206,6 +3241,7 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) {
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
+	defer conn.Release()
 	query := `
 	SELECT DISTINCT u.username
 	FROM users u
