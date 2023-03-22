@@ -70,7 +70,7 @@ const (
 var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	LOGS_RETENTION_IN_DAYS          int
-	DLS_RETENTION_HOURS  int
+	DLS_RETENTION_HOURS             int
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
 	BROKER_HOST                     string
