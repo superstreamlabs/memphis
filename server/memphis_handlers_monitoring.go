@@ -540,7 +540,9 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 		minikubeCheck := false
 		isMinikube := false
 		for _, pod := range pods.Items {
+			fmt.Println("Pod: " + pod.Name)
 			if pod.Status.Phase != v1.PodRunning {
+				fmt.Println("not running: " + pod.Name)
 				allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
 				continue
 			}
@@ -582,10 +584,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if cpuLimit == float64(0) {
 				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
 			}
+			fmt.Println("pod " + pod.Name + "CPU limit: ")
+			fmt.Println(cpuLimit)
 			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
 			if memLimit == float64(0) {
 				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
 			}
+			fmt.Println("pod " + pod.Name + "MEM limit: ")
+			fmt.Println(memLimit)
 			storageLimit := float64(0)
 			if len(pvcList.Items) == 1 {
 				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
@@ -605,6 +611,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					}
 				}
 			}
+			fmt.Println("pod " + pod.Name + "STORAGE limit: ")
+			fmt.Println(storageLimit)
 			mountpath := ""
 			containerForExec := ""
 			for _, container := range pod.Spec.Containers {
@@ -635,6 +643,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
 				memUsage += container.Usage.Memory().AsApproximateFloat64()
 			}
+			fmt.Println("pod " + pod.Name + "CPU usage: ")
+			fmt.Println(cpuUsage)
+
+			fmt.Println("pod " + pod.Name + "MEM usage: ")
+			fmt.Println(memUsage)
 
 			storageUsage := float64(0)
 			if isMinikube {
@@ -656,6 +669,8 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					return components, metricsEnabled, err
 				}
 			}
+			fmt.Println("pod " + pod.Name + "STORAGE usage: ")
+			fmt.Println(storageUsage)
 			storagePercentage := 0
 			if storageUsage > float64(0) && storageLimit > float64(0) {
 				storagePercentage = int(math.Ceil((storageUsage / storageLimit) * 100))
