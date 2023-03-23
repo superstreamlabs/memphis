@@ -4676,14 +4676,19 @@ func setBaselineOptions(opts *Options) {
 	if opts.RestGwPort == 0 {
 		opts.RestGwPort = DEFAULT_REST_GW_PORT
 	}
-	if opts.Authorization == _EMPTY_ { // default auth - token based
-		opts.Authorization = DEFAULT_CLIENTS_TOKEN
+	if !configuration.USER_PASS_BASED_AUTH { // default auth - token based
+		opts.Authorization = configuration.CONNECTION_TOKEN
+		if opts.Authorization == _EMPTY_ {
+			opts.Authorization = DEFAULT_CLIENTS_TOKEN
+		}
 	}
 	if opts.Websocket.Port == 0 { // default ws config
 		opts.Websocket.Port = DEFAULT_WS_PORT
 		opts.Websocket.SameOrigin = false
 		opts.Websocket.NoTLS = true
-		opts.Websocket.Token = DEFAULT_WS_TOKEN
+	}
+	if opts.Authorization != _EMPTY_ {
+		opts.Websocket.Token = opts.Authorization
 	}
 	if opts.LogsRetentionDays == 0 {
 		opts.LogsRetentionDays = 7
