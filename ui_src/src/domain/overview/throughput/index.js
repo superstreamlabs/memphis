@@ -14,6 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useState, useContext } from 'react';
 import { Line } from 'react-chartjs-2';
+import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
 import { convertBytes } from '../../../services/valueConvertor';
@@ -21,8 +22,9 @@ import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
 import DataNotFound from '../../../assets/images/dataNotFound.svg';
+
 import { Context } from '../../../hooks/store';
-import { PauseRounded, PlayArrowRounded, Replay } from '@material-ui/icons';
+import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
 
 const yAxesOptions = [
     {
@@ -77,6 +79,14 @@ function Throughput() {
     const [stop, setstop] = useState(false);
     const [socketFailIndicator, setSocketFailIndicator] = useState(false);
 
+    Chart.plugins.register({
+        afterDraw: function (chart) {
+            if (dataSamples?.total?.read?.length === 0) {
+                !socketFailIndicator && setSocketFailIndicator(true);
+            } else socketFailIndicator && setSocketFailIndicator(false);
+        }
+    });
+
     const initiateDataState = () => {
         let dataSets = [];
         selectOptions.forEach((selectOption, i) => {
@@ -93,7 +103,7 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
-        setLoader();
+        !socketFailIndicator && setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
                 data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
@@ -151,9 +161,6 @@ function Throughput() {
         } else {
             value = dataSamples[select]?.read[0]?.read;
             updatedDataSamples[select]?.read.shift();
-        }
-        if (value === undefined) {
-            setSocketFailIndicator(true);
         }
         setDataSamples(updatedDataSamples);
         return value;
@@ -262,19 +269,14 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-
-                {socketFailIndicator ? (
+                {socketFailIndicator && (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
                         <p className="title">No data found</p>
-                        <div className="reload" onClick={() => setSocketFailIndicator(false)}>
-                            <Replay />
-                            <p>Reload Data</p>
-                        </div>
                     </div>
-                ) : (
-                    <Line id="test" data={data} options={options} />
                 )}
+
+                <Line id="test" data={data} options={options} />
             </div>
         </div>
     );
