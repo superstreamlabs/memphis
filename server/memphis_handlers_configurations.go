@@ -96,6 +96,14 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
+	// send signal to reload config
+	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	if err != nil {
+		serv.Errorf("EditConfigurations: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
@@ -114,12 +122,6 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 func changeDlsRetention(dlsRetention int) error {
 	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention))
-	if err != nil {
-		return err
-	}
-
-	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		return err
 	}
@@ -162,12 +164,6 @@ func changeLogsRetention(logsRetention int) error {
 		return err
 	}
 
-	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
-	if err != nil {
-		return err
-	}
-
 	retentionDur := time.Duration(logsRetention) * time.Hour * 24
 	err = serv.memphisUpdateStream(&StreamConfig{
 		Name:         syslogsStreamName,
@@ -206,12 +202,6 @@ func changeTSTime(tsTime int) error {
 		return err
 	}
 
-	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -219,12 +209,6 @@ func EditClusterCompHost(key string, host string) error {
 	key = strings.ToLower(key)
 	host = strings.ToLower(host)
 	err := db.UpsertConfiguration(key, host)
-	if err != nil {
-		return err
-	}
-
-	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		return err
 	}

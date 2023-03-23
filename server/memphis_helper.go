@@ -1190,10 +1190,10 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) GetMemphisOpts(opts *Options) (*Options, error) {
+func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
-		return nil, err
+		return Options{}, err
 	}
 
 	for _, conf := range configs {

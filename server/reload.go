@@ -780,8 +780,8 @@ func (s *Server) Reload() error {
 		return err
 	}
 
-	memphisOpts, _ := s.GetMemphisOpts(newOpts)
-	return s.ReloadOptions(memphisOpts)
+	memphisOpts, _ := s.GetMemphisOpts(*newOpts)
+	return s.ReloadOptions(&memphisOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option
