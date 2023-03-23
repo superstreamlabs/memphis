@@ -4700,7 +4700,7 @@ func setBaselineOptions(opts *Options) {
 	if opts.RestGwPort == 0 {
 		opts.RestGwPort = DEFAULT_REST_GW_PORT
 	}
-	if !configuration.USER_PASS_BASED_AUTH { // default auth - token based
+	if !configuration.USER_PASS_BASED_AUTH && len(opts.Users) == 0 { // default auth - token based
 		opts.Authorization = configuration.CONNECTION_TOKEN
 		if opts.Authorization == _EMPTY_ {
 			opts.Authorization = DEFAULT_CLIENTS_TOKEN

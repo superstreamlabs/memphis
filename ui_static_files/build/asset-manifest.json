@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.bb1f3e53.css",
-    "main.js": "/static/js/main.42d22911.js",
+    "main.css": "/static/css/main.a8340bb1.css",
+    "main.js": "/static/js/main.82ebb294.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -83,7 +83,7 @@
     "static/js/6476.634b9f6d.chunk.js": "/static/js/6476.634b9f6d.chunk.js",
     "static/js/1391.ba40a944.chunk.js": "/static/js/1391.ba40a944.chunk.js",
     "static/js/6619.03b4c4cd.chunk.js": "/static/js/6619.03b4c4cd.chunk.js",
-    "static/js/1448.9e4b081c.chunk.js": "/static/js/1448.9e4b081c.chunk.js",
+    "static/js/1448.2f35c683.chunk.js": "/static/js/1448.2f35c683.chunk.js",
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -210,9 +210,6 @@
     "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
     "static/media/BrokerHostname.svg": "/static/media/BrokerHostname.9934a24a7838aaef881a0964af3a7779.svg",
-    "static/media/orangeWarning.svg": "/static/media/orangeWarning.6ff11e29fa13804fd233676b039cad5e.svg",
-    "static/media/redWarning.svg": "/static/media/redWarning.bb9d7e2e1fbad51f82f1d4fe011ba397.svg",
-    "static/media/yellowWarning.svg": "/static/media/yellowWarning.54b8c7276c7ea3c2e42e73fb56a7c8ff.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
@@ -250,7 +247,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.bb1f3e53.css",
-    "static/js/main.42d22911.js"
+    "static/css/main.a8340bb1.css",
+    "static/js/main.82ebb294.js"
   ]
 }
