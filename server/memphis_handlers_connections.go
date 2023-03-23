@@ -31,7 +31,7 @@ var consumersHandler ConsumersHandler
 
 const (
 	connectItemSep                      = "::"
-	connectConfigUpdatesSubjectTemplate = CONFIGURATIONS_UPDATES_SUBJ + ".init.%s"
+	connectConfigUpdatesSubjectTemplate = "$memphis_configurations_updates.init.%s"
 )
 
 func updateNewClientWithConfig(c *client, connId string) {

@@ -292,6 +292,9 @@ type Options struct {
 	LogsRetentionDays              int    `json:"-"`
 	TieredStorageUploadIntervalSec int    `json:"-"`
 	DlsRetentionHours              int    `json:"-"`
+	UiHost                         string `json:"-"`
+	RestGwHost                     string `json:"-"`
+	BrokerHost                     string `json:"-"`
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -1412,6 +1415,27 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			return
 		}
 		o.DlsRetentionHours = value
+	case "ui_host":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error ui_host config: can not be empty"})
+			return
+		}
+		o.UiHost = value
+	case "rest_gw_host":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error rest_gw_host config: can not be empty"})
+			return
+		}
+		o.RestGwHost = value
+	case "broker_host":
+		value := v.(string)
+		if value == _EMPTY_ {
+			*errors = append(*errors, &configErr{tk, "error broker_host config: can not be empty"})
+			return
+		}
+		o.BrokerHost = value
 	default:
 		if au := atomic.LoadInt32(&allowUnknownTopLevelField); au == 0 && !tk.IsUsedVariable() {
 			err := &unknownConfigFieldErr{
@@ -4698,6 +4722,27 @@ func setBaselineOptions(opts *Options) {
 	}
 	if opts.DlsRetentionHours == 0 {
 		opts.DlsRetentionHours = DEFAULT_DLS_RETENTION_HOURS
+	}
+	if opts.BrokerHost == _EMPTY_ {
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			opts.BrokerHost = "localhost"
+		} else {
+			opts.BrokerHost = "memphis." + opts.K8sNamespace + ".svc.cluster.local"
+		}
+	}
+	if opts.UiHost == _EMPTY_ {
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			opts.UiHost = fmt.Sprintf("http://localhost:%v", opts.UiPort)
+		} else {
+			opts.UiHost = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", opts.K8sNamespace, opts.UiPort)
+		}
+	}
+	if opts.RestGwHost == _EMPTY_ {
+		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+			opts.RestGwHost = fmt.Sprintf("http://localhost:%v", opts.RestGwPort)
+		} else {
+			opts.RestGwHost = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", opts.K8sNamespace, opts.RestGwPort)
+		}
 	}
 }
 

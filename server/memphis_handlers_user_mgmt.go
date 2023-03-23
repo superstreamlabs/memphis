@@ -348,23 +348,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-login")
 	}
 
-	brokerHost := BROKER_HOST
-	restGWHost := REST_GW_HOST
-	uiHost := UI_HOST
-	var env string
+	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
-	} else {
-		env = "K8S"
-		if BROKER_HOST == "" {
-			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if UI_HOST == "" {
-			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
 	}
 
 	domain := ""
@@ -383,10 +369,10 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"env":                     env,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
-		"broker_host":             brokerHost,
-		"rest_gw_host":            restGWHost,
-		"ui_host":                 uiHost,
-		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"broker_host":             serv.opts.BrokerHost,
+		"rest_gw_host":            serv.opts.RestGwHost,
+		"ui_host":                 serv.opts.UiHost,
+		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
 		"ws_port":                 serv.opts.Websocket.Port,
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
@@ -465,23 +451,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	brokerHost := BROKER_HOST
-	restGWHost := REST_GW_HOST
-	uiHost := UI_HOST
-	var env string
+	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
-	} else {
-		env = "K8S"
-		if BROKER_HOST == "" {
-			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if UI_HOST == "" {
-			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
 	}
 
 	domain := ""
@@ -501,10 +473,10 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               user.FullName,
 		"skip_get_started":        user.SkipGetStarted,
-		"broker_host":             brokerHost,
-		"rest_gw_host":            restGWHost,
-		"ui_host":                 uiHost,
-		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"broker_host":             serv.opts.BrokerHost,
+		"rest_gw_host":            serv.opts.RestGwHost,
+		"ui_host":                 serv.opts.UiHost,
+		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
 		"ws_port":                 serv.opts.Websocket.Port,
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
@@ -571,23 +543,9 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		return
 	}
 
-	brokerHost := BROKER_HOST
-	restGWHost := REST_GW_HOST
-	uiHost := UI_HOST
-	var env string
+	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
-	} else {
-		env = "K8S"
-		if BROKER_HOST == "" {
-			brokerHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if UI_HOST == "" {
-			uiHost = "memphis." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		if REST_GW_HOST == "" {
-			restGWHost = "http://memphis-rest-gateway." + serv.opts.K8sNamespace + ".svc.cluster.local"
-		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -621,10 +579,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"namespace":               serv.opts.K8sNamespace,
 		"full_name":               newUser.FullName,
 		"skip_get_started":        newUser.SkipGetStarted,
-		"broker_host":             brokerHost,
-		"rest_gw_host":            restGWHost,
-		"ui_host":                 uiHost,
-		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
+		"broker_host":             serv.opts.BrokerHost,
+		"rest_gw_host":            serv.opts.RestGwHost,
+		"ui_host":                 serv.opts.UiHost,
+		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
 		"ws_port":                 serv.opts.Websocket.Port,
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,

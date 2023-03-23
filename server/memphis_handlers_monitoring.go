@@ -707,17 +707,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				return components, metricsEnabled, err
 			}
 			if brokerMatch {
-				if BROKER_HOST == "" {
+				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
-					hosts = []string{BROKER_HOST}
+					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if UI_HOST != "" {
-					hosts = append(hosts, UI_HOST)
+				if mh.S.opts.UiHost != "" {
+					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				if REST_GW_HOST != "" {
-					hosts = []string{REST_GW_HOST}
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(d.Name, "metadata") {
 				hosts = []string{}
@@ -766,17 +766,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				return components, metricsEnabled, err
 			}
 			if brokerMatch {
-				if BROKER_HOST == "" {
+				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
-					hosts = []string{BROKER_HOST}
+					hosts = []string{mh.S.opts.BrokerHost}
 				}
-				if UI_HOST != "" {
-					hosts = append(hosts, UI_HOST)
+				if mh.S.opts.UiHost != "" {
+					hosts = append(hosts, mh.S.opts.UiHost)
 				}
 			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				if REST_GW_HOST != "" {
-					hosts = []string{REST_GW_HOST}
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(s.Name, "metadata") {
 				hosts = []string{}

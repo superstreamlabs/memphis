@@ -779,7 +779,9 @@ func (s *Server) Reload() error {
 		// TODO: Dump previous good config to a .bak file?
 		return err
 	}
-	return s.ReloadOptions(newOpts)
+
+	memphisOpts, _ := s.GetMemphisOpts(newOpts)
+	return s.ReloadOptions(memphisOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option

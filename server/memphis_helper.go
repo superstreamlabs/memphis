@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"net/textproto"
 	"sort"
@@ -69,14 +70,8 @@ const (
 // errors
 var (
 	ErrBadHeader                    = errors.New("could not decode header")
-	LOGS_RETENTION_IN_DAYS          int
-	DLS_RETENTION_HOURS             int
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
-	BROKER_HOST                     string
-	UI_HOST                         string
-	REST_GW_HOST                    string
-	TIERED_STORAGE_TIME_FRAME_SEC   int
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -193,7 +188,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 }
 
 func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
-	maxAge := time.Duration(DLS_RETENTION_HOURS) * time.Hour
+	maxAge := time.Duration(serv.opts.DlsRetentionHours) * time.Hour
 
 	var storage StorageType
 	if storageType == "memory" {
@@ -226,7 +221,7 @@ func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas in
 
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
-	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
+	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
 
 	successCh := make(chan error)
 
@@ -318,7 +313,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create tiered storage consumer
 	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	tieredStorageTimeFrame := time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second
 	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
@@ -1193,4 +1188,33 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return m, err
 		}
 	}
+}
+
+func (s *Server) GetMemphisOpts(opts *Options) (*Options, error) {
+	_, configs, err := db.GetAllConfigurations()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, conf := range configs {
+		switch conf.Key {
+		case "dls_retention":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.DlsRetentionHours = v
+		case "logs_retention":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.LogsRetentionDays = v
+		case "tiered_storage_time_sec":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.TieredStorageUploadIntervalSec = v
+		case "ui_host":
+			opts.UiHost = conf.Value
+		case "broker_host":
+			opts.BrokerHost = conf.Value
+		case "rest_gw_host":
+			opts.RestGwHost = conf.Value
+		}
+	}
+
+	return opts, nil
 }

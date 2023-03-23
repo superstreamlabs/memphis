@@ -12,7 +12,6 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"memphis/analytics"
 	"memphis/db"
@@ -25,123 +24,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ConfigurationsHandler struct{}
-
-func (s *Server) initializeConfigurations() {
-	exist, pmRetentionRes, err := db.GetConfiguration("pm_retention")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		DLS_RETENTION_HOURS = s.opts.DlsRetentionHours
-		err = db.InsertConfiguration("pm_retention", strconv.Itoa(DLS_RETENTION_HOURS))
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		pmRetention, err := strconv.Atoi(pmRetentionRes.Value)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		DLS_RETENTION_HOURS = pmRetention
-	}
-	exist, logsRetentionRes, err := db.GetConfiguration("logs_retention")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		LOGS_RETENTION_IN_DAYS = s.opts.LogsRetentionDays
-		err = db.InsertConfiguration("logs_retention", strconv.Itoa(LOGS_RETENTION_IN_DAYS))
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		logsRetention, err := strconv.Atoi(logsRetentionRes.Value)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		LOGS_RETENTION_IN_DAYS = logsRetention
-	}
-
-	exist, tsTimeRes, err := db.GetConfiguration("tiered_storage_time_sec")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		if s.opts.TieredStorageUploadIntervalSec > 3600 || s.opts.TieredStorageUploadIntervalSec < 5 {
-			s.Warnf("initializeConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes - using default 8 seconds")
-			TIERED_STORAGE_TIME_FRAME_SEC = 8
-		} else {
-			TIERED_STORAGE_TIME_FRAME_SEC = s.opts.TieredStorageUploadIntervalSec
-		}
-		err = db.InsertConfiguration("tiered_storage_time_sec", strconv.Itoa(TIERED_STORAGE_TIME_FRAME_SEC))
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		tsTime, err := strconv.Atoi(tsTimeRes.Value)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		TIERED_STORAGE_TIME_FRAME_SEC = tsTime
-	}
-
-	exist, brokerHost, err := db.GetConfiguration("broker_host")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			BROKER_HOST = "localhost"
-		} else {
-			BROKER_HOST = "memphis." + s.opts.K8sNamespace + ".svc.cluster.local"
-		}
-		err = db.InsertConfiguration("broker_host", BROKER_HOST)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		BROKER_HOST = brokerHost.Value
-	}
-	exist, uiHost, err := db.GetConfiguration("ui_host")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			UI_HOST = fmt.Sprintf("http://localhost:%v", s.opts.UiPort)
-		} else {
-			UI_HOST = fmt.Sprintf("http://memphis.%s.svc.cluster.local:%v", s.opts.K8sNamespace, s.opts.UiPort)
-		}
-		err = db.InsertConfiguration("ui_host", UI_HOST)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		UI_HOST = uiHost.Value
-	}
-	exist, restGWHost, err := db.GetConfiguration("rest_gw_host")
-	if err != nil || !exist {
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-			REST_GW_HOST = fmt.Sprintf("http://localhost:%v", s.opts.RestGwPort)
-		} else {
-			REST_GW_HOST = fmt.Sprintf("http://memphis-rest-gateway.%s.svc.cluster.local:%v", s.opts.K8sNamespace, s.opts.RestGwPort)
-		}
-		restGWHost = models.ConfigurationsValue{
-			Key:   "rest_gw_host",
-			Value: REST_GW_HOST,
-		}
-		err = db.InsertConfiguration("rest_gw_host", REST_GW_HOST)
-		if err != nil {
-			s.Errorf("initializeConfigurations: " + err.Error())
-		}
-	} else {
-		REST_GW_HOST = restGWHost.Value
-	}
-}
+type ConfigurationsHandler struct{ S *Server }
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
@@ -153,15 +36,15 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if DLS_RETENTION_HOURS != body.PMRetention {
-		err := changePMRetention(body.PMRetention)
+	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
+		err := changeDlsRetention(body.DlsRetention)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
-	if LOGS_RETENTION_IN_DAYS != body.LogsRetention {
+	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
@@ -169,22 +52,23 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			return
 		}
 	}
-
-	if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
-		serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
-	} else {
-		err := changeTSTime(body.TSTimeSec)
-		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+	if ch.S.opts.TieredStorageUploadIntervalSec != body.TSTimeSec {
+		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
+			serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+		} else {
+			err := changeTSTime(body.TSTimeSec)
+			if err != nil {
+				serv.Errorf("EditConfigurations: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		}
 	}
 
 	brokerHost := strings.ToLower(body.BrokerHost)
-	if BROKER_HOST != brokerHost {
-		err := editClusterCompHost("broker_host", brokerHost)
+	if ch.S.opts.BrokerHost != brokerHost {
+		err := EditClusterCompHost("broker_host", brokerHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -193,8 +77,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	uiHost := strings.ToLower(body.UiHost)
-	if UI_HOST != uiHost {
-		err := editClusterCompHost("ui_host", uiHost)
+	if ch.S.opts.UiHost != uiHost {
+		err := EditClusterCompHost("ui_host", uiHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -203,8 +87,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	restGWHost := strings.ToLower(body.RestGWHost)
-	if REST_GW_HOST != restGWHost {
-		err := editClusterCompHost("rest_gw_host", restGWHost)
+	if ch.S.opts.RestGwHost != restGWHost {
+		err := EditClusterCompHost("rest_gw_host", restGWHost)
 		if err != nil {
 			serv.Errorf("EditConfigurations: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -218,28 +102,33 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-update-cluster-config")
 	}
 
-	c.IndentedJSON(200, gin.H{"pm_retention": DLS_RETENTION_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+	})
 }
 
-func changePMRetention(pmRetention int) error {
-	DLS_RETENTION_HOURS = pmRetention
-	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "pm_retention", Update: DLS_RETENTION_HOURS})
+func changeDlsRetention(dlsRetention int) error {
+	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention))
 	if err != nil {
 		return err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+
+	// send signal to reload config
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		return err
 	}
-	err = db.UpdateConfiguration("pm_retention", strconv.Itoa(DLS_RETENTION_HOURS))
-	if err != nil {
-		return err
-	}
+
 	stations, err := db.GetActiveStations()
 	if err != nil {
 		return err
 	}
-	maxAge := time.Duration(DLS_RETENTION_HOURS) * time.Hour
+	maxAge := time.Duration(dlsRetention) * time.Hour
 	for _, station := range stations {
 		sn, err := StationNameFromStr(station.Name)
 		if err != nil {
@@ -268,12 +157,18 @@ func changePMRetention(pmRetention int) error {
 }
 
 func changeLogsRetention(logsRetention int) error {
-	LOGS_RETENTION_IN_DAYS = logsRetention
-	err := db.UpdateConfiguration("logs_retention", strconv.Itoa(LOGS_RETENTION_IN_DAYS))
+	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention))
 	if err != nil {
 		return err
 	}
-	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
+
+	// send signal to reload config
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	if err != nil {
+		return err
+	}
+
+	retentionDur := time.Duration(logsRetention) * time.Hour * 24
 	err = serv.memphisUpdateStream(&StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
@@ -295,20 +190,24 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
 	}
-	c.IndentedJSON(200, gin.H{"pm_retention": DLS_RETENTION_HOURS, "logs_retention": LOGS_RETENTION_IN_DAYS, "broker_host": BROKER_HOST, "ui_host": UI_HOST, "rest_gw_host": REST_GW_HOST, "tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC})
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+	})
 }
 
 func changeTSTime(tsTime int) error {
-	TIERED_STORAGE_TIME_FRAME_SEC = tsTime
-	msg, err := json.Marshal(models.SdkClientsUpdates{Type: "tiered_storage_time_sec", Update: TIERED_STORAGE_TIME_FRAME_SEC})
+	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime))
 	if err != nil {
 		return err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return err
-	}
-	err = db.UpdateConfiguration("tiered_storage_time_sec", strconv.Itoa(TIERED_STORAGE_TIME_FRAME_SEC))
+
+	// send signal to reload config
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		return err
 	}
@@ -316,27 +215,19 @@ func changeTSTime(tsTime int) error {
 	return nil
 }
 
-func editClusterCompHost(key string, host string) error {
-	switch key {
-	case "broker_host":
-		BROKER_HOST = host
-	case "ui_host":
-		UI_HOST = host
-	case "rest_gw_host":
-		REST_GW_HOST = host
+func EditClusterCompHost(key string, host string) error {
+	key = strings.ToLower(key)
+	host = strings.ToLower(host)
+	err := db.UpsertConfiguration(key, host)
+	if err != nil {
+		return err
 	}
 
-	msg, err := json.Marshal(models.SdkClientsUpdates{Type: key, Update: host})
+	// send signal to reload config
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		return err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return err
-	}
-	err = db.UpdateConfiguration(key, host)
-	if err != nil {
-		return err
-	}
+
 	return nil
 }

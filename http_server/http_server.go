@@ -19,13 +19,14 @@ import (
 
 func InitializeHttpServer(s *server.Server) {
 	handlers := server.Handlers{
-		Producers:  server.ProducersHandler{S: s},
-		Consumers:  server.ConsumersHandler{S: s},
-		AuditLogs:  server.AuditLogsHandler{},
-		Stations:   server.StationsHandler{S: s},
-		Monitoring: server.MonitoringHandler{S: s},
-		PoisonMsgs: server.PoisonMessagesHandler{S: s},
-		Schemas:    server.SchemasHandler{S: s},
+		Producers:      server.ProducersHandler{S: s},
+		Consumers:      server.ConsumersHandler{S: s},
+		AuditLogs:      server.AuditLogsHandler{},
+		Stations:       server.StationsHandler{S: s},
+		Monitoring:     server.MonitoringHandler{S: s},
+		PoisonMsgs:     server.PoisonMessagesHandler{S: s},
+		Schemas:        server.SchemasHandler{S: s},
+		Configurations: server.ConfigurationsHandler{S: s},
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)

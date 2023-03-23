@@ -12,12 +12,12 @@
 package models
 
 type EditClusterConfigSchema struct {
-	PMRetention   int    `json:"pm_retention" binding:"required"`
+	DlsRetention  int    `json:"dls_retention" binding:"required"`
 	LogsRetention int    `json:"logs_retention" binding:"required"`
 	BrokerHost    string `json:"broker_host"`
 	UiHost        string `json:"ui_host"`
 	RestGWHost    string `json:"rest_gw_host"`
-	TSTimeSec     int    `json:"tiered_storage_time_sec" binding:"min=5,max=3600"`
+	TSTimeSec     int    `json:"tiered_storage_time_sec"`
 }
 
 type GlobalConfigurationsUpdate struct {

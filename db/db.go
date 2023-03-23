@@ -494,6 +494,35 @@ func GetConfiguration(key string) (bool, models.ConfigurationsValue, error) {
 	return true, configurations[0], nil
 }
 
+func GetAllConfigurations() (bool, []models.ConfigurationsValue, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.ConfigurationsValue{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM configurations`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_configurations", query)
+	if err != nil {
+		return false, []models.ConfigurationsValue{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return false, []models.ConfigurationsValue{}, err
+	}
+	defer rows.Close()
+	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsValue])
+	if err != nil {
+		return false, []models.ConfigurationsValue{}, err
+	}
+	if len(configurations) == 0 {
+		return false, []models.ConfigurationsValue{}, nil
+	}
+
+	return true, configurations, nil
+}
+
 func InsertConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -559,7 +588,7 @@ func InsertConfiguration(key string, value string) error {
 	return nil
 }
 
-func UpdateConfiguration(key string, value string) error {
+func UpsertConfiguration(key string, value string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -567,7 +596,8 @@ func UpdateConfiguration(key string, value string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE configurations SET value = $2 WHERE key = $1`
+	query := `INSERT INTO configurations (key, value) VALUES($1, $2)
+	ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
 	if err != nil {
 		return err
