@@ -37,6 +37,10 @@ const Component = ({ comp, i }) => {
         return data;
     };
 
+    const handleIconClick = (event) => {
+        event.stopPropagation();
+    };
+
     return (
         <div className="sys-components-container" key={`${comp?.podName}${i}`}>
             <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
@@ -91,10 +95,14 @@ const Component = ({ comp, i }) => {
                                 overlayInnerStyle={remainingPorstPopInnerStyle}
                                 placement="bottomLeft"
                                 content={comp?.ports?.slice(1)?.map((port) => {
-                                    return <p className="comp-plus-popover">{port}</p>;
+                                    return (
+                                        <p className="comp-plus-popover" onClick={handleIconClick}>
+                                            {port}
+                                        </p>
+                                    );
                                 })}
                             >
-                                <div className="plus-comp">
+                                <div className="plus-comp" onClick={handleIconClick}>
                                     <Add className="add" />
                                     <p>{comp?.ports?.length - 1}</p>
                                 </div>
