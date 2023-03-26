@@ -98,8 +98,10 @@ func (s *Server) ListenForConfigReloadEvents() error {
 		go func(msg []byte) {
 			// reload config
 			s.Errorf("Got a message")
-			// memphisOpts, _ := s.GetMemphisOpts(*s.opts)
-			// s.ReloadOptions(&memphisOpts)
+			err := s.Reload()
+			if err != nil {
+				s.Errorf("Failed reloading: " + err.Error())
+			}
 		}(copyBytes(msg))
 	})
 	if err != nil {

@@ -106,11 +106,10 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		os.Exit(1)
 	}
 
-	// memphisOpts, _ := s.GetMemphisOpts(*(s.Opts()))
-	err = s.Reload()
-	if err != nil {
-		s.Errorf("Failed reloading: " + err.Error())
-	}
+	// err = s.Reload()
+	// if err != nil {
+	// 	s.Errorf("Failed reloading: " + err.Error())
+	// }
 
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
