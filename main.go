@@ -95,7 +95,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server, opts *server.Options) db.MetadataStorage {
+func runMemphis(s *server.Server) db.MetadataStorage {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
@@ -106,8 +106,8 @@ func runMemphis(s *server.Server, opts *server.Options) db.MetadataStorage {
 		os.Exit(1)
 	}
 
-	memphisOpts, _ := s.GetMemphisOpts(opts)
-	s.ReloadOptions(memphisOpts)
+	memphisOpts, _ := s.GetMemphisOpts(*(s.Opts()))
+	s.ReloadOptions(&memphisOpts)
 
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
@@ -198,7 +198,7 @@ func main() {
 		server.SnapshotMonitorInfo()
 	}
 
-	metadataDb := runMemphis(s, opts)
+	metadataDb := runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
