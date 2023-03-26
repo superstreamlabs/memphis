@@ -1214,38 +1214,36 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
-
-	if len(opts.Users) > 0 {
-		usersToUpsert := []models.User{}
-		for _, user := range opts.Users {
-			newUser := models.User{
-				Username:  user.Username,
-				Password:  user.Password,
-				UserType:  "application",
-				CreatedAt: time.Now(),
-				AvatarId:  1,
-				FullName:  "",
+	if configuration.USER_PASS_BASED_AUTH {
+		if len(opts.Users) > 0 {
+			usersToUpsert := []models.User{}
+			for _, user := range opts.Users {
+				newUser := models.User{
+					Username:  user.Username,
+					Password:  user.Password,
+					UserType:  "application",
+					CreatedAt: time.Now(),
+					AvatarId:  1,
+					FullName:  "",
+				}
+				usersToUpsert = append(usersToUpsert, newUser)
 			}
-			usersToUpsert = append(usersToUpsert, newUser)
+			err = db.UpsertBatchOfUsers(usersToUpsert)
+			if err != nil {
+				return Options{}, err
+			}
 		}
-		err = db.UpsertBatchOfUsers(usersToUpsert)
+
+		users, err := db.GetAllUsersByType("application")
 		if err != nil {
 			return Options{}, err
 		}
+		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+		for _, user := range users {
+			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+		}
+		opts.Users = appUsers
 	}
-
-	users, err := db.GetAllUsersByType("application")
-	if err != nil {
-		return Options{}, err
-	}
-	appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
-	if configuration.USER_PASS_BASED_AUTH {
-		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME, Password: configuration.CONNECTION_TOKEN})
-	}
-	for _, user := range users {
-		appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
-	}
-	opts.Users = appUsers
 
 	return opts, nil
 }
