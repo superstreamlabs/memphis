@@ -73,8 +73,6 @@ type MessagePayloadDlsPg struct {
 // TODO: remove
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name"`
-	PoisoningTime       time.Time  `json:"poisoning_time"`
-	DeliveriesCount     int        `json:"deliveries_count"`
 	UnprocessedMessages int        `json:"unprocessed_messages"`
 	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
 	InProcessMessages   int        `json:"in_process_messages"`
@@ -87,8 +85,6 @@ type PoisonedCg struct {
 
 type PoisonedCgPg struct {
 	CgName              string     `json:"cg_name"`
-	PoisoningTime       time.Time  `json:"poisoning_time"`
-	DeliveriesCount     int        `json:"deliveries_count"`
 	UnprocessedMessages int        `json:"unprocessed_messages"`
 	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
 	InProcessMessages   int        `json:"in_process_messages"`
@@ -97,6 +93,10 @@ type PoisonedCgPg struct {
 	CgMembers           []CgMember `json:"cg_members"`
 	IsActive            bool       `json:"is_active"`
 	IsDeleted           bool       `json:"is_deleted"`
+}
+
+type PoisonedCgResponseCg struct {
+	CgName []string `json:"cg_name"`
 }
 
 // TODO: remove

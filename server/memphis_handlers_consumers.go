@@ -12,6 +12,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"sort"
@@ -335,7 +336,7 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station, poisonedCgMap map[string]int) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
 	consumers, err := db.GetAllConsumersByStation(station.ID)
 	if err != nil {
@@ -396,9 +397,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
-			totalPoisonMsgs := 0
-			if _, ok := poisonedCgMap[cg.Name]; ok {
-				totalPoisonMsgs = poisonedCgMap[cg.Name]
+			totalPoisonMsgs, err := getTotalPoisonMsgsPerCg(cg.Name)
+			if err != nil {
+				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 			}
 
 			cg.InProcessMessages = cgInfo.NumAckPending
@@ -596,4 +597,26 @@ func (ch ConsumersHandler) ReliveConsumers(connectionId string) error {
 	}
 
 	return nil
+}
+
+func getTotalPoisonMsgsPerCg(cgName string) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs)`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_using_schema", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

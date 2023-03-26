@@ -269,7 +269,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, poisonedCgMap, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -277,7 +277,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station, poisonedCgMap)
+		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station)
 		if err != nil {
 			return map[string]any{}, err
 		}

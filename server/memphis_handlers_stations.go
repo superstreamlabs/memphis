@@ -1384,7 +1384,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
+		poisonedCgs, err = GetPoisonedCgsByMessage(station, models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1417,7 +1417,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			poisonedCgs[i].IsDeleted = isDeleted
 		}
 		sort.Slice(poisonedCgs, func(i, j int) bool {
-			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
 
