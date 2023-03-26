@@ -18,6 +18,7 @@ type EditClusterConfigSchema struct {
 	UiHost        string `json:"ui_host"`
 	RestGWHost    string `json:"rest_gw_host"`
 	TSTimeSec     int    `json:"tiered_storage_time_sec"`
+	MaxMsgSizeMb  int    `json:"max_msg_size_mb"`
 }
 
 type GlobalConfigurationsUpdate struct {
