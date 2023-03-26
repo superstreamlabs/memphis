@@ -3820,3 +3820,164 @@ func GetImage(name string) (bool, models.Image, error) {
 	}
 	return true, images[0], nil
 }
+
+// dls Functions
+func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayloadPg, updatedAt time.Time, messageType string) (models.DlsMessagePg, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.DlsMessagePg{}, err
+	}
+	defer connection.Release()
+
+	query := `INSERT INTO dls_messages( 
+			station_id,
+			message_seq,
+			producer_id,
+			poisoned_cgs,
+			message_details,
+			updated_at,
+			message_type
+			) 
+		VALUES($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id`
+
+	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
+	if err != nil {
+		return models.DlsMessagePg{}, err
+	}
+
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType)
+	if err != nil {
+		return models.DlsMessagePg{}, err
+	}
+	defer rows.Close()
+	var messagePaylodId int
+	for rows.Next() {
+		err := rows.Scan(&messagePaylodId)
+		if err != nil {
+			return models.DlsMessagePg{}, err
+		}
+	}
+
+	if err != nil {
+		return models.DlsMessagePg{}, err
+	}
+
+	msgDetails := models.MessagePayloadDlsPg{
+		TimeSent: messageDetails.TimeSent,
+		Size:     messageDetails.Size,
+		Data:     messageDetails.Data,
+		// Headers:  messageDetails.headersJson,
+	}
+
+	deadLetterPayload := models.DlsMessagePg{
+		ID:             messagePaylodId,
+		StationId:      stationId,
+		MessageSeq:     messageSeq,
+		ProducerId:     producerId,
+		PoisonedCgs:    poisonedCgs,
+		MessageDetails: msgDetails,
+		UpdatedAt:      updatedAt,
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if !strings.Contains(pgErr.Detail, "already exists") {
+					return models.DlsMessagePg{}, errors.New("messages table already exists")
+				} else {
+					return models.DlsMessagePg{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.DlsMessagePg{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.DlsMessagePg{}, err
+		}
+	}
+
+	return deadLetterPayload, nil
+}
+
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessagePg, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.DlsMessagePg{}, err
+	}
+	defer connection.Release()
+
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+
+	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+	if err != nil {
+		return false, models.DlsMessagePg{}, err
+	}
+
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	if err != nil {
+		return false, models.DlsMessagePg{}, err
+	}
+	defer rows.Close()
+
+	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessagePg])
+	if err != nil {
+		return false, models.DlsMessagePg{}, err
+	}
+	if len(message) == 0 {
+		return false, models.DlsMessagePg{}, nil
+	}
+
+	return true, message[0], nil
+
+}
+
+func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs)`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_poison_msgs_per_cg", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

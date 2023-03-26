@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"sort"
@@ -397,7 +396,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
-			totalPoisonMsgs, err := getTotalPoisonMsgsPerCg(cg.Name)
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name)
 			if err != nil {
 				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 			}
@@ -597,26 +596,4 @@ func (ch ConsumersHandler) ReliveConsumers(connectionId string) error {
 	}
 
 	return nil
-}
-
-func getTotalPoisonMsgsPerCg(cgName string) (int, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer conn.Release()
-	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs)`
-	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_using_schema", query)
-	if err != nil {
-		return 0, err
-	}
-	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }

@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const (
@@ -45,144 +44,6 @@ func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
 	return func(_ *client, _, _ string, msg []byte) {
 		go s.handleNewPoisonMessage(copyBytes(msg))
 	}
-}
-
-func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
-	if err != nil {
-		return err
-	}
-	return nil
-
-}
-
-func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessagePg, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	connection, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, models.DlsMessagePg{}, err
-	}
-	defer connection.Release()
-
-	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
-
-	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
-	if err != nil {
-		return false, models.DlsMessagePg{}, err
-	}
-
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
-	if err != nil {
-		return false, models.DlsMessagePg{}, err
-	}
-	defer rows.Close()
-
-	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessagePg])
-	if err != nil {
-		return false, models.DlsMessagePg{}, err
-	}
-	if len(message) == 0 {
-		return false, models.DlsMessagePg{}, nil
-	}
-
-	return true, message[0], nil
-
-}
-
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayloadPg, updatedAt time.Time, messageType string) (models.DlsMessagePg, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	connection, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return models.DlsMessagePg{}, err
-	}
-	defer connection.Release()
-
-	query := `INSERT INTO dls_messages( 
-			station_id,
-			message_seq,
-			producer_id,
-			poisoned_cgs,
-			message_details,
-			updated_at,
-			message_type
-			) 
-		VALUES($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id`
-
-	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
-	if err != nil {
-		return models.DlsMessagePg{}, err
-	}
-
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType)
-	if err != nil {
-		return models.DlsMessagePg{}, err
-	}
-	defer rows.Close()
-	var messagePaylodId int
-	for rows.Next() {
-		err := rows.Scan(&messagePaylodId)
-		if err != nil {
-			return models.DlsMessagePg{}, err
-		}
-	}
-
-	if err != nil {
-		return models.DlsMessagePg{}, err
-	}
-
-	msgDetails := models.MessagePayloadDlsPg{
-		TimeSent: messageDetails.TimeSent,
-		Size:     messageDetails.Size,
-		Data:     messageDetails.Data,
-		// Headers:  messageDetails.headersJson,
-	}
-
-	deadLetterPayload := models.DlsMessagePg{
-		ID:             messagePaylodId,
-		StationId:      stationId,
-		MessageSeq:     messageSeq,
-		ProducerId:     producerId,
-		PoisonedCgs:    poisonedCgs,
-		MessageDetails: msgDetails,
-		UpdatedAt:      updatedAt,
-	}
-
-	if err := rows.Err(); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Detail != "" {
-				if !strings.Contains(pgErr.Detail, "already exists") {
-					return models.DlsMessagePg{}, errors.New("messages table already exists")
-				} else {
-					return models.DlsMessagePg{}, errors.New(pgErr.Detail)
-				}
-			} else {
-				return models.DlsMessagePg{}, errors.New(pgErr.Message)
-			}
-		} else {
-			return models.DlsMessagePg{}, err
-		}
-	}
-
-	return deadLetterPayload, nil
 }
 
 func (s *Server) handleNewPoisonMessage(msg []byte) {
@@ -272,20 +133,20 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			Headers:  headersJson,
 		}
 
-		exist, deadLetterMsg, err := GetMsgByStationIdAndMsgSeq(station.ID, int(messageSeq))
+		exist, deadLetterMsg, err := db.GetMsgByStationIdAndMsgSeq(station.ID, int(messageSeq))
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
 
 		if exist {
-			err := UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq), updatedAt)
+			err := db.UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq), updatedAt)
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
 			}
 		} else {
-			deadLetterMsg, err = InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison")
+			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison")
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
@@ -541,116 +402,6 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	return result, nil
 }
 
-func (pmh PoisonMessagesHandler) GetTotalDlsMsgsByStation(stationName string) (int, error) {
-	count := 0
-	timeout := 1 * time.Second
-	idCheck := make(map[string]bool)
-
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return 0, err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	var msgs []StoredMsg
-
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return 0, err
-	}
-
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-
-	cc := ConsumerConfig{
-		OptStartSeq:   startSeq,
-		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		Replicas:      1,
-	}
-
-	err = serv.memphisAddConsumer(streamName, &cc)
-	if err != nil {
-		return 0, err
-	}
-
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
-	}
-
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, msg := range msgs {
-		splittedSubj := strings.Split(msg.Subject, tsep)
-		msgType := splittedSubj[1]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return 0, err
-		}
-		msgId := dlsMsg.ID
-		if msgType == "poison" {
-			if _, ok := idCheck[msgId]; !ok {
-				idCheck[msgId] = true
-				count++
-			}
-		} else if msgType == "schema" {
-			count++
-		}
-	}
-
-	return count, nil
-}
-
 func RemovePoisonedCg(stationName StationName, cgName string) error {
 	timeout := 500 * time.Millisecond
 
@@ -754,34 +505,6 @@ cleanup:
 	return nil
 }
 
-func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
-	timeout := 500 * time.Millisecond
-
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return 0, err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return 0, err
-	}
-
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-	internalCgName := replaceDelimiters(cgName)
-	filter := GetDlsSubject("poison", sn.Intern(), "*", internalCgName)
-	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, startSeq, amount, timeout)
-	if err != nil {
-		return 0, err
-	}
-	return len(msgs), nil
-}
-
 func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.PoisonedCg, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -854,16 +577,4 @@ func GetDlsSubject(subjType, stationName, id, cgName string) string {
 		suffix = tsep + cgName
 	}
 	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id + suffix
-}
-
-func GetDlsMsgId(stationName string, messageSeq int, producerName string, timeSent string) string {
-	producer := producerName
-	// Support for dls messages from nonNative Memphis SDKs
-	if producer == "" {
-		producer = "nonNative"
-	}
-	// Remove any spaces might be in ID
-	msgId := strings.ReplaceAll(stationName+dlsMsgSep+producer+dlsMsgSep+strconv.Itoa(messageSeq)+dlsMsgSep+timeSent, " ", "")
-	msgId = strings.ReplaceAll(msgId, tsep, "+")
-	return msgId
 }
