@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"memphis/db"
 	"memphis/models"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -156,12 +157,12 @@ func unwrapHandlersFunc[T interface{}](f func(*Handlers) (T, error), h *Handlers
 
 func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphisWSReqFiller, error) {
 	subjectHead := tokenAt(subj, 1)
+	stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 	switch subjectHead {
 	case memphisWS_Subj_MainOverviewData:
 		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h), nil
 
 	case memphisWS_Subj_StationOverviewData:
-		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 		if stationName == _EMPTY_ {
 			return nil, errors.New("invalid station name")
 		}
@@ -171,11 +172,15 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 
 	case memphisWS_Subj_PoisonMsgJourneyData:
 		poisonMsgId := tokenAt(subj, 2)
+		poisonMsgIdInt, err := strconv.Atoi(poisonMsgId)
+		if err != nil {
+			return nil, err
+		}
 		if poisonMsgId == _EMPTY_ {
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetDlsMsgDetails(poisonMsgId, "poison")
+			return h.Stations.GetDlsMsgDetails(poisonMsgIdInt, stationName, "poison")
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:

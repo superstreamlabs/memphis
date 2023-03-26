@@ -129,7 +129,7 @@ const Messages = () => {
                 messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
-                        return item._id !== messageId;
+                        return item.id !== messageId;
                     });
                 });
             }
@@ -206,7 +206,7 @@ const Messages = () => {
     };
 
     const listGenerator = (index, message) => {
-        const id = tabValue === tabs[1] ? message?._id : message?.message_seq;
+        const id = tabValue === tabs[1] ? message?.id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
                 <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />

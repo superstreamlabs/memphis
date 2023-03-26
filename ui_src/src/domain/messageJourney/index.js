@@ -45,7 +45,7 @@ const MessageJourney = () => {
     const getPosionMessageDetails = async () => {
         setisLoading(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${encodeURIComponent(messageId)}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}&station_name=${stationName}`);
             arrangeData(data);
         } catch (error) {
             setisLoading(false);

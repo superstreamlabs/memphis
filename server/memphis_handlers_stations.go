@@ -1067,10 +1067,8 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMsgDetails(dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
-	var dlsMessage models.DlsMessageResponse
-	splitId := strings.Split(dlsMsgId, dlsMsgSep)
-	stationName := splitId[0]
+func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponsePg, error) {
+	var dlsMessage models.DlsMessageResponsePg
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return dlsMessage, err
@@ -1083,17 +1081,17 @@ func (sh StationsHandler) GetDlsMsgDetails(dlsMsgId, dlsType string) (models.Dls
 		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
 	}
 
-	return getDlsMessageById(station, sn, dlsMsgId, dlsType)
+	return getDlsMessageById(station, messageId, sn, dlsType)
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
-	var body models.GetPoisonMessageJourneySchema
+	var body models.GetPoisonMessageJourneySchemaPg
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, "poison")
+	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1283,7 +1281,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
-	var body models.GetMessageDetailsSchema
+	var body models.GetMessageDetailsSchemaPg
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1291,9 +1289,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msgId := body.MessageId
 
 	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(msgId, body.DlsType)
+		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "posion")
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1304,14 +1302,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		serv.Warnf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1325,7 +1323,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + msgId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1334,7 +1332,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if sm.Header != nil {
 		headersJson, err = DecodeHeader(sm.Header)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1388,7 +1386,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if station.IsNative {
 		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1396,14 +1394,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		for i, cg := range poisonedCgs {
 			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}

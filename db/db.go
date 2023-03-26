@@ -245,6 +245,20 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ON producers(station_id);
 		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
+	dlsMessagesTable := `
+	CREATE TABLE IF NOT EXISTS dls_messages(
+		id SERIAL NOT NULL,    
+		station_id INT NOT NULL,
+		message_seq INT NOT NULL,
+		producer_id INT NOT NULL, 
+		poisoned_cgs VARCHAR[],
+		message_details JSON NOT NULL,    
+		updated_at TIMESTAMP NOT NULL,
+		message_type VARCHAR NOT NULL,
+		PRIMARY KEY (id),
+		CONSTRAINT unique_station_id_message_seq UNIQUE(station_id, message_seq)
+	)`
+
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
@@ -337,6 +351,15 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		}
 	}
 	_, err = db.Exec(ctx, producersTable)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		errPg := errors.As(err, &pgErr)
+		if errPg && !strings.Contains(pgErr.Message, "already exists") {
+			return err
+		}
+	}
+
+	_, err = db.Exec(ctx, dlsMessagesTable)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		errPg := errors.As(err, &pgErr)
@@ -1492,6 +1515,34 @@ func UpdateProducersConnection(connectionId string, isActive bool) error {
 		return err
 	}
 	return nil
+}
+
+func GetProducerByID(id int) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM producers WHERE id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_id", query)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {

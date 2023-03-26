@@ -164,14 +164,29 @@ type RemoveStationSchema struct {
 	StationNames []string `json:"station_names" binding:"required"`
 }
 
+// TODO: remove
 type GetPoisonMessageJourneySchema struct {
 	MessageId string `form:"message_id" json:"message_id" binding:"required"`
 }
 
+type GetPoisonMessageJourneySchemaPg struct {
+	MessageId   int    `form:"message_id" json:"message_id" binding:"required"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+// TODO: remove
 type GetMessageDetailsSchema struct {
 	IsDls       bool   `form:"is_dls" json:"is_dls"`
 	DlsType     string `form:"dls_type" json:"dls_type"`
 	MessageId   string `form:"message_id" json:"message_id"`
+	MessageSeq  int    `form:"message_seq" json:"message_seq"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type GetMessageDetailsSchemaPg struct {
+	IsDls       bool   `form:"is_dls" json:"is_dls"`
+	DlsType     string `form:"dls_type" json:"dls_type"`
+	MessageId   int    `form:"message_id" json:"message_id"`
 	MessageSeq  int    `form:"message_seq" json:"message_seq"`
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }

@@ -15,6 +15,7 @@ import (
 	"time"
 )
 
+// TODO: remove
 type ProducerDetails struct {
 	Name              string `json:"name"`
 	ClientAddress     string `json:"client_address"`
@@ -25,11 +26,21 @@ type ProducerDetails struct {
 	CreatedByUsername string `json:"created_by_username"`
 }
 
+type ProducerDetailsPg struct {
+	Name              string `json:"name"`
+	ClientAddress     string `json:"client_address"`
+	ConnectionId      string `json:"connection_id"`
+	CreatedBy         int    `json:"created_by"`
+	IsActive          bool   `json:"is_active"`
+	IsDeleted         bool   `json:"is_deleted"`
+	CreatedByUsername string `json:"created_by_username"`
+}
 type MsgHeader struct {
 	HeaderKey   string `json:"header_key"`
 	HeaderValue string `json:"header_value"`
 }
 
+// TODO: remove
 type MessagePayload struct {
 	TimeSent time.Time         `json:"time_sent"`
 	Size     int               `json:"size"`
@@ -37,6 +48,14 @@ type MessagePayload struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadPg struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
+// TODO: remove
 type MessagePayloadDls struct {
 	TimeSent time.Time         `json:"time_sent"`
 	Size     int               `json:"size"`
@@ -44,6 +63,14 @@ type MessagePayloadDls struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadDlsPg struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     string            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
+// TODO: remove
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name"`
 	PoisoningTime       time.Time  `json:"poisoning_time"`
@@ -58,6 +85,21 @@ type PoisonedCg struct {
 	IsDeleted           bool       `json:"is_deleted"`
 }
 
+type PoisonedCgPg struct {
+	CgName              string     `json:"cg_name"`
+	PoisoningTime       time.Time  `json:"poisoning_time"`
+	DeliveriesCount     int        `json:"deliveries_count"`
+	UnprocessedMessages int        `json:"unprocessed_messages"`
+	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
+	InProcessMessages   int        `json:"in_process_messages"`
+	TotalPoisonMessages int        `json:"total_poison_messages"`
+	MaxMsgDeliveries    int        `json:"max_msg_deliveries"`
+	CgMembers           []CgMember `json:"cg_members"`
+	IsActive            bool       `json:"is_active"`
+	IsDeleted           bool       `json:"is_deleted"`
+}
+
+// TODO: remove
 type DlsMessage struct {
 	ID              string            `json:"_id"`
 	StationName     string            `json:"station_name"`
@@ -70,6 +112,18 @@ type DlsMessage struct {
 	ValidationError string            `json:"validation_error"`
 }
 
+type DlsMessagePg struct {
+	ID             int                 `json:"id"`
+	StationId      int                 `json:"station_id"`
+	MessageSeq     int                 `json:"message_seq"`
+	ProducerId     int                 `json:"producer_id"`
+	PoisonedCgs    []string            `json:"poisoned_cgs"`
+	MessageDetails MessagePayloadDlsPg `json:"message_details"`
+	UpdatedAt      time.Time           `json:"updated_at"`
+	MessageType    string              `json:"message_type"`
+}
+
+// TODO: remove
 type DlsMessageResponse struct {
 	ID              string            `json:"_id"`
 	StationName     string            `json:"station_name"`
@@ -80,6 +134,18 @@ type DlsMessageResponse struct {
 	Message         MessagePayloadDls `json:"message"`
 	CreatedAt       time.Time         `json:"created_at"`
 	ValidationError string            `json:"validation_error"`
+}
+
+type DlsMessageResponsePg struct {
+	ID              int                 `json:"id"`
+	StationName     string              `json:"station_name"`
+	SchemaType      string              `json:"schema_type"`
+	MessageSeq      int                 `json:"message_seq"`
+	Producer        ProducerDetails     `json:"producer"`
+	PoisonedCgs     []PoisonedCgPg      `json:"poisoned_cgs"`
+	Message         MessagePayloadDlsPg `json:"message"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	ValidationError string              `json:"validation_error"`
 }
 
 type PmAckMsg struct {
@@ -94,8 +160,15 @@ type LightDlsMessage struct {
 	Message    MessagePayloadDls `json:"message"`
 }
 
+// TODO: remove
 type LightDlsMessageResponse struct {
 	MessageSeq int               `json:"message_seq"`
 	ID         string            `json:"_id"`
 	Message    MessagePayloadDls `json:"message"`
+}
+
+type LightDlsMessageResponsePg struct {
+	MessageSeq int                 `json:"message_seq"`
+	ID         int                 `json:"id"`
+	Message    MessagePayloadDlsPg `json:"message"`
 }
