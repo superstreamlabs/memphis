@@ -98,7 +98,7 @@ func handleConnectMessage(client *client) error {
 		client.Warnf("handleConnectMessage: " + errMsg)
 		return errors.New(errMsg)
 	}
-	if user.UserType != ROOT_USERNAME && user.UserType != "application" {
+	if user.UserType != "root" && user.UserType != "application" {
 		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
 		return errors.New("Please use a user of type Root/Application and not Management")
 	}

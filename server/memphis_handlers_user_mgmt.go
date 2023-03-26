@@ -237,7 +237,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, ROOT_USERNAME, hashedPwdString, "", false, 1)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1)
 		if err != nil {
 			return err
 		}
@@ -268,24 +268,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 	}
 
-	if configuration.USER_PASS_BASED_AUTH {
-		exist, _, err := db.GetUserByUsername(MEMPHIS_USERNAME)
-		if err != nil {
-			return err
-		}
-		if !exist {
-			_, err = db.CreateUser(MEMPHIS_USERNAME, "application", configuration.CONNECTION_TOKEN, "", false, 1)
-			if err != nil {
-				return err
-			}
-		} else {
-			err = db.ChangeUserPassword(MEMPHIS_USERNAME, configuration.CONNECTION_TOKEN)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -302,7 +284,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if username == ROOT_USERNAME && user.UserType != ROOT_USERNAME {
+	if username == ROOT_USERNAME && user.UserType != "root" {
 		errMsg := "Change root password: This operation can be done only by the root user"
 		serv.Warnf("EditPassword: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -689,16 +671,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				avatarId = body.AvatarId
 			}
 		} else {
-			brokerConnectionCreds, err = AddUser(username)
-			if err != nil || len(username) == 0 {
-				serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-				return
-			}
+			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
 	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
-	if err != nil || len(username) == 0 {
+	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -801,7 +778,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
-	if userToRemove.UserType == ROOT_USERNAME {
+	if userToRemove.UserType == "root" {
 		serv.Warnf("RemoveUser: You can not remove the root user")
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
@@ -837,7 +814,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	if user.UserType == ROOT_USERNAME {
+	if user.UserType == "root" {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
 		return
 	}

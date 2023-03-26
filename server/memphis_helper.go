@@ -122,10 +122,6 @@ func (s *Server) getJsApiReplySubject() string {
 	return sb.String()
 }
 
-func AddUser(username string) (string, error) {
-	return serv.opts.Authorization, nil
-}
-
 func RemoveUser(username string) error {
 	return nil
 }
@@ -1241,8 +1237,10 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 	if err != nil {
 		return Options{}, err
 	}
-
 	appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+	if configuration.USER_PASS_BASED_AUTH {
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME, Password: configuration.CONNECTION_TOKEN})
+	}
 	for _, user := range users {
 		appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
 	}
