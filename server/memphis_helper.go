@@ -1214,19 +1214,20 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
-	usersToUpsert := []models.User{}
-	for _, user := range opts.Users {
-		newUser := models.User{
-			Username:  user.Username,
-			Password:  user.Password,
-			UserType:  "application",
-			CreatedAt: time.Now(),
-			AvatarId:  1,
-			FullName:  "",
+
+	if len(opts.Users) > 0 {
+		usersToUpsert := []models.User{}
+		for _, user := range opts.Users {
+			newUser := models.User{
+				Username:  user.Username,
+				Password:  user.Password,
+				UserType:  "application",
+				CreatedAt: time.Now(),
+				AvatarId:  1,
+				FullName:  "",
+			}
+			usersToUpsert = append(usersToUpsert, newUser)
 		}
-		usersToUpsert = append(usersToUpsert, newUser)
-	}
-	if len(usersToUpsert) > 0 {
 		err = db.UpsertBatchOfUsers(usersToUpsert)
 		if err != nil {
 			return Options{}, err
