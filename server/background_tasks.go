@@ -97,8 +97,10 @@ func (s *Server) ListenForConfigReloadEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
-			memphisOpts, _ := s.GetMemphisOpts(*s.opts)
-			s.ReloadOptions(&memphisOpts)
+			err := s.Reload()
+			if err != nil {
+				s.Errorf("Failed reloading: " + err.Error())
+			}
 		}(copyBytes(msg))
 	})
 	if err != nil {
