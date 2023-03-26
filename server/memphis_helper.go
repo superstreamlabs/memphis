@@ -1239,6 +1239,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			return Options{}, err
 		}
 		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+		appUsers = append(appUsers, &User{Username: "$memphis_user", Password: configuration.CONNECTION_TOKEN})
 		for _, user := range users {
 			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
 		}
