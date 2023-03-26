@@ -1384,7 +1384,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(station, models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
+		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

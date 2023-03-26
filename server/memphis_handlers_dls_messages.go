@@ -782,7 +782,7 @@ func GetTotalPoisonMsgsByCg(stationName, cgName string) (int, error) {
 	return len(msgs), nil
 }
 
-func GetPoisonedCgsByMessage(station models.Station, message models.MessageDetails) ([]models.PoisonedCg, error) {
+func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.PoisonedCg, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -799,7 +799,7 @@ func GetPoisonedCgsByMessage(station models.Station, message models.MessageDetai
 		return []models.PoisonedCg{}, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, station.ID, message.MessageSeq)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, station.ID, messageSeq)
 	if err != nil {
 		return []models.PoisonedCg{}, err
 	}
