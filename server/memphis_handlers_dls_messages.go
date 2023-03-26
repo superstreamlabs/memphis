@@ -278,7 +278,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		if exist {
-			updatedAt := time.Now()
 			err := UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq), updatedAt)
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
