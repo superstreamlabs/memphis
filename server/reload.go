@@ -972,7 +972,6 @@ func (s *Server) reloadOptions(curOpts, newOpts *Options) error {
 
 	changed, err := s.diffOptions(newOpts)
 	if err != nil {
-		s.Errorf("here: %s", err.Error())
 		return err
 	}
 
