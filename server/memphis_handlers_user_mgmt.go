@@ -711,8 +711,13 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	if userType == "application" {
-		memphisOpts, _ := serv.GetMemphisOpts(serv.opts)
-		serv.ReloadOptions(memphisOpts)
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	serv.Noticef("User " + username + " has been created")

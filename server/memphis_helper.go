@@ -1230,13 +1230,13 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 	if len(usersToUpsert) > 0 {
 		err = db.UpsertBatchOfUsers(usersToUpsert)
 		if err != nil {
-			return nil, err
+			return Options{}, err
 		}
 	}
 
 	users, err := db.GetAllUsersByType("application")
 	if err != nil {
-		return nil, err
+		return Options{}, err
 	}
 
 	appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
