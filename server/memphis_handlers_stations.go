@@ -302,13 +302,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	err = s.CreateDlsStream(stationName, storageType, replicas)
-	if err != nil {
-		serv.Errorf("createStationDirect: Create DLS at station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-
 	_, user, err := db.GetUserByUsername(username)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
@@ -747,12 +740,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.CreateDlsStream(stationName, body.StorageType, body.Replicas)
-	if err != nil {
-		serv.Errorf("CreateStation: Create DLS at station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
