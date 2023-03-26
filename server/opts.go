@@ -1078,7 +1078,7 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			return
 		}
 		o.LameDuckGracePeriod = dur
-	case "operator", "operators", "roots", "root", "root_operators", "root_operator":
+	case "operator", "operators", "roots", ROOT_USERNAME, "root_operators", "root_operator":
 		opFiles := []string{}
 		switch v := v.(type) {
 		case string:

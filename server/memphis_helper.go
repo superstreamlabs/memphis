@@ -1215,6 +1215,35 @@ func (s *Server) GetMemphisOpts(opts *Options) (*Options, error) {
 			opts.RestGwHost = conf.Value
 		}
 	}
+	usersToUpsert := []models.User{}
+	for _, user := range opts.Users {
+		newUser := models.User{
+			Username:  user.Username,
+			Password:  user.Password,
+			UserType:  "application",
+			CreatedAt: time.Now(),
+			AvatarId:  1,
+			FullName:  "",
+		}
+		usersToUpsert = append(usersToUpsert, newUser)
+	}
+	if len(usersToUpsert) > 0 {
+		err = db.UpsertBatchOfUsers(usersToUpsert)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	users, err := db.GetAllUsersByType("application")
+	if err != nil {
+		return nil, err
+	}
+
+	appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+	for _, user := range users {
+		appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+	}
+	opts.Users = appUsers
 
 	return opts, nil
 }
