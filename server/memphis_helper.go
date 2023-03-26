@@ -1213,6 +1213,9 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			opts.BrokerHost = conf.Value
 		case "rest_gw_host":
 			opts.RestGwHost = conf.Value
+		case "max_msg_size_mb":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
 

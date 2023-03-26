@@ -26,6 +26,23 @@ import (
 
 type ConfigurationsHandler struct{ S *Server }
 
+func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+	}
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+	})
+}
+
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
 	// 	return
@@ -96,6 +113,15 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
+	if ch.S.opts.MaxPayload != int32(body.MaxMsgSizeMb) {
+		err := changeMaxMsgSize(body.MaxMsgSizeMb)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	// send signal to reload config
 	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
@@ -117,6 +143,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		"ui_host":                 ch.S.opts.UiHost,
 		"rest_gw_host":            ch.S.opts.RestGwHost,
 		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -180,22 +207,6 @@ func changeLogsRetention(logsRetention int) error {
 	return nil
 }
 
-func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
-	}
-	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-	})
-}
-
 func changeTSTime(tsTime int) error {
 	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime))
 	if err != nil {
@@ -209,6 +220,15 @@ func EditClusterCompHost(key string, host string) error {
 	key = strings.ToLower(key)
 	host = strings.ToLower(host)
 	err := db.UpsertConfiguration(key, host)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func changeMaxMsgSize(newSize int) error {
+	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize))
 	if err != nil {
 		return err
 	}

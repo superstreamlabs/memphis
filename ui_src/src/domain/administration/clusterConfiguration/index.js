@@ -113,6 +113,16 @@ function ClusterConfiguration() {
                 <>
                     <div className="configuration-body">
                         <SliderRow
+                            title="MAX MESSAGE SIZE"
+                            desc="Maximum  message size (payload + headers) in megabytes"
+                            value={formFields?.max_msg_size_mb}
+                            img={DeadLetterInHours}
+                            min={1}
+                            max={12}
+                            unit={'mb'}
+                            onChanges={(e) => handleChange('max_msg_size_mb', e)}
+                        />
+                        <SliderRow
                             title="DEAD LETTER MESSAGES RETENTION IN HOURS"
                             desc="Amount of hours to retain dead letter messages in a DLS"
                             value={formFields?.dls_retention}
