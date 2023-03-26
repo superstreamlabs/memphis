@@ -26,6 +26,22 @@ import (
 
 type ConfigurationsHandler struct{ S *Server }
 
+func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+	}
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+	})
+}
+
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
 	// 	return
@@ -178,22 +194,6 @@ func changeLogsRetention(logsRetention int) error {
 		return err
 	}
 	return nil
-}
-
-func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
-	}
-	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-	})
 }
 
 func changeTSTime(tsTime int) error {
