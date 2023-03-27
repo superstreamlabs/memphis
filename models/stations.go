@@ -157,11 +157,7 @@ type RemoveMessagesSchema struct {
 	MessageSeqs []uint64 `json:"message_seqs" binding:"required"`
 }
 
-// type ResendPoisonMessagesSchema struct {
-// 	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
-// }
-
-type ResendPoisonMessagesSchemaPg struct {
+type ResendPoisonMessagesSchema struct {
 	PoisonMessageIds []int  `json:"poison_message_ids" binding:"required"`
 	StationName      string `json:"station_name" binding:"required"`
 }
@@ -170,26 +166,13 @@ type RemoveStationSchema struct {
 	StationNames []string `json:"station_names" binding:"required"`
 }
 
-// TODO: remove
 type GetPoisonMessageJourneySchema struct {
-	MessageId string `form:"message_id" json:"message_id" binding:"required"`
-}
-
-type GetPoisonMessageJourneySchemaPg struct {
 	MessageId   int    `form:"message_id" json:"message_id" binding:"required"`
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
 
 // TODO: remove
 type GetMessageDetailsSchema struct {
-	IsDls       bool   `form:"is_dls" json:"is_dls"`
-	DlsType     string `form:"dls_type" json:"dls_type"`
-	MessageId   string `form:"message_id" json:"message_id"`
-	MessageSeq  int    `form:"message_seq" json:"message_seq"`
-	StationName string `form:"station_name" json:"station_name" binding:"required"`
-}
-
-type GetMessageDetailsSchemaPg struct {
 	IsDls       bool   `form:"is_dls" json:"is_dls"`
 	DlsType     string `form:"dls_type" json:"dls_type"`
 	MessageId   int    `form:"message_id" json:"message_id"`

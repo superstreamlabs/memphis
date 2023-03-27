@@ -309,10 +309,8 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
 	}
-	err = s.ListenForDlsRetentionUpdate()
-	if err != nil {
-		return errors.New("Failed to subscribe for dls retention update" + err.Error())
-	}
+	//TODO: check this flow
+	// go s.ListenForDlsRetentionUpdate()
 
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
@@ -508,7 +506,7 @@ func (s *Server) ListenForDlsRetentionUpdate() error {
 		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
 		if err != nil {
 			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
-			return nil
+			return err
 		}
 		for _, updatedAtValue := range updatedAtValues {
 			configurationTime := updatedAtValue.Updated_at.Add(time.Hour * time.Duration(s.opts.DlsRetentionHours))
@@ -516,7 +514,7 @@ func (s *Server) ListenForDlsRetentionUpdate() error {
 				err := db.DeleteOldDlsMessageByRetention(updatedAtValue.Updated_at)
 				if err != nil {
 					serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
-					return nil
+					return err
 				}
 			}
 		}
