@@ -25,6 +25,7 @@ import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import UserItem from './userItem';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -81,7 +82,7 @@ function Users() {
         setUsersList(newUserList);
         setCopyOfUserList(newUserList);
         addUserModalFlip(false);
-        if (userData.user_type === 'application') {
+        if (userData.user_type === 'application' &&  localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
             setUserDetailsModal(true);
         }
     };
