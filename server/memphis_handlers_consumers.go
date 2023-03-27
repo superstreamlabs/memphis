@@ -539,8 +539,8 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err == nil {
 			deleted = true
 		}
-
-		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
+		updatedAt := time.Now()
+		err = RemovePoisonedCg(station.ID, consumer.ConsumersGroup, updatedAt)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)

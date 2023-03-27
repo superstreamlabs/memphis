@@ -3980,3 +3980,54 @@ func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
 
 	return count, nil
 }
+
+func GetUpdatedAtValueFromDls() ([]models.RetentionIntervalData, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.RetentionIntervalData{}, err
+	}
+	defer conn.Release()
+	query := `SELECT updated_at FROM dls_messages`
+	stmt, err := conn.Conn().Prepare(ctx, "get_updated_at_value_from_dls", query)
+	if err != nil {
+		return []models.RetentionIntervalData{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.RetentionIntervalData{}, err
+	}
+	defer rows.Close()
+
+	updatedAtData, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.RetentionIntervalData])
+	if err != nil {
+		return []models.RetentionIntervalData{}, err
+	}
+	if len(updatedAtData) == 0 {
+		return []models.RetentionIntervalData{}, nil
+	}
+	return updatedAtData, nil
+}
+
+func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages WHERE updated_at = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_old_dls_messages", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, updatedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}

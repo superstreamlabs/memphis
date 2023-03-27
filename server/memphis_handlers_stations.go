@@ -12,6 +12,7 @@
 package server
 
 import (
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -1094,89 +1095,111 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	c.IndentedJSON(200, poisonMessage)
 }
 
-func dropPoisonDlsMessages(poisonMessageIds []string) error {
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(poisonMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
+func updatePoisongDlsCg(poisonMessageId int, dlsType string, stationName string, funcName string) error {
+	updatedAt := time.Now()
+	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
-		return errors.New("dropPoisonDlsMessages: " + err.Error())
+		return errors.New(funcName + ": " + err.Error())
 	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
+
+	if !exist {
+		serv.Warnf(funcName + ": Station " + stationName + " does not exist")
+		return errors.New(funcName + ": " + err.Error())
+	}
+
+	stationNameStruct, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return errors.New("dropPoisonDlsMessages: " + err.Error())
+		return errors.New(funcName + ": " + err.Error())
 	}
-	amount := streamInfo.State.Msgs
-	for _, msgId := range poisonMessageIds {
-		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+
+	poisonMessage, err := getDlsMessageById(station, poisonMessageId, stationNameStruct, dlsType)
+	if err != nil {
+		return errors.New(funcName + ": " + err.Error())
+	}
+
+	poisonCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
+	if err != nil {
+		return errors.New(funcName + ": " + err.Error())
+	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
+	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+	if err != nil {
+		return err
+	}
+	for _, poisonCg := range poisonCgs {
+		_, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
 		if err != nil {
-			return errors.New("dropPoisonDlsMessages: " + err.Error())
-		}
-		for _, msg := range msgs {
-			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-			if err != nil {
-				return errors.New("dropPoisonDlsMessages: " + err.Error())
-			}
+			return err
 		}
 	}
 	return nil
 }
 
-func dropSchemaDlsMsgs(schemaMessageIds []string) error {
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return errors.New("dropSchemaDlsMsg: " + err.Error())
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	amount := uint64(1)
-	for _, msgId := range schemaMessageIds {
-		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-		msg := msgs[0]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-		if msgId == dlsMsg.ID {
-			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-			if err != nil {
-				return errors.New("dropSchemaDlsMsg: " + err.Error())
-			}
-		}
-	}
-
-	return nil
+func dropPoisonDlsMessages(poisonMessageIds []int, dlsType string, stationName string) error {
+	return updatePoisongDlsCg(poisonMessageIds[0], dlsType, stationName, "dropPoisonDlsMessages")
 }
+
+// func dropSchemaDlsMsgs(schemaMessageIds []string) error {
+// 	timeout := 500 * time.Millisecond
+// 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
+// 	stationName := splitId[0]
+// 	sn, err := StationNameFromStr(stationName)
+// 	if err != nil {
+// 		return errors.New("dropSchemaDlsMsg: " + err.Error())
+// 	}
+// 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
+// 	amount := uint64(1)
+// 	for _, msgId := range schemaMessageIds {
+// 		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
+// 		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+// 		if err != nil {
+// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
+// 		}
+// 		msg := msgs[0]
+// 		var dlsMsg models.DlsMessage
+// 		err = json.Unmarshal(msg.Data, &dlsMsg)
+// 		if err != nil {
+// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
+// 		}
+// 		if msgId == dlsMsg.ID {
+// 			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
+// 			if err != nil {
+// 				return errors.New("dropSchemaDlsMsg: " + err.Error())
+// 			}
+// 		}
+// 	}
+
+// 	return nil
+// }
 
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
-	var body models.DropDlsMessagesSchema
+	var body models.DropDlsMessagesSchemaPg
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 	if body.DlsMsgType == "poison" {
-		err := dropPoisonDlsMessages(body.DlsMessageIds)
+		err := dropPoisonDlsMessages(body.DlsMessageIds, body.DlsMsgType, body.StationName)
 		if err != nil {
 			serv.Errorf("DropDlsMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	} else if body.DlsMsgType == "schema" {
-		err := dropSchemaDlsMsgs(body.DlsMessageIds)
-		if err != nil {
-			serv.Errorf("DropDlsMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+		// err := dropSchemaDlsMsgs(body.DlsMessageIds)
+		// if err != nil {
+		// 	serv.Errorf("DropDlsMessages: " + err.Error())
+		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		// 	return
+		// }
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1189,73 +1212,16 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
-	var body models.ResendPoisonMessagesSchema
+	var body models.ResendPoisonMessagesSchemaPg
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
+	err := updatePoisongDlsCg(body.PoisonMessageIds[0], "poison", body.StationName, "ResendPoisonMessages")
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	amount := streamInfo.State.Msgs
-	for _, msgId := range body.PoisonMessageIds {
-		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		for _, msg := range msgs {
-			var dlsMsg models.DlsMessage
-			err = json.Unmarshal(msg.Data, &dlsMsg)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			stationName := replaceDelimiters(dlsMsg.StationName)
-			cgName := replaceDelimiters(dlsMsg.PoisonedCg.CgName)
-			headersJson := map[string]string{}
-			for key, value := range dlsMsg.Message.Headers {
-				headersJson[key] = value
-			}
-			headersJson["$memphis_pm_id"] = dlsMsg.ID
-			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(msg.Sequence, 10)
-			headers, err := json.Marshal(headersJson)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			data, err := hex.DecodeString(dlsMsg.Message.Data)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			err = sh.S.ResendPoisonMessage("$memphis_dls_"+stationName+"_"+cgName, []byte(data), headers)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		}
-
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

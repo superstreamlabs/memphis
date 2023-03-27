@@ -140,9 +140,15 @@ type UpdateDlsConfigSchema struct {
 	Schemaverse bool   `json:"schemaverse"`
 }
 
-type DropDlsMessagesSchema struct {
-	DlsMsgType    string   `json:"dls_type" binding:"required"`
-	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
+// type DropDlsMessagesSchema struct {
+// 	DlsMsgType    string   `json:"dls_type" binding:"required"`
+// 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
+// }
+
+type DropDlsMessagesSchemaPg struct {
+	DlsMsgType    string `json:"dls_type" binding:"required"`
+	DlsMessageIds []int  `json:"dls_message_ids" binding:"required"`
+	StationName   string `json:"station_name" binding:"required"`
 }
 
 type PurgeStationSchema struct {
@@ -156,8 +162,13 @@ type RemoveMessagesSchema struct {
 	MessageSeqs []uint64 `json:"message_seqs" binding:"required"`
 }
 
-type ResendPoisonMessagesSchema struct {
-	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
+// type ResendPoisonMessagesSchema struct {
+// 	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
+// }
+
+type ResendPoisonMessagesSchemaPg struct {
+	PoisonMessageIds []int  `json:"poison_message_ids" binding:"required"`
+	StationName      string `json:"station_name" binding:"required"`
 }
 
 type RemoveStationSchema struct {

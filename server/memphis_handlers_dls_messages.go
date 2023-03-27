@@ -20,7 +20,6 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -397,106 +396,24 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	return result, nil
 }
 
-func RemovePoisonedCg(stationName StationName, cgName string) error {
-	timeout := 500 * time.Millisecond
-
-	streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
-
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	var msgs []StoredMsg
-
-	streamInfo, err := serv.memphisStreamInfo(streamName)
+func RemovePoisonedCg(stationId int, cgName string, updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return err
 	}
+	defer conn.Release()
 
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-
-	cc := ConsumerConfig{
-		OptStartSeq:   startSeq,
-		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		Replicas:      1,
-	}
-
-	err = serv.memphisAddConsumer(streamName, &cc)
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
 	if err != nil {
 		return err
 	}
-
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, streamName, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("GetTotalPoisonMsgsByCg: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, updatedAt, stationId)
 	if err != nil {
 		return err
 	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
-	}
-
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return err
-	}
-
-	for _, msg := range msgs {
-		splittedSubj := strings.Split(msg.Subject, tsep)
-		msgType := splittedSubj[1]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return err
-		}
-		if msgType == "poison" {
-			if dlsMsg.PoisonedCg.CgName == cgName {
-				_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-
 	return nil
 }
 
