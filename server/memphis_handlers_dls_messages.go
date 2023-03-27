@@ -128,7 +128,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		messageDetails := models.MessagePayload{
 			TimeSent: poisonMessageContent.Time,
 			Size:     len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
-			Data:     string(poisonMessageContent.Data),
+			Data:     hex.EncodeToString(poisonMessageContent.Data),
 			Headers:  headersJson,
 		}
 
