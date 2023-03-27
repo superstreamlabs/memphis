@@ -477,8 +477,6 @@ func (s *Server) ListenForTieredStorageMessages() error {
 func (s *Server) ListenSchemaVerseDls() error {
 	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			fmt.Println(string(msg))
-
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)
 			if err != nil {
@@ -509,7 +507,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 			}
 
 			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), message.CreatedAt, "schema")
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), message.CreatedAt, "schema", message.ValidationError)
 			if err != nil {
 				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
 				return
