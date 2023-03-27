@@ -509,7 +509,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 			}
 
 			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayloadPg(message.Message), message.CreatedAt, "schema")
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), message.CreatedAt, "schema")
 			if err != nil {
 				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
 				return

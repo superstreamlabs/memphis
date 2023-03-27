@@ -3821,13 +3821,13 @@ func GetImage(name string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayloadPg, updatedAt time.Time, messageType string) (models.DlsMessagePg, error) {
+func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, updatedAt time.Time, messageType string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return models.DlsMessagePg{}, err
+		return models.DlsMessage{}, err
 	}
 	defer connection.Release()
 
@@ -3845,34 +3845,34 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 
 	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
 	if err != nil {
-		return models.DlsMessagePg{}, err
+		return models.DlsMessage{}, err
 	}
 
 	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType)
 	if err != nil {
-		return models.DlsMessagePg{}, err
+		return models.DlsMessage{}, err
 	}
 	defer rows.Close()
 	var messagePaylodId int
 	for rows.Next() {
 		err := rows.Scan(&messagePaylodId)
 		if err != nil {
-			return models.DlsMessagePg{}, err
+			return models.DlsMessage{}, err
 		}
 	}
 
 	if err != nil {
-		return models.DlsMessagePg{}, err
+		return models.DlsMessage{}, err
 	}
 
-	msgDetails := models.MessagePayloadDlsPg{
+	msgDetails := models.MessagePayloadDls{
 		TimeSent: messageDetails.TimeSent,
 		Size:     messageDetails.Size,
 		Data:     messageDetails.Data,
 		// Headers:  messageDetails.headersJson,
 	}
 
-	deadLetterPayload := models.DlsMessagePg{
+	deadLetterPayload := models.DlsMessage{
 		ID:             messagePaylodId,
 		StationId:      stationId,
 		MessageSeq:     messageSeq,
@@ -3887,28 +3887,28 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if !strings.Contains(pgErr.Detail, "already exists") {
-					return models.DlsMessagePg{}, errors.New("messages table already exists")
+					return models.DlsMessage{}, errors.New("messages table already exists")
 				} else {
-					return models.DlsMessagePg{}, errors.New(pgErr.Detail)
+					return models.DlsMessage{}, errors.New(pgErr.Detail)
 				}
 			} else {
-				return models.DlsMessagePg{}, errors.New(pgErr.Message)
+				return models.DlsMessage{}, errors.New(pgErr.Message)
 			}
 		} else {
-			return models.DlsMessagePg{}, err
+			return models.DlsMessage{}, err
 		}
 	}
 
 	return deadLetterPayload, nil
 }
 
-func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessagePg, error) {
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, models.DlsMessagePg{}, err
+		return false, models.DlsMessage{}, err
 	}
 	defer connection.Release()
 
@@ -3916,21 +3916,21 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 
 	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
 	if err != nil {
-		return false, models.DlsMessagePg{}, err
+		return false, models.DlsMessage{}, err
 	}
 
 	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
 	if err != nil {
-		return false, models.DlsMessagePg{}, err
+		return false, models.DlsMessage{}, err
 	}
 	defer rows.Close()
 
-	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessagePg])
+	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
 	if err != nil {
-		return false, models.DlsMessagePg{}, err
+		return false, models.DlsMessage{}, err
 	}
 	if len(message) == 0 {
-		return false, models.DlsMessagePg{}, nil
+		return false, models.DlsMessage{}, nil
 	}
 
 	return true, message[0], nil

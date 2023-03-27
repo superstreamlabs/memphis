@@ -1055,8 +1055,8 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponsePg, error) {
-	var dlsMessage models.DlsMessageResponsePg
+func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponse, error) {
+	var dlsMessage models.DlsMessageResponse
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return dlsMessage, err
