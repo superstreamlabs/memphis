@@ -1097,8 +1097,13 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 func updatePoisongDlsCg(poisonMessageId int, dlsType string, stationName string, funcName string) error {
 	updatedAt := time.Now()
-	_, station, err := db.GetStationByName(stationName)
+	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
+		return errors.New(funcName + ": " + err.Error())
+	}
+
+	if !exist {
+		serv.Warnf(funcName + ": Station " + stationName + " does not exist")
 		return errors.New(funcName + ": " + err.Error())
 	}
 
@@ -1197,11 +1202,11 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 		// }
 	}
 
-	// shouldSendAnalytics, _ := shouldSendAnalytics()
-	// if shouldSendAnalytics {
-	// 	user, _ := getUserDetailsFromMiddleware(c)
-	// 	analytics.SendEvent(user.Username, "user-ack-poison-message")
-	// }
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-ack-poison-message")
+	}
 
 	c.IndentedJSON(200, gin.H{})
 }
@@ -1218,6 +1223,14 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-resend-poison-message")
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
