@@ -3205,6 +3205,34 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
+func GetUserForLogin(username string) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login", query)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
 func GetUserByUserId(userId int) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3261,30 +3289,30 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
-func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
+func GetAllUsersByType(userType string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE user_type='application'`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
+	query := `SELECT * FROM users WHERE type=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userType)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	if len(users) == 0 {
-		return []models.FilteredApplicationUser{}, nil
+		return []models.User{}, nil
 	}
 	return users, nil
 }
@@ -3398,6 +3426,37 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) {
 		return []models.FilteredUser{}, nil
 	}
 	return userList, nil
+}
+
+func UpsertBatchOfUsers(users []models.User) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	valueStrings := make([]string, 0, len(users))
+	valueArgs := make([]interface{}, 0, len(users)*6)
+	for i, user := range users {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
+		valueArgs = append(valueArgs, user.Username)
+		valueArgs = append(valueArgs, user.Password)
+		valueArgs = append(valueArgs, user.UserType)
+		valueArgs = append(valueArgs, user.CreatedAt)
+		valueArgs = append(valueArgs, user.AvatarId)
+		valueArgs = append(valueArgs, user.FullName)
+	}
+	query := fmt.Sprintf("INSERT INTO users (username, password, type, created_at, avatar_id, full_name) VALUES %s ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password", strings.Join(valueStrings, ","))
+	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, valueArgs...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Tags Functions
