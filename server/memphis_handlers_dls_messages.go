@@ -429,7 +429,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 
 	query := `SELECT dls.poisoned_cgs FROM dls_messages as dls WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
 
-	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_message", query)
 	if err != nil {
 		return []models.PoisonedCg{}, err
 	}
