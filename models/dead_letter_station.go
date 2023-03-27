@@ -172,3 +172,7 @@ type LightDlsMessageResponsePg struct {
 	ID         int                 `json:"id"`
 	Message    MessagePayloadDlsPg `json:"message"`
 }
+
+type RetentionIntervalData struct {
+	Updated_at time.Time `json:"updated_at"`
+}

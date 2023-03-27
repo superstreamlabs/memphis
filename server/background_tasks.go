@@ -317,6 +317,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
 	}
 
+	err = s.ListenForDlsRetentionUpdate()
+	if err != nil {
+		return errors.New("Failed to subscribe for dls retention update" + err.Error())
+	}
+
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
@@ -461,5 +466,28 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Server) ListenForDlsRetentionUpdate() error {
+	currentTime := time.Now()
+	ticker := time.NewTicker(2 * time.Minute)
+	for range ticker.C {
+		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
+		if err != nil {
+			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+			return nil
+		}
+		for _, updatedAtValue := range updatedAtValues {
+			configurationTime := updatedAtValue.Updated_at.Add(time.Hour * time.Duration(s.opts.DlsRetentionHours))
+			if currentTime.After(configurationTime) || currentTime.Equal(configurationTime) {
+				err := db.DeleteOldDlsMessageByRetention(updatedAtValue.Updated_at)
+				if err != nil {
+					serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+					return nil
+				}
+			}
+		}
+	}
 	return nil
 }
