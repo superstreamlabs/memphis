@@ -350,11 +350,6 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 		// if dlsType == "schema" {
 		// size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
 		// dlsMsg.Message.Size = size
-		// if dlsMsg.CreatedAt.IsZero() {
-		// 	dlsMsg.Message.TimeSent = time.Unix(0, dlsMsg.CreationUnix*1000000)
-		// } else {
-		// 	dlsMsg.Message.TimeSent = dlsMsg.CreatedAt
-		// }
 		// }
 
 		for header := range dlsMsg.MessageDetails.Headers {

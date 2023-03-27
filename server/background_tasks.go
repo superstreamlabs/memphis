@@ -30,6 +30,7 @@ const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
+const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
@@ -317,6 +318,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
 	}
 
+	err = s.ListenSchemaVerseDls()
+	if err != nil {
+		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
+	}
+
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
@@ -462,4 +468,54 @@ func (s *Server) ListenForTieredStorageMessages() error {
 	}
 
 	return nil
+}
+
+func (s *Server) ListenSchemaVerseDls() error {
+	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			fmt.Println(string(msg))
+
+			var message models.SchemaVerseDlsMessageSdk
+			err := json.Unmarshal(msg, &message)
+			if err != nil {
+				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+
+			exist, station, err := db.GetStationByName(message.StationName)
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				return
+			}
+			if !exist {
+				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + ": " + "is not exists")
+				return
+
+			}
+
+			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+
+			if !exist {
+				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
+				return
+			}
+
+			poisnedCgs := []string{}
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayloadPg(message.Message), message.CreatedAt, "schema")
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+
 }

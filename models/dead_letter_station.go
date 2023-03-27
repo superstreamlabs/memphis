@@ -112,6 +112,13 @@ type DlsMessage struct {
 	ValidationError string            `json:"validation_error"`
 }
 
+type SchemaVerseDlsMessageSdk struct {
+	StationName string            `json:"station_name"`
+	Producer    ProducerDetails   `json:"producer"`
+	Message     MessagePayloadDls `json:"message"`
+	CreatedAt   time.Time         `json:"created_at"`
+}
+
 type DlsMessagePg struct {
 	ID             int                 `json:"id"`
 	StationId      int                 `json:"station_id"`

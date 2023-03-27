@@ -255,8 +255,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		message_details JSON NOT NULL,    
 		updated_at TIMESTAMP NOT NULL,
 		message_type VARCHAR NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT unique_station_id_message_seq UNIQUE(station_id, message_seq)
+		PRIMARY KEY (id)
 	)`
 
 	db := MetadataDbClient.Client
