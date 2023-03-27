@@ -505,9 +505,15 @@ func (s *Server) ListenSchemaVerseDls() error {
 				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
 				return
 			}
+			var createdAt time.Time
+			if message.CreatedAt.IsZero() {
+				createdAt = time.Unix(0, message.CreationUnix*1000000)
+			} else {
+				createdAt = message.CreatedAt
+			}
 
 			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), message.CreatedAt, "schema", message.ValidationError)
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), createdAt, "schema", message.ValidationError)
 			if err != nil {
 				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
 				return
