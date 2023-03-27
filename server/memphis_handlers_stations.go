@@ -1181,7 +1181,7 @@ func dropPoisonDlsMessages(poisonMessageIds []int, dlsType string, stationName s
 // }
 
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
-	var body models.DropDlsMessagesSchemaPg
+	var body models.DropDlsMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return

@@ -140,12 +140,7 @@ type UpdateDlsConfigSchema struct {
 	Schemaverse bool   `json:"schemaverse"`
 }
 
-// type DropDlsMessagesSchema struct {
-// 	DlsMsgType    string   `json:"dls_type" binding:"required"`
-// 	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
-// }
-
-type DropDlsMessagesSchemaPg struct {
+type DropDlsMessagesSchema struct {
 	DlsMsgType    string `json:"dls_type" binding:"required"`
 	DlsMessageIds []int  `json:"dls_message_ids" binding:"required"`
 	StationName   string `json:"station_name" binding:"required"`
