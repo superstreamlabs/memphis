@@ -4032,3 +4032,56 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 	return nil
 
 }
+
+func DropPoisonDlsMessages(schemaMessageIds []int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("dropSchemaDlsMsg: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where id=ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "drop_dls_schema_msg", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, schemaMessageIds)
+	if err != nil {
+		return errors.New("dropSchemaDlsMsg: " + err.Error())
+	}
+	return nil
+}
+
+func ResendDlsMessage(poisonedCgs []models.PoisonedCg, poisonMessageIds []int, station models.Station, poisonMessage models.DlsMessageResponse) error {
+	updatedAt := time.Now()
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	if len(poisonedCgs) <= 1 {
+		err := DropPoisonDlsMessages(poisonMessageIds)
+		if err != nil {
+			return err
+		}
+	} else {
+		query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
+		stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+		if err != nil {
+			return err
+		}
+		for _, poisonCg := range poisonedCgs {
+			_, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}

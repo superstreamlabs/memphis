@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -836,7 +835,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1095,111 +1094,18 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	c.IndentedJSON(200, poisonMessage)
 }
 
-func updatePoisongDlsCg(poisonMessageId int, dlsType string, stationName string, funcName string) error {
-	updatedAt := time.Now()
-	exist, station, err := db.GetStationByName(stationName)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	if !exist {
-		serv.Warnf(funcName + ": Station " + stationName + " does not exist")
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	stationNameStruct, err := StationNameFromStr(station.Name)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	poisonMessage, err := getDlsMessageById(station, poisonMessageId, stationNameStruct, dlsType)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	poisonCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-	if err != nil {
-		return err
-	}
-	for _, poisonCg := range poisonCgs {
-		_, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func dropPoisonDlsMessages(poisonMessageIds []int, dlsType string, stationName string) error {
-	return updatePoisongDlsCg(poisonMessageIds[0], dlsType, stationName, "dropPoisonDlsMessages")
-}
-
-// func dropSchemaDlsMsgs(schemaMessageIds []string) error {
-// 	timeout := 500 * time.Millisecond
-// 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
-// 	stationName := splitId[0]
-// 	sn, err := StationNameFromStr(stationName)
-// 	if err != nil {
-// 		return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 	}
-// 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-// 	amount := uint64(1)
-// 	for _, msgId := range schemaMessageIds {
-// 		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
-// 		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-// 		if err != nil {
-// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 		}
-// 		msg := msgs[0]
-// 		var dlsMsg models.DlsMessage
-// 		err = json.Unmarshal(msg.Data, &dlsMsg)
-// 		if err != nil {
-// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 		}
-// 		if msgId == dlsMsg.ID {
-// 			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-// 			if err != nil {
-// 				return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 			}
-// 		}
-// 	}
-
-// 	return nil
-// }
-
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	var body models.DropDlsMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	if body.DlsMsgType == "poison" {
-		err := dropPoisonDlsMessages(body.DlsMessageIds, body.DlsMsgType, body.StationName)
-		if err != nil {
-			serv.Errorf("DropDlsMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	} else if body.DlsMsgType == "schema" {
-		// err := dropSchemaDlsMsgs(body.DlsMessageIds)
-		// if err != nil {
-		// 	serv.Errorf("DropDlsMessages: " + err.Error())
-		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 	return
-		// }
+
+	err := db.DropPoisonDlsMessages(body.DlsMessageIds)
+	if err != nil {
+		serv.Errorf("DropDlsMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1217,7 +1123,44 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	err := updatePoisongDlsCg(body.PoisonMessageIds[0], "poison", body.StationName, "ResendPoisonMessages")
+
+	stationName := body.StationName
+	poisonMessageIds := body.PoisonMessageIds
+	exist, station, err := db.GetStationByName(stationName)
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if !exist {
+		serv.Warnf("ResendPoisonMessages: Station " + stationName + " does not exist")
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	stationNameStruct, err := StationNameFromStr(station.Name)
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	poisonMessage, err := getDlsMessageById(station, poisonMessageIds[0], stationNameStruct, "poison")
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	poisonedCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	err = db.ResendDlsMessage(poisonedCgs, poisonMessageIds, station, poisonMessage)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1696,7 +1639,7 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.RemoveSchemaFromStation
@@ -1879,7 +1822,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.PurgeStationSchema
@@ -1937,7 +1880,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 
 func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.RemoveMessagesSchema
