@@ -34,6 +34,8 @@ import (
 const (
 	REFRESH_JWT_EXPIRES_IN_MINUTES = 2880
 	JWT_EXPIRES_IN_MINUTES         = 15
+	ROOT_USERNAME                  = "root"
+	MEMPHIS_USERNAME               = "$memphis_user"
 )
 
 type UserMgmtHandler struct{}
@@ -64,7 +66,7 @@ func isRootUserLoggedIn() (bool, error) {
 }
 
 func authenticateUser(username string, password string) (bool, models.User, error) {
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserForLogin(username)
 	if err != nil {
 		return false, models.User{}, err
 	} else if !exist {
@@ -235,7 +237,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser("root", "root", hashedPwdString, "", false, 1)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1)
 		if err != nil {
 			return err
 		}
@@ -260,7 +262,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		}
 	} else {
-		err = db.ChangeUserPassword("root", hashedPwdString)
+		err = db.ChangeUserPassword(ROOT_USERNAME, hashedPwdString)
 		if err != nil {
 			return err
 		}
@@ -282,12 +284,12 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if username == "root" && user.UserType != "root" {
+	if username == ROOT_USERNAME && user.UserType != "root" {
 		errMsg := "Change root password: This operation can be done only by the root user"
 		serv.Warnf("EditPassword: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
-	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != "root" {
+	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != ROOT_USERNAME {
 		errMsg := "Change user password: This operation can be done only by the user or the root user"
 		serv.Warnf("EditPassword: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
@@ -377,6 +379,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
 		"rest_gw_port":            serv.opts.RestGwPort,
+		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
+		"connection_token":        configuration.CONNECTION_TOKEN,
 	})
 }
 
@@ -481,6 +485,8 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
 		"rest_gw_port":            serv.opts.RestGwPort,
+		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
+		"connection_token":        configuration.CONNECTION_TOKEN,
 	})
 }
 
@@ -587,6 +593,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"http_port":               serv.opts.UiPort,
 		"clients_port":            serv.opts.Port,
 		"rest_gw_port":            serv.opts.RestGwPort,
+		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
+		"connection_token":        configuration.CONNECTION_TOKEN,
 	})
 }
 
@@ -626,7 +634,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	var hashedPwdString string
+	var password string
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
@@ -641,7 +649,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-		hashedPwdString = string(hashedPwd)
+		password = string(hashedPwd)
 
 		avatarId = 1
 		if body.AvatarId > 0 {
@@ -651,15 +659,23 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var brokerConnectionCreds string
 	if userType == "application" {
-		brokerConnectionCreds, err = AddUser(username)
-		if err != nil || len(username) == 0 {
-			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-			return
+		if configuration.USER_PASS_BASED_AUTH {
+			if body.Password == "" {
+				serv.Warnf("CreateUser: Password was not provided for user " + username)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+				return
+			}
+			password = body.Password
+			avatarId = 1
+			if body.AvatarId > 0 {
+				avatarId = body.AvatarId
+			}
+		} else {
+			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, hashedPwdString, "", false, avatarId)
-	if err != nil || len(username) == 0 {
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
+	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -669,6 +685,16 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-add-user")
+	}
+
+	if userType == "application" {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	serv.Noticef("User " + username + " has been created")
