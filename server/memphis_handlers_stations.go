@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -1095,29 +1094,6 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	c.IndentedJSON(200, poisonMessage)
 }
 
-func dropPoisonDlsMessages(schemaMessageIds []int) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return errors.New("dropSchemaDlsMsg: " + err.Error())
-	}
-	defer conn.Release()
-
-	query := `DELETE FROM dls_messages where id=$1`
-	stmt, err := conn.Conn().Prepare(ctx, "drop_dls_schema_msg", query)
-	if err != nil {
-		return err
-	}
-	for _, msgId := range schemaMessageIds {
-		_, err = conn.Conn().Exec(ctx, stmt.Name, msgId)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-	}
-	return nil
-}
-
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	var body models.DropDlsMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1125,7 +1101,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 		return
 	}
 
-	err := dropPoisonDlsMessages(body.DlsMessageIds)
+	err := db.DropPoisonDlsMessages(body.DlsMessageIds)
 	if err != nil {
 		serv.Errorf("DropDlsMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1148,7 +1124,6 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	updatedAt := time.Now()
 	stationName := body.StationName
 	poisonMessageIds := body.PoisonMessageIds
 	exist, station, err := db.GetStationByName(stationName)
@@ -1185,39 +1160,11 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	err = db.ResendDlsMessage(poisonedCgs, poisonMessageIds, station, poisonMessage)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
-	}
-	defer conn.Release()
-
-	if len(poisonedCgs) <= 1 {
-		err := dropPoisonDlsMessages(poisonMessageIds)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	} else {
-		query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
-		stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		for _, poisonCg := range poisonedCgs {
-			_, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
