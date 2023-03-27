@@ -131,7 +131,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
-		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
@@ -189,7 +189,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
 	if err != nil {
-		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}

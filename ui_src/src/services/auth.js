@@ -30,7 +30,9 @@ import {
     LOCAL_STORAGE_REST_GW_PORT,
     LOCAL_STORAGE_HTTP_PORT,
     LOCAL_STORAGE_CLIENTS_PORT,
-    LOCAL_STORAGE_WS_PORT
+    LOCAL_STORAGE_WS_PORT,
+    LOCAL_STORAGE_CONNECTION_TOKEN,
+    LOCAL_STORAGE_USER_PASS_BASED_AUTH
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 
@@ -58,7 +60,9 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_CLIENTS_PORT, userData.clients_port);
         localStorage.setItem(LOCAL_STORAGE_HTTP_PORT, userData.http_port);
         localStorage.setItem(LOCAL_STORAGE_REST_GW_PORT, userData.rest_gw_port);
-
+        localStorage.setItem(LOCAL_STORAGE_CONNECTION_TOKEN, userData.connection_token)
+        localStorage.setItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH, userData.user_pass_based_auth)
+        
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }

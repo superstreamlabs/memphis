@@ -153,7 +153,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		idForUrl := string(rune(deadLetterMsg.ID))
-		var msgUrl = UI_HOST + "/stations/" + stationName.Ext() + "/" + idForUrl
+		var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
 		err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 		if err != nil {
 			serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())

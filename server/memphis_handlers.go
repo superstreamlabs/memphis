@@ -60,7 +60,6 @@ func (s *Server) InitializeMemphisHandlers() {
 	s.memphis.nuid = nuid.New()
 
 	s.initializeSDKHandlers()
-	s.initializeConfigurations()
 	s.initWS()
 }
 

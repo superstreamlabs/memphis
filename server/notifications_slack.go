@@ -149,10 +149,10 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(integrationType strin
 	if err != nil {
 		return keys, properties, models.Integration{}, errorCode, err
 	}
-	if UI_HOST == "" {
-		UI_HOST = strings.ToLower(body.UIUrl)
+	if it.S.opts.UiHost == "" {
+		EditClusterCompHost("ui_host", body.UIUrl)
 	}
-	slackIntegration, err := createSlackIntegration(keys, properties, UI_HOST)
+	slackIntegration, err := createSlackIntegration(keys, properties, body.UIUrl)
 	if err != nil {
 		if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") || strings.Contains(err.Error(), "already exists") {
 			return map[string]string{}, map[string]bool{}, models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err

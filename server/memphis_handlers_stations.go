@@ -268,18 +268,18 @@ func (s *Server) createStationDirectIntern(c *client,
 		replicas = 1
 	}
 
-	err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
+	if csr.IdempotencyWindow <= 0 {
+		csr.IdempotencyWindow = 120000 // default
+	} else if csr.IdempotencyWindow < 100 {
+		csr.IdempotencyWindow = 100 // minimum is 100 millis
+	}
+
+	err = validateIdempotencyWindow(retentionType, retentionValue, csr.IdempotencyWindow)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
 		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
-	}
-
-	if csr.IdempotencyWindow <= 0 {
-		csr.IdempotencyWindow = 120000 // default
-	} else if csr.IdempotencyWindow < 100 {
-		csr.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
 	username := c.memphisInfo.username
@@ -291,7 +291,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
-				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
 				respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}

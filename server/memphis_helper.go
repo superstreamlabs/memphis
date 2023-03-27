@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"net/textproto"
 	"sort"
@@ -69,14 +70,8 @@ const (
 // errors
 var (
 	ErrBadHeader                    = errors.New("could not decode header")
-	LOGS_RETENTION_IN_DAYS          int
-	DLS_RETENTION_HOURS             int
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
-	BROKER_HOST                     string
-	UI_HOST                         string
-	REST_GW_HOST                    string
-	TIERED_STORAGE_TIME_FRAME_SEC   int
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -125,10 +120,6 @@ func (s *Server) getJsApiReplySubject() string {
 	sb.WriteString("$memphis_jsapi_reply_")
 	sb.WriteString(nuid.Next())
 	return sb.String()
-}
-
-func AddUser(username string) (string, error) {
-	return serv.opts.Authorization, nil
 }
 
 func RemoveUser(username string) error {
@@ -194,7 +185,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
-	retentionDur := time.Duration(LOGS_RETENTION_IN_DAYS) * time.Hour * 24
+	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
 
 	successCh := make(chan error)
 
@@ -286,7 +277,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create tiered storage consumer
 	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+	tieredStorageTimeFrame := time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second
 	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
@@ -1161,4 +1152,67 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 			return m, err
 		}
 	}
+}
+
+func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
+	_, configs, err := db.GetAllConfigurations()
+	if err != nil {
+		return Options{}, err
+	}
+
+	for _, conf := range configs {
+		switch conf.Key {
+		case "dls_retention":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.DlsRetentionHours = v
+		case "logs_retention":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.LogsRetentionDays = v
+		case "tiered_storage_time_sec":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.TieredStorageUploadIntervalSec = v
+		case "ui_host":
+			opts.UiHost = conf.Value
+		case "broker_host":
+			opts.BrokerHost = conf.Value
+		case "rest_gw_host":
+			opts.RestGwHost = conf.Value
+		case "max_msg_size_mb":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.MaxPayload = int32(v * 1024 * 1024)
+		}
+	}
+	if configuration.USER_PASS_BASED_AUTH {
+		if len(opts.Users) > 0 {
+			usersToUpsert := []models.User{}
+			for _, user := range opts.Users {
+				newUser := models.User{
+					Username:  user.Username,
+					Password:  user.Password,
+					UserType:  "application",
+					CreatedAt: time.Now(),
+					AvatarId:  1,
+					FullName:  "",
+				}
+				usersToUpsert = append(usersToUpsert, newUser)
+			}
+			err = db.UpsertBatchOfUsers(usersToUpsert)
+			if err != nil {
+				return Options{}, err
+			}
+		}
+
+		users, err := db.GetAllUsersByType("application")
+		if err != nil {
+			return Options{}, err
+		}
+		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+		appUsers = append(appUsers, &User{Username: "$memphis_user", Password: configuration.CONNECTION_TOKEN})
+		for _, user := range users {
+			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+		}
+		opts.Users = appUsers
+	}
+
+	return opts, nil
 }

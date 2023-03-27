@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
 	"memphis/models"
 	"sync"
 
@@ -26,7 +25,7 @@ import (
 
 const CONN_STATUS_SUBJ = "$memphis_connection_status"
 const INTEGRATIONS_UPDATES_SUBJ = "$memphis_integration_updates"
-const CONFIGURATIONS_UPDATES_SUBJ = "$memphis_configurations_updates"
+const CONFIGURATIONS_RELOAD_SIGNAL_SUBJ = "$memphis_config_reload_signal"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
@@ -67,7 +66,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
@@ -77,10 +76,9 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
 			case "slack":
-				if UI_HOST == "" {
-					UI_HOST = integrationUpdate.UIUrl
+				if s.opts.UiHost == "" {
+					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
 				}
-				db.UpdateConfiguration("ui_host", UI_HOST)
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
@@ -96,28 +94,13 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForConfigurationsUpdateEvents() error {
-	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_UPDATES_SUBJ, CONFIGURATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForConfigReloadEvents() error {
+	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var configurationsUpdate models.SdkClientsUpdates
-			err := json.Unmarshal(msg, &configurationsUpdate)
+			// reload config
+			err := s.Reload()
 			if err != nil {
-				s.Errorf("ListenForConfigurationsUpdateEvents: " + err.Error())
-				return
-			}
-			switch strings.ToLower(configurationsUpdate.Type) {
-			case "pm_retention":
-				DLS_RETENTION_HOURS = int(configurationsUpdate.Update.(float64))
-			case "tiered_storage_time_sec":
-				TIERED_STORAGE_TIME_FRAME_SEC = int(configurationsUpdate.Update.(float64))
-			case "broker_host":
-				BROKER_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
-			case "ui_host":
-				UI_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
-			case "rest_gw_host":
-				REST_GW_HOST = fmt.Sprintf("%v", configurationsUpdate.Update)
-			default:
-				return
+				s.Errorf("Failed reloading: " + err.Error())
 			}
 		}(copyBytes(msg))
 	})
@@ -167,6 +150,9 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
 	timeout := 30 * time.Second
 	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+	if err != nil {
+		return err
+	}
 
 	if len(msgs) != 1 {
 		return errors.New("message was not found")
@@ -307,7 +293,7 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 
-	err = s.ListenForConfigurationsUpdateEvents()
+	err = s.ListenForConfigReloadEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
@@ -331,19 +317,6 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
 
-	exist, ui_host, err := db.GetConfiguration("ui_host")
-	if err != nil {
-		return err
-	} else if !exist {
-		UI_HOST = ""
-		err = db.InsertConfiguration("ui_host", UI_HOST)
-		if err != nil {
-			return err
-		}
-	} else {
-		UI_HOST = ui_host.Value
-	}
-
 	err = s.InitializeThroughputSampling()
 	if err != nil {
 		return err
@@ -352,15 +325,15 @@ func (s *Server) StartBackgroundTasks() error {
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
-	currentTimeFrame := TIERED_STORAGE_TIME_FRAME_SEC
-	ticker := time.NewTicker(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+	currentTimeFrame := s.opts.TieredStorageUploadIntervalSec
+	ticker := time.NewTicker(time.Duration(currentTimeFrame) * time.Second)
 	for range ticker.C {
-		if TIERED_STORAGE_TIME_FRAME_SEC != currentTimeFrame {
-			currentTimeFrame = TIERED_STORAGE_TIME_FRAME_SEC
-			ticker.Reset(time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second)
+		if s.opts.TieredStorageUploadIntervalSec != currentTimeFrame {
+			currentTimeFrame = s.opts.TieredStorageUploadIntervalSec
+			ticker.Reset(time.Duration(currentTimeFrame) * time.Second)
 			// update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
 			durableName := TIERED_STORAGE_CONSUMER
-			tieredStorageTimeFrame := time.Duration(TIERED_STORAGE_TIME_FRAME_SEC) * time.Second
+			tieredStorageTimeFrame := time.Duration(currentTimeFrame) * time.Second
 			filterSubject := tieredStorageStream + ".>"
 			cc := ConsumerConfig{
 				DeliverPolicy: DeliverAll,

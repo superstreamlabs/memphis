@@ -97,6 +97,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
             }
         } catch (error) {
             setAttachLoader(false);
+            close();
         }
     };
 

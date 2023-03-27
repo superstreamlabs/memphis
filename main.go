@@ -148,6 +148,10 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		env = "K8S"
 	}
 
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
 	s.Noticef("Memphis broker is ready, ENV: " + env)
 	return metadataDb
 }
