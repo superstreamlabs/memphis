@@ -32,1957 +32,1954 @@ import (
 type StationsHandler struct{ S *Server }
 
 const (
-	stationObjectName       = "Station"
-	schemaToDlsUpdateType   = "schemaverse_to_dls"
-	removeStationUpdateType = "remove_station"
+    stationObjectName       = "Station"
+    schemaToDlsUpdateType   = "schemaverse_to_dls"
+    removeStationUpdateType = "remove_station"
 )
 
 type StationName struct {
-	internal string
-	external string
+    internal string
+    external string
 }
 
 func (sn StationName) Ext() string {
-	return sn.external
+    return sn.external
 }
 
 func (sn StationName) Intern() string {
-	return sn.internal
+    return sn.internal
 }
 
 func StationNameFromStr(name string) (StationName, error) {
-	var intern, extern string
-	if strings.Contains(name, delimiterReplacement) {
-		extern = revertDelimiters(name)
-		extern = strings.ToLower(extern)
-		err := validateName(extern, stationObjectName)
-		if err != nil {
-			return StationName{}, err
-		}
+    var intern, extern string
+    if strings.Contains(name, delimiterReplacement) {
+        extern = revertDelimiters(name)
+        extern = strings.ToLower(extern)
+        err := validateName(extern, stationObjectName)
+        if err != nil {
+            return StationName{}, err
+        }
 
-		intern = strings.ToLower(name)
-	} else {
-		extern = strings.ToLower(name)
-		err := validateName(extern, stationObjectName)
-		if err != nil {
-			return StationName{}, err
-		}
+        intern = strings.ToLower(name)
+    } else {
+        extern = strings.ToLower(name)
+        err := validateName(extern, stationObjectName)
+        if err != nil {
+            return StationName{}, err
+        }
 
-		intern = replaceDelimiters(name)
-		intern = strings.ToLower(intern)
-	}
+        intern = replaceDelimiters(name)
+        intern = strings.ToLower(intern)
+    }
 
-	return StationName{internal: intern, external: extern}, nil
+    return StationName{internal: intern, external: extern}, nil
 }
 
 func StationNameFromStreamName(streamName string) StationName {
-	intern := streamName
-	extern := revertDelimiters(intern)
+    intern := streamName
+    extern := revertDelimiters(intern)
 
-	return StationName{internal: intern, external: extern}
+    return StationName{internal: intern, external: extern}
 }
 
 func validateRetentionType(retentionType string) error {
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
+    if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
+        return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
+    }
 
-	return nil
+    return nil
 }
 
 func validateStorageType(storageType string) error {
-	if storageType != "file" && storageType != "memory" {
-		return errors.New("storage type can be one of the following file/memory")
-	}
+    if storageType != "file" && storageType != "memory" {
+        return errors.New("storage type can be one of the following file/memory")
+    }
 
-	return nil
+    return nil
 }
 
 func validateReplicas(replicas int) error {
-	if replicas > 5 {
-		return errors.New("max replicas in a cluster is 5")
-	}
+    if replicas > 5 {
+        return errors.New("max replicas in a cluster is 5")
+    }
 
-	return nil
+    return nil
 }
 
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
-	if idempotencyWindow > 86400000 { // 24 hours
-		return errors.New("Idempotency window can not exceed 24 hours")
-	}
-	if retentionType == "message_age_sec" && (int64(retentionValue)*1000 < idempotencyWindow) {
-		return errors.New("idempotency window cannot be greater than the station retention")
-	}
+    if idempotencyWindow > 86400000 { // 24 hours
+        return errors.New("Idempotency window can not exceed 24 hours")
+    }
+    if retentionType == "message_age_sec" && (int64(retentionValue)*1000 < idempotencyWindow) {
+        return errors.New("idempotency window cannot be greater than the station retention")
+    }
 
-	return nil
+    return nil
 }
 
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station, shouldDeleteStream bool) error {
-	stationName, err := StationNameFromStr(station.Name)
-	if err != nil {
-		return err
-	}
+    stationName, err := StationNameFromStr(station.Name)
+    if err != nil {
+        return err
+    }
 
-	if shouldDeleteStream {
-		err = s.RemoveStream(stationName.Intern())
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			return err
-		}
-	}
+    if shouldDeleteStream {
+        err = s.RemoveStream(stationName.Intern())
+        if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+            return err
+        }
+    }
 
-	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-		return err
-	}
+    err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
+    if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+        return err
+    }
 
-	DeleteTagsFromStation(station.ID)
+    DeleteTagsFromStation(station.ID)
 
-	err = db.DeleteProducersByStationID(station.ID)
-	if err != nil {
-		return err
-	}
+    err = db.DeleteProducersByStationID(station.ID)
+    if err != nil {
+        return err
+    }
 
-	err = db.DeleteConsumersByStationID(station.ID)
-	if err != nil {
-		return err
-	}
+    err = db.DeleteConsumersByStationID(station.ID)
+    if err != nil {
+        return err
+    }
 
-	err = RemoveAllAuditLogsByStation(station.Name)
-	if err != nil {
-		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
-	}
+    err = RemoveAllAuditLogsByStation(station.Name)
+    if err != nil {
+        serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
+    }
 
-	return nil
+    return nil
 }
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
-	var csr createStationRequest
-	if err := json.Unmarshal(msg, &csr); err != nil {
-		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	s.createStationDirectIntern(c, reply, &csr, true)
+    var csr createStationRequest
+    if err := json.Unmarshal(msg, &csr); err != nil {
+        s.Errorf("createStationDirect: failed creating station: %v", err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    s.createStationDirectIntern(c, reply, &csr, true)
 }
 
 func (s *Server) createStationDirectIntern(c *client,
-	reply string,
-	csr *createStationRequest,
-	shouldCreateStream bool) {
-	isNative := shouldCreateStream
-	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-	stationName, err := StationNameFromStr(csr.StationName)
-	if err != nil {
-		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    reply string,
+    csr *createStationRequest,
+    shouldCreateStream bool) {
+    isNative := shouldCreateStream
+    jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+    stationName, err := StationNameFromStr(csr.StationName)
+    if err != nil {
+        serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+        jsApiResp.Error = NewJSStreamCreateError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    exist, _, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+        jsApiResp.Error = NewJSStreamCreateError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	if exist {
-		errMsg := "Station " + stationName.Ext() + " already exists"
-		serv.Warnf("createStationDirect: " + errMsg)
-		jsApiResp.Error = NewJSStreamNameExistError()
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    if exist {
+        errMsg := "Station " + stationName.Ext() + " already exists"
+        serv.Warnf("createStationDirect: " + errMsg)
+        jsApiResp.Error = NewJSStreamNameExistError()
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	schemaName := csr.SchemaName
-	var schemaDetails models.SchemaDetails
-	if schemaName != "" {
-		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
-		if err != nil {
-			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
-		if !exist {
-			errMsg := "Schema " + csr.SchemaName + " does not exist"
-			serv.Warnf("createStationDirect: " + errMsg)
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
+    schemaName := csr.SchemaName
+    var schemaDetails models.SchemaDetails
+    if schemaName != "" {
+        schemaName = strings.ToLower(csr.SchemaName)
+        exist, schema, err := db.GetSchemaByName(schemaName)
+        if err != nil {
+            serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
+        if !exist {
+            errMsg := "Schema " + csr.SchemaName + " does not exist"
+            serv.Warnf("createStationDirect: " + errMsg)
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
 
-		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
-		if err != nil {
-			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
-		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
-	}
+        schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+        if err != nil {
+            serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
+        schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
+    }
 
-	var retentionType string
-	var retentionValue int
-	if csr.RetentionType != "" {
-		retentionType = strings.ToLower(csr.RetentionType)
-		err = validateRetentionType(retentionType)
-		if err != nil {
-			serv.Warnf("createStationDirect: " + err.Error())
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
-		retentionValue = csr.RetentionValue
-	} else {
-		retentionType = "message_age_sec"
-		retentionValue = 604800 // 1 week
-	}
+    var retentionType string
+    var retentionValue int
+    if csr.RetentionType != "" {
+        retentionType = strings.ToLower(csr.RetentionType)
+        err = validateRetentionType(retentionType)
+        if err != nil {
+            serv.Warnf("createStationDirect: " + err.Error())
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
+        retentionValue = csr.RetentionValue
+    } else {
+        retentionType = "message_age_sec"
+        retentionValue = 604800 // 1 week
+    }
 
-	var storageType string
-	if csr.StorageType != "" {
-		storageType = strings.ToLower(csr.StorageType)
-		err = validateStorageType(storageType)
-		if err != nil {
-			serv.Warnf("createStationDirect: " + err.Error())
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
-	} else {
-		storageType = "file"
-	}
+    var storageType string
+    if csr.StorageType != "" {
+        storageType = strings.ToLower(csr.StorageType)
+        err = validateStorageType(storageType)
+        if err != nil {
+            serv.Warnf("createStationDirect: " + err.Error())
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
+    } else {
+        storageType = "file"
+    }
 
-	replicas := csr.Replicas
-	if replicas > 0 {
-		err = validateReplicas(replicas)
-		if err != nil {
-			serv.Warnf("createStationDirect: " + err.Error())
-			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-			return
-		}
-	} else {
-		replicas = 1
-	}
+    replicas := csr.Replicas
+    if replicas > 0 {
+        err = validateReplicas(replicas)
+        if err != nil {
+            serv.Warnf("createStationDirect: " + err.Error())
+            jsApiResp.Error = NewJSStreamCreateError(err)
+            respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+            return
+        }
+    } else {
+        replicas = 1
+    }
 
-	err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
-	if err != nil {
-		serv.Warnf("createStationDirect: " + err.Error())
-		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
+    if err != nil {
+        serv.Warnf("createStationDirect: " + err.Error())
+        jsApiResp.Error = NewJSStreamCreateError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	if csr.IdempotencyWindow <= 0 {
-		csr.IdempotencyWindow = 120000 // default
-	} else if csr.IdempotencyWindow < 100 {
-		csr.IdempotencyWindow = 100 // minimum is 100 millis
-	}
+    if csr.IdempotencyWindow <= 0 {
+        csr.IdempotencyWindow = 120000 // default
+    } else if csr.IdempotencyWindow < 100 {
+        csr.IdempotencyWindow = 100 // minimum is 100 millis
+    }
 
-	username := c.memphisInfo.username
-	if username == "" {
-		username = csr.Username
-	}
+    username := c.memphisInfo.username
+    if username == "" {
+        username = csr.Username
+    }
 
-	if shouldCreateStream {
-		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
-		if err != nil {
-			if IsNatsErr(err, JSInsufficientResourcesErr) {
-				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
-				respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
-				return
-			}
+    if shouldCreateStream {
+        err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
+        if err != nil {
+            if IsNatsErr(err, JSInsufficientResourcesErr) {
+                serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+                respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+                return
+            }
 
-			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(s, reply, err)
-			return
-		}
-	}
+            serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+            respondWithErr(s, reply, err)
+            return
+        }
+    }
 
-	_, user, err := db.GetUserByUsername(username)
-	if err != nil {
-		serv.Warnf("createStationDirect: " + err.Error())
-		respondWithErr(s, reply, err)
-	}
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
-	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	if rowsUpdated > 0 {
-		message := "Station " + stationName.Ext() + " has been created by user " + username
-		serv.Noticef(message)
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			StationName:       stationName.Ext(),
-			Message:           message,
-			CreatedBy:         user.ID,
-			CreatedByUsername: user.Username,
-			CreatedAt:         time.Now(),
-			UserType:          "application",
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
-		}
+    _, user, err := db.GetUserByUsername(username)
+    if err != nil {
+        serv.Warnf("createStationDirect: " + err.Error())
+        respondWithErr(s, reply, err)
+    }
+    _, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+    if err != nil {
+        serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    if rowsUpdated > 0 {
+        message := "Station " + stationName.Ext() + " has been created by user " + username
+        serv.Noticef(message)
+        var auditLogs []interface{}
+        newAuditLog := models.AuditLog{
+            StationName:       stationName.Ext(),
+            Message:           message,
+            CreatedBy:         user.ID,
+            CreatedByUsername: user.Username,
+            CreatedAt:         time.Now(),
+            UserType:          "application",
+        }
+        auditLogs = append(auditLogs, newAuditLog)
+        err = CreateAuditLogs(auditLogs)
+        if err != nil {
+            serv.Errorf("createStationDirect: Station " + csr.StationName + " - create audit logs error: " + err.Error())
+        }
 
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "tiered-storage",
-				Value: strconv.FormatBool(csr.TieredStorageEnabled),
-			}
-			param3 := analytics.EventParam{
-				Name:  "nats-comp",
-				Value: strconv.FormatBool(!isNative),
-			}
-			analyticsParams := []analytics.EventParam{param1, param2, param3}
-			analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
-		}
-	}
+        shouldSendAnalytics, _ := shouldSendAnalytics()
+        if shouldSendAnalytics {
+            param1 := analytics.EventParam{
+                Name:  "station-name",
+                Value: stationName.Ext(),
+            }
+            param2 := analytics.EventParam{
+                Name:  "tiered-storage",
+                Value: strconv.FormatBool(csr.TieredStorageEnabled),
+            }
+            param3 := analytics.EventParam{
+                Name:  "nats-comp",
+                Value: strconv.FormatBool(!isNative),
+            }
+            analyticsParams := []analytics.EventParam{param1, param2, param3}
+            analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
+        }
+    }
 
-	respondWithErr(s, reply, nil)
+    respondWithErr(s, reply, nil)
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
-	var body models.GetStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	tagsHandler := TagsHandler{S: sh.S}
+    var body models.GetStationSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
+    tagsHandler := TagsHandler{S: sh.S}
 
-	exist, station, err := db.GetStationByName(body.StationName)
-	if err != nil {
-		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	} else if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
-	if err != nil {
-		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    exist, station, err := db.GetStationByName(body.StationName)
+    if err != nil {
+        serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    } else if !exist {
+        errMsg := "Station " + body.StationName + " does not exist"
+        serv.Warnf("GetStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
+    tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
+    if err != nil {
+        serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	if station.StorageType == "file" {
-		station.StorageType = "disk"
-	}
+    if station.StorageType == "file" {
+        station.StorageType = "disk"
+    }
 
-	stationResponse := models.GetStationResponseSchema{
-		ID:                   station.ID,
-		Name:                 station.Name,
-		RetentionType:        station.RetentionType,
-		RetentionValue:       station.RetentionValue,
-		StorageType:          station.StorageType,
-		Replicas:             station.Replicas,
-		CreatedBy:            station.CreatedBy,
-		CreatedByUsername:    station.CreatedByUsername,
-		CreatedAt:            station.CreatedAt,
-		LastUpdate:           station.UpdatedAt,
-		IsDeleted:            station.IsDeleted,
-		IdempotencyWindow:    station.IdempotencyWindow,
-		IsNative:             station.IsNative,
-		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
-		TieredStorageEnabled: station.TieredStorageEnabled,
-		Tags:                 tags,
-	}
+    stationResponse := models.GetStationResponseSchema{
+        ID:                   station.ID,
+        Name:                 station.Name,
+        RetentionType:        station.RetentionType,
+        RetentionValue:       station.RetentionValue,
+        StorageType:          station.StorageType,
+        Replicas:             station.Replicas,
+        CreatedBy:            station.CreatedBy,
+        CreatedByUsername:    station.CreatedByUsername,
+        CreatedAt:            station.CreatedAt,
+        LastUpdate:           station.UpdatedAt,
+        IsDeleted:            station.IsDeleted,
+        IdempotencyWindow:    station.IdempotencyWindow,
+        IsNative:             station.IsNative,
+        DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
+        TieredStorageEnabled: station.TieredStorageEnabled,
+        Tags:                 tags,
+    }
 
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
-		station.TieredStorageEnabled = false
-	}
+    _, ok = IntegrationsCache["s3"].(models.Integration)
+    if !ok {
+        station.TieredStorageEnabled = false
+    }
 
-	c.IndentedJSON(200, stationResponse)
+    c.IndentedJSON(200, stationResponse)
 }
 
 func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
-	var exStations []models.ExtendedStationDetails
-	stations, err := db.GetActiveStations()
-	if err != nil {
-		return []models.ExtendedStationDetails{}, err
-	}
-	streamInfoToDls := make(map[string]models.StationMsgsDetails)
-	if len(stations) == 0 {
-		return []models.ExtendedStationDetails{}, nil
-	} else {
-		allStreamInfo, err := serv.memphisAllStreamsInfo()
-		if err != nil {
-			return []models.ExtendedStationDetails{}, err
-		}
-		for _, info := range allStreamInfo {
-			streamName := info.Config.Name
-			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
-				splitName := strings.Split(streamName, "-")
-				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
-				_, ok := streamInfoToDls[stationName]
-				if ok {
-					infoToUpdate := streamInfoToDls[stationName]
-					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
-					streamInfoToDls[stationName] = infoToUpdate
-				} else {
-					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
-				}
-			} else {
-				_, ok := streamInfoToDls[streamName]
-				if ok {
-					infoToUpdate := streamInfoToDls[streamName]
-					infoToUpdate.TotalMessages = int(info.State.Msgs)
-					streamInfoToDls[streamName] = infoToUpdate
-				} else {
-					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
-				}
-			}
-		}
-		tagsHandler := TagsHandler{S: sh.S}
-		for _, station := range stations {
-			tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
-			if err != nil {
-				return []models.ExtendedStationDetails{}, err
-			}
-			if station.StorageType == "file" {
-				station.StorageType = "disk"
-			}
-			fullStationName, err := StationNameFromStr(station.Name)
-			if err != nil {
-				return []models.ExtendedStationDetails{}, err
-			}
-			msgsInfo := streamInfoToDls[fullStationName.Intern()]
+    var exStations []models.ExtendedStationDetails
+    stations, err := db.GetActiveStations()
+    if err != nil {
+        return []models.ExtendedStationDetails{}, err
+    }
+    streamInfoToDls := make(map[string]models.StationMsgsDetails)
+    if len(stations) == 0 {
+        return []models.ExtendedStationDetails{}, nil
+    } else {
+        allStreamInfo, err := serv.memphisAllStreamsInfo()
+        if err != nil {
+            return []models.ExtendedStationDetails{}, err
+        }
+        for _, info := range allStreamInfo {
+            streamName := info.Config.Name
+            if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+                splitName := strings.Split(streamName, "-")
+                stationName := strings.Join(splitName[1:len(splitName)-1], "-")
+                _, ok := streamInfoToDls[stationName]
+                if ok {
+                    infoToUpdate := streamInfoToDls[stationName]
+                    infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+                    streamInfoToDls[stationName] = infoToUpdate
+                } else {
+                    streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+                }
+            } else {
+                _, ok := streamInfoToDls[streamName]
+                if ok {
+                    infoToUpdate := streamInfoToDls[streamName]
+                    infoToUpdate.TotalMessages = int(info.State.Msgs)
+                    streamInfoToDls[streamName] = infoToUpdate
+                } else {
+                    streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
+                }
+            }
+        }
+        tagsHandler := TagsHandler{S: sh.S}
+        for _, station := range stations {
+            tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
+            if err != nil {
+                return []models.ExtendedStationDetails{}, err
+            }
+            if station.StorageType == "file" {
+                station.StorageType = "disk"
+            }
+            fullStationName, err := StationNameFromStr(station.Name)
+            if err != nil {
+                return []models.ExtendedStationDetails{}, err
+            }
+            msgsInfo := streamInfoToDls[fullStationName.Intern()]
 
-			activity := false
-			activeCount, err := db.CountActiveProudcersByStationID(station.ID)
-			if err != nil {
-				return []models.ExtendedStationDetails{}, err
-			}
-			if activeCount > 0 {
-				activity = true
-			} else {
-				activeCount, err = db.CountActiveConsumersByStationID(station.ID)
-				if err != nil {
-					return []models.ExtendedStationDetails{}, err
-				}
-				if activeCount > 0 {
-					activity = true
-				}
-			}
-			_, ok := IntegrationsCache["s3"].(models.Integration)
-			if !ok {
-				station.TieredStorageEnabled = false
-			}
+            activity := false
+            activeCount, err := db.CountActiveProudcersByStationID(station.ID)
+            if err != nil {
+                return []models.ExtendedStationDetails{}, err
+            }
+            if activeCount > 0 {
+                activity = true
+            } else {
+                activeCount, err = db.CountActiveConsumersByStationID(station.ID)
+                if err != nil {
+                    return []models.ExtendedStationDetails{}, err
+                }
+                if activeCount > 0 {
+                    activity = true
+                }
+            }
+            _, ok := IntegrationsCache["s3"].(models.Integration)
+            if !ok {
+                station.TieredStorageEnabled = false
+            }
 
-			exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags, Activity: activity})
-		}
-		if exStations == nil {
-			return []models.ExtendedStationDetails{}, nil
-		}
-		return exStations, nil
-	}
+            exStations = append(exStations, models.ExtendedStationDetails{Station: station, HasDlsMsgs: msgsInfo.HasDlsMsgs, TotalMessages: msgsInfo.TotalMessages, Tags: tags, Activity: activity})
+        }
+        if exStations == nil {
+            return []models.ExtendedStationDetails{}, nil
+        }
+        return exStations, nil
+    }
 }
 
 func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uint64, uint64, error) {
-	totalMessages := uint64(0)
-	totalDlsMessages := uint64(0)
-	stations, err := db.GetAllStationsDetails()
-	if err != nil {
-		return stations, totalMessages, totalDlsMessages, err
-	}
-	if len(stations) == 0 {
-		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
-	} else {
-		streamInfoToDls := make(map[string]models.StationMsgsDetails)
-		tagsHandler := TagsHandler{S: sh.S}
-		allStreamInfo, err := serv.memphisAllStreamsInfo()
-		if err != nil {
-			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-		}
-		for _, info := range allStreamInfo {
-			streamName := info.Config.Name
-			if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
-				totalDlsMessages += info.State.Msgs
-				splitName := strings.Split(streamName, "-")
-				stationName := strings.Join(splitName[1:len(splitName)-1], "-")
-				_, ok := streamInfoToDls[stationName]
-				if ok {
-					infoToUpdate := streamInfoToDls[stationName]
-					infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
-					streamInfoToDls[stationName] = infoToUpdate
-				} else {
-					streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
-				}
-			} else if !strings.Contains(streamName, "$memphis") {
-				totalMessages += info.State.Msgs
-				_, ok := streamInfoToDls[streamName]
-				if ok {
-					infoToUpdate := streamInfoToDls[streamName]
-					infoToUpdate.TotalMessages = int(info.State.Msgs)
-					streamInfoToDls[streamName] = infoToUpdate
-				} else {
-					streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
-				}
-			}
-		}
-		var extStations []models.ExtendedStation
-		for i := 0; i < len(stations); i++ {
-			fullStationName, err := StationNameFromStr(stations[i].Name)
-			if err != nil {
-				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-			}
-			tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
-			if err != nil {
-				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-			}
-			msgsInfo := streamInfoToDls[fullStationName.Intern()]
-			stations[i].TotalMessages = msgsInfo.TotalMessages
-			stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
-			stations[i].Tags = tags
+    totalMessages := uint64(0)
+    totalDlsMessages := uint64(0)
+    stations, err := db.GetAllStationsDetails()
+    if err != nil {
+        return stations, totalMessages, totalDlsMessages, err
+    }
+    if len(stations) == 0 {
+        return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
+    } else {
+        streamInfoToDls := make(map[string]models.StationMsgsDetails)
+        tagsHandler := TagsHandler{S: sh.S}
+        allStreamInfo, err := serv.memphisAllStreamsInfo()
+        if err != nil {
+            return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
+        }
+        for _, info := range allStreamInfo {
+            streamName := info.Config.Name
+            if strings.Contains(streamName, "$memphis") && strings.Contains(streamName, "dls") {
+                totalDlsMessages += info.State.Msgs
+                splitName := strings.Split(streamName, "-")
+                stationName := strings.Join(splitName[1:len(splitName)-1], "-")
+                _, ok := streamInfoToDls[stationName]
+                if ok {
+                    infoToUpdate := streamInfoToDls[stationName]
+                    infoToUpdate.HasDlsMsgs = info.State.Msgs > 0
+                    streamInfoToDls[stationName] = infoToUpdate
+                } else {
+                    streamInfoToDls[stationName] = models.StationMsgsDetails{HasDlsMsgs: info.State.Msgs > 0}
+                }
+            } else if !strings.Contains(streamName, "$memphis") {
+                totalMessages += info.State.Msgs
+                _, ok := streamInfoToDls[streamName]
+                if ok {
+                    infoToUpdate := streamInfoToDls[streamName]
+                    infoToUpdate.TotalMessages = int(info.State.Msgs)
+                    streamInfoToDls[streamName] = infoToUpdate
+                } else {
+                    streamInfoToDls[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
+                }
+            }
+        }
+        var extStations []models.ExtendedStation
+        for i := 0; i < len(stations); i++ {
+            fullStationName, err := StationNameFromStr(stations[i].Name)
+            if err != nil {
+                return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
+            }
+            tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
+            if err != nil {
+                return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
+            }
+            msgsInfo := streamInfoToDls[fullStationName.Intern()]
+            stations[i].TotalMessages = msgsInfo.TotalMessages
+            stations[i].HasDlsMsgs = msgsInfo.HasDlsMsgs
+            stations[i].Tags = tags
 
-			found := false
-			for _, p := range stations[i].Producers {
-				if p.IsActive {
-					stations[i].Activity = true
-					found = true
-					break
-				}
-			}
+            found := false
+            for _, p := range stations[i].Producers {
+                if p.IsActive {
+                    stations[i].Activity = true
+                    found = true
+                    break
+                }
+            }
 
-			if !found {
-				for _, c := range stations[i].Consumers {
-					if c.IsActive {
-						stations[i].Activity = true
-						break
-					}
-				}
-			}
+            if !found {
+                for _, c := range stations[i].Consumers {
+                    if c.IsActive {
+                        stations[i].Activity = true
+                        break
+                    }
+                }
+            }
 
-			_, ok := IntegrationsCache["s3"].(models.Integration)
-			if !ok {
-				stations[i].TieredStorageEnabled = false
-			}
+            _, ok := IntegrationsCache["s3"].(models.Integration)
+            if !ok {
+                stations[i].TieredStorageEnabled = false
+            }
 
-			extStations = append(extStations, stations[i])
-		}
-		return extStations, totalMessages, totalDlsMessages, nil
-	}
+            extStations = append(extStations, stations[i])
+        }
+        return extStations, totalMessages, totalDlsMessages, nil
+    }
 }
 
 func (sh StationsHandler) GetStations(c *gin.Context) {
-	stations, err := sh.GetStationsDetails()
-	if err != nil {
-		serv.Errorf("GetStations: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    stations, err := sh.GetStationsDetails()
+    if err != nil {
+        serv.Errorf("GetStations: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-stations-page")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-enter-stations-page")
+    }
 
-	c.IndentedJSON(200, gin.H{
-		"stations": stations,
-	})
+    c.IndentedJSON(200, gin.H{
+        "stations": stations,
+    })
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
-	stations, _, _, err := sh.GetAllStationsDetails()
-	if err != nil {
-		serv.Errorf("GetAllStations: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    stations, _, _, err := sh.GetAllStationsDetails()
+    if err != nil {
+        serv.Errorf("GetAllStations: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	c.IndentedJSON(200, stations)
+    c.IndentedJSON(200, stations)
 }
 
 func (sh StationsHandler) CreateStation(c *gin.Context) {
-	var body models.CreateStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.CreateStationSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.Name)
-	if err != nil {
-		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.Name)
+    if err != nil {
+        serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if exist {
-		errMsg := "Station " + stationName.external + " already exists"
-		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, _, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if exist {
+        errMsg := "Station " + stationName.external + " already exists"
+        serv.Warnf("CreateStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
+    user, err := getUserDetailsFromMiddleware(c)
+    if err != nil {
+        serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+    }
 
-	var schemaVersionNumber int
-	schemaName := body.SchemaName
-	if schemaName != "" {
-		schemaName = strings.ToLower(body.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
-		if err != nil {
-			serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
-			return
-		}
-		if !exist {
-			errMsg := "Schema " + schemaName + " does not exist"
-			serv.Warnf("CreateStation: Station " + body.Name + ": " + errMsg)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-			return
-		}
+    var schemaVersionNumber int
+    schemaName := body.SchemaName
+    if schemaName != "" {
+        schemaName = strings.ToLower(body.SchemaName)
+        exist, schema, err := db.GetSchemaByName(schemaName)
+        if err != nil {
+            serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
+            return
+        }
+        if !exist {
+            errMsg := "Schema " + schemaName + " does not exist"
+            serv.Warnf("CreateStation: Station " + body.Name + ": " + errMsg)
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+            return
+        }
 
-		schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
-		if err != nil {
-			serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-			return
-		}
+        schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+        if err != nil {
+            serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+            return
+        }
 
-		schemaVersionNumber = schemaVersion.VersionNumber
-	} else {
-		schemaName = ""
-		schemaVersionNumber = 0
-	}
+        schemaVersionNumber = schemaVersion.VersionNumber
+    } else {
+        schemaName = ""
+        schemaVersionNumber = 0
+    }
 
-	var retentionType string
-	if body.RetentionType != "" && body.RetentionValue > 0 {
-		retentionType = strings.ToLower(body.RetentionType)
-		err = validateRetentionType(retentionType)
-		if err != nil {
-			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-	} else {
-		retentionType = "message_age_sec"
-		body.RetentionValue = 604800 // 1 week
-	}
+    var retentionType string
+    if body.RetentionType != "" && body.RetentionValue > 0 {
+        retentionType = strings.ToLower(body.RetentionType)
+        err = validateRetentionType(retentionType)
+        if err != nil {
+            serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+            return
+        }
+    } else {
+        retentionType = "message_age_sec"
+        body.RetentionValue = 604800 // 1 week
+    }
 
-	if body.StorageType != "" {
-		body.StorageType = strings.ToLower(body.StorageType)
-		err = validateStorageType(body.StorageType)
-		if err != nil {
-			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-	} else {
-		body.StorageType = "file"
-	}
+    if body.StorageType != "" {
+        body.StorageType = strings.ToLower(body.StorageType)
+        err = validateStorageType(body.StorageType)
+        if err != nil {
+            serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+            return
+        }
+    } else {
+        body.StorageType = "file"
+    }
 
-	storageTypeForResponse := "disk"
-	if body.StorageType == "memory" {
-		storageTypeForResponse = body.StorageType
-	}
+    storageTypeForResponse := "disk"
+    if body.StorageType == "memory" {
+        storageTypeForResponse = body.StorageType
+    }
 
-	if body.Replicas > 0 {
-		err = validateReplicas(body.Replicas)
-		if err != nil {
-			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-	} else {
-		body.Replicas = 1
-	}
+    if body.Replicas > 0 {
+        err = validateReplicas(body.Replicas)
+        if err != nil {
+            serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+            return
+        }
+    } else {
+        body.Replicas = 1
+    }
 
-	err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)
-	if err != nil {
-		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)
+    if err != nil {
+        serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	if body.IdempotencyWindow <= 0 {
-		body.IdempotencyWindow = 120000 // default
-	} else if body.IdempotencyWindow < 100 {
-		body.IdempotencyWindow = 100 // minimum is 100 millis
-	}
+    if body.IdempotencyWindow <= 0 {
+        body.IdempotencyWindow = 120000 // default
+    } else if body.IdempotencyWindow < 100 {
+        body.IdempotencyWindow = 100 // minimum is 100 millis
+    }
 
-	err = sh.S.CreateStream(stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
-	if err != nil {
-		if IsNatsErr(err, JSInsufficientResourcesErr) {
-			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
-			return
-		}
+    err = sh.S.CreateStream(stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
+    if err != nil {
+        if IsNatsErr(err, JSInsufficientResourcesErr) {
+            serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+            return
+        }
 
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+        serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	//rowsUpdated == 0 means that the row already exists
-	if rowsUpdated == 0 {
-		errMsg := "Station " + newStation.Name + " already exists"
-		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+    if err != nil {
+        serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    //rowsUpdated == 0 means that the row already exists
+    if rowsUpdated == 0 {
+        errMsg := "Station " + newStation.Name + " already exists"
+        serv.Warnf("CreateStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
-		if err != nil {
-			serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-	message := "Station " + stationName.Ext() + " has been created by " + user.Username
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		StationName:       stationName.Ext(),
-		Message:           message,
-		CreatedBy:         user.ID,
-		CreatedByUsername: user.Username,
-		CreatedAt:         time.Now(),
-		UserType:          user.UserType,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-	}
+    if len(body.Tags) > 0 {
+        err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+        if err != nil {
+            serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
+    message := "Station " + stationName.Ext() + " has been created by " + user.Username
+    serv.Noticef(message)
+    var auditLogs []interface{}
+    newAuditLog := models.AuditLog{
+        StationName:       stationName.Ext(),
+        Message:           message,
+        CreatedBy:         user.ID,
+        CreatedByUsername: user.Username,
+        CreatedAt:         time.Now(),
+        UserType:          user.UserType,
+    }
+    auditLogs = append(auditLogs, newAuditLog)
+    err = CreateAuditLogs(auditLogs)
+    if err != nil {
+        serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        param1 := analytics.EventParam{
+            Name:  "station-name",
+            Value: stationName.Ext(),
+        }
+        param2 := analytics.EventParam{
+            Name:  "tiered-storage",
+            Value: strconv.FormatBool(newStation.TieredStorageEnabled),
+        }
+        analyticsParams := []analytics.EventParam{param1, param2}
+        analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
+    }
 
-	if schemaName != "" {
-		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_username":           user.Username,
-			"created_at":                    time.Now(),
-			"last_update":                   time.Now(),
-			"is_deleted":                    false,
-			"schema_name":                   schemaName,
-			"schema_version_number":         schemaVersionNumber,
-			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
-			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
-			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
-			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
-		})
-	} else {
-		c.IndentedJSON(200, gin.H{
-			"id":                    newStation.ID,
-			"name":                  stationName.Ext(),
-			"retention_type":        retentionType,
-			"retention_value":       body.RetentionValue,
-			"storage_type":          storageTypeForResponse,
-			"replicas":              body.Replicas,
-			"created_by_username":   user.Username,
-			"created_at":            time.Now(),
-			"last_update":           time.Now(),
-			"is_deleted":            false,
-			"schema_name":           schemaName,
-			"schema_version_number": schemaVersionNumber, "idempotency_window_in_ms": newStation.IdempotencyWindow,
-			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
-			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
-			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
-		})
-	}
+    if schemaName != "" {
+        c.IndentedJSON(200, gin.H{
+            "id":                            newStation.ID,
+            "name":                          stationName.Ext(),
+            "retention_type":                retentionType,
+            "retention_value":               body.RetentionValue,
+            "storage_type":                  storageTypeForResponse,
+            "replicas":                      body.Replicas,
+            "created_by_username":           user.Username,
+            "created_at":                    time.Now(),
+            "last_update":                   time.Now(),
+            "is_deleted":                    false,
+            "schema_name":                   schemaName,
+            "schema_version_number":         schemaVersionNumber,
+            "idempotency_window_in_ms":      newStation.IdempotencyWindow,
+            "dls_configuration_poison":      newStation.DlsConfigurationPoison,
+            "dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
+            "tiered_storage_enabled":        newStation.TieredStorageEnabled,
+        })
+    } else {
+        c.IndentedJSON(200, gin.H{
+            "id":                    newStation.ID,
+            "name":                  stationName.Ext(),
+            "retention_type":        retentionType,
+            "retention_value":       body.RetentionValue,
+            "storage_type":          storageTypeForResponse,
+            "replicas":              body.Replicas,
+            "created_by_username":   user.Username,
+            "created_at":            time.Now(),
+            "last_update":           time.Now(),
+            "is_deleted":            false,
+            "schema_name":           schemaName,
+            "schema_version_number": schemaVersionNumber, "idempotency_window_in_ms": newStation.IdempotencyWindow,
+            "dls_configuration_poison":      newStation.DlsConfigurationPoison,
+            "dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
+            "tiered_storage_enabled":        newStation.TieredStorageEnabled,
+        })
+    }
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
-	var body models.RemoveStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    // if err := DenyForSandboxEnv(c); err != nil {
+    //  return
+    // }
+    var body models.RemoveStationSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	var stationNames []string
-	for _, name := range body.StationNames {
-		stationName, err := StationNameFromStr(name)
-		if err != nil {
-			serv.Warnf("RemoveStation: Station " + name + ": " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
+    var stationNames []string
+    for _, name := range body.StationNames {
+        stationName, err := StationNameFromStr(name)
+        if err != nil {
+            serv.Warnf("RemoveStation: Station " + name + ": " + err.Error())
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+            return
+        }
 
-		stationNames = append(stationNames, stationName.Ext())
+        stationNames = append(stationNames, stationName.Ext())
 
-		exist, station, err := db.GetStationByName(stationName.Ext())
-		if err != nil {
-			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if !exist {
-			errMsg := "Station " + name + " does not exist"
-			serv.Warnf("RemoveStation: " + errMsg)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-			return
-		}
+        exist, station, err := db.GetStationByName(stationName.Ext())
+        if err != nil {
+            serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+        if !exist {
+            errMsg := "Station " + name + " does not exist"
+            serv.Warnf("RemoveStation: " + errMsg)
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+            return
+        }
 
-		err = removeStationResources(sh.S, station, true)
-		if err != nil {
-			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+        err = removeStationResources(sh.S, station, true)
+        if err != nil {
+            serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
 
-	err := db.DeleteStationsByNames(stationNames)
-	if err != nil {
-		serv.Errorf("RemoveStation: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    err := db.DeleteStationsByNames(stationNames)
+    if err != nil {
+        serv.Errorf("RemoveStation: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-remove-station")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-remove-station")
+    }
 
-	for _, name := range body.StationNames {
-		stationName, err := StationNameFromStr(name)
-		if err != nil {
-			serv.Errorf("RemoveStation: Station " + name + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
+    for _, name := range body.StationNames {
+        stationName, err := StationNameFromStr(name)
+        if err != nil {
+            serv.Errorf("RemoveStation: Station " + name + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        }
 
-		user, err := getUserDetailsFromMiddleware(c)
-		if err != nil {
-			serv.Errorf("RemoveStation: Station " + name + ": " + err.Error())
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		}
+        user, err := getUserDetailsFromMiddleware(c)
+        if err != nil {
+            serv.Errorf("RemoveStation: Station " + name + ": " + err.Error())
+            c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+        }
 
-		serv.Noticef("Station " + stationName.Ext() + " has been deleted by user " + user.Username)
+        serv.Noticef("Station " + stationName.Ext() + " has been deleted by user " + user.Username)
 
-		removeStationUpdate := models.SdkClientsUpdates{
-			StationName: stationName.Intern(),
-			Type:        removeStationUpdateType,
-		}
-		serv.SendUpdateToClients(removeStationUpdate)
-	}
-	c.IndentedJSON(200, gin.H{})
+        removeStationUpdate := models.SdkClientsUpdates{
+            StationName: stationName.Intern(),
+            Type:        removeStationUpdateType,
+        }
+        serv.SendUpdateToClients(removeStationUpdate)
+    }
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
-	var dsr destroyStationRequest
-	if err := json.Unmarshal(msg, &dsr); err != nil {
-		s.Errorf("removeStationDirect: " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	s.removeStationDirectIntern(c, reply, &dsr, true)
+    var dsr destroyStationRequest
+    if err := json.Unmarshal(msg, &dsr); err != nil {
+        s.Errorf("removeStationDirect: " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    s.removeStationDirectIntern(c, reply, &dsr, true)
 }
 
 func (s *Server) removeStationDirectIntern(c *client,
-	reply string,
-	dsr *destroyStationRequest,
-	shouldDeleteStream bool) {
-	isNative := shouldDeleteStream
-	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
+    reply string,
+    dsr *destroyStationRequest,
+    shouldDeleteStream bool) {
+    isNative := shouldDeleteStream
+    jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
 
-	stationName, err := StationNameFromStr(dsr.StationName)
-	if err != nil {
-		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    stationName, err := StationNameFromStr(dsr.StationName)
+    if err != nil {
+        serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+        jsApiResp.Error = NewJSStreamDeleteError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
-	if !exist {
-		errMsg := "Station " + station.Name + " does not exist"
-		serv.Warnf("removeStationDirect: " + errMsg)
-		err := errors.New(errMsg)
-		jsApiResp.Error = NewJSStreamDeleteError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
+    exist, station, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+        jsApiResp.Error = NewJSStreamDeleteError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
+    if !exist {
+        errMsg := "Station " + station.Name + " does not exist"
+        serv.Warnf("removeStationDirect: " + errMsg)
+        err := errors.New(errMsg)
+        jsApiResp.Error = NewJSStreamDeleteError(err)
+        respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+        return
+    }
 
-	err = removeStationResources(s, station, shouldDeleteStream)
-	if err != nil {
-		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    err = removeStationResources(s, station, shouldDeleteStream)
+    if err != nil {
+        serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	err = db.DeleteStation(stationName.Ext())
-	if err != nil {
-		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	_, user, err := db.GetUserByUsername(dsr.Username)
-	if err != nil {
-		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
-	serv.Noticef(message)
-	if isNative {
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			StationName:       stationName.Ext(),
-			Message:           message,
-			CreatedBy:         user.ID,
-			CreatedByUsername: user.Username,
-			CreatedAt:         time.Now(),
-			UserType:          "application",
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
-		}
-	}
+    err = db.DeleteStation(stationName.Ext())
+    if err != nil {
+        serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    _, user, err := db.GetUserByUsername(dsr.Username)
+    if err != nil {
+        serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
+    serv.Noticef(message)
+    if isNative {
+        var auditLogs []interface{}
+        newAuditLog := models.AuditLog{
+            StationName:       stationName.Ext(),
+            Message:           message,
+            CreatedBy:         user.ID,
+            CreatedByUsername: user.Username,
+            CreatedAt:         time.Now(),
+            UserType:          "application",
+        }
+        auditLogs = append(auditLogs, newAuditLog)
+        err = CreateAuditLogs(auditLogs)
+        if err != nil {
+            serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+        }
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(dsr.Username, "user-delete-station-sdk")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        analytics.SendEvent(dsr.Username, "user-delete-station-sdk")
+    }
 
-	respondWithErr(s, reply, nil)
+    respondWithErr(s, reply, nil)
 }
 
 func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
-	stationName, err := StationNameFromStr(stationNameExt)
-	if err != nil {
-		return 0, err
-	}
-	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
-	return totalMessages, err
+    stationName, err := StationNameFromStr(stationNameExt)
+    if err != nil {
+        return 0, err
+    }
+    totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
+    return totalMessages, err
 }
 
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
-	avgMsgSize, err := sh.S.GetAvgMsgSizeInStation(station)
-	return avgMsgSize, err
+    avgMsgSize, err := sh.S.GetAvgMsgSizeInStation(station)
+    return avgMsgSize, err
 }
 
 func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
-	messages, err := sh.S.GetMessages(station, messagesToFetch)
-	if err != nil {
-		return messages, err
-	}
+    messages, err := sh.S.GetMessages(station, messagesToFetch)
+    if err != nil {
+        return messages, err
+    }
 
-	return messages, nil
+    return messages, nil
 }
 
 func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
-	if sh.S.JetStreamIsClustered() {
-		leader, followers, err := sh.S.GetLeaderAndFollowers(station)
-		if err != nil {
-			return "", []string{}, err
-		}
+    if sh.S.JetStreamIsClustered() {
+        leader, followers, err := sh.S.GetLeaderAndFollowers(station)
+        if err != nil {
+            return "", []string{}, err
+        }
 
-		return leader, followers, nil
-	} else {
-		return "memphis-0", []string{}, nil
-	}
+        return leader, followers, nil
+    } else {
+        return "memphis-0", []string{}, nil
+    }
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
-	deletedCount := 0
-	for _, member := range members {
-		if member.IsActive {
-			return true, false
-		}
+    deletedCount := 0
+    for _, member := range members {
+        if member.IsActive {
+            return true, false
+        }
 
-		if member.IsDeleted {
-			deletedCount++
-		}
-	}
+        if member.IsDeleted {
+            deletedCount++
+        }
+    }
 
-	if len(members) == deletedCount {
-		return false, true
-	}
+    if len(members) == deletedCount {
+        return false, true
+    }
 
-	return false, false
+    return false, false
 }
 
 func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponse, error) {
-	var dlsMessage models.DlsMessageResponse
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return dlsMessage, err
-	}
-	exist, station, err := db.GetStationByName(sn.Ext())
-	if err != nil {
-		return dlsMessage, err
-	}
-	if !exist {
-		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
-	}
+    var dlsMessage models.DlsMessageResponse
+    sn, err := StationNameFromStr(stationName)
+    if err != nil {
+        return dlsMessage, err
+    }
+    exist, station, err := db.GetStationByName(sn.Ext())
+    if err != nil {
+        return dlsMessage, err
+    }
+    if !exist {
+        return dlsMessage, errors.New("Station " + station.Name + " does not exist")
+    }
 
-	return getDlsMessageById(station, messageId, sn, dlsType)
+    return getDlsMessageById(station, messageId, sn, dlsType)
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
-	var body models.GetPoisonMessageJourneySchemaPg
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.GetPoisonMessageJourneySchemaPg
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "poison")
-	if err != nil {
-		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "poison")
+    if err != nil {
+        serv.Errorf("GetPoisonMessageJourney: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-message-journey")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-enter-message-journey")
+    }
 
-	c.IndentedJSON(200, poisonMessage)
+    c.IndentedJSON(200, poisonMessage)
 }
 
-func updatePoisongDlsCg(poisonMessageId int, dlsType string, stationName string, funcName string) error {
-	updatedAt := time.Now()
-	exist, station, err := db.GetStationByName(stationName)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
+func dropPoisonDlsMessages(schemaMessageIds []int) error {
+    ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+    defer cancelfunc()
+    conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+    if err != nil {
+        return errors.New("dropSchemaDlsMsg: " + err.Error())
+    }
+    defer conn.Release()
 
-	if !exist {
-		serv.Warnf(funcName + ": Station " + stationName + " does not exist")
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	stationNameStruct, err := StationNameFromStr(station.Name)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	poisonMessage, err := getDlsMessageById(station, poisonMessageId, stationNameStruct, dlsType)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-
-	poisonCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
-	if err != nil {
-		return errors.New(funcName + ": " + err.Error())
-	}
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-	if err != nil {
-		return err
-	}
-	for _, poisonCg := range poisonCgs {
-		_, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+    query := `DELETE FROM dls_messages where id=$1`
+    stmt, err := conn.Conn().Prepare(ctx, "drop_dls_schema_msg", query)
+    if err != nil {
+        return err
+    }
+    for _, msgId := range schemaMessageIds {
+        _, err = conn.Conn().Exec(ctx, stmt.Name, msgId)
+        if err != nil {
+            return errors.New("dropSchemaDlsMsg: " + err.Error())
+        }
+    }
+    return nil
 }
-
-func dropPoisonDlsMessages(poisonMessageIds []int, dlsType string, stationName string) error {
-	return updatePoisongDlsCg(poisonMessageIds[0], dlsType, stationName, "dropPoisonDlsMessages")
-}
-
-// func dropSchemaDlsMsgs(schemaMessageIds []string) error {
-// 	timeout := 500 * time.Millisecond
-// 	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
-// 	stationName := splitId[0]
-// 	sn, err := StationNameFromStr(stationName)
-// 	if err != nil {
-// 		return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 	}
-// 	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-// 	amount := uint64(1)
-// 	for _, msgId := range schemaMessageIds {
-// 		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
-// 		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-// 		if err != nil {
-// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 		}
-// 		msg := msgs[0]
-// 		var dlsMsg models.DlsMessage
-// 		err = json.Unmarshal(msg.Data, &dlsMsg)
-// 		if err != nil {
-// 			return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 		}
-// 		if msgId == dlsMsg.ID {
-// 			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-// 			if err != nil {
-// 				return errors.New("dropSchemaDlsMsg: " + err.Error())
-// 			}
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
-	var body models.DropDlsMessagesSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	if body.DlsMsgType == "poison" {
-		err := dropPoisonDlsMessages(body.DlsMessageIds, body.DlsMsgType, body.StationName)
-		if err != nil {
-			serv.Errorf("DropDlsMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	} else if body.DlsMsgType == "schema" {
-		// err := dropSchemaDlsMsgs(body.DlsMessageIds)
-		// if err != nil {
-		// 	serv.Errorf("DropDlsMessages: " + err.Error())
-		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 	return
-		// }
-	}
+    var body models.DropDlsMessagesSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-ack-poison-message")
-	}
+    err := dropPoisonDlsMessages(body.DlsMessageIds)
+    if err != nil {
+        serv.Errorf("DropDlsMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	c.IndentedJSON(200, gin.H{})
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-ack-poison-message")
+    }
+
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
-	var body models.ResendPoisonMessagesSchemaPg
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	err := updatePoisongDlsCg(body.PoisonMessageIds[0], "poison", body.StationName, "ResendPoisonMessages")
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    var body models.ResendPoisonMessagesSchemaPg
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-resend-poison-message")
-	}
+    updatedAt := time.Now()
+    stationName := body.StationName
+    poisonMessageIds := body.PoisonMessageIds
+    exist, station, err := db.GetStationByName(stationName)
+    if err != nil {
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	c.IndentedJSON(200, gin.H{})
+    if !exist {
+        serv.Warnf("ResendPoisonMessages: Station " + stationName + " does not exist")
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+
+    stationNameStruct, err := StationNameFromStr(station.Name)
+    if err != nil {
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+
+    poisonMessage, err := getDlsMessageById(station, poisonMessageIds[0], stationNameStruct, "poison")
+    if err != nil {
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+
+    poisonedCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
+    if err != nil {
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+    defer cancelfunc()
+    conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+    if err != nil {
+        serv.Errorf("ResendPoisonMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    defer conn.Release()
+
+    if len(poisonedCgs) <= 1 {
+        err := dropPoisonDlsMessages(poisonMessageIds)
+        if err != nil {
+            serv.Errorf("ResendPoisonMessages: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    } else {
+        query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3 AND id=$4`
+        stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+        if err != nil {
+            serv.Errorf("ResendPoisonMessages: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+        for _, poisonCg := range poisonedCgs {
+            _, err = conn.Conn().Query(ctx, stmt.Name, poisonCg.CgName, updatedAt, station.ID, poisonMessage.ID)
+            if err != nil {
+                serv.Errorf("ResendPoisonMessages: " + err.Error())
+                c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+                return
+            }
+        }
+    }
+
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-resend-poison-message")
+    }
+
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
-	var body models.GetMessageDetailsSchemaPg
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	msgId := body.MessageId
+    var body models.GetMessageDetailsSchemaPg
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
+    msgId := body.MessageId
 
-	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "posion")
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+    if body.IsDls {
+        dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "posion")
+        if err != nil {
+            serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
 
-		c.IndentedJSON(200, dlsMessage)
-		return
-	}
+        c.IndentedJSON(200, dlsMessage)
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    exist, station, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	if !exist {
-		errMsg := "Station " + stationName.external + " does not exist"
-		serv.Warnf("GetMessageDetails: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    if !exist {
+        errMsg := "Station " + stationName.external + " does not exist"
+        serv.Warnf("GetMessageDetails: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
-	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
+    if err != nil {
+        serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	var headersJson map[string]string
-	if sm.Header != nil {
-		headersJson, err = DecodeHeader(sm.Header)
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+    var headersJson map[string]string
+    if sm.Header != nil {
+        headersJson, err = DecodeHeader(sm.Header)
+        if err != nil {
+            serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
 
-	// For non-native stations - default values
-	if !station.IsNative {
-		msg := models.MessageResponse{
-			MessageSeq: body.MessageSeq,
-			Message: models.MessagePayload{
-				TimeSent: sm.Time,
-				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-				Data:     hex.EncodeToString(sm.Data),
-				Headers:  headersJson,
-			},
-			Producer: models.ProducerDetails{
-				Name:          "",
-				ClientAddress: "",
-				IsActive:      false,
-				IsDeleted:     false,
-			},
-			PoisonedCgs: []models.PoisonedCg{},
-		}
-		c.IndentedJSON(200, msg)
-		return
-	}
+    // For non-native stations - default values
+    if !station.IsNative {
+        msg := models.MessageResponse{
+            MessageSeq: body.MessageSeq,
+            Message: models.MessagePayload{
+                TimeSent: sm.Time,
+                Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
+                Data:     hex.EncodeToString(sm.Data),
+                Headers:  headersJson,
+            },
+            Producer: models.ProducerDetails{
+                Name:          "",
+                ClientAddress: "",
+                IsActive:      false,
+                IsDeleted:     false,
+            },
+            PoisonedCgs: []models.PoisonedCg{},
+        }
+        c.IndentedJSON(200, msg)
+        return
+    }
 
-	connectionIdHeader := headersJson["$memphis_connectionId"]
-	producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
+    connectionIdHeader := headersJson["$memphis_connectionId"]
+    producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-	for header := range headersJson {
-		if strings.HasPrefix(header, "$memphis") {
-			delete(headersJson, header)
-		}
-	}
+    for header := range headersJson {
+        if strings.HasPrefix(header, "$memphis") {
+            delete(headersJson, header)
+        }
+    }
 
-	// This check for backward compatability
-	if connectionIdHeader == "" || producedByHeader == "" {
-		connectionIdHeader = headersJson["connectionId"]
-		producedByHeader = strings.ToLower(headersJson["producedBy"])
-		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
-			return
-		}
-	}
+    // This check for backward compatability
+    if connectionIdHeader == "" || producedByHeader == "" {
+        connectionIdHeader = headersJson["connectionId"]
+        producedByHeader = strings.ToLower(headersJson["producedBy"])
+        if connectionIdHeader == "" || producedByHeader == "" {
+            serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
+            return
+        }
+    }
 
-	connectionId := connectionIdHeader
-	poisonedCgs := make([]models.PoisonedCg, 0)
-	// Only native stations have CGs
-	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
-		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+    connectionId := connectionIdHeader
+    poisonedCgs := make([]models.PoisonedCg, 0)
+    // Only native stations have CGs
+    if station.IsNative {
+        poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
+        if err != nil {
+            serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
 
-		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
-			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+        for i, cg := range poisonedCgs {
+            cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+            if err != nil {
+                serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+                c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+                return
+            }
 
-			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
+            cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
+            if err != nil {
+                serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+                c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+                return
+            }
 
-			isActive, isDeleted := getCgStatus(cgMembers)
+            isActive, isDeleted := getCgStatus(cgMembers)
 
-			poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-			poisonedCgs[i].TotalPoisonMessages = -1
-			poisonedCgs[i].IsActive = isActive
-			poisonedCgs[i].IsDeleted = isDeleted
-		}
-		sort.Slice(poisonedCgs, func(i, j int) bool {
-			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
-		})
-	}
+            poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
+            poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
+            poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
+            poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
+            poisonedCgs[i].TotalPoisonMessages = -1
+            poisonedCgs[i].IsActive = isActive
+            poisonedCgs[i].IsDeleted = isDeleted
+        }
+        sort.Slice(poisonedCgs, func(i, j int) bool {
+            return poisonedCgs[i].CgName < poisonedCgs[j].CgName
+        })
+    }
 
-	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
-		serv.Warnf("GetMessageDetails: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+    if err != nil {
+        serv.Errorf("GetMessageDetails: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
+        serv.Warnf("GetMessageDetails: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	_, conn, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("GetMessageDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    _, conn, err := db.GetConnectionByID(connectionId)
+    if err != nil {
+        serv.Errorf("GetMessageDetails: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	msg := models.MessageResponse{
-		MessageSeq: body.MessageSeq,
-		Message: models.MessagePayload{
-			TimeSent: sm.Time,
-			Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-			Data:     hex.EncodeToString(sm.Data),
-			Headers:  headersJson,
-		},
-		Producer: models.ProducerDetails{
-			Name:              producedByHeader,
-			ConnectionId:      connectionId,
-			ClientAddress:     conn.ClientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
-		},
-		PoisonedCgs: poisonedCgs,
-	}
-	c.IndentedJSON(200, msg)
+    msg := models.MessageResponse{
+        MessageSeq: body.MessageSeq,
+        Message: models.MessagePayload{
+            TimeSent: sm.Time,
+            Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
+            Data:     hex.EncodeToString(sm.Data),
+            Headers:  headersJson,
+        },
+        Producer: models.ProducerDetails{
+            Name:              producedByHeader,
+            ConnectionId:      connectionId,
+            ClientAddress:     conn.ClientAddress,
+            CreatedBy:         producer.CreatedBy,
+            CreatedByUsername: producer.CreatedByUsername,
+            IsActive:          producer.IsActive,
+            IsDeleted:         producer.IsDeleted,
+        },
+        PoisonedCgs: poisonedCgs,
+    }
+    c.IndentedJSON(200, msg)
 }
 
 func (sh StationsHandler) UseSchema(c *gin.Context) {
-	var body models.UseSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.UseSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := db.GetSchemaByName(schemaName)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
-		return
-	}
-	if !exist {
-		errMsg := "Schema " + schemaName + " does not exist"
-		serv.Warnf("UseSchema: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    schemaName := strings.ToLower(body.SchemaName)
+    exist, schema, err := db.GetSchemaByName(schemaName)
+    if err != nil {
+        serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
+        return
+    }
+    if !exist {
+        errMsg := "Schema " + schemaName + " does not exist"
+        serv.Warnf("UseSchema: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-	schemaDetailsResponse := models.StationOverviewSchemaDetails{
-		SchemaName:       schemaName,
-		VersionNumber:    schemaVersion.VersionNumber,
-		UpdatesAvailable: false,
-		SchemaType:       schema.Type,
-	}
+    schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+    if err != nil {
+        serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+        return
+    }
+    schemaDetailsResponse := models.StationOverviewSchemaDetails{
+        SchemaName:       schemaName,
+        VersionNumber:    schemaVersion.VersionNumber,
+        UpdatesAvailable: false,
+        SchemaType:       schema.Type,
+    }
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
+    user, err := getUserDetailsFromMiddleware(c)
+    if err != nil {
+        serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
+        c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	for _, stationName := range body.StationNames {
-		stationName, err := StationNameFromStr(stationName)
-		if err != nil {
-			serv.Warnf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    for _, stationName := range body.StationNames {
+        stationName, err := StationNameFromStr(stationName)
+        if err != nil {
+            serv.Warnf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+            return
+        }
 
-		exist, station, err := db.GetStationByName(stationName.Ext())
-		if err != nil {
-			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		if !exist {
-			errMsg := "Station " + station.Name + " does not exist"
-			serv.Warnf("UseSchema: Schema " + body.SchemaName + ": " + errMsg)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-			return
-		}
+        exist, station, err := db.GetStationByName(stationName.Ext())
+        if err != nil {
+            serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+        if !exist {
+            errMsg := "Station " + station.Name + " does not exist"
+            serv.Warnf("UseSchema: Schema " + body.SchemaName + ": " + errMsg)
+            c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+            return
+        }
 
-		err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
-		if err != nil {
-			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-			return
-		}
+        err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
+        if err != nil {
+            serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+            return
+        }
 
-		message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
-		serv.Noticef(message)
+        message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + user.Username
+        serv.Noticef(message)
 
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			StationName:       stationName.Intern(),
-			Message:           message,
-			CreatedBy:         user.ID,
-			CreatedByUsername: user.Username,
-			CreatedAt:         time.Now(),
-			UserType:          user.UserType,
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
-		if err != nil {
-			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + " - create audit logs: " + err.Error())
-		}
+        var auditLogs []interface{}
+        newAuditLog := models.AuditLog{
+            StationName:       stationName.Intern(),
+            Message:           message,
+            CreatedBy:         user.ID,
+            CreatedByUsername: user.Username,
+            CreatedAt:         time.Now(),
+            UserType:          user.UserType,
+        }
+        auditLogs = append(auditLogs, newAuditLog)
+        err = CreateAuditLogs(auditLogs)
+        if err != nil {
+            serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + " - create audit logs: " + err.Error())
+        }
 
-		updateContent, err := generateSchemaUpdateInit(schema)
-		if err != nil {
-			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
-			return
-		}
-		update := models.ProducerSchemaUpdate{
-			UpdateType: models.SchemaUpdateTypeInit,
-			Init:       *updateContent,
-		}
-		sh.S.updateStationProducersOfSchemaChange(stationName, update)
+        updateContent, err := generateSchemaUpdateInit(schema)
+        if err != nil {
+            serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
+            return
+        }
+        update := models.ProducerSchemaUpdate{
+            UpdateType: models.SchemaUpdateTypeInit,
+            Init:       *updateContent,
+        }
+        sh.S.updateStationProducersOfSchemaChange(stationName, update)
 
-		if shouldSendAnalytics {
-			user, _ := getUserDetailsFromMiddleware(c)
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "schema-name",
-				Value: schemaName,
-			}
-			analyticsParams := []analytics.EventParam{param1, param2}
-			analytics.SendEventWithParams(user.Username, analyticsParams, "user-attach-schema-to-station")
-		}
-	}
+        if shouldSendAnalytics {
+            user, _ := getUserDetailsFromMiddleware(c)
+            param1 := analytics.EventParam{
+                Name:  "station-name",
+                Value: stationName.Ext(),
+            }
+            param2 := analytics.EventParam{
+                Name:  "schema-name",
+                Value: schemaName,
+            }
+            analyticsParams := []analytics.EventParam{param1, param2}
+            analytics.SendEventWithParams(user.Username, analyticsParams, "user-attach-schema-to-station")
+        }
+    }
 
-	c.IndentedJSON(200, schemaDetailsResponse)
+    c.IndentedJSON(200, schemaDetailsResponse)
 }
 
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
-	var asr attachSchemaRequest
-	if err := json.Unmarshal(msg, &asr); err != nil {
-		errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
-		s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
-		return
-	}
-	stationName, err := StationNameFromStr(asr.StationName)
-	if err != nil {
-		serv.Warnf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    var asr attachSchemaRequest
+    if err := json.Unmarshal(msg, &asr); err != nil {
+        errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
+        s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
+        respondWithErr(s, reply, errors.New(errMsg))
+        return
+    }
+    stationName, err := StationNameFromStr(asr.StationName)
+    if err != nil {
+        serv.Warnf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    exist, _, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	if !exist {
-		errMsg := "Station " + stationName.external + " does not exist"
-		serv.Warnf("useSchemaDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New("memphis: "+errMsg))
-		return
-	}
-	schemaName := strings.ToLower(asr.Name)
-	exist, schema, err := db.GetSchemaByName(schemaName)
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	if !exist {
-		errMsg := "Schema " + schemaName + " does not exist"
-		serv.Warnf("useSchemaDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
-		return
-	}
+    if !exist {
+        errMsg := "Station " + stationName.external + " does not exist"
+        serv.Warnf("useSchemaDirect: " + errMsg)
+        respondWithErr(s, reply, errors.New("memphis: "+errMsg))
+        return
+    }
+    schemaName := strings.ToLower(asr.Name)
+    exist, schema, err := db.GetSchemaByName(schemaName)
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    if !exist {
+        errMsg := "Schema " + schemaName + " does not exist"
+        serv.Warnf("useSchemaDirect: " + errMsg)
+        respondWithErr(s, reply, errors.New(errMsg))
+        return
+    }
 
-	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	username := c.getClientInfo(true).Name
-	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
-	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(username)
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		StationName:       stationName.Intern(),
-		Message:           message,
-		CreatedBy:         user.ID,
-		CreatedByUsername: user.Username,
-		CreatedAt:         time.Now(),
-		UserType:          "sdk",
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("useSchemaDirect : Schema " + asr.Name + " at station " + asr.StationName + " - create audit logs: " + err.Error())
-	}
+    username := c.getClientInfo(true).Name
+    message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
+    serv.Noticef(message)
+    _, user, err := db.GetUserByUsername(username)
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    var auditLogs []interface{}
+    newAuditLog := models.AuditLog{
+        StationName:       stationName.Intern(),
+        Message:           message,
+        CreatedBy:         user.ID,
+        CreatedByUsername: user.Username,
+        CreatedAt:         time.Now(),
+        UserType:          "sdk",
+    }
+    auditLogs = append(auditLogs, newAuditLog)
+    err = CreateAuditLogs(auditLogs)
+    if err != nil {
+        serv.Errorf("useSchemaDirect : Schema " + asr.Name + " at station " + asr.StationName + " - create audit logs: " + err.Error())
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "schema-name",
-			Value: schemaName,
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(username, analyticsParams, "user-attach-schema-to-station")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        param1 := analytics.EventParam{
+            Name:  "station-name",
+            Value: stationName.Ext(),
+        }
+        param2 := analytics.EventParam{
+            Name:  "schema-name",
+            Value: schemaName,
+        }
+        analyticsParams := []analytics.EventParam{param1, param2}
+        analytics.SendEventWithParams(username, analyticsParams, "user-attach-schema-to-station")
+    }
 
-	updateContent, err := generateSchemaUpdateInit(schema)
-	if err != nil {
-		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		return
-	}
+    updateContent, err := generateSchemaUpdateInit(schema)
+    if err != nil {
+        serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
+        return
+    }
 
-	update := models.ProducerSchemaUpdate{
-		UpdateType: models.SchemaUpdateTypeInit,
-		Init:       *updateContent,
-	}
+    update := models.ProducerSchemaUpdate{
+        UpdateType: models.SchemaUpdateTypeInit,
+        Init:       *updateContent,
+    }
 
-	serv.updateStationProducersOfSchemaChange(stationName, update)
-	respondWithErr(s, reply, nil)
+    serv.updateStationProducersOfSchemaChange(stationName, update)
+    respondWithErr(s, reply, nil)
 }
 
 func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
-	exist, _, err := db.GetStationByName(sn.Ext())
-	if err != nil {
-		return err
-	}
-	if !exist {
-		return errors.New("Station " + sn.external + " does not exist")
-	}
+    exist, _, err := db.GetStationByName(sn.Ext())
+    if err != nil {
+        return err
+    }
+    if !exist {
+        return errors.New("Station " + sn.external + " does not exist")
+    }
 
-	if updateDB {
-		err = db.DetachSchemaFromStation(sn.Ext())
-		if err != nil {
-			return err
-		}
-	}
+    if updateDB {
+        err = db.DetachSchemaFromStation(sn.Ext())
+        if err != nil {
+            return err
+        }
+    }
 
-	update := models.ProducerSchemaUpdate{
-		UpdateType: models.SchemaUpdateTypeDrop,
-	}
+    update := models.ProducerSchemaUpdate{
+        UpdateType: models.SchemaUpdateTypeDrop,
+    }
 
-	s.updateStationProducersOfSchemaChange(sn, update)
-	return nil
+    s.updateStationProducersOfSchemaChange(sn, update)
+    return nil
 }
 
 func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
-	var dsr detachSchemaRequest
-	if err := json.Unmarshal(msg, &dsr); err != nil {
-		s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
-	stationName, err := StationNameFromStr(dsr.StationName)
-	if err != nil {
-		serv.Warnf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    var dsr detachSchemaRequest
+    if err := json.Unmarshal(msg, &dsr); err != nil {
+        s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
+    stationName, err := StationNameFromStr(dsr.StationName)
+    if err != nil {
+        serv.Warnf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	err = removeSchemaFromStation(serv, stationName, true)
-	if err != nil {
-		serv.Errorf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
-	}
+    err = removeSchemaFromStation(serv, stationName, true)
+    if err != nil {
+        serv.Errorf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
+        respondWithErr(s, reply, err)
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(dsr.Username, "user-detach-schema-from-station-sdk")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        analytics.SendEvent(dsr.Username, "user-detach-schema-from-station-sdk")
+    }
 
-	respondWithErr(s, reply, nil)
+    respondWithErr(s, reply, nil)
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
+    // if err := DenyForSandboxEnv(c); err != nil {
+    //  return
+    // }
 
-	var body models.RemoveSchemaFromStation
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.RemoveSchemaFromStation
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("RemoveSchemaFromStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
+    exist, station, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Station " + body.StationName + " does not exist"
+        serv.Warnf("RemoveSchemaFromStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	err = removeSchemaFromStation(sh.S, stationName, true)
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    err = removeSchemaFromStation(sh.S, stationName, true)
+    if err != nil {
+        serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-	message := "Schema " + station.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
-	serv.Noticef(message)
-	var auditLogs []interface{}
-	newAuditLog := models.AuditLog{
-		StationName:       stationName.Intern(),
-		Message:           message,
-		CreatedBy:         user.ID,
-		CreatedByUsername: user.Username,
-		CreatedAt:         time.Now(),
-		UserType:          user.UserType,
-	}
-	auditLogs = append(auditLogs, newAuditLog)
-	err = CreateAuditLogs(auditLogs)
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + " - create audit logs error: " + err.Error())
-	}
+    user, err := getUserDetailsFromMiddleware(c)
+    if err != nil {
+        serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+    }
+    message := "Schema " + station.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
+    serv.Noticef(message)
+    var auditLogs []interface{}
+    newAuditLog := models.AuditLog{
+        StationName:       stationName.Intern(),
+        Message:           message,
+        CreatedBy:         user.ID,
+        CreatedByUsername: user.Username,
+        CreatedAt:         time.Now(),
+        UserType:          user.UserType,
+    }
+    auditLogs = append(auditLogs, newAuditLog)
+    err = CreateAuditLogs(auditLogs)
+    if err != nil {
+        serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + " - create audit logs error: " + err.Error())
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-schema-from-station")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        analytics.SendEvent(user.Username, "user-remove-schema-from-station")
+    }
 
-	c.IndentedJSON(200, gin.H{})
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
-	var body models.GetUpdatesForSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.GetUpdatesForSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, station, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Station " + body.StationName + " does not exist"
+        serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	exist, schema, err := db.GetSchemaByName(station.SchemaName)
-	if err != nil {
-		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+    exist, schema, err := db.GetSchemaByName(station.SchemaName)
+    if err != nil {
+        serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
 
-	if !exist {
-		errMsg := "Schema " + station.SchemaName + " does not exist"
-		serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    if !exist {
+        errMsg := "Schema " + station.SchemaName + " does not exist"
+        serv.Warnf("GetUpdatesForSchemaByStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	schemasHandler := SchemasHandler{S: sh.S}
-	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.SchemaVersionNumber, schema)
+    schemasHandler := SchemasHandler{S: sh.S}
+    extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.SchemaVersionNumber, schema)
 
-	if err != nil {
-		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
+    if err != nil {
+        serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+        return
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-apply-schema-updates-on-station")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-apply-schema-updates-on-station")
+    }
 
-	c.IndentedJSON(200, extedndedSchemaDetails)
+    c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
 func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-pushed-tierd-storage-button")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-pushed-tierd-storage-button")
+    }
 
-	c.IndentedJSON(200, gin.H{})
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
-	var body models.UpdateDlsConfigSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.UpdateDlsConfigSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("DlsConfiguration: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, station, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Station " + body.StationName + " does not exist"
+        serv.Warnf("DlsConfiguration: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
-	schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
-	if poisonConfigChanged || schemaverseConfigChanged {
-		err = db.UpdateStationDlsConfig(body.StationName, body.Poison, body.Schemaverse)
-		if err != nil {
-			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-	configUpdate := models.SdkClientsUpdates{
-		StationName: stationName.Intern(),
-		Type:        schemaToDlsUpdateType,
-		Update:      station.DlsConfigurationSchemaverse,
-	}
-	serv.SendUpdateToClients(configUpdate)
+    poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
+    schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
+    if poisonConfigChanged || schemaverseConfigChanged {
+        err = db.UpdateStationDlsConfig(body.StationName, body.Poison, body.Schemaverse)
+        if err != nil {
+            serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
+    configUpdate := models.SdkClientsUpdates{
+        StationName: stationName.Intern(),
+        Type:        schemaToDlsUpdateType,
+        Update:      station.DlsConfigurationSchemaverse,
+    }
+    serv.SendUpdateToClients(configUpdate)
 
-	c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
+    c.IndentedJSON(200, gin.H{"poison": body.Poison, "schemaverse": body.Schemaverse})
 }
 
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
+    // if err := DenyForSandboxEnv(c); err != nil {
+    //  return
+    // }
 
-	var body models.PurgeStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.PurgeStationSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("PurgeStation: station name: " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("PurgeStation: station name: " + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("PurgeStation: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + stationName.external + " does not exist"
-		serv.Warnf("PurgeStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, _, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("PurgeStation: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Station " + stationName.external + " does not exist"
+        serv.Warnf("PurgeStation: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	if body.PurgeStation {
-		err = sh.S.PurgeStream(stationName.Intern())
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Errorf("PurgeStation: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+    if body.PurgeStation {
+        err = sh.S.PurgeStream(stationName.Intern())
+        if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+            serv.Errorf("PurgeStation: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
 
-	if body.PurgeDls {
-		streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
-		err = sh.S.PurgeStream(streamName)
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Errorf("PurgeStation dls: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+    if body.PurgeDls {
+        streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
+        err = sh.S.PurgeStream(streamName)
+        if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+            serv.Errorf("PurgeStation dls: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-purge-station")
-	}
-	c.IndentedJSON(200, gin.H{})
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-purge-station")
+    }
+    c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) RemoveMessages(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
+    // if err := DenyForSandboxEnv(c); err != nil {
+    //  return
+    // }
 
-	var body models.RemoveMessagesSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
+    var body models.RemoveMessagesSchema
+    ok := utils.Validate(c, &body, false, nil)
+    if !ok {
+        return
+    }
 
-	stationName, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		serv.Warnf("RemoveMessages: station name: " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
-	}
+    stationName, err := StationNameFromStr(body.StationName)
+    if err != nil {
+        serv.Warnf("RemoveMessages: station name: " + body.StationName + ": " + err.Error())
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+        return
+    }
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("RemoveMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + stationName.external + " does not exist"
-		serv.Warnf("RemoveMessages: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
+    exist, _, err := db.GetStationByName(stationName.Ext())
+    if err != nil {
+        serv.Errorf("RemoveMessages: " + err.Error())
+        c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+        return
+    }
+    if !exist {
+        errMsg := "Station " + stationName.external + " does not exist"
+        serv.Warnf("RemoveMessages: " + errMsg)
+        c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+        return
+    }
 
-	for _, msg := range body.MessageSeqs {
-		err = sh.S.RemoveMsg(stationName, msg)
-		if err != nil {
-			if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
-				continue
-			}
-			serv.Errorf("RemoveMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
+    for _, msg := range body.MessageSeqs {
+        err = sh.S.RemoveMsg(stationName, msg)
+        if err != nil {
+            if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
+                continue
+            }
+            serv.Errorf("RemoveMessages: " + err.Error())
+            c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+            return
+        }
+    }
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-remove-messages")
-	}
+    shouldSendAnalytics, _ := shouldSendAnalytics()
+    if shouldSendAnalytics {
+        user, _ := getUserDetailsFromMiddleware(c)
+        analytics.SendEvent(user.Username, "user-remove-messages")
+    }
 
-	c.IndentedJSON(200, gin.H{})
+    c.IndentedJSON(200, gin.H{})
 }
+
