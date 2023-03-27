@@ -145,7 +145,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 				return
 			}
 		} else {
-			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison")
+			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison", "")
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
@@ -192,30 +192,21 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	}
 
 	for _, v := range dlsMsgs {
+		messageDetails := models.MessagePayloadDls{
+			TimeSent: v.MessageDetails.TimeSent,
+			Size:     v.MessageDetails.Size,
+			Data:     v.MessageDetails.Data,
+			Headers:  v.MessageDetails.Headers,
+		}
 		switch v.MessageType {
 		case "poison":
-			messageDetails := models.MessagePayloadDls{
-				TimeSent: v.MessageDetails.TimeSent,
-				Size:     v.MessageDetails.Size,
-				Data:     hex.EncodeToString([]byte(v.MessageDetails.Data)),
-				Headers:  v.MessageDetails.Headers,
-			}
 			poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
 		case "schema":
-			// message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
+			messageDetails.Size = len(v.MessageDetails.Data) + len(v.MessageDetails.Headers)
 			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
 		}
 
 	}
-
-	// 	if msgType == "poison" {
-	// poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: , ID: msgId, Message: dlsMsg.Message})
-	// 	} else {
-	// message.Size = len(msg.Subject) + len(message.Data) + len(message.Headers)
-	// schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: int(msg.Sequence), ID: msgId, Message: message})
-	// 		}
-	// 	}
-	// }
 
 	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
 	totalDlsAmount := lenPoison + lenSchema
@@ -224,9 +215,9 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		return poisonMessages[i].Message.TimeSent.After(poisonMessages[j].Message.TimeSent)
 	})
 
-	// sort.Slice(schemaMessages, func(i, j int) bool {
-	// 	return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
-	// })
+	sort.Slice(schemaMessages, func(i, j int) bool {
+		return schemaMessages[i].Message.TimeSent.After(schemaMessages[j].Message.TimeSent)
+	})
 
 	if lenPoison > 1000 {
 		poisonMessages = poisonMessages[:1000]
@@ -266,29 +257,26 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 
 	poisonedCgs := []models.PoisonedCg{}
 	var producer models.Producer
-	// var dlsMsg models.DlsMessage
 	var clientAddress string
 	var connectionId string
 
 	msgDetails := models.MessagePayloadDls{
 		TimeSent: dlsMsgs[0].MessageDetails.TimeSent,
 		Size:     dlsMsgs[0].MessageDetails.Size,
-		Data:     hex.EncodeToString([]byte(dlsMsgs[0].MessageDetails.Data)),
+		Data:     dlsMsgs[0].MessageDetails.Data,
 		Headers:  dlsMsgs[0].MessageDetails.Headers,
 	}
 	dlsMsg := models.DlsMessage{
-		ID:             dlsMsgs[0].ID,
-		StationId:      dlsMsgs[0].StationId,
-		MessageSeq:     dlsMsgs[0].MessageSeq,
-		ProducerId:     dlsMsgs[0].ProducerId,
-		PoisonedCgs:    dlsMsgs[0].PoisonedCgs,
-		MessageDetails: msgDetails,
-		UpdatedAt:      dlsMsgs[0].UpdatedAt,
-		MessageType:    dlsMsgs[0].MessageType,
+		ID:              dlsMsgs[0].ID,
+		StationId:       dlsMsgs[0].StationId,
+		MessageSeq:      dlsMsgs[0].MessageSeq,
+		ProducerId:      dlsMsgs[0].ProducerId,
+		PoisonedCgs:     dlsMsgs[0].PoisonedCgs,
+		MessageDetails:  msgDetails,
+		UpdatedAt:       dlsMsgs[0].UpdatedAt,
+		MessageType:     dlsMsgs[0].MessageType,
+		ValidationError: dlsMsgs[0].ValidationError,
 	}
-
-	// if msgType == "poison"
-	// poisonedCgs := []models.PoisonedCgPg{}
 
 	if station.IsNative {
 		connectionIdHeader := dlsMsg.MessageDetails.Headers["$memphis_connectionId"]
@@ -315,12 +303,6 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 		}
 		producer = prod
 
-		// if dlsType == "poison" {
-		// cgInfo, err := serv.GetCgInfo(sn, dlsMsg.PoisonedCg.CgName)
-		// if err != nil {
-		// 	return models.DlsMessageResponse{}, err
-		// }
-
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		// if dlsType == "poison" {
@@ -346,10 +328,10 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 
 		}
 
-		// if dlsType == "schema" {
-		// size := len(msg.Subject) + len(dlsMsg.Message.Data) + len(dlsMsg.Message.Headers)
-		// dlsMsg.Message.Size = size
-		// }
+		if dlsType == "schema" {
+			size := len(dlsMsgs[0].MessageDetails.Data) + len(dlsMsgs[0].MessageDetails.Headers)
+			dlsMsg.MessageDetails.Size = size
+		}
 
 		for header := range dlsMsg.MessageDetails.Headers {
 			if strings.HasPrefix(header, "$memphis") {
@@ -387,10 +369,10 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 			IsActive:          producer.IsActive,
 			IsDeleted:         producer.IsDeleted,
 		},
-		Message:     dlsMsg.MessageDetails,
-		UpdatedAt:   dlsMsg.UpdatedAt,
-		PoisonedCgs: poisonedCgs,
-		// ValidationError: dlsMsg.ValidationError,
+		Message:         dlsMsg.MessageDetails,
+		UpdatedAt:       dlsMsg.UpdatedAt,
+		PoisonedCgs:     poisonedCgs,
+		ValidationError: dlsMsg.ValidationError,
 	}
 
 	return result, nil

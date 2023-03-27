@@ -1242,7 +1242,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msgId := body.MessageId
 
 	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "posion")
+		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, body.DlsType)
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1298,7 +1298,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Message: models.MessagePayload{
 				TimeSent: sm.Time,
 				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-				Data:     hex.EncodeToString(sm.Data),
+				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{

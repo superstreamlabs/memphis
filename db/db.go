@@ -255,6 +255,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		message_details JSON NOT NULL,    
 		updated_at TIMESTAMP NOT NULL,
 		message_type VARCHAR NOT NULL,
+		validation_error VARCHAR DEFAULT '',
 		PRIMARY KEY (id)
 	)`
 
@@ -2033,7 +2034,6 @@ func InsertNewConsumer(name string,
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Detail)
 			if pgErr.Detail != "" {
 				return models.Consumer{}, 0, errors.New(pgErr.Detail)
 			} else {
@@ -3821,7 +3821,7 @@ func GetImage(name string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, updatedAt time.Time, messageType string) (models.DlsMessage, error) {
+func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, updatedAt time.Time, messageType, validationError string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3838,9 +3838,10 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 			poisoned_cgs,
 			message_details,
 			updated_at,
-			message_type
+			message_type,
+			validation_error
 			) 
-		VALUES($1, $2, $3, $4, $5, $6, $7)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id`
 
 	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
@@ -3848,7 +3849,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		return models.DlsMessage{}, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType, validationError)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}

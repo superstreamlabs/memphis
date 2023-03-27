@@ -60,22 +60,23 @@ type PoisonedCgResponse struct {
 }
 
 type SchemaVerseDlsMessageSdk struct {
-	StationName string            `json:"station_name"`
-	Producer    ProducerDetails   `json:"producer"`
-	Message     MessagePayloadDls `json:"message"`
-	CreatedAt   time.Time         `json:"created_at"`
+	StationName     string            `json:"station_name"`
+	Producer        ProducerDetails   `json:"producer"`
+	Message         MessagePayloadDls `json:"message"`
+	CreatedAt       time.Time         `json:"created_at"`
+	ValidationError string            `json:"validation_error"`
 }
 
 type DlsMessage struct {
-	ID             int               `json:"id"`
-	StationId      int               `json:"station_id"`
-	MessageSeq     int               `json:"message_seq"`
-	ProducerId     int               `json:"producer_id"`
-	PoisonedCgs    []string          `json:"poisoned_cgs"`
-	MessageDetails MessagePayloadDls `json:"message_details"`
-	UpdatedAt      time.Time         `json:"updated_at"`
-	MessageType    string            `json:"message_type"`
-	// ValidationError string            `json:"validation_error"`
+	ID              int               `json:"id"`
+	StationId       int               `json:"station_id"`
+	MessageSeq      int               `json:"message_seq"`
+	ProducerId      int               `json:"producer_id"`
+	PoisonedCgs     []string          `json:"poisoned_cgs"`
+	MessageDetails  MessagePayloadDls `json:"message_details"`
+	UpdatedAt       time.Time         `json:"updated_at"`
+	MessageType     string            `json:"message_type"`
+	ValidationError string            `json:"validation_error"`
 }
 
 type DlsMessageResponse struct {
