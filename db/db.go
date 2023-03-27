@@ -4020,7 +4020,7 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 	}
 	defer conn.Release()
 
-	query := `DELETE FROM dls_messages WHERE updated_at <= $1`
+	query := `DELETE FROM dls_messages WHERE updated_at = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_old_dls_messages", query)
 	if err != nil {
 		return err
