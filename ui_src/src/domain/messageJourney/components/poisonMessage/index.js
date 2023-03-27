@@ -23,11 +23,13 @@ import { message as messageAnt } from 'antd';
 const PoisonMessage = ({ messageId, details, message, headers, processing, returnBack, schemaType }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1];
 
     const handleIgnore = async () => {
         setIgnoreProcess(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId], station_name: stationName });
             setTimeout(() => {
                 setIgnoreProcess(false);
                 returnBack();
