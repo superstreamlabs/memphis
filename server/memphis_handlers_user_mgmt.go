@@ -731,7 +731,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
-	users, err := db.GetAllApplicationUsers()
+	users, err := db.GetAllUsersByType("application")
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

@@ -169,7 +169,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<broker-token>")
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
     if err != nil {
         os.Exit(1)
     }
@@ -204,7 +204,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<broker-token>")
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
     if err != nil {
         os.Exit(1)
     }

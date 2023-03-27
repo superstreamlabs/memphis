@@ -3289,34 +3289,6 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
-func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE user_type='application'`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
-	if err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
-	if err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
-	if err != nil {
-		return []models.FilteredApplicationUser{}, err
-	}
-	if len(users) == 0 {
-		return []models.FilteredApplicationUser{}, nil
-	}
-	return users, nil
-}
-
 func GetAllUsersByType(userType string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3326,7 +3298,7 @@ func GetAllUsersByType(userType string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM users WHERE type=$1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
 		return []models.User{}, err
 	}
