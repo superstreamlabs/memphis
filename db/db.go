@@ -4140,3 +4140,25 @@ func DropPoisonDlsMessages(messageIds []int) error {
 	}
 	return nil
 }
+
+func PurgeDlsMsgsFromStation(station_id int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "purge_dls_messages", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, station_id)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	return nil
+}

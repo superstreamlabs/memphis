@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -1853,7 +1852,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("PurgeStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1876,9 +1875,8 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeDls {
-		streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
-		err = sh.S.PurgeStream(streamName)
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+		err := db.PurgeDlsMsgsFromStation(station.ID)
+		if err != nil {
 			serv.Errorf("PurgeStation dls: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
