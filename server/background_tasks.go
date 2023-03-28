@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"sync"
 
@@ -29,6 +30,7 @@ const CONFIGURATIONS_RELOAD_SIGNAL_SUBJ = "$memphis_config_reload_signal"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
+const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
@@ -180,32 +182,9 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			//This check for backward compatability
-			if msgToAck.CgName != "" {
-				err = ackPoisonMsgV0(msgToAck.ID, msgToAck.CgName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-			} else {
-				splitId := strings.Split(msgToAck.ID, dlsMsgSep)
-				stationName := splitId[0]
-				sn, err := StationNameFromStr(stationName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-				seq, err := strconv.ParseInt(msgToAck.Sequence, 10, 64)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				_, err = s.memphisDeleteMsgFromStream(streamName, uint64(seq))
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
+			err = ResendDlsMessage(msgToAck.ID, msgToAck.CgName)
+			if err != nil {
+				return
 			}
 
 		}(copyBytes(msg))
@@ -302,6 +281,12 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
 	}
+
+	err = s.ListenSchemaVerseDls()
+	if err != nil {
+		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
+	}
+	go s.ListenForDlsRetentionUpdate()
 
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
@@ -434,5 +419,81 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		return err
 	}
 
+	return nil
+}
+
+func (s *Server) ListenSchemaVerseDls() error {
+	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var message models.SchemaVerseDlsMessageSdk
+			err := json.Unmarshal(msg, &message)
+			if err != nil {
+				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+
+			exist, station, err := db.GetStationByName(message.StationName)
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				return
+			}
+			if !exist {
+				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + ": " + "is not exists")
+				return
+
+			}
+
+			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+
+			if !exist {
+				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
+				return
+			}
+			var createdAt time.Time
+			if message.CreatedAt.IsZero() {
+				createdAt = time.Unix(0, message.CreationUnix*1000000)
+			} else {
+				createdAt = message.CreatedAt
+			}
+
+			poisnedCgs := []string{}
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), createdAt, "schema", message.ValidationError)
+			if err != nil {
+				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) ListenForDlsRetentionUpdate() error {
+	currentTime := time.Now()
+	ticker := time.NewTicker(2 * time.Minute)
+	for range ticker.C {
+		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
+		if err != nil {
+			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+			return err
+		}
+		for _, updatedAtValue := range updatedAtValues {
+			configurationTime := updatedAtValue.Updated_at.Add(time.Hour * time.Duration(s.opts.DlsRetentionHours))
+			if currentTime.After(configurationTime) || currentTime.Equal(configurationTime) {
+				err := db.DeleteOldDlsMessageByRetention(updatedAtValue.Updated_at)
+				if err != nil {
+					serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }

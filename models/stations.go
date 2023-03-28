@@ -141,8 +141,9 @@ type UpdateDlsConfigSchema struct {
 }
 
 type DropDlsMessagesSchema struct {
-	DlsMsgType    string   `json:"dls_type" binding:"required"`
-	DlsMessageIds []string `json:"dls_message_ids" binding:"required"`
+	DlsMsgType    string `json:"dls_type" binding:"required"`
+	DlsMessageIds []int  `json:"dls_message_ids" binding:"required"`
+	StationName   string `json:"station_name" binding:"required"`
 }
 
 type PurgeStationSchema struct {
@@ -157,7 +158,8 @@ type RemoveMessagesSchema struct {
 }
 
 type ResendPoisonMessagesSchema struct {
-	PoisonMessageIds []string `json:"poison_message_ids" binding:"required"`
+	PoisonMessageIds []int  `json:"poison_message_ids" binding:"required"`
+	StationName      string `json:"station_name" binding:"required"`
 }
 
 type RemoveStationSchema struct {
@@ -165,13 +167,15 @@ type RemoveStationSchema struct {
 }
 
 type GetPoisonMessageJourneySchema struct {
-	MessageId string `form:"message_id" json:"message_id" binding:"required"`
+	MessageId   int    `form:"message_id" json:"message_id" binding:"required"`
+	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
 
+// TODO: remove
 type GetMessageDetailsSchema struct {
 	IsDls       bool   `form:"is_dls" json:"is_dls"`
 	DlsType     string `form:"dls_type" json:"dls_type"`
-	MessageId   string `form:"message_id" json:"message_id"`
+	MessageId   int    `form:"message_id" json:"message_id"`
 	MessageSeq  int    `form:"message_seq" json:"message_seq"`
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }

@@ -21,6 +21,7 @@ import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
 import Copy from '../../../../components/copy';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStorageConsts';
 
 const GenerateTokenModal = ({ host, close }) => {
     const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +34,8 @@ const GenerateTokenModal = ({ host, close }) => {
         refresh_token_expiry_in_minutes: 10000092
     });
     const [userToken, setUserToken] = useState({});
+    const [tokenTitle, setTokenTitle] = useState("Connection token")
+    const [tokenPlaceHolder, setTokenPlaceHolder] = useState("Generated during user creation")
 
     const updateState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -57,6 +60,16 @@ const GenerateTokenModal = ({ host, close }) => {
 
     useEffect(() => {
         getAppUsers();
+        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){
+        setFormFields({
+            username: appUsers[0]?.name || '',
+            password: '',
+            token_expiry_in_minutes: 123,
+            refresh_token_expiry_in_minutes: 10000092
+        })
+        setTokenTitle("Password")
+        setTokenPlaceHolder("User password")
+        }
         return () => {};
     }, []);
 
@@ -109,9 +122,9 @@ const GenerateTokenModal = ({ host, close }) => {
                                 />
                             </div>
                             <div className="app-token">
-                                <p className="field-title">Connection token</p>
+                                <p className="field-title">{tokenTitle}</p>
                                 <Input
-                                    placeholder="Generated during user creation"
+                                    placeholder={tokenPlaceHolder}
                                     type="text"
                                     fontSize="12px"
                                     radiusType="semi-round"
@@ -119,8 +132,8 @@ const GenerateTokenModal = ({ host, close }) => {
                                     backgroundColorType="none"
                                     borderColorType="gray"
                                     height="40px"
-                                    onBlur={(e) => updateState('connection_token', e.target.value)}
-                                    onChange={(e) => updateState('connection_token', e.target.value)}
+                                    onBlur={(e) => { if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){updateState('password', e.target.value)} else {updateState('connection_token', e.target.value)}}}
+                                    onChange={(e) => {updateState('connection_token', e.target.value)}}
                                     value={formFields.connection_token}
                                 />
                             </div>
@@ -133,7 +146,7 @@ const GenerateTokenModal = ({ host, close }) => {
                                 backgroundColorType={'purple'}
                                 fontSize="14px"
                                 fontWeight="bold"
-                                disabled={formFields.connection_token === ''}
+                                disabled={formFields.connection_token === '' && formFields.password === ''}
                                 isLoading={generateLoading}
                                 onClick={generateToken}
                             />

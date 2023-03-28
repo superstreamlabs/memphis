@@ -992,7 +992,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.20",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.999Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1004,7 +1004,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.19",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.99Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1016,7 +1016,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.18",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.982Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1028,7 +1028,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.17",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.969Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1042,7 +1042,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.16",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.959Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1054,7 +1054,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.15",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.951Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1066,7 +1066,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.14",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.941Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1078,7 +1078,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.13",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.93Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1090,7 +1090,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.12",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.92Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1102,7 +1102,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.11",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.911Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1114,7 +1114,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.10",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.902Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1126,7 +1126,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.9",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.892Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1138,7 +1138,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.8",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.882Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1150,7 +1150,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.7",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.872Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1162,7 +1162,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.6",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.862Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1429,7 +1429,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, schemaFailedMessages, totalDlsAmount, poisonCgMap, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
@@ -1445,7 +1445,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	// Only native stations have CGs
 	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station, poisonCgMap)
+		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

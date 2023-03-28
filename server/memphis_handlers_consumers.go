@@ -131,7 +131,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
-		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
@@ -189,7 +189,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
 	if err != nil {
-		errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
@@ -335,7 +335,7 @@ func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
 	}
 }
 
-func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station, poisonedCgMap map[string]int) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
+func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
 	consumers, err := db.GetAllConsumersByStation(station.ID)
 	if err != nil {
@@ -396,9 +396,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
-			totalPoisonMsgs := 0
-			if _, ok := poisonedCgMap[cg.Name]; ok {
-				totalPoisonMsgs = poisonedCgMap[cg.Name]
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name)
+			if err != nil {
+				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 			}
 
 			cg.InProcessMessages = cgInfo.NumAckPending
@@ -539,8 +539,8 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err == nil {
 			deleted = true
 		}
-
-		err = RemovePoisonedCg(stationName, consumer.ConsumersGroup)
+		updatedAt := time.Now()
+		err = RemovePoisonedCg(station.ID, consumer.ConsumersGroup, updatedAt)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)

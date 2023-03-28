@@ -268,18 +268,18 @@ func (s *Server) createStationDirectIntern(c *client,
 		replicas = 1
 	}
 
-	err = validateIdempotencyWindow(csr.RetentionType, csr.RetentionValue, csr.IdempotencyWindow)
+	if csr.IdempotencyWindow <= 0 {
+		csr.IdempotencyWindow = 120000 // default
+	} else if csr.IdempotencyWindow < 100 {
+		csr.IdempotencyWindow = 100 // minimum is 100 millis
+	}
+
+	err = validateIdempotencyWindow(retentionType, retentionValue, csr.IdempotencyWindow)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
 		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
-	}
-
-	if csr.IdempotencyWindow <= 0 {
-		csr.IdempotencyWindow = 120000 // default
-	} else if csr.IdempotencyWindow < 100 {
-		csr.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
 	username := c.memphisInfo.username
@@ -291,7 +291,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
-				serv.Warnf("CreateStation: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
+				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
 				respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}
@@ -300,13 +300,6 @@ func (s *Server) createStationDirectIntern(c *client,
 			respondWithErr(s, reply, err)
 			return
 		}
-	}
-
-	err = s.CreateDlsStream(stationName, storageType, replicas)
-	if err != nil {
-		serv.Errorf("createStationDirect: Create DLS at station " + csr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
-		return
 	}
 
 	_, user, err := db.GetUserByUsername(username)
@@ -747,12 +740,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.CreateDlsStream(stationName, body.StorageType, body.Replicas)
-	if err != nil {
-		serv.Errorf("CreateStation: Create DLS at station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
@@ -848,7 +835,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1067,10 +1054,8 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMsgDetails(dlsMsgId, dlsType string) (models.DlsMessageResponse, error) {
+func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponse, error) {
 	var dlsMessage models.DlsMessageResponse
-	splitId := strings.Split(dlsMsgId, dlsMsgSep)
-	stationName := splitId[0]
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return dlsMessage, err
@@ -1083,7 +1068,7 @@ func (sh StationsHandler) GetDlsMsgDetails(dlsMsgId, dlsType string) (models.Dls
 		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
 	}
 
-	return getDlsMessageById(station, sn, dlsMsgId, dlsType)
+	return getDlsMessageById(station, messageId, sn, dlsType)
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
@@ -1093,7 +1078,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, "poison")
+	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1109,89 +1094,18 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	c.IndentedJSON(200, poisonMessage)
 }
 
-func dropPoisonDlsMessages(poisonMessageIds []string) error {
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(poisonMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return errors.New("dropPoisonDlsMessages: " + err.Error())
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
-	if err != nil {
-		return errors.New("dropPoisonDlsMessages: " + err.Error())
-	}
-	amount := streamInfo.State.Msgs
-	for _, msgId := range poisonMessageIds {
-		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-		if err != nil {
-			return errors.New("dropPoisonDlsMessages: " + err.Error())
-		}
-		for _, msg := range msgs {
-			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-			if err != nil {
-				return errors.New("dropPoisonDlsMessages: " + err.Error())
-			}
-		}
-	}
-	return nil
-}
-
-func dropSchemaDlsMsgs(schemaMessageIds []string) error {
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(schemaMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return errors.New("dropSchemaDlsMsg: " + err.Error())
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	amount := uint64(1)
-	for _, msgId := range schemaMessageIds {
-		filter := GetDlsSubject("schema", sn.Intern(), msgId, _EMPTY_)
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-		msg := msgs[0]
-		var dlsMsg models.DlsMessage
-		err = json.Unmarshal(msg.Data, &dlsMsg)
-		if err != nil {
-			return errors.New("dropSchemaDlsMsg: " + err.Error())
-		}
-		if msgId == dlsMsg.ID {
-			_, err = serv.memphisDeleteMsgFromStream(streamName, msg.Sequence)
-			if err != nil {
-				return errors.New("dropSchemaDlsMsg: " + err.Error())
-			}
-		}
-	}
-
-	return nil
-}
-
 func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	var body models.DropDlsMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
-	if body.DlsMsgType == "poison" {
-		err := dropPoisonDlsMessages(body.DlsMessageIds)
-		if err != nil {
-			serv.Errorf("DropDlsMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	} else if body.DlsMsgType == "schema" {
-		err := dropSchemaDlsMsgs(body.DlsMessageIds)
-		if err != nil {
-			serv.Errorf("DropDlsMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+
+	err := db.DropPoisonDlsMessages(body.DlsMessageIds)
+	if err != nil {
+		serv.Errorf("DropDlsMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1209,63 +1123,63 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if !ok {
 		return
 	}
-	timeout := 500 * time.Millisecond
-	splitId := strings.Split(body.PoisonMessageIds[0], dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
+
+	stationName := body.StationName
+	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	streamInfo, err := serv.memphisStreamInfo(streamName)
+
+	if !exist {
+		serv.Warnf("ResendPoisonMessages: Station " + stationName + " does not exist")
+		serv.Errorf("ResendPoisonMessages: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	stationNameStruct, err := StationNameFromStr(station.Name)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	amount := streamInfo.State.Msgs
+
 	for _, msgId := range body.PoisonMessageIds {
-		filter := GetDlsSubject("poison", sn.Intern(), msgId, "*")
-		msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
+		dlsMsg, err := getDlsMessageById(station, msgId, stationNameStruct, "poison")
 		if err != nil {
 			serv.Errorf("ResendPoisonMessages: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		for _, msg := range msgs {
-			var dlsMsg models.DlsMessage
-			err = json.Unmarshal(msg.Data, &dlsMsg)
-			if err != nil {
-				serv.Errorf("ResendPoisonMessages: " + err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			stationName := replaceDelimiters(dlsMsg.StationName)
-			cgName := replaceDelimiters(dlsMsg.PoisonedCg.CgName)
+		for _, name := range dlsMsg.PoisonedCgs {
+			cgName := name.CgName
 			headersJson := map[string]string{}
 			for key, value := range dlsMsg.Message.Headers {
 				headersJson[key] = value
 			}
-			headersJson["$memphis_pm_id"] = dlsMsg.ID
-			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(msg.Sequence, 10)
+			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(uint64(dlsMsg.MessageSeq), 10)
+			headersJson["$memphis_pm_cg_name"] = cgName
+
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCgs[0].CgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
+
 			data, err := hex.DecodeString(dlsMsg.Message.Data)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 			err = sh.S.ResendPoisonMessage("$memphis_dls_"+stationName+"_"+cgName, []byte(data), headers)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCg.CgName + ": " + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1291,9 +1205,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msgId := body.MessageId
 
 	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(msgId, body.DlsType)
+		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, body.DlsType)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1304,14 +1218,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		serv.Warnf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1325,7 +1239,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + msgId + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1334,7 +1248,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if sm.Header != nil {
 		headersJson, err = DecodeHeader(sm.Header)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1347,7 +1261,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Message: models.MessagePayload{
 				TimeSent: sm.Time,
 				Size:     len(sm.Subject) + len(sm.Data) + len(sm.Header),
-				Data:     hex.EncodeToString(sm.Data),
+				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{
@@ -1386,9 +1300,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(stationName.Intern(), models.MessageDetails{MessageSeq: int(sm.Sequence), ProducedBy: producedByHeader, TimeSent: sm.Time})
+		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1396,14 +1310,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		for i, cg := range poisonedCgs {
 			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + msgId + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1419,7 +1333,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			poisonedCgs[i].IsDeleted = isDeleted
 		}
 		sort.Slice(poisonedCgs, func(i, j int) bool {
-			return poisonedCgs[i].PoisoningTime.After(poisonedCgs[j].PoisoningTime)
+			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
 
@@ -1745,7 +1659,7 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.RemoveSchemaFromStation
@@ -1928,7 +1842,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.PurgeStationSchema
@@ -1986,7 +1900,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 
 func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
+	//  return
 	// }
 
 	var body models.RemoveMessagesSchema

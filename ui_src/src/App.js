@@ -18,7 +18,7 @@ import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
+import { LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
 import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
@@ -84,11 +84,22 @@ const App = withRouter(() => {
             if (handleRefreshStatus) {
                 if (firstTime) {
                     try {
-                        const conn = await connect({
-                            servers: [SOCKET_URL],
-                            token: '::memphis',
-                            timeout: '5000'
-                        });
+                        let conn;
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                user: '$memphis_user',
+                                pass: connection_token,
+                                timeout: '5000'
+                            });
+                        } else {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::'+connection_token,
+                                timeout: '5000'
+                            });
+                        }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}
                 }

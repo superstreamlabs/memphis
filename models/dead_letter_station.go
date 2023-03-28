@@ -24,7 +24,6 @@ type ProducerDetails struct {
 	IsDeleted         bool   `json:"is_deleted"`
 	CreatedByUsername string `json:"created_by_username"`
 }
-
 type MsgHeader struct {
 	HeaderKey   string `json:"header_key"`
 	HeaderValue string `json:"header_value"`
@@ -46,8 +45,6 @@ type MessagePayloadDls struct {
 
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name"`
-	PoisoningTime       time.Time  `json:"poisoning_time"`
-	DeliveriesCount     int        `json:"deliveries_count"`
 	UnprocessedMessages int        `json:"unprocessed_messages"`
 	MaxAckTimeMs        int64      `json:"max_ack_time_ms"`
 	InProcessMessages   int        `json:"in_process_messages"`
@@ -58,34 +55,46 @@ type PoisonedCg struct {
 	IsDeleted           bool       `json:"is_deleted"`
 }
 
-type DlsMessage struct {
-	ID              string            `json:"_id"`
+type PoisonedCgResponse struct {
+	CgName []string `json:"cg_name"`
+}
+
+type SchemaVerseDlsMessageSdk struct {
 	StationName     string            `json:"station_name"`
-	MessageSeq      int               `json:"message_seq"`
 	Producer        ProducerDetails   `json:"producer"`
-	PoisonedCg      PoisonedCg        `json:"poisoned_cg"`
 	Message         MessagePayloadDls `json:"message"`
 	CreatedAt       time.Time         `json:"created_at"`
 	CreationUnix    int64             `json:"creation_unix"`
 	ValidationError string            `json:"validation_error"`
 }
 
+type DlsMessage struct {
+	ID              int               `json:"id"`
+	StationId       int               `json:"station_id"`
+	MessageSeq      int               `json:"message_seq"`
+	ProducerId      int               `json:"producer_id"`
+	PoisonedCgs     []string          `json:"poisoned_cgs"`
+	MessageDetails  MessagePayloadDls `json:"message_details"`
+	UpdatedAt       time.Time         `json:"updated_at"`
+	MessageType     string            `json:"message_type"`
+	ValidationError string            `json:"validation_error"`
+}
+
 type DlsMessageResponse struct {
-	ID              string            `json:"_id"`
+	ID              int               `json:"id"`
 	StationName     string            `json:"station_name"`
 	SchemaType      string            `json:"schema_type"`
 	MessageSeq      int               `json:"message_seq"`
 	Producer        ProducerDetails   `json:"producer"`
 	PoisonedCgs     []PoisonedCg      `json:"poisoned_cgs"`
 	Message         MessagePayloadDls `json:"message"`
-	CreatedAt       time.Time         `json:"created_at"`
+	UpdatedAt       time.Time         `json:"updated_at"`
 	ValidationError string            `json:"validation_error"`
 }
 
 type PmAckMsg struct {
-	ID       string `json:"id" binding:"required"`
-	CgName   string `json:"cg_name"`
-	Sequence string `json:"sequence"`
+	ID     int    `json:"id" binding:"required"`
+	CgName string `json:"cg_name"`
 }
 
 type LightDlsMessage struct {
@@ -96,6 +105,10 @@ type LightDlsMessage struct {
 
 type LightDlsMessageResponse struct {
 	MessageSeq int               `json:"message_seq"`
-	ID         string            `json:"_id"`
+	ID         int               `json:"id"`
 	Message    MessagePayloadDls `json:"message"`
+}
+
+type RetentionIntervalData struct {
+	Updated_at time.Time `json:"updated_at"`
 }
