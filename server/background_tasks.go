@@ -182,32 +182,9 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			//This check for backward compatability
-			if msgToAck.CgName != "" {
-				err = ackPoisonMsgV0(msgToAck.ID, msgToAck.CgName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-			} else {
-				splitId := strings.Split(msgToAck.ID, dlsMsgSep)
-				stationName := splitId[0]
-				sn, err := StationNameFromStr(stationName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-				seq, err := strconv.ParseInt(msgToAck.Sequence, 10, 64)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				_, err = s.memphisDeleteMsgFromStream(streamName, uint64(seq))
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
+			err = ResendDlsMessage(msgToAck.ID, msgToAck.CgName)
+			if err != nil {
+				return
 			}
 
 		}(copyBytes(msg))
@@ -309,8 +286,7 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
 	}
-	//TODO: check this flow
-	// go s.ListenForDlsRetentionUpdate()
+	go s.ListenForDlsRetentionUpdate()
 
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()

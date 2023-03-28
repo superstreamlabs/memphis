@@ -93,7 +93,7 @@ type DlsMessageResponse struct {
 }
 
 type PmAckMsg struct {
-	ID       string `json:"id" binding:"required"`
+	ID       int    `json:"id" binding:"required"`
 	CgName   string `json:"cg_name"`
 	Sequence string `json:"sequence"`
 }

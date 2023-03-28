@@ -472,3 +472,27 @@ func GetDlsSubject(subjType, stationName, id, cgName string) string {
 	}
 	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id + suffix
 }
+
+func ResendDlsMessage(msgId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
+	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1;`
+
+	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -1072,7 +1072,7 @@ func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType s
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
-	var body models.GetPoisonMessageJourneySchemaPg
+	var body models.GetPoisonMessageJourneySchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1118,14 +1118,13 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 }
 
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
-	var body models.ResendPoisonMessagesSchemaPg
+	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 
 	stationName := body.StationName
-	poisonMessageIds := body.PoisonMessageIds
 	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
@@ -1147,24 +1146,45 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := getDlsMessageById(station, poisonMessageIds[0], stationNameStruct, "poison")
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+	for _, msgId := range body.PoisonMessageIds {
+		dlsMsg, err := getDlsMessageById(station, msgId, stationNameStruct, "poison")
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 
-	poisonedCgs, err := GetPoisonedCgsByMessage(station, poisonMessage.MessageSeq)
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	err = db.ResendDlsMessage(poisonedCgs, poisonMessageIds, station, poisonMessage)
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		for _, name := range dlsMsg.PoisonedCgs {
+			cgName := name.CgName
+			headersJson := map[string]string{}
+			for key, value := range dlsMsg.Message.Headers {
+				headersJson[key] = value
+			}
+			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(uint64(dlsMsg.MessageSeq), 10)
+			headersJson["$memphis_pm_cg_name"] = cgName
+
+			headers, err := json.Marshal(headersJson)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCgs[0].CgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			data, err := hex.DecodeString(dlsMsg.Message.Data)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			err = sh.S.ResendPoisonMessage("$memphis_dls_"+stationName+"_"+cgName, []byte(data), headers)
+			if err != nil {
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1177,7 +1197,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
-	var body models.GetMessageDetailsSchemaPg
+	var body models.GetMessageDetailsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
