@@ -262,112 +262,18 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	_, err := db.Exec(ctx, usersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
+	tables := []string{usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable}
 
-	_, err = db.Exec(ctx, connectionsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
+	for _, table := range tables {
+		_, err := db.Exec(ctx, table)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			errPg := errors.As(err, &pgErr)
+			if errPg && !strings.Contains(pgErr.Message, "already exists") {
+				return err
+			}
 		}
 	}
-
-	_, err = db.Exec(ctx, auditLogsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, configurationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, integrationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, schemasTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, tagsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, stationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-	_, err = db.Exec(ctx, consumersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, schemaVersionsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-	_, err = db.Exec(ctx, producersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, dlsMessagesTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
 	return nil
 }
 
