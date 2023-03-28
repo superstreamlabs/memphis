@@ -16,7 +16,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"sort"
@@ -104,11 +103,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		connId := connectionIdHeader
-		_, _, err := db.GetConnectionByID(connId)
-		if err != nil {
-			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-			return
-		}
 
 		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
 		if err != nil {
@@ -121,7 +115,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			return
 		}
 
-		updatedAt := time.Now()
 		var poisonedCgs []string
 		poisonedCgs = append(poisonedCgs, cgName)
 
@@ -139,13 +132,13 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		if exist {
-			err := db.UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq), updatedAt)
+			err := db.UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq))
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
 			}
 		} else {
-			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison", "")
+			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, "poison", "")
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
@@ -205,7 +198,6 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 			messageDetails.Size = len(v.MessageDetails.Data) + len(v.MessageDetails.Headers)
 			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
 		}
-
 	}
 
 	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
@@ -378,7 +370,7 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	return result, nil
 }
 
-func RemovePoisonedCg(stationId int, cgName string, updatedAt time.Time) error {
+func RemovePoisonedCg(stationId int, cgName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
@@ -387,12 +379,12 @@ func RemovePoisonedCg(stationId int, cgName string, updatedAt time.Time) error {
 	}
 	defer conn.Release()
 
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1), updated_at = $2 WHERE station_id=$3`
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$3`
 	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, updatedAt, stationId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
 	if err != nil {
 		return err
 	}
@@ -463,36 +455,4 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 	})
 
 	return poisonedCgs, nil
-}
-
-func GetDlsSubject(subjType, stationName, id, cgName string) string {
-	suffix := _EMPTY_
-	if cgName != _EMPTY_ {
-		suffix = tsep + cgName
-	}
-	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id + suffix
-}
-
-func ResendDlsMessage(msgId int, cgName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
-	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1;`
-
-	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

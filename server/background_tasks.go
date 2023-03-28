@@ -136,43 +136,6 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
-func ackPoisonMsgV0(msgId string, cgName string) error {
-	splitId := strings.Split(msgId, dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	amount := uint64(1)
-	internalCgName := replaceDelimiters(cgName)
-	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
-	timeout := 30 * time.Second
-	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-	if err != nil {
-		return err
-	}
-
-	if len(msgs) != 1 {
-		return errors.New("message was not found")
-	}
-
-	msg := msgs[0]
-	var dlsMsg models.DlsMessage
-	err = json.Unmarshal(msg.Data, &dlsMsg)
-	if err != nil {
-		return err
-	}
-
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -182,7 +145,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			err = ResendDlsMessage(msgToAck.ID, msgToAck.CgName)
+			err = db.RemovePoisonedCgsAfterAck(msgToAck.ID, msgToAck.CgName)
 			if err != nil {
 				return
 			}
@@ -428,7 +391,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)
 			if err != nil {
-				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 
@@ -438,14 +401,14 @@ func (s *Server) ListenSchemaVerseDls() error {
 				return
 			}
 			if !exist {
-				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + ": " + "is not exists")
+				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + "couldn't been found")
 				return
 
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 
@@ -453,17 +416,11 @@ func (s *Server) ListenSchemaVerseDls() error {
 				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
 				return
 			}
-			var createdAt time.Time
-			if message.CreatedAt.IsZero() {
-				createdAt = time.Unix(0, message.CreationUnix*1000000)
-			} else {
-				createdAt = message.CreatedAt
-			}
 
 			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), createdAt, "schema", message.ValidationError)
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), "schema", message.ValidationError)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 		}(copyBytes(msg))
@@ -476,9 +433,9 @@ func (s *Server) ListenSchemaVerseDls() error {
 }
 
 func (s *Server) ListenForDlsRetentionUpdate() error {
-	currentTime := time.Now()
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
+		currentTime := time.Now()
 		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
 		if err != nil {
 			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())

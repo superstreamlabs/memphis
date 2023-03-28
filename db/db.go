@@ -1499,14 +1499,14 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, s.name, p.created_at, p.is_active, p.is_deleted, c.client_address
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name, p.is_active, p.is_deleted, c.client_address
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
 	LEFT JOIN connections AS c
 	ON c.id = p.connection_id
 	WHERE p.connection_id = $1 AND p.is_active = true
-	GROUP BY p.id, s.id`
+	GROUP BY p.id, s.id, c.client_address`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
@@ -1555,7 +1555,7 @@ func GetProducerByID(id int) (bool, models.Producer, error) {
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE id = $1`
+	query := `SELECT * FROM producers WHERE id = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -2340,14 +2340,11 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name  
 		FROM consumers AS c
-		FROM
-		consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE
-		c.connection_id = $1
+		WHERE c.connection_id = $1
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
@@ -3910,10 +3907,9 @@ func GetImage(name string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, updatedAt time.Time, messageType, validationError string) (models.DlsMessage, error) {
+func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, messageType, validationError string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.DlsMessage{}, err
@@ -3937,15 +3933,15 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
-
+	updatedAt := time.Now()
 	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType, validationError)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
 	defer rows.Close()
-	var messagePaylodId int
+	var messagePayloadId int
 	for rows.Next() {
-		err := rows.Scan(&messagePaylodId)
+		err := rows.Scan(&messagePayloadId)
 		if err != nil {
 			return models.DlsMessage{}, err
 		}
@@ -3959,11 +3955,11 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		TimeSent: messageDetails.TimeSent,
 		Size:     messageDetails.Size,
 		Data:     messageDetails.Data,
-		// Headers:  messageDetails.headersJson,
+		Headers:  messageDetails.Headers,
 	}
 
 	deadLetterPayload := models.DlsMessage{
-		ID:             messagePaylodId,
+		ID:             messagePayloadId,
 		StationId:      stationId,
 		MessageSeq:     messageSeq,
 		ProducerId:     producerId,
@@ -3977,7 +3973,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if !strings.Contains(pgErr.Detail, "already exists") {
-					return models.DlsMessage{}, errors.New("messages table already exists")
+					return models.DlsMessage{}, errors.New("dls_messages table already exists")
 				} else {
 					return models.DlsMessage{}, errors.New(pgErr.Detail)
 				}
@@ -4027,7 +4023,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 
 }
 
-func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
+func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4036,11 +4032,12 @@ func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, 
 	}
 	defer conn.Release()
 
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3`
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs))`
 	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
 	if err != nil {
 		return err
 	}
+	updatedAt := time.Now()
 	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
 	if err != nil {
 		return err
@@ -4122,7 +4119,7 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 
 }
 
-func DropPoisonDlsMessages(messageIds []int) error {
+func DropDlsMessages(messageIds []int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4141,5 +4138,51 @@ func DropPoisonDlsMessages(messageIds []int) error {
 	if err != nil {
 		return errors.New("dropSchemaDlsMsg: " + err.Error())
 	}
+	return nil
+}
+
+func PurgeDlsMsgsFromStation(station_id int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "purge_dls_messages", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, station_id)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	return nil
+}
+
+func RemovePoisonedCgsAfterAck(msgId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
+	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1 AND id = $2;`
+
+	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

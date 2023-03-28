@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -128,11 +127,6 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			return err
 		}
-	}
-
-	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-		return err
 	}
 
 	DeleteTagsFromStation(station.ID)
@@ -1101,7 +1095,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 		return
 	}
 
-	err := db.DropPoisonDlsMessages(body.DlsMessageIds)
+	err := db.DropDlsMessages(body.DlsMessageIds)
 	if err != nil {
 		serv.Errorf("DropDlsMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1161,12 +1155,11 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				headersJson[key] = value
 			}
 			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(uint64(dlsMsg.MessageSeq), 10)
 			headersJson["$memphis_pm_cg_name"] = cgName
 
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCgs[0].CgName + ": " + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1858,7 +1851,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		serv.Errorf("PurgeStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1881,9 +1874,8 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeDls {
-		streamName := fmt.Sprintf(dlsStreamName, stationName.Intern())
-		err = sh.S.PurgeStream(streamName)
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+		err := db.PurgeDlsMsgsFromStation(station.ID)
+		if err != nil {
 			serv.Errorf("PurgeStation dls: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return

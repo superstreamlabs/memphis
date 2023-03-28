@@ -63,8 +63,6 @@ type SchemaVerseDlsMessageSdk struct {
 	StationName     string            `json:"station_name"`
 	Producer        ProducerDetails   `json:"producer"`
 	Message         MessagePayloadDls `json:"message"`
-	CreatedAt       time.Time         `json:"created_at"`
-	CreationUnix    int64             `json:"creation_unix"`
 	ValidationError string            `json:"validation_error"`
 }
 
