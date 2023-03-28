@@ -483,7 +483,7 @@ func ResendDlsMessage(msgId int, cgName string) error {
 	defer conn.Release()
 
 	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
-	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1;`
+	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1 AND id = $2;`
 
 	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
 	if err != nil {
