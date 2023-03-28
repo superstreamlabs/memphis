@@ -1408,7 +1408,7 @@ func UpdateStationsOfDeletedUser(userId int) error {
 }
 
 func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
-	var stationNames []string
+	stationNames := []string{}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
