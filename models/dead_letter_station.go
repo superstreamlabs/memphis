@@ -93,9 +93,8 @@ type DlsMessageResponse struct {
 }
 
 type PmAckMsg struct {
-	ID       int    `json:"id" binding:"required"`
-	CgName   string `json:"cg_name"`
-	Sequence string `json:"sequence"`
+	ID     int    `json:"id" binding:"required"`
+	CgName string `json:"cg_name"`
 }
 
 type LightDlsMessage struct {
