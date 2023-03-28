@@ -255,6 +255,5 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		return err
 	}
 
-	serv.Noticef("Client has been disconnected from Memphis")
 	return nil
 }
