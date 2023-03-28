@@ -438,10 +438,23 @@ func (s *Server) ListenSchemaVerseDls() error {
 	return nil
 }
 
+func removeTimezone(dateTime time.Time) (time.Time, error) {
+	dateTimeString := dateTime.Format("2006-01-02 15:04:05")
+	parsedDateTime, err := time.Parse("2006-01-02 15:04:05", dateTimeString)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return parsedDateTime, nil
+}
+
 func (s *Server) ListenForDlsRetentionUpdate() error {
-	currentTime := time.Now()
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
+		currentTime, err := removeTimezone(time.Now())
+		if err != nil {
+			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+			return err
+		}
 		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
 		if err != nil {
 			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
@@ -449,6 +462,11 @@ func (s *Server) ListenForDlsRetentionUpdate() error {
 		}
 		for _, updatedAtValue := range updatedAtValues {
 			configurationTime := updatedAtValue.Updated_at.Add(time.Hour * time.Duration(s.opts.DlsRetentionHours))
+			configurationTime, err = removeTimezone(configurationTime)
+			if err != nil {
+				serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+				return err
+			}
 			if currentTime.After(configurationTime) || currentTime.Equal(configurationTime) {
 				err := db.DeleteOldDlsMessageByRetention(updatedAtValue.Updated_at)
 				if err != nil {
