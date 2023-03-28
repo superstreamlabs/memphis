@@ -435,21 +435,11 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 func (s *Server) RemoveOldDlsMsgs() error {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
-		currentTime := time.Now()
-		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
+		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
+		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
 			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
 			return err
-		}
-		for _, updatedAtValue := range updatedAtValues {
-			configurationTime := updatedAtValue.Updated_at.Add(time.Hour * time.Duration(s.opts.DlsRetentionHours))
-			if currentTime.After(configurationTime) || currentTime.Equal(configurationTime) {
-				err := db.DeleteOldDlsMessageByRetention(updatedAtValue.Updated_at)
-				if err != nil {
-					serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
-					return err
-				}
-			}
 		}
 	}
 	
