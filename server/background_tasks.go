@@ -136,42 +136,6 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
-func ackPoisonMsgV0(msgId string, cgName string) error {
-	splitId := strings.Split(msgId, dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	amount := uint64(1)
-	internalCgName := replaceDelimiters(cgName)
-	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
-	timeout := 30 * time.Second
-	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-	if err != nil {
-		return err
-	}
-
-	if len(msgs) != 1 {
-		return errors.New("message was not found")
-	}
-
-	msg := msgs[0]
-	var dlsMsg models.DlsMessage
-	err = json.Unmarshal(msg.Data, &dlsMsg)
-	if err != nil {
-		return err
-	}
-
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
