@@ -324,7 +324,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
 
     const updateStations = (stationsList) => {
         let updatedValue = { ...schemaDetails };
-        updatedValue['used_stations'] = stationsList;
+        if (updatedValue['used_stations']) updatedValue['used_stations'] = [...updatedValue['used_stations'], ...stationsList];
+        else updatedValue['used_stations'] = stationsList;
         setSchemaDetails((schemaDetails) => ({ ...schemaDetails, ...updatedValue }));
         dispatch({ type: 'SET_IS_USED', payload: { schemaName: schemaName } });
     };
