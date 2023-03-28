@@ -16,7 +16,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"sort"
@@ -463,14 +462,6 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 	})
 
 	return poisonedCgs, nil
-}
-
-func GetDlsSubject(subjType, stationName, id, cgName string) string {
-	suffix := _EMPTY_
-	if cgName != _EMPTY_ {
-		suffix = tsep + cgName
-	}
-	return fmt.Sprintf(dlsStreamName, stationName) + tsep + subjType + tsep + id + suffix
 }
 
 func ResendDlsMessage(msgId int, cgName string) error {

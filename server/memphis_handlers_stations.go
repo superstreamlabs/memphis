@@ -130,11 +130,6 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		}
 	}
 
-	err = s.RemoveStream(fmt.Sprintf(dlsStreamName, stationName.Intern()))
-	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-		return err
-	}
-
 	DeleteTagsFromStation(station.ID)
 
 	err = db.DeleteProducersByStationID(station.ID)
