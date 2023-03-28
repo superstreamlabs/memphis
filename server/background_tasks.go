@@ -391,7 +391,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)
 			if err != nil {
-				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 
@@ -401,14 +401,14 @@ func (s *Server) ListenSchemaVerseDls() error {
 				return
 			}
 			if !exist {
-				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + ": " + "is not exists")
+				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + "couldn't been found")
 				return
 
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 
@@ -426,7 +426,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 			poisnedCgs := []string{}
 			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), createdAt, "schema", message.ValidationError)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: Error while getting notified about a poison message: " + err.Error())
+				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
 			}
 		}(copyBytes(msg))

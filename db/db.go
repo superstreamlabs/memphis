@@ -4119,7 +4119,7 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 
 }
 
-func DropPoisonDlsMessages(messageIds []int) error {
+func DropDlsMessages(messageIds []int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)

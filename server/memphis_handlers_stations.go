@@ -1095,7 +1095,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 		return
 	}
 
-	err := db.DropPoisonDlsMessages(body.DlsMessageIds)
+	err := db.DropDlsMessages(body.DlsMessageIds)
 	if err != nil {
 		serv.Errorf("DropDlsMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1155,12 +1155,11 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				headersJson[key] = value
 			}
 			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-			headersJson["$memphis_pm_sequence"] = strconv.FormatUint(uint64(dlsMsg.MessageSeq), 10)
 			headersJson["$memphis_pm_cg_name"] = cgName
 
 			headers, err := json.Marshal(headersJson)
 			if err != nil {
-				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + dlsMsg.PoisonedCgs[0].CgName + ": " + err.Error())
+				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
