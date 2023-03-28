@@ -100,7 +100,7 @@ const Messages = () => {
                 element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
-    }, [stationState?.stationSocketData]);
+    }, []);
 
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -136,7 +136,9 @@ const Messages = () => {
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === subTabs[0].name
+                tabValue === tabs[0]
+                    ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
+                    : subTabValue === subTabs[0].name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });

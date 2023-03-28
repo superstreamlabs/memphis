@@ -91,7 +91,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
         try {
             const data = await httpRequest('POST', ApiEndpoints.USE_SCHEMA, { station_names: isCheck, schema_name: schemaName });
             if (data) {
-                !update && handleAttachedStations([...attachedStations, ...isCheck]);
+                !update && handleAttachedStations(isCheck);
                 setAttachLoader(false);
                 close();
             }
