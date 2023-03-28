@@ -1499,14 +1499,14 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, s.name, p.created_at, p.is_active, p.is_deleted, c.client_address
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name, p.is_active, p.is_deleted, c.client_address
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
 	LEFT JOIN connections AS c
 	ON c.id = p.connection_id
 	WHERE p.connection_id = $1 AND p.is_active = true
-	GROUP BY p.id, s.id`
+	GROUP BY p.id, s.id, c.client_address`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
@@ -2340,14 +2340,11 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name  
 		FROM consumers AS c
-		FROM
-		consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE
-		c.connection_id = $1
+		WHERE c.connection_id = $1
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
