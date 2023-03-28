@@ -136,7 +136,6 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
-
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -146,7 +145,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			err = ResendDlsMessage(msgToAck.ID, msgToAck.CgName)
+			err = db.RemovePoisonedCgsAfterAck(msgToAck.ID, msgToAck.CgName)
 			if err != nil {
 				return
 			}

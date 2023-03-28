@@ -1555,7 +1555,7 @@ func GetProducerByID(id int) (bool, models.Producer, error) {
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE id = $1`
+	query := `SELECT * FROM producers WHERE id = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
@@ -3956,7 +3956,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		TimeSent: messageDetails.TimeSent,
 		Size:     messageDetails.Size,
 		Data:     messageDetails.Data,
-		// Headers:  messageDetails.headersJson,
+		Headers:  messageDetails.Headers,
 	}
 
 	deadLetterPayload := models.DlsMessage{
@@ -4024,7 +4024,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 
 }
 
-func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
+func UpdatePoisonedCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4160,5 +4160,29 @@ func PurgeDlsMsgsFromStation(station_id int) error {
 	if err != nil {
 		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
 	}
+	return nil
+}
+
+func RemovePoisonedCgsAfterAck(msgId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
+	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1 AND id = $2;`
+
+	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
