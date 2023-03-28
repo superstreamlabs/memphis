@@ -122,10 +122,6 @@ func (s *Server) getJsApiReplySubject() string {
 	return sb.String()
 }
 
-func AddUser(username string) (string, error) {
-	return serv.opts.Authorization, nil
-}
-
 func RemoveUser(username string) error {
 	return nil
 }
@@ -1190,10 +1186,10 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) GetMemphisOpts(opts *Options) (*Options, error) {
+func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
-		return nil, err
+		return Options{}, err
 	}
 
 	for _, conf := range configs {
@@ -1213,7 +1209,41 @@ func (s *Server) GetMemphisOpts(opts *Options) (*Options, error) {
 			opts.BrokerHost = conf.Value
 		case "rest_gw_host":
 			opts.RestGwHost = conf.Value
+		case "max_msg_size_mb":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
+	}
+	if configuration.USER_PASS_BASED_AUTH {
+		if len(opts.Users) > 0 {
+			usersToUpsert := []models.User{}
+			for _, user := range opts.Users {
+				newUser := models.User{
+					Username:  user.Username,
+					Password:  user.Password,
+					UserType:  "application",
+					CreatedAt: time.Now(),
+					AvatarId:  1,
+					FullName:  "",
+				}
+				usersToUpsert = append(usersToUpsert, newUser)
+			}
+			err = db.UpsertBatchOfUsers(usersToUpsert)
+			if err != nil {
+				return Options{}, err
+			}
+		}
+
+		users, err := db.GetAllUsersByType("application")
+		if err != nil {
+			return Options{}, err
+		}
+		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
+		appUsers = append(appUsers, &User{Username: "$memphis_user", Password: configuration.CONNECTION_TOKEN})
+		for _, user := range users {
+			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+		}
+		opts.Users = appUsers
 	}
 
 	return opts, nil

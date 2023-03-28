@@ -710,6 +710,84 @@ func (o *mqttInactiveThresholdReload) Apply(s *Server) {
 	s.Noticef("Reloaded: MQTT consumer_inactive_threshold = %v", o.newValue)
 }
 
+// dlsRetentionHoursOption implements the option interface for the `dls_retention_hours`
+// setting.
+type dlsRetentionHoursOption struct {
+	noopOption
+	newValue int
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *dlsRetentionHoursOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: dls_retention_hours = %d", o.newValue)
+}
+
+// logsRetentionDaysOption implements the option interface for the `logs_retention_days`
+// setting.
+type logsRetentionDaysOption struct {
+	noopOption
+	newValue int
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *logsRetentionDaysOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: logs_retention_days = %d", o.newValue)
+}
+
+// tStorageuploadIntervalSecOption implements the option interface for the `tiered_storage_upload_interval_seconds`
+// setting.
+type tStorageuploadIntervalSecOption struct {
+	noopOption
+	newValue int
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *tStorageuploadIntervalSecOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: tiered_storage_upload_interval_seconds = %d", o.newValue)
+}
+
+// uiHostOption implements the option interface for the `ui_host`
+// setting.
+type uiHostOption struct {
+	noopOption
+	newValue string
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *uiHostOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: ui_host = %v", o.newValue)
+}
+
+// brokerHostOption implements the option interface for the `broker_host`
+// setting.
+type brokerHostOption struct {
+	noopOption
+	newValue string
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *brokerHostOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: broker_host = %v", o.newValue)
+}
+
+// restGwOption implements the option interface for the `rest_gw_host`
+// setting.
+type restGwOption struct {
+	noopOption
+	newValue string
+}
+
+// Apply the setting by updating the server info and each client.
+func (o *restGwOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: rest_gw_host = %v", o.newValue)
+}
+
 // Compares options and disconnects clients that are no longer listed in pinned certs. Lock must not be held.
 func (s *Server) recheckPinnedCerts(curOpts *Options, newOpts *Options) {
 	s.mu.Lock()
@@ -780,8 +858,8 @@ func (s *Server) Reload() error {
 		return err
 	}
 
-	memphisOpts, _ := s.GetMemphisOpts(newOpts)
-	return s.ReloadOptions(memphisOpts)
+	memphisOpts, _ := s.GetMemphisOpts(*newOpts)
+	return s.ReloadOptions(&memphisOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option
@@ -1348,6 +1426,18 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 			}
 		case "ocspconfig":
 			diffOpts = append(diffOpts, &ocspOption{newValue: newValue.(*OCSPConfig)})
+		case "logsretentiondays":
+			diffOpts = append(diffOpts, &logsRetentionDaysOption{newValue: newValue.(int)})
+		case "dlsretentionhours":
+			diffOpts = append(diffOpts, &dlsRetentionHoursOption{newValue: newValue.(int)})
+		case "tieredstorageuploadintervalsec":
+			diffOpts = append(diffOpts, &tStorageuploadIntervalSecOption{newValue: newValue.(int)})
+		case "uihost":
+			diffOpts = append(diffOpts, &uiHostOption{newValue: newValue.(string)})
+		case "brokerhost":
+			diffOpts = append(diffOpts, &brokerHostOption{newValue: newValue.(string)})
+		case "restgwhost":
+			diffOpts = append(diffOpts, &restGwOption{newValue: newValue.(string)})
 		default:
 			// TODO(ik): Implement String() on those options to have a nice print.
 			// %v is difficult to figure what's what, %+v print private fields and

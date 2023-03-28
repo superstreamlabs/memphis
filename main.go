@@ -95,7 +95,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server, opts *server.Options) db.MetadataStorage {
+func runMemphis(s *server.Server) db.MetadataStorage {
 	if !s.MemphisInitialized() {
 		s.Fatalf("Jetstream not enabled on global account")
 	}
@@ -105,9 +105,6 @@ func runMemphis(s *server.Server, opts *server.Options) db.MetadataStorage {
 		s.Errorf("Failed initializing connection with the metadata db: " + err.Error())
 		os.Exit(1)
 	}
-
-	memphisOpts, _ := s.GetMemphisOpts(opts)
-	s.ReloadOptions(memphisOpts)
 
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
@@ -151,6 +148,10 @@ func runMemphis(s *server.Server, opts *server.Options) db.MetadataStorage {
 		env = "K8S"
 	}
 
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
 	s.Noticef("Memphis broker is ready, ENV: " + env)
 	return metadataDb
 }
@@ -198,7 +199,7 @@ func main() {
 		server.SnapshotMonitorInfo()
 	}
 
-	metadataDb := runMemphis(s, opts)
+	metadataDb := runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()

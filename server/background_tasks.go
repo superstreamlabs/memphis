@@ -65,7 +65,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
@@ -93,12 +93,14 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	return nil
 }
 
-func (s *Server) ListenForConfigurationsUpdateEvents() error {
-	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid"+s.Name(), func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForConfigReloadEvents() error {
+	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
-			memphisOpts, _ := s.GetMemphisOpts(s.opts)
-			s.ReloadOptions(memphisOpts)
+			err := s.Reload()
+			if err != nil {
+				s.Errorf("Failed reloading: " + err.Error())
+			}
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -150,7 +152,7 @@ func ackPoisonMsgV0(msgId string, cgName string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if len(msgs) != 1 {
 		return errors.New("message was not found")
 	}
@@ -290,7 +292,7 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
 	}
 
-	err = s.ListenForConfigurationsUpdateEvents()
+	err = s.ListenForConfigReloadEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
