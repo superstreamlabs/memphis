@@ -3974,7 +3974,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if !strings.Contains(pgErr.Detail, "already exists") {
-					return models.DlsMessage{}, errors.New("messages table already exists")
+					return models.DlsMessage{}, errors.New("dls_messages table already exists")
 				} else {
 					return models.DlsMessage{}, errors.New(pgErr.Detail)
 				}
@@ -4024,7 +4024,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 
 }
 
-func UpdatePoisonedCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int, updatedAt time.Time) error {
+func UpdatePoisonedCgsInDlsMessage(poisonedCg string, stationId, messageSeq int, updatedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4033,12 +4033,12 @@ func UpdatePoisonedCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int
 	}
 	defer conn.Release()
 
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3`
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs))`
 	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
+	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCg, stationId, messageSeq, updatedAt)
 	if err != nil {
 		return err
 	}
