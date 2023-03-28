@@ -245,11 +245,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
 	}
 
-	err = s.ListenSchemaVerseDls()
+	err = s.ListenForSchemaverseDlsEvents()
 	if err != nil {
 		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
 	}
-	go s.ListenForDlsRetentionUpdate()
+	go s.RemoveOldDlsMsgs()
 
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
@@ -385,42 +385,42 @@ func (s *Server) ListenForTieredStorageMessages() error {
 	return nil
 }
 
-func (s *Server) ListenSchemaVerseDls() error {
+func (s *Server) ListenForSchemaverseDlsEvents() error {
 	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 
 			exist, station, err := db.GetStationByName(message.StationName)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 			if !exist {
-				serv.Errorf("ListenSchemaVerseDls: station " + message.StationName + "couldn't been found")
+				serv.Errorf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
 				return
 
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 
 			if !exist {
-				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
+				serv.Warnf("ListenForSchemaverseDlsEvents: producer " + p.Name + " couldn't been found")
 				return
 			}
 
 			poisnedCgs := []string{}
 			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), "schema", message.ValidationError)
 			if err != nil {
-				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 		}(copyBytes(msg))
@@ -432,7 +432,7 @@ func (s *Server) ListenSchemaVerseDls() error {
 	return nil
 }
 
-func (s *Server) ListenForDlsRetentionUpdate() error {
+func (s *Server) RemoveOldDlsMsgs() error {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
 		currentTime := time.Now()
@@ -452,5 +452,6 @@ func (s *Server) ListenForDlsRetentionUpdate() error {
 			}
 		}
 	}
+	
 	return nil
 }
