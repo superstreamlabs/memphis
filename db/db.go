@@ -253,7 +253,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		producer_id INT NOT NULL, 
 		poisoned_cgs VARCHAR[],
 		message_details JSON NOT NULL,    
-		updated_at TIMESTAMP NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
 		PRIMARY KEY (id)
