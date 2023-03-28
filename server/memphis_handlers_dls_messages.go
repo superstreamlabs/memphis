@@ -115,7 +115,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			return
 		}
 
-		updatedAt := time.Now()
 		var poisonedCgs []string
 		poisonedCgs = append(poisonedCgs, cgName)
 
@@ -133,13 +132,13 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		if exist {
-			err := db.UpdatePoisonedCgsInDlsMessage(cgName, station.ID, int(messageSeq), updatedAt)
+			err := db.UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq))
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return
 			}
 		} else {
-			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, updatedAt, "poison", "")
+			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, "poison", "")
 			if err != nil {
 				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 				return

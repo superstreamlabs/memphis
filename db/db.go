@@ -3907,10 +3907,9 @@ func GetImage(name string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, updatedAt time.Time, messageType, validationError string) (models.DlsMessage, error) {
+func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, messageType, validationError string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
 		return models.DlsMessage{}, err
@@ -3934,15 +3933,15 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
-
+	updatedAt := time.Now()
 	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType, validationError)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
 	defer rows.Close()
-	var messagePaylodId int
+	var messagePayloadId int
 	for rows.Next() {
-		err := rows.Scan(&messagePaylodId)
+		err := rows.Scan(&messagePayloadId)
 		if err != nil {
 			return models.DlsMessage{}, err
 		}
@@ -3960,7 +3959,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 	}
 
 	deadLetterPayload := models.DlsMessage{
-		ID:             messagePaylodId,
+		ID:             messagePayloadId,
 		StationId:      stationId,
 		MessageSeq:     messageSeq,
 		ProducerId:     producerId,
@@ -4024,7 +4023,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 
 }
 
-func UpdatePoisonedCgsInDlsMessage(poisonedCg string, stationId, messageSeq int, updatedAt time.Time) error {
+func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4038,7 +4037,8 @@ func UpdatePoisonedCgsInDlsMessage(poisonedCg string, stationId, messageSeq int,
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCg, stationId, messageSeq, updatedAt)
+	updatedAt := time.Now()
+	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
 	if err != nil {
 		return err
 	}

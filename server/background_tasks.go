@@ -416,15 +416,9 @@ func (s *Server) ListenSchemaVerseDls() error {
 				serv.Warnf("ListenSchemaVerseDls: producer " + p.Name + " couldn't been found")
 				return
 			}
-			var createdAt time.Time
-			if message.CreatedAt.IsZero() {
-				createdAt = time.Unix(0, message.CreationUnix*1000000)
-			} else {
-				createdAt = message.CreatedAt
-			}
 
 			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), createdAt, "schema", message.ValidationError)
+			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), "schema", message.ValidationError)
 			if err != nil {
 				serv.Errorf("ListenSchemaVerseDls: " + err.Error())
 				return
@@ -439,9 +433,9 @@ func (s *Server) ListenSchemaVerseDls() error {
 }
 
 func (s *Server) ListenForDlsRetentionUpdate() error {
-	currentTime := time.Now()
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
+		currentTime := time.Now()
 		updatedAtValues, err := db.GetUpdatedAtValueFromDls()
 		if err != nil {
 			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
