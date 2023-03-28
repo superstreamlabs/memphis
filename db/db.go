@@ -80,7 +80,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		message TEXT NOT NULL,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		PRIMARY KEY (id));
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
@@ -93,7 +93,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		password TEXT NOT NULL,
 		type enum NOT NULL DEFAULT 'root',
 		already_logged_in BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		avatar_id SERIAL NOT NULL,
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
@@ -111,7 +111,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
 		PRIMARY KEY (id));`
 
@@ -160,7 +160,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
@@ -189,8 +189,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		replicas SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
-		updated_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL,
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
@@ -208,7 +208,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		active BOOL NOT NULL DEFAULT false,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
@@ -231,7 +231,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
