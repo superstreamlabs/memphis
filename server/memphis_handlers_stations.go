@@ -1048,21 +1048,8 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMsgDetails(messageId int, stationName, dlsType string) (models.DlsMessageResponse, error) {
-	var dlsMessage models.DlsMessageResponse
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return dlsMessage, err
-	}
-	exist, station, err := db.GetStationByName(sn.Ext())
-	if err != nil {
-		return dlsMessage, err
-	}
-	if !exist {
-		return dlsMessage, errors.New("Station " + station.Name + " does not exist")
-	}
-
-	return getDlsMessageById(station, messageId, sn, dlsType)
+func (sh StationsHandler) GetDlsMsgDetails(messageId int, dlsType string) (models.DlsMessageResponse, error) {
+	return getDlsMessageDetailsById(messageId, dlsType)
 }
 
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
@@ -1072,7 +1059,7 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, "poison")
+	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1190,7 +1177,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	msgId := body.MessageId
 
 	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.StationName, body.DlsType)
+		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.DlsType)
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

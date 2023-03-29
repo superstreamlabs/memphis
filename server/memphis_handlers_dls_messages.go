@@ -182,13 +182,26 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	return poisonMessages, schemaMessages, totalDlsAmount, nil
 }
 
-func getDlsMessageById(station models.Station, messageId int, sn StationName, dlsType string) (models.DlsMessageResponse, error) {
+func getDlsMessageDetailsById(messageId int, dlsType string) (models.DlsMessageResponse, error) {
 	exist, dlsMessage, err := db.GetDlsMessageById(messageId)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}
 	if !exist {
 		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
+	}
+
+	exist, station, err := db.GetStationById(dlsMessage.StationId)
+	if err != nil {
+		return models.DlsMessageResponse{}, err
+	}
+	if !exist {
+		return models.DlsMessageResponse{}, errors.New("Station " + station.Name + " does not exists")
+	}
+
+	sn, err := StationNameFromStr(station.Name)
+	if err != nil {
+		return models.DlsMessageResponse{}, err
 	}
 
 	poisonedCgs := []models.PoisonedCg{}

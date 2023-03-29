@@ -167,8 +167,7 @@ type RemoveStationSchema struct {
 }
 
 type GetPoisonMessageJourneySchema struct {
-	MessageId   int    `form:"message_id" json:"message_id" binding:"required"`
-	StationName string `form:"station_name" json:"station_name" binding:"required"`
+	MessageId int `form:"message_id" json:"message_id" binding:"required"`
 }
 
 // TODO: remove

@@ -899,6 +899,34 @@ func GetStationByName(name string) (bool, models.Station, error) {
 	return true, stations[0], nil
 }
 
+func GetStationById(messageId int) (bool, models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE id = $1 AND (is_deleted = false OR is_deleted IS NULL) LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_id", query)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return false, models.Station{}, nil
+	}
+	return true, stations[0], nil
+}
+
 func InsertNewStation(
 	stationName string,
 	userId int,
@@ -3884,37 +3912,37 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 }
 
 func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
-    ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-    defer cancelfunc()
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
 
-    connection, err := MetadataDbClient.Client.Acquire(ctx)
-    if err != nil {
-        return false, models.DlsMessage{}, err
-    }
-    defer connection.Release()
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer connection.Release()
 
-    query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
 
-    stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
-    if err != nil {
-        return false, models.DlsMessage{}, err
-    }
+	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
 
-    rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
-    if err != nil {
-        return false, models.DlsMessage{}, err
-    }
-    defer rows.Close()
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer rows.Close()
 
-    message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-    if err != nil {
-        return false, models.DlsMessage{}, err
-    }
-    if len(message) == 0 {
-        return false, models.DlsMessage{}, nil
-    }
+	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	if len(message) == 0 {
+		return false, models.DlsMessage{}, nil
+	}
 
-    return true, message[0], nil
+	return true, message[0], nil
 
 }
 

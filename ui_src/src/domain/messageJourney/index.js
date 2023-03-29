@@ -32,7 +32,7 @@ import pathDomains from '../../router';
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
     const url = window.location.href;
-    const messageId = url.split('stations/')[1].split('/')[1];
+    const messageId = parseInt(url.split('stations/')[1].split('/')[1]);
     const stationName = url.split('stations/')[1].split('/')[0];
     const [isLoading, setisLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
@@ -45,7 +45,7 @@ const MessageJourney = () => {
     const getPosionMessageDetails = async () => {
         setisLoading(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}&station_name=${stationName}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_POISON_MESSAGE_JOURNEY}?message_id=${messageId}`);
             arrangeData(data);
         } catch (error) {
             setisLoading(false);
