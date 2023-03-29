@@ -3883,6 +3883,41 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 	return deadLetterPayload, nil
 }
 
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
+    ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+    defer cancelfunc()
+
+    connection, err := MetadataDbClient.Client.Acquire(ctx)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    defer connection.Release()
+
+    query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+
+    stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+
+    rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    defer rows.Close()
+
+    message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    if len(message) == 0 {
+        return false, models.DlsMessage{}, nil
+    }
+
+    return true, message[0], nil
+
+}
+
 func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4089,7 +4124,7 @@ func PurgeDlsMsgsFromStation(station_id int) error {
 	return nil
 }
 
-func RemovePoisonedCgsAfterAck(msgId int, cgName string) error {
+func RemoveCgFromDlsMsg(msgId int, cgName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4110,5 +4145,84 @@ func RemovePoisonedCgsAfterAck(msgId int, cgName string) error {
 		return err
 	}
 
+	return nil
+}
+
+func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+
+}
+
+func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where id=$1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_id", query)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return false, models.DlsMessage{}, nil
+	}
+	return true, dlsMsgs[0], nil
+}
+
+func RemovePoisonedCg(stationId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
+	if err != nil {
+		return err
+	}
 	return nil
 }

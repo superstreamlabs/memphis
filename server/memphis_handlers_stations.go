@@ -1118,7 +1118,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	stationName := body.StationName
+	stationName := strings.ToLower(body.StationName)
 	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
@@ -1128,30 +1128,22 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	if !exist {
 		serv.Warnf("ResendPoisonMessages: Station " + stationName + " does not exist")
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Server error"})
 		return
 	}
 
-	stationNameStruct, err := StationNameFromStr(station.Name)
+	dlsMsgs, err := db.GetDlsMsgsByStationId(station.ID)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	for _, msgId := range body.PoisonMessageIds {
-		dlsMsg, err := getDlsMessageById(station, msgId, stationNameStruct, "poison")
-		if err != nil {
-			serv.Errorf("ResendPoisonMessages: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
+	for _, dlsMsg := range dlsMsgs {
 
-		for _, name := range dlsMsg.PoisonedCgs {
-			cgName := name.CgName
+		for _, cgName := range dlsMsg.PoisonedCgs {
 			headersJson := map[string]string{}
-			for key, value := range dlsMsg.Message.Headers {
+			for key, value := range dlsMsg.MessageDetails.Headers {
 				headersJson[key] = value
 			}
 			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
@@ -1164,7 +1156,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				return
 			}
 
-			data, err := hex.DecodeString(dlsMsg.Message.Data)
+			data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
 			if err != nil {
 				serv.Errorf("ResendPoisonMessages: Poisoned consumer group: " + cgName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
