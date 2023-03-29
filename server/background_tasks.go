@@ -145,7 +145,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			err = db.RemovePoisonedCgsAfterAck(msgToAck.ID, msgToAck.CgName)
+			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName)
 			if err != nil {
 				return
 			}
@@ -338,11 +338,11 @@ func (s *Server) ListenForTieredStorageMessages() error {
 				if len(rawMsg) == 2 {
 					err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
 					if err != nil {
-						serv.Errorf("Failed unmarshalling tiered storage message: " + err.Error())
+						serv.Errorf("ListenForTieredStorageMessages: Failed unmarshalling tiered storage message: " + err.Error())
 						return
 					}
 				} else {
-					serv.Errorf("Invalid tiered storage message structure: message must contains msg-id header")
+					serv.Errorf("ListenForTieredStorageMessages: Invalid tiered storage message structure: message must contains msg-id header")
 					return
 				}
 				payload := tieredStorageMsg.Buf
@@ -351,7 +351,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 				seq, _, _ := ackReplyInfo(reply)
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("Failed convert rawTs from string to int")
+					serv.Errorf("ListenForTieredStorageMessages: Failed convert rawTs from string to int")
 					return
 				}
 
@@ -378,7 +378,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		serv.Errorf("Failed queueSubscribe tiered storage: " + err.Error())
+		serv.Errorf("ListenForTieredStorageMessages: Failed queueSubscribe tiered storage: " + err.Error())
 		return err
 	}
 
@@ -401,7 +401,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 			if !exist {
-				serv.Errorf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
+				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
 				return
 
 			}
@@ -438,10 +438,9 @@ func (s *Server) RemoveOldDlsMsgs() error {
 		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
 		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
-			serv.Errorf("Failed get all updated at dls messages values: " + err.Error())
+			serv.Errorf("RemoveOldDlsMsgs: " + err.Error())
 			return err
 		}
 	}
-	
 	return nil
 }

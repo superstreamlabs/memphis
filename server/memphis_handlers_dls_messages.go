@@ -12,7 +12,6 @@
 package server
 
 import (
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -20,9 +19,6 @@ import (
 	"memphis/models"
 	"sort"
 	"strings"
-	"time"
-
-	"github.com/jackc/pgx/v5"
 )
 
 const (
@@ -159,29 +155,9 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
 
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	dlsMsgs, err := db.GetDlsMsgsByStationId(station.ID)
 	if err != nil {
 		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
-	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, station.ID)
-	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, nil
 	}
 
 	for _, v := range dlsMsgs {
@@ -222,29 +198,12 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 }
 
 func getDlsMessageById(station models.Station, messageId int, sn StationName, dlsType string) (models.DlsMessageResponse, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
+	exist, dlsMessage, err := db.GetDlsMessageById(messageId)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where id=$1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_id", query)
-	if err != nil {
-		return models.DlsMessageResponse{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId)
-	if err != nil {
-		return models.DlsMessageResponse{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return models.DlsMessageResponse{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return models.DlsMessageResponse{}, nil
+	if !exist {
+		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
 	}
 
 	poisonedCgs := []models.PoisonedCg{}
@@ -253,21 +212,21 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	var connectionId string
 
 	msgDetails := models.MessagePayloadDls{
-		TimeSent: dlsMsgs[0].MessageDetails.TimeSent,
-		Size:     dlsMsgs[0].MessageDetails.Size,
-		Data:     dlsMsgs[0].MessageDetails.Data,
-		Headers:  dlsMsgs[0].MessageDetails.Headers,
+		TimeSent: dlsMessage.MessageDetails.TimeSent,
+		Size:     dlsMessage.MessageDetails.Size,
+		Data:     dlsMessage.MessageDetails.Data,
+		Headers:  dlsMessage.MessageDetails.Headers,
 	}
 	dlsMsg := models.DlsMessage{
-		ID:              dlsMsgs[0].ID,
-		StationId:       dlsMsgs[0].StationId,
-		MessageSeq:      dlsMsgs[0].MessageSeq,
-		ProducerId:      dlsMsgs[0].ProducerId,
-		PoisonedCgs:     dlsMsgs[0].PoisonedCgs,
+		ID:              dlsMessage.ID,
+		StationId:       dlsMessage.StationId,
+		MessageSeq:      dlsMessage.MessageSeq,
+		ProducerId:      dlsMessage.ProducerId,
+		PoisonedCgs:     dlsMessage.PoisonedCgs,
 		MessageDetails:  msgDetails,
-		UpdatedAt:       dlsMsgs[0].UpdatedAt,
-		MessageType:     dlsMsgs[0].MessageType,
-		ValidationError: dlsMsgs[0].ValidationError,
+		UpdatedAt:       dlsMessage.UpdatedAt,
+		MessageType:     dlsMessage.MessageType,
+		ValidationError: dlsMessage.ValidationError,
 	}
 
 	if station.IsNative {
@@ -297,7 +256,6 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
-		// if dlsType == "poison" {
 		for _, v := range pCg {
 			cgInfo, err := serv.GetCgInfo(sn, v)
 			if err != nil {
@@ -321,7 +279,7 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 		}
 
 		if dlsType == "schema" {
-			size := len(dlsMsgs[0].MessageDetails.Data) + len(dlsMsgs[0].MessageDetails.Headers)
+			size := len(dlsMessage.MessageDetails.Data) + len(dlsMessage.MessageDetails.Headers)
 			dlsMsg.MessageDetails.Size = size
 		}
 
@@ -370,62 +328,18 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	return result, nil
 }
 
-func RemovePoisonedCg(stationId int, cgName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$3`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.PoisonedCg, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	connection, err := db.MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.PoisonedCg{}, err
-	}
-	defer connection.Release()
-
-	query := `SELECT dls.poisoned_cgs FROM dls_messages as dls WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
-
-	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_message", query)
+	var dlsMsg models.DlsMessage
+	_, dlsMsg, err := db.GetMsgByStationIdAndMsgSeq(station.ID, messageSeq)
 	if err != nil {
 		return []models.PoisonedCg{}, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, station.ID, messageSeq)
-	if err != nil {
-		return []models.PoisonedCg{}, err
-	}
-	defer rows.Close()
-
-	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.PoisonedCgResponse])
-	if err != nil {
-		return []models.PoisonedCg{}, err
-	}
-
-	if len(cgs) == 0 {
-		return []models.PoisonedCg{}, nil
-	}
+	cgs := dlsMsg.PoisonedCgs
 
 	poisonedCg := models.PoisonedCg{}
 	poisonedCgs := []models.PoisonedCg{}
-	for _, cg := range cgs[0].CgName {
+	for _, cg := range cgs {
 		stationName, err := StationNameFromStr(station.Name)
 		if err != nil {
 			return []models.PoisonedCg{}, err

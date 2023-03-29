@@ -84,7 +84,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+		serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 		return err
 	}
 
@@ -92,7 +92,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+			serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 			return err
 		}
 	} else {
@@ -102,7 +102,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	consumerType := strings.ToLower(cType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+		serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 		return err
 	}
 
@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 	if !exist {
-		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		serv.Warnf("createProducerDirectCommon: user" + user.Username + "is not exists")
 		return err
 	}
 
@@ -152,7 +152,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-			serv.Errorf("createConsumerDirectCommon: " + errMsg)
+			serv.Warnf("createConsumerDirectCommon: " + errMsg)
 			return err
 		}
 
@@ -539,7 +539,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err == nil {
 			deleted = true
 		}
-		err = RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
+		err = db.RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
