@@ -84,7 +84,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 		return err
 	}
 
@@ -92,7 +92,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+			serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 			return err
 		}
 	} else {
@@ -102,7 +102,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	consumerType := strings.ToLower(cType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Errorf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
+		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
 		return err
 	}
 
@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 	if !exist {
-		serv.Warnf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		serv.Warnf("createProducerDirectCommon: user %v is not exists", connection.CreatedBy)
 		return err
 	}
 
