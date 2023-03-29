@@ -157,12 +157,12 @@ func unwrapHandlersFunc[T interface{}](f func(*Handlers) (T, error), h *Handlers
 
 func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphisWSReqFiller, error) {
 	subjectHead := tokenAt(subj, 1)
-	stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 	switch subjectHead {
 	case memphisWS_Subj_MainOverviewData:
 		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h), nil
 
 	case memphisWS_Subj_StationOverviewData:
+		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 		if stationName == _EMPTY_ {
 			return nil, errors.New("invalid station name")
 		}
@@ -180,7 +180,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetDlsMsgDetails(poisonMsgIdInt, stationName, "poison")
+			return h.Stations.GetDlsMsgDetails(poisonMsgIdInt, "poison")
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
