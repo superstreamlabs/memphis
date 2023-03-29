@@ -417,8 +417,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			poisnedCgs := []string{}
-			_, err = db.InsertPoisonedCgMessages(station.ID, 0, p.ID, poisnedCgs, models.MessagePayload(message.Message), "schema", message.ValidationError)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return

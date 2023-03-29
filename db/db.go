@@ -480,16 +480,7 @@ func InsertConfiguration(key string, value string) error {
 		return err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&newConfiguration.ID)
-		if err != nil {
-			return err
-		}
-	}
 
-	if err != nil {
-		return err
-	}
 	for rows.Next() {
 		err := rows.Scan(&newConfiguration.ID)
 		if err != nil {
@@ -3813,7 +3804,7 @@ func GetImage(name string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, messageType, validationError string) (models.DlsMessage, error) {
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, validationError string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3840,7 +3831,7 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		return models.DlsMessage{}, err
 	}
 	updatedAt := time.Now()
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, messageType, validationError)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -3857,21 +3848,19 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 		return models.DlsMessage{}, err
 	}
 
-	msgDetails := models.MessagePayloadDls{
-		TimeSent: messageDetails.TimeSent,
-		Size:     messageDetails.Size,
-		Data:     messageDetails.Data,
-		Headers:  messageDetails.Headers,
-	}
-
 	deadLetterPayload := models.DlsMessage{
-		ID:             messagePayloadId,
-		StationId:      stationId,
-		MessageSeq:     messageSeq,
-		ProducerId:     producerId,
-		PoisonedCgs:    poisonedCgs,
-		MessageDetails: msgDetails,
-		UpdatedAt:      updatedAt,
+		ID:          messagePayloadId,
+		StationId:   stationId,
+		MessageSeq:  messageSeq,
+		ProducerId:  producerId,
+		PoisonedCgs: poisonedCgs,
+		MessageDetails: models.MessagePayload{
+			TimeSent: messageDetails.TimeSent,
+			Size:     messageDetails.Size,
+			Data:     messageDetails.Data,
+			Headers:  messageDetails.Headers,
+		},
+		UpdatedAt: updatedAt,
 	}
 
 	if err := rows.Err(); err != nil {
@@ -3895,61 +3884,156 @@ func InsertPoisonedCgMessages(stationId int, messageSeq int, producerId int, poi
 }
 
 func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
+    ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+    defer cancelfunc()
+
+    connection, err := MetadataDbClient.Client.Acquire(ctx)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    defer connection.Release()
+
+    query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+
+    stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+
+    rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    defer rows.Close()
+
+    message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+    if err != nil {
+        return false, models.DlsMessage{}, err
+    }
+    if len(message) == 0 {
+        return false, models.DlsMessage{}, nil
+    }
+
+    return true, message[0], nil
+
+}
+
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, models.DlsMessage{}, err
+		return 0, err
 	}
 	defer connection.Release()
 
-	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
-
-	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+	tx, err := connection.Conn().Begin(ctx)
 	if err != nil {
-		return false, models.DlsMessage{}, err
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1 FOR UPDATE`
+	stmt, err := tx.Prepare(ctx, "handle_insert_dls_message", query)
+	if err != nil {
+		return 0, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq)
 	if err != nil {
-		return false, models.DlsMessage{}, err
+		return 0, err
 	}
-	defer rows.Close()
 
 	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
 	if err != nil {
-		return false, models.DlsMessage{}, err
+		return 0, err
 	}
-	if len(message) == 0 {
-		return false, models.DlsMessage{}, nil
+	defer rows.Close()
+
+	var dlsMsgId int
+	if len(message) == 0 { // then insert
+		query = `INSERT INTO dls_messages( 
+			station_id,
+			message_seq,
+			producer_id,
+			poisoned_cgs,
+			message_details,
+			updated_at,
+			message_type,
+			validation_error
+			) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id`
+
+		stmt, err := tx.Prepare(ctx, "insert_dls_message", query)
+		if err != nil {
+			return 0, err
+		}
+		updatedAt := time.Now()
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "")
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&dlsMsgId)
+			if err != nil {
+				return 0, err
+			}
+		}
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				if pgErr.Detail != "" {
+					if !strings.Contains(pgErr.Detail, "already exists") {
+						return 0, errors.New("dls_messages row already exists")
+					} else {
+						return 0, errors.New(pgErr.Detail)
+					}
+				} else {
+					return 0, errors.New(pgErr.Message)
+				}
+			} else {
+				return 0, err
+			}
+		}
+	} else { // then update
+		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) RETURNING id`
+		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
+		if err != nil {
+			return 0, err
+		}
+		updatedAt := time.Now()
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt)
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&dlsMsgId)
+			if err != nil {
+				return 0, err
+			}
+		}
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				return 0, errors.New(pgErr.Message)
+			} else {
+				return 0, err
+			}
+		}
 	}
 
-	return true, message[0], nil
-
-}
-
-func UpdatePoisonCgsInDlsMessage(poisonedCgs string, stationId, messageSeq int) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	err = tx.Commit(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
-	defer conn.Release()
 
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs))`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
-	if err != nil {
-		return err
-	}
-	updatedAt := time.Now()
-	_, err = conn.Conn().Query(ctx, stmt.Name, poisonedCgs, stationId, messageSeq, updatedAt)
-	if err != nil {
-		return err
-	}
-	return nil
-
+	return dlsMsgId, nil
 }
 
 func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
