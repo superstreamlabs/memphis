@@ -80,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 	if !exist {
-		serv.Warnf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		serv.Warnf("createProducerDirectCommon: user %v is not exists", connection.CreatedBy)
 		return false, false, err
 	}
 
