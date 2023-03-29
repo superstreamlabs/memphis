@@ -17,7 +17,7 @@ import React, { useEffect, useState } from 'react';
 import * as monaco from 'monaco-editor';
 
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
-import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_BROKER_HOST, LOCAL_STORAGE_ENV, LOCAL_STORAGE_REST_GW_HOST, LOCAL_STORAGE_REST_GW_PORT, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import noCodeExample from '../../assets/images/noCodeExample.svg';
 import refresh from '../../assets/images/refresh.svg';
@@ -72,6 +72,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = codeEx.producer?.replaceAll('<broker-token>', connectionCreds);
                 codeEx.consumer = codeEx.consumer?.replaceAll('<broker-token>', connectionCreds);
             }
+            if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                codeEx.producer = codeEx.producer?.replaceAll('memphis.ConnectionToken', 'memphis.Password');
+                codeEx.consumer = codeEx.consumer?.replaceAll('memphis.ConnectionToken', 'memphis.Password');
+                codeEx.producer = codeEx.producer?.replaceAll('connectionToken:', 'password:');
+                codeEx.consumer = codeEx.consumer?.replaceAll('connectionToken:', 'password:');
+                codeEx.producer = codeEx.producer?.replaceAll('connection_token', 'password');
+                codeEx.consumer = codeEx.consumer?.replaceAll('connection_token', 'password');
+                codeEx.producer = codeEx.producer?.replaceAll('<broker-token>', '<password>');
+                codeEx.consumer = codeEx.consumer?.replaceAll('<broker-token>', '<password>');
+            }
             setCodeExample(codeEx);
         }
     };
@@ -83,6 +93,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         codeEx.producer = codeEx.producer.replaceAll('localhost', restGWHost);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', restGWHost);
+        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('connection_token', 'password');
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<broker-token>', '<password>');
+        }
         setCodeExample(codeEx);
     };
 

@@ -19,8 +19,8 @@ import { httpRequest } from '../../services/http';
 const DlsConfig = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [dlsTypes, setDlsTypes] = useState({
-        poison: stationState?.stationSocketData?.dls_configuration?.poison,
-        schemaverse: stationState?.stationSocketData?.dls_configuration?.schemaverse
+        poison: stationState?.stationSocketData?.dls_configuration_poison,
+        schemaverse: stationState?.stationSocketData?.dls_configuration_schemaverse
     });
 
     const [dlsLoading, setDlsLoading] = useState({

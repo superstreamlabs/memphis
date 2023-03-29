@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/db"
 	"memphis/models"
 	"sync"
 
@@ -29,6 +30,7 @@ const CONFIGURATIONS_RELOAD_SIGNAL_SUBJ = "$memphis_config_reload_signal"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
+const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
@@ -97,8 +99,10 @@ func (s *Server) ListenForConfigReloadEvents() error {
 	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
-			memphisOpts, _ := s.GetMemphisOpts(*s.opts)
-			s.ReloadOptions(&memphisOpts)
+			err := s.Reload()
+			if err != nil {
+				s.Errorf("Failed reloading: " + err.Error())
+			}
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -132,43 +136,6 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
-func ackPoisonMsgV0(msgId string, cgName string) error {
-	splitId := strings.Split(msgId, dlsMsgSep)
-	stationName := splitId[0]
-	sn, err := StationNameFromStr(stationName)
-	if err != nil {
-		return err
-	}
-	streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_dls_consumer_" + uid
-	amount := uint64(1)
-	internalCgName := replaceDelimiters(cgName)
-	filter := GetDlsSubject("poison", sn.Intern(), msgId, internalCgName)
-	timeout := 30 * time.Second
-	msgs, err := serv.memphisGetMessagesByFilter(streamName, filter, 0, amount, timeout)
-	if err != nil {
-		return err
-	}
-
-	if len(msgs) != 1 {
-		return errors.New("message was not found")
-	}
-
-	msg := msgs[0]
-	var dlsMsg models.DlsMessage
-	err = json.Unmarshal(msg.Data, &dlsMsg)
-	if err != nil {
-		return err
-	}
-
-	err = serv.memphisRemoveConsumer(streamName, durableName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -178,32 +145,9 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			//This check for backward compatability
-			if msgToAck.CgName != "" {
-				err = ackPoisonMsgV0(msgToAck.ID, msgToAck.CgName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-			} else {
-				splitId := strings.Split(msgToAck.ID, dlsMsgSep)
-				stationName := splitId[0]
-				sn, err := StationNameFromStr(stationName)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-				seq, err := strconv.ParseInt(msgToAck.Sequence, 10, 64)
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
-				_, err = s.memphisDeleteMsgFromStream(streamName, uint64(seq))
-				if err != nil {
-					s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
-					return
-				}
+			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName)
+			if err != nil {
+				return
 			}
 
 		}(copyBytes(msg))
@@ -301,6 +245,12 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
 	}
 
+	err = s.ListenForSchemaverseDlsEvents()
+	if err != nil {
+		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
+	}
+	go s.RemoveOldDlsMsgs()
+
 	// send JS API request to get more messages
 	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
@@ -388,11 +338,11 @@ func (s *Server) ListenForTieredStorageMessages() error {
 				if len(rawMsg) == 2 {
 					err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
 					if err != nil {
-						serv.Errorf("Failed unmarshalling tiered storage message: " + err.Error())
+						serv.Errorf("ListenForTieredStorageMessages: Failed unmarshalling tiered storage message: " + err.Error())
 						return
 					}
 				} else {
-					serv.Errorf("Invalid tiered storage message structure: message must contains msg-id header")
+					serv.Errorf("ListenForTieredStorageMessages: Invalid tiered storage message structure: message must contains msg-id header")
 					return
 				}
 				payload := tieredStorageMsg.Buf
@@ -401,7 +351,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 				seq, _, _ := ackReplyInfo(reply)
 				intTs, err := strconv.Atoi(rawTs)
 				if err != nil {
-					serv.Errorf("Failed convert rawTs from string to int")
+					serv.Errorf("ListenForTieredStorageMessages: Failed convert rawTs from string to int")
 					return
 				}
 
@@ -428,9 +378,68 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		serv.Errorf("Failed queueSubscribe tiered storage: " + err.Error())
+		serv.Errorf("ListenForTieredStorageMessages: Failed queueSubscribe tiered storage: " + err.Error())
 		return err
 	}
 
+	return nil
+}
+
+func (s *Server) ListenForSchemaverseDlsEvents() error {
+	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var message models.SchemaVerseDlsMessageSdk
+			err := json.Unmarshal(msg, &message)
+			if err != nil {
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				return
+			}
+
+			exist, station, err := db.GetStationByName(message.StationName)
+			if err != nil {
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				return
+			}
+			if !exist {
+				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
+				return
+
+			}
+
+			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
+			if err != nil {
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				return
+			}
+
+			if !exist {
+				serv.Warnf("ListenForSchemaverseDlsEvents: producer " + p.Name + " couldn't been found")
+				return
+			}
+
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError)
+			if err != nil {
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				return
+			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Server) RemoveOldDlsMsgs() error {
+	ticker := time.NewTicker(2 * time.Minute)
+	for range ticker.C {
+		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
+		err := db.DeleteOldDlsMessageByRetention(configurationTime)
+		if err != nil {
+			serv.Errorf("RemoveOldDlsMsgs: " + err.Error())
+			return err
+		}
+	}
 	return nil
 }

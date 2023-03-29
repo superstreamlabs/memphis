@@ -106,9 +106,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		os.Exit(1)
 	}
 
-	memphisOpts, _ := s.GetMemphisOpts(*(s.Opts()))
-	s.ReloadOptions(&memphisOpts)
-
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -151,6 +148,10 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		env = "K8S"
 	}
 
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
 	s.Noticef("Memphis broker is ready, ENV: " + env)
 	return metadataDb
 }
