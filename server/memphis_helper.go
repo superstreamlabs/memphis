@@ -183,38 +183,6 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 		})
 }
 
-func (s *Server) CreateDlsStream(sn StationName, storageType string, replicas int) error {
-	maxAge := time.Duration(serv.opts.DlsRetentionHours) * time.Hour
-
-	var storage StorageType
-	if storageType == "memory" {
-		storage = MemoryStorage
-	} else {
-		storage = FileStorage
-	}
-
-	idempotencyWindow := time.Duration(100) * time.Millisecond // minimum is 100 millis
-
-	name := fmt.Sprintf(dlsStreamName, sn.Intern())
-
-	return s.
-		memphisAddStream(&StreamConfig{
-			Name:         (name),
-			Subjects:     []string{name + ".>"},
-			Retention:    LimitsPolicy,
-			MaxConsumers: -1,
-			MaxMsgs:      int64(-1),
-			MaxBytes:     int64(-1),
-			Discard:      DiscardOld,
-			MaxAge:       maxAge,
-			MaxMsgsPer:   -1,
-			Storage:      storage,
-			Replicas:     replicas,
-			NoAck:        false,
-			Duplicates:   idempotencyWindow,
-		})
-}
-
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24

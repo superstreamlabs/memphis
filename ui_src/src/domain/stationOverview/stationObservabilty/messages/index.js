@@ -100,7 +100,7 @@ const Messages = () => {
                 element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
-    }, [stationState?.stationSocketData]);
+    }, []);
 
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -124,18 +124,21 @@ const Messages = () => {
             } else {
                 await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, {
                     dls_type: subTabValue === subTabs[0].name ? 'poison' : 'schema',
-                    dls_message_ids: isCheck
+                    dls_message_ids: isCheck,
+                    station_name: stationName
                 });
                 messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
-                        return item._id !== messageId;
+                        return item.id !== messageId;
                     });
                 });
             }
             setTimeout(() => {
                 setIgnoreProcced(false);
-                subTabValue === subTabs[0].name
+                tabValue === tabs[0]
+                    ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
+                    : subTabValue === subTabs[0].name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -184,7 +187,7 @@ const Messages = () => {
     const handleResend = async () => {
         setResendProcced(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
             setTimeout(() => {
                 setResendProcced(false);
                 message.success({
@@ -206,7 +209,7 @@ const Messages = () => {
     };
 
     const listGenerator = (index, message) => {
-        const id = tabValue === tabs[1] ? message?._id : message?.message_seq;
+        const id = tabValue === tabs[1] ? message?.id : message?.message_seq;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
                 <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />

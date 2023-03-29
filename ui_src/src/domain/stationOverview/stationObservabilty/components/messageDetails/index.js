@@ -55,7 +55,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
             const data = await httpRequest(
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${isFailedSchemaMessage ? 'schema' : 'poison'}&station_name=${stationName}&is_dls=${isDls}&message_id=${
-                    isDls ? encodeURIComponent(selectedRow) : null
+                    isDls ? parseInt(selectedRow) : -1
                 }&message_seq=${isDls ? -1 : selectedRow}`
             );
             arrangeData(data);
@@ -99,7 +99,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 poisonedCGs.push(cg);
             });
             let messageDetails = {
-                _id: data._id ?? null,
+                id: data.id ?? null,
                 message_seq: data.message_seq,
                 details: [
                     {
@@ -203,8 +203,8 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 fontSize="12px"
                                 fontWeight="600"
                                 tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                disabled={!stationState?.stationMetaData?.is_native || !messageDetails?._id}
-                                onClick={() => history.push(`${window.location.pathname}/${messageDetails?._id}`)}
+                                disabled={!stationState?.stationMetaData?.is_native || !messageDetails?.id}
+                                onClick={() => history.push(`${window.location.pathname}/${messageDetails?.id}`)}
                             />
                         )}
                     </>

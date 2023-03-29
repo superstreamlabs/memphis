@@ -104,7 +104,7 @@ func handleConnectMessage(client *client) error {
 	}
 
 	if isNativeMemphisClient {
-		connectionId := splittedMemphisInfo[0]
+		connectionId = splittedMemphisInfo[0]
 
 		exist, _, err = db.GetConnectionByID(connectionId)
 		if err != nil {

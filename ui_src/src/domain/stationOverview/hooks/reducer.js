@@ -23,6 +23,12 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationSocketData: action.payload
             };
+        case 'SET_MESSAGES':
+            updatedSocketState.messages = action.payload;
+            return {
+                ...stationState,
+                stationSocketData: updatedSocketState
+            };
         case 'SET_POISON_MESSAGES':
             updatedSocketState.poison_messages = action.payload;
             return {
