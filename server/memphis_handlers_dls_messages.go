@@ -74,7 +74,6 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	}
 
 	producedByHeader := ""
-
 	var headersJson map[string]string
 	if poisonMessageContent.Header != nil {
 		headersJson, err = DecodeHeader(poisonMessageContent.Header)
@@ -84,6 +83,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 	}
 
+	var producerId int
+	poisonedCgs := []string{}
 	if station.IsNative {
 		connectionIdHeader := headersJson["$memphis_connectionId"]
 		producedByHeader = headersJson["$memphis_producedBy"]
@@ -103,55 +104,39 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		}
 
 		connId := connectionIdHeader
-
 		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
 		if err != nil {
 			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 			return
 		}
-
 		if !exist {
 			serv.Warnf("handleNewPoisonMessage: producer " + producedByHeader + " couldn't been found")
 			return
 		}
+		producerId = p.ID
 
-		var poisonedCgs []string
 		poisonedCgs = append(poisonedCgs, cgName)
+	}
 
-		messageDetails := models.MessagePayload{
-			TimeSent: poisonMessageContent.Time,
-			Size:     len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
-			Data:     hex.EncodeToString(poisonMessageContent.Data),
-			Headers:  headersJson,
-		}
+	messageDetails := models.MessagePayload{
+		TimeSent: poisonMessageContent.Time,
+		Size:     len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
+		Data:     hex.EncodeToString(poisonMessageContent.Data),
+		Headers:  headersJson,
+	}
 
-		exist, deadLetterMsg, err := db.GetMsgByStationIdAndMsgSeq(station.ID, int(messageSeq))
-		if err != nil {
-			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-			return
-		}
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails)
+	if err != nil {
+		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
+		return
+	}
 
-		if exist {
-			err := db.UpdatePoisonCgsInDlsMessage(cgName, station.ID, int(messageSeq))
-			if err != nil {
-				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-				return
-			}
-		} else {
-			deadLetterMsg, err = db.InsertPoisonedCgMessages(station.ID, int(messageSeq), p.ID, poisonedCgs, messageDetails, "poison", "")
-			if err != nil {
-				serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-				return
-			}
-		}
-
-		idForUrl := string(rune(deadLetterMsg.ID))
-		var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
-		err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
-		if err != nil {
-			serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
-			return
-		}
+	idForUrl := string(rune(dlsMsgId))
+	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
+	err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
+	if err != nil {
+		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
+		return
 	}
 }
 
@@ -185,7 +170,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	}
 
 	for _, v := range dlsMsgs {
-		messageDetails := models.MessagePayloadDls{
+		messageDetails := models.MessagePayload{
 			TimeSent: v.MessageDetails.TimeSent,
 			Size:     v.MessageDetails.Size,
 			Data:     v.MessageDetails.Data,
@@ -252,7 +237,7 @@ func getDlsMessageById(station models.Station, messageId int, sn StationName, dl
 	var clientAddress string
 	var connectionId string
 
-	msgDetails := models.MessagePayloadDls{
+	msgDetails := models.MessagePayload{
 		TimeSent: dlsMsgs[0].MessageDetails.TimeSent,
 		Size:     dlsMsgs[0].MessageDetails.Size,
 		Data:     dlsMsgs[0].MessageDetails.Data,
