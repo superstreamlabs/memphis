@@ -3896,7 +3896,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if !strings.Contains(pgErr.Detail, "already exists") {
-					return models.DlsMessage{}, errors.New("dls_messages table already exists")
+					return models.DlsMessage{}, errors.New("schemaverse dls already exists")
 				} else {
 					return models.DlsMessage{}, errors.New(pgErr.Detail)
 				}

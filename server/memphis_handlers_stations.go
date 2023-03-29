@@ -354,8 +354,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		return
 	}
 	tagsHandler := TagsHandler{S: sh.S}
-
-	exist, station, err := db.GetStationByName(body.StationName)
+	stationName := strings.ToLower(body.StationName)
+	exist, station, err := db.GetStationByName(stationName)
 	if err != nil {
 		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1048,10 +1048,6 @@ func getCgStatus(members []models.CgMember) (bool, bool) {
 	return false, false
 }
 
-func (sh StationsHandler) GetDlsMsgDetails(messageId int, dlsType string) (models.DlsMessageResponse, error) {
-	return getDlsMessageDetailsById(messageId, dlsType)
-}
-
 func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 	var body models.GetPoisonMessageJourneySchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1059,7 +1055,8 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 		return
 	}
 
-	poisonMessage, err := sh.GetDlsMsgDetails(body.MessageId, "poison")
+	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
+	poisonMessage, err := poisonMsgsHandler.GetDlsMessageDetailsById(body.MessageId, "poison")
 	if err != nil {
 		serv.Errorf("GetPoisonMessageJourney: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1176,8 +1173,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 	msgId := body.MessageId
 
+	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	if body.IsDls {
-		dlsMessage, err := sh.GetDlsMsgDetails(body.MessageId, body.DlsType)
+		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetailsById(body.MessageId, body.DlsType)
 		if err != nil {
 			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1795,7 +1793,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
 	schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
 	if poisonConfigChanged || schemaverseConfigChanged {
-		err = db.UpdateStationDlsConfig(body.StationName, body.Poison, body.Schemaverse)
+		err = db.UpdateStationDlsConfig(station.Name, body.Poison, body.Schemaverse)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

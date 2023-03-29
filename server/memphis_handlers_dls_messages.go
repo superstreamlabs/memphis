@@ -182,7 +182,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	return poisonMessages, schemaMessages, totalDlsAmount, nil
 }
 
-func getDlsMessageDetailsById(messageId int, dlsType string) (models.DlsMessageResponse, error) {
+func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType string) (models.DlsMessageResponse, error) {
 	exist, dlsMessage, err := db.GetDlsMessageById(messageId)
 	if err != nil {
 		return models.DlsMessageResponse{}, err

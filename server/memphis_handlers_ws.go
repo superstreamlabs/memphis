@@ -180,7 +180,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid poison msg id")
 		}
 		return func() (any, error) {
-			return h.Stations.GetDlsMsgDetails(poisonMsgIdInt, "poison")
+			return h.PoisonMsgs.GetDlsMessageDetailsById(poisonMsgIdInt, "poison")
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
