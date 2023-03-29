@@ -102,7 +102,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                             message: 'Please input username!'
                         },
                         {
-                            message: 'Username has to include only letters/numbers and . or /',
+                            message: 'Username has to include only letters/numbers and .',
                             pattern: new RegExp(/^[a-zA-Z0-9_.]*$/)
                         }
                     ]}
