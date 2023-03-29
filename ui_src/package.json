@@ -36,7 +36,6 @@
     "react-player": "2.11.0",
     "react-responsive": "^9.0.0-beta.6",
     "react-router-dom": "^5.2.0",
-    "react-scripts": "^5.0.0",
     "react-test-renderer": "^17.0.2",
     "react-virtuoso": "1.2.5",
     "react-window": "^1.8.6",
@@ -82,7 +81,8 @@
     "eslint-plugin-react": "^7.29.4",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^28.1.0",
-    "jest-canvas-mock": "^2.4.0"
+    "jest-canvas-mock": "^2.4.0",
+    "react-scripts": "^5.0.0"
   },
   "jest": {
     "moduleNameMapper": {
