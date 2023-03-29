@@ -81,9 +81,11 @@ function Throughput() {
 
     Chart.plugins.register({
         afterDraw: function (chart) {
-            if (dataSamples?.total?.read?.length === 0) {
-                !socketFailIndicator && setSocketFailIndicator(true);
-            } else socketFailIndicator && setSocketFailIndicator(false);
+            setTimeout(function () {
+                if (dataSamples?.total?.read?.length === 0) {
+                    !socketFailIndicator && setSocketFailIndicator(true);
+                } else socketFailIndicator && setSocketFailIndicator(false);
+            }, 500);
         }
     });
 
@@ -115,23 +117,7 @@ function Throughput() {
         }
     }, [throughputType, selectedComponent]);
 
-    useEffect(() => {
-        if (Object.keys(dataSamples).length > 0) {
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                let updatedDataSamples = { ...dataSamples };
-                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
-                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
-                setDataSamples(updatedDataSamples);
-            });
-        } else {
-            let sampleObject = {};
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                const componentName = component.name;
-                sampleObject[componentName] = { read: component.read, write: component.write };
-            });
-            setDataSamples(sampleObject);
-        }
-
+    const getSelectComponentList = () => {
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
@@ -150,6 +136,25 @@ function Throughput() {
                 return 0;
             });
         setSelectOptions(components);
+    };
+
+    useEffect(() => {
+        if (Object.keys(dataSamples).length > 0) {
+            getSelectComponentList();
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                let updatedDataSamples = { ...dataSamples };
+                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
+                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
+                setDataSamples(updatedDataSamples);
+            });
+        } else {
+            let sampleObject = {};
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                const componentName = component.name;
+                sampleObject[componentName] = { read: component.read, write: component.write };
+            });
+            setDataSamples(sampleObject);
+        }
     }, [state?.monitor_data?.brokers_throughput]);
 
     const getValue = (type, select) => {
