@@ -61,9 +61,9 @@ function UserItem({ content, handleRemoveUser }) {
                 </div>
             )}
             <Modal
-                header="Remove user"
+                header="Delete user"
                 height="120px"
-                rBtnText="Cancel"
+                rBtnText="Delete"
                 lBtnText="Remove"
                 lBtnClick={() => {
                     removeUser(content?.username);
