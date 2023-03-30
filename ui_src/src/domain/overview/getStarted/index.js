@@ -82,6 +82,10 @@ const initialState = {
         retentionMessagesValue: '10',
         tiered_storage_enabled: false
     },
+    user: {
+        username: '',
+        password: ''
+    },
     nextDisable: false,
     isLoading: false,
     isHiddenButton: false,
@@ -112,7 +116,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
         const unblock = history.block((location) => {
             if (getStartedStateRef.current.completedSteps >= 4) {
                 setTargetLocation(location.pathname);
-                handleConfirm();
+                handleConfirm(location.pathname);
             }
             if (displayGetStarted) {
                 modalFlip(true);
@@ -125,10 +129,10 @@ const GetStarted = ({ username, dataSentence, skip }) => {
         };
     }, [displayGetStarted, history]);
 
-    const handleConfirm = () => {
+    const handleConfirm = (target) => {
         skipGetStarted();
         setDisplayGetStarted(false);
-        targetLocation ? history.push(targetLocation) : skip();
+        target ? history.push(target) : targetLocation ? history.push(targetLocation) : skip();
         modalFlip(false);
     };
 

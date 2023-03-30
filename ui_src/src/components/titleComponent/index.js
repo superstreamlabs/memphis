@@ -26,14 +26,16 @@ const TitleComponent = (props) => {
                     {headerTitle}
                 </p>
             )}
-            <p className="header-description" style={style?.description}>
-                {headerDescription}&nbsp;
-                {learnMore && (
-                    <a className="learn-more" href={link} target="_blank">
-                        Learn more
-                    </a>
-                )}
-            </p>
+            {headerDescription && (
+                <p className="header-description" style={style?.description}>
+                    {headerDescription}&nbsp;
+                    {learnMore && (
+                        <a className="learn-more" href={link} target="_blank">
+                            Learn more
+                        </a>
+                    )}
+                </p>
+            )}
         </div>
     );
 };

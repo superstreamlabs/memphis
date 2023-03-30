@@ -15,7 +15,6 @@ package server
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -848,9 +847,9 @@ func (s *Server) Reload() error {
 	s.mu.Lock()
 	configFile := s.configFile
 	s.mu.Unlock()
-	if configFile == "" {
-		return errors.New("can only reload config when a file is provided using -c or --config")
-	}
+	// if configFile == "" { // Memphis change deleted since we allow reload without a config file
+	// 	return errors.New("can only reload config when a file is provided using -c or --config")
+	// }
 
 	newOpts, err := ProcessConfigFile(configFile)
 	if err != nil {
