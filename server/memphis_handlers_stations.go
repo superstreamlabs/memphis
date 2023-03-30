@@ -51,14 +51,14 @@ func (sn StationName) Intern() string {
 func StationNameFromStr(name string) (StationName, error) {
 	var intern, extern string
 	if strings.Contains(name, delimiterReplacement) {
-		extern = revertDelimiters(name)
-		extern = strings.ToLower(extern)
-		err := validateName(extern, stationObjectName)
+		intern = strings.ToLower(name)
+		err := validateName(intern, stationObjectName)
 		if err != nil {
 			return StationName{}, err
 		}
+		extern = revertDelimiters(name)
+		extern = strings.ToLower(extern)
 
-		intern = strings.ToLower(name)
 	} else {
 		extern = strings.ToLower(name)
 		err := validateName(extern, stationObjectName)
