@@ -4243,7 +4243,7 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 	}
 	defer conn.Release()
 
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$3`
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
 	if err != nil {
 		return err
