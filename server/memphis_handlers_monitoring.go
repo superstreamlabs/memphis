@@ -702,7 +702,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, d.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -761,7 +761,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, s.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -1925,7 +1925,7 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 	dangerousComps := []models.SysComponent{}
 	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
-		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
+		regexMatch, _ := regexp.MatchString(`^`+name+`-\d+$`, comp.Name)
 		if regexMatch {
 			switch comp.Status {
 			case unhealthyStatus:
