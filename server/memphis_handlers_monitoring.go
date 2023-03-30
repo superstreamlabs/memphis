@@ -1968,9 +1968,26 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 
 func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	res := []int{}
+	brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, name)
+	if err != nil {
+		return []int{}
+	}
 	mPorts := make(map[int]bool)
 	for key, ports := range portsMap {
-		if strings.Contains(key, name) {
+		if brokerMatch {
+			keyMatchBroker, err := regexp.MatchString(`^memphis-\d+$`, key)
+			if err != nil {
+				return []int{}
+			}
+			if keyMatchBroker {
+				for _, port := range ports {
+					if !mPorts[port] {
+						mPorts[port] = true
+						res = append(res, port)
+					}
+				}
+			}
+		} else if strings.Contains(key, name) {
 			for _, port := range ports {
 				if !mPorts[port] {
 					mPorts[port] = true
