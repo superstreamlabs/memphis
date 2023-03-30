@@ -702,7 +702,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, d.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -761,7 +761,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, s.Name)
+			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
 			if err != nil {
 				return components, metricsEnabled, err
 			}
@@ -1968,14 +1968,14 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 
 func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	res := []int{}
-	brokerMatch, err := regexp.MatchString(`^memphis-\d+$`, name)
+	brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, name)
 	if err != nil {
 		return []int{}
 	}
 	mPorts := make(map[int]bool)
 	for key, ports := range portsMap {
 		if brokerMatch {
-			keyMatchBroker, err := regexp.MatchString(`^memphis-\d+$`, key)
+			keyMatchBroker, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, key)
 			if err != nil {
 				return []int{}
 			}
