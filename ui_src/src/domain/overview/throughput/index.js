@@ -81,11 +81,10 @@ function Throughput() {
 
     Chart.plugins.register({
         afterDraw: function (chart) {
-            setTimeout(function () {
-                if (dataSamples?.total?.read?.length === 0) {
-                    !socketFailIndicator && setSocketFailIndicator(true);
-                } else socketFailIndicator && setSocketFailIndicator(false);
-            }, 500);
+            if (data?.datasets?.length == 0) {
+                // && dataSamples?.total?.read?.length === 0
+                !socketFailIndicator && setSocketFailIndicator(true);
+            } else socketFailIndicator && setSocketFailIndicator(false);
         }
     });
 
