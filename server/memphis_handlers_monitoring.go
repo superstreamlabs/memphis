@@ -706,7 +706,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if err != nil {
 				return components, metricsEnabled, err
 			}
-			if brokerMatch {
+			if strings.Contains(d.Name, "memphis-rest-gateway") {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if brokerMatch {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -714,10 +718,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(d.Name, "metadata") {
 				hosts = []string{}
@@ -765,7 +765,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			if err != nil {
 				return components, metricsEnabled, err
 			}
-			if brokerMatch {
+			if strings.Contains(s.Name, "memphis-rest-gateway") {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if brokerMatch {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -773,10 +777,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(s.Name, "metadata") {
 				hosts = []string{}

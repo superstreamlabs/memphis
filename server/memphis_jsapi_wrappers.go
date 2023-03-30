@@ -98,6 +98,8 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 					Poison:      true,
 					Schemaverse: false,
 				},
+				Username:             c.memphisInfo.username,
+				TieredStorageEnabled: false,
 			}
 
 			s.createStationDirectIntern(c, reply, &csr, false)
