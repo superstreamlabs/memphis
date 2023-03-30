@@ -61,29 +61,28 @@
                         display: flex;
                         align-items: center;
                         filter: drop-shadow(1px 1px 1px #ececec);
-                        .sys-components-info{
+                        .sys-components-info {
                             width: 26px;
                             height: 25px;
                             display: flex;
                             border-radius: 4px;
-                            justify-content:center;
-                            align-items:center;
+                            justify-content: center;
+                            align-items: center;
                             img {
                                 width: 16px;
                             }
                             .error-icon {
-                                    width: 14px;
-                                    height: 14px;
-                                    position: relative;
-                                    display: flex;
-                                    align-items: center;
-                                    justify-content: center;
-                                    border-radius: 50%;
-                                    svg {
-                                        width: 12px;
-                                        color: white;
-                                    }
-                                
+                                width: 14px;
+                                height: 14px;
+                                position: relative;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border-radius: 50%;
+                                svg {
+                                    width: 12px;
+                                    color: white;
+                                }
                             }
                         }
                         .pie-status {
@@ -97,7 +96,6 @@
                             font-size: 12px;
                             margin-left: 5px;
                         }
-
                     }
                 }
                 .pods-container {
@@ -210,6 +208,7 @@
             }
         }
         .blury {
+            cursor: auto;
             background: rgba(255, 255, 255, 0.2);
             filter: blur(2.5px);
             -webkit-filter: blur(2.5px);
@@ -289,11 +288,11 @@
 .comp-plus-popover {
     margin: 3px 0px 3px 0px;
 }
-.comp-list-wrapper{
+.comp-list-wrapper {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    .comp-length{
+    .comp-length {
         display: flex;
         height: 30px;
         border-radius: 4px;
@@ -301,14 +300,14 @@
         align-items: center;
         padding: 0 10px;
         gap: 10px;
-        p{
+        p {
             margin: 0;
             font-family: 'InterMedium';
         }
-        .number-wrapper{
+        .number-wrapper {
             min-width: 20px;
             min-height: 20px;
-            background: #FC3400;
+            background: #fc3400;
             color: white;
             border-radius: 10px;
             display: flex;
@@ -316,37 +315,37 @@
             align-items: center;
             justify-content: center;
         }
-        span{
+        span {
             line-height: 12px;
             font-family: 'InterSemiBold';
         }
     }
-    .unhealthy{
-        background: #FFEBE6;
-        color: #FC3400;
-        .number-wrapper{
-            background: #FC3400;
+    .unhealthy {
+        background: #ffebe6;
+        color: #fc3400;
+        .number-wrapper {
+            background: #fc3400;
         }
     }
-    .risky{
-        background: #FFF6ED;
-        color: #FFA043;
-        .number-wrapper{
-            background: #FFA043;
+    .risky {
+        background: #fff6ed;
+        color: #ffa043;
+        .number-wrapper {
+            background: #ffa043;
         }
     }
-    .dangerous{
-        background: #FFF6E0;
-        color: #FFC633;
-        .number-wrapper{
-            background: #FFC633;
+    .dangerous {
+        background: #fff6e0;
+        color: #ffc633;
+        .number-wrapper {
+            background: #ffc633;
         }
     }
-    .healthy{
-        background: #E0F1EE;
-        color: #20C9AC;
-        .number-wrapper{
-            background: #20C9AC;
+    .healthy {
+        background: #e0f1ee;
+        color: #20c9ac;
+        .number-wrapper {
+            background: #20c9ac;
         }
     }
 }
