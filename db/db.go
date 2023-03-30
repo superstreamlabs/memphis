@@ -3303,34 +3303,6 @@ func GetAllUsersByType(userType string) ([]models.User, error) {
 	return users, nil
 }
 
-func GetAllUsersByType(userType string) ([]models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE type=$1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
-	if err != nil {
-		return []models.User{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, userType)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return []models.User{}, err
-	}
-	if len(users) == 0 {
-		return []models.User{}, nil
-	}
-	return users, nil
-}
-
 func UpdateUserAlreadyLoggedIn(userId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

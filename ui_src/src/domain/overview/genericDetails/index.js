@@ -45,7 +45,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Dead-letter messages</span>
+                        <span>Dead-lettered messages</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
                     </div>
                 </div>
