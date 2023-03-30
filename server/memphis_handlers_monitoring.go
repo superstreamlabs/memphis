@@ -702,11 +702,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if brokerMatch {
+			if d.Name == "memphis-rest-gateway" {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if d.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -714,10 +714,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(d.Name, "metadata") {
 				hosts = []string{}
@@ -761,11 +757,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if brokerMatch {
+			if s.Name == "memphis-rest-gateway" {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if s.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -773,10 +769,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(s.Name, "metadata") {
 				hosts = []string{}
@@ -1925,17 +1917,33 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 	dangerousComps := []models.SysComponent{}
 	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
-		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
-		if regexMatch {
-			switch comp.Status {
-			case unhealthyStatus:
-				unhealthyComps = append(unhealthyComps, comp)
-			case dangerousStatus:
-				dangerousComps = append(dangerousComps, comp)
-			case riskyStatus:
-				riskyComps = append(riskyComps, comp)
-			default:
-				healthyComps = append(healthyComps, comp)
+		if name == "memphis" {
+			regexMatch, _ := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, comp.Name)
+			if regexMatch {
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
+			}
+		} else if name == "memphis-metadata" {
+			regexMatch, _ := regexp.MatchString(`^memphis-metadata-\d*[0-9]\d*$`, comp.Name)
+			if regexMatch {
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
 			}
 		} else if name == "memphis-rest-gateway" || name == "memphis-metadata-coordinator" {
 			if strings.Contains(comp.Name, name) {
@@ -1970,7 +1978,20 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	res := []int{}
 	mPorts := make(map[int]bool)
 	for key, ports := range portsMap {
-		if strings.Contains(key, name) {
+		if name == "memphis" {
+			keyMatchBroker, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, key)
+			if err != nil {
+				return []int{}
+			}
+			if keyMatchBroker {
+				for _, port := range ports {
+					if !mPorts[port] {
+						mPorts[port] = true
+						res = append(res, port)
+					}
+				}
+			}
+		} else if strings.Contains(key, name) {
 			for _, port := range ports {
 				if !mPorts[port] {
 					mPorts[port] = true
