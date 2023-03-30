@@ -13,6 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useState, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
@@ -22,6 +23,7 @@ import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
 import DataNotFound from '../../../assets/images/dataNotFound.svg';
+import pathDomains from '../../../router';
 
 import { Context } from '../../../hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
@@ -78,6 +80,7 @@ function Throughput() {
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
     const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    const history = useHistory();
 
     Chart.plugins.register({
         afterDraw: function (chart) {
@@ -261,7 +264,7 @@ function Throughput() {
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p>Live throughput</p>
+                    <p>Throughput</p>
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <div className="throughput-actions">
@@ -270,6 +273,12 @@ function Throughput() {
                     </div>
                     <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 </div>
+            </div>
+            <div className="external-monitoring">
+                <label>For historical monitoring, please connect Memphis to an external </label>
+                <label className="link-to-integrations" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
+                    monitoring tool
+                </label>
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}

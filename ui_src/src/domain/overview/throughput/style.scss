@@ -9,10 +9,20 @@
     .ant-segmented-item-label {
         color: #12131a;
     }
+    .external-monitoring {
+        font-weight: 400;
+        font-size: 12px;
+        color: #b4b4b4;
+        font-family: 'Inter';
+        .link-to-integrations {
+            color: #6557ff;
+            cursor: pointer;
+        }
+    }
 }
 .throughput-chart {
     width: 100%;
-    height: calc(100% - 50px);
+    height: calc(100% - 65px);
     position: relative;
     margin-top: 20px;
     .loader-container {
