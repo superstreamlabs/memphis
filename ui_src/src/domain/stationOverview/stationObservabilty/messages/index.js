@@ -302,23 +302,6 @@ const Messages = () => {
                             onClick={() => handleDrop()}
                         />
                     )}
-                    {tabValue === tabs[0] &&
-                        (stationState?.stationSocketData?.messages?.length > 0 ||
-                            stationState?.stationSocketData?.poison_messages?.length > 0 ||
-                            stationState?.stationSocketData?.schema_failed_messages?.length > 0) && (
-                            <Button
-                                width="80px"
-                                height="32px"
-                                placeholder="Purge"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontWeight="600"
-                                disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
-                                onClick={() => modalPurgeFlip(true)}
-                            />
-                        )}
                     {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <Button
                             width="80px"
