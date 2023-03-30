@@ -13,6 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useState, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
@@ -22,6 +23,7 @@ import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
 import DataNotFound from '../../../assets/images/dataNotFound.svg';
+import pathDomains from '../../../router';
 
 import { Context } from '../../../hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
@@ -78,10 +80,12 @@ function Throughput() {
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
     const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    const history = useHistory();
 
     Chart.plugins.register({
         afterDraw: function (chart) {
-            if (dataSamples?.total?.read?.length === 0) {
+            if (data?.datasets?.length == 0) {
+                // && dataSamples?.total?.read?.length === 0
                 !socketFailIndicator && setSocketFailIndicator(true);
             } else socketFailIndicator && setSocketFailIndicator(false);
         }
@@ -115,23 +119,7 @@ function Throughput() {
         }
     }, [throughputType, selectedComponent]);
 
-    useEffect(() => {
-        if (Object.keys(dataSamples).length > 0) {
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                let updatedDataSamples = { ...dataSamples };
-                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
-                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
-                setDataSamples(updatedDataSamples);
-            });
-        } else {
-            let sampleObject = {};
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                const componentName = component.name;
-                sampleObject[componentName] = { read: component.read, write: component.write };
-            });
-            setDataSamples(sampleObject);
-        }
-
+    const getSelectComponentList = () => {
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
@@ -150,6 +138,25 @@ function Throughput() {
                 return 0;
             });
         setSelectOptions(components);
+    };
+
+    useEffect(() => {
+        if (Object.keys(dataSamples).length > 0) {
+            getSelectComponentList();
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                let updatedDataSamples = { ...dataSamples };
+                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
+                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
+                setDataSamples(updatedDataSamples);
+            });
+        } else {
+            let sampleObject = {};
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                const componentName = component.name;
+                sampleObject[componentName] = { read: component.read, write: component.write };
+            });
+            setDataSamples(sampleObject);
+        }
     }, [state?.monitor_data?.brokers_throughput]);
 
     const getValue = (type, select) => {
@@ -257,7 +264,7 @@ function Throughput() {
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p>Live throughput</p>
+                    <p>Throughput</p>
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <div className="throughput-actions">
@@ -266,6 +273,12 @@ function Throughput() {
                     </div>
                     <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 </div>
+            </div>
+            <div className="external-monitoring">
+                <label>For historical monitoring, please connect Memphis to an external </label>
+                <label className="link-to-integrations" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
+                    monitoring tool
+                </label>
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}

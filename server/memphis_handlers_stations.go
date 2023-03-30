@@ -51,14 +51,14 @@ func (sn StationName) Intern() string {
 func StationNameFromStr(name string) (StationName, error) {
 	var intern, extern string
 	if strings.Contains(name, delimiterReplacement) {
-		extern = revertDelimiters(name)
-		extern = strings.ToLower(extern)
-		err := validateName(extern, stationObjectName)
+		intern = strings.ToLower(name)
+		err := validateName(intern, stationObjectName)
 		if err != nil {
 			return StationName{}, err
 		}
+		extern = revertDelimiters(name)
+		extern = strings.ToLower(extern)
 
-		intern = strings.ToLower(name)
 	} else {
 		extern = strings.ToLower(name)
 		err := validateName(extern, stationObjectName)
@@ -1523,9 +1523,9 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 
 	username := c.getClientInfo(true).Name
-	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(username)
+	_, user, err := db.GetUserByUsername(asr.Username)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
