@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -687,7 +687,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-add-user")
 	}
 
-	if userType == "application" {
+	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
@@ -796,6 +796,16 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
+	}
+
+	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
