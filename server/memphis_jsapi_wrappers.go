@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/models"
+	"strings"
 	"time"
 )
 
@@ -73,8 +74,8 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				storageType = "file"
 			}
 
-			var retentionType string
-			var retentionValue int
+			retentionType := "message_age_sec"
+			retentionValue := 604800
 			if cfg.MaxAge > 0 {
 				retentionType = "message_age_sec"
 				retentionValue = int(cfg.MaxAge / 1000000000)
@@ -85,7 +86,10 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				retentionType = "messages"
 				retentionValue = int(cfg.MaxMsgs)
 			}
-
+			username := c.opts.Username
+			if username == "" {
+				username = strings.Split(c.getRawAuthUser(), "::")[0]
+			}
 			csr := createStationRequest{
 				StationName:       cfg.Name,
 				SchemaName:        "",
@@ -98,7 +102,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 					Poison:      true,
 					Schemaverse: false,
 				},
-				Username:             c.memphisInfo.username,
+				Username:             username,
 				TieredStorageEnabled: false,
 			}
 
@@ -145,7 +149,6 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 
 func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-
 	var cfg StreamConfig
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
