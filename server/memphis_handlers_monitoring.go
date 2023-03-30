@@ -1925,7 +1925,6 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 	dangerousComps := []models.SysComponent{}
 	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
-		fmt.Println("for comp name: " + comp.Name)
 		// regexMatch, _ := regexp.MatchString(`^`+name+`-\d+$`, comp.Name)
 		brokerMatch, _ := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, name)
 		if brokerMatch {
@@ -1939,7 +1938,7 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 			default:
 				healthyComps = append(healthyComps, comp)
 			}
-		} else if name == "memphis-rest-gateway" || name == "memphis-metadata-coordinator" {
+		} else if name == "memphis-rest-gateway" || name == "memphis-metadata" {
 			if strings.Contains(comp.Name, name) {
 				switch comp.Status {
 				case unhealthyStatus:
