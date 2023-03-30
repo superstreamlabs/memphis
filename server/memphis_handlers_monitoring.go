@@ -1925,21 +1925,32 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 	dangerousComps := []models.SysComponent{}
 	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
-		if name == "memphis" || name == "memphis-metadata" {
-			regexMatch, _ := regexp.MatchString(`^`+name+`-\d+$`, comp.Name)
+		if name == "memphis" {
+			regexMatch, _ := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, comp.Name)
 			if regexMatch {
-				compRegex, _ := regexp.MatchString(`^`+name+`-\d+$`, comp.Name)
-				if strings.Contains(comp.Name, name) && compRegex {
-					switch comp.Status {
-					case unhealthyStatus:
-						unhealthyComps = append(unhealthyComps, comp)
-					case dangerousStatus:
-						dangerousComps = append(dangerousComps, comp)
-					case riskyStatus:
-						riskyComps = append(riskyComps, comp)
-					default:
-						healthyComps = append(healthyComps, comp)
-					}
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
+			}
+		} else if name == "memphis-metadata" {
+			regexMatch, _ := regexp.MatchString(`^emphis-metadata-\d*[0-9]\d*$`, comp.Name)
+			if regexMatch {
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
 				}
 			}
 		} else if name == "memphis-rest-gateway" || name == "memphis-metadata-coordinator" {
