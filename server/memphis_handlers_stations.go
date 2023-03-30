@@ -1523,7 +1523,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 
 	username := c.getClientInfo(true).Name
-	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + username
+	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
 	_, user, err := db.GetUserByUsername(asr.Username)
 	if err != nil {
