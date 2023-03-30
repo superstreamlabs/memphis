@@ -15,7 +15,7 @@ export const SDK_CODE_EXAMPLE = {
     'Node.js': {
         langCode: 'javascript',
         installation: `npm i memphis-dev --save`,
-        producer: `const memphis = require("memphis-dev");
+        producer: `const { memphis } = require("memphis-dev");
 
 (async function () {
     let memphisConnection
@@ -46,7 +46,7 @@ export const SDK_CODE_EXAMPLE = {
     }
 })();
         `,
-        consumer: `const memphis = require('memphis-dev');
+        consumer: `const { memphis } = require('memphis-dev');
 
 (async function () {
     let memphisConnection;

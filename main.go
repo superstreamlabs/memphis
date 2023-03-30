@@ -137,6 +137,11 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	// run only on the leader
 	go s.KillZombieResources()
 
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
+
 	var env string
 	if os.Getenv("DOCKER_ENV") != "" {
 		env = "Docker"
@@ -148,10 +153,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		env = "K8S"
 	}
 
-	err = s.Reload()
-	if err != nil {
-		s.Errorf("Failed reloading: " + err.Error())
-	}
 	s.Noticef("Memphis broker is ready, ENV: " + env)
 	return metadataDb
 }

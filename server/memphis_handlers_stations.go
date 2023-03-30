@@ -1111,8 +1111,9 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	if !exist {
-		serv.Warnf("ResendPoisonMessages: Station " + stationName + " does not exist")
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Server error"})
+		errMsg := "Station " + stationName + " does not exist"
+		serv.Warnf("ResendPoisonMessages: %s", errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
