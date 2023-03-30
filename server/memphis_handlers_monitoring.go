@@ -702,15 +702,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if strings.Contains(d.Name, "memphis-rest-gateway") {
+			if d.Name == "memphis-rest-gateway" {
 				if mh.S.opts.RestGwHost != "" {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
-			} else if brokerMatch {
+			} else if d.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -761,15 +757,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if strings.Contains(s.Name, "memphis-rest-gateway") {
+			if s.Name == "memphis-rest-gateway" {
 				if mh.S.opts.RestGwHost != "" {
 					hosts = []string{mh.S.opts.RestGwHost}
 				}
-			} else if brokerMatch {
+			} else if s.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -1940,7 +1932,7 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 				}
 			}
 		} else if name == "memphis-metadata" {
-			regexMatch, _ := regexp.MatchString(`^emphis-metadata-\d*[0-9]\d*$`, comp.Name)
+			regexMatch, _ := regexp.MatchString(`^memphis-metadata-\d*[0-9]\d*$`, comp.Name)
 			if regexMatch {
 				switch comp.Status {
 				case unhealthyStatus:
@@ -1984,13 +1976,9 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 
 func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	res := []int{}
-	brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, name)
-	if err != nil {
-		return []int{}
-	}
 	mPorts := make(map[int]bool)
 	for key, ports := range portsMap {
-		if brokerMatch {
+		if name == "memphis" {
 			keyMatchBroker, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, key)
 			if err != nil {
 				return []int{}
