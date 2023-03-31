@@ -22,10 +22,8 @@ import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 
 const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = false, dlsDisabled = false }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
-
     const [confirm, setConfirm] = useState('');
-    const [loader, setLoader] = useState('');
-
+    const [loader, setLoader] = useState(false);
     const [purgeData, setPurgeData] = useState({
         purge_station: false,
         purge_dls: false
