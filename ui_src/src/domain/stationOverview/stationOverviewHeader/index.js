@@ -154,7 +154,7 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
-                    <div className="purge-button">
+                    {/* <div className="purge-button">
                         <Button
                             width="70px"
                             height="30px"
@@ -168,7 +168,7 @@ const StationOverviewHeader = () => {
                             disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
                             onClick={() => modalPurgeFlip(true)}
                         />
-                    </div>
+                    </div> */}
                     <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
                         <div className="action">
                             <img src={deleteIcon} alt="redirectIcon" />
