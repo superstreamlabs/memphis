@@ -12,13 +12,20 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Button from '../../../../../components/button';
 import CheckboxComponent from '../../../../../components/checkBox';
 import Input from '../../../../../components/Input';
+import { StationStoreContext } from '../../..';
+import { httpRequest } from '../../../../../services/http';
+import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 
-const PurgeStationModal = ({ title, desc, handlePurgeSelected, cancel, loader = false, msgsDisabled = false, dlsDisabled = false }) => {
+const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = false, dlsDisabled = false }) => {
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
+
     const [confirm, setConfirm] = useState('');
+    const [loader, setLoader] = useState('');
+
     const [purgeData, setPurgeData] = useState({
         purge_station: false,
         purge_dls: false
@@ -27,7 +34,7 @@ const PurgeStationModal = ({ title, desc, handlePurgeSelected, cancel, loader = 
     useEffect(() => {
         const keyDownHandler = (event) => {
             if (event.key === 'Enter' && confirm === 'purge') {
-                handlePurgeSelected();
+                handlePurge();
             }
         };
         document.addEventListener('keydown', keyDownHandler);
@@ -35,6 +42,33 @@ const PurgeStationModal = ({ title, desc, handlePurgeSelected, cancel, loader = 
             document.removeEventListener('keydown', keyDownHandler);
         };
     }, [confirm]);
+
+    const handlePurge = async (purgeData) => {
+        setLoader(true);
+        try {
+            let purgeDataPayload = purgeData;
+            purgeDataPayload['station_name'] = stationName;
+            await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
+            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+            let data = stationState?.stationSocketData;
+            if (purgeDataPayload['purge_station']) data['total_messages'] = 0;
+            if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
+            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+        } catch (error) {
+            setLoader(false);
+        }
+    };
+
+    useEffect(() => {
+        if (
+            (stationState?.stationSocketData?.total_messages === 0 && purgeData.purge_station) ||
+            (stationState?.stationSocketData?.total_dls_messages === 0 && purgeData.purge_dls)
+        ) {
+            cancel();
+            setLoader(false);
+            setPurgeData({});
+        }
+    }, [stationState?.stationSocketData]);
 
     return (
         <div className="delete-modal-wrapper">
@@ -105,7 +139,7 @@ const PurgeStationModal = ({ title, desc, handlePurgeSelected, cancel, loader = 
                     fontFamily="InterSemiBold"
                     disabled={confirm !== 'purge' || (!purgeData.purge_dls && !purgeData.purge_station)}
                     isLoading={loader}
-                    onClick={() => handlePurgeSelected(purgeData)}
+                    onClick={() => handlePurge(purgeData)}
                 />
             </div>
         </div>

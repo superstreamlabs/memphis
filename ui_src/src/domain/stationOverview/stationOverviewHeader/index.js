@@ -151,6 +151,21 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
+                    <div className="purge-button">
+                        <Button
+                            width="70px"
+                            height="30px"
+                            placeholder="Purge"
+                            colorType="red"
+                            radiusType="semi-round"
+                            border="gray"
+                            backgroundColorType="none"
+                            fontSize="12px"
+                            fontFamily="InterMedium"
+                            disabled={!stationState?.stationMetaData?.is_native}
+                            onClick={() => setUseSchemaModal(true)}
+                        />
+                    </div>
                     <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
                         <div className="action">
                             <img src={deleteIcon} alt="redirectIcon" />
