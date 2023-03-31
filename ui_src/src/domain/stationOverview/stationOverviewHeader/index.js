@@ -19,6 +19,7 @@ import { MinusOutlined } from '@ant-design/icons';
 
 import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
+import purgeWrapperIcon from '../../../assets/images/purgeWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
 import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
@@ -41,19 +42,21 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
+import PurgeStationModal from '../stationObservabilty/components/purgeStationModal';
 
 const StationOverviewHeader = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
-    const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
-    const history = useHistory();
-    const [retentionValue, setRetentionValue] = useState('');
-    const [sdkModal, setSdkModal] = useState(false);
-    const [auditModal, setAuditModal] = useState(false);
-    const [useSchemaModal, setUseSchemaModal] = useState(false);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
-    const [deleteLoader, setDeleteLoader] = useState(false);
+    const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
+    const [useSchemaModal, setUseSchemaModal] = useState(false);
+    const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
+    const [retentionValue, setRetentionValue] = useState('');
     const [detachLoader, setDetachLoader] = useState(false);
+    const [deleteLoader, setDeleteLoader] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
+    const [auditModal, setAuditModal] = useState(false);
+    const [sdkModal, setSdkModal] = useState(false);
+    const history = useHistory();
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -151,6 +154,21 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
+                    <div className="purge-button">
+                        <Button
+                            width="70px"
+                            height="30px"
+                            placeholder="Purge"
+                            colorType="red"
+                            radiusType="semi-round"
+                            border="gray"
+                            backgroundColorType="none"
+                            fontSize="12px"
+                            fontFamily="InterMedium"
+                            disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
+                            onClick={() => modalPurgeFlip(true)}
+                        />
+                    </div>
                     <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
                         <div className="action">
                             <img src={deleteIcon} alt="redirectIcon" />
@@ -403,6 +421,23 @@ const StationOverviewHeader = () => {
                         textToConfirm="detach"
                         handleDeleteSelected={handleStopUseSchema}
                         loader={detachLoader}
+                    />
+                </Modal>
+                <Modal
+                    header={<img src={purgeWrapperIcon} alt="deleteWrapperIcon" />}
+                    width="460px"
+                    height="320px"
+                    displayButtons={false}
+                    clickOutside={() => modalPurgeFlip(false)}
+                    open={modalPurgeIsOpen}
+                >
+                    <PurgeStationModal
+                        title="Purge"
+                        desc="This action will clean the station from messages."
+                        stationName={stationState?.stationMetaData?.name}
+                        cancel={() => modalPurgeFlip(false)}
+                        msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
+                        dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
                     />
                 </Modal>
             </div>

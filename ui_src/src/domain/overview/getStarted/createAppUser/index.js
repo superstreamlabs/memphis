@@ -45,7 +45,6 @@ const CreateAppUser = (props) => {
     useEffect(() => {
         createStationFormRef.current = onNext;
         getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: false });
-        console.log(getStartedState?.user?.username);
         if (getStartedState?.user?.username) {
             getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: true });
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
