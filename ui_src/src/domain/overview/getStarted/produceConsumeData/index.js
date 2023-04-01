@@ -34,7 +34,7 @@ const ProduceConsumeData = ({ createStationFormRef, consumer = false }) => {
                 showTabs={false}
                 stationName={getStartedState?.stationName}
                 username={getStartedState?.username}
-                connectionCreds={getStartedState?.connectionCreds}
+                connectionCreds={getStartedState?.connectionCreds === "" ? getStartedState?.password : getStartedState?.connectionCreds}
                 consumer={consumer}
             />
         </div>
