@@ -40,7 +40,7 @@ func validateConsumerName(consumerName string) error {
 
 func validateConsumerType(consumerType string) error {
 	if consumerType != "application" && consumerType != "connector" {
-		return errors.New("Consumer type has to be one of the following application/connector")
+		return errors.New("consumer type has to be one of the following application/connector")
 	}
 	return nil
 }
@@ -318,7 +318,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	respondWithErr(s, reply, err)
-	return
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {

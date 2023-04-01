@@ -31,7 +31,7 @@ func validateEntityType(entity string) error {
 	case "station", "schema", "user":
 		return nil
 	default:
-		return errors.New("Entity type is not valid")
+		return errors.New("entity type is not valid")
 	}
 }
 

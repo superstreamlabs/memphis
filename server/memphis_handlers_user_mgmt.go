@@ -55,7 +55,7 @@ func isRootUserLoggedIn() (bool, error) {
 	if err != nil {
 		return false, err
 	} else if !exist {
-		return false, errors.New("Root user does not exist")
+		return false, errors.New("root user does not exist")
 	}
 
 	if user.AlreadyLoggedIn {
@@ -405,6 +405,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
+		serv.Warnf("refreshToken: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 		// exist, sandboxUser, err := IsSandboxUserExist(username)
 		// if exist {
 		// 	if err != nil {

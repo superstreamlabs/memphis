@@ -33,7 +33,7 @@ func flushMapToTire2Storage() error {
 				}
 			}
 		default:
-			return errors.New("Failed uploading to tiered storage : unsupported integration")
+			return errors.New("failed uploading to tiered storage : unsupported integration")
 		}
 	}
 	return nil
@@ -76,7 +76,7 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 				}
 			}
 		default:
-			return errors.New("Failed send to tiered storage : unsupported integration")
+			return errors.New("failed send to tiered storage : unsupported integration")
 		}
 	}
 	return nil

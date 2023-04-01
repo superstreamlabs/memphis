@@ -147,7 +147,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 	s.unsubscribeOnAcc(s.SystemAccount(), sub)
 }
 
-func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
+func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	var cfg StreamConfig
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
@@ -163,13 +163,13 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 	}
 
 	if cfg.Retention != LimitsPolicy {
-		resp.Error = NewJSStreamCreateError(errors.New("The only supported retention type is limits"))
+		resp.Error = NewJSStreamCreateError(errors.New("the only supported retention type is limits"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
 
 	if len(cfg.Name) > 32 {
-		resp.Error = NewJSStreamCreateError(errors.New("Stream name can not be greater than 32 characters"))
+		resp.Error = NewJSStreamCreateError(errors.New("stream name can not be greater than 32 characters"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}

@@ -98,7 +98,7 @@ func TestMemphisGetMsgs(t *testing.T) {
 			}
 
 			msgsToFetchNum = 3
-			memphisMsgs, err = s.memphisGetMsgs("", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
+			_, err = s.memphisGetMsgs("", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
 			if err != ErrStoreEOF {
 				t.Fatalf("Unexpected error getting messages: %v", err)
 			}

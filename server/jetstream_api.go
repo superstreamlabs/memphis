@@ -1375,7 +1375,6 @@ func (s *Server) jsStreamCreateRequestIntern(sub *subscription, c *client, _ *Ac
 	}
 	resp.DidCreate = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
-	return
 }
 
 // Request to update a stream.
@@ -2807,7 +2806,6 @@ func (s *Server) jsStreamDeleteRequestIntern(sub *subscription, c *client, _ *Ac
 	}
 	resp.Success = true
 	s.sendAPIResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(resp))
-	return
 }
 
 // Request to delete a message.
