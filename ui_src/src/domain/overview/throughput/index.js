@@ -91,6 +91,7 @@ function Throughput() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
+    const [loadedComponent, setLoadedComponent] = useState(true);
     const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
 
@@ -109,6 +110,7 @@ function Throughput() {
             dataSets.push(getDataset(selectOption.name, 'read', true));
         });
         setData({ datasets: dataSets });
+        setLoadedComponent(false);
     };
 
     useEffect(() => {
@@ -153,7 +155,7 @@ function Throughput() {
 
     useEffect(() => {
         if (Object.keys(dataSamples).length > 0) {
-            getSelectComponentList();
+            selectOptions.length === 0 && getSelectComponentList();
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 let updatedDataSamples = { ...dataSamples };
                 updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
@@ -288,7 +290,7 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                {socketFailIndicator && (
+                {socketFailIndicator && !loadedComponent && (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
                         <p className="title">No data found</p>
