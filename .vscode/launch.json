@@ -21,7 +21,7 @@
                 "METADATA_DB_DBNAME": "memphis",
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
-                "USER_PASS_BASED_AUTH": "false",
+                "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
                 // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
                 // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
@@ -51,7 +51,7 @@
                 "METADATA_DB_DBNAME": "memphis",
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
-                "USER_PASS_BASED_AUTH": "false",
+                "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
                 // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
                 // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
@@ -81,7 +81,7 @@
                 "METADATA_DB_DBNAME": "memphis",
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
-                "USER_PASS_BASED_AUTH": "false",
+                "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
                 // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
                 // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
@@ -111,7 +111,7 @@
                 "METADATA_DB_DBNAME": "memphis",
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
-                "USER_PASS_BASED_AUTH": "false",
+                "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
                 // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
                 // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",

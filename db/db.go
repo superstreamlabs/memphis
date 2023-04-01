@@ -268,10 +268,10 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			FOREIGN KEY(producer_id)
 			REFERENCES producers(id)
 	);
-	CREATE INDEX station_id
-		ON producers(station_id);
-	CREATE INDEX producer_id
-		ON producers(producer_id);`
+	CREATE INDEX dls_station_id
+		ON dls_messages(station_id);
+	CREATE INDEX dls_producer_id
+		ON dls_messages(producer_id);`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
