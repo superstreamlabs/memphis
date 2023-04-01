@@ -7,6 +7,13 @@
         margin: 0;
     }
 
+    .create-user-form-field {
+        margin-bottom: 20px;
+    }
+
+    .validate-pass {
+        color: var(--red);
+    }
     .creating-the-user-container {
         text-align: center;
         justify-content: center;
@@ -68,7 +75,7 @@
                 }
 
                 img {
-                    margin-left:10px
+                    margin-left: 10px;
                 }
             }
         }

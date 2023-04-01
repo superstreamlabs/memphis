@@ -175,6 +175,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX station_id
 		ON consumers (station_id);
+		CREATE INDEX connection_id
+		ON consumers (connection_id);
 		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
@@ -243,6 +245,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX producer_station_id
 		ON producers(station_id);
+		CREATE INDEX producer_connection_id
+		ON producers(connection_id);
 		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
 
 	dlsMessagesTable := `
@@ -256,8 +260,18 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
-		PRIMARY KEY (id)
-	)`
+		PRIMARY KEY (id),
+		CONSTRAINT fk_station_id
+			FOREIGN KEY(station_id)
+			REFERENCES stations(id),
+		CONSTRAINT fk_producer_id
+			FOREIGN KEY(producer_id)
+			REFERENCES producers(id)
+	);
+	CREATE INDEX station_id
+		ON producers(station_id);
+	CREATE INDEX producer_id
+		ON producers(producer_id);`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx

@@ -1365,7 +1365,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetStationOverviewData: " + errMsg)
-		c.AbortWithStatusJSON(404, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1389,7 +1389,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1400,7 +1400,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1413,7 +1413,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1425,7 +1425,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1455,7 +1455,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

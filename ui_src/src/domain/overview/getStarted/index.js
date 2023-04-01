@@ -82,6 +82,10 @@ const initialState = {
         retentionMessagesValue: '10',
         tiered_storage_enabled: false
     },
+    user: {
+        username: '',
+        password: ''
+    },
     nextDisable: false,
     isLoading: false,
     isHiddenButton: false,

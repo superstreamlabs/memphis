@@ -49,8 +49,6 @@ const Messages = () => {
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
-    const [loader, setLoader] = useState(false);
-    const [purgeData, setPurgeData] = useState(false);
     const [isCheck, setIsCheck] = useState([]);
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
@@ -147,39 +145,6 @@ const Messages = () => {
                 setIndeterminate(false);
             }, 1500);
         } catch (error) {
-            setIgnoreProcced(false);
-        }
-    };
-
-    useEffect(() => {
-        if (
-            (stationState?.stationSocketData?.total_messages === 0 && purgeData.purge_station) ||
-            (stationState?.stationSocketData?.total_dls_messages === 0 && purgeData.purge_dls)
-        ) {
-            modalPurgeFlip(false);
-            setLoader(false);
-            setPurgeData({});
-        }
-    }, [stationState?.stationSocketData]);
-
-    const handlePurge = async (purgeData) => {
-        setLoader(true);
-        setIgnoreProcced(true);
-        try {
-            let purgeDataPayload = purgeData;
-            purgeDataPayload['station_name'] = stationName;
-            await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
-            setIgnoreProcced(false);
-            stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
-            let data = stationState?.stationSocketData;
-            if (purgeDataPayload['purge_station']) data['total_messages'] = 0;
-            if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
-            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
-            setSelectedRowIndex(null);
-            setIsCheck([]);
-            setIndeterminate(false);
-        } catch (error) {
-            setLoader(false);
             setIgnoreProcced(false);
         }
     };
@@ -454,12 +419,8 @@ const Messages = () => {
                 <PurgeStationModal
                     title="Purge"
                     desc="This action will clean the station from messages."
-                    handlePurgeSelected={(purgeData) => {
-                        handlePurge(purgeData);
-                        setPurgeData(purgeData);
-                    }}
+                    stationName={stationName}
                     cancel={() => modalPurgeFlip(false)}
-                    loader={loader}
                     msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
                     dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
                 />

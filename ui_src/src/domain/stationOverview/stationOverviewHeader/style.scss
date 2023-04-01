@@ -37,6 +37,8 @@
             }
         }
         .station-buttons {
+            display: flex;
+            gap: 10px;
             .station-actions {
                 display: flex;
                 width: 35px;
@@ -44,7 +46,7 @@
                 align-items: center;
                 .action {
                     border: 1px solid #d7d7d7;
-                    border-radius: 8px;
+                    border-radius: 5px;
                     width: 30px;
                     height: 30px;
                     justify-content: center;

@@ -14,7 +14,9 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 
+import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
 import { ExtractAddedFeatures, GithubRequest } from '../../../services/githubRequests';
+import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
 import upgradeBanner from '../../../assets/images/upgradeBanner.svg';
 import uptodateIcon from '../../../assets/images/uptodateIcon.svg';
 import fullLogo from '../../../assets/images/fullLogo.svg';
@@ -22,8 +24,6 @@ import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import NoteItem from './components/noteItem';
 import Loader from '../../../components/loader';
-import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
-import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
 
 function VersionUpgrade() {
     const [state, dispatch] = useContext(Context);

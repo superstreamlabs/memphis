@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.1fe8d45e.css",
-    "main.js": "/static/js/main.0d6f0289.js",
+    "main.css": "/static/css/main.4d9f6ad4.css",
+    "main.js": "/static/js/main.508f8bad.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -83,7 +83,7 @@
     "static/js/6476.634b9f6d.chunk.js": "/static/js/6476.634b9f6d.chunk.js",
     "static/js/1391.ba40a944.chunk.js": "/static/js/1391.ba40a944.chunk.js",
     "static/js/6619.03b4c4cd.chunk.js": "/static/js/6619.03b4c4cd.chunk.js",
-    "static/js/1448.2f35c683.chunk.js": "/static/js/1448.2f35c683.chunk.js",
+    "static/js/1448.9e4b081c.chunk.js": "/static/js/1448.9e4b081c.chunk.js",
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -145,7 +145,6 @@
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
     "static/media/s3Banner.webp": "/static/media/s3Banner.58721b84536982abd2ed.webp",
     "static/media/pagerdutyBanner.webp": "/static/media/pagerdutyBanner.3a702b9db3201eba99a4.webp",
-    "index.html": "/index.html",
     "static/media/TotalMessages.svg": "/static/media/TotalMessages.c10b99309c7023e5b8060dfdd788da9c.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
@@ -162,6 +161,7 @@
     "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "static/media/newrelicBanner.webp": "/static/media/newrelicBanner.7ac3fcee8ec773e5fa4c.webp",
+    "index.html": "/index.html",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
     "static/media/influxDBBanner.webp": "/static/media/influxDBBanner.907086855f4791ea3b9f.webp",
     "static/media/slackBanner.webp": "/static/media/slackBanner.568424be397fd884f5a6.webp",
@@ -247,7 +247,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.1fe8d45e.css",
-    "static/js/main.0d6f0289.js"
+    "static/css/main.4d9f6ad4.css",
+    "static/js/main.508f8bad.js"
   ]
 }
