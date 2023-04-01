@@ -514,7 +514,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 	if len(stations) == 0 {
 		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
 	} else {
-		stationTotalMsgs := make(map[string]models.StationMsgsDetails)
+		stationTotalMsgs := make(map[string]int)// models.StationMsgsDetails)
 		tagsHandler := TagsHandler{S: sh.S}
 		allStreamInfo, err := serv.memphisAllStreamsInfo()
 		if err != nil {
@@ -524,14 +524,7 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
 				totalMessages += info.State.Msgs
-				_, ok := stationTotalMsgs[streamName]
-				if ok {
-					infoToUpdate := stationTotalMsgs[streamName]
-					infoToUpdate.TotalMessages = int(info.State.Msgs)
-					stationTotalMsgs[streamName] = infoToUpdate
-				} else {
-					stationTotalMsgs[streamName] = models.StationMsgsDetails{TotalMessages: int(info.State.Msgs)}
-				}
+				stationTotalMsgs[streamName] = int(info.State.Msgs)
 			}
 		}
 		var extStations []models.ExtendedStation
@@ -552,9 +545,8 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
-			totalMsgInfo := stationTotalMsgs[fullStationName.Intern()]
 
-			stations[i].TotalMessages = totalMsgInfo.TotalMessages
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
 			stations[i].PoisonMessages = totalDlsMsgs
 			stations[i].HasDlsMsgs = hasDlsMsgs
 			stations[i].Tags = tags
