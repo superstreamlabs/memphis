@@ -52,7 +52,8 @@ const Reducer = (getStartedState, action) => {
         case 'SET_USER':
             return {
                 ...getStartedState,
-                user: action.payload
+                username: action.payload.username,
+                password: action.payload.password
             };
         case 'SET_CURRENT_STEP':
             return {
