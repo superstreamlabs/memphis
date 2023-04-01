@@ -267,13 +267,23 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			continue
 		}
 
+		producerRes := models.ExtendedProducer{
+			ID:                producer.ID,
+			Name:              producer.Name,
+			CreatedByUsername: producer.CreatedByUsername,
+			CreatedAt:         producer.CreatedAt,
+			IsActive:          producer.IsActive,
+			IsDeleted:         producer.IsDeleted,
+			ClientAddress:     producer.ClientAddress,
+		}
+
 		producersNames = append(producersNames, producer.Name)
 		if producer.IsActive {
-			connectedProducers = append(connectedProducers, producer)
+			connectedProducers = append(connectedProducers, producerRes)
 		} else if !producer.IsDeleted && !producer.IsActive {
-			disconnectedProducers = append(disconnectedProducers, producer)
+			disconnectedProducers = append(disconnectedProducers, producerRes)
 		} else if producer.IsDeleted {
-			deletedProducers = append(deletedProducers, producer)
+			deletedProducers = append(deletedProducers, producerRes)
 		}
 	}
 

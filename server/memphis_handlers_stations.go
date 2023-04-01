@@ -377,6 +377,11 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		station.StorageType = "disk"
 	}
 
+	_, ok = IntegrationsCache["s3"].(models.Integration)
+	if !ok {
+		station.TieredStorageEnabled = false
+	}
+
 	stationResponse := models.GetStationResponseSchema{
 		ID:                   station.ID,
 		Name:                 station.Name,
@@ -394,11 +399,6 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
-	}
-
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
-		station.TieredStorageEnabled = false
 	}
 
 	c.IndentedJSON(200, stationResponse)
@@ -583,13 +583,14 @@ func (sh StationsHandler) GetAllStationsDetails() ([]models.ExtendedStation, uin
 			}
 
 			stationRes := models.ExtendedStation{
-				ID:             stations[i].ID,
-				Name:           stations[i].Name,
-				CreatedAt:      stations[i].CreatedAt,
-				TotalMessages:  stations[i].TotalMessages,
-				PoisonMessages: stations[i].PoisonMessages,
-				HasDlsMsgs:     stations[i].HasDlsMsgs,
-				Activity:       stations[i].Activity,
+				ID:                   stations[i].ID,
+				Name:                 stations[i].Name,
+				CreatedAt:            stations[i].CreatedAt,
+				TotalMessages:        stations[i].TotalMessages,
+				PoisonMessages:       stations[i].PoisonMessages,
+				HasDlsMsgs:           stations[i].HasDlsMsgs,
+				Activity:             stations[i].Activity,
+				TieredStorageEnabled: stations[i].TieredStorageEnabled,
 			}
 
 			extStations = append(extStations, stationRes)
