@@ -205,6 +205,5 @@ type GetUpdatesForSchema struct {
 }
 
 type StationMsgsDetails struct {
-	HasDlsMsgs    bool `json:"has_dls_messages"`
-	TotalMessages int  `json:"total_messages"`
+	TotalMessages int `json:"total_messages"`
 }

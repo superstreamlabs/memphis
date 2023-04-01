@@ -396,7 +396,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
-			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name)
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
 			if err != nil {
 				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 			}
