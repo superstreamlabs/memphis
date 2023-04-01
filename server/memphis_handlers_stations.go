@@ -721,6 +721,22 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+
+	if err != nil {
+		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	//rowsUpdated == 0 means that the row already exists
+	if rowsUpdated == 0 {
+		errMsg := "Station " + newStation.Name + " already exists"
+		serv.Warnf("CreateStation: " + errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
 	err = sh.S.CreateStream(stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
 	if err != nil {
 		if IsNatsErr(err, JSInsufficientResourcesErr) {
@@ -731,20 +747,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	//rowsUpdated == 0 means that the row already exists
-	if rowsUpdated == 0 {
-		errMsg := "Station " + newStation.Name + " already exists"
-		serv.Warnf("CreateStation: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
