@@ -15,7 +15,7 @@ import './style.scss';
 import React, { createContext, useEffect, useReducer, useRef, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
-import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../const/localStorageConsts';
+import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import GetStartedItem from '../../../components/getStartedItem';
 import GetStartedIcon from '../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../assets/images/usersIconActive.svg';
@@ -141,7 +141,9 @@ const GetStarted = ({ username, dataSentence, skip }) => {
             case 1:
                 return 'A station is a distributed unit that stores the produced data';
             case 2:
-                return 'Each producer/consumer has to have a username and a connection-token';
+                return `Each producer/consumer has to have a username and a ${
+                    localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? 'passsword' : 'connection-token'
+                }`;
             case 3:
                 return 'A producer is the source application/service that pushes data or messages to the broker or station';
             case 4:

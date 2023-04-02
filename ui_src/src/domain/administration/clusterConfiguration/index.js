@@ -150,7 +150,7 @@ function ClusterConfiguration() {
                                 handleChange('tiered_storage_time_sec', e, err);
                             }}
                         />
-                        {localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' && (
+                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && (
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"
