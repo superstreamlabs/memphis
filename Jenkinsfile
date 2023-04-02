@@ -212,7 +212,7 @@ node {
 	      
 	stage('Create new release') {
           withCredentials([string(credentialsId: 'gh_token', variable: 'GH_TOKEN')]) {
-	    sh "gh release create v${versionTag}-beta --generate-notes"
+	    sh "gh release create v${versionTag} --generate-notes"
           }
         }
       }  
