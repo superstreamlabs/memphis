@@ -1,3 +1,15 @@
+// Copyright 2022-2023 The Memphis.dev Authors
+// Licensed under the Memphis Business Source License 1.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// Changed License: [Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0), as published by the Apache Foundation.
+//
+// https://github.com/memphisdev/memphis/blob/master/LICENSE
+//
+// Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
+// A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
+
 // Copyright 2021-2022 The Memphis Authors
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
@@ -13,6 +25,7 @@
 import './style.scss';
 
 import React, { useEffect, useState, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
@@ -22,6 +35,7 @@ import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
 import DataNotFound from '../../../assets/images/dataNotFound.svg';
+import pathDomains from '../../../router';
 
 import { Context } from '../../../hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
@@ -77,15 +91,16 @@ function Throughput() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
-    const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    const history = useHistory();
 
-    Chart.plugins.register({
-        afterDraw: function (chart) {
-            if (dataSamples?.total?.read?.length === 0) {
-                !socketFailIndicator && setSocketFailIndicator(true);
-            } else socketFailIndicator && setSocketFailIndicator(false);
-        }
-    });
+    // Chart.plugins.register({
+    //     afterDraw: function (chart) {
+    //         if (data?.datasets?.length == 0) {
+    //             !socketFailIndicator && setSocketFailIndicator(true);
+    //         } else socketFailIndicator && setSocketFailIndicator(false);
+    //     }
+    // });
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -103,7 +118,7 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
-        !socketFailIndicator && setLoader();
+        setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
                 data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
@@ -115,23 +130,7 @@ function Throughput() {
         }
     }, [throughputType, selectedComponent]);
 
-    useEffect(() => {
-        if (Object.keys(dataSamples).length > 0) {
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                let updatedDataSamples = { ...dataSamples };
-                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
-                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
-                setDataSamples(updatedDataSamples);
-            });
-        } else {
-            let sampleObject = {};
-            state?.monitor_data?.brokers_throughput?.forEach((component) => {
-                const componentName = component.name;
-                sampleObject[componentName] = { read: component.read, write: component.write };
-            });
-            setDataSamples(sampleObject);
-        }
-
+    const getSelectComponentList = () => {
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
@@ -150,6 +149,25 @@ function Throughput() {
                 return 0;
             });
         setSelectOptions(components);
+    };
+
+    useEffect(() => {
+        if (Object.keys(dataSamples).length > 0) {
+            selectOptions.length === 0 && getSelectComponentList();
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                let updatedDataSamples = { ...dataSamples };
+                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
+                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
+                setDataSamples(updatedDataSamples);
+            });
+        } else {
+            let sampleObject = {};
+            state?.monitor_data?.brokers_throughput?.forEach((component) => {
+                const componentName = component.name;
+                sampleObject[componentName] = { read: component.read, write: component.write };
+            });
+            setDataSamples(sampleObject);
+        }
     }, [state?.monitor_data?.brokers_throughput]);
 
     const getValue = (type, select) => {
@@ -190,15 +208,10 @@ function Throughput() {
         plugins: {
             streaming: {
                 pause: stop,
-                frameRate: 30000
+                frameRate: 5
             }
         },
-        animation: {
-            duration: 2000,
-            easing: 'easeOutQuart'
-        },
-        responsiveAnimationDuration: 2000,
-
+        animation: false,
         legend: { display: false },
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
@@ -257,7 +270,7 @@ function Throughput() {
         <div className="overview-components-wrapper throughput-overview-container">
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
-                    <p>Live throughput</p>
+                    <p>Throughput</p>
                     <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
                 </div>
                 <div className="throughput-actions">
@@ -267,15 +280,20 @@ function Throughput() {
                     <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
                 </div>
             </div>
+            <div className="external-monitoring">
+                <label>For historical monitoring, please connect Memphis to an external </label>
+                <label className="link-to-integrations" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
+                    monitoring tool
+                </label>
+            </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                {socketFailIndicator && (
+                {/* {socketFailIndicator && (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
                         <p className="title">No data found</p>
                     </div>
-                )}
-
+                )} */}
                 <Line id="test" data={data} options={options} />
             </div>
         </div>
