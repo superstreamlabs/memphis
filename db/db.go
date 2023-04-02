@@ -4279,28 +4279,6 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 	return nil
 }
 
-func GetTotalDlsMessagesByStationId(stationId int) (int, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return 0, err
-	}
-	defer conn.Release()
-	query := `SELECT COUNT(*) FROM dls_messages WHERE station_id = $1 `
-	stmt, err := conn.Conn().Prepare(ctx, "get_total_poison_dls_msgs_by_station_id", query)
-	if err != nil {
-		return 0, err
-	}
-	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-
-	return count, nil
-}
-
 func GetTotalDlsMessages() (uint64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
