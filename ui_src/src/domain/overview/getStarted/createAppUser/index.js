@@ -45,10 +45,10 @@ const CreateAppUser = (props) => {
     useEffect(() => {
         createStationFormRef.current = onNext;
         getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: false });
-        if (getStartedState?.user?.username) {
+        if (getStartedState?.username !== '') {
             getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: true });
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
-            setUser({ username: getStartedState.user.username, password: getStartedState.user.password });
+            setUser({ username: getStartedState.username, password: getStartedState.password });
             setAllowEdit(false);
         }
     }, []);
@@ -195,7 +195,11 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
                 <div className="information-container">
                     <img src={Information} alt="information" className="information-img" />
-                    <p className="information">Please save the generated credentials for future usage.</p>
+                    {localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? (
+                        <p className="information">Please save your credentials for future usage.</p>
+                    ) : (
+                        <p className="information">Please save the generated credentials for future usage.</p>
+                    )}
                 </div>
             )}
         </div>
