@@ -2234,7 +2234,7 @@ func CountAllActiveConsumers() (int64, error) {
 	}
 	defer conn.Release()
 	query := `SELECT COUNT(*) FROM consumers WHERE is_active = true`
-	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_producers", query)
+	stmt, err := conn.Conn().Prepare(ctx, "count_all_active_consumers", query)
 	if err != nil {
 		return 0, err
 	}
