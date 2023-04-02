@@ -82,10 +82,8 @@ const initialState = {
         retentionMessagesValue: '10',
         tiered_storage_enabled: false
     },
-    user: {
-        username: '',
-        password: ''
-    },
+    username: '',
+    password: '',
     nextDisable: false,
     isLoading: false,
     isHiddenButton: false,
@@ -114,25 +112,21 @@ const GetStarted = ({ username, dataSentence, skip }) => {
 
     useEffect(() => {
         const unblock = history.block((location) => {
-            if (getStartedStateRef.current.completedSteps >= 4) {
-                setTargetLocation(location.pathname);
-                handleConfirm(location.pathname);
-            }
-            if (displayGetStarted) {
+            if (displayGetStarted && getStartedStateRef.current.completedSteps < 4) {
                 modalFlip(true);
                 setTargetLocation(location.pathname);
                 return false;
-            }
+            } else skipGetStarted();
         });
         return () => {
             unblock();
         };
     }, [displayGetStarted, history]);
 
-    const handleConfirm = (target) => {
+    const handleConfirm = () => {
         skipGetStarted();
         setDisplayGetStarted(false);
-        target ? history.push(target) : targetLocation ? history.push(targetLocation) : skip();
+        targetLocation ? history.push(targetLocation) : skip();
         modalFlip(false);
     };
 
