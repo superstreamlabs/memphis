@@ -15,7 +15,7 @@ export const SDK_CODE_EXAMPLE = {
     'Node.js': {
         langCode: 'javascript',
         installation: `npm i memphis-dev --save`,
-        producer: `const memphis = require("memphis-dev");
+        producer: `const { memphis } = require("memphis-dev");
 
 (async function () {
     let memphisConnection
@@ -46,7 +46,7 @@ export const SDK_CODE_EXAMPLE = {
     }
 })();
         `,
-        consumer: `const memphis = require('memphis-dev');
+        consumer: `const { memphis } = require('memphis-dev');
 
 (async function () {
     let memphisConnection;
@@ -169,7 +169,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<broker-token>")
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
     if err != nil {
         os.Exit(1)
     }
@@ -204,7 +204,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", "<broker-token>")
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
     if err != nil {
         os.Exit(1)
     }

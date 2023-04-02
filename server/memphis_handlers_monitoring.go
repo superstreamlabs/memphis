@@ -702,11 +702,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, d.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if brokerMatch {
+			if d.Name == "memphis-rest-gateway" {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if d.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -714,10 +714,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(d.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(d.Name, "metadata") {
 				hosts = []string{}
@@ -761,11 +757,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					status = unhealthyStatus
 				}
 			}
-			brokerMatch, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, s.Name)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if brokerMatch {
+			if s.Name == "memphis-rest-gateway" {
+				if mh.S.opts.RestGwHost != "" {
+					hosts = []string{mh.S.opts.RestGwHost}
+				}
+			} else if s.Name == "memphis" {
 				if mh.S.opts.BrokerHost == "" {
 					hosts = []string{}
 				} else {
@@ -773,10 +769,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				}
 				if mh.S.opts.UiHost != "" {
 					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(s.Name, "memphis-rest-gateway") {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
 				}
 			} else if strings.Contains(s.Name, "metadata") {
 				hosts = []string{}
@@ -992,7 +984,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.20",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.999Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1004,7 +996,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.19",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.99Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1016,7 +1008,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.18",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.982Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1028,7 +1020,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.17",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.969Z",
 		"station_name":    "idanasulin6",
 		"is_active":       true,
@@ -1042,7 +1034,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.16",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.959Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1054,7 +1046,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.15",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.951Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1066,7 +1058,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.14",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.941Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1078,7 +1070,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.13",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.93Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1090,7 +1082,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.12",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.92Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1102,7 +1094,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.11",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.911Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1114,7 +1106,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.10",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.902Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1126,7 +1118,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.9",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.892Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1138,7 +1130,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.8",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.882Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1150,7 +1142,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.7",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.872Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1162,7 +1154,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"name":            "prod.6",
 		"type":            "application",
 		"connection_id":   "f95f24fbcf959dfb941e6ff3",
-		"created_by_user": "root",
+		"created_by_user": ROOT_USERNAME,
 		"creation_date":   "2023-01-05T08:44:36.862Z",
 		"station_name":    "idanasulin6",
 		"is_active":       false,
@@ -1373,7 +1365,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if !exist {
 		errMsg := "Station " + body.StationName + " does not exist"
 		serv.Warnf("GetStationOverviewData: " + errMsg)
-		c.AbortWithStatusJSON(404, gin.H{"message": errMsg})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 
@@ -1397,7 +1389,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1408,7 +1400,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1421,7 +1413,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1429,11 +1421,11 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
-	poisonMessages, schemaFailedMessages, totalDlsAmount, poisonCgMap, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1445,7 +1437,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	// Only native stations have CGs
 	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station, poisonCgMap)
+		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1463,7 +1455,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(404, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1925,17 +1917,33 @@ func getRelevantComponents(name string, components []models.SysComponent, desire
 	dangerousComps := []models.SysComponent{}
 	riskyComps := []models.SysComponent{}
 	for _, comp := range components {
-		regexMatch, _ := regexp.MatchString(`^`+name+`-\d*[0-9]\d*$`, comp.Name)
-		if regexMatch {
-			switch comp.Status {
-			case unhealthyStatus:
-				unhealthyComps = append(unhealthyComps, comp)
-			case dangerousStatus:
-				dangerousComps = append(dangerousComps, comp)
-			case riskyStatus:
-				riskyComps = append(riskyComps, comp)
-			default:
-				healthyComps = append(healthyComps, comp)
+		if name == "memphis" {
+			regexMatch, _ := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, comp.Name)
+			if regexMatch {
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
+			}
+		} else if name == "memphis-metadata" {
+			regexMatch, _ := regexp.MatchString(`^memphis-metadata-\d*[0-9]\d*$`, comp.Name)
+			if regexMatch {
+				switch comp.Status {
+				case unhealthyStatus:
+					unhealthyComps = append(unhealthyComps, comp)
+				case dangerousStatus:
+					dangerousComps = append(dangerousComps, comp)
+				case riskyStatus:
+					riskyComps = append(riskyComps, comp)
+				default:
+					healthyComps = append(healthyComps, comp)
+				}
 			}
 		} else if name == "memphis-rest-gateway" || name == "memphis-metadata-coordinator" {
 			if strings.Contains(comp.Name, name) {
@@ -1970,7 +1978,20 @@ func getRelevantPorts(name string, portsMap map[string][]int) []int {
 	res := []int{}
 	mPorts := make(map[int]bool)
 	for key, ports := range portsMap {
-		if strings.Contains(key, name) {
+		if name == "memphis" {
+			keyMatchBroker, err := regexp.MatchString(`^memphis-\d*[0-9]\d*$`, key)
+			if err != nil {
+				return []int{}
+			}
+			if keyMatchBroker {
+				for _, port := range ports {
+					if !mPorts[port] {
+						mPorts[port] = true
+						res = append(res, port)
+					}
+				}
+			}
+		} else if strings.Contains(key, name) {
 			for _, port := range ports {
 				if !mPorts[port] {
 					mPorts[port] = true

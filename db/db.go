@@ -80,7 +80,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		message TEXT NOT NULL,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		PRIMARY KEY (id));
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
@@ -93,7 +93,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		password TEXT NOT NULL,
 		type enum NOT NULL DEFAULT 'root',
 		already_logged_in BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		avatar_id SERIAL NOT NULL,
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
@@ -111,7 +111,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT false,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
 		PRIMARY KEY (id));`
 
@@ -160,7 +160,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
@@ -175,6 +175,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX station_id
 		ON consumers (station_id);
+		CREATE INDEX connection_id
+		ON consumers (connection_id);
 		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
@@ -189,8 +191,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		replicas SERIAL NOT NULL,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
-		updated_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL,
 		schema_name VARCHAR,
 		schema_version_number SERIAL,
@@ -208,7 +210,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		active BOOL NOT NULL DEFAULT false,
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR,
@@ -231,7 +233,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		created_at TIMESTAMP NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
@@ -243,108 +245,49 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX producer_station_id
 		ON producers(station_id);
+		CREATE INDEX producer_connection_id
+		ON producers(connection_id);
 		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
+
+	dlsMessagesTable := `
+	CREATE TABLE IF NOT EXISTS dls_messages(
+		id SERIAL NOT NULL,    
+		station_id INT NOT NULL,
+		message_seq INT NOT NULL,
+		producer_id INT NOT NULL, 
+		poisoned_cgs VARCHAR[],
+		message_details JSON NOT NULL,    
+		updated_at TIMESTAMPTZ NOT NULL,
+		message_type VARCHAR NOT NULL,
+		validation_error VARCHAR DEFAULT '',
+		PRIMARY KEY (id),
+		CONSTRAINT fk_station_id
+			FOREIGN KEY(station_id)
+			REFERENCES stations(id),
+		CONSTRAINT fk_producer_id
+			FOREIGN KEY(producer_id)
+			REFERENCES producers(id)
+	);
+	CREATE INDEX dls_station_id
+		ON dls_messages(station_id);
+	CREATE INDEX dls_producer_id
+		ON dls_messages(producer_id);`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	_, err := db.Exec(ctx, usersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
+	tables := []string{usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable}
 
-	_, err = db.Exec(ctx, connectionsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
+	for _, table := range tables {
+		_, err := db.Exec(ctx, table)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			errPg := errors.As(err, &pgErr)
+			if errPg && !strings.Contains(pgErr.Message, "already exists") {
+				return err
+			}
 		}
 	}
-
-	_, err = db.Exec(ctx, auditLogsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, configurationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, integrationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, schemasTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, tagsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, stationsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-	_, err = db.Exec(ctx, consumersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
-	_, err = db.Exec(ctx, schemaVersionsTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-	_, err = db.Exec(ctx, producersTable)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		errPg := errors.As(err, &pgErr)
-		if errPg && !strings.Contains(pgErr.Message, "already exists") {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -551,16 +494,7 @@ func InsertConfiguration(key string, value string) error {
 		return err
 	}
 	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&newConfiguration.ID)
-		if err != nil {
-			return err
-		}
-	}
 
-	if err != nil {
-		return err
-	}
 	for rows.Next() {
 		err := rows.Scan(&newConfiguration.ID)
 		if err != nil {
@@ -965,6 +899,34 @@ func GetStationByName(name string) (bool, models.Station, error) {
 		return false, models.Station{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return false, models.Station{}, nil
+	}
+	return true, stations[0], nil
+}
+
+func GetStationById(messageId int) (bool, models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE id = $1 AND (is_deleted = false OR is_deleted IS NULL) LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_id", query)
+	if err != nil {
+		return false, models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId)
 	if err != nil {
 		return false, models.Station{}, err
 	}
@@ -1385,7 +1347,7 @@ func UpdateStationsOfDeletedUser(userId int) error {
 }
 
 func GetStationNamesUsingSchema(schemaName string) ([]string, error) {
-	var stationNames []string
+	stationNames := []string{}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1476,14 +1438,14 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, s.name, p.created_at, p.is_active, p.is_deleted, c.client_address
+	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name, p.is_active, p.is_deleted, c.client_address
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
 	LEFT JOIN connections AS c
 	ON c.id = p.connection_id
 	WHERE p.connection_id = $1 AND p.is_active = true
-	GROUP BY p.id, s.id`
+	GROUP BY p.id, s.id, c.client_address`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
@@ -1522,6 +1484,34 @@ func UpdateProducersConnection(connectionId string, isActive bool) error {
 		return err
 	}
 	return nil
+}
+
+func GetProducerByID(id int) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM producers WHERE id = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_id", query)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
 }
 
 func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, models.Producer, error) {
@@ -1729,7 +1719,7 @@ func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error)
 	defer conn.Release()
 
 	query := `SELECT * FROM producers AS p WHERE p.station_id = $1 AND p.is_deleted = false`
-	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_not_deleted_producers_by_station_id", query)
 	if err != nil {
 		return []models.Producer{}, err
 	}
@@ -2013,7 +2003,6 @@ func InsertNewConsumer(name string,
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
-			fmt.Println(pgErr.Detail)
 			if pgErr.Detail != "" {
 				return models.Consumer{}, 0, errors.New(pgErr.Detail)
 			} else {
@@ -2054,7 +2043,7 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
+		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON c.station_id = s.id
 		LEFT JOIN connections AS con ON c.connection_id = con.id
@@ -2290,14 +2279,11 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,  
+		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name  
 		FROM consumers AS c
-		FROM
-		consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE
-		c.connection_id = $1
+		WHERE c.connection_id = $1
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
@@ -3205,6 +3191,34 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
+func GetUserForLogin(username string) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login", query)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
 func GetUserByUserId(userId int) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3261,30 +3275,30 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
-func GetAllApplicationUsers() ([]models.FilteredApplicationUser, error) {
+func GetAllUsersByType(userType string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE user_type='application'`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_application_users", query)
+	query := `SELECT * FROM users WHERE type=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userType)
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredApplicationUser])
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
 	if err != nil {
-		return []models.FilteredApplicationUser{}, err
+		return []models.User{}, err
 	}
 	if len(users) == 0 {
-		return []models.FilteredApplicationUser{}, nil
+		return []models.User{}, nil
 	}
 	return users, nil
 }
@@ -3398,6 +3412,37 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) {
 		return []models.FilteredUser{}, nil
 	}
 	return userList, nil
+}
+
+func UpsertBatchOfUsers(users []models.User) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	valueStrings := make([]string, 0, len(users))
+	valueArgs := make([]interface{}, 0, len(users)*6)
+	for i, user := range users {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d)", i*6+1, i*6+2, i*6+3, i*6+4, i*6+5, i*6+6))
+		valueArgs = append(valueArgs, user.Username)
+		valueArgs = append(valueArgs, user.Password)
+		valueArgs = append(valueArgs, user.UserType)
+		valueArgs = append(valueArgs, user.CreatedAt)
+		valueArgs = append(valueArgs, user.AvatarId)
+		valueArgs = append(valueArgs, user.FullName)
+	}
+	query := fmt.Sprintf("INSERT INTO users (username, password, type, created_at, avatar_id, full_name) VALUES %s ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password", strings.Join(valueStrings, ","))
+	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, valueArgs...)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Tags Functions
@@ -3798,4 +3843,428 @@ func GetImage(name string) (bool, models.Image, error) {
 		return false, models.Image{}, nil
 	}
 	return true, images[0], nil
+}
+
+// dls Functions
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, validationError string) (models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.DlsMessage{}, err
+	}
+	defer connection.Release()
+
+	query := `INSERT INTO dls_messages( 
+			station_id,
+			message_seq,
+			producer_id,
+			poisoned_cgs,
+			message_details,
+			updated_at,
+			message_type,
+			validation_error
+			) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id`
+
+	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
+	if err != nil {
+		return models.DlsMessage{}, err
+	}
+	updatedAt := time.Now()
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError)
+	if err != nil {
+		return models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	var messagePayloadId int
+	for rows.Next() {
+		err := rows.Scan(&messagePayloadId)
+		if err != nil {
+			return models.DlsMessage{}, err
+		}
+	}
+
+	if err != nil {
+		return models.DlsMessage{}, err
+	}
+
+	deadLetterPayload := models.DlsMessage{
+		ID:          messagePayloadId,
+		StationId:   stationId,
+		MessageSeq:  messageSeq,
+		ProducerId:  producerId,
+		PoisonedCgs: poisonedCgs,
+		MessageDetails: models.MessagePayload{
+			TimeSent: messageDetails.TimeSent,
+			Size:     messageDetails.Size,
+			Data:     messageDetails.Data,
+			Headers:  messageDetails.Headers,
+		},
+		UpdatedAt: updatedAt,
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if !strings.Contains(pgErr.Detail, "already exists") {
+					return models.DlsMessage{}, errors.New("schemaverse dls already exists")
+				} else {
+					return models.DlsMessage{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.DlsMessage{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.DlsMessage{}, err
+		}
+	}
+
+	return deadLetterPayload, nil
+}
+
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer connection.Release()
+
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+
+	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer rows.Close()
+
+	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	if len(message) == 0 {
+		return false, models.DlsMessage{}, nil
+	}
+
+	return true, message[0], nil
+
+}
+
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer connection.Release()
+
+	tx, err := connection.Conn().Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1 FOR UPDATE`
+	stmt, err := tx.Prepare(ctx, "handle_insert_dls_message", query)
+	if err != nil {
+		return 0, err
+	}
+
+	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq)
+	if err != nil {
+		return 0, err
+	}
+
+	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+
+	var dlsMsgId int
+	if len(message) == 0 { // then insert
+		query = `INSERT INTO dls_messages( 
+			station_id,
+			message_seq,
+			producer_id,
+			poisoned_cgs,
+			message_details,
+			updated_at,
+			message_type,
+			validation_error
+			) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id`
+
+		stmt, err := tx.Prepare(ctx, "insert_dls_message", query)
+		if err != nil {
+			return 0, err
+		}
+		updatedAt := time.Now()
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "")
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&dlsMsgId)
+			if err != nil {
+				return 0, err
+			}
+		}
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				if pgErr.Detail != "" {
+					if !strings.Contains(pgErr.Detail, "already exists") {
+						return 0, errors.New("dls_messages row already exists")
+					} else {
+						return 0, errors.New(pgErr.Detail)
+					}
+				} else {
+					return 0, errors.New(pgErr.Message)
+				}
+			} else {
+				return 0, err
+			}
+		}
+	} else { // then update
+		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) RETURNING id`
+		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
+		if err != nil {
+			return 0, err
+		}
+		updatedAt := time.Now()
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt)
+		if err != nil {
+			return 0, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&dlsMsgId)
+			if err != nil {
+				return 0, err
+			}
+		}
+		if err := rows.Err(); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) {
+				return 0, errors.New(pgErr.Message)
+			} else {
+				return 0, err
+			}
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return dlsMsgId, nil
+}
+
+func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs)`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_poison_msgs_per_cg", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages WHERE updated_at < $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_old_dls_messages", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, updatedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func DropDlsMessages(messageIds []int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("dropSchemaDlsMsg: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where id=ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "drop_dls_schema_msg", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, messageIds)
+	if err != nil {
+		return errors.New("dropSchemaDlsMsg: " + err.Error())
+	}
+	return nil
+}
+
+func PurgeDlsMsgsFromStation(station_id int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "purge_dls_messages", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, station_id)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromStation: " + err.Error())
+	}
+	return nil
+}
+
+func RemoveCgFromDlsMsg(msgId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
+	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1 AND id = $2;`
+
+	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+
+}
+
+func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where id=$1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_id", query)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId)
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return false, models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return false, models.DlsMessage{}, nil
+	}
+	return true, dlsMsgs[0], nil
+}
+
+func RemovePoisonedCg(stationId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2`
+	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

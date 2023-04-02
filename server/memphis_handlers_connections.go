@@ -100,11 +100,11 @@ func handleConnectMessage(client *client) error {
 	}
 	if user.UserType != "root" && user.UserType != "application" {
 		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
-		return errors.New("Please use a user of type Root/Application and not Management")
+		return errors.New("please use a user of type Root/Application and not Management")
 	}
 
 	if isNativeMemphisClient {
-		connectionId := splittedMemphisInfo[0]
+		connectionId = splittedMemphisInfo[0]
 
 		exist, _, err = db.GetConnectionByID(connectionId)
 		if err != nil {
@@ -255,6 +255,5 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 		return err
 	}
 
-	serv.Noticef("Client has been disconnected from Memphis")
 	return nil
 }

@@ -20,9 +20,13 @@ import React from 'react';
 const remainingPorstPopInnerStyle = { padding: '10px', borderRadius: '4px', boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 23px 44px rgba(176, 183, 195, 0.14)' };
 
 const SysCompInfo = ({ status, components }) => {
+    const handleIconClick = (event) => {
+        event.stopPropagation();
+    };
+
     const compList = () => {
         return (
-            <div className="comp-list-wrapper">
+            <div className="comp-list-wrapper" onClick={handleIconClick}>
                 {components['unhealthy_components']?.length && (
                     <div className="comp-length unhealthy">
                         <p>Unhealthy</p>
@@ -62,7 +66,7 @@ const SysCompInfo = ({ status, components }) => {
     const infoStatus = (background, iconColor) => {
         return (
             <Popover overlayInnerStyle={remainingPorstPopInnerStyle} placement="bottomLeft" content={compList}>
-                <div className="sys-components-info" style={{ background: background }}>
+                <div className="sys-components-info" style={{ background: background }} onClick={handleIconClick}>
                     <div className="error-icon" style={{ background: iconColor }}>
                         <PriorityHighRounded />
                     </div>

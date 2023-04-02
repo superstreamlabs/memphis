@@ -3,7 +3,6 @@ module memphis
 go 1.19
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 	github.com/gin-gonic/gin v1.8.1
@@ -22,20 +21,21 @@ require (
 	golang.org/x/crypto v0.6.0
 	golang.org/x/sys v0.5.0
 	golang.org/x/time v0.3.0
-	k8s.io/apimachinery v0.26.1
-	k8s.io/client-go v0.26.1
-	k8s.io/utils v0.0.0-20221107191617-1a15be271d1d
+	k8s.io/apimachinery v0.26.3
+	k8s.io/client-go v0.26.3
+	k8s.io/utils v0.0.0-20230313181309-38a27ef9d749
 )
 
 require (
 	github.com/aws/aws-sdk-go v1.44.180
 	github.com/docker/docker v20.10.23+incompatible
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/graph-gophers/graphql-go v1.4.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
-	k8s.io/api v0.26.1
-	k8s.io/metrics v0.26.1
+	k8s.io/api v0.26.3
+	k8s.io/metrics v0.26.3
 )
 
 require (
@@ -87,7 +87,7 @@ require (
 	github.com/ugorji/go/codec v1.2.7 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/mod v0.6.0 // indirect
-	golang.org/x/net v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
@@ -95,7 +95,7 @@ require (
 	golang.org/x/tools v0.2.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221010155953-15ba04fc1c0e // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.28.2-0.20230222093303-bc1253ad3743 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect

@@ -21,6 +21,7 @@ import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import SelectComponent from '../../../components/select';
 import { generator } from '../../../services/generator';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 
 const CreateUserDetails = ({ createUserRef, closeModal }) => {
     const [creationForm] = Form.useForm();
@@ -101,7 +102,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                             message: 'Please input username!'
                         },
                         {
-                            message: 'Username has to include only letters/numbers and . or /',
+                            message: 'Username has to include only letters/numbers and .',
                             pattern: new RegExp(/^[a-zA-Z0-9_.]*$/)
                         }
                     ]}
@@ -143,7 +144,8 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                         </Form.Item>
                     </div>
                 </div>
-                {formFields.user_type === 'management' && (
+                {(formFields.user_type === 'management' ||
+                    (formFields.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
                     <div className="password-section">
                         <p>Password</p>
                         <Form.Item name="passwordType" initialValue={passwordType}>

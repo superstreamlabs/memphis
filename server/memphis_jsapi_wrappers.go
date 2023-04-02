@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/models"
+	"strings"
 	"time"
 )
 
@@ -73,8 +74,8 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				storageType = "file"
 			}
 
-			var retentionType string
-			var retentionValue int
+			retentionType := "message_age_sec"
+			retentionValue := 604800
 			if cfg.MaxAge > 0 {
 				retentionType = "message_age_sec"
 				retentionValue = int(cfg.MaxAge / 1000000000)
@@ -85,7 +86,10 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 				retentionType = "messages"
 				retentionValue = int(cfg.MaxMsgs)
 			}
-
+			username := c.opts.Username
+			if username == "" {
+				username = strings.Split(c.getRawAuthUser(), "::")[0]
+			}
 			csr := createStationRequest{
 				StationName:       cfg.Name,
 				SchemaName:        "",
@@ -98,6 +102,8 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 					Poison:      true,
 					Schemaverse: false,
 				},
+				Username:             username,
+				TieredStorageEnabled: false,
 			}
 
 			s.createStationDirectIntern(c, reply, &csr, false)
@@ -141,9 +147,8 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 	s.unsubscribeOnAcc(s.SystemAccount(), sub)
 }
 
-func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc *Account, subject, reply string, rmsg []byte) {
+func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
 	var resp = JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-
 	var cfg StreamConfig
 	ci, acc, _, msg, err := s.getRequestInfo(c, rmsg)
 	if err != nil {
@@ -158,13 +163,13 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, acc 
 	}
 
 	if cfg.Retention != LimitsPolicy {
-		resp.Error = NewJSStreamCreateError(errors.New("The only supported retention type is limits"))
+		resp.Error = NewJSStreamCreateError(errors.New("the only supported retention type is limits"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
 
 	if len(cfg.Name) > 32 {
-		resp.Error = NewJSStreamCreateError(errors.New("Stream name can not be greater than 32 characters"))
+		resp.Error = NewJSStreamCreateError(errors.New("stream name can not be greater than 32 characters"))
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}

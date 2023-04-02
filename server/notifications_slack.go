@@ -114,17 +114,17 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(integrationType string,
 	var pmAlert, svfAlert, disconnectAlert bool
 	authToken, ok := body.Keys["auth_token"]
 	if !ok {
-		return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("Must provide auth token for slack integration")
+		return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide auth token for slack integration")
 	}
 	channelID, ok = body.Keys["channel_id"]
 	if !ok {
 		if !ok {
-			return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("Must provide channel ID for slack integration")
+			return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide channel ID for slack integration")
 		}
 	}
 	uiUrl = body.UIUrl
 	if uiUrl == "" {
-		return map[string]string{}, map[string]bool{}, 500, errors.New("Must provide UI url for slack integration")
+		return map[string]string{}, map[string]bool{}, 500, errors.New("must provide UI url for slack integration")
 	}
 
 	pmAlert, ok = body.Properties[PoisonMAlert]
@@ -215,7 +215,7 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		slackIntegration.Keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
 		return slackIntegration, nil
 	}
-	return slackIntegration, errors.New("Slack integration already exists")
+	return slackIntegration, errors.New("slack integration already exists")
 }
 
 func updateSlackIntegration(authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, uiUrl string) (models.Integration, error) {
@@ -226,7 +226,7 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 			return models.Integration{}, err
 		}
 		if !exist {
-			return models.Integration{}, errors.New("No auth token was provided")
+			return models.Integration{}, errors.New("no auth token was provided")
 		}
 		authToken = integrationFromDb.Keys["auth_token"]
 	}
@@ -268,7 +268,7 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 	slackClientTemp := slack.New(authToken)
 	_, err := slackClientTemp.AuthTest()
 	if err != nil {
-		return errors.New("Invalid auth token")
+		return errors.New("invalid auth token")
 	}
 	attachment := slack.Attachment{
 		AuthorName: "Memphis",
@@ -281,7 +281,7 @@ func testSlackIntegration(authToken string, channelID string, message string) er
 		slack.MsgOptionAttachments(attachment),
 	)
 	if err != nil {
-		return errors.New("Invalid channel ID")
+		return errors.New("invalid channel ID")
 	}
 	return nil
 }

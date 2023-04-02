@@ -80,7 +80,7 @@ const (
 
 	// MAX_PAYLOAD_SIZE is the maximum allowed payload size. Should be using
 	// something different if > 1MB payloads are needed.
-	MAX_PAYLOAD_SIZE = (8 * 1024 * 1024)
+	MAX_PAYLOAD_SIZE = (1 * 1024 * 1024)
 
 	// MAX_PAYLOAD_MAX_SIZE is the size at which the server will warn about
 	// max_payload being too high. In the future, the server may enforce/reject
@@ -142,7 +142,7 @@ const (
 	DEFAULT_LEAF_TLS_TIMEOUT = 2 * time.Second
 
 	// PROTO_SNIPPET_SIZE is the default size of proto to print on parse errors.
-	PROTO_SNIPPET_SIZE = 32
+	PROTO_SNIPPET_SIZE = 64 // TODO return to 32
 
 	// MAX_CONTROL_LINE_SNIPPET_SIZE is the default size of proto to print on max control line errors.
 	MAX_CONTROL_LINE_SNIPPET_SIZE = 128

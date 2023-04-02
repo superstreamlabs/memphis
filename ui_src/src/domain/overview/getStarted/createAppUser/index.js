@@ -13,7 +13,7 @@ import './style.scss';
 
 import React, { useState, useEffect, useContext } from 'react';
 import Lottie from 'lottie-react';
-
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStorageConsts';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Button from '../../../../components/button';
@@ -36,15 +36,19 @@ const CreateAppUser = (props) => {
     const [isCreatedUser, setCreatedUser] = useState(screenEnum['CREATE_USER_PAGE']);
     const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
     const [allowEdit, setAllowEdit] = useState(true);
-
-    const [username, setUsername] = useState('');
+    const [user, setUser] = useState({
+        username: '',
+        password: ''
+    });
+    const [confirmPass, setConfirmPass] = useState('');
 
     useEffect(() => {
         createStationFormRef.current = onNext;
         getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: false });
-        if (getStartedState?.username) {
+        if (getStartedState?.user?.username) {
+            getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: true });
             getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: false });
-            setUsername(getStartedState.username);
+            setUser({ username: getStartedState.user.username, password: getStartedState.user.password });
             setAllowEdit(false);
         }
     }, []);
@@ -57,7 +61,8 @@ const CreateAppUser = (props) => {
     const handleCreateUser = async () => {
         getStartedDispatch({ type: 'IS_LOADING', payload: true });
         const bodyRequest = {
-            username: username,
+            username: user.username,
+            password: user.password,
             user_type: 'application'
         };
         try {
@@ -68,7 +73,7 @@ const CreateAppUser = (props) => {
                 setAllowEdit(false);
                 getStartedDispatch({ type: 'IS_LOADING', payload: false });
 
-                getStartedDispatch({ type: 'SET_USER_NAME', payload: data?.username });
+                getStartedDispatch({ type: 'SET_USER', payload: { username: data?.username, password: user.password } });
                 getStartedDispatch({ type: 'SET_BROKER_CONNECTION_CREDS', payload: data?.broker_connection_creds });
 
                 getStartedDispatch({ type: 'SET_CREATE_APP_USER_DISABLE', payload: true });
@@ -87,21 +92,64 @@ const CreateAppUser = (props) => {
     return (
         <div className="create-station-form-create-app-user">
             <div>
-                <TitleComponent headerTitle="Enter user name" typeTitle="sub-header" required={true}></TitleComponent>
-                <Input
-                    placeholder="Type user name"
-                    type="text"
-                    radiusType="semi-round"
-                    colorType="black"
-                    backgroundColorType="none"
-                    borderColorType="gray"
-                    width="371px"
-                    height="38px"
-                    onBlur={(e) => setUsername(e.target.value)}
-                    onChange={(e) => setUsername(e.target.value)}
-                    value={username}
-                    disabled={!allowEdit}
-                />
+                <div className="create-user-form-field">
+                    <TitleComponent headerTitle="Enter user name" typeTitle="sub-header" required={true}></TitleComponent>
+                    <Input
+                        placeholder="Type user name"
+                        type="text"
+                        radiusType="semi-round"
+                        colorType="black"
+                        backgroundColorType="none"
+                        borderColorType="gray"
+                        width="371px"
+                        height="38px"
+                        onBlur={(e) => setUser({ ...user, username: e.target.value })}
+                        onChange={(e) => setUser({ ...user, username: e.target.value })}
+                        value={user.username}
+                        disabled={!allowEdit}
+                    />
+                </div>
+                {localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && (
+                    <div>
+                        <div className="create-user-form-field">
+                            <TitleComponent headerTitle="Enter password" typeTitle="sub-header" required={true}></TitleComponent>
+                            <Input
+                                placeholder="Type password"
+                                type="password"
+                                radiusType="semi-round"
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                width="371px"
+                                height="38px"
+                                onBlur={(e) => setUser({ ...user, password: e.target.value })}
+                                onChange={(e) => setUser({ ...user, password: e.target.value })}
+                                value={user.password}
+                                disabled={!allowEdit}
+                            />
+                        </div>
+                        {allowEdit && (
+                            <div className="create-user-form-field">
+                                <TitleComponent headerTitle="Confirm password" typeTitle="sub-header" required={true}></TitleComponent>
+                                <Input
+                                    placeholder="Confirm password"
+                                    type="password"
+                                    radiusType="semi-round"
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    width="371px"
+                                    height="38px"
+                                    onBlur={(e) => setConfirmPass(e.target.value)}
+                                    onChange={(e) => setConfirmPass(e.target.value)}
+                                    value={confirmPass}
+                                    disabled={!allowEdit}
+                                />
+                                {confirmPass != '' && user.password !== confirmPass && <label className="validate-pass">Passwords do not match</label>}
+                            </div>
+                        )}
+                    </div>
+                )}
                 <Button
                     placeholder="Create app user"
                     colorType="white"
@@ -110,7 +158,12 @@ const CreateAppUser = (props) => {
                     fontSize="12px"
                     fontWeight="bold"
                     marginTop="25px"
-                    disabled={!allowEdit || username.length === 0}
+                    disabled={
+                        !allowEdit ||
+                        user.username.length === 0 ||
+                        (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password === '') ||
+                        (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password !== confirmPass)
+                    }
                     onClick={handleCreateUser}
                     isLoading={getStartedState?.isLoading}
                 />
@@ -121,7 +174,7 @@ const CreateAppUser = (props) => {
                     <p className="create-the-user-header">Please hold a second. The user is being created</p>
                 </div>
             )}
-            {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
+            {isCreatedUser === screenEnum['DATA_RECIEVED'] && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) !== 'true' && (
                 <div className="connection-details-container">
                     <div className="user-details-container">
                         <img src={UserCheck} alt="usercheck" width="20px" height="20px"></img>

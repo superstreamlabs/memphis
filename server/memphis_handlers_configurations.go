@@ -12,7 +12,6 @@
 package server
 
 import (
-	"fmt"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -152,36 +151,6 @@ func changeDlsRetention(dlsRetention int) error {
 	if err != nil {
 		return err
 	}
-
-	stations, err := db.GetActiveStations()
-	if err != nil {
-		return err
-	}
-	maxAge := time.Duration(dlsRetention) * time.Hour
-	for _, station := range stations {
-		sn, err := StationNameFromStr(station.Name)
-		if err != nil {
-			return err
-		}
-		streamName := fmt.Sprintf(dlsStreamName, sn.Intern())
-		var storage StorageType
-		if station.StorageType == "memory" {
-			storage = MemoryStorage
-		} else {
-			storage = FileStorage
-		}
-		err = serv.memphisUpdateStream(&StreamConfig{
-			Name:      streamName,
-			Subjects:  []string{streamName + ".>"},
-			Retention: LimitsPolicy,
-			MaxAge:    maxAge,
-			Storage:   storage,
-		})
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 

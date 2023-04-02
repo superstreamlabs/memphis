@@ -38,7 +38,7 @@ func validateProducerName(name string) error {
 
 func validateProducerType(producerType string) error {
 	if producerType != "application" && producerType != "connector" {
-		return errors.New("Producer type has to be one of the following application/connector")
+		return errors.New("producer type has to be one of the following application/connector")
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 	if !exist {
-		serv.Errorf("createProducerDirectCommon: user" + user.Username + "is not exists")
+		serv.Warnf("createProducerDirectCommon: user" + user.Username + "is not exists")
 		return false, false, err
 	}
 
@@ -308,7 +308,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
-	stationName, err := StationNameFromStr(body.StationName)
+	stationName, _ := StationNameFromStr(body.StationName)
 	exist, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

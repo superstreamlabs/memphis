@@ -49,10 +49,11 @@ const Reducer = (getStartedState, action) => {
                 ...getStartedState,
                 stationName: action.payload
             };
-        case 'SET_USER_NAME':
+        case 'SET_USER':
             return {
                 ...getStartedState,
-                username: action.payload
+                username: action.payload.username,
+                password: action.payload.password
             };
         case 'SET_CURRENT_STEP':
             return {

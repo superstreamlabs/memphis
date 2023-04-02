@@ -22,14 +22,14 @@ function checkIsBuffer(node) {
         n = {
             field_number: node.index,
             type: node.type,
-            childrens: node.childrens
+            children: node.children
         };
     } else {
         n = {
             field_number: node.index,
             type: node.type,
             value: node.value,
-            childrens: node.childrens
+            children: node.children
         };
     }
     return n;
@@ -43,19 +43,19 @@ function list_to_tree(list) {
 
     for (i = 0; i < list.length; i += 1) {
         map[list[i].uuid] = i; // initialize the map
-        list[i].childrens = []; // initialize the childrens
+        list[i].children = []; // initialize the childrens
     }
 
     for (i = 0; i < list.length; i += 1) {
         node = list[i];
         if (node.parentId !== null) {
-            list[map[node.parentId]].childrens.push(checkIsBuffer(node));
+            list[map[node.parentId]].children.push(checkIsBuffer(node));
         } else {
             roots.push(checkIsBuffer(node));
         }
     }
     for (i = 0; i < roots.length; i += 1) {
-        if (roots[i].childrens.length === 0 && !roots[i].value) {
+        if (roots[i].children.length === 0 && !roots[i].value) {
             roots.splice(i, 1);
         }
     }

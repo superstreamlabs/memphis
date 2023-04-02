@@ -23,11 +23,13 @@ import { message as messageAnt } from 'antd';
 const PoisonMessage = ({ messageId, details, message, headers, processing, returnBack, schemaType }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
+    const url = window.location.href;
+    const stationName = url.split('stations/')[1].split('/')[0];
 
     const handleIgnore = async () => {
         setIgnoreProcess(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId], station_name: stationName });
             setTimeout(() => {
                 setIgnoreProcess(false);
                 returnBack();
@@ -41,7 +43,7 @@ const PoisonMessage = ({ messageId, details, message, headers, processing, retur
         setResendProcess(true);
         processing(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId] });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId], station_name: stationName });
             setTimeout(() => {
                 setResendProcess(false);
                 processing(false);

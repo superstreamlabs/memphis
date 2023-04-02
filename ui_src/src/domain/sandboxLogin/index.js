@@ -16,7 +16,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_TOKEN } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 import FullLogo from '../../assets/images/fullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import sharps from '../../assets/images/sharps.svg';
@@ -126,11 +126,22 @@ const SandboxLogin = (props) => {
                     try {
                         const ws_port = data.ws_port;
                         const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-                        const conn = await connect({
-                            servers: [SOCKET_URL],
-                            token: '::memphis',
-                            timeout: '5000'
-                        });
+                        let conn;
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH)) {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                user: '$memphis_user',
+                                pass: connection_token,
+                                timeout: '5000'
+                            });
+                        } else {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::'+connection_token,
+                                timeout: '5000'
+                            });
+                        }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}
                     dispatch({ type: 'SET_USER_DATA', payload: data });
@@ -163,11 +174,22 @@ const SandboxLogin = (props) => {
                 try {
                     const ws_port = data.ws_port;
                     const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-                    const conn = await connect({
-                        servers: [SOCKET_URL],
-                        token: '::memphis',
-                        timeout: '5000'
-                    });
+                    let conn;
+                    const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH)) {
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            user: '$memphis_user',
+                            pass: connection_token,
+                            timeout: '5000'
+                        });
+                    } else {
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            token: '::'+connection_token,
+                            timeout: '5000'
+                        });
+                    }
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {}
                 dispatch({ type: 'SET_USER_DATA', payload: data });
@@ -200,11 +222,22 @@ const SandboxLogin = (props) => {
                 try {
                     const ws_port = data.ws_port;
                     const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-                    const conn = await connect({
-                        servers: [SOCKET_URL],
-                        token: '::memphis',
-                        timeout: '5000'
-                    });
+                    let conn;
+                    const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                    if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            user: '$memphis_user',
+                            pass: connection_token,
+                            timeout: '5000'
+                        });
+                    } else {
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            token: '::'+connection_token,
+                            timeout: '5000'
+                        });
+                    }
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {}
                 dispatch({ type: 'SET_USER_DATA', payload: data });

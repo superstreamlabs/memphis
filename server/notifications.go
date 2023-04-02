@@ -30,7 +30,7 @@ func SendNotification(title string, message string, msgType string) error {
 				}
 			}
 		default:
-			return errors.New("Failed sending notification: unsupported integration")
+			return errors.New("failed sending notification: unsupported integration")
 		}
 	}
 	return nil
