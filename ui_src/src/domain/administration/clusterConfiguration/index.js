@@ -86,15 +86,14 @@ function ClusterConfiguration() {
         }
     };
 
-    const handleChange = (field, value, err, type) => {
+    const handleChange = (field, value, err) => {
         if (err !== '' && err !== undefined) {
             setIsChanged(false);
         } else {
             let updatedValue = { ...formFields };
             updatedValue[field] = value;
-            setIsChanged(!compareObjects(updatedValue, oldValues));
-            updatedValue[field] = value;
             setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+            setIsChanged(!compareObjects(updatedValue, oldValues));
         }
     };
     const discardChanges = () => {
@@ -151,7 +150,7 @@ function ClusterConfiguration() {
                                 handleChange('tiered_storage_time_sec', e, err);
                             }}
                         />
-                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && (
+                        {localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker' && (
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"

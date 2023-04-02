@@ -12,19 +12,13 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Input from '../../../../../components/Input';
 
 function InputRow({ title, desc, value, onChanges, img, placeholder, disabled }) {
-    const [inputValue, setInputValue] = useState(value);
-
     const onChange = (newValue) => {
-        setInputValue(newValue);
         onChanges(newValue);
     };
-    useEffect(() => {
-        setInputValue(value);
-    }, [value]);
 
     return (
         <div className="configuration-list-container">
@@ -37,7 +31,7 @@ function InputRow({ title, desc, value, onChanges, img, placeholder, disabled })
             </div>
             <div className="input">
                 <Input
-                    value={inputValue}
+                    value={value}
                     placeholder={placeholder}
                     type="text"
                     radiusType="semi-round"
@@ -48,7 +42,7 @@ function InputRow({ title, desc, value, onChanges, img, placeholder, disabled })
                     width="30vw"
                     minWidth="200px"
                     height="38px"
-                    onChange={onChange}
+                    onChange={(e) => onChange(e)}
                     disabled={disabled}
                 />
             </div>
