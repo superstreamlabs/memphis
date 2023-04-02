@@ -50,7 +50,7 @@ type Station struct {
 	CreatedByUsername           string    `json:"created_by_username"`
 	CreatedAt                   time.Time `json:"created_at"`
 	UpdatedAt                   time.Time `json:"updated_at,omitempty"`
-	IsDeleted                   bool      `json:"is_deleted"`
+	IsDeleted                   bool      `json:"is_deleted,omitempty"`
 	SchemaName                  string    `json:"schema_name,omitempty"`
 	SchemaVersionNumber         int       `json:"schema_vesrion_number,omitempty"`
 	IdempotencyWindow           int64     `json:"idempotency_window_in_ms,omitempty"`

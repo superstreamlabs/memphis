@@ -1120,7 +1120,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	stationName := strings.ToLower(body.StationName)
-	exist, station, err := db.GetStationByName(stationName)
+	exist, _, err := db.GetStationByName(stationName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1134,15 +1134,13 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	dlsMsgs, err := db.GetDlsMsgsByStationId(station.ID)
-	if err != nil {
-		serv.Errorf("ResendPoisonMessages: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	for _, dlsMsg := range dlsMsgs {
-
+	for _, id := range body.PoisonMessageIds {
+		_, dlsMsg, err := db.GetDlsMessageById(id)
+		if err != nil {
+			serv.Errorf("ResendPoisonMessages: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 		for _, cgName := range dlsMsg.PoisonedCgs {
 			headersJson := map[string]string{}
 			for key, value := range dlsMsg.MessageDetails.Headers {
