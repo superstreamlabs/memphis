@@ -46,17 +46,17 @@ type Station struct {
 	RetentionValue              int       `json:"retention_value"`
 	StorageType                 string    `json:"storage_type"`
 	Replicas                    int       `json:"replicas"`
-	CreatedBy                   int       `json:"created_by"`
+	CreatedBy                   int       `json:"created_by,omitempty"`
 	CreatedByUsername           string    `json:"created_by_username"`
 	CreatedAt                   time.Time `json:"created_at"`
-	UpdatedAt                   time.Time `json:"updated_at"`
-	IsDeleted                   bool      `json:"is_deleted"`
-	SchemaName                  string    `json:"schema_name"`
-	SchemaVersionNumber         int       `json:"schema_vesrion_number"`
-	IdempotencyWindow           int64     `json:"idempotency_window_in_ms"`
+	UpdatedAt                   time.Time `json:"updated_at,omitempty"`
+	IsDeleted                   bool      `json:"is_deleted,omitempty"`
+	SchemaName                  string    `json:"schema_name,omitempty"`
+	SchemaVersionNumber         int       `json:"schema_vesrion_number,omitempty"`
+	IdempotencyWindow           int64     `json:"idempotency_window_in_ms,omitempty"`
 	IsNative                    bool      `json:"is_native"`
-	DlsConfigurationPoison      bool      `json:"dls_configuration_poison"`
-	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse"`
+	DlsConfigurationPoison      bool      `json:"dls_configuration_poison,omitempty"`
+	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse,omitempty"`
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 }
 
@@ -82,25 +82,25 @@ type GetStationResponseSchema struct {
 type ExtendedStation struct {
 	ID                          int         `json:"id"`
 	Name                        string      `json:"name"`
-	RetentionType               string      `json:"retention_type"`
-	RetentionValue              int         `json:"retention_value"`
-	StorageType                 string      `json:"storage_type"`
-	Replicas                    int         `json:"replicas"`
-	CreatedBy                   int         `json:"created_by"`
+	RetentionType               string      `json:"retention_type,omitempty"`
+	RetentionValue              int         `json:"retention_value,omitempty"`
+	StorageType                 string      `json:"storage_type,omitempty"`
+	Replicas                    int         `json:"replicas,omitempty"`
+	CreatedBy                   int         `json:"created_by,omitempty"`
 	CreatedAt                   time.Time   `json:"created_at"`
-	UpdatedAt                   time.Time   `json:"last_update"`
+	UpdatedAt                   time.Time   `json:"updated_at,omitempty"`
 	TotalMessages               int         `json:"total_messages"`
-	PoisonMessages              int         `json:"posion_messages"`
-	Tags                        []CreateTag `json:"tags"`
-	IdempotencyWindow           int64       `json:"idempotency_window_in_ms"`
+	PoisonMessages              int         `json:"posion_messages,omitempty"`
+	Tags                        []CreateTag `json:"tags,omitempty"`
+	IdempotencyWindow           int64       `json:"idempotency_window_in_ms,omitempty"`
 	IsNative                    bool        `json:"is_native"`
-	DlsConfigurationPoison      bool        `json:"dls_configuration_poison"`
-	DlsConfigurationSchemaverse bool        `json:"dls_configuration_schemaverse"`
+	DlsConfigurationPoison      bool        `json:"dls_configuration_poison,omitempty"`
+	DlsConfigurationSchemaverse bool        `json:"dls_configuration_schemaverse,omitempty"`
 	HasDlsMsgs                  bool        `json:"has_dls_messages"`
 	Activity                    bool        `json:"activity"`
-	Producers                   []Producer  `json:"producers"`
-	Consumers                   []Consumer  `json:"consumers"`
-	TieredStorageEnabled        bool        `json:"tiered_storage_enabled"`
+	Producers                   []Producer  `json:"producers,omitempty"`
+	Consumers                   []Consumer  `json:"consumers,omitempty"`
+	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 }
 
 type ExtendedStationDetails struct {
@@ -202,9 +202,4 @@ type StationOverviewSchemaDetails struct {
 
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
-}
-
-type StationMsgsDetails struct {
-	HasDlsMsgs    bool `json:"has_dls_messages"`
-	TotalMessages int  `json:"total_messages"`
 }

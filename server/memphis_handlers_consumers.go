@@ -370,12 +370,25 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			cg = m[consumer.ConsumersGroup]
 		}
 
+		consumerRes := models.ExtendedConsumer{
+			ID:                consumer.ID,
+			Name:              consumer.Name,
+			CreatedByUsername: consumer.CreatedByUsername,
+			CreatedAt:         consumer.CreatedAt,
+			IsActive:          consumer.IsActive,
+			ClientAddress:     consumer.ClientAddress,
+			ConsumersGroup:    consumer.ConsumersGroup,
+			MaxAckTimeMs:      consumer.MaxAckTimeMs,
+			MaxMsgDeliveries:  consumer.MaxMsgDeliveries,
+			StationName:       consumer.StationName,
+		}
+
 		if consumer.IsActive {
-			cg.ConnectedConsumers = append(cg.ConnectedConsumers, consumer)
+			cg.ConnectedConsumers = append(cg.ConnectedConsumers, consumerRes)
 		} else if !consumer.IsDeleted && !consumer.IsActive {
-			cg.DisconnectedConsumers = append(cg.DisconnectedConsumers, consumer)
+			cg.DisconnectedConsumers = append(cg.DisconnectedConsumers, consumerRes)
 		} else if consumer.IsDeleted {
-			cg.DeletedConsumers = append(cg.DeletedConsumers, consumer)
+			cg.DeletedConsumers = append(cg.DeletedConsumers, consumerRes)
 		}
 	}
 
@@ -393,7 +406,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
 
-			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name)
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
 			if err != nil {
 				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 			}

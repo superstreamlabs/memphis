@@ -1058,7 +1058,31 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	}
 	defer conn.Release()
 	query := `
-	SELECT s.*, COALESCE(p.id, 0),  COALESCE(p.name, ''), COALESCE(p.station_id, 0), COALESCE(p.type, 'application'), COALESCE(p.connection_id, ''), COALESCE(p.created_by, 0), COALESCE(p.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.id, 0),  COALESCE(c.name, ''), COALESCE(c.station_id, 0), COALESCE(c.type, 'application'), COALESCE(c.connection_id, ''),COALESCE(c.consumers_group, ''),COALESCE(c.max_ack_time_ms, 0), COALESCE(c.created_by, 0), COALESCE(c.created_by_username, ''), COALESCE(p.is_active, false), COALESCE(p.created_at, CURRENT_TIMESTAMP), COALESCE(p.is_deleted, false), COALESCE(c.max_msg_deliveries, 0), COALESCE(c.start_consume_from_seq, 0), COALESCE(c.last_msgs, 0) 
+	SELECT s.*, COALESCE(p.id, 0),  
+	COALESCE(p.name, ''), 
+	COALESCE(p.station_id, 0), 
+	COALESCE(p.type, 'application'), 
+	COALESCE(p.connection_id, ''), 
+	COALESCE(p.created_by, 0), 
+	COALESCE(p.created_by_username, ''), 
+	COALESCE(p.is_active, false), 
+	COALESCE(p.created_at, CURRENT_TIMESTAMP), 
+	COALESCE(p.is_deleted, false), 
+	COALESCE(c.id, 0),  
+	COALESCE(c.name, ''), 
+	COALESCE(c.station_id, 0), 
+	COALESCE(c.type, 'application'), 
+	COALESCE(c.connection_id, ''),
+	COALESCE(c.consumers_group, ''),
+	COALESCE(c.max_ack_time_ms, 0), 
+	COALESCE(c.created_by, 0), 
+	COALESCE(c.created_by_username, ''), 
+	COALESCE(c.is_active, false), 
+	COALESCE(c.created_at, CURRENT_TIMESTAMP), 
+	COALESCE(c.is_deleted, false), 
+	COALESCE(c.max_msg_deliveries, 0), 
+	COALESCE(c.start_consume_from_seq, 0),
+	 COALESCE(c.last_msgs, 0) 
 	FROM stations AS s
 	LEFT JOIN producers AS p
 	ON s.id = p.station_id 
@@ -4077,7 +4101,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 	return dlsMsgId, nil
 }
 
-func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
+func GetTotalPoisonMsgsPerCg(cgName string, stationId int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4085,13 +4109,13 @@ func GetTotalPoisonMsgsPerCg(cgName string) (int, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs)`
+	query := `SELECT COUNT(*) FROM dls_messages WHERE $1 = ANY(poisoned_cgs) AND station_id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_total_poison_msgs_per_cg", query)
 	if err != nil {
 		return 0, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName).Scan(&count)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, cgName, stationId).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -4266,4 +4290,61 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 	return nil
+}
+
+func GetTotalDlsMessages() (uint64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM dls_messages`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_dls_msgs", query)
+	if err != nil {
+		return 0, err
+	}
+	var count uint64
+	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func GetStationIdsFromDlsMsgs() ([]int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []int{}, err
+	}
+	defer conn.Release()
+	query := `SELECT DISTINCT station_id FROM dls_messages`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_ids_in_dls_messages", query)
+	if err != nil {
+		return []int{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []int{}, err
+	}
+	defer rows.Close()
+
+	var stationIds []int
+	for rows.Next() {
+		var stationId int
+		err := rows.Scan(&stationId)
+		if err != nil {
+			return []int{}, err
+		}
+		stationIds = append(stationIds, stationId)
+	}
+	if len(stationIds) == 0 {
+		return []int{}, nil
+	}
+	return stationIds, nil
 }

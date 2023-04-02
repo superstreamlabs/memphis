@@ -200,7 +200,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	stations, totalMessages, totalDlsMsgs, err := h.Stations.GetAllStationsDetails()
+	stations, totalMessages, totalDlsMsgs, err := h.Stations.GetAllStationsDetails(false)
 	if err != nil {
 		return models.MainOverviewData{}, nil
 	}
