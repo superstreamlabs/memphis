@@ -92,16 +92,16 @@ function Throughput() {
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
     const [loadedComponent, setLoadedComponent] = useState(true);
-    const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
 
-    Chart.plugins.register({
-        afterDraw: function (chart) {
-            if (data?.datasets?.length == 0) {
-                !socketFailIndicator && setSocketFailIndicator(true);
-            } else socketFailIndicator && setSocketFailIndicator(false);
-        }
-    });
+    // Chart.plugins.register({
+    //     afterDraw: function (chart) {
+    //         if (data?.datasets?.length == 0) {
+    //             !socketFailIndicator && setSocketFailIndicator(true);
+    //         } else socketFailIndicator && setSocketFailIndicator(false);
+    //     }
+    // });
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -290,13 +290,12 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                {socketFailIndicator && !loadedComponent && (
+                {/* {socketFailIndicator && (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
                         <p className="title">No data found</p>
                     </div>
-                )}
-
+                )} */}
                 <Line id="test" data={data} options={options} />
             </div>
         </div>
