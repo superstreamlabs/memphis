@@ -91,16 +91,16 @@ function Throughput() {
     const [data, setData] = useState({});
     const [loading, setLoading] = useState(false);
     const [stop, setstop] = useState(false);
-    const [socketFailIndicator, setSocketFailIndicator] = useState(false);
+    // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
 
-    Chart.plugins.register({
-        afterDraw: function (chart) {
-            if (data?.datasets?.length == 0) {
-                !socketFailIndicator && setSocketFailIndicator(true);
-            } else socketFailIndicator && setSocketFailIndicator(false);
-        }
-    });
+    // Chart.plugins.register({
+    //     afterDraw: function (chart) {
+    //         if (data?.datasets?.length == 0) {
+    //             !socketFailIndicator && setSocketFailIndicator(true);
+    //         } else socketFailIndicator && setSocketFailIndicator(false);
+    //     }
+    // });
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -118,7 +118,7 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
-        !socketFailIndicator && setLoader();
+        setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
                 data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
@@ -153,7 +153,7 @@ function Throughput() {
 
     useEffect(() => {
         if (Object.keys(dataSamples).length > 0) {
-            getSelectComponentList();
+            selectOptions.length === 0 && getSelectComponentList();
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 let updatedDataSamples = { ...dataSamples };
                 updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
@@ -288,13 +288,12 @@ function Throughput() {
             </div>
             <div className="throughput-chart">
                 {loading && <Loader />}
-                {socketFailIndicator && (
+                {/* {socketFailIndicator && (
                     <div className="failed-socket">
                         <img src={DataNotFound} alt="Data not found" />
                         <p className="title">No data found</p>
                     </div>
-                )}
-
+                )} */}
                 <Line id="test" data={data} options={options} />
             </div>
         </div>
