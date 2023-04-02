@@ -27,7 +27,7 @@ import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
 const initializeState = {
-    stationMetaData: {},
+    stationMetaData: { is_native: true },
     stationSocketData: {}
 };
 
