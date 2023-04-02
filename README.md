@@ -102,7 +102,8 @@ docker compose -f docker-compose.yml -p memphis up
 
 <a href="https://docs.memphis.dev/memphis/memphis/architecture">
 <p align="center">
-<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/212160911-aeae5b55-c0cf-46bc-a1aa-fcfdb6d10a2a.png">
+<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/229371674-35a5e4cc-d3f5-413e-982d-d1081b18d82a.jpeg">
+
 </p>
 </a>
 
