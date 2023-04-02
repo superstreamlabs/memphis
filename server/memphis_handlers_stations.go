@@ -317,7 +317,6 @@ func (s *Server) createStationDirectIntern(c *client,
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
-			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -767,7 +766,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
-		UserType:          user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -979,7 +977,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
-			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1432,7 +1429,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
-			UserType:          user.UserType,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1541,7 +1537,6 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
-		UserType:          "sdk",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1682,7 +1677,6 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
-		UserType:          user.UserType,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

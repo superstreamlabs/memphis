@@ -106,7 +106,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				CreatedBy:         connection.CreatedBy,
 				CreatedByUsername: connection.CreatedByUsername,
 				CreatedAt:         time.Now(),
-				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -151,7 +150,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			CreatedBy:         connection.CreatedBy,
 			CreatedByUsername: connection.CreatedByUsername,
 			CreatedAt:         time.Now(),
-			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -344,7 +342,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + "at station " + dpr.StationName + ": " + err.Error())
+		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -352,14 +350,14 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + "at station " + dpr.StationName + ": " + err.Error())
+		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
+		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -376,7 +374,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	}
 	_, user, err := db.GetUserByUsername(username)
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
+		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 	}
 	message := "Producer " + name + " has been deleted by user " + username
 	serv.Noticef(message)
@@ -387,12 +385,11 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
-		UserType:          "application",
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + name + "at station " + dpr.StationName + ": " + err.Error())
+		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

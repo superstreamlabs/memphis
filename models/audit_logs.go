@@ -21,7 +21,6 @@ type AuditLog struct {
 	Message           string    `json:"message"`
 	CreatedBy         int       `json:"created_by"`
 	CreatedByUsername string    `json:"created_by_username"`
-	UserType          string    `json:"user_type"`
 	CreatedAt         time.Time `json:"created_at"`
 }
 

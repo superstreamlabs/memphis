@@ -789,8 +789,7 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 		return []models.AuditLog{}, err
 	}
 	defer conn.Release()
-	query := `SELECT a.id, a.station_name, a.message, a.created_by, a.created_by_username, u.type, a.created_at FROM audit_logs AS a 
-		LEFT JOIN users AS u ON u.id = a.created_by 
+	query := `SELECT a.id, a.station_name, a.message, a.created_by, a.created_by_username, a.created_at FROM audit_logs AS a 
 		WHERE a.station_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {

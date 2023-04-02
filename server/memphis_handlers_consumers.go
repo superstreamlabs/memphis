@@ -166,7 +166,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				CreatedBy:         connection.CreatedBy,
 				CreatedByUsername: connection.CreatedByUsername,
 				CreatedAt:         time.Now(),
-				UserType:          "application",
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -259,7 +258,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			CreatedBy:         connection.CreatedBy,
 			CreatedByUsername: connection.CreatedByUsername,
 			CreatedAt:         time.Now(),
-			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -568,7 +566,6 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
-			UserType:          "application",
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
