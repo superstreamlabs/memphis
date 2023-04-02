@@ -109,7 +109,7 @@ const CreateAppUser = (props) => {
                         disabled={!allowEdit}
                     />
                 </div>
-                {localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && (
+                {localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && allowEdit && (
                     <div>
                         <div className="create-user-form-field">
                             <TitleComponent headerTitle="Enter password" typeTitle="sub-header" required={true}></TitleComponent>
@@ -128,26 +128,24 @@ const CreateAppUser = (props) => {
                                 disabled={!allowEdit}
                             />
                         </div>
-                        {allowEdit && (
-                            <div className="create-user-form-field">
-                                <TitleComponent headerTitle="Confirm password" typeTitle="sub-header" required={true}></TitleComponent>
-                                <Input
-                                    placeholder="Confirm password"
-                                    type="password"
-                                    radiusType="semi-round"
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    width="371px"
-                                    height="38px"
-                                    onBlur={(e) => setConfirmPass(e.target.value)}
-                                    onChange={(e) => setConfirmPass(e.target.value)}
-                                    value={confirmPass}
-                                    disabled={!allowEdit}
-                                />
-                                {confirmPass != '' && user.password !== confirmPass && <label className="validate-pass">Passwords do not match</label>}
-                            </div>
-                        )}
+                        <div className="create-user-form-field">
+                            <TitleComponent headerTitle="Confirm password" typeTitle="sub-header" required={true}></TitleComponent>
+                            <Input
+                                placeholder="Confirm password"
+                                type="password"
+                                radiusType="semi-round"
+                                colorType="black"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                width="371px"
+                                height="38px"
+                                onBlur={(e) => setConfirmPass(e.target.value)}
+                                onChange={(e) => setConfirmPass(e.target.value)}
+                                value={confirmPass}
+                                disabled={!allowEdit}
+                            />
+                            {confirmPass != '' && user.password !== confirmPass && <label className="validate-pass">Passwords do not match</label>}
+                        </div>
                     </div>
                 )}
                 <Button
