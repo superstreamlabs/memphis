@@ -142,7 +142,7 @@ const GetStarted = ({ username, dataSentence, skip }) => {
                 return 'A station is a distributed unit that stores the produced data';
             case 2:
                 return `Each producer/consumer has to have a username and a ${
-                    localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? 'passsword' : 'connection-token'
+                    localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? 'password' : 'connection-token'
                 }`;
             case 3:
                 return 'A producer is the source application/service that pushes data or messages to the broker or station';
