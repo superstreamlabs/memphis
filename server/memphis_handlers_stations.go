@@ -494,7 +494,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetails(isGetTags bool) ([]models.ExtendedStation, uint64, uint64, error) {
+func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool) ([]models.ExtendedStation, uint64, uint64, error) {
 	totalMessages := uint64(0)
 	totalDlsMessages, err := db.GetTotalDlsMessages()
 	if err != nil {
@@ -540,7 +540,7 @@ func (sh StationsHandler) GetAllStationsDetails(isGetTags bool) ([]models.Extend
 				}
 			}
 
-			if isGetTags {
+			if shouldGetTags {
 				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 				if err != nil {
 					return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
