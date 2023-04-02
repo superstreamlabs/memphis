@@ -42,13 +42,13 @@ node {
     stage('Tests - Install/upgrade Memphis cli') {
       if (env.BRANCH_NAME ==~ /(master)/) { 
         sh """
-          sudo npm uninstall memphis-dev-cli-beta
+          sudo npm uninstall memphis-dev-cli-beta -g
           sudo npm i memphis-dev-cli-beta -g
         """
       }
       else {
 	sh """
-          sudo npm uninstall memphis-dev-cli
+          sudo npm uninstall memphis-dev-cli -g
           sudo npm i memphis-dev-cli -g
         """
       }
