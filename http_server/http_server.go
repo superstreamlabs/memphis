@@ -27,6 +27,7 @@ func InitializeHttpServer(s *server.Server) {
 		PoisonMsgs:     server.PoisonMessagesHandler{S: s},
 		Schemas:        server.SchemasHandler{S: s},
 		Configurations: server.ConfigurationsHandler{S: s},
+		Integrations:   server.IntegrationsHandler{S: s},
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)
