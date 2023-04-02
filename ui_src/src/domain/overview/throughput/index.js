@@ -120,7 +120,6 @@ function Throughput() {
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
         if (foundItemIndex === -1) return;
-        // !socketFailIndicator &&
         setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
