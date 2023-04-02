@@ -379,7 +379,6 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			CreatedByUsername: consumer.CreatedByUsername,
 			CreatedAt:         consumer.CreatedAt,
 			IsActive:          consumer.IsActive,
-			IsDeleted:         consumer.IsDeleted,
 			ClientAddress:     consumer.ClientAddress,
 			ConsumersGroup:    consumer.ConsumersGroup,
 			MaxAckTimeMs:      consumer.MaxAckTimeMs,

@@ -271,6 +271,7 @@ func (ph ProducersHandler) GetProducersByStation(station models.Station) ([]mode
 			ID:                producer.ID,
 			Name:              producer.Name,
 			CreatedByUsername: producer.CreatedByUsername,
+			StationName:       producer.StationName,
 			CreatedAt:         producer.CreatedAt,
 			IsActive:          producer.IsActive,
 			IsDeleted:         producer.IsDeleted,

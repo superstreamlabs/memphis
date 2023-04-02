@@ -36,7 +36,7 @@ type Consumer struct {
 type ExtendedConsumer struct {
 	ID                int       `json:"id"`
 	Name              string    `json:"name"`
-	CreatedBy         string    `json:"created_by"`
+	CreatedBy         string    `json:"created_by,omitempty"`
 	CreatedByUsername string    `json:"created_by_username"`
 	CreatedAt         time.Time `json:"created_at"`
 	IsActive          bool      `json:"is_active"`
@@ -45,7 +45,7 @@ type ExtendedConsumer struct {
 	ConsumersGroup    string    `json:"consumers_group"`
 	MaxAckTimeMs      int64     `json:"max_ack_time_ms"`
 	MaxMsgDeliveries  int       `json:"max_msg_deliveries"`
-	StationName       string    `json:"station_name"`
+	StationName       string    `json:"station_name,omitempty"`
 }
 
 type Cg struct {

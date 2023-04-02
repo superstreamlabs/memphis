@@ -930,7 +930,7 @@ cleanup:
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails()
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
 	if err != nil {
 		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

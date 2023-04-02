@@ -4322,3 +4322,38 @@ func GetTotalDlsMessages() (uint64, error) {
 
 	return count, nil
 }
+
+func GetStationIdsFromDlsMsgs() ([]int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []int{}, err
+	}
+	defer conn.Release()
+	query := `SELECT DISTINCT station_id FROM dls_messages`
+	stmt, err := conn.Conn().Prepare(ctx, "get_station_ids_in_dls_messages", query)
+	if err != nil {
+		return []int{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []int{}, err
+	}
+	defer rows.Close()
+
+	var stationIds []int
+	for rows.Next() {
+		var stationId int
+		err := rows.Scan(&stationId)
+		if err != nil {
+			return []int{}, err
+		}
+		stationIds = append(stationIds, stationId)
+	}
+	if len(stationIds) == 0 {
+		return []int{}, nil
+	}
+	return stationIds, nil
+}

@@ -31,9 +31,9 @@ type Producer struct {
 type ExtendedProducer struct {
 	ID                int       `json:"id"`
 	Name              string    `json:"name"`
-	Type              string    `json:"type"`
-	ConnectionId      string    `json:"connection_id"`
-	CreatedBy         int       `json:"created_by"`
+	Type              string    `json:"type,omitempty"`
+	ConnectionId      string    `json:"connection_id,omitempty"`
+	CreatedBy         int       `json:"created_by,omitempty"`
 	CreatedByUsername string    `json:"created_by_username"`
 	CreatedAt         time.Time `json:"created_at"`
 	StationName       string    `json:"station_name"`

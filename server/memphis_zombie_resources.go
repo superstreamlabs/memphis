@@ -45,7 +45,7 @@ func updateSystemLiveness() {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails()
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: " + err.Error())
 			return
