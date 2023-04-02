@@ -133,8 +133,8 @@ const GenerateTokenModal = ({ host, close }) => {
                                     borderColorType="gray"
                                     height="40px"
                                     onBlur={(e) => { if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){updateState('password', e.target.value)} else {updateState('connection_token', e.target.value)}}}
-                                    onChange={(e) => {updateState('connection_token', e.target.value)}}
-                                    value={formFields.connection_token}
+                                    onChange={(e) => { if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){updateState('password', e.target.value)} else {updateState('connection_token', e.target.value)}}}
+                                    value={ ((localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')? formFields.password : formFields.connection_token)}
                                 />
                             </div>
                             <Button
