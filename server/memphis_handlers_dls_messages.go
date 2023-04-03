@@ -146,10 +146,14 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	}
 
 	for _, v := range dlsMsgs {
+		data := v.MessageDetails.Data
+		if len(data) > 40 { // get the first chars for preview needs
+			data = data[0:40]
+		}
 		messageDetails := models.MessagePayload{
 			TimeSent: v.MessageDetails.TimeSent,
 			Size:     v.MessageDetails.Size,
-			Data:     v.MessageDetails.Data,
+			Data:     data,
 			Headers:  v.MessageDetails.Headers,
 		}
 		switch v.MessageType {
