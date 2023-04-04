@@ -1098,7 +1098,8 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	case "syslogs":
 		logType := []string{"info", "warn", "err"}
-		c.IndentedJSON(200, gin.H{"type": logType})
+		logSource := []string{"memphis-0", "memphis-1", "memphis-2"}
+		c.IndentedJSON(200, gin.H{"type": logType, "source": logSource})
 		return
 	default:
 		c.IndentedJSON(200, gin.H{})

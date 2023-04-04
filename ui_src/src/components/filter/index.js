@@ -42,7 +42,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     let sub;
 
     useEffect(() => {
-        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: '' });
+        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['external', ''] });
     }, [filterComponent]);
 
     useEffect(() => {
@@ -253,7 +253,17 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 return { name: type };
             })
         };
-        filteredFields.push(typeFilter);
+        const sourceFilter = {
+            name: 'source',
+            value: 'Source',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.source?.map((type) => {
+                return { name: type };
+            })
+        };
+        filteredFields.push(typeFilter, sourceFilter);
+        // filteredFields.push(sourceFilter);
         setFilterFields(filteredFields);
     };
 
@@ -328,11 +338,27 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
 
     const handleApply = () => {
         if (filterComponent === 'syslogs') {
-            const selectedField = filterState?.filterFields[0]?.radioValue;
-            if (selectedField !== -1) {
-                dispatch({ type: 'SET_LOG_FILTER', payload: filterState?.filterFields[0]?.fields[selectedField]?.name });
-                applyFilter(filterState?.filterFields[0]?.fields[selectedField]?.name);
-                setFilterTerms([filterState?.filterFields[0]?.fields[selectedField]?.name]);
+            const selectedTypeField = filterState?.filterFields[0]?.radioValue;
+            const selectedSourceField = filterState?.filterFields[1]?.radioValue;
+            if (selectedTypeField !== -1 && selectedSourceField !== -1) {
+                dispatch({
+                    type: 'SET_LOG_FILTER',
+                    payload: [filterState?.filterFields[0]?.fields[selectedTypeField]?.name, filterState?.filterFields[1]?.fields[selectedSourceField]?.name]
+                });
+                applyFilter([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
+                setFilterTerms([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
+            } else if (selectedTypeField !== -1 && selectedSourceField === -1) {
+                dispatch({ type: 'SET_LOG_FILTER', payload: [filterState?.filterFields[0]?.fields[selectedTypeField]?.name, ''] });
+                applyFilter([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, '']);
+                setFilterTerms([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, '']);
+            } else if (selectedTypeField === -1 && selectedSourceField !== -1) {
+                dispatch({ type: 'SET_LOG_FILTER', payload: ['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name] });
+                applyFilter(['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
+                setFilterTerms(['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
+            } else {
+                dispatch({ type: 'SET_LOG_FILTER', payload: ['external', ''] });
+                applyFilter(['external', '']);
+                setFilterTerms(['external', '']);
             }
         } else {
             let filterTerms = [];
@@ -387,8 +413,8 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
         setFilterTerms([]);
         if (filterComponent === 'syslogs') {
-            dispatch({ type: 'SET_LOG_FILTER', payload: 'external' });
-            applyFilter('external');
+            dispatch({ type: 'SET_LOG_FILTER', payload: ['external' ,'']});
+            applyFilter(['external', '']);
         }
     };
 

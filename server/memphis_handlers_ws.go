@@ -188,8 +188,9 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 
 	case memphisWS_Subj_SysLogsData:
 		logLevel := tokenAt(subj, 2)
+		logSource := tokenAt(subj, 3)
 		return func() (any, error) {
-			return memphisWSGetSystemLogs(h, logLevel)
+			return memphisWSGetSystemLogs(h, logLevel, logSource)
 		}, nil
 
 	case memphisWS_Subj_AllSchemasData:
@@ -407,7 +408,7 @@ func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDeta
 	return stations, nil
 }
 
-func memphisWSGetSystemLogs(h *Handlers, logLevel string) (models.SystemLogsResponse, error) {
+func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.SystemLogsResponse, error) {
 	const amount = 100
 	const timeout = 3 * time.Second
 	filterSubjectSuffix := ""
@@ -424,5 +425,14 @@ func memphisWSGetSystemLogs(h *Handlers, logLevel string) (models.SystemLogsResp
 
 	filterSubject := "$memphis_syslogs.*." + filterSubjectSuffix
 
+	if filterSubjectSuffix != _EMPTY_ {
+		if logSource != "" && logLevel != "external" {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
+		} else if logSource != "" && logLevel == "external" {
+			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
+		} else {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
+		}
+	}
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }

@@ -1615,9 +1615,17 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 		filterSubjectSuffix = syslogsExternalSubject
 	}
 
+	logSource := request.LogSource
 	if filterSubjectSuffix != _EMPTY_ {
-		filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
+		if request.LogSource != "" && request.LogType != "external" {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
+		} else if request.LogSource != "" && request.LogType == "external" {
+			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
+		} else {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
+		}
 	}
+
 	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
 	if err != nil {
 		serv.Errorf("GetSystemLogs: " + err.Error())

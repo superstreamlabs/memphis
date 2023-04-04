@@ -35,6 +35,7 @@ const LogsWrapper = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [visibleRange, setVisibleRange] = useState(0);
     const [logType, setLogType] = useState('external');
+    const [logSource, setLogSource] = useState('');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
@@ -46,12 +47,15 @@ const LogsWrapper = () => {
 
     const stateRef = useRef([]);
 
-    stateRef.current = [seqNum, visibleRange, socketOn, lastMgsSeq, changeSelected, logType];
+    stateRef.current = [seqNum, visibleRange, socketOn, lastMgsSeq, changeSelected, logType, logSource];
 
     const getLogs = async (changed = false, seqNum = null) => {
         changed && setLoader(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SYS_LOGS}?log_type=${stateRef.current[5]}&start_index=${seqNum || stateRef.current[0]}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_SYS_LOGS}?log_type=${stateRef.current[5]}&log_source=${stateRef.current[6]}&start_index=${seqNum || stateRef.current[0]}`
+            );
             if (data.logs && !changed) {
                 if (stateRef.current[0] === -1) {
                     setLastMgsSeq(data.logs[0].message_seq);
@@ -121,7 +125,7 @@ const LogsWrapper = () => {
     const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (logType === 'external') {
+        if (logType === 'external' && logSource === '') {
             try {
                 (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
@@ -134,9 +138,13 @@ const LogsWrapper = () => {
         } else {
             try {
                 (async () => {
-                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logType}`, sc.encode('SUB'));
+                    let logFilter = `${logType}.${logSource}`;
+                    if (logSource === '') {
+                        logFilter = `${logType}`;
+                    }
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logFilter}`, sc.encode('SUB'));
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                    sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${logType}.${brokerName}`);
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${logFilter}.${brokerName}`);
                 })();
             } catch (err) {
                 return;
@@ -185,8 +193,13 @@ const LogsWrapper = () => {
     };
 
     const handleFilter = async (e) => {
-        if (e !== logType) {
-            setLogType(e);
+        if (e[0] !== logType) {
+            setLogType(e[0]);
+            setChanged(true);
+            setDisplayedLog({});
+        }
+        if (e[1] !== logSource) {
+            setLogSource(e[1]);
             setChanged(true);
             setDisplayedLog({});
         }
