@@ -116,3 +116,14 @@ type Throughput struct {
 	Bytes       int64 `json:"bytes"`
 	BytesPerSec int64 `json:"bytes_per_sec"`
 }
+
+type GetAllStationsDetailsResponse struct {
+	Stations      []ExtendedStation
+	TotalMessages uint64
+	TotalDlsMsgs  uint64
+}
+
+type GetSystemComponentsResponse struct {
+	SystemComponents []SystemComponents
+	MetricsEnabled   bool
+}

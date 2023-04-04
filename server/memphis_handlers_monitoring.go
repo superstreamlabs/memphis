@@ -928,46 +928,100 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	stationsHandler := StationsHandler{S: mh.S}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
-	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
-	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
-			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
-		} else {
-			serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+func (mh MonitoringHandler) getMainOverviewDataAsync(c *gin.Context) (models.MainOverviewData, error) {
+	var stations models.GetAllStationsDetailsResponse
+	var systemComponents models.GetSystemComponentsResponse
+	var throughputs []models.BrokerThroughputResponse
+
+	stationsChan := make(chan models.GetAllStationsDetailsResponse)
+	systemComponentsChan := make(chan models.GetSystemComponentsResponse)
+	throughputsChan := make(chan []models.BrokerThroughputResponse)
+	errorChan := make(chan error)
+
+	go func() {
+		stationsHandler := StationsHandler{S: mh.S}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+		if err != nil {
+			errorChan <- err
+			return
 		}
-		return
+		response := models.GetAllStationsDetailsResponse{
+			Stations:      stations,
+			TotalMessages: totalMessages,
+			TotalDlsMsgs:  totalDlsMsgs,
+		}
+		stationsChan <- response
+	}()
+
+	go func() {
+		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		response := models.GetSystemComponentsResponse{
+			SystemComponents: systemComponents,
+			MetricsEnabled:   metricsEnabled,
+		}
+		systemComponentsChan <- response
+	}()
+
+	go func() {
+		brokersThroughputs, err := mh.GetBrokersThroughputs()
+		if err != nil {
+			errorChan <- err
+			return
+		}
+		throughputsChan <- brokersThroughputs
+	}()
+
+	counter := 3
+	for {
+		select {
+		case stations = <-stationsChan:
+			counter--
+		case systemComponents = <-systemComponentsChan:
+			counter--
+		case throughputs = <-throughputsChan:
+			counter--
+		case err := <-errorChan:
+			if c != nil {
+				if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
+					serv.Warnf("GetMainOverviewData: " + err.Error())
+					c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
+				} else {
+					serv.Errorf("GetMainOverviewData: " + err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				}
+			}
+			return models.MainOverviewData{}, err
+		}
+
+		//check that all varibales got the channels values and the channles are empty
+		if counter == 0 {
+			break
+		}
 	}
+
 	k8sEnv := true
 	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
 		k8sEnv = false
 	}
-	brokersThroughputs, err := mh.GetBrokersThroughputs()
-	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetBrokersThroughputs: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	response := models.MainOverviewData{
-		TotalStations:     len(stations),
-		TotalMessages:     totalMessages,
-		TotalDlsMessages:  totalDlsMsgs,
-		SystemComponents:  systemComponents,
-		Stations:          stations,
+		TotalStations:     len(stations.Stations),
+		TotalMessages:     stations.TotalMessages,
+		TotalDlsMessages:  stations.TotalDlsMsgs,
+		SystemComponents:  systemComponents.SystemComponents,
+		Stations:          stations.Stations,
 		K8sEnv:            k8sEnv,
-		BrokersThroughput: brokersThroughputs,
-		MetricsEnabled:    metricsEnabled,
+		BrokersThroughput: throughputs,
+		MetricsEnabled:    systemComponents.MetricsEnabled,
 	}
+	return response, nil
+}
 
+func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
+	response, _ := mh.getMainOverviewDataAsync(c)
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
