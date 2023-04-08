@@ -260,7 +260,7 @@ async def main():
         headers = Headers()
         headers.add("key", "value") 
         for i in range(5):
-            await producer.produce(bytearray('Message #'+str(i)+': Hello world', 'utf-8'), headers=headers)
+            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers)
         
     except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
         print(e)
@@ -268,7 +268,7 @@ async def main():
     finally:
         await memphis.close()
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())`,
         consumer: `from __future__ import annotations
 import asyncio
@@ -303,7 +303,7 @@ async def main():
     finally:
         await memphis.close()
         
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(main())`
     }
 };
