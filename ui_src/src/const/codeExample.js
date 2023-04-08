@@ -248,9 +248,9 @@ func main() {
         langCode: 'python',
         installation: `pip3 install --upgrade memphis-py`,
         producer: `from __future__ import annotations
-        import asyncio
+import asyncio
 from memphis import Memphis, Headers, MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError
-        
+
 async def main():
     try:
         memphis = Memphis()
@@ -271,9 +271,9 @@ async def main():
 if __name__ == '__main__':
     asyncio.run(main())`,
         consumer: `from __future__ import annotations
-        import asyncio
+import asyncio
 from memphis import Memphis, MemphisError, MemphisConnectError, MemphisHeaderError
-        
+
 async def main():
     async def msg_handler(msgs, error, context):
         try:
