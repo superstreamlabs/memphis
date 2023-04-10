@@ -167,7 +167,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid station name")
 		}
 		return func() (any, error) {
-			return memphisWSGetStationOverviewData(s, h, stationName)
+			return memphisWSGetStationOverviewDataAsync(s, h, stationName)
 		}, nil
 
 	case memphisWS_Subj_PoisonMsgJourneyData:
@@ -228,71 +228,13 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	}, nil
 }
 
-func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string) (map[string]any, error) {
-	sn, err := StationNameFromStr(stationName)
+func memphisWSGetStationOverviewDataAsync(s *Server, h *Handlers, stationNameString string) (map[string]any, error) {
+	stationOverviewData, stationName, err := GetStationOverviewData(h, stationNameString)
 	if err != nil {
 		return map[string]any{}, err
 	}
 
-	exist, station, err := db.GetStationByName(sn.Ext())
-	if err != nil {
-		return map[string]any{}, err
-	}
-	if !exist {
-		return map[string]any{}, errors.New("Station " + stationName + " does not exist")
-	}
-
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
-	if station.IsNative {
-		connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
-		if err != nil {
-			return map[string]any{}, err
-		}
-	}
-
-	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
-	if err != nil {
-		return map[string]any{}, err
-	}
-	totalMessages, err := h.Stations.GetTotalMessages(station.Name)
-	if err != nil {
-		return map[string]any{}, err
-	}
-	avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
-	if err != nil {
-		return map[string]any{}, err
-	}
-
-	messagesToFetch := 1000
-	messages, err := h.Stations.GetMessages(station, messagesToFetch)
-	if err != nil {
-		return map[string]any{}, err
-	}
-
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
-	if err != nil {
-		return map[string]any{}, err
-	}
-
-	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
-	// Only native stations have CGs
-	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(sn, station)
-		if err != nil {
-			return map[string]any{}, err
-		}
-	}
-
-	tags, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
-	if err != nil {
-		return map[string]any{}, err
-	}
-	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
-	if err != nil {
-		return map[string]any{}, err
-	}
-
-	schema, err := h.Schemas.GetSchemaByStationName(sn)
+	schema, err := h.Schemas.GetSchemaByStationName(stationName)
 
 	if err != nil && err != ErrNoSchema {
 		return map[string]any{}, err
@@ -301,91 +243,91 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	var response map[string]any
 
 	if err == ErrNoSchema { // non native stations will always reach this point
-		if !station.IsNative {
+		if !stationOverviewData.Station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
 			response = map[string]any{
 				"connected_producers":           cp,
 				"disconnected_producers":        dp,
-				"deleted_producers":             deletedProducers,
+				"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
 				"connected_cgs":                 cc,
-				"disconnected_cgs":              disconnectedCgs,
+				"disconnected_cgs":              stationOverviewData.Cgs.DisconnectedCgs,
 				"deleted_cgs":                   dc,
-				"total_messages":                totalMessages,
-				"average_message_size":          avgMsgSize,
-				"audit_logs":                    auditLogs,
-				"messages":                      messages,
-				"poison_messages":               poisonMessages,
-				"schema_failed_messages":        schemaFailMessages,
-				"tags":                          tags,
-				"leader":                        leader,
-				"followers":                     followers,
+				"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+				"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+				"audit_logs":                    stationOverviewData.AuditLogs,
+				"messages":                      stationOverviewData.MessagesSample.Messages,
+				"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+				"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+				"tags":                          stationOverviewData.Tags,
+				"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+				"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 				"schema":                        struct{}{},
-				"idempotency_window_in_ms":      station.IdempotencyWindow,
-				"dls_configuration_poison":      station.DlsConfigurationPoison,
-				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-				"total_dls_messages":            totalDlsAmount,
+				"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+				"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
 			}
 		} else {
 			response = map[string]any{
-				"connected_producers":           connectedProducers,
-				"disconnected_producers":        disconnectedProducers,
-				"deleted_producers":             deletedProducers,
-				"connected_cgs":                 connectedCgs,
-				"disconnected_cgs":              disconnectedCgs,
-				"deleted_cgs":                   deletedCgs,
-				"total_messages":                totalMessages,
-				"average_message_size":          avgMsgSize,
-				"audit_logs":                    auditLogs,
-				"messages":                      messages,
-				"poison_messages":               poisonMessages,
-				"schema_failed_messages":        schemaFailMessages,
-				"tags":                          tags,
-				"leader":                        leader,
-				"followers":                     followers,
+				"connected_producers":           stationOverviewData.Producers.ConnectedProducers,
+				"disconnected_producers":        stationOverviewData.Producers.DisconnectedProducers,
+				"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
+				"connected_cgs":                 stationOverviewData.Cgs.ConnectedCgs,
+				"disconnected_cgs":              stationOverviewData.Cgs.DisconnectedCgs,
+				"deleted_cgs":                   stationOverviewData.Cgs.DeletedCgs,
+				"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+				"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+				"audit_logs":                    stationOverviewData.AuditLogs,
+				"messages":                      stationOverviewData.MessagesSample.Messages,
+				"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+				"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+				"tags":                          stationOverviewData.Tags,
+				"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+				"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 				"schema":                        struct{}{},
-				"idempotency_window_in_ms":      station.IdempotencyWindow,
-				"dls_configuration_poison":      station.DlsConfigurationPoison,
-				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-				"total_dls_messages":            totalDlsAmount,
+				"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+				"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
 			}
 		}
 
 		return response, nil
 	}
 
-	_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
+	_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(stationOverviewData.Station.SchemaVersionNumber, schema.ID)
 	if err != nil {
 		return map[string]any{}, err
 	}
 	updatesAvailable := !schemaVersion.Active
 	schemaDetails := models.StationOverviewSchemaDetails{
 		SchemaName:       schema.Name,
-		VersionNumber:    station.SchemaVersionNumber,
+		VersionNumber:    stationOverviewData.Station.SchemaVersionNumber,
 		UpdatesAvailable: updatesAvailable,
 		SchemaType:       schema.Type,
 	}
 
 	response = map[string]any{
-		"connected_producers":           connectedProducers,
-		"disconnected_producers":        disconnectedProducers,
-		"deleted_producers":             deletedProducers,
-		"connected_cgs":                 connectedCgs,
-		"disconnected_cgs":              disconnectedCgs,
-		"deleted_cgs":                   deletedCgs,
-		"total_messages":                totalMessages,
-		"average_message_size":          avgMsgSize,
-		"audit_logs":                    auditLogs,
-		"messages":                      messages,
-		"poison_messages":               poisonMessages,
-		"schema_failed_messages":        schemaFailMessages,
-		"tags":                          tags,
-		"leader":                        leader,
-		"followers":                     followers,
+		"connected_producers":           stationOverviewData.Producers.ConnectedProducers,
+		"disconnected_producers":        stationOverviewData.Producers.DisconnectedProducers,
+		"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
+		"connected_cgs":                 stationOverviewData.Cgs.ConnectedCgs,
+		"disconnected_cgs":              stationOverviewData.Cgs.DisconnectedCgs,
+		"deleted_cgs":                   stationOverviewData.Cgs.DeletedCgs,
+		"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+		"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+		"audit_logs":                    stationOverviewData.AuditLogs,
+		"messages":                      stationOverviewData.MessagesSample.Messages,
+		"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+		"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+		"tags":                          stationOverviewData.Tags,
+		"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+		"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 		"schema":                        schemaDetails,
-		"idempotency_window_in_ms":      station.IdempotencyWindow,
-		"dls_configuration_poison":      station.DlsConfigurationPoison,
-		"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-		"total_dls_messages":            totalDlsAmount,
+		"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+		"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+		"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+		"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
 	}
 
 	return response, nil

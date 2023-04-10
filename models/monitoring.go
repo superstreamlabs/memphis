@@ -116,3 +116,44 @@ type Throughput struct {
 	Bytes       int64 `json:"bytes"`
 	BytesPerSec int64 `json:"bytes_per_sec"`
 }
+
+type GetProducersByStationResponse struct {
+	ConnectedProducers    []ExtendedProducer `json:"connected_producers"`
+	DisconnectedProducers []ExtendedProducer `json:"disconnected_producers"`
+	DeletedProducers      []ExtendedProducer `json:"deleted_producers"`
+}
+
+type MessagesSampleResponse struct {
+	TotalMessages int              `json:"total_messages"`
+	AvgMsgSize    int64            `json:"avg_msg_size"`
+	Messages      []MessageDetails `json:"messages"`
+}
+
+type GetDlsMsgsByStationLightResponse struct {
+	PoisonMessages       []LightDlsMessageResponse `json:"poison_messages"`
+	SchemaFailedMessages []LightDlsMessageResponse `json:"schema_fail_messages"`
+	TotalDlsAmount       int                       `json:"total_dls_amount"`
+}
+
+type GetCgsByStationResponse struct {
+	ConnectedCgs    []Cg `json:"connected_cgs"`
+	DisconnectedCgs []Cg `json:"disconnected_cgs"`
+	DeletedCgs      []Cg `json:"deleted_cgs"`
+}
+
+type GetLeaderAndFollowersResponse struct {
+	Leader    string   `json:"leader"`
+	Followers []string `json:"followers"`
+}
+
+type GetStationOverviewDataResponse struct {
+	// StationName        StationName                      `json:"station_name"`
+	Station            Station                          `json:"station"`
+	Producers          GetProducersByStationResponse    `json:"producers"`
+	AuditLogs          []AuditLog                       `json:"audit_log"`
+	MessagesSample     MessagesSampleResponse           `json:"message_sample"`
+	DlsMessages        GetDlsMsgsByStationLightResponse `json:"dls_messages"`
+	Cgs                GetCgsByStationResponse          `json:"cgs"`
+	Tags               []CreateTag                      `json:"tags"`
+	LeaderAndFollowers GetLeaderAndFollowersResponse    `json:"leader_and_followers"`
+}

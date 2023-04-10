@@ -32,6 +32,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -1337,143 +1338,53 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 	return connectedProducers, disconnectedProducers, connectedCgs, disconnectedCgs
 }
 
-func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
+func (mh MonitoringHandler) GetStationOverviewDataAsync(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
 	producersHandler := ProducersHandler{S: mh.S}
 	consumersHandler := ConsumersHandler{S: mh.S}
 	auditLogsHandler := AuditLogsHandler{}
 	poisonMsgsHandler := PoisonMessagesHandler{S: mh.S}
 	tagsHandler := TagsHandler{S: mh.S}
+
+	handlers := Handlers{
+		Stations:   stationsHandler,
+		Producers:  producersHandler,
+		Consumers:  consumersHandler,
+		AuditLogs:  auditLogsHandler,
+		PoisonMsgs: poisonMsgsHandler,
+		Tags:       tagsHandler,
+	}
+
 	var body models.GetStationOverviewDataSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
 
-	stationName, err := StationNameFromStr(body.StationName)
+	stationOverviewData, _, err := GetStationOverviewData(&handlers, body.StationName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetStationOverviewData: " + errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
-	if station.IsNative {
-		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
-		if err != nil {
+		if IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
+			return
+		} else {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-	}
-
-	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
-		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
-		return
-	}
-	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
-		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
-		return
-	}
-
-	messagesToFetch := 1000
-	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
-		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
-		return
-	}
-
-	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
-		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
-		return
-	}
-
-	connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
-
-	// Only native stations have CGs
-	if station.IsNative {
-		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
-		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-	}
-
-	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
-	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
-	if err != nil {
-		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
-		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		}
-		return
 	}
 
 	_, ok = IntegrationsCache["s3"].(models.Integration)
 	if !ok {
-		station.TieredStorageEnabled = false
+		stationOverviewData.Station.TieredStorageEnabled = false
 	}
 	var response gin.H
 
 	// Check when the schema object in station is not empty, not optional for non native stations
-	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
+	if stationOverviewData.Station.SchemaName != "" && stationOverviewData.Station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(stationOverviewData.Station.SchemaName)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1482,7 +1393,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		if !exist {
 			schemaDetails = models.StationOverviewSchemaDetails{}
 		} else {
-			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
+			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(stationOverviewData.Station.SchemaVersionNumber, schema.ID)
 			if err != nil {
 				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1491,87 +1402,87 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			updatesAvailable := !schemaVersion.Active
 			schemaDetails = models.StationOverviewSchemaDetails{
 				SchemaName:       schema.Name,
-				VersionNumber:    station.SchemaVersionNumber,
+				VersionNumber:    stationOverviewData.Station.SchemaVersionNumber,
 				UpdatesAvailable: updatesAvailable,
 				SchemaType:       schema.Type,
 			}
 		}
 		response = gin.H{
-			"connected_producers":           connectedProducers,
-			"disconnected_producers":        disconnectedProducers,
-			"deleted_producers":             deletedProducers,
-			"connected_cgs":                 connectedCgs,
-			"disconnected_cgs":              disconnectedCgs,
-			"deleted_cgs":                   deletedCgs,
-			"total_messages":                totalMessages,
-			"average_message_size":          avgMsgSize,
-			"audit_logs":                    auditLogs,
-			"messages":                      messages,
-			"poison_messages":               poisonMessages,
-			"schema_failed_messages":        schemaFailedMessages,
-			"tags":                          tags,
-			"leader":                        leader,
-			"followers":                     followers,
+			"connected_producers":           stationOverviewData.Producers.ConnectedProducers,
+			"disconnected_producers":        stationOverviewData.Producers.DisconnectedProducers,
+			"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
+			"connected_cgs":                 stationOverviewData.Cgs.ConnectedCgs,
+			"disconnected_cgs":              stationOverviewData.Cgs.DisconnectedCgs,
+			"deleted_cgs":                   stationOverviewData.Cgs.DeletedCgs,
+			"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+			"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+			"audit_logs":                    stationOverviewData.AuditLogs,
+			"messages":                      stationOverviewData.MessagesSample.Messages,
+			"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+			"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+			"tags":                          stationOverviewData.Tags,
+			"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+			"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 			"schema":                        schemaDetails,
-			"idempotency_window_in_ms":      station.IdempotencyWindow,
-			"dls_configuration_poison":      station.DlsConfigurationPoison,
-			"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-			"total_dls_messages":            totalDlsAmount,
-			"tiered_storage_enabled":        station.TieredStorageEnabled,
-			"created_by_username":           station.CreatedByUsername,
+			"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+			"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+			"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+			"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
+			"tiered_storage_enabled":        stationOverviewData.Station.TieredStorageEnabled,
+			"created_by_username":           stationOverviewData.Station.CreatedByUsername,
 		}
 	} else {
 		var emptyResponse struct{}
-		if !station.IsNative {
+		if !stationOverviewData.Station.IsNative {
 			cp, dp, cc, dc := getFakeProdsAndConsForPreview()
 			response = gin.H{
 				"connected_producers":           cp,
 				"disconnected_producers":        dp,
-				"deleted_producers":             deletedProducers,
+				"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
 				"connected_cgs":                 cc,
 				"disconnected_cgs":              dc,
-				"deleted_cgs":                   deletedCgs,
-				"total_messages":                totalMessages,
-				"average_message_size":          avgMsgSize,
-				"audit_logs":                    auditLogs,
-				"messages":                      messages,
-				"poison_messages":               poisonMessages,
-				"schema_failed_messages":        schemaFailedMessages,
-				"tags":                          tags,
-				"leader":                        leader,
-				"followers":                     followers,
+				"deleted_cgs":                   stationOverviewData.Cgs.DeletedCgs,
+				"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+				"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+				"audit_logs":                    stationOverviewData.AuditLogs,
+				"messages":                      stationOverviewData.MessagesSample.Messages,
+				"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+				"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+				"tags":                          stationOverviewData.Tags,
+				"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+				"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 				"schema":                        emptyResponse,
-				"idempotency_window_in_ms":      station.IdempotencyWindow,
-				"dls_configuration_poison":      station.DlsConfigurationPoison,
-				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-				"total_dls_messages":            totalDlsAmount,
-				"tiered_storage_enabled":        station.TieredStorageEnabled,
-				"created_by_username":           station.CreatedByUsername,
+				"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+				"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
+				"tiered_storage_enabled":        stationOverviewData.Station.TieredStorageEnabled,
+				"created_by_username":           stationOverviewData.Station.CreatedByUsername,
 			}
 		} else {
 			response = gin.H{
-				"connected_producers":           connectedProducers,
-				"disconnected_producers":        disconnectedProducers,
-				"deleted_producers":             deletedProducers,
-				"connected_cgs":                 connectedCgs,
-				"disconnected_cgs":              disconnectedCgs,
-				"deleted_cgs":                   deletedCgs,
-				"total_messages":                totalMessages,
-				"average_message_size":          avgMsgSize,
-				"audit_logs":                    auditLogs,
-				"messages":                      messages,
-				"poison_messages":               poisonMessages,
-				"schema_failed_messages":        schemaFailedMessages,
-				"tags":                          tags,
-				"leader":                        leader,
-				"followers":                     followers,
+				"connected_producers":           stationOverviewData.Producers.ConnectedProducers,
+				"disconnected_producers":        stationOverviewData.Producers.DisconnectedProducers,
+				"deleted_producers":             stationOverviewData.Producers.DeletedProducers,
+				"connected_cgs":                 stationOverviewData.Cgs.ConnectedCgs,
+				"disconnected_cgs":              stationOverviewData.Cgs.DisconnectedCgs,
+				"deleted_cgs":                   stationOverviewData.Cgs.DeletedCgs,
+				"total_messages":                stationOverviewData.MessagesSample.TotalMessages,
+				"average_message_size":          stationOverviewData.MessagesSample.AvgMsgSize,
+				"audit_logs":                    stationOverviewData.AuditLogs,
+				"messages":                      stationOverviewData.MessagesSample.Messages,
+				"poison_messages":               stationOverviewData.DlsMessages.PoisonMessages,
+				"schema_failed_messages":        stationOverviewData.DlsMessages.SchemaFailedMessages,
+				"tags":                          stationOverviewData.Tags,
+				"leader":                        stationOverviewData.LeaderAndFollowers.Leader,
+				"followers":                     stationOverviewData.LeaderAndFollowers.Followers,
 				"schema":                        emptyResponse,
-				"idempotency_window_in_ms":      station.IdempotencyWindow,
-				"dls_configuration_poison":      station.DlsConfigurationPoison,
-				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
-				"total_dls_messages":            totalDlsAmount,
-				"tiered_storage_enabled":        station.TieredStorageEnabled,
-				"created_by_username":           station.CreatedByUsername,
+				"idempotency_window_in_ms":      stationOverviewData.Station.IdempotencyWindow,
+				"dls_configuration_poison":      stationOverviewData.Station.DlsConfigurationPoison,
+				"dls_configuration_schemaverse": stationOverviewData.Station.DlsConfigurationSchemaverse,
+				"total_dls_messages":            stationOverviewData.DlsMessages.TotalDlsAmount,
+				"tiered_storage_enabled":        stationOverviewData.Station.TieredStorageEnabled,
+				"created_by_username":           stationOverviewData.Station.CreatedByUsername,
 			}
 		}
 	}
@@ -1583,6 +1494,199 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func GetStationOverviewData(h *Handlers, stationNameString string) (models.GetStationOverviewDataResponse, StationName, error) {
+	GetStationOverviewDataWorkers := 9
+	errorChan := make(chan error)
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(GetStationOverviewDataWorkers)
+
+	var stationName StationName
+	stationNameChan := make(chan StationName)
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		sn, err := StationNameFromStr(stationNameString)
+		if err != nil {
+			errorChan <- err
+		}
+		stationNameChan <- sn
+		wg.Done()
+	}()
+	stationName = <-stationNameChan
+	GetStationOverviewDataWorkers--
+
+	var station models.Station
+	stationsChan := make(chan models.Station)
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		exist, station, err := db.GetStationByName(stationName.Ext())
+		if err != nil {
+			errorChan <- err
+		}
+		if !exist {
+			errorChan <- errors.New("Station " + stationNameString + " does not exist")
+		}
+		stationsChan <- station
+		wg.Done()
+	}()
+	station = <-stationsChan
+	GetStationOverviewDataWorkers--
+
+	var producers models.GetProducersByStationResponse
+	producersChan := make(chan models.GetProducersByStationResponse)
+	go func() {
+		connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
+		var err error
+		if station.IsNative {
+			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
+			if err != nil {
+				errorChan <- err
+			}
+		}
+		response := models.GetProducersByStationResponse{
+			ConnectedProducers:    connectedProducers,
+			DisconnectedProducers: disconnectedProducers,
+			DeletedProducers:      deletedProducers,
+		}
+		producersChan <- response
+		wg.Done()
+	}()
+
+	var auditLogs []models.AuditLog
+	auditLogsChan := make(chan []models.AuditLog)
+	go func() {
+		auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
+		if err != nil {
+			errorChan <- err
+		}
+		auditLogsChan <- auditLogs
+		wg.Done()
+	}()
+
+	var messagesSample models.MessagesSampleResponse
+	messagesSampleChan := make(chan models.MessagesSampleResponse)
+	go func() {
+		totalMessages, err := h.Stations.GetTotalMessages(station.Name)
+		if err != nil {
+			errorChan <- err
+		}
+
+		avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
+		if err != nil {
+			errorChan <- err
+		}
+
+		messagesToFetch := 1000
+		messages, err := h.Stations.GetMessages(station, messagesToFetch)
+		if err != nil {
+			errorChan <- err
+		}
+
+		response := models.MessagesSampleResponse{
+			TotalMessages: totalMessages,
+			AvgMsgSize:    avgMsgSize,
+			Messages:      messages,
+		}
+		messagesSampleChan <- response
+		wg.Done()
+	}()
+
+	var dlsMessages models.GetDlsMsgsByStationLightResponse
+	dlsMessagesChan := make(chan models.GetDlsMsgsByStationLightResponse)
+	go func() {
+		poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+		if err != nil {
+			errorChan <- err
+		}
+		response := models.GetDlsMsgsByStationLightResponse{
+			PoisonMessages:       poisonMessages,
+			SchemaFailedMessages: schemaFailMessages,
+			TotalDlsAmount:       totalDlsAmount,
+		}
+		dlsMessagesChan <- response
+		wg.Done()
+	}()
+
+	var cgs models.GetCgsByStationResponse
+	cgsChan := make(chan models.GetCgsByStationResponse)
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
+		var err error
+		// Only native stations have CGs
+		if station.IsNative {
+			connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(stationName, station)
+			if err != nil {
+				errorChan <- err
+			}
+			response := models.GetCgsByStationResponse{
+				ConnectedCgs:    connectedCgs,
+				DisconnectedCgs: disconnectedCgs,
+				DeletedCgs:      deletedCgs,
+			}
+			cgsChan <- response
+		}
+		wg.Done()
+	}()
+
+	var tags []models.CreateTag
+	tagsChan := make(chan []models.CreateTag)
+	go func() {
+		tags, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
+		if err != nil {
+			errorChan <- err
+		}
+		tagsChan <- tags
+		wg.Done()
+	}()
+
+	var leaderAndFollowers models.GetLeaderAndFollowersResponse
+	LeaderAndFollowersChan := make(chan models.GetLeaderAndFollowersResponse)
+	go func() {
+		leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+		if err != nil {
+			errorChan <- err
+		}
+		response := models.GetLeaderAndFollowersResponse{
+			Leader:    leader,
+			Followers: followers,
+		}
+		LeaderAndFollowersChan <- response
+		wg.Done()
+	}()
+
+	for i := 0; i < GetStationOverviewDataWorkers; i++ {
+		select {
+		case producers = <-producersChan:
+		case auditLogs = <-auditLogsChan:
+		case messagesSample = <-messagesSampleChan:
+		case dlsMessages = <-dlsMessagesChan:
+		case cgs = <-cgsChan:
+		case tags = <-tagsChan:
+		case leaderAndFollowers = <-LeaderAndFollowersChan:
+		case err := <-errorChan:
+			return models.GetStationOverviewDataResponse{}, StationName{}, err
+		}
+	}
+	wg.Wait()
+
+	StationOverviewData := models.GetStationOverviewDataResponse{
+		// StationName:        sn,
+		Station:            station,
+		Producers:          producers,
+		AuditLogs:          auditLogs,
+		MessagesSample:     messagesSample,
+		DlsMessages:        dlsMessages,
+		Cgs:                cgs,
+		Tags:               tags,
+		LeaderAndFollowers: leaderAndFollowers,
+	}
+	return StationOverviewData, stationName, nil
 }
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
