@@ -1338,7 +1338,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 	return connectedProducers, disconnectedProducers, connectedCgs, disconnectedCgs
 }
 
-func (mh MonitoringHandler) GetStationOverviewDataAsync(c *gin.Context) {
+func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	stationsHandler := StationsHandler{S: mh.S}
 	producersHandler := ProducersHandler{S: mh.S}
 	consumersHandler := ConsumersHandler{S: mh.S}
@@ -1361,7 +1361,7 @@ func (mh MonitoringHandler) GetStationOverviewDataAsync(c *gin.Context) {
 		return
 	}
 
-	stationOverviewData, _, err := GetStationOverviewData(&handlers, body.StationName)
+	stationOverviewData, _, err := GetStationOverviewDataDetails(&handlers, body.StationName)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
@@ -1496,197 +1496,180 @@ func (mh MonitoringHandler) GetStationOverviewDataAsync(c *gin.Context) {
 	c.IndentedJSON(200, response)
 }
 
-func GetStationOverviewData(h *Handlers, stationNameString string) (models.GetStationOverviewDataResponse, StationName, error) {
-	GetStationOverviewDataWorkers := 9
-	errorChan := make(chan error)
-	var mu sync.Mutex
+func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (models.GetStationOverviewDataResponse, StationName, error) {
 	var wg sync.WaitGroup
-	wg.Add(GetStationOverviewDataWorkers)
+	generalErr := new(error)
+	wg.Add(9)
 
-	var stationName StationName
+	stationName := &StationName{}
 	stationNameChan := make(chan StationName)
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
 		sn, err := StationNameFromStr(stationNameString)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
 		stationNameChan <- sn
+		// *stationName = sn
 		wg.Done()
 	}()
-	stationName = <-stationNameChan
-	GetStationOverviewDataWorkers--
+	*stationName = <-stationNameChan
 
-	var station models.Station
+	station := &models.Station{}
 	stationsChan := make(chan models.Station)
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
-		exist, station, err := db.GetStationByName(stationName.Ext())
+		exist, stationByName, err := db.GetStationByName(stationName.Ext())
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
 		if !exist {
-			errorChan <- errors.New("Station " + stationNameString + " does not exist")
+			*generalErr = errors.New("Station " + stationNameString + " does not exist")
 		}
-		stationsChan <- station
+		stationsChan <- stationByName
+		// *station = stationByName
 		wg.Done()
 	}()
-	station = <-stationsChan
-	GetStationOverviewDataWorkers--
+	*station = <-stationsChan
 
-	var producers models.GetProducersByStationResponse
-	producersChan := make(chan models.GetProducersByStationResponse)
+	producers := &models.GetProducersByStationResponse{}
 	go func() {
 		connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
 		var err error
 		if station.IsNative {
-			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
+			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(*station)
 			if err != nil {
-				errorChan <- err
+				// errorChan <- err
+				*generalErr = err
+				return
 			}
 		}
-		response := models.GetProducersByStationResponse{
+		*producers = models.GetProducersByStationResponse{
 			ConnectedProducers:    connectedProducers,
 			DisconnectedProducers: disconnectedProducers,
 			DeletedProducers:      deletedProducers,
 		}
-		producersChan <- response
 		wg.Done()
 	}()
 
-	var auditLogs []models.AuditLog
-	auditLogsChan := make(chan []models.AuditLog)
+	auditLogs := &([]models.AuditLog{})
 	go func() {
-		auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
+		auditLogsByStation, err := h.AuditLogs.GetAuditLogsByStation(*station)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
-		auditLogsChan <- auditLogs
+		*auditLogs = auditLogsByStation
 		wg.Done()
 	}()
 
-	var messagesSample models.MessagesSampleResponse
-	messagesSampleChan := make(chan models.MessagesSampleResponse)
+	messagesSample := &models.MessagesSampleResponse{}
 	go func() {
 		totalMessages, err := h.Stations.GetTotalMessages(station.Name)
 		if err != nil {
-			errorChan <- err
+			fmt.Print(err)
+			*generalErr = err
+			return
 		}
 
-		avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
+		avgMsgSize, err := h.Stations.GetAvgMsgSize(*station)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
 
 		messagesToFetch := 1000
-		messages, err := h.Stations.GetMessages(station, messagesToFetch)
+		messages, err := h.Stations.GetMessages(*station, messagesToFetch)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
 
-		response := models.MessagesSampleResponse{
+		*messagesSample = models.MessagesSampleResponse{
 			TotalMessages: totalMessages,
 			AvgMsgSize:    avgMsgSize,
 			Messages:      messages,
 		}
-		messagesSampleChan <- response
 		wg.Done()
 	}()
 
-	var dlsMessages models.GetDlsMsgsByStationLightResponse
-	dlsMessagesChan := make(chan models.GetDlsMsgsByStationLightResponse)
+	dlsMessages := &models.GetDlsMsgsByStationLightResponse{}
 	go func() {
-		poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+		poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(*station)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
-		response := models.GetDlsMsgsByStationLightResponse{
+		*dlsMessages = models.GetDlsMsgsByStationLightResponse{
 			PoisonMessages:       poisonMessages,
 			SchemaFailedMessages: schemaFailMessages,
 			TotalDlsAmount:       totalDlsAmount,
 		}
-		dlsMessagesChan <- response
 		wg.Done()
 	}()
 
-	var cgs models.GetCgsByStationResponse
-	cgsChan := make(chan models.GetCgsByStationResponse)
+	cgs := &models.GetCgsByStationResponse{}
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
 		connectedCgs, disconnectedCgs, deletedCgs := make([]models.Cg, 0), make([]models.Cg, 0), make([]models.Cg, 0)
 		var err error
 		// Only native stations have CGs
 		if station.IsNative {
-			connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(stationName, station)
+			connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(*stationName, *station)
 			if err != nil {
-				errorChan <- err
+				*generalErr = err
+				return
 			}
-			response := models.GetCgsByStationResponse{
+			*cgs = models.GetCgsByStationResponse{
 				ConnectedCgs:    connectedCgs,
 				DisconnectedCgs: disconnectedCgs,
 				DeletedCgs:      deletedCgs,
 			}
-			cgsChan <- response
 		}
 		wg.Done()
 	}()
 
-	var tags []models.CreateTag
-	tagsChan := make(chan []models.CreateTag)
+	tags := &([]models.CreateTag{})
 	go func() {
-		tags, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
+		tagsByEntity, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
-		tagsChan <- tags
+		*tags = tagsByEntity
 		wg.Done()
 	}()
 
-	var leaderAndFollowers models.GetLeaderAndFollowersResponse
-	LeaderAndFollowersChan := make(chan models.GetLeaderAndFollowersResponse)
+	leaderAndFollowers := &models.GetLeaderAndFollowersResponse{}
 	go func() {
-		leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+		leader, followers, err := h.Stations.GetLeaderAndFollowers(*station)
 		if err != nil {
-			errorChan <- err
+			*generalErr = err
+			return
 		}
-		response := models.GetLeaderAndFollowersResponse{
+		*leaderAndFollowers = models.GetLeaderAndFollowersResponse{
 			Leader:    leader,
 			Followers: followers,
 		}
-		LeaderAndFollowersChan <- response
 		wg.Done()
 	}()
 
-	for i := 0; i < GetStationOverviewDataWorkers; i++ {
-		select {
-		case producers = <-producersChan:
-		case auditLogs = <-auditLogsChan:
-		case messagesSample = <-messagesSampleChan:
-		case dlsMessages = <-dlsMessagesChan:
-		case cgs = <-cgsChan:
-		case tags = <-tagsChan:
-		case leaderAndFollowers = <-LeaderAndFollowersChan:
-		case err := <-errorChan:
-			return models.GetStationOverviewDataResponse{}, StationName{}, err
-		}
-	}
 	wg.Wait()
-
-	StationOverviewData := models.GetStationOverviewDataResponse{
-		// StationName:        sn,
-		Station:            station,
-		Producers:          producers,
-		AuditLogs:          auditLogs,
-		MessagesSample:     messagesSample,
-		DlsMessages:        dlsMessages,
-		Cgs:                cgs,
-		Tags:               tags,
-		LeaderAndFollowers: leaderAndFollowers,
+	if *generalErr != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, *generalErr
 	}
-	return StationOverviewData, stationName, nil
+
+	stationOverviewData := models.GetStationOverviewDataResponse{
+		// StationName:        sn,
+		Station:            *station,
+		Producers:          *producers,
+		AuditLogs:          *auditLogs,
+		MessagesSample:     *messagesSample,
+		DlsMessages:        *dlsMessages,
+		Cgs:                *cgs,
+		Tags:               *tags,
+		LeaderAndFollowers: *leaderAndFollowers,
+	}
+	return stationOverviewData, *stationName, nil
 }
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {

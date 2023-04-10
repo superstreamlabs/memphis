@@ -167,7 +167,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 			return nil, errors.New("invalid station name")
 		}
 		return func() (any, error) {
-			return memphisWSGetStationOverviewDataAsync(s, h, stationName)
+			return memphisWSGetStationOverviewData(s, h, stationName)
 		}, nil
 
 	case memphisWS_Subj_PoisonMsgJourneyData:
@@ -228,8 +228,8 @@ func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) 
 	}, nil
 }
 
-func memphisWSGetStationOverviewDataAsync(s *Server, h *Handlers, stationNameString string) (map[string]any, error) {
-	stationOverviewData, stationName, err := GetStationOverviewData(h, stationNameString)
+func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationNameString string) (map[string]any, error) {
+	stationOverviewData, stationName, err := GetStationOverviewDataDetails(h, stationNameString)
 	if err != nil {
 		return map[string]any{}, err
 	}
