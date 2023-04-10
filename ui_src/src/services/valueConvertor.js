@@ -47,31 +47,31 @@ export const convertSecondsToDate = (seconds) => {
 
     let result = '';
     if (days > 0) {
-        result = days === 1 ? 'one day' : `${days} days`;
+        result = days === 1 ? '1 day' : `${days} days`;
         if (hours > 0) {
-            result = hours === 1 ? `${result}, one hour` : `${result}, ${hours} hours`;
+            result = hours === 1 ? `${result}, 1 hour` : `${result}, ${hours} hours`;
         }
         if (minutes > 0) {
-            result = minutes === 1 ? `${result}, one minute` : `${result}, ${minutes} minutes`;
+            result = minutes === 1 ? `${result}, 1 minute` : `${result}, ${minutes} minutes`;
         }
         if (seconds > 0) {
-            result = seconds === 1 ? `${result}, one second` : `${result}, ${seconds} seconds`;
+            result = seconds === 1 ? `${result}, 1 second` : `${result}, ${seconds} seconds`;
         }
     } else if (hours > 0) {
-        result = hours === 1 ? 'one hour' : `${hours} hours`;
+        result = hours === 1 ? '1 hour' : `${hours} hours`;
         if (minutes > 0) {
-            result = minutes === 1 ? `${result}, one minute` : `${result}, ${minutes} minutes`;
+            result = minutes === 1 ? `${result}, 1 minute` : `${result}, ${minutes} minutes`;
         }
         if (seconds > 0) {
-            result = seconds === 1 ? `${result}, one second` : `${result}, ${seconds} seconds`;
+            result = seconds === 1 ? `${result}, 1 second` : `${result}, ${seconds} seconds`;
         }
     } else if (minutes > 0) {
-        result = minutes === 1 ? 'one minute' : `${minutes} minutes`;
+        result = minutes === 1 ? '1 minute' : `${minutes} minutes`;
         if (seconds > 0) {
-            result = seconds === 1 ? `${result}, one second` : `${result}, ${seconds} seconds`;
+            result = seconds === 1 ? `${result}, 1 second` : `${result}, ${seconds} seconds`;
         }
     } else if (seconds > 0) {
-        result = seconds === 1 ? 'one second' : `${seconds} seconds`;
+        result = seconds === 1 ? '1 second' : `${seconds} seconds`;
     }
 
     const spliter = result.split(',');
