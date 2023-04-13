@@ -1955,7 +1955,7 @@ func (c *client) authViolation() {
 			ErrAuthentication.Error(),
 			c.opts.Nkey)
 	} else if hasUsers {
-		c.Errorf("%s - User %q",
+		c.Warnf("%s - User %q",
 			ErrAuthentication.Error(),
 			c.opts.Username)
 	} else {
