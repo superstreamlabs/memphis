@@ -168,8 +168,6 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 	createdByUsername = strings.ToLower(createdByUsername)
 	exist, _, err := db.GetUserByUsername(createdByUsername)
 	if err != nil {
-		errMsg := "User " + createdByUsername + ": " + err.Error()
-		serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	if !exist {
@@ -188,8 +186,6 @@ func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string
 
 	err = db.InsertConnection(newConnection)
 	if err != nil {
-		errMsg := "User " + createdByUsername + ": " + err.Error()
-		serv.Errorf("CreateConnection error: " + errMsg)
 		return err
 	}
 	return nil
