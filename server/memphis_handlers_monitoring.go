@@ -944,6 +944,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 			return
 		}
 		mu.Lock()
+		mainOverviewData.TotalStations = len(stations)
 		mainOverviewData.Stations = stations
 		mainOverviewData.TotalMessages = totalMessages
 		mainOverviewData.TotalDlsMessages = totalDlsMsgs
@@ -986,7 +987,6 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 		k8sEnv = false
 	}
 	mainOverviewData.K8sEnv = k8sEnv
-	mainOverviewData.TotalStations = len(mainOverviewData.Stations)
 	return *mainOverviewData, nil
 }
 
