@@ -105,14 +105,12 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-
-		exist, _, err = db.GetConnectionByID(connectionId)
+		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username)
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
 			client.Errorf("handleConnectMessage: " + errMsg)
 			return err
 		}
-
 		if exist {
 			err = connectionsHandler.ReliveConnection(connectionId)
 			if err != nil {
@@ -127,14 +125,6 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 			err = consumersHandler.ReliveConsumers(connectionId)
-			if err != nil {
-
-				errMsg := "User " + username + ": " + err.Error()
-				client.Errorf("handleConnectMessage: " + errMsg)
-				return err
-			}
-		} else {
-			err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username)
 			if err != nil {
 				errMsg := "User " + username + ": " + err.Error()
 				client.Errorf("handleConnectMessage: " + errMsg)
@@ -164,31 +154,25 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(username int, clientAddress string, connectionId string, createdByUsername string) error {
+func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string) (bool, error) {
 	createdByUsername = strings.ToLower(createdByUsername)
-	exist, _, err := db.GetUserByUsername(createdByUsername)
-	if err != nil {
-		return err
-	}
-	if !exist {
-		errMsg := "User " + createdByUsername + " does not exist"
-		return errors.New(errMsg)
-	}
-
 	newConnection := models.Connection{
 		ID:                connectionId,
-		CreatedBy:         username,
+		CreatedBy:         userId,
 		CreatedByUsername: createdByUsername,
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
 	}
 
-	err = db.InsertConnection(newConnection)
+	err := db.InsertConnection(newConnection)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), "already exists") {
+			return true, nil
+		}
+		return false, err
 	}
-	return nil
+	return false, nil
 }
 
 func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
