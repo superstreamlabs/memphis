@@ -43,7 +43,7 @@ func (srv *Server) removeStaleStations() {
 
 func updateSystemLiveness() {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if !shouldSendAnalytics {
+	if shouldSendAnalytics {
 		stationsHandler := StationsHandler{S: serv}
 		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
 		if err != nil {
