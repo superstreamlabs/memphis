@@ -1510,13 +1510,12 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 			return
 		}
 		stationNameChan <- sn
-		// *stationName = sn
 		wg.Done()
 	}()
 	*stationName = <-stationNameChan
 
 	station := &models.Station{}
-	stationsChan := make(chan models.Station)
+	stationChan := make(chan models.Station)
 	go func() {
 		exist, stationByName, err := db.GetStationByName(stationName.Ext())
 		if err != nil {
@@ -1526,11 +1525,10 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		if !exist {
 			*generalErr = errors.New("Station " + stationNameString + " does not exist")
 		}
-		stationsChan <- stationByName
-		// *station = stationByName
+		stationChan <- stationByName
 		wg.Done()
 	}()
-	*station = <-stationsChan
+	*station = <-stationChan
 
 	producers := &models.GetProducersByStationResponse{}
 	go func() {
@@ -1539,7 +1537,6 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		if station.IsNative {
 			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(*station)
 			if err != nil {
-				// errorChan <- err
 				*generalErr = err
 				return
 			}
@@ -1659,7 +1656,6 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 	}
 
 	stationOverviewData := models.GetStationOverviewDataResponse{
-		// StationName:        sn,
 		Station:            *station,
 		Producers:          *producers,
 		AuditLogs:          *auditLogs,

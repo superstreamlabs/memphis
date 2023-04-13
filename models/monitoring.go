@@ -147,7 +147,6 @@ type GetLeaderAndFollowersResponse struct {
 }
 
 type GetStationOverviewDataResponse struct {
-	// StationName        StationName                      `json:"station_name"`
 	Station            Station                          `json:"station"`
 	Producers          GetProducersByStationResponse    `json:"producers"`
 	AuditLogs          []AuditLog                       `json:"audit_log"`
