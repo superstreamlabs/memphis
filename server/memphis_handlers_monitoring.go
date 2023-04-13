@@ -937,42 +937,42 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 
 	wg.Add(3)
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
 		stationsHandler := StationsHandler{S: mh.S}
 		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
 		if err != nil {
 			*generalErr = err
 			return
 		}
+		mu.Lock()
 		mainOverviewData.Stations = stations
 		mainOverviewData.TotalMessages = totalMessages
 		mainOverviewData.TotalDlsMessages = totalDlsMsgs
+		mu.Unlock()
 		wg.Done()
 	}()
 
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
 		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 		if err != nil {
 			*generalErr = err
 			return
 		}
+		mu.Lock()
 		mainOverviewData.SystemComponents = systemComponents
 		mainOverviewData.MetricsEnabled = metricsEnabled
+		mu.Unlock()
 		wg.Done()
 	}()
 
 	go func() {
-		mu.Lock()
-		defer mu.Unlock()
 		brokersThroughputs, err := mh.GetBrokersThroughputs()
 		if err != nil {
 			*generalErr = err
 			return
 		}
+		mu.Lock()
 		mainOverviewData.BrokersThroughput = brokersThroughputs
+		mu.Unlock()
 		wg.Done()
 	}()
 
@@ -985,17 +985,9 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
 		k8sEnv = false
 	}
-	response := models.MainOverviewData{
-		TotalStations:     len(mainOverviewData.Stations),
-		TotalMessages:     mainOverviewData.TotalMessages,
-		TotalDlsMessages:  mainOverviewData.TotalDlsMessages,
-		SystemComponents:  mainOverviewData.SystemComponents,
-		Stations:          mainOverviewData.Stations,
-		K8sEnv:            k8sEnv,
-		BrokersThroughput: mainOverviewData.BrokersThroughput,
-		MetricsEnabled:    mainOverviewData.MetricsEnabled,
-	}
-	return response, nil
+	mainOverviewData.K8sEnv = k8sEnv
+	mainOverviewData.TotalStations = len(mainOverviewData.Stations)
+	return *mainOverviewData, nil
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
