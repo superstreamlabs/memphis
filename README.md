@@ -35,7 +35,7 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
-It enables building modern queue-based applications that require
+Memphis enables building modern queue-based applications that require
 large volumes of streamed and enriched data, modern protocols, zero ops, up to x9 faster development,
 up to x46 fewer costs, and significantly lower dev time for data-oriented developers and data engineers.
 
