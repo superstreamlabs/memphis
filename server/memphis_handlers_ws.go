@@ -200,32 +200,11 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	stations, totalMessages, totalDlsMsgs, err := h.Stations.GetAllStationsDetails(false)
-	if err != nil {
-		return models.MainOverviewData{}, nil
-	}
-	systemComponents, metricsEnabled, err := h.Monitoring.GetSystemComponents()
+	response, err := h.Monitoring.getMainOverviewDataDetails()
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
-	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
-		k8sEnv = false
-	}
-	brokersThroughputs, err := h.Monitoring.GetBrokersThroughputs()
-	if err != nil {
-		return models.MainOverviewData{}, err
-	}
-	return models.MainOverviewData{
-		TotalStations:     len(stations),
-		TotalMessages:     totalMessages,
-		TotalDlsMessages:  totalDlsMsgs,
-		SystemComponents:  systemComponents,
-		Stations:          stations,
-		K8sEnv:            k8sEnv,
-		BrokersThroughput: brokersThroughputs,
-		MetricsEnabled:    metricsEnabled,
-	}, nil
+	return response, nil
 }
 
 func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string) (map[string]any, error) {

@@ -32,6 +32,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -928,46 +929,78 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	stationsHandler := StationsHandler{S: mh.S}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
-	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetAllStationsDetails: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	systemComponents, metricsEnabled, err := mh.GetSystemComponents()
-	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
-			serv.Warnf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
-		} else {
-			serv.Errorf("GetMainOverviewData: GetSystemComponents: " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewData, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	mainOverviewData := &models.MainOverviewData{}
+	generalErr := new(error)
+
+	wg.Add(3)
+	go func() {
+		stationsHandler := StationsHandler{S: mh.S}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+		if err != nil {
+			*generalErr = err
+			return
 		}
-		return
+		mu.Lock()
+		mainOverviewData.TotalStations = len(stations)
+		mainOverviewData.Stations = stations
+		mainOverviewData.TotalMessages = totalMessages
+		mainOverviewData.TotalDlsMessages = totalDlsMsgs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
+		if err != nil {
+			*generalErr = err
+			return
+		}
+		mu.Lock()
+		mainOverviewData.SystemComponents = systemComponents
+		mainOverviewData.MetricsEnabled = metricsEnabled
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		brokersThroughputs, err := mh.GetBrokersThroughputs()
+		if err != nil {
+			*generalErr = err
+			return
+		}
+		mu.Lock()
+		mainOverviewData.BrokersThroughput = brokersThroughputs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if *generalErr != nil {
+		return models.MainOverviewData{}, *generalErr
 	}
+
 	k8sEnv := true
 	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
 		k8sEnv = false
 	}
-	brokersThroughputs, err := mh.GetBrokersThroughputs()
-	if err != nil {
-		serv.Errorf("GetMainOverviewData: GetBrokersThroughputs: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	response := models.MainOverviewData{
-		TotalStations:     len(stations),
-		TotalMessages:     totalMessages,
-		TotalDlsMessages:  totalDlsMsgs,
-		SystemComponents:  systemComponents,
-		Stations:          stations,
-		K8sEnv:            k8sEnv,
-		BrokersThroughput: brokersThroughputs,
-		MetricsEnabled:    metricsEnabled,
-	}
+	mainOverviewData.K8sEnv = k8sEnv
+	return *mainOverviewData, nil
+}
 
+func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
+	response, err := mh.getMainOverviewDataDetails()
+	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
+			serv.Warnf("GetMainOverviewData: " + err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
+		} else {
+			serv.Errorf("GetMainOverviewData: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		}
+	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
