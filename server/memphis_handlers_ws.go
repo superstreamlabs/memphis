@@ -426,9 +426,9 @@ func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.Sys
 	filterSubject := "$memphis_syslogs.*." + filterSubjectSuffix
 
 	if filterSubjectSuffix != _EMPTY_ {
-		if logSource != "" && logLevel != "external" {
+		if logSource != "empty" && logLevel != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
-		} else if logSource != "" && logLevel == "external" {
+		} else if logSource != "empty" && logLevel == "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
 		} else {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)

@@ -42,7 +42,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     let sub;
 
     useEffect(() => {
-        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['external', ''] });
+        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['', 'empty'] });
     }, [filterComponent]);
 
     useEffect(() => {
@@ -263,7 +263,6 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             })
         };
         filteredFields.push(typeFilter, sourceFilter);
-        // filteredFields.push(sourceFilter);
         setFilterFields(filteredFields);
     };
 
@@ -348,17 +347,17 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 applyFilter([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
                 setFilterTerms([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
             } else if (selectedTypeField !== -1 && selectedSourceField === -1) {
-                dispatch({ type: 'SET_LOG_FILTER', payload: [filterState?.filterFields[0]?.fields[selectedTypeField]?.name, ''] });
-                applyFilter([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, '']);
-                setFilterTerms([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, '']);
+                dispatch({ type: 'SET_LOG_FILTER', payload: [filterState?.filterFields[0]?.fields[selectedTypeField]?.name, 'empty'] });
+                applyFilter([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, 'empty']);
+                setFilterTerms([filterState?.filterFields[0]?.fields[selectedTypeField]?.name, 'empty']);
             } else if (selectedTypeField === -1 && selectedSourceField !== -1) {
                 dispatch({ type: 'SET_LOG_FILTER', payload: ['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name] });
                 applyFilter(['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
                 setFilterTerms(['external', filterState?.filterFields[1]?.fields[selectedSourceField]?.name]);
             } else {
-                dispatch({ type: 'SET_LOG_FILTER', payload: ['external', ''] });
-                applyFilter(['external', '']);
-                setFilterTerms(['external', '']);
+                dispatch({ type: 'SET_LOG_FILTER', payload: ['external', 'empty'] });
+                applyFilter(['external', 'empty']);
+                setFilterTerms(['external', 'empty']);
             }
         } else {
             let filterTerms = [];
@@ -413,8 +412,8 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
         setFilterTerms([]);
         if (filterComponent === 'syslogs') {
-            dispatch({ type: 'SET_LOG_FILTER', payload: ['external', ''] });
-            applyFilter(['external', '']);
+            dispatch({ type: 'SET_LOG_FILTER', payload: ['external', 'empty'] });
+            applyFilter(['external', 'empty']);
         }
     };
 

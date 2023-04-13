@@ -35,7 +35,7 @@ const LogsWrapper = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const [visibleRange, setVisibleRange] = useState(0);
     const [logType, setLogType] = useState('external');
-    const [logSource, setLogSource] = useState('');
+    const [logSource, setLogSource] = useState('empty');
     const [logs, setLogs] = useState(() => []);
     const [seqNum, setSeqNum] = useState(-1);
     const [stopLoad, setStopLoad] = useState(false);
