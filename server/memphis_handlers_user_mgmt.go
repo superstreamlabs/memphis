@@ -1111,6 +1111,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		for i := range v.Cluster.URLs {
 			logSource = append(logSource, "memphis-"+strconv.Itoa(i))
 		}
+		logSource = append(logSource, "rest-gateway")
 
 		c.IndentedJSON(200, gin.H{"type": logType, "source": logSource})
 		return
