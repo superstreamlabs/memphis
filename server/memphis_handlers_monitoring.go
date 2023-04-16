@@ -895,35 +895,55 @@ cleanup:
 		}
 
 		mapEntry := m[brokerThroughput.Name]
-		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
+		mapEntry.BytesRead = append(m[brokerThroughput.Name].BytesRead, models.ThroughputReadResponse{
 			Timestamp: msg.Time,
-			Read:      brokerThroughput.Read,
+			Read:      brokerThroughput.BytesRead,
 		})
-		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
+		mapEntry.BytesWrite = append(m[brokerThroughput.Name].BytesWrite, models.ThroughputWriteResponse{
 			Timestamp: msg.Time,
-			Write:     brokerThroughput.Write,
+			Write:     brokerThroughput.BytesWrite,
+		})
+		mapEntry.MsgsRead = append(m[brokerThroughput.Name].MsgsRead, models.ThroughputReadResponse{
+			Timestamp: msg.Time,
+			Read:      brokerThroughput.MsgsRead,
+		})
+		mapEntry.MsgsWrite = append(m[brokerThroughput.Name].MsgsWrite, models.ThroughputWriteResponse{
+			Timestamp: msg.Time,
+			Write:     brokerThroughput.MsgsWrite,
 		})
 		m[brokerThroughput.Name] = mapEntry
 	}
 
 	throughputs = make([]models.BrokerThroughputResponse, 0, len(m))
-	totalRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
-	totalWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
+	totalBytesRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
+	totalBytesWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
+	totalMsgsRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
+	totalMsgsWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
 	for _, t := range m {
 		throughputs = append(throughputs, t)
-		for i, r := range t.Read {
-			totalRead[i].Timestamp = r.Timestamp
-			totalRead[i].Read += r.Read
+		for i, br := range t.BytesRead {
+			totalBytesRead[i].Timestamp = br.Timestamp
+			totalBytesRead[i].Read += br.Read
 		}
-		for i, w := range t.Write {
-			totalWrite[i].Timestamp = w.Timestamp
-			totalWrite[i].Write += w.Write
+		for i, bw := range t.BytesWrite {
+			totalBytesWrite[i].Timestamp = bw.Timestamp
+			totalBytesWrite[i].Write += bw.Write
+		}
+		for i, mr := range t.MsgsRead {
+			totalMsgsRead[i].Timestamp = mr.Timestamp
+			totalMsgsRead[i].Read += mr.Read
+		}
+		for i, mw := range t.BytesWrite {
+			totalBytesWrite[i].Timestamp = mw.Timestamp
+			totalBytesWrite[i].Write += mw.Write
 		}
 	}
 	throughputs = append([]models.BrokerThroughputResponse{{
-		Name:  "total",
-		Read:  totalRead,
-		Write: totalWrite,
+		Name:       "total",
+		BytesRead:  totalBytesRead,
+		BytesWrite: totalBytesWrite,
+		MsgsRead:   totalMsgsRead,
+		MsgsWrite:  totalMsgsWrite,
 	}}, throughputs...)
 
 	return throughputs, nil

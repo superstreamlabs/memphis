@@ -91,15 +91,19 @@ type RestGwMonitoringResponse struct {
 }
 
 type BrokerThroughput struct {
-	Name  string `json:"name"`
-	Read  int64  `json:"read"`
-	Write int64  `json:"write"`
+	Name       string `json:"name"`
+	BytesRead  int64  `json:"bytes_read"`
+	BytesWrite int64  `json:"bytes_write"`
+	MsgsRead   int64  `json:"msgs_read"`
+	MsgsWrite  int64  `json:"msgs_write"`
 }
 
 type BrokerThroughputResponse struct {
-	Name  string                    `json:"name"`
-	Read  []ThroughputReadResponse  `json:"read"`
-	Write []ThroughputWriteResponse `json:"write"`
+	Name       string                    `json:"name"`
+	BytesRead  []ThroughputReadResponse  `json:"bytes_read"`
+	BytesWrite []ThroughputWriteResponse `json:"bytes_write"`
+	MsgsRead   []ThroughputReadResponse  `json:"msgs_read"`
+	MsgsWrite  []ThroughputWriteResponse `json:"msgs_write"`
 }
 
 type ThroughputReadResponse struct {
@@ -112,7 +116,12 @@ type ThroughputWriteResponse struct {
 	Write     int64     `json:"write"`
 }
 
-type Throughput struct {
+type BytesThroughput struct {
 	Bytes       int64 `json:"bytes"`
 	BytesPerSec int64 `json:"bytes_per_sec"`
+}
+
+type MsgsThroughput struct {
+	Msgs       int64 `json:"msgs"`
+	MsgsPerSec int64 `json:"msgs_per_sec"`
 }

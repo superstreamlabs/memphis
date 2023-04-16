@@ -32,8 +32,11 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
-var LastReadThroughput models.Throughput
-var LastWriteThroughput models.Throughput
+var LastBytesReadThroughput models.BytesThroughput
+var LastBytesWriteThroughput models.BytesThroughput
+var LastMsgsReadThroughput models.MsgsThroughput
+var LastMsgsWriteThroughput models.MsgsThroughput
+
 var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
@@ -168,15 +171,22 @@ func (s *Server) InitializeThroughputSampling() error {
 		return err
 	}
 
-	LastReadThroughput = models.Throughput{
+	LastBytesReadThroughput = models.BytesThroughput{
 		Bytes:       v.OutBytes,
 		BytesPerSec: 0,
 	}
-	LastWriteThroughput = models.Throughput{
+	LastBytesWriteThroughput = models.BytesThroughput{
 		Bytes:       v.InBytes,
 		BytesPerSec: 0,
 	}
-
+	LastMsgsReadThroughput = models.MsgsThroughput{
+		Msgs:       v.OutMsgs,
+		MsgsPerSec: 0,
+	}
+	LastMsgsWriteThroughput = models.MsgsThroughput{
+		Msgs:       v.InMsgs,
+		MsgsPerSec: 0,
+	}
 	go s.CalculateSelfThroughput()
 
 	return nil
@@ -189,22 +199,34 @@ func (s *Server) CalculateSelfThroughput() error {
 			return err
 		}
 
-		currentWrite := v.InBytes - LastWriteThroughput.Bytes
-		LastWriteThroughput = models.Throughput{
+		currentBytesWrite := v.InBytes - LastBytesWriteThroughput.Bytes
+		LastBytesWriteThroughput = models.BytesThroughput{
 			Bytes:       v.InBytes,
-			BytesPerSec: currentWrite,
+			BytesPerSec: currentBytesWrite,
 		}
-		currentRead := v.OutBytes - LastReadThroughput.Bytes
-		LastReadThroughput = models.Throughput{
+		currentBytesRead := v.OutBytes - LastBytesReadThroughput.Bytes
+		LastBytesReadThroughput = models.BytesThroughput{
 			Bytes:       v.OutBytes,
-			BytesPerSec: currentRead,
+			BytesPerSec: currentBytesRead,
+		}
+		currentMsgsWrite := v.InMsgs - LastMsgsWriteThroughput.Msgs
+		LastMsgsWriteThroughput = models.MsgsThroughput{
+			Msgs:       v.InMsgs,
+			MsgsPerSec: currentMsgsWrite,
+		}
+		currentMsgsRead := v.OutMsgs - LastMsgsReadThroughput.Msgs
+		LastMsgsReadThroughput = models.MsgsThroughput{
+			Msgs:       v.OutMsgs,
+			MsgsPerSec: currentMsgsRead,
 		}
 		serverName := s.opts.ServerName
 		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
-			Name:  serverName,
-			Read:  currentRead,
-			Write: currentWrite,
+			Name:       serverName,
+			BytesRead:  currentBytesRead,
+			BytesWrite: currentBytesWrite,
+			MsgsRead:   currentMsgsRead,
+			MsgsWrite:  currentMsgsWrite,
 		}
 		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
 	}
