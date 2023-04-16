@@ -243,11 +243,22 @@ func CreateRootUserOnFirstSystemLoad() error {
 		}
 
 		if configuration.ANALYTICS == "true" {
+			var deviceIdValue string
 			installationType := "stand-alone-k8s"
 			if serv.JetStreamIsClustered() {
 				installationType = "cluster"
+				k8sClusterTimestamp, err := getK8sClusterTimestamp()
+				if err != nil {
+					return err
+				}
+				deviceIdValue = k8sClusterTimestamp
 			} else if configuration.DOCKER_ENV == "true" {
 				installationType = "stand-alone-docker"
+				dockerMacAddress, err := getDockerMacAddress()
+				if err != nil {
+					return err
+				}
+				deviceIdValue = dockerMacAddress
 			}
 
 			param := analytics.EventParam{
@@ -255,6 +266,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 				Value: installationType,
 			}
 			analyticsParams := []analytics.EventParam{param}
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
 			analytics.SendEventWithParams("", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
