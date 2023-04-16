@@ -30,7 +30,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-import { convertBytes } from '../../../services/valueConvertor';
+import { convertBytes, convertNumberToK } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
@@ -41,7 +41,7 @@ import { Context } from '../../../hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
 import RadioButton from '../../../components/radioButton';
 
-const throputhTypes = [
+const throughputTypes = [
     {
         id: 1,
         value: 'Bytes per second',
@@ -51,24 +51,6 @@ const throputhTypes = [
         id: 2,
         value: 'Messages per second',
         label: 'Messages per second'
-    }
-];
-
-const yAxesOptions = [
-    {
-        gridLines: {
-            display: true,
-            borderDash: [3, 3]
-        },
-        ticks: {
-            beginAtZero: true,
-            callback: function (value) {
-                return `${convertBytes(value, true)}/s`;
-            },
-            maxTicksLimit: 5,
-            min: 0,
-            suggestedMax: 45 * 1024
-        }
     }
 ];
 
@@ -98,7 +80,7 @@ const getDataset = (dsName, readWrite, hidden) => {
 
 function Throughput() {
     const [state, dispatch] = useContext(Context);
-    const [throughputType, setThroughputType] = useState('write');
+    const [throughputAction, setThroughputAction] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
     const [dataSamples, setDataSamples] = useState({});
@@ -107,7 +89,8 @@ function Throughput() {
     const [stop, setstop] = useState(false);
     // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
-    const [formFields, setFormFields] = useState('show in KB');
+    const [throughputType, setThroughputType] = useState(throughputTypes[0].value);
+    const [optionChart, setOptionsChart] = useState({});
 
     // Chart.plugins.register({
     //     afterDraw: function (chart) {
@@ -117,20 +100,38 @@ function Throughput() {
     //     }
     // });
 
-    const updateFormState = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
-    };
+    const yAxesOptions = [
+        {
+            gridLines: {
+                display: true,
+                borderDash: [3, 3]
+            },
+            ticks: {
+                beginAtZero: true,
+                callback: function (value) {
+                    return throughputType === throughputTypes[0].value ? `${convertBytes(value, true)}/s` : `${convertNumberToK(value)} Msgs/s`;
+                },
+                maxTicksLimit: 5,
+                min: 0,
+                suggestedMax: 45 * 1024
+            }
+        }
+    ];
 
     const initiateDataState = () => {
         let dataSets = [];
         selectOptions.forEach((selectOption, i) => {
-            dataSets.push(getDataset(selectOption.name, 'write', i !== 0));
-            dataSets.push(getDataset(selectOption.name, 'read', true));
+            dataSets.push(getDataset(selectOption.name, 'bytes_write', throughputAction === 'write' && throughputType === throughputTypes[0].value ? false : true));
+            dataSets.push(getDataset(selectOption.name, 'bytes_read', throughputAction !== 'write' && throughputType === throughputTypes[0].value ? false : true));
+            dataSets.push(getDataset(selectOption.name, 'msgs_write', throughputAction === 'write' && throughputType === throughputTypes[1].value ? false : true));
+            dataSets.push(getDataset(selectOption.name, 'msgs_read', throughputAction !== 'write' && throughputType === throughputTypes[1].value ? false : true));
         });
         setData({ datasets: dataSets });
     };
+
+    useEffect(() => {
+        setOptionsChart(options);
+    }, [throughputType]);
 
     useEffect(() => {
         if (data?.datasets?.length === 0 && selectOptions?.length > 0) initiateDataState();
@@ -142,14 +143,18 @@ function Throughput() {
         setLoader();
         for (let i = 0; i < selectOptions?.length; i++) {
             if (i === foundItemIndex) {
-                data.datasets[2 * i].hidden = throughputType === 'write' ? false : true;
-                data.datasets[2 * i + 1].hidden = throughputType !== 'write' ? false : true;
+                data.datasets[4 * i].hidden = throughputAction === 'write' ? (throughputType === throughputTypes[0].value ? false : true) : true;
+                data.datasets[4 * i + 1].hidden = throughputAction !== 'write' ? (throughputType === throughputTypes[0].value ? false : true) : true;
+                data.datasets[4 * i + 2].hidden = throughputAction === 'write' ? (throughputType === throughputTypes[1].value ? false : true) : true;
+                data.datasets[4 * i + 3].hidden = throughputAction !== 'write' ? (throughputType === throughputTypes[1].value ? false : true) : true;
             } else {
-                data.datasets[2 * i].hidden = true;
-                data.datasets[2 * i + 1].hidden = true;
+                data.datasets[4 * i].hidden = true;
+                data.datasets[4 * i + 1].hidden = true;
+                data.datasets[4 * i + 2].hidden = true;
+                data.datasets[4 * i + 3].hidden = true;
             }
         }
-    }, [throughputType, selectedComponent]);
+    }, [throughputAction, selectedComponent, throughputType]);
 
     const getSelectComponentList = () => {
         const components = state?.monitor_data?.brokers_throughput
@@ -177,15 +182,23 @@ function Throughput() {
             selectOptions.length === 0 && getSelectComponentList();
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 let updatedDataSamples = { ...dataSamples };
-                updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
-                updatedDataSamples[component.name].write = [...updatedDataSamples[component.name]?.write, ...component.write];
+                updatedDataSamples[component.name].bytes_write = [...updatedDataSamples[component.name]?.bytes_write, ...component.bytes_write];
+                updatedDataSamples[component.name].bytes_read = [...updatedDataSamples[component.name]?.bytes_read, ...component.bytes_read];
+                updatedDataSamples[component.name].msgs_write = [...updatedDataSamples[component.name]?.msgs_write, ...component.msgs_write];
+                updatedDataSamples[component.name].msgs_read = [...updatedDataSamples[component.name]?.msgs_read, ...component.msgs_read];
+
                 setDataSamples(updatedDataSamples);
             });
         } else {
             let sampleObject = {};
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 const componentName = component.name;
-                sampleObject[componentName] = { read: component.read, write: component.write };
+                sampleObject[componentName] = {
+                    bytes_read: component.bytes_read,
+                    bytes_write: component.bytes_write,
+                    msgs_read: component.msgs_read,
+                    msgs_write: component.msgs_write
+                };
             });
             setDataSamples(sampleObject);
         }
@@ -194,26 +207,45 @@ function Throughput() {
     const getValue = (type, select) => {
         let updatedDataSamples = { ...dataSamples };
         let value;
-        if (type === 'write') {
-            value = dataSamples[select]?.write[0]?.write;
-            updatedDataSamples[select]?.write.shift();
+        if (throughputType === throughputTypes[0].value) {
+            if (throughputAction === 'write') {
+                value = dataSamples[select]?.bytes_write[0]?.write;
+                updatedDataSamples[select]?.bytes_write.shift();
+            } else {
+                value = dataSamples[select]?.bytes_read[0]?.read;
+                updatedDataSamples[select]?.bytes_read.shift();
+            }
         } else {
-            value = dataSamples[select]?.read[0]?.read;
-            updatedDataSamples[select]?.read.shift();
+            if (throughputAction === 'write') {
+                value = dataSamples[select]?.msgs_write[0]?.write;
+                updatedDataSamples[select]?.msgs_write.shift();
+            } else {
+                value = dataSamples[select]?.msgs_read[0]?.read;
+                updatedDataSamples[select]?.msgs_read.shift();
+            }
         }
+
         setDataSamples(updatedDataSamples);
         return value;
     };
 
     const updateData = (chart) => {
         for (let i = 0; i < selectOptions?.length; i++) {
-            chart.data?.datasets[2 * i]?.data?.push({
+            chart.data?.datasets[4 * i]?.data?.push({
                 x: moment(),
-                y: getValue('write', selectOptions[i].name)
+                y: getValue('bytes_write', selectOptions[i].name)
             });
-            chart.data?.datasets[2 * i + 1]?.data?.push({
+            chart.data?.datasets[4 * i + 1]?.data?.push({
                 x: moment(),
-                y: getValue('read', selectOptions[i].name)
+                y: getValue('bytes_read', selectOptions[i].name)
+            });
+            chart.data?.datasets[4 * i + 2]?.data?.push({
+                x: moment(),
+                y: getValue('msgs_write', selectOptions[i].name)
+            });
+            chart.data?.datasets[4 * i + 3]?.data?.push({
+                x: moment(),
+                y: getValue('msgs_read', selectOptions[i].name)
             });
         }
     };
@@ -243,13 +275,15 @@ function Throughput() {
             displayColors: false,
             callbacks: {
                 title: () => {
-                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
+                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputAction}`;
                 },
                 label: (tooltipItem) => {
                     return `${tooltipItem.label}`;
                 },
                 afterLabel: (tooltipItem) => {
-                    return `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`;
+                    return throughputType === throughputTypes[0].value
+                        ? `Throughput: ${convertBytes(tooltipItem.yLabel, true)}/s`
+                        : `Throughput: ${convertNumberToK(tooltipItem.yLabel)} Msgs/s`;
                 }
             },
             backgroundColor: 'rgba(0, 0, 0, 0.75)',
@@ -292,7 +326,7 @@ function Throughput() {
             <div className="overview-components-header throughput-header">
                 <div className="throughput-header-side">
                     <p>Throughput</p>
-                    <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputType(e)} />
+                    <SegmentButton options={['write', 'read']} onChange={(e) => setThroughputAction(e)} />
                 </div>
                 <div className="throughput-actions">
                     <div className="play-pause-btn" onClick={() => setstop(!stop)}>
@@ -315,15 +349,14 @@ function Throughput() {
                         <p className="title">No data found</p>
                     </div>
                 )} */}
-                <Line id="test" data={data} options={options} />
+                <Line id="test" data={data} options={optionChart} />
             </div>
-            <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'center' }}>
+            <div className="wrapper-radio-button">
                 <RadioButton
                     vertical={false}
-                    options={throputhTypes}
-                    // radioWrapper="throughput-type"
-                    radioValue={formFields.type}
-                    onChange={(e) => updateFormState('type', e.target.value)}
+                    options={throughputTypes}
+                    radioValue={throughputType}
+                    onChange={(e) => setThroughputType(e.target.value)}
                 />
             </div>
         </div>

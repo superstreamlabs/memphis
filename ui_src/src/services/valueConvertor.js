@@ -137,6 +137,24 @@ export const convertBytes = (bytes, round) => {
     }
 };
 
+export const convertNumberToK = (num) => {
+    const K = 1000;
+    const M = K * 1000;
+    const B = M * 1000;
+
+    if (num < K && num > 0) {
+        return `${num}`;
+    } else if (num >= K && num < M) {
+        return `${num / 1000}K`;
+    } else if (num >= M && num < B) {
+        return `${num / 1000000}M`;
+    } else if (num >= B) {
+        return `${num / 1000000000}B`;
+    } else {
+        return '0';
+    }
+};
+
 export const numberWithCommas = (x) => {
     if (x) {
         return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
