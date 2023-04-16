@@ -186,19 +186,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		}
 	}
 
-	exist, _, err = db.GetActiveConsumerByStationID(name, station.ID)
-	if err != nil {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
-	}
-
-	if exist {
-		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New("memphis: " + errMsg)
-	}
-
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
@@ -206,11 +193,16 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
 		return err
+	}
+	if exist {
+		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
+		serv.Warnf("createConsumerDirectCommon: " + errMsg)
+		return errors.New("memphis: " + errMsg)
 	}
 
 	if rowsUpdated == 1 {
