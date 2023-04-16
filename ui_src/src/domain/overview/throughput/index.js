@@ -44,13 +44,13 @@ import RadioButton from '../../../components/radioButton';
 const throputhTypes = [
     {
         id: 1,
-        value: 'Show in KB',
-        label: 'Show in KB'
+        value: 'Bytes per second',
+        label: 'Bytes per second'
     },
     {
         id: 2,
-        value: 'Show per messages',
-        label: 'Show per messages'
+        value: 'Messages per second',
+        label: 'Messages per second'
     }
 ];
 
