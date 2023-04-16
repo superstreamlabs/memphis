@@ -248,17 +248,17 @@ func CreateRootUserOnFirstSystemLoad() error {
 			if serv.JetStreamIsClustered() {
 				installationType = "cluster"
 				k8sClusterTimestamp, err := getK8sClusterTimestamp()
-				if err != nil {
-					return err
+				if err == nil {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
+					deviceIdValue = k8sClusterTimestamp
 				}
-				deviceIdValue = k8sClusterTimestamp
 			} else if configuration.DOCKER_ENV == "true" {
 				installationType = "stand-alone-docker"
 				dockerMacAddress, err := getDockerMacAddress()
-				if err != nil {
-					return err
+				if err == nil {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
+					deviceIdValue = dockerMacAddress
 				}
-				deviceIdValue = dockerMacAddress
 			}
 
 			param := analytics.EventParam{
