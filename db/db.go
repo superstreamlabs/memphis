@@ -213,7 +213,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_at TIMESTAMPTZ NOT NULL,
 		schema_content TEXT NOT NULL,
 		schema_id INTEGER NOT NULL,
-		msg_struct_name VARCHAR,
+		msg_struct_name VARCHAR DEFAULT '',
 		descriptor bytea,
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
@@ -1977,13 +1977,13 @@ func InsertNewConsumer(name string,
 	maxAckTime int,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
-	lastMessages int64) (models.Consumer, int64, error) {
+	lastMessages int64) (bool, models.Consumer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		return false, models.Consumer{}, 0, err
 	}
 	defer conn.Release()
 
@@ -2007,7 +2007,7 @@ func InsertNewConsumer(name string,
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		return false, models.Consumer{}, 0, err
 	}
 
 	var consumerId int
@@ -2018,30 +2018,36 @@ func InsertNewConsumer(name string,
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// Handle unique constraint violation error
+			return true, models.Consumer{}, 0, nil
+		} else {
+			return false, models.Consumer{}, 0, err
+		}
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&consumerId)
 		if err != nil {
-			return models.Consumer{}, 0, err
+			return false, models.Consumer{}, 0, err
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		return models.Consumer{}, 0, err
+		return false, models.Consumer{}, 0, err
 	}
 
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
-				return models.Consumer{}, 0, errors.New(pgErr.Detail)
+				return false, models.Consumer{}, 0, errors.New(pgErr.Detail)
 			} else {
-				return models.Consumer{}, 0, errors.New(pgErr.Message)
+				return false, models.Consumer{}, 0, errors.New(pgErr.Message)
 			}
 		} else {
-			return models.Consumer{}, 0, err
+			return false, models.Consumer{}, 0, err
 		}
 	}
 
@@ -2063,7 +2069,7 @@ func InsertNewConsumer(name string,
 		StartConsumeFromSeq: startConsumeFromSequence,
 		LastMessages:        lastMessages,
 	}
-	return newConsumer, rowsAffected, nil
+	return false, newConsumer, rowsAffected, nil
 }
 
 func GetAllConsumers() ([]models.ExtendedConsumer, error) {
@@ -4290,7 +4296,7 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 	defer conn.Release()
 
 	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2`
-	stmt, err := conn.Conn().Prepare(ctx, "update_poisoned_cgs", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_poisoned_cg", query)
 	if err != nil {
 		return err
 	}
