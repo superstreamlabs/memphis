@@ -200,7 +200,7 @@ EOF`}
                                 border="none"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/datadog', '_blank')}
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/datadog', '_blank')}
                             />
                         </div>
                     </div>

@@ -16,6 +16,7 @@ import React, { useEffect, useContext, useState } from 'react';
 
 import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
 import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
+import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
@@ -142,6 +143,13 @@ const Integrations = () => {
                                     <div className="cloud-icon">
                                         <CloudQueueRounded />
                                     </div>
+                                </div>
+                                <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
+                            </div>
+                        ) : filterList[integration].experimental ? (
+                            <div key={filterList[integration].name}>
+                                <div className="experimental-badge">
+                                    <img src={experimentalIcon} />
                                 </div>
                                 <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
                             </div>
