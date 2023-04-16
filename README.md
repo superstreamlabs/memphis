@@ -143,11 +143,11 @@ Broker: localhost:6666
 
 ## Support 🙋‍♂️🤝
 
-### Ask a question ❓ about Memphis{dev} or something related to us:
+### Ask a question ❓ about Memphis.dev. or something related to us:
 
 We welcome you to our discord server with your questions, doubts and feedback.
 
-<a href="https://discord.gg/WZpysvAeTf"><img src="https://amplication.com/images/discord_banner_purple.svg"/></a>
+<a href="https://memphis.dev/discord"><img src="https://amplication.com/images/discord_banner_purple.svg"/></a>
 
 ### Create a bug 🐞 report
 
@@ -163,9 +163,9 @@ If you add some more information such as your thoughts and vision about the feat
 
 ## Contributing
 
-Memphis{dev} is an open-source project.<br>
+Memphis.dev is an open-source project.<br>
 We are committed to a fully transparent development process and appreciate highly any contributions.<br>
-Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - we would love to have you as part of the Memphis{dev} community.
+Whether you are helping us fix bugs, proposing new features, improving our documentation or spreading the word - we would love to have you as part of the Memphis.dev community.
 
 Please refer to our [Contribution Guidelines](./CONTRIBUTING.md) and [Code of Conduct](./CODE_OF_CONDUCT.md).
 
