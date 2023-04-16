@@ -1098,7 +1098,22 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	case "syslogs":
 		logType := []string{"info", "warn", "err"}
-		c.IndentedJSON(200, gin.H{"type": logType})
+		v, err := serv.Varz(nil)
+		if err != nil {
+			serv.Errorf("GetFilterDetails: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		var logSource []string
+		if len(v.Cluster.URLs) == 0 {
+			logSource = append(logSource, "memphis-0")
+		}
+		for i := range v.Cluster.URLs {
+			logSource = append(logSource, "memphis-"+strconv.Itoa(i))
+		}
+		logSource = append(logSource, "rest-gateway")
+
+		c.IndentedJSON(200, gin.H{"type": logType, "source": logSource})
 		return
 	default:
 		c.IndentedJSON(200, gin.H{})

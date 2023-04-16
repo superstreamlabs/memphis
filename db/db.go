@@ -302,9 +302,13 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 	metadataDbPort := configuration.METADATA_DB_PORT
 	var metadataDbUrl string
 	if configuration.METADATA_DB_TLS_ENABLED {
-		metadataDbUrl = "postgres://" + metadataDbUser + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=verify-full"
+		metadataAuth := ""
+		if !configuration.METADATA_DB_TLS_MUTUAL {
+			metadataAuth = ":" + metadataDbPassword
+		}
+		metadataDbUrl = "postgres://" + metadataDbUser + metadataAuth + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=verify-full"
 	} else {
-		metadataDbUrl = "postgres://" + metadataDbUser + ":" + metadataDbPassword + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=disable"
+		metadataDbUrl = "postgres://" + metadataDbUser + ":" + metadataDbPassword + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=prefer"
 	}
 
 	config, err := pgxpool.ParseConfig(metadataDbUrl)
@@ -314,11 +318,6 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 	config.MaxConns = 5
 
 	if configuration.METADATA_DB_TLS_ENABLED {
-		cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
-		if err != nil {
-			return MetadataStorage{}, err
-		}
-
 		CACert, err := os.ReadFile(configuration.METADATA_DB_TLS_CA)
 		if err != nil {
 			return MetadataStorage{}, err
@@ -326,7 +325,17 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 
 		CACertPool := x509.NewCertPool()
 		CACertPool.AppendCertsFromPEM(CACert)
-		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
+
+		if configuration.METADATA_DB_TLS_MUTUAL {
+			cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
+			if err != nil {
+				return MetadataStorage{}, err
+			}
+
+			config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
+		} else {
+			config.ConnConfig.TLSConfig = &tls.Config{RootCAs: CACertPool, InsecureSkipVerify: true}
+		}
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)

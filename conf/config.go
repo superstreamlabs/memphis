@@ -31,6 +31,7 @@ type Configuration struct {
 	METADATA_DB_HOST        string
 	METADATA_DB_PORT        string
 	METADATA_DB_TLS_ENABLED bool
+	METADATA_DB_TLS_MUTUAL  bool
 	METADATA_DB_TLS_KEY     string
 	METADATA_DB_TLS_CRT     string
 	METADATA_DB_TLS_CA      string
