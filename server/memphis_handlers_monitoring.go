@@ -24,6 +24,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -40,6 +41,7 @@ import (
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1Apimachinery "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -2110,4 +2112,45 @@ func getComponentsStructByOneComp(comp models.SysComponent) models.Components {
 	return models.Components{
 		HealthyComponents: []models.SysComponent{comp},
 	}
+}
+
+func getK8sClusterTimestamp() (string, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return "", err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	ctx := context.Background()
+	clusterInfo, err := clientset.CoreV1().Namespaces().Get(ctx, "kube-system", v1Apimachinery.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	creationTime := clusterInfo.CreationTimestamp.Time
+	unixTime := creationTime.Unix()
+
+	return strconv.FormatInt(unixTime, 10), nil
+}
+
+func getDockerMacAddress() (string, error) {
+	var macAdress string
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, iface := range ifaces {
+		if (iface.HardwareAddr == nil) || (iface.HardwareAddr[0]&2 == 2) {
+			continue
+		} else {
+			macAdress = iface.HardwareAddr.String()
+			break
+		}
+	}
+	return macAdress, nil
 }
