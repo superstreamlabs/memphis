@@ -1769,6 +1769,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
 				s.Errorf("GetSystemLogs: " + err.Error())
+				return
 			}
 
 			respCh <- StoredMsg{

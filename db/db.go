@@ -38,7 +38,7 @@ var configuration = conf.GetConfig()
 var MetadataDbClient MetadataStorage
 
 const (
-	DbOperationTimeout = 20
+	DbOperationTimeout = 40
 )
 
 type logger interface {
