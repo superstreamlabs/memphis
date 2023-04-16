@@ -70,8 +70,20 @@
                     }
                 }
             }
+            
             integ-item{
                 border: unset !important;
+            }
+        }
+        .experimental-badge{
+            position:absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            img{
+                position: absolute;
+                left: -8px;
+                top: 8px;
             }
         }
     }

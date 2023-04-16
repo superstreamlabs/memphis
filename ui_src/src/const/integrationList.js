@@ -11,11 +11,13 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
+import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
 import newrelicBanner from '../assets/images/newrelicBanner.webp';
+import elasticBanner from '../assets/images/elasticBanner.webp';
 import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
 import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
@@ -25,6 +27,7 @@ import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.webp';
 import datadogIcon from '../assets/images/datadogIcon.svg';
 import grafanaIcon from '../assets/images/grafanaIcon.svg';
+import elasticIcon from '../assets/images/elasticIcon.svg';
 import slackLogo from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
 import s3Logo from '../assets/images/s3Logo.svg';
@@ -252,6 +255,49 @@ export const INTEGRATION_LIST = {
                 <span className="content">AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
             </div>
         )
+    },
+    Elasticsearch: {
+        name: 'Elasticsearch observability',
+        by: 'memphis',
+        banner: <img className="banner" src={elasticBanner} alt="elasticBanner" />,
+        insideBanner: <img className="insideBanner" src={elasticBannerPopup} alt="elasticBannerPopup" />,
+        icon: <img src={elasticIcon} alt="elasticIcon" />,
+        description: 'Monitor and observe Memphis infrastructure using Elasticsearch Observability and Kibana',
+        category: CATEGORY_LIST['Monitoring'],
+        experimental: true,
+        header: (
+            <div className="header-left-side">
+                <img src={elasticIcon} alt="elasticIcon" />
+                <div className="details">
+                    <p>Elasticsearch observability</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">Monitor and observe Memphis infrastructure using Elasticsearch Observability and Kibana</span>
+            </div>
+        ),
+        steps: [
+            {
+                title: 'Step 1: Download the Elastic Agent manifest',
+                key: 0
+            },
+            {
+                title: 'Step 2: Configure Elastic Agent policy',
+                key: 1
+            },
+            {
+                title: 'Step 3: Enroll Elastic Agent to the policy',
+                key: 2
+            },
+            {
+                title: 'Step 4: Deploy the Elastic Agent',
+                key: 3
+            }
+        ]
     },
     Grafana: {
         name: 'Grafana',

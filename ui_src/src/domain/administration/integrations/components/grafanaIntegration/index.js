@@ -171,7 +171,7 @@ exporter.enabled="true"`}
                                 border="none"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/monitoring/grafana', '_blank')}
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/grafana', '_blank')}
                             />
                         </div>
                     </div>

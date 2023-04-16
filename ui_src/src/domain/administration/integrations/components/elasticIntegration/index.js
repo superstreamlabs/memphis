@@ -17,29 +17,25 @@ import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
 
 import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
-import Modal from '../../../../../components/modal';
-import { ZoomInRounded } from '@material-ui/icons';
 import Loader from '../../../../../components/loader';
 
 const { Panel } = Collapse;
 
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
-const DataDogIntegration = ({ close }) => {
-    const dataDogConfiguration = INTEGRATION_LIST['Datadog'];
+const ElasticIntegration = ({ close }) => {
+    const elasticConfiguration = INTEGRATION_LIST['Elasticsearch'];
     const [currentStep, setCurrentStep] = useState(0);
-    const [showModal, setShowModal] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
 
     useEffect(() => {
         const images = [];
-        images.push(INTEGRATION_LIST['Datadog'].banner.props.src);
-        images.push(INTEGRATION_LIST['Datadog'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Datadog'].icon.props.src);
+        images.push(INTEGRATION_LIST['Elasticsearch'].banner.props.src);
+        images.push(INTEGRATION_LIST['Elasticsearch'].insideBanner.props.src);
+        images.push(INTEGRATION_LIST['Elasticsearch'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {
@@ -56,38 +52,16 @@ const DataDogIntegration = ({ close }) => {
             setImagesLoaded(true);
         });
     }, []);
-    const handleToggleModal = () => {
-        setShowModal(!showModal);
-    };
 
     const getContent = (key) => {
         switch (key) {
             case 0:
                 return (
                     <div className="steps-content">
-                        <h3>
-                            If you haven't installed Memphis with the <label>exporter.enabled</label> yet
-                        </h3>
+                        <h3>Download the manifest file:</h3>
                         <div className="editor">
-                            <pre>
-                                {`helm install memphis memphis
---create-namespace --namespace memphis --wait 
---set 
-cluster.enabled="true", 
-exporter.enabled="true"`}
-                            </pre>
-                            <Copy
-                                data={`helm install memphis memphis
---create-namespace --namespace memphis --wait 
---set 
-cluster.enabled="true", 
-exporter.enabled="true"`}
-                            />
-                        </div>
-                        <p>If Memphis is already installed -</p>
-                        <div className="editor">
-                            <pre>helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values</pre>
-                            <Copy data={`helm upgrade --set exporter.enabled=true memphis --namespace memphis --reuse-values`} />
+                            <pre>curl -L -O https://raw.githubusercontent.com/elastic/elastic-agent/master/deploy/kubernetes/elastic-agent-managed-kubernetes.yaml</pre>
+                            <Copy data="curl -L -O https://raw.githubusercontent.com/elastic/elastic-agent/master/deploy/kubernetes/elastic-agent-managed-kubernetes.yaml" />
                         </div>
                     </div>
                 );
@@ -95,83 +69,38 @@ exporter.enabled="true"`}
                 return (
                     <div className="steps-content">
                         <h3>
-                            Add Datadog annotation to the <label>memphis</label> statefulset to expose Prometheus metrics to datadog agent:
+                            The Elastic Agent needs to be assigned to a policy to enable the proper inputs. To achieve Kubernetes observability, the policy needs to
+                            include the Kubernetes integration. Refer to{' '}
+                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#create-a-policy" target="_blank">
+                                Create a policy
+                            </a>{' '}
+                            and{' '}
+                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#add-integration" target="_blank">
+                                Add an integration to a policy
+                            </a>{' '}
+                            to learn how to configure the{' '}
+                            <a href="https://docs.elastic.co/en/integrations/kubernetes" target="_blank">
+                                Kubernetes integration
+                            </a>
+                            .
                         </h3>
-                        <span>A one-liner command -</span>
-                        <div className="editor">
-                            <pre>{`cat <<EOF | kubectl -n memphis patch sts memphis --patch '
-spec:
-  template:
-    metadata:
-      annotations:
-        ad.datadoghq.com/metrics.checks: |
-           {
-             "openmetrics": {
-               "instances": [
-                 {
-                   "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
-                   "namespace": "memphis",
-                   "metrics": [".*"]
-                 }
-               ]
-             }
-           }'
-EOF`}</pre>
-                            <Copy
-                                data={`cat <<EOF | kubectl -n memphis patch sts memphis --patch '
-spec:
-  template:
-    metadata:
-      annotations:
-        ad.datadoghq.com/metrics.checks: |
-           {
-             "openmetrics": {
-               "instances": [
-                 {
-                   "openmetrics_endpoint": "http://%%host%%:%%port%%/metrics",
-                   "namespace": "memphis",
-                   "metrics": [".*"]
-                 }
-               ]
-             }
-           }'
-EOF`}
-                            />
-                        </div>
                     </div>
                 );
             case 2:
                 return (
                     <div className="steps-content">
-                        <h3>{`Reach your Datadog account -> Metrics -> Summary, and check if "memphis" metrics arrives.`}</h3>
-                        <div className="img" onClick={handleToggleModal}>
-                            <img src={datadogMetricsps} alt="datadogMetricsps" width={400} />
-                            <ZoomInRounded />
-                        </div>
+                        <h3>Enrollment of an Elastic Agent is defined as the action to register a specific agent to a running Fleet Server within the manifest file.</h3>
                     </div>
                 );
             case 3:
                 return (
                     <div className="steps-content">
-                        <h3>
-                            A Datadog{' '}
-                            <a href="https://docs.datadoghq.com/dashboards/#copy-import-or-export-dashboard-json" target="_blank">
-                                tutorial
-                            </a>{' '}
-                            on how to import a dashboard
-                        </h3>
-                        <h3>
-                            Memphis dashboard .json file to{' '}
-                            <a
-                                href="https://raw.githubusercontent.com/memphisdev/gitbook-backup/master/dashboard-gui/integrations/monitoring/MemphisDashboard.json"
-                                target="_blank"
-                            >
-                                download
-                            </a>
-                        </h3>
+                        <div className="editor">
+                            <pre>kubectl create -f elastic-agent-managed-kubernetes.yaml</pre>
+                            <Copy data="kubectl create -f elastic-agent-managed-kubernetes.yaml" />
+                        </div>
                     </div>
                 );
-
             default:
                 break;
         }
@@ -186,9 +115,9 @@ EOF`}
             )}
             {imagesLoaded && (
                 <>
-                    {dataDogConfiguration?.insideBanner}
+                    {elasticConfiguration?.insideBanner}
                     <div className="integrate-header">
-                        {dataDogConfiguration.header}
+                        {elasticConfiguration.header}
                         <div className="action-buttons flex-end">
                             <Button
                                 width="140px"
@@ -200,11 +129,11 @@ EOF`}
                                 border="none"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/datadog', '_blank')}
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/elasticsearch-observability', '_blank')}
                             />
                         </div>
                     </div>
-                    {dataDogConfiguration.integrateDesc}
+                    {elasticConfiguration.integrateDesc}
                     <div className="integration-guid-stepper">
                         <Collapse
                             activeKey={currentStep}
@@ -212,7 +141,7 @@ EOF`}
                             accordion={true}
                             expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
                         >
-                            {dataDogConfiguration?.steps?.map((step) => {
+                            {elasticConfiguration?.steps?.map((step) => {
                                 return (
                                     <Panel header={step.title} key={step.key}>
                                         {getContent(step.key)}
@@ -234,15 +163,10 @@ EOF`}
                             />
                         </div>
                     </div>
-                    {showModal && (
-                        <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
-                            <img width={'100%'} src={datadogMetricsps} alt="zoomable" />
-                        </Modal>
-                    )}
                 </>
             )}
         </dynamic-integration>
     );
 };
 
-export default DataDogIntegration;
+export default ElasticIntegration;
