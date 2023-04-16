@@ -39,6 +39,20 @@ import pathDomains from '../../../router';
 
 import { Context } from '../../../hooks/store';
 import { PauseRounded, PlayArrowRounded } from '@material-ui/icons';
+import RadioButton from '../../../components/radioButton';
+
+const throputhTypes = [
+    {
+        id: 1,
+        value: 'Show in KB',
+        label: 'Show in KB'
+    },
+    {
+        id: 2,
+        value: 'Show per messages',
+        label: 'Show per messages'
+    }
+];
 
 const yAxesOptions = [
     {
@@ -93,6 +107,7 @@ function Throughput() {
     const [stop, setstop] = useState(false);
     // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
+    const [formFields, setFormFields] = useState('show in KB');
 
     // Chart.plugins.register({
     //     afterDraw: function (chart) {
@@ -101,6 +116,12 @@ function Throughput() {
     //         } else socketFailIndicator && setSocketFailIndicator(false);
     //     }
     // });
+
+    const updateFormState = (field, value) => {
+        let updatedValue = { ...formFields };
+        updatedValue[field] = value;
+        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+    };
 
     const initiateDataState = () => {
         let dataSets = [];
@@ -295,6 +316,15 @@ function Throughput() {
                     </div>
                 )} */}
                 <Line id="test" data={data} options={options} />
+            </div>
+            <div style={{ marginTop: '15px', display: 'flex', justifyContent: 'center' }}>
+                <RadioButton
+                    vertical={false}
+                    options={throputhTypes}
+                    // radioWrapper="throughput-type"
+                    radioValue={formFields.type}
+                    onChange={(e) => updateFormState('type', e.target.value)}
+                />
             </div>
         </div>
     );
