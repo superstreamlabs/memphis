@@ -791,13 +791,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 }
 
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
-	fileContent, err := os.ReadFile("version.conf")
-	if err != nil {
-		serv.Errorf("GetClusterInfo: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	c.IndentedJSON(200, gin.H{"version": string(fileContent)})
+	c.IndentedJSON(200, gin.H{"version": mh.S.MemphisVersion()})
 }
 
 func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputResponse, error) {
