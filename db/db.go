@@ -308,7 +308,7 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 		}
 		metadataDbUrl = "postgres://" + metadataDbUser + metadataAuth + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=verify-full"
 	} else {
-		metadataDbUrl = "postgres://" + metadataDbUser + ":" + metadataDbPassword + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=disable"
+		metadataDbUrl = "postgres://" + metadataDbUser + ":" + metadataDbPassword + "@" + metadataDbHost + ":" + metadataDbPort + "/" + metadataDbName + "?sslmode=prefer"
 	}
 
 	config, err := pgxpool.ParseConfig(metadataDbUrl)
