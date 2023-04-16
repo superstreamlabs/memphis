@@ -871,10 +871,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnGlobalAcc(sub)
-	err = serv.memphisRemoveConsumer(throughputStreamNameV1, durableName)
-	if err != nil {
-		return throughputs, err
-	}
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(throughputStreamNameV1, durableName) })
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)
@@ -1799,10 +1796,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnGlobalAcc(sub)
-	err = s.memphisRemoveConsumer(syslogsStreamName, durableName)
-	if err != nil {
-		return models.SystemLogsResponse{}, err
-	}
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
