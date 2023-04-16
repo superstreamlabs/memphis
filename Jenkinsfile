@@ -129,7 +129,12 @@ node {
 	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
       }
       else{
-	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
+	if(versionTag.contains('stable')) {
+	  sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName}:stable --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
+	}
+	else{
+          sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
+	}      
       }
     }
 
