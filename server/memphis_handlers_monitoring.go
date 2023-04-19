@@ -1497,47 +1497,38 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 }
 
 func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (models.GetStationOverviewDataResponse, StationName, error) {
+	// exe := "nats-server"
+	// f, err := os.Create("profile.prof")
+	// if err != nil {
+	// 	server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
+	// }
+	// pprof.StartCPUProfile(f)
+	// defer pprof.StopCPUProfile()
 	var wg sync.WaitGroup
-	generalErr := new(error)
-	wg.Add(9)
+	routinesError := new(error)
+	wg.Add(5)
 
-	stationName := &StationName{}
-	stationNameChan := make(chan StationName)
-	go func() {
-		sn, err := StationNameFromStr(stationNameString)
-		if err != nil {
-			*generalErr = err
-			return
-		}
-		stationNameChan <- sn
-		wg.Done()
-	}()
-	*stationName = <-stationNameChan
+	stationName, err := StationNameFromStr(stationNameString)
+	if err != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, err
+	}
 
-	station := &models.Station{}
-	stationChan := make(chan models.Station)
-	go func() {
-		exist, stationByName, err := db.GetStationByName(stationName.Ext())
-		if err != nil {
-			*generalErr = err
-			return
-		}
-		if !exist {
-			*generalErr = errors.New("Station " + stationNameString + " does not exist")
-		}
-		stationChan <- stationByName
-		wg.Done()
-	}()
-	*station = <-stationChan
+	exist, station, err := db.GetStationByName(stationName.Ext())
+	if err != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, err
+	}
+	if !exist {
+		return models.GetStationOverviewDataResponse{}, StationName{}, errors.New("Station " + stationNameString + " does not exist")
+	}
 
 	producers := &models.GetProducersByStationResponse{}
 	go func() {
 		connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
 		var err error
 		if station.IsNative {
-			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(*station)
+			connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
 			if err != nil {
-				*generalErr = err
+				*routinesError = err
 				return
 			}
 		}
@@ -1549,36 +1540,25 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		wg.Done()
 	}()
 
-	auditLogs := &([]models.AuditLog{})
-	go func() {
-		auditLogsByStation, err := h.AuditLogs.GetAuditLogsByStation(*station)
-		if err != nil {
-			*generalErr = err
-			return
-		}
-		*auditLogs = auditLogsByStation
-		wg.Done()
-	}()
-
 	messagesSample := &models.MessagesSampleResponse{}
 	go func() {
 		totalMessages, err := h.Stations.GetTotalMessages(station.Name)
 		if err != nil {
 			fmt.Print(err)
-			*generalErr = err
+			*routinesError = err
 			return
 		}
 
-		avgMsgSize, err := h.Stations.GetAvgMsgSize(*station)
+		avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
 		if err != nil {
-			*generalErr = err
+			*routinesError = err
 			return
 		}
 
 		messagesToFetch := 1000
-		messages, err := h.Stations.GetMessages(*station, messagesToFetch)
+		messages, err := h.Stations.GetMessages(station, messagesToFetch)
 		if err != nil {
-			*generalErr = err
+			*routinesError = err
 			return
 		}
 
@@ -1592,9 +1572,9 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 
 	dlsMessages := &models.GetDlsMsgsByStationLightResponse{}
 	go func() {
-		poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(*station)
+		poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
 		if err != nil {
-			*generalErr = err
+			*routinesError = err
 			return
 		}
 		*dlsMessages = models.GetDlsMsgsByStationLightResponse{
@@ -1611,9 +1591,9 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		var err error
 		// Only native stations have CGs
 		if station.IsNative {
-			connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(*stationName, *station)
+			connectedCgs, disconnectedCgs, deletedCgs, err = h.Consumers.GetCgsByStation(stationName, station)
 			if err != nil {
-				*generalErr = err
+				*routinesError = err
 				return
 			}
 			*cgs = models.GetCgsByStationResponse{
@@ -1625,22 +1605,11 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		wg.Done()
 	}()
 
-	tags := &([]models.CreateTag{})
-	go func() {
-		tagsByEntity, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
-		if err != nil {
-			*generalErr = err
-			return
-		}
-		*tags = tagsByEntity
-		wg.Done()
-	}()
-
 	leaderAndFollowers := &models.GetLeaderAndFollowersResponse{}
 	go func() {
-		leader, followers, err := h.Stations.GetLeaderAndFollowers(*station)
+		leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
 		if err != nil {
-			*generalErr = err
+			*routinesError = err
 			return
 		}
 		*leaderAndFollowers = models.GetLeaderAndFollowersResponse{
@@ -1650,22 +1619,32 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 		wg.Done()
 	}()
 
+	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
+	if err != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, err
+	}
+
+	tags, err := h.Tags.GetTagsByEntityWithID("station", station.ID)
+	if err != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, err
+	}
+
 	wg.Wait()
-	if *generalErr != nil {
-		return models.GetStationOverviewDataResponse{}, StationName{}, *generalErr
+	if *routinesError != nil {
+		return models.GetStationOverviewDataResponse{}, StationName{}, *routinesError
 	}
 
 	stationOverviewData := models.GetStationOverviewDataResponse{
-		Station:            *station,
+		Station:            station,
 		Producers:          *producers,
-		AuditLogs:          *auditLogs,
+		AuditLogs:          auditLogs,
 		MessagesSample:     *messagesSample,
 		DlsMessages:        *dlsMessages,
 		Cgs:                *cgs,
-		Tags:               *tags,
+		Tags:               tags,
 		LeaderAndFollowers: *leaderAndFollowers,
 	}
-	return stationOverviewData, *stationName, nil
+	return stationOverviewData, stationName, nil
 }
 
 func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
