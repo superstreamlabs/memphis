@@ -90,7 +90,7 @@ function Throughput() {
     // const [socketFailIndicator, setSocketFailIndicator] = useState(false);
     const history = useHistory();
     const [throughputType, setThroughputType] = useState(throughputTypes[0].value);
-    const [optionChart, setOptionsChart] = useState({});
+    const [optionsChart, setOptionsChart] = useState({});
 
     // Chart.plugins.register({
     //     afterDraw: function (chart) {
@@ -349,7 +349,7 @@ function Throughput() {
                         <p className="title">No data found</p>
                     </div>
                 )} */}
-                <Line id="test" data={data} options={optionChart} />
+                <Line id="test" data={data} options={optionsChart} />
             </div>
             <div className="wrapper-radio-button">
                 <RadioButton
