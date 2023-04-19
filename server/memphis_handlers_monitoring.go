@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"memphis/analytics"
 	"memphis/db"
@@ -29,6 +30,7 @@ import (
 	"os/exec"
 	"regexp"
 	"runtime"
+	"runtime/trace"
 	"sort"
 	"strconv"
 	"strings"
@@ -1504,6 +1506,19 @@ func GetStationOverviewDataDetails(h *Handlers, stationNameString string) (model
 	// }
 	// pprof.StartCPUProfile(f)
 	// defer pprof.StopCPUProfile()
+
+	f, err := os.Create("trace.out")
+	if err != nil {
+		log.Fatalf("failed to create trace output file: %v", err)
+	}
+	defer f.Close()
+
+	err = trace.Start(f)
+	if err != nil {
+		log.Fatalf("failed to start trace: %v", err)
+	}
+	defer trace.Stop()
+
 	var wg sync.WaitGroup
 	routinesError := new(error)
 	wg.Add(5)
