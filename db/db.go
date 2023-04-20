@@ -74,6 +74,13 @@ func AddIndexToTable(indexName, tableName, field string, MetadataDbClient Metada
 func createTables(MetadataDbClient MetadataStorage) error {
 	cancelfunc := MetadataDbClient.Cancel
 	defer cancelfunc()
+
+	tenatsTable := `CREATE TABLE IF NOT EXISTS tenants(
+		id SERIAL NOT NULL
+		name  VARCHAR NOT NULL UNIQUE,
+		PRIMARY KEY (id));
+	)`
+
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
 		station_name VARCHAR NOT NULL,
@@ -89,7 +96,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	CREATE TYPE enum AS ENUM ('root', 'management', 'application');
 	CREATE TABLE IF NOT EXISTS users(
 		id SERIAL NOT NULL,
-		username VARCHAR NOT NULL UNIQUE,
+		username VARCHAR NOT NULL,
 		password TEXT NOT NULL,
 		type enum NOT NULL DEFAULT 'root',
 		already_logged_in BOOL NOT NULL DEFAULT false,
@@ -98,13 +105,25 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		PRIMARY KEY (id));`
+		tenant_id INTEGER NOT NULL,
+		PRIMARY KEY (id))
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id),
+		UNIQUE(username, tenant_id)
+		);`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		PRIMARY KEY (id));`
+		tenant_id INTEGER NOT NULL,
+		PRIMARY KEY (id),
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id),
+		UNIQUE(key, tenant_id)
+		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
 		id VARCHAR NOT NULL,
@@ -113,14 +132,25 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
-		PRIMARY KEY (id));`
+		tenant_id INTEGER NOT NULL,
+		PRIMARY KEY (id)
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id)
+		);`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL UNIQUE,
+		name VARCHAR NOT NULL,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
-		PRIMARY KEY (id));`
+		tenant_id INTEGER NOT NULL,
+		PRIMARY KEY (id)
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id),
+		UNIQUE(name, tenant_id)
+		);`
 
 	schemasTable := `
 	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
@@ -129,20 +159,29 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
 		created_by_username VARCHAR NOT NULL,
+		tenant_id INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		UNIQUE(name)
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id),
+		UNIQUE(name, tenant_id)
 		);
 		CREATE INDEX name
 		ON schemas (name);`
 
 	tagsTable := `CREATE TABLE IF NOT EXISTS tags(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL UNIQUE,
+		name VARCHAR NOT NULL,
 		color VARCHAR NOT NULL,
 		users INTEGER[] ,
 		stations INTEGER[],
 		schemas INTEGER[],
+		tenant_id INTEGER NOT NULL,
 		PRIMARY KEY (id)
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id),
+		UNIQUE(name, tenant_id)
 		);
 		CREATE INDEX name_tag
 		ON tags (name);`
@@ -201,8 +240,13 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		dls_configuration_poison BOOL NOT NULL DEFAULT true,
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
-		PRIMARY KEY (id));
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted) WHERE is_deleted = false;`
+		tenant_id INTEGER NOT NULL,
+		PRIMARY KEY (id),
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id)
+		);
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_id) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
@@ -235,7 +279,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
+		tenant_id INTEGER NOT NULL,
 		PRIMARY KEY (id),
+		CONSTRAINT fk_tenant_id
+					FOREIGN KEY(tenant_id)
+					REFERENCES tenants(id)
+				);
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
@@ -276,7 +325,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable}
+	tables := []string{tenatsTable, usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)

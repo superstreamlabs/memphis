@@ -26,6 +26,7 @@ type User struct {
 	FullName        string    `json:"full_name"`
 	Subscribtion    bool      `json:"subscription"`
 	SkipGetStarted  bool      `json:"skip_get_started"`
+	TenantId        int       `json:"tenant_id"`
 }
 
 type Image struct {

@@ -174,6 +174,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
+		atClaims["tenant_id"] = u.TenantId
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 		// case models.SandboxUser:
 		// 	atClaims["user_id"] = u.ID
