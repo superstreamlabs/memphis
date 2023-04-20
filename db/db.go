@@ -303,13 +303,17 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
+		tenant_id INTEGER NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
 		CONSTRAINT fk_producer_id
 			FOREIGN KEY(producer_id)
-			REFERENCES producers(id)
+			REFERENCES producers(id),
+		CONSTRAINT fk_tenant_id
+			FOREIGN KEY(tenant_id)
+			REFERENCES tenants(id)
 	);
 	CREATE INDEX dls_station_id
 		ON dls_messages(station_id);
