@@ -76,10 +76,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	defer cancelfunc()
 
 	tenatsTable := `CREATE TABLE IF NOT EXISTS tenants(
-		id SERIAL NOT NULL
-		name  VARCHAR NOT NULL UNIQUE,
-		PRIMARY KEY (id));
-	)`
+		id SERIAL NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
+		PRIMARY KEY (id));`
 
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
@@ -106,7 +105,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
 		tenant_id INTEGER NOT NULL,
-		PRIMARY KEY (id))
+		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_id
 			FOREIGN KEY(tenant_id)
 			REFERENCES tenants(id),
@@ -133,7 +132,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
 		tenant_id INTEGER NOT NULL,
-		PRIMARY KEY (id)
+		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_id
 			FOREIGN KEY(tenant_id)
 			REFERENCES tenants(id)
@@ -145,7 +144,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
 		tenant_id INTEGER NOT NULL,
-		PRIMARY KEY (id)
+		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_id
 			FOREIGN KEY(tenant_id)
 			REFERENCES tenants(id),
@@ -177,7 +176,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		stations INTEGER[],
 		schemas INTEGER[],
 		tenant_id INTEGER NOT NULL,
-		PRIMARY KEY (id)
+		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_id
 			FOREIGN KEY(tenant_id)
 			REFERENCES tenants(id),
@@ -279,12 +278,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
-		tenant_id INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-					FOREIGN KEY(tenant_id)
-					REFERENCES tenants(id)
-				);
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
@@ -4425,8 +4419,7 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) 
-    VALUES($1) RETURNING id`
+	query := `INSERT INTO tenants (name) VALUES($1) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -4478,7 +4471,7 @@ func GetGlobalTenant() (bool, models.Tenant, error) {
 		return false, models.Tenant{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE name = 'global' LIMIT 1`
+	query := `SELECT * FROM tenants WHERE name = 'global' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_global_tenant", query)
 	if err != nil {
 		return false, models.Tenant{}, err
