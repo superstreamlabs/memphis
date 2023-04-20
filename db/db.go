@@ -3128,7 +3128,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 }
 
 // User Functions
-func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int) (models.User, error) {
+func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantId int) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3147,8 +3147,9 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		avatar_id,
 		full_name, 
 		subscription,
-		skip_get_started) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+		skip_get_started,
+		tenant_id) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
 	if err != nil {
@@ -3159,7 +3160,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantId)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -4411,4 +4412,88 @@ func GetStationIdsFromDlsMsgs() ([]int, error) {
 		return []int{}, nil
 	}
 	return stationIds, nil
+}
+
+// Tenant functions
+func CreateTenant(name string) (models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tenants (name) 
+    VALUES($1) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+
+	var tenantId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&tenantId)
+		if err != nil {
+			return models.Tenant{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tenant{}, errors.New("Tenant " + name + " already exists")
+				} else {
+					return models.Tenant{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tenant{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tenant{}, err
+		}
+	}
+
+	newTenant := models.Tenant{
+		ID:   tenantId,
+		Name: name,
+	}
+	return newTenant, nil
+}
+
+func GetGlobalTenant() (bool, models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE name = 'global' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_global_tenant", query)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer rows.Close()
+	tenants, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tenant])
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	if len(tenants) == 0 {
+		return false, models.Tenant{}, nil
+	}
+	return true, tenants[0], nil
 }

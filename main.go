@@ -120,6 +120,8 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	go s.CreateInternalJetStreamResources()
 
+	err = server.CreateGlobalTenantOnFirstSystemLoad()
+
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
 		s.Errorf("Failed to create root user: " + err.Error())
