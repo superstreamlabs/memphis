@@ -2,6 +2,7 @@ name: 🐛 Bug report
 description: Create a bug report to help us improve Memphis ⚒️
 title: "Bug: "
 labels: [bug]
+assignees: idanasulinmemphis
 body:
   - type: markdown
     attributes:
