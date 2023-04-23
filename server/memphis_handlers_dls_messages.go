@@ -194,8 +194,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	if !exist {
 		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
 	}
-
-	exist, station, err := db.GetStationById(dlsMessage.StationId)
+	exist, station, err := db.GetStationById(dlsMessage.StationId, dlsMessage.TenantName)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}

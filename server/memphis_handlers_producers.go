@@ -84,7 +84,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 
-	exist, station, err := db.GetStationByName(pStationName.Ext())
+	exist, station, err := db.GetStationByName(pStationName.Ext(), user.tenantName)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -219,7 +219,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	resp.SchemaVerseToDls = schemaVerseToDls
 	resp.ClusterSendNotification = clusterSendNotification
-	schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
+	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, c.acc.GetName())
 	if err == ErrNoSchema {
 		respondWithResp(s, reply, &resp)
 		return
@@ -317,8 +317,14 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllProducersByStation: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	stationName, _ := StationNameFromStr(body.StationName)
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -357,9 +363,8 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-
 	name := strings.ToLower(dpr.ProducerName)
-	_, station, err := db.GetStationByName(stationName.Ext())
+	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.Name)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)

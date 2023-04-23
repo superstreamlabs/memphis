@@ -156,6 +156,13 @@ func handleConnectMessage(client *client) error {
 
 func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string) (bool, error) {
 	createdByUsername = strings.ToLower(createdByUsername)
+	exist, user, err := db.GetUserByUsername(createdByUsername)
+	if err != nil {
+		return false, err
+	}
+	if exist {
+		return false, err
+	}
 	newConnection := models.Connection{
 		ID:                connectionId,
 		CreatedBy:         userId,
@@ -163,9 +170,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
+		TenantName:        user.TenantName,
 	}
 
-	err := db.InsertConnection(newConnection)
+	err = db.InsertConnection(newConnection, user.TenantName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return true, nil

@@ -15,8 +15,6 @@ import (
 	"memphis/db"
 )
 
-var GlobalTenantId = 1
-
 func isGlobalTenantExist() (bool, error) {
 	exist, _, err := db.GetGlobalTenant()
 	if err != nil {
@@ -38,9 +36,9 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 		if err != nil {
 			return err
 		}
-		GlobalTenantId = t.ID
+		db.GlobalTenantName = t.Name
 	} else {
-		GlobalTenantId = globalTenant.ID
+		db.GlobalTenantName = globalTenant.Name
 	}
 
 	return nil

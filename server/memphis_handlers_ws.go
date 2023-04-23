@@ -272,7 +272,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	schema, err := h.Schemas.GetSchemaByStationName(sn)
+	schema, err := h.Schemas.GetSchemaByStationName(sn, station.TenantName)
 
 	if err != nil && err != ErrNoSchema {
 		return map[string]any{}, err

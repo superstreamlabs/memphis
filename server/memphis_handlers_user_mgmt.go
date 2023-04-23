@@ -97,12 +97,12 @@ func updateDeletedUserResources(user models.User) error {
 		}
 	}
 
-	err := db.UpdateStationsOfDeletedUser(user.ID)
+	err := db.UpdateStationsOfDeletedUser(user.ID, user.TenantId)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.ID)
+	err = db.UpdateConncetionsOfDeletedUser(user.ID, user.TenantId)
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, GlobalTenantId)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, db.GlobalTenantId)
 		if err != nil {
 			return err
 		}
@@ -404,7 +404,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics")
+	_, systemKey, err := db.GetSystemKey("analytics", db.GlobalTenantId)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -550,7 +550,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, GlobalTenantId)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, db.GlobalTenantId)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -690,7 +690,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, GlobalTenantId)
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, db.GlobalTenantId)
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -977,7 +977,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag)
+	err := db.EditConfigurationValue("analytics", flag, db.GlobalTenantId)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

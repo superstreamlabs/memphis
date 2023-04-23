@@ -32,7 +32,7 @@ func (srv *Server) removeStaleStations() {
 			_, err = srv.memphisStreamInfo(stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
-				err := db.DeleteStation(s.Name)
+				err := db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
 					srv.Errorf("removeStaleStations: " + err.Error())
 				}
@@ -45,7 +45,7 @@ func updateSystemLiveness() {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: " + err.Error())
 			return

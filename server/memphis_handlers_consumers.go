@@ -140,7 +140,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -193,7 +193,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
+	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, station.TenantName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -455,7 +455,13 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		return
 	}
 
-	exist, station, err := db.GetStationByName(sn.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllConsumersByStation: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
+	exist, station, err := db.GetStationByName(sn.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllConsumersByStation: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -499,7 +505,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	name := strings.ToLower(dcr.ConsumerName)
-	_, station, err := db.GetStationByName(stationName.Ext())
+	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.Name)
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
