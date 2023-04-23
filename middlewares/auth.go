@@ -88,7 +88,7 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		CreatedAt:       creationDate,
 		AlreadyLoggedIn: claims["already_logged_in"].(bool),
 		AvatarId:        int(claims["avatar_id"].(float64)),
-		TenantId:        claims["tenant_id"].(int),
+		TenantName:      claims["tenant_name"].(string),
 	}
 
 	return user, nil

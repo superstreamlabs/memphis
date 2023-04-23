@@ -33,6 +33,7 @@ type SchemaVersion struct {
 	SchemaId          int       `json:"schema_id"`
 	MessageStructName string    `json:"message_struct_name"`
 	Descriptor        string    `json:"descriptor"`
+	TenantName        string    `json:"tenant_name"`
 }
 
 type SchemaVersionResponse struct {
@@ -46,6 +47,7 @@ type SchemaVersionResponse struct {
 	SchemaId          int       `json:"schema_id"`
 	MessageStructName string    `json:"message_struct_name"`
 	Descriptor        []byte    `json:"descriptor"`
+	TenantName        string    `json:"tenant_name"`
 }
 
 type CreateNewSchema struct {

@@ -87,7 +87,7 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserByUsername(username, strings.ToLower(client.acc.GetName()))
 	if err != nil {
 		errMsg := "User " + username + ": " + err.Error()
 		client.Errorf("handleConnectMessage: " + errMsg)

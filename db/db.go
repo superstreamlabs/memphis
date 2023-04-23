@@ -39,6 +39,7 @@ var MetadataDbClient MetadataStorage
 
 const (
 	DbOperationTimeout = 40
+	GlobalTenant       = "global"
 )
 
 type logger interface {
@@ -104,24 +105,24 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id),
-		UNIQUE(username, tenant_id)
+		UNIQUE(username, tenant_name)
 		);`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id),
-		UNIQUE(key, tenant_id)
+		UNIQUE(key, tenant_name)
 		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
@@ -131,24 +132,19 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id)
 		);`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL,
+		name VARCHAR NOT NULL UNIQUE,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
-		tenant_id INTEGER NOT NULL,
-		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
-			REFERENCES tenants(id),
-		UNIQUE(name, tenant_id)
+		PRIMARY KEY (id)
 		);`
 
 	schemasTable := `
@@ -158,12 +154,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
 		created_by_username VARCHAR NOT NULL,
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id),
-		UNIQUE(name, tenant_id)
+		UNIQUE(name, tenant_name)
 		);
 		CREATE INDEX name
 		ON schemas (name);`
@@ -175,12 +171,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		users INTEGER[] ,
 		stations INTEGER[],
 		schemas INTEGER[],
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id),
-		UNIQUE(name, tenant_id)
+		UNIQUE(name, tenant_name)
 		);
 		CREATE INDEX name_tag
 		ON tags (name);`
@@ -203,13 +199,17 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
-			REFERENCES stations(id)
+			REFERENCES stations(id),
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(id),
 		);
 		CREATE INDEX station_id
 		ON consumers (station_id);
@@ -239,13 +239,13 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		dls_configuration_poison BOOL NOT NULL DEFAULT true,
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id)
 		);
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_id) WHERE is_deleted = false;`
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
@@ -258,11 +258,15 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR DEFAULT '',
 		descriptor bytea,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
 			FOREIGN KEY(schema_id)
-			REFERENCES schemas(id)
+			REFERENCES schemas(id),
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(id)
 		);`
 
 	producersTable := `
@@ -278,13 +282,17 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
-			REFERENCES connections(id)
+			REFERENCES connections(id),
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(id)
 		);
 		CREATE INDEX producer_station_id
 		ON producers(station_id);
@@ -303,7 +311,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
-		tenant_id INTEGER NOT NULL,
+		tenant_name INTEGER NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -311,8 +319,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_producer_id
 			FOREIGN KEY(producer_id)
 			REFERENCES producers(id),
-		CONSTRAINT fk_tenant_id
-			FOREIGN KEY(tenant_id)
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(id)
 	);
 	CREATE INDEX dls_station_id
@@ -2478,7 +2486,7 @@ func KillConsumersByConnections(connectionIds []string) error {
 }
 
 // Schema Functions
-func GetSchemaByName(name string) (bool, models.Schema, error) {
+func GetSchemaByName(name string, tenantName string) (bool, models.Schema, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2486,12 +2494,12 @@ func GetSchemaByName(name string) (bool, models.Schema, error) {
 		return false, models.Schema{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM schemas WHERE name = $1 LIMIT 1`
+	query := `SELECT * FROM schemas WHERE name = $1 AND tenant_name = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_schema_by_name", query)
 	if err != nil {
 		return false, models.Schema{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Schema{}, err
 	}
@@ -2545,6 +2553,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 			SchemaId:          v.SchemaId,
 			MessageStructName: v.MessageStructName,
 			Descriptor:        string(v.Descriptor),
+			TenantName:        v.TenantName,
 		}
 
 		schemaVersions = append(schemaVersions, version)
@@ -2588,12 +2597,13 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
 		Descriptor:        string(schemas[0].Descriptor),
+		TenantName:        schemas[0].TenantName,
 	}
 
 	return schemaVersion, nil
 }
 
-func UpdateSchemasOfDeletedUser(userId int) error {
+func UpdateSchemasOfDeletedUser(userId int, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2606,19 +2616,20 @@ func UpdateSchemasOfDeletedUser(userId int) error {
 	WHERE created_by_username = (
 		SELECT username FROM users WHERE id = $1
 	)
-	AND created_by_username NOT LIKE '%(deleted)'`
+	AND created_by_username NOT LIKE '%(deleted)'
+	AND tenant_name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_schemas_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func UpdateSchemaVersionsOfDeletedUser(userId int) error {
+func UpdateSchemaVersionsOfDeletedUser(userId int, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2631,12 +2642,13 @@ func UpdateSchemaVersionsOfDeletedUser(userId int) error {
 	WHERE created_by_username = (
 		SELECT username FROM users WHERE id = $1
 	)
-	AND created_by_username NOT LIKE '%(deleted)'`
+	AND created_by_username NOT LIKE '%(deleted)'
+	AND tenant_name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_schema_versions_of_deleted_user", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -2679,6 +2691,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
 		Descriptor:        string(schemas[0].Descriptor),
+		TenantName:        schemas[0].TenantName,
 	}
 	return true, schemaVersion, nil
 }
@@ -2709,7 +2722,7 @@ func UpdateSchemaActiveVersion(schemaId int, versionNumber int) error {
 	return nil
 }
 
-func GetShcemaVersionsCount(schemaId int) (int, error) {
+func GetShcemaVersionsCount(schemaId int, tenantName string) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2717,13 +2730,13 @@ func GetShcemaVersionsCount(schemaId int) (int, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM schema_versions WHERE schema_id=$1`
+	query := `SELECT COUNT(*) FROM schema_versions WHERE schema_id=$1 AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_schema_versions_count", query)
 	if err != nil {
 		return 0, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId).Scan(&count)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -2731,7 +2744,7 @@ func GetShcemaVersionsCount(schemaId int) (int, error) {
 	return count, nil
 }
 
-func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
+func GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2743,14 +2756,14 @@ func GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
 	          FROM schemas AS s
 	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
 	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
-	          WHERE asv.id IS NOT NULL
+	          WHERE asv.id IS NOT NULL AND tenant_name = $1
 	          ORDER BY sv.created_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_schemas_details", query)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -2811,7 +2824,7 @@ func FindAndDeleteSchema(schemaIds []int) error {
 	return nil
 }
 
-func InsertNewSchema(schemaName string, schemaType string, createdByUsername string) (models.Schema, int64, error) {
+func InsertNewSchema(schemaName string, schemaType string, createdByUsername string, tenantName string) (models.Schema, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2824,8 +2837,9 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	query := `INSERT INTO schemas ( 
 		name, 
 		type,
-		created_by_username) 
-    VALUES($1, $2, $3) RETURNING id`
+		created_by_username,
+		tenant_name) 
+    VALUES($1, $2, $3, $4) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema", query)
 	if err != nil {
@@ -2833,7 +2847,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	}
 
 	var schemaId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, tenantName)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -2872,7 +2886,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	return newSchema, rowsAffected, nil
 }
 
-func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool) (models.SchemaVersion, int64, error) {
+func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string, schemaContent string, schemaId int, messageStructName string, descriptor string, active bool, tenantName string) (models.SchemaVersion, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2891,8 +2905,9 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 		schema_content,
 		schema_id,
 		msg_struct_name,
-		descriptor)
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+		descriptor,
+		tenant_name)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema_version", query)
 	if err != nil {
@@ -2902,7 +2917,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	var schemaVersionId int
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor))
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), tenantName)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -2949,6 +2964,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 }
 
 // Integration Functions
+// TODO: add tenants
 func GetIntegration(name string) (bool, models.Integration, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3029,7 +3045,6 @@ func DeleteIntegration(name string) error {
 	}
 
 	return nil
-
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -3126,7 +3141,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 }
 
 // User Functions
-func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantId int) (models.User, error) {
+func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3146,7 +3161,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		full_name, 
 		subscription,
 		skip_get_started,
-		tenant_id) 
+		tenant_name) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
@@ -3158,7 +3173,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -3201,7 +3216,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	return newUser, nil
 }
 
-func ChangeUserPassword(username string, hashedPassword string) error {
+func ChangeUserPassword(username string, hashedPassword string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3209,19 +3224,19 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE users SET password = $2 WHERE username = $1`
+	query := `UPDATE users SET password = $2 WHERE username = $1 AND tenant_name = $3`
 	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, tenantName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetRootUser() (bool, models.User, error) {
+func GetRootUser(tenantName string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3229,12 +3244,12 @@ func GetRootUser() (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
+	query := `SELECT * FROM users WHERE type = 'root' AND tenant_name = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3249,7 +3264,7 @@ func GetRootUser() (bool, models.User, error) {
 	return true, users[0], nil
 }
 
-func GetUserByUsername(username string) (bool, models.User, error) {
+func GetUserByUsername(username string, tenantName string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3257,12 +3272,12 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
+	query := `SELECT * FROM users WHERE username = $1 AND tenant_name = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -4423,26 +4438,16 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) VALUES($1) RETURNING id`
+	query := `INSERT INTO tenants (name) VALUES($1)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
 		return models.Tenant{}, err
 	}
-
-	var tenantId int
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return models.Tenant{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&tenantId)
-		if err != nil {
-			return models.Tenant{}, err
-		}
-	}
-
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
@@ -4461,7 +4466,6 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 
 	newTenant := models.Tenant{
-		ID:   tenantId,
 		Name: name,
 	}
 	return newTenant, nil

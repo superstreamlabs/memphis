@@ -1499,7 +1499,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

@@ -243,7 +243,7 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 		return models.Schema{}, ErrNoSchema
 	}
 
-	exist, schema, err := db.GetSchemaByName(station.SchemaName)
+	exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("getSchemaByStation: Schema" + station.SchemaName + "at station " + station.Name + err.Error())
 		return models.Schema{}, err
@@ -341,8 +341,8 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 	return extedndedSchemaDetails, nil
 }
 
-func (sh SchemasHandler) GetAllSchemasDetails() ([]models.ExtendedSchema, error) {
-	schemas, err := db.GetAllSchemasDetails()
+func (sh SchemasHandler) GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
+	schemas, err := db.GetAllSchemasDetails(tenantName)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -387,7 +387,13 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, _, err := db.GetSchemaByName(schemaName)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, _, err := db.GetSchemaByName(schemaName, user.TenantName)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -397,12 +403,6 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		errMsg := "Schema with the name " + schemaName + " already exists"
 		serv.Warnf("CreateNewSchema: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
 	schemaType := strings.ToLower(body.Type)
@@ -440,7 +440,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username)
+	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username, user.TenantName)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -448,7 +448,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if rowsUpdated == 1 {
-		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true)
+		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true, user.TenantName)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -487,7 +487,13 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 }
 
 func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
-	schemas, err := sh.GetAllSchemasDetails()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllSchemas: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	schemas, err := sh.GetAllSchemasDetails(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllSchemas: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -496,7 +502,6 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-schemas-page")
 	}
 
@@ -510,7 +515,13 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 		return
 	}
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetSchemaDetails: Schema " + schemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetSchemaDetails: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -577,10 +588,16 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		return
 	}
 	var schemaIds []int
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveSchema: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	for _, name := range body.SchemaNames {
 		schemaName := strings.ToLower(name)
-		exist, schema, err := db.GetSchemaByName(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 		if err != nil {
 			serv.Errorf("RemoveSchema: Schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -627,8 +644,14 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 	if err != nil {
 		serv.Errorf("CreateNewVersion: Schema" + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -638,13 +661,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		errMsg := "Schema " + body.SchemaName + " does not exist"
 		serv.Warnf("CreateNewVersion: " + errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
 
@@ -665,7 +681,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		return
 	}
 
-	countVersions, err := db.GetShcemaVersionsCount(schema.ID)
+	countVersions, err := db.GetShcemaVersionsCount(schema.ID, user.TenantName)
 	if err != nil {
 		serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -682,7 +698,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 			return
 		}
 	}
-	newSchemaVersion, rowsUpdated, err := db.InsertNewSchemaVersion(versionNumber, user.ID, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false)
+	newSchemaVersion, rowsUpdated, err := db.InsertNewSchemaVersion(versionNumber, user.ID, user.Username, schemaContent, schema.ID, messageStructName, descriptor, false, user.TenantName)
 	if err != nil {
 		serv.Warnf("CreateNewVersion: " + err.Error())
 		c.AbortWithStatusJSON(SCHEMA_VALIDATION_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
@@ -722,9 +738,14 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
+		return
+	}
 	schemaName := strings.ToLower(body.SchemaName)
-
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 	if err != nil {
 		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -751,7 +772,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 		return
 	}
 
-	countVersions, err := db.GetShcemaVersionsCount(schema.ID)
+	countVersions, err := db.GetShcemaVersionsCount(schema.ID, user.TenantName)
 	if err != nil {
 		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

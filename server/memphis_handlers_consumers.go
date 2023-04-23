@@ -555,7 +555,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if username == "" {
 			username = dcr.Username
 		}
-		_, user, err := db.GetUserByUsername(username)
+		_, user, err := db.GetUserByUsername(username, strings.ToLower(c.acc.GetName()))
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)

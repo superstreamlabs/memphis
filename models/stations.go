@@ -58,6 +58,7 @@ type Station struct {
 	DlsConfigurationPoison      bool      `json:"dls_configuration_poison,omitempty"`
 	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse,omitempty"`
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
+	TenantName                  string    `json:"tenant_name"`
 }
 
 type GetStationResponseSchema struct {
