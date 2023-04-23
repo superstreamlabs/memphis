@@ -103,8 +103,8 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
 
     return (
         <div className="attach-station-content">
-            <p className="title">{update ? 'Update a new version' : 'Attach to station'}</p>
-            <p className="desc">{update ? 'Which stations should be updated' : 'Attaching a scheme to a station will force the producers to follow it'}</p>
+            <p className="title">{update ? 'Enforce the new version' : 'Enforce a schema on a station'}</p>
+            <p className="desc">{update ? 'Which stations should be updated' : 'Enforcing a scheme on a station will force the producers to comply with it'}</p>
             <div className="stations-list">
                 {allStations?.length > 0 ? (
                     <div className="header">
