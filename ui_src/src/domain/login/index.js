@@ -95,7 +95,7 @@ const Login = (props) => {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
                             conn = await connect({
                                 servers: [SOCKET_URL],
-                                user: '$memphis_user_' + account_id,
+                                user: '$memphis_user$' + account_id,
                                 pass: connection_token,
                                 timeout: '5000'
                             });
