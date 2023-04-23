@@ -1082,16 +1082,30 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		}
 	}
 	if configuration.USER_PASS_BASED_AUTH {
+		if len(opts.Accounts) > 0 {
+			tenantsToUpsert := []string{MEMPHIS_GLOBAL_ACCOUNT}
+			for _, account := range opts.Accounts {
+				name := strings.ToLower(account.GetName())
+				tenantsToUpsert = append(tenantsToUpsert, name)
+			}
+			err = db.UpsertBatchOfTenants(tenantsToUpsert)
+			if err != nil {
+				return Options{}, err
+			}
+		}
 		if len(opts.Users) > 0 {
 			usersToUpsert := []models.User{}
 			for _, user := range opts.Users {
+				username := strings.ToLower(user.Username)
+				tenantName := strings.ToLower(user.Account.GetName())
 				newUser := models.User{
-					Username:  user.Username,
-					Password:  user.Password,
-					UserType:  "application",
-					CreatedAt: time.Now(),
-					AvatarId:  1,
-					FullName:  "",
+					Username:   username,
+					Password:   user.Password,
+					UserType:   "application",
+					CreatedAt:  time.Now(),
+					AvatarId:   1,
+					FullName:   "",
+					TenantName: tenantName,
 				}
 				usersToUpsert = append(usersToUpsert, newUser)
 			}
@@ -1101,15 +1115,28 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			}
 		}
 
-		users, err := db.GetAllUsersByType("application")
+		users, err := db.GetAllUsersByType([]string{"application", "root"})
 		if err != nil {
 			return Options{}, err
 		}
-		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
-		appUsers = append(appUsers, &User{Username: "$memphis_user", Password: configuration.CONNECTION_TOKEN})
-		for _, user := range users {
-			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+
+		tenants, err := db.GetAllTenants()
+		tenantsId := map[string]int{}
+		for _, tenant := range tenants {
+			name := strings.ToLower(tenant.Name)
+			tenantsId[name] = tenant.ID
 		}
+		appUsers := []*User{}
+		accounts := []*Account{}
+		for _, user := range users {
+			name := strings.ToLower(user.TenantName)
+			account := &Account{Name: name}
+
+			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password, Account: account})
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenantsId[name]), Password: configuration.CONNECTION_TOKEN, Account: account})
+			accounts = append(accounts, account)
+		}
+		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
 

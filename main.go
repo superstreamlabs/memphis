@@ -96,9 +96,6 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) db.MetadataStorage {
-	if !s.MemphisInitialized() {
-		s.Fatalf("Jetstream not enabled on global account")
-	}
 
 	metadataDb, err := db.InitalizeMetadataDbConnection(s)
 	if err != nil {

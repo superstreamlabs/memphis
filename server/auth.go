@@ -29,9 +29,9 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
-	"memphis/internal/ldap"
 	"github.com/nats-io/nkeys"
 	"golang.org/x/crypto/bcrypt"
+	"memphis/internal/ldap"
 )
 
 // Authentication is an interface for implementing authentication

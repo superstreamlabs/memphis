@@ -26,6 +26,7 @@ type User struct {
 	FullName        string    `json:"full_name"`
 	Subscribtion    bool      `json:"subscription"`
 	SkipGetStarted  bool      `json:"skip_get_started"`
+	TenantName      string    `json:"tenant_name"`
 }
 
 type Image struct {
@@ -91,4 +92,9 @@ type FilteredApplicationUser struct {
 	ID        int       `json:"id"`
 	Username  string    `json:"username"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type Tenant struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }

@@ -36,12 +36,13 @@ const (
 	JWT_EXPIRES_IN_MINUTES         = 15
 	ROOT_USERNAME                  = "root"
 	MEMPHIS_USERNAME               = "$memphis_user"
+	MEMPHIS_GLOBAL_ACCOUNT         = "$memphis_account"
 )
 
 type UserMgmtHandler struct{}
 
-func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser()
+func isRootUserExist(tenantName string) (bool, error) {
+	exist, _, err := db.GetRootUser(tenantName)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -51,7 +52,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser()
+	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -224,7 +225,7 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	exist, err := isRootUserExist()
+	exist, err := isRootUserExist(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
@@ -237,7 +238,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, MEMPHIS_GLOBAL_ACCOUNT)
 		if err != nil {
 			return err
 		}
@@ -549,7 +550,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -689,7 +690,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -746,7 +747,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
-	users, err := db.GetAllUsersByType("application")
+	users, err := db.GetAllUsersByType([]string{"application"})
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
