@@ -2,6 +2,7 @@ name: 🚀 Feature request
 description: Suggest an idea for Memphis 💡
 title: "Feature: "
 labels: [💟 Community involvement,Feature Request]
+assignees: [idanasulinmemphis, yanivbh1, avrhamNeeman]
 body:
   - type: markdown
     attributes:
