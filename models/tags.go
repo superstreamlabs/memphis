@@ -12,12 +12,13 @@
 package models
 
 type Tag struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Color    string `json:"color"`
-	Users    []int  `json:"users"`
-	Stations []int  `json:"stations"`
-	Schemas  []int  `json:"schemas"`
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	Color      string `json:"color"`
+	Users      []int  `json:"users"`
+	Stations   []int  `json:"stations"`
+	Schemas    []int  `json:"schemas"`
+	TenantName string `json:"tenant_name"`
 }
 
 type CreateTag struct {

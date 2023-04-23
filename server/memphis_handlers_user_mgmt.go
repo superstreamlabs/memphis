@@ -910,6 +910,12 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("EditCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	fileName := "company_logo" + filepath.Ext(file.Filename)
 	if err := c.SaveUploadedFile(&file, fileName); err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
@@ -926,7 +932,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	err = db.InsertImage("company_logo", base64Encoding)
+	err = db.InsertImage("company_logo", base64Encoding, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -937,7 +943,12 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
-	err := db.DeleteImage("company_logo")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	err = db.DeleteImage("company_logo", strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("RemoveCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -948,7 +959,12 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
-	exist, image, err := db.GetImage("company_logo")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	exist, image, err := db.GetImage("company_logo", strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("GetCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1047,8 +1063,8 @@ func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 	return users, nil
 }
 
-func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
-	tags, err := db.GetAllUsedTags()
+func (umh UserMgmtHandler) GetActiveTags(tenantName string) ([]models.CreateTag, error) {
+	tags, err := db.GetAllUsedTags(strings.ToLower(tenantName))
 	if err != nil {
 		return []models.CreateTag{}, err
 	}
@@ -1071,6 +1087,11 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetFilterDetails: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
 	switch body.Route {
 	case "stations":
 		users, err := umh.GetActiveUsers()
@@ -1080,7 +1101,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 			return
 		}
 
-		tags, err := umh.GetActiveTags()
+		tags, err := umh.GetActiveTags(user.TenantName)
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1098,7 +1119,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 			return
 		}
 
-		tags, err := umh.GetActiveTags()
+		tags, err := umh.GetActiveTags(strings.ToLower(user.TenantName))
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

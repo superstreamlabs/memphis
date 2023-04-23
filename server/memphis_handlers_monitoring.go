@@ -931,7 +931,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (model
 	wg.Add(3)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, strings.ToLower(tenantName))
 		if err != nil {
 			*generalErr = err
 			return
@@ -989,7 +989,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 		serv.Errorf("GetMainOverviewData: Tag " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	response, err := mh.getMainOverviewDataDetails(user.TenantName)
+	response, err := mh.getMainOverviewDataDetails(strings.ToLower(user.TenantName))
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: " + err.Error())
@@ -1392,7 +1392,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		serv.Errorf("GetStationOverviewData: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
+	exist, station, err := db.GetStationByName(stationName.Ext(), strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

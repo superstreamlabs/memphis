@@ -193,7 +193,7 @@ func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdat
 }
 
 func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.ProducerSchemaUpdateInit, error) {
-	schema, err := getSchemaByStationName(sn, tenantName)
+	schema, err := getSchemaByStationName(sn, strings.ToLower(strings.ToLower(tenantName)))
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +229,7 @@ func getActiveVersionBySchemaId(id int) (models.SchemaVersion, error) {
 
 func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, error) {
 
-	exist, station, err := db.GetStationByName(sn.Ext(), tenantName)
+	exist, station, err := db.GetStationByName(sn.Ext(), strings.ToLower(tenantName))
 	if err != nil {
 		serv.Errorf("getSchemaByStation: At station " + sn.external + ": " + err.Error())
 		return models.Schema{}, err
@@ -257,7 +257,7 @@ func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, e
 }
 
 func (sh SchemasHandler) GetSchemaByStationName(stationName StationName, tenantName string) (models.Schema, error) {
-	return getSchemaByStationName(stationName, tenantName)
+	return getSchemaByStationName(stationName, strings.ToLower(tenantName))
 }
 
 func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId int) ([]models.SchemaVersion, error) {
@@ -287,7 +287,7 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion i
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
 
-	stations, err := db.GetStationNamesUsingSchema(schema.Name, schema.TenantName)
+	stations, err := db.GetStationNamesUsingSchema(schema.Name, strings.ToLower(schema.TenantName))
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -318,7 +318,7 @@ func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.
 	}
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
-	stations, err := db.GetStationNamesUsingSchema(schema.Name, schema.TenantName)
+	stations, err := db.GetStationNamesUsingSchema(schema.Name, strings.ToLower(schema.TenantName))
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -352,7 +352,7 @@ func (sh SchemasHandler) GetAllSchemasDetails(tenantName string) ([]models.Exten
 	}
 
 	for i, schema := range schemas {
-		stations, err := db.GetCountStationsUsingSchema(schema.Name, tenantName)
+		stations, err := db.GetCountStationsUsingSchema(schema.Name, strings.ToLower(tenantName))
 		if err != nil {
 			return []models.ExtendedSchema{}, err
 		}
@@ -465,7 +465,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context, tenantName string) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, strings.ToLower(user.TenantName))
 		if err != nil {
 			serv.Errorf("CreateNewSchema: Failed creating tag at schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -493,7 +493,7 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 		serv.Errorf("GetAllSchemas: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	schemas, err := sh.GetAllSchemasDetails(user.TenantName)
+	schemas, err := sh.GetAllSchemasDetails(strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("GetAllSchemas: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -555,7 +555,7 @@ func deleteSchemaFromStations(s *Server, schemaName string) error {
 	if err != nil {
 		return err
 	}
-	stationNames, err := db.GetStationNamesUsingSchema(schemaName, schema.TenantName)
+	stationNames, err := db.GetStationNamesUsingSchema(schemaName, strings.ToLower(schema.TenantName))
 	if err != nil {
 		return err
 	}
@@ -564,10 +564,10 @@ func deleteSchemaFromStations(s *Server, schemaName string) error {
 		if err != nil {
 			return err
 		}
-		removeSchemaFromStation(s, sn, false, schema.TenantName)
+		removeSchemaFromStation(s, sn, false, strings.ToLower(schema.TenantName))
 	}
 
-	err = db.RemoveSchemaFromAllUsingStations(schemaName, schema.TenantName)
+	err = db.RemoveSchemaFromAllUsingStations(schemaName, strings.ToLower(schema.TenantName))
 	if err != nil {
 		s.Errorf("deleteSchemaFromStations: Schema " + schemaName + ": " + err.Error())
 		return err

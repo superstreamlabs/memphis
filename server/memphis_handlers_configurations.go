@@ -147,7 +147,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 }
 
 func changeDlsRetention(dlsRetention int) error {
-	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), db.GlobalTenantName)
+	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func changeDlsRetention(dlsRetention int) error {
 }
 
 func changeLogsRetention(logsRetention int) error {
-	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), db.GlobalTenantName)
+	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		return err
 	}
@@ -177,7 +177,7 @@ func changeLogsRetention(logsRetention int) error {
 }
 
 func changeTSTime(tsTime int) error {
-	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), db.GlobalTenantName)
+	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		return err
 	}
@@ -188,7 +188,7 @@ func changeTSTime(tsTime int) error {
 func EditClusterCompHost(key string, host string) error {
 	key = strings.ToLower(key)
 	host = strings.ToLower(host)
-	err := db.UpsertConfiguration(key, host, db.GlobalTenantName)
+	err := db.UpsertConfiguration(key, host, strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,7 @@ func EditClusterCompHost(key string, host string) error {
 }
 
 func changeMaxMsgSize(newSize int) error {
-	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), db.GlobalTenantName)
+	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		return err
 	}

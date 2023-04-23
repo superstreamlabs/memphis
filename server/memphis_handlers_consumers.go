@@ -140,7 +140,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
+	exist, station, err := db.GetStationByName(stationName.Ext(), strings.ToLower(user.TenantName))
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -193,7 +193,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, station.TenantName)
+	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
@@ -461,7 +461,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	exist, station, err := db.GetStationByName(sn.Ext(), user.TenantName)
+	exist, station, err := db.GetStationByName(sn.Ext(), strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("GetAllConsumersByStation: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -505,7 +505,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	name := strings.ToLower(dcr.ConsumerName)
-	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.Name)
+	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)

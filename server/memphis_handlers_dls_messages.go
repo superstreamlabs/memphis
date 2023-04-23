@@ -121,7 +121,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, strings.ToLower(station.TenantName))
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -194,7 +194,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	if !exist {
 		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
 	}
-	exist, station, err := db.GetStationById(dlsMessage.StationId, dlsMessage.TenantName)
+	exist, station, err := db.GetStationById(dlsMessage.StationId, strings.ToLower(dlsMessage.TenantName))
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}

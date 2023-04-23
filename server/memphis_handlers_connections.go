@@ -170,10 +170,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
-		TenantName:        user.TenantName,
+		TenantName:        strings.ToLower(user.TenantName),
 	}
 
-	err = db.InsertConnection(newConnection, user.TenantName)
+	err = db.InsertConnection(newConnection, strings.ToLower(user.TenantName))
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return true, nil
