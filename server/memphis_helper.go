@@ -419,17 +419,16 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	}
 
 	var deliveryPolicy DeliverPolicy
-	streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
-	if err != nil {
-		return errors.New("Streaminfo: " + err.Error())
-	}
-	lastSeq := streamInfo.State.LastSeq
-
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
 	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
+		streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
+		if err != nil {
+			return err
+		}
+		lastSeq := streamInfo.State.LastSeq
 		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
 		if int(lastMessages) < 1 {
 			lastMessages = uint64(1)

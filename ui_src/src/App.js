@@ -18,7 +18,7 @@ import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
-import { LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
 import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
@@ -87,9 +87,10 @@ const App = withRouter(() => {
                         let conn;
                         const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
                             conn = await connect({
                                 servers: [SOCKET_URL],
-                                user: '$memphis_user',
+                                user: '$memphis_user$' + account_id,
                                 pass: connection_token,
                                 timeout: '5000'
                             });

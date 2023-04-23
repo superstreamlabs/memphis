@@ -13,6 +13,7 @@ package server
 
 import (
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 
@@ -281,7 +282,7 @@ func hideS3SecretKey(secretKey string) string {
 }
 
 type Msg struct {
-	Payload []byte            `json:"payload"`
+	Payload string            `json:"payload"`
 	Headers map[string]string `json:"headers"`
 }
 
@@ -334,7 +335,8 @@ func (s *Server) uploadToS3Storage() error {
 					headers = ""
 				}
 
-				message := Msg{Payload: msg.Data, Headers: hdrs}
+				encodedMsg := hex.EncodeToString(msg.Data)
+				message := Msg{Payload: encodedMsg, Headers: hdrs}
 				messages = append(messages, message)
 			}
 			// Upload the object to S3.

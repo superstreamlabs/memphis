@@ -1,7 +1,8 @@
 name: 🐛 Bug report
 description: Create a bug report to help us improve Memphis ⚒️
 title: "Bug: "
-labels: [👀 needs triage, 🐛 bug]
+labels: [bug]
+assignees: idanasulinmemphis
 body:
   - type: markdown
     attributes:
@@ -81,11 +82,3 @@ body:
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
-  - type: checkboxes
-    id: contribution
-    attributes:
-      label: Contributing Docs
-      description: If you plan on contributing code please read - [Contribution Guide](https://docs.memphis.dev/memphis-new/getting-started/how-to-contribute)
-      options:
-        - label: I agree to follow this project's Contribution Docs
-          required: false
