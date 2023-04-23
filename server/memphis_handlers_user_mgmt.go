@@ -256,8 +256,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 				installationType = "stand-alone-docker"
 				dockerMacAddress, err := getDockerMacAddress()
 				if err == nil {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
 					deviceIdValue = dockerMacAddress
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
 				}
 			}
 
@@ -551,6 +552,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exist") {
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
+			return
+		}
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return

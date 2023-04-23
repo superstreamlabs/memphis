@@ -2035,7 +2035,13 @@ func InsertNewConsumer(name string,
 	}
 
 	if err := rows.Err(); err != nil {
-		return false, models.Consumer{}, 0, err
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// Handle unique constraint violation error
+			return true, models.Consumer{}, 0, nil
+		} else {
+			return false, models.Consumer{}, 0, err
+		}
 	}
 
 	if err := rows.Err(); err != nil {

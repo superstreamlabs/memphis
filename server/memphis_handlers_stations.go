@@ -284,7 +284,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	if shouldCreateStream {
 		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
-			if IsNatsErr(err, JSInsufficientResourcesErr) {
+			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
 				respondWithErr(s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
@@ -303,7 +303,9 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
 	if err != nil {
-		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		if !strings.Contains(err.Error(), "already exist") {
+			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		}
 		respondWithErr(s, reply, err)
 		return
 	}
@@ -1225,6 +1227,10 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
 	if err != nil {
+		if IsNatsErr(err, JSNoMessageFoundErr) {
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "The message was not found since it had probably already been deleted"})
+			return
+		}
 		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return

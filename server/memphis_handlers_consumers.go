@@ -125,7 +125,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
-		serv.Errorf("createConsumerDirectCommon: " + errMsg)
+		serv.Warnf("createConsumerDirectCommon: " + errMsg)
 		return err
 	}
 
