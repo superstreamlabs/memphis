@@ -16,7 +16,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 import FullLogo from '../../assets/images/fullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import sharps from '../../assets/images/sharps.svg';
@@ -92,9 +92,10 @@ const Login = (props) => {
                         let conn;
                         const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
                             conn = await connect({
                                 servers: [SOCKET_URL],
-                                user: '$memphis_user',
+                                user: '$memphis_user_' + account_id,
                                 pass: connection_token,
                                 timeout: '5000'
                             });
