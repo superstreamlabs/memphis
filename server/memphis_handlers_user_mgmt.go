@@ -340,6 +340,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("Login: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	username := strings.ToLower(body.Username)
@@ -414,6 +415,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("refreshToken: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	username := user.Username
 	_, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
@@ -748,6 +750,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	users, err := db.GetAllUsers(user.TenantName)
@@ -775,6 +778,7 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	users, err := db.GetAllUsersByType("application", user.TenantName)
 	if err != nil {
@@ -805,6 +809,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	if user.Username == username {
 		serv.Warnf("RemoveUser: You can not remove your own user")
@@ -867,6 +872,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveMyUser: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	if user.UserType == "root" {
@@ -913,6 +919,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("EditAvatar: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	err = db.EditAvatar(user.Username, avatarId, user.TenantName)
@@ -1055,6 +1062,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("SkipGetStarted: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	username := strings.ToLower(user.Username)
@@ -1123,6 +1131,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetFilterDetails: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	tenantName := user.TenantName
 	switch body.Route {

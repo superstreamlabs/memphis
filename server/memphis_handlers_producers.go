@@ -321,6 +321,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	if err != nil {
 		serv.Errorf("GetAllProducersByStation: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	stationName, _ := StationNameFromStr(body.StationName)

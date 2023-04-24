@@ -630,7 +630,6 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-schema")
 	}
 
@@ -721,7 +720,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-create-new-schema-version")
 	}
 
@@ -795,7 +793,6 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-rollback-schema-version")
 	}
 

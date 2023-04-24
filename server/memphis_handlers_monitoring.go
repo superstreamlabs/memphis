@@ -988,6 +988,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetMainOverviewData: Tag " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
@@ -1001,7 +1002,6 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-main-overview")
 	}
 
@@ -1391,6 +1391,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
@@ -1614,7 +1615,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-station-overview")
 	}
 

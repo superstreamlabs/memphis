@@ -2691,7 +2691,7 @@ func GetSchemaByName(name string, tenantName string) (bool, models.Schema, error
 	if err != nil {
 		return false, models.Schema{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
 	if err != nil {
 		return false, models.Schema{}, err
 	}
@@ -2745,7 +2745,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 			SchemaId:          v.SchemaId,
 			MessageStructName: v.MessageStructName,
 			Descriptor:        string(v.Descriptor),
-			TenantName:        v.TenantName,
+			TenantName:        strings.ToLower(v.TenantName),
 		}
 
 		schemaVersions = append(schemaVersions, version)
@@ -2789,7 +2789,7 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
 		Descriptor:        string(schemas[0].Descriptor),
-		TenantName:        schemas[0].TenantName,
+		TenantName:        strings.ToLower(schemas[0].TenantName),
 	}
 
 	return schemaVersion, nil
@@ -2814,7 +2814,7 @@ func UpdateSchemasOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -2840,7 +2840,7 @@ func UpdateSchemaVersionsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -2883,7 +2883,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
 		Descriptor:        string(schemas[0].Descriptor),
-		TenantName:        schemas[0].TenantName,
+		TenantName:        strings.ToLower(schemas[0].TenantName),
 	}
 	return true, schemaVersion, nil
 }
@@ -3365,7 +3365,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, strings.ToLower(tenantName))
 	if err != nil {
 		return models.User{}, err
 	}
@@ -3422,7 +3422,7 @@ func ChangeUserPassword(username string, hashedPassword string, tenantName strin
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -3442,7 +3442,7 @@ func GetRootUser(tenantName string) (bool, models.User, error) {
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3470,7 +3470,7 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3554,7 +3554,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
@@ -4171,7 +4171,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		return models.DlsMessage{}, err
 	}
 	updatedAt := time.Now()
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, strings.ToLower(tenantName))
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -4201,7 +4201,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 			Headers:  messageDetails.Headers,
 		},
 		UpdatedAt:  updatedAt,
-		TenantName: tenantName,
+		TenantName: strings.ToLower(tenantName),
 	}
 
 	if err := rows.Err(); err != nil {

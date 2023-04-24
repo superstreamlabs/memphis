@@ -459,6 +459,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 	if err != nil {
 		serv.Errorf("GetAllConsumersByStation: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, station, err := db.GetStationByName(sn.Ext(), user.TenantName)

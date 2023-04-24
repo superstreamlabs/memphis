@@ -123,6 +123,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	name := strings.ToLower(body.Name)
@@ -182,6 +183,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	tenantName := user.TenantName
@@ -285,6 +287,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	tenantName := user.TenantName
@@ -500,6 +503,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetTags: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	tags, err := db.GetTagsByEntityType(entity, user.TenantName)
@@ -533,6 +537,7 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetUsedTags: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	tags, err := db.GetAllUsedTags(user.TenantName)
 	if err != nil {

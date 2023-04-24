@@ -358,6 +358,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetStation: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	exist, station, err := db.GetStationByName(stationName, user.TenantName)
 	if err != nil {
@@ -603,6 +604,7 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetStations: Station " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	stations, err := sh.GetStationsDetails(user.TenantName)
 	if err != nil {
@@ -626,6 +628,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetAllStations: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
 	if err != nil {
@@ -656,6 +659,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("CreateStation: At station" + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, _, err := db.GetStationByName(stationName.Ext(), tenantName)
@@ -888,6 +892,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		if err != nil {
 			serv.Errorf("RemoveStation: " + err.Error())
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
 		}
 
 		exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -915,6 +920,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveStation: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	err = db.DeleteStationsByNames(stationNames, user.TenantName)
 	if err != nil {
@@ -1151,6 +1157,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	stationName := strings.ToLower(body.StationName)
@@ -1246,6 +1253,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetMessageDetails: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -1701,6 +1709,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
@@ -1763,6 +1772,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -1837,6 +1847,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("UpdateDlsConfig: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -1894,6 +1905,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -1956,6 +1968,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveMessages: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName)
