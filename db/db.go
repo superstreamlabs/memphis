@@ -37,8 +37,6 @@ var configuration = conf.GetConfig()
 
 var MetadataDbClient MetadataStorage
 
-var GlobalTenantName = "1"
-
 const (
 	DbOperationTimeout = 40
 	GlobalTenant       = "global"
@@ -962,7 +960,7 @@ func GetActiveStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations AS s WHERE (s.is_deleted = false OR s.is_deleted IS NULL)`
+	query := `SELECT * FROM stations AS s WHERE s.is_deleted = false OR s.is_deleted IS NULL`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations", query)
 	if err != nil {
 		return []models.Station{}, err
@@ -1697,7 +1695,7 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1 and tenant_name=$2`
+	query := `UPDATE stations SET schema_name = '' WHERE schema_name = $1 AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_from_all_using_stations", query)
 	if err != nil {
 		return err
@@ -3031,8 +3029,9 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	query := `INSERT INTO schemas ( 
 		name, 
 		type,
-		created_by_username) 
-    VALUES($1, $2, $3) RETURNING id`
+		created_by_username,
+		tenant_name) 
+    VALUES($1, $2, $3, $4) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_schema", query)
 	if err != nil {
@@ -3354,7 +3353,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		full_name, 
 		subscription,
 		skip_get_started,
-		tenant_id) 
+		tenant_name) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
@@ -3418,7 +3417,7 @@ func ChangeUserPassword(username string, hashedPassword string, tenantName strin
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE users SET password = $2 WHERE username = $1`
+	query := `UPDATE users SET password = $2 WHERE username = $1 AND tenant_name=$3`
 	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
 	if err != nil {
 		return err
@@ -3438,7 +3437,7 @@ func GetRootUser(tenantName string) (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
+	query := `SELECT * FROM users WHERE type = 'root' AND tenant_name = $1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
 	if err != nil {
 		return false, models.User{}, err
