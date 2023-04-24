@@ -2175,7 +2175,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if (iface.HardwareAddr == nil) || (iface.HardwareAddr[0]&2 == 2) {
+		if (iface.HardwareAddr == nil) {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()
