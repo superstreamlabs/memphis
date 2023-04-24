@@ -39,12 +39,13 @@ function VersionUpgrade() {
     const getConfigurationValue = async () => {
         try {
             const latest = await GithubRequest(LATEST_RELEASE_URL);
-            const version = latest[0].name;
+            const version = latest[0].name?.split('-')[0];
             setVersion(version);
             const data = await GithubRequest(RELEASE_NOTES_URL);
             const mdFiles = data.filter((file) => file?.name.endsWith('.md') && file?.name !== 'README.md' && file?.name?.includes(version));
             if (mdFiles.length === 0) {
                 console.log('No matching files found');
+                setIsLoading(false);
                 return;
             }
             const mdFile = mdFiles[0];
@@ -52,6 +53,7 @@ function VersionUpgrade() {
             const file = await GithubRequest(mdFile.download_url);
             const addedFeatures = ExtractAddedFeatures(file);
             setFeatures(addedFeatures);
+            setIsLoading(false);
         } catch (err) {
             setIsLoading(false);
             return;
@@ -115,14 +117,12 @@ function VersionUpgrade() {
                     </div>
 
                     <div className="feature-list">
-                        {features?.length === 0 && (
+                        {isLoading && (
                             <div className="loading">
                                 <Loader background={false} />
                             </div>
                         )}
-                        {features.map((feature, index) => (
-                            <NoteItem key={index} feature={feature} />
-                        ))}
+                        {!isLoading && features.map((feature, index) => <NoteItem key={index} feature={feature} />)}
                     </div>
                 </>
             )}
