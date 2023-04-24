@@ -193,7 +193,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	var schemaDetails models.SchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName, strings.ToLower(c.acc.GetName()))
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -674,7 +674,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	schemaName := body.SchemaName
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 		if err != nil {
 			serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -1410,8 +1410,15 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
 	if err != nil {
 		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -1435,12 +1442,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		VersionNumber:    schemaVersion.VersionNumber,
 		UpdatesAvailable: false,
 		SchemaType:       schema.Type,
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -1545,7 +1546,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	schemaName := strings.ToLower(asr.Name)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1775,7 +1776,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	exist, schema, err := db.GetSchemaByName(station.SchemaName)
+	exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

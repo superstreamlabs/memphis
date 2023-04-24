@@ -102,7 +102,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenantName))
+	exist, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenant))
 	if err != nil {
 		return false, err
 	}

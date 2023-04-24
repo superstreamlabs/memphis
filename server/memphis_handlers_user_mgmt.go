@@ -51,7 +51,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(strings.ToLower(MEMPHIS_GLOBAL_ACCOUNT))
+	exist, user, err := db.GetRootUser(strings.ToLower(db.GlobalTenant))
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -117,12 +117,12 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
-	err = db.UpdateSchemasOfDeletedUser(user.ID)
+	err = db.UpdateSchemasOfDeletedUser(user.ID, user.TenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID)
+	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID, user.TenantName)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
-		atClaims["tenant_id"] = u.TenantId
+		atClaims["tenant_name"] = u.TenantName
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 		// case models.SandboxUser:
 		// 	atClaims["user_id"] = u.ID
@@ -238,7 +238,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, strings.ToLower(db.GlobalTenantName))
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, strings.ToLower(db.GlobalTenant))
 		if err != nil {
 			return err
 		}
@@ -275,7 +275,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		}
 	} else {
-		_, user, err := db.GetUserByUsername(ROOT_USERNAME)
+		_, user, err := db.GetUserByUsername(ROOT_USERNAME, strings.ToLower(db.GlobalTenant))
 		if err != nil {
 			return err
 		}
@@ -415,7 +415,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenantName))
+	_, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenant))
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -561,7 +561,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, strings.ToLower(db.GlobalTenantName))
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, strings.ToLower(db.GlobalTenant))
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -707,7 +707,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, strings.ToLower(db.GlobalTenantName))
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -716,7 +716,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-add-user")
 	}
 
@@ -1015,7 +1014,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, strings.ToLower(db.GlobalTenantName))
+	err := db.EditConfigurationValue("analytics", flag, strings.ToLower(db.GlobalTenant))
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

@@ -35,7 +35,7 @@ func (s *Server) ListenForPoisonMessages() {
 }
 
 func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, _, _ string, msg []byte) {
+	return func(c *client, _, _ string, msg []byte) {
 		go s.handleNewPoisonMessage(copyBytes(msg))
 	}
 }
@@ -297,7 +297,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 
 	schemaType := ""
 	if station.SchemaName != "" {
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}

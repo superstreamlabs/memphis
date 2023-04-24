@@ -372,7 +372,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 }
 
 func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
-	schemas, err := h.Schemas.GetAllSchemasDetails()
+	//TODO: change tenant name
+	schemas, err := h.Schemas.GetAllSchemasDetails(db.GlobalTenant)
 	if err != nil {
 		return schemas, err
 	}

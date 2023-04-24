@@ -26,20 +26,16 @@ func isGlobalTenantExist() (bool, error) {
 }
 
 func CreateGlobalTenantOnFirstSystemLoad() error {
-	exist, globalTenant, err := db.GetGlobalTenant()
+	exist, _, err := db.GetGlobalTenant()
 	if err != nil {
 		return err
 	}
 
 	if !exist {
-		t, err := db.CreateTenant("global")
+		_, err := db.CreateTenant(db.GlobalTenant)
 		if err != nil {
 			return err
 		}
-		db.GlobalTenantName = t.Name
-	} else {
-		db.GlobalTenantName = globalTenant.Name
 	}
-
 	return nil
 }

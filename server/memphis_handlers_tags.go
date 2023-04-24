@@ -205,7 +205,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		message = "Tag " + name + " has been deleted from station " + stationName + " by user " + user.Username
 
 	case "schema":
-		exist, schema, err := db.GetSchemaByName(body.EntityName)
+		exist, schema, err := db.GetSchemaByName(body.EntityName, user.TenantName)
 		if err != nil {
 			serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -278,13 +278,11 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-
 	var stationName StationName
 	var schemaName string
 	switch entity {
@@ -309,7 +307,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		stationName = station_name
 
 	case "schema":
-		exist, schema, err := db.GetSchemaByName(body.EntityName)
+		exist, schema, err := db.GetSchemaByName(body.EntityName, user.TenantName)
 		if err != nil {
 			serv.Errorf("UpdateTagsForEntity: Schema " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
