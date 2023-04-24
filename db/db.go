@@ -94,8 +94,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	alterUsersTable := `
 	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT 'memphis';
 	ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS users_username_key;
-	ALTER TABLE IF EXISTS users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
-	ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);`
+	ALTER TABLE IF EXISTS users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);`
 
 	usersTable := `
 	CREATE TYPE enum AS ENUM ('root', 'management', 'application');
@@ -4728,6 +4727,14 @@ func CreateTenant(name string) (models.Tenant, error) {
 
 	newTenant := models.Tenant{
 		Name: name,
+	}
+
+	//After creation a tenant we update the users table and create fk
+	//(we can't do alter and create fk in users table before memphis account exists in tenants table)
+	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);`
+	_, err = conn.Conn().Query(ctx, queryAlterUsersTable)
+	if err != nil {
+		return models.Tenant{}, err
 	}
 	return newTenant, nil
 
