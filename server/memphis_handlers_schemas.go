@@ -192,8 +192,8 @@ func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdat
 	}, nil
 }
 
-func getSchemaUpdateInitFromStation(sn StationName) (*models.ProducerSchemaUpdateInit, error) {
-	schema, err := getSchemaByStationName(sn)
+func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.ProducerSchemaUpdateInit, error) {
+	schema, err := getSchemaByStationName(sn, tenantName)
 	if err != nil {
 		return nil, err
 	}
@@ -227,9 +227,9 @@ func getActiveVersionBySchemaId(id int) (models.SchemaVersion, error) {
 	return schemaVersion, nil
 }
 
-func getSchemaByStationName(sn StationName) (models.Schema, error) {
+func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, error) {
 
-	exist, station, err := db.GetStationByName(sn.Ext())
+	exist, station, err := db.GetStationByName(sn.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("getSchemaByStation: At station " + sn.external + ": " + err.Error())
 		return models.Schema{}, err
@@ -256,15 +256,15 @@ func getSchemaByStationName(sn StationName) (models.Schema, error) {
 	return schema, nil
 }
 
-func (sh SchemasHandler) GetSchemaByStationName(stationName StationName) (models.Schema, error) {
-	return getSchemaByStationName(stationName)
+func (sh SchemasHandler) GetSchemaByStationName(stationName StationName, tenantName string) (models.Schema, error) {
+	return getSchemaByStationName(stationName, tenantName)
 }
 
 func (sh SchemasHandler) getSchemaVersionsBySchemaId(schemaId int) ([]models.SchemaVersion, error) {
 	return getSchemaVersionsBySchemaId(schemaId)
 }
 
-func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion int, schema models.Schema) (models.ExtendedSchemaDetails, error) {
+func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion int, schema models.Schema, tenantName string) (models.ExtendedSchemaDetails, error) {
 	var schemaVersions []models.SchemaVersion
 	exist, usedSchemaVersion, err := db.GetSchemaVersionByNumberAndID(schemaVersion, schema.ID)
 	if err != nil {
@@ -286,7 +286,7 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion i
 	}
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
-	stations, err := db.GetStationNamesUsingSchema(schema.Name)
+	stations, err := db.GetStationNamesUsingSchema(schema.Name, tenantName)
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -310,14 +310,14 @@ func (sh SchemasHandler) getExtendedSchemaDetailsUpdateAvailable(schemaVersion i
 	return extedndedSchemaDetails, nil
 }
 
-func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema) (models.ExtendedSchemaDetails, error) {
+func (sh SchemasHandler) getExtendedSchemaDetails(schema models.Schema, tenantName string) (models.ExtendedSchemaDetails, error) {
 	schemaVersions, err := sh.getSchemaVersionsBySchemaId(schema.ID)
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
 
 	var extedndedSchemaDetails models.ExtendedSchemaDetails
-	stations, err := db.GetStationNamesUsingSchema(schema.Name)
+	stations, err := db.GetStationNamesUsingSchema(schema.Name, tenantName)
 	if err != nil {
 		return models.ExtendedSchemaDetails{}, err
 	}
@@ -351,7 +351,7 @@ func (sh SchemasHandler) GetAllSchemasDetails(tenantName string) ([]models.Exten
 	}
 
 	for i, schema := range schemas {
-		stations, err := db.GetCountStationsUsingSchema(schema.Name)
+		stations, err := db.GetCountStationsUsingSchema(schema.Name, tenantName)
 		if err != nil {
 			return []models.ExtendedSchema{}, err
 		}
@@ -393,7 +393,8 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
-	exist, _, err := db.GetSchemaByName(schemaName, user.TenantName)
+	tenantName := user.TenantName
+	exist, _, err := db.GetSchemaByName(schemaName, tenantName)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -440,7 +441,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		}
 	}
 
-	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username, user.TenantName)
+	newSchema, rowsUpdated, err := db.InsertNewSchema(schemaName, schemaType, user.Username, tenantName)
 	if err != nil {
 		serv.Errorf("CreateNewSchema: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -448,7 +449,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if rowsUpdated == 1 {
-		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true, user.TenantName)
+		_, _, err = db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, schemaContent, newSchema.ID, messageStructName, descriptor, true, tenantName)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -464,7 +465,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID)
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName)
 		if err != nil {
 			serv.Errorf("CreateNewSchema: Failed creating tag at schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -474,7 +475,6 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		param := analytics.EventParam{
 			Name:  "schema-name",
 			Value: newSchema.Name,
@@ -534,7 +534,7 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 		return
 	}
 
-	schemaDetails, err := sh.getExtendedSchemaDetails(schema)
+	schemaDetails, err := sh.getExtendedSchemaDetails(schema, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetSchemaDetails: Schema " + schemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -555,21 +555,20 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	c.IndentedJSON(200, schemaDetails)
 }
 
-func deleteSchemaFromStations(s *Server, schemaName string) error {
-	stationNames, err := db.GetStationNamesUsingSchema(schemaName)
+func deleteSchemaFromStations(s *Server, schemaName string, tenantName string) error {
+	stationNames, err := db.GetStationNamesUsingSchema(schemaName, tenantName)
 	if err != nil {
 		return err
 	}
-
 	for _, name := range stationNames {
 		sn, err := StationNameFromStr(name)
 		if err != nil {
 			return err
 		}
-		removeSchemaFromStation(s, sn, false)
+		removeSchemaFromStation(s, sn, false, tenantName)
 	}
 
-	err = db.RemoveSchemaFromAllUsingStations(schemaName)
+	err = db.RemoveSchemaFromAllUsingStations(schemaName, tenantName)
 	if err != nil {
 		s.Errorf("deleteSchemaFromStations: Schema " + schemaName + ": " + err.Error())
 		return err
@@ -595,9 +594,10 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		return
 	}
 
+	tenantName := user.TenantName
 	for _, name := range body.SchemaNames {
 		schemaName := strings.ToLower(name)
-		exist, schema, err := db.GetSchemaByName(schemaName, user.TenantName)
+		exist, schema, err := db.GetSchemaByName(schemaName, tenantName)
 		if err != nil {
 			serv.Errorf("RemoveSchema: Schema " + schemaName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -605,7 +605,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 		}
 		if exist {
 			DeleteTagsFromSchema(schema.ID)
-			err := deleteSchemaFromStations(sh.S, schema.Name)
+			err := deleteSchemaFromStations(sh.S, schema.Name, tenantName)
 			if err != nil {
 				serv.Errorf("RemoveSchema: Schema " + schemaName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -630,7 +630,6 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-schema")
 	}
 
@@ -712,7 +711,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Version already exists"})
 		return
 	}
-	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema)
+	extedndedSchemaDetails, err := sh.getExtendedSchemaDetails(schema, user.TenantName)
 	if err != nil {
 		serv.Errorf("CreateNewVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -721,7 +720,6 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-create-new-schema-version")
 	}
 
@@ -786,7 +784,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 			return
 		}
 	}
-	extedndedSchemaDetails, err = sh.getExtendedSchemaDetails(schema)
+	extedndedSchemaDetails, err = sh.getExtendedSchemaDetails(schema, user.TenantName)
 	if err != nil {
 		serv.Errorf("RollBackVersion: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -795,7 +793,6 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-rollback-schema-version")
 	}
 

@@ -32,7 +32,7 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics(analyticsToken, memphisV string) error {
 	memphisVersion = memphisV
-	exist, deployment, err := db.GetSystemKey("deployment_id")
+	exist, deployment, err := db.GetSystemKey("deployment_id", MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -41,7 +41,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			return err
 		}
 		deploymentId = uid.String()
-		err = db.InsertSystemKey("deployment_id", deploymentId)
+		err = db.InsertSystemKey("deployment_id", deploymentId, MEMPHIS_GLOBAL_ACCOUNT)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		deploymentId = deployment.Value
 	}
 
-	exist, _, err = db.GetSystemKey("analytics")
+	exist, _, err = db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -60,7 +60,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKey("analytics", value)
+		err = db.InsertSystemKey("analytics", value, MEMPHIS_GLOBAL_ACCOUNT)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 }
 
 func Close() {
-	_, analytics, _ := db.GetSystemKey("analytics")
+	_, analytics, _ := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
 	if analytics.Value == "true" {
 		AnalyticsClient.Close()
 	}

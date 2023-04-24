@@ -102,6 +102,7 @@ type ExtendedStation struct {
 	Producers                   []Producer  `json:"producers,omitempty"`
 	Consumers                   []Consumer  `json:"consumers,omitempty"`
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
+	TenantName                  string      `json:"tenant_name"`
 }
 
 type ExtendedStationDetails struct {

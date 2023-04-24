@@ -272,7 +272,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	schema, err := h.Schemas.GetSchemaByStationName(sn)
+	schema, err := h.Schemas.GetSchemaByStationName(sn, station.TenantName)
 
 	if err != nil && err != ErrNoSchema {
 		return map[string]any{}, err
@@ -373,7 +373,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 
 func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
 	//TODO: change tenant name
-	schemas, err := h.Schemas.GetAllSchemasDetails(db.GlobalTenant)
+	schemas, err := h.Schemas.GetAllSchemasDetails(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return schemas, err
 	}

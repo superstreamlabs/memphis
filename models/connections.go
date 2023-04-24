@@ -22,4 +22,5 @@ type Connection struct {
 	IsActive          bool      `json:"is_active"`
 	CreatedAt         time.Time `json:"created_at"`
 	ClientAddress     string    `json:"client_address"`
+	TenantName        string    `json:"tenant_name"`
 }
