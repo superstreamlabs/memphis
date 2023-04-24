@@ -103,6 +103,12 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		os.Exit(1)
 	}
 
+	err = server.CreateGlobalTenantOnFirstSystemLoad()
+	if err != nil {
+		s.Errorf("Failed to create global tenant: " + err.Error())
+		os.Exit(1)
+	}
+
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -116,12 +122,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	}
 
 	go s.CreateInternalJetStreamResources()
-
-	err = server.CreateGlobalTenantOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create global tenant: " + err.Error())
-		os.Exit(1)
-	}
 
 	err = server.CreateRootUserOnFirstSystemLoad()
 	if err != nil {
