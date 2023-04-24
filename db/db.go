@@ -2928,7 +2928,7 @@ func GetShcemaVersionsCount(schemaId int, tenantName string) (int, error) {
 		return 0, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, tenantName).Scan(&count)
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, strings.ToLower(tenantName)).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -2955,7 +2955,7 @@ func GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
 		return []models.ExtendedSchema{}, err
 	}
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -3039,7 +3039,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	}
 
 	var schemaId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, strings.ToLower(tenantName))
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -3109,7 +3109,7 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	var schemaVersionId int
 	createdAt := time.Now()
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), strings.ToLower(tenantName))
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
