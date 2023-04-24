@@ -98,7 +98,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		tenant_name VARCHAR NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT '$memphis_account',
 		UNIQUE(username, tenant_name),
 		PRIMARY KEY (id));`
 
