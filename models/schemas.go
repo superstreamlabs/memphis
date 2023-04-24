@@ -20,6 +20,7 @@ type Schema struct {
 	Name              string `json:"name"`
 	Type              string `json:"type"`
 	CreatedByUsername string `json:"created_by_username"`
+	TenantName        string `json:"tenant_name"`
 }
 
 type SchemaVersion struct {
