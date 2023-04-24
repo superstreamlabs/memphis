@@ -80,7 +80,7 @@ function VersionUpgrade() {
             ) : (
                 <>
                     <div className="banner-section">
-                        <img src={upgradeBanner} width="95%" alt="upgradeBanner" />
+                        <img src={upgradeBanner} width="97%" alt="upgradeBanner" />
                         <div className="actions">
                             <div className="logo">
                                 <img src={fullLogo} alt="fullLogo" />
