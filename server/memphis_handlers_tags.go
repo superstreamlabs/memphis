@@ -49,7 +49,7 @@ func CreateTag(name string, entity_type string, entity_id int, color string, ten
 		// case "user":
 		// 	userArr = append(userArr, entity_id)
 	}
-	_, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr, strings.ToLower(tenantName))
+	_, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr, tenantName)
 	if err != nil {
 		return err
 	}
@@ -66,12 +66,12 @@ func AddTagsToEntity(tags []models.CreateTag, entity_type string, entity_id int,
 		return err
 	}
 	for _, tagToCreate := range tags {
-		exist, _, err := db.GetTagByName(tagToCreate.Name, strings.ToLower(tenantName))
+		exist, _, err := db.GetTagByName(tagToCreate.Name, tenantName)
 		if err != nil {
 			return err
 		}
 		if !exist {
-			err = CreateTag(tagToCreate.Name, entity_type, entity_id, tagToCreate.Color, strings.ToLower(tenantName))
+			err = CreateTag(tagToCreate.Name, entity_type, entity_id, tagToCreate.Color, tenantName)
 			if err != nil {
 				return err
 			}
@@ -119,13 +119,14 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	}
 
 	user, err := getUserDetailsFromMiddleware(c)
+	tenantName := user.TenantName
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
 	name := strings.ToLower(body.Name)
-	exist, _, err := db.GetTagByName(name, strings.ToLower(user.TenantName))
+	exist, _, err := db.GetTagByName(name, tenantName)
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -146,7 +147,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	stationArr := []int{}
 	schemaArr := []int{}
 	userArr := []int{}
-	newTag, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr, strings.ToLower(user.TenantName))
+	newTag, err := db.InsertNewTag(name, color, stationArr, schemaArr, userArr, tenantName)
 	if err != nil {
 		serv.Errorf("CreateNewTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -182,6 +183,8 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
+
+	tenantName := user.TenantName
 	switch entity {
 	case "station":
 		station_name, err := StationNameFromStr(body.EntityName)
@@ -190,7 +193,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-		exist, station, err := db.GetStationByName(station_name.Ext(), strings.ToLower(user.TenantName))
+		exist, station, err := db.GetStationByName(station_name.Ext(), tenantName)
 		if err != nil {
 			serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -205,7 +208,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		message = "Tag " + name + " has been deleted from station " + stationName + " by user " + user.Username
 
 	case "schema":
-		exist, schema, err := db.GetSchemaByName(body.EntityName, user.TenantName)
+		exist, schema, err := db.GetSchemaByName(body.EntityName, tenantName)
 		if err != nil {
 			serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -283,6 +286,8 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
+
+	tenantName := user.TenantName
 	var stationName StationName
 	var schemaName string
 	switch entity {
@@ -293,7 +298,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-		exist, station, err := db.GetStationByName(station_name.Ext(), strings.ToLower(user.TenantName))
+		exist, station, err := db.GetStationByName(station_name.Ext(), tenantName)
 		if err != nil {
 			serv.Errorf("UpdateTagsForEntity: Station " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -307,7 +312,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		stationName = station_name
 
 	case "schema":
-		exist, schema, err := db.GetSchemaByName(body.EntityName, user.TenantName)
+		exist, schema, err := db.GetSchemaByName(body.EntityName, tenantName)
 		if err != nil {
 			serv.Errorf("UpdateTagsForEntity: Schema " + body.EntityName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -343,14 +348,14 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	if len(body.TagsToAdd) > 0 {
 		for _, tagToAdd := range body.TagsToAdd {
 			name := strings.ToLower(tagToAdd.Name)
-			exist, tag, err := db.GetTagByName(name, strings.ToLower(user.TenantName))
+			exist, tag, err := db.GetTagByName(name, tenantName)
 			if err != nil {
 				serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 			if !exist {
-				err = CreateTag(name, body.EntityType, entity_id, tagToAdd.Color, strings.ToLower(user.TenantName))
+				err = CreateTag(name, body.EntityType, entity_id, tagToAdd.Color, tenantName)
 				if err != nil {
 					serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -409,7 +414,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	if len(body.TagsToRemove) > 0 {
 		for _, tagToRemove := range body.TagsToRemove {
 			name := strings.ToLower(tagToRemove)
-			exist, tag, err := db.GetTagByName(name, strings.ToLower(user.TenantName))
+			exist, tag, err := db.GetTagByName(name, tenantName)
 			if err != nil {
 				serv.Errorf("UpdateTagsForEntity: " + body.EntityType + " " + body.EntityName + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -497,7 +502,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	tags, err := db.GetTagsByEntityType(entity, strings.ToLower(user.TenantName))
+	tags, err := db.GetTagsByEntityType(entity, user.TenantName)
 	if err != nil {
 		desc := ""
 		if entity == "" {
@@ -529,7 +534,7 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 		serv.Errorf("GetUsedTags: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
-	tags, err := db.GetAllUsedTags(strings.ToLower(user.TenantName))
+	tags, err := db.GetAllUsedTags(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetUsedTags: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

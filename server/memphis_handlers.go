@@ -90,7 +90,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 	schemaName := ""
 	schemaVersionNumber := 0
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, strings.ToLower(user.TenantName))
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, user.TenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -102,7 +102,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenant))
+	exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return false, err
 	}

@@ -17,7 +17,6 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
@@ -33,7 +32,7 @@ func (srv *Server) removeStaleStations() {
 			_, err = srv.memphisStreamInfo(stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
-				err := db.DeleteStation(s.Name, strings.ToLower(s.TenantName))
+				err := db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
 					srv.Errorf("removeStaleStations: " + err.Error())
 				}

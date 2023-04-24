@@ -932,8 +932,8 @@ func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations AS s WHERE (s.is_deleted = false OR s.is_deleted IS NULL) AND tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations", query)
+	query := `SELECT * FROM stations AS s WHERE (s.is_deleted = false) AND tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations_per_tenant", query)
 	if err != nil {
 		return []models.Station{}, err
 	}
@@ -960,7 +960,7 @@ func GetActiveStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations AS s WHERE s.is_deleted = false OR s.is_deleted IS NULL`
+	query := `SELECT * FROM stations AS s WHERE s.is_deleted = false`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations", query)
 	if err != nil {
 		return []models.Station{}, err
@@ -988,7 +988,7 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 		return false, models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false OR is_deleted IS NULL) AND tenant_name = $2 LIMIT 1`
+	query := `SELECT * FROM stations WHERE name = $1 AND (is_deleted = false) AND tenant_name = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_name", query)
 	if err != nil {
 		return false, models.Station{}, err
@@ -1016,7 +1016,7 @@ func GetStationById(messageId int, tenantName string) (bool, models.Station, err
 		return false, models.Station{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM stations WHERE id = $1 AND (is_deleted = false OR is_deleted IS NULL) AND tenant_name = $2 LIMIT 1`
+	query := `SELECT * FROM stations WHERE id = $1 AND (is_deleted = false) AND tenant_name = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_station_by_id", query)
 	if err != nil {
 		return false, models.Station{}, err
@@ -1190,7 +1190,7 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	ON s.id = c.station_id
 	WHERE s.is_deleted = false
 	GROUP BY s.id,p.id,c.id`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details_per_tenant", query)
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
@@ -3404,7 +3404,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		CreatedAt:       createdAt,
 		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
-		TenantName:      tenantName,
+		TenantName:      strings.ToLower(tenantName),
 	}
 	return newUser, nil
 }
@@ -3498,7 +3498,7 @@ func GetUserForLogin(username string, tenantName string) (bool, models.User, err
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3541,7 +3541,7 @@ func GetUserByUserId(userId int) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
-func GetAllUsers() ([]models.FilteredGenericUser, error) {
+func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3549,12 +3549,12 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.already_logged_in, s.avatar_id FROM users AS s`
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.already_logged_in, s.avatar_id FROM users AS s WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
@@ -3582,7 +3582,7 @@ func GetAllUsersByType(userType string, tenantName string) ([]models.User, error
 	if err != nil {
 		return []models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, userType, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userType, strings.ToLower(tenantName))
 	if err != nil {
 		return []models.User{}, err
 	}
@@ -3624,7 +3624,7 @@ func UpdateSkipGetStarted(username string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -3648,7 +3648,7 @@ func DeleteUser(username string, tenantName string) error {
 		return err
 	}
 
-	_, err = conn.Conn().Exec(ctx, stmt.Name, username)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, username, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -3669,7 +3669,7 @@ func EditAvatar(username string, avatarId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, strings.ToLower(tenantName))
 	if err != nil {
 		return err
 	}
@@ -3694,7 +3694,7 @@ func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
@@ -3802,7 +3802,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		Stations:   stationArr,
 		Schemas:    schemaArr,
 		Users:      userArr,
-		TenantName: tenantName,
+		TenantName: strings.ToLower(tenantName),
 	}
 	return newTag, nil
 
@@ -4143,7 +4143,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, validationError string) (models.DlsMessage, error) {
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4160,9 +4160,10 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 			message_details,
 			updated_at,
 			message_type,
-			validation_error
+			validation_error,
+			tenant_name
 			) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`
 
 	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
@@ -4170,7 +4171,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		return models.DlsMessage{}, err
 	}
 	updatedAt := time.Now()
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -4199,7 +4200,8 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 			Data:     messageDetails.Data,
 			Headers:  messageDetails.Headers,
 		},
-		UpdatedAt: updatedAt,
+		UpdatedAt:  updatedAt,
+		TenantName: tenantName,
 	}
 
 	if err := rows.Err(); err != nil {
@@ -4340,13 +4342,13 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			}
 		}
 	} else { // then update
-		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$4 RETURNING id`
+		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
 		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
 		if err != nil {
 			return 0, err
 		}
 		updatedAt := time.Now()
-		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt)
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, strings.ToLower(tenantName))
 		if err != nil {
 			return 0, err
 		}

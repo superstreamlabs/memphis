@@ -84,7 +84,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 
-	exist, station, err := db.GetStationByName(pStationName.Ext(), strings.ToLower(user.TenantName))
+	exist, station, err := db.GetStationByName(pStationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 		return false, false, err
@@ -324,7 +324,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	}
 
 	stationName, _ := StationNameFromStr(body.StationName)
-	exist, station, err := db.GetStationByName(stationName.Ext(), strings.ToLower(user.TenantName))
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -388,7 +388,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	if username == "" {
 		username = dpr.Username
 	}
-	_, user, err := db.GetUserByUsername(username, strings.ToLower(c.acc.GetName()))
+	_, user, err := db.GetUserByUsername(username, c.acc.GetName())
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 	}
