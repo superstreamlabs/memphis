@@ -92,7 +92,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	ON audit_logs (station_name);`
 
 	alterUsersTable := `
-	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT 'memphis';
 	ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS users_username_key;
 	ALTER TABLE IF EXISTS users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
 	ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name FOREIGN KEY (tenant_name) REFERENCES tenants (name);`
