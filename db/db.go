@@ -3316,7 +3316,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 }
 
 // User Functions
-func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int) (models.User, error) {
+func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3335,8 +3335,9 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		avatar_id,
 		full_name, 
 		subscription,
-		skip_get_started) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
+		skip_get_started,
+		tenant_name) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
 	if err != nil {
@@ -3347,7 +3348,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -3386,11 +3387,12 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		CreatedAt:       createdAt,
 		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
+		TenantName:      tenantName,
 	}
 	return newUser, nil
 }
 
-func ChangeUserPassword(username string, hashedPassword string) error {
+func ChangeUserPassword(username string, hashedPassword string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3398,19 +3400,19 @@ func ChangeUserPassword(username string, hashedPassword string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE users SET password = $2 WHERE username = $1`
+	query := `UPDATE users SET password = $2 WHERE username = $1 AND tenant_name=$3`
 	stmt, err := conn.Conn().Prepare(ctx, "change_user_password", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, tenantName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetRootUser() (bool, models.User, error) {
+func GetRootUser(tenantName string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3418,12 +3420,12 @@ func GetRootUser() (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE type = 'root' LIMIT 1`
+	query := `SELECT * FROM users WHERE type = 'root' AND tenant_name=$1 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_root_user", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3438,7 +3440,7 @@ func GetRootUser() (bool, models.User, error) {
 	return true, users[0], nil
 }
 
-func GetUserByUsername(username string) (bool, models.User, error) {
+func GetUserByUsername(username string, tenantName string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3446,12 +3448,12 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE username = $1 LIMIT 1`
+	query := `SELECT * FROM users WHERE username = $1 AND tenant_name = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_by_username", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3466,7 +3468,7 @@ func GetUserByUsername(username string) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
-func GetUserForLogin(username string) (bool, models.User, error) {
+func GetUserForLogin(username string, tenantName string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3474,12 +3476,12 @@ func GetUserForLogin(username string) (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' LIMIT 1`
+	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' AND tenant_name=$2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3550,7 +3552,7 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
-func GetAllUsersByType(userType string) ([]models.User, error) {
+func GetAllUsersByType(userType string, tenantName string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3558,12 +3560,12 @@ func GetAllUsersByType(userType string) ([]models.User, error) {
 		return []models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE type=$1`
+	query := `SELECT * FROM users WHERE type=$1 AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
 		return []models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, userType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, userType, tenantName)
 	if err != nil {
 		return []models.User{}, err
 	}
@@ -3592,7 +3594,7 @@ func UpdateUserAlreadyLoggedIn(userId int) error {
 	return nil
 }
 
-func UpdateSkipGetStarted(username string) error {
+func UpdateSkipGetStarted(username string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3600,19 +3602,19 @@ func UpdateSkipGetStarted(username string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE users SET skip_get_started = true WHERE username = $1`
+	query := `UPDATE users SET skip_get_started = true WHERE username = $1 AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_skip_get_started", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func DeleteUser(username string) error {
+func DeleteUser(username string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3622,7 +3624,7 @@ func DeleteUser(username string) error {
 	}
 	defer conn.Release()
 
-	removeUserQuery := `DELETE FROM users WHERE username = $1`
+	removeUserQuery := `DELETE FROM users WHERE username = $1 AND tenant_name=$2`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
 	if err != nil {
@@ -3637,7 +3639,7 @@ func DeleteUser(username string) error {
 	return nil
 }
 
-func EditAvatar(username string, avatarId int) error {
+func EditAvatar(username string, avatarId int, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3645,19 +3647,19 @@ func EditAvatar(username string, avatarId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE users SET avatar_id = $2 WHERE username = $1`
+	query := `UPDATE users SET avatar_id = $2 WHERE username = $1 AND tenant_name=$3`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_avatar", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, tenantName)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func GetAllActiveUsers() ([]models.FilteredUser, error) {
+func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3669,12 +3671,13 @@ func GetAllActiveUsers() ([]models.FilteredUser, error) {
 	SELECT DISTINCT u.username
 	FROM users u
 	JOIN stations s ON u.id = s.created_by
+	WHERE tenant_name=$1
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}

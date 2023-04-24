@@ -375,7 +375,7 @@ func (sh SchemasHandler) GetAllSchemasDetails(tenantName string) ([]models.Exten
 	return schemas, nil
 }
 
-func (sh SchemasHandler) CreateNewSchema(c *gin.Context, tenantName string) {
+func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	var body models.CreateNewSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

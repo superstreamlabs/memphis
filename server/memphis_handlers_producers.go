@@ -388,7 +388,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	if username == "" {
 		username = dpr.Username
 	}
-	_, user, err := db.GetUserByUsername(username)
+	_, user, err := db.GetUserByUsername(username, strings.ToLower(c.acc.GetName()))
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 	}

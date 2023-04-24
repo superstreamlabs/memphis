@@ -41,7 +41,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser()
+	exist, _, err := db.GetRootUser(strings.ToLower(MEMPHIS_GLOBAL_ACCOUNT))
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -51,7 +51,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser()
+	exist, user, err := db.GetRootUser(strings.ToLower(MEMPHIS_GLOBAL_ACCOUNT))
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -65,8 +65,8 @@ func isRootUserLoggedIn() (bool, error) {
 	}
 }
 
-func authenticateUser(username string, password string) (bool, models.User, error) {
-	exist, user, err := db.GetUserForLogin(username)
+func authenticateUser(username string, password string, tenantName string) (bool, models.User, error) {
+	exist, user, err := db.GetUserForLogin(username, strings.ToLower(tenantName))
 	if err != nil {
 		return false, models.User{}, err
 	} else if !exist {
@@ -97,12 +97,12 @@ func updateDeletedUserResources(user models.User) error {
 		}
 	}
 
-	err := db.UpdateStationsOfDeletedUser(user.ID, user.TenantId)
+	err := db.UpdateStationsOfDeletedUser(user.ID, strings.ToLower(user.TenantName))
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.ID, user.TenantId)
+	err = db.UpdateConncetionsOfDeletedUser(user.ID, strings.ToLower(user.TenantName))
 	if err != nil {
 		return err
 	}
@@ -238,7 +238,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, db.GlobalTenantId)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, strings.ToLower(db.GlobalTenantName))
 		if err != nil {
 			return err
 		}
@@ -275,7 +275,11 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		}
 	} else {
-		err = db.ChangeUserPassword(ROOT_USERNAME, hashedPwdString)
+		_, user, err := db.GetUserByUsername(ROOT_USERNAME)
+		if err != nil {
+			return err
+		}
+		err = db.ChangeUserPassword(ROOT_USERNAME, hashedPwdString, strings.ToLower(user.TenantName))
 		if err != nil {
 			return err
 		}
@@ -315,7 +319,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 	hashedPwdString := string(hashedPwd)
-	err = db.ChangeUserPassword(username, hashedPwdString)
+	err = db.ChangeUserPassword(username, hashedPwdString, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -330,8 +334,15 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if !ok {
 		return
 	}
+
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("Login: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	username := strings.ToLower(body.Username)
-	authenticated, user, err := authenticateUser(username, body.Password)
+	authenticated, user, err := authenticateUser(username, body.Password, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("Login : User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -404,14 +415,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", db.GlobalTenantId)
+	_, systemKey, err := db.GetSystemKey("analytics", strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserByUsername(username, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -550,7 +561,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, db.GlobalTenantId)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -621,8 +632,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("AddUser: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+
 	username := strings.ToLower(body.Username)
-	exist, _, err := db.GetUserByUsername(username)
+	exist, _, err := db.GetUserByUsername(username, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -690,7 +707,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, db.GlobalTenantId)
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -747,7 +764,12 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
-	users, err := db.GetAllUsersByType("application")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetApplicationUsers: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+	}
+	users, err := db.GetAllUsersByType("application", strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -783,7 +805,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	exist, userToRemove, err := db.GetUserByUsername(username)
+	exist, userToRemove, err := db.GetUserByUsername(username, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -807,7 +829,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(username)
+	err = db.DeleteUser(username, strings.ToLower(userToRemove.TenantName))
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -852,7 +874,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(user.Username)
+	err = db.DeleteUser(user.Username, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -886,7 +908,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 
-	err = db.EditAvatar(user.Username, avatarId)
+	err = db.EditAvatar(user.Username, avatarId, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("EditAvatar: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -993,7 +1015,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, db.GlobalTenantId)
+	err := db.EditConfigurationValue("analytics", flag, strings.ToLower(db.GlobalTenantName))
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1026,7 +1048,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	}
 
 	username := strings.ToLower(user.Username)
-	err = db.UpdateSkipGetStarted(username)
+	err = db.UpdateSkipGetStarted(username, strings.ToLower(user.TenantName))
 	if err != nil {
 		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1047,8 +1069,8 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
-	userList, err := db.GetAllActiveUsers()
+func (umh UserMgmtHandler) GetActiveUsers(tenantName string) ([]string, error) {
+	userList, err := db.GetAllActiveUsers(strings.ToLower(tenantName))
 	if err != nil {
 		return []string{}, err
 	}
@@ -1094,7 +1116,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	}
 	switch body.Route {
 	case "stations":
-		users, err := umh.GetActiveUsers()
+		users, err := umh.GetActiveUsers(strings.ToLower(user.TenantName))
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1112,7 +1134,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 		return
 	case "schemaverse":
-		users, err := umh.GetActiveUsers()
+		users, err := umh.GetActiveUsers(strings.ToLower(user.TenantName))
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

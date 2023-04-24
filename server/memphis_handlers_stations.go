@@ -296,7 +296,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	_, user, err := db.GetUserByUsername(username)
+	_, user, err := db.GetUserByUsername(username, strings.ToLower(c.acc.GetName()))
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1005,7 +1005,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, user, err := db.GetUserByUsername(dsr.Username)
+	_, user, err := db.GetUserByUsername(dsr.Username, strings.ToLower(c.acc.GetName()))
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1575,7 +1575,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(asr.Username)
+	_, user, err := db.GetUserByUsername(asr.Username, strings.ToLower(c.acc.GetName()))
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
