@@ -100,7 +100,6 @@ const IntegrationItem = ({ value }) => {
         <>
             <integ-item is="3xd" onClick={() => (value?.comingSoon ? null : modalFlip(true))}>
                 {value?.banner}
-
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
                     <div className="integrate-icon">
                         <img src={integrated} />
