@@ -326,16 +326,16 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 		CACertPool := x509.NewCertPool()
 		CACertPool.AppendCertsFromPEM(CACert)
 
-		if configuration.METADATA_DB_TLS_MUTUAL {
-			cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
-			if err != nil {
-				return MetadataStorage{}, err
-			}
-
-			config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
-		} else {
-			config.ConnConfig.TLSConfig = &tls.Config{RootCAs: CACertPool, InsecureSkipVerify: true}
+		// if configuration.METADATA_DB_TLS_MUTUAL {
+		cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
+		if err != nil {
+			return MetadataStorage{}, err
 		}
+
+		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
+		// } else {
+		// config.ConnConfig.TLSConfig = &tls.Config{RootCAs: CACertPool, InsecureSkipVerify: true}
+		// }
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
