@@ -77,7 +77,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
+		name VARCHAR NOT NULL UNIQUE DEFAULT 'memphis',
 		PRIMARY KEY (id));`
 
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
@@ -110,7 +110,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -122,12 +122,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_name
+		UNIQUE(key, tenant_name),
+		CONSTRAINT fk_tenant_name_configurations
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id),
-		UNIQUE(key, tenant_name)
+			REFERENCES tenants(name)
 		);`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
@@ -137,11 +137,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_connections
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 		);`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
@@ -159,11 +159,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
 		created_by_username VARCHAR NOT NULL,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_schemas
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id),
+			REFERENCES tenants(name),
 		UNIQUE(name, tenant_name)
 		);
 		CREATE INDEX name
@@ -176,11 +176,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		users INTEGER[] ,
 		stations INTEGER[],
 		schemas INTEGER[],
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_tags
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id),
+			REFERENCES tenants(name),
 		UNIQUE(name, tenant_name)
 		);
 		CREATE INDEX name_tag
@@ -204,7 +204,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
@@ -212,9 +212,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_consumers
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 		);
 		CREATE INDEX station_id ON consumers (station_id);
 		CREATE INDEX connection_id ON consumers (connection_id);
@@ -242,11 +242,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		dls_configuration_poison BOOL NOT NULL DEFAULT true,
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 		);
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
@@ -261,15 +261,15 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR DEFAULT '',
 		descriptor bytea,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
 			FOREIGN KEY(schema_id)
 			REFERENCES schemas(id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_schemaverse
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 		);`
 
 	producersTable := `
@@ -285,7 +285,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -293,9 +293,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_producers
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 		);
 		CREATE INDEX producer_station_id
 		ON producers(station_id);
@@ -314,7 +314,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
-		tenant_name INTEGER NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT 'memphis',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -322,9 +322,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_producer_id
 			FOREIGN KEY(producer_id)
 			REFERENCES producers(id),
-		CONSTRAINT fk_tenant_name
+		CONSTRAINT fk_tenant_name_dls_msgs
 			FOREIGN KEY(tenant_name)
-			REFERENCES tenants(id)
+			REFERENCES tenants(name)
 	);
 	CREATE INDEX dls_station_id
 		ON dls_messages(station_id);
@@ -3598,7 +3598,7 @@ func GetAllUsersByType(userType []string, tenantName string) ([]models.User, err
 			return []models.User{}, err
 		}
 	} else {
-		query := `SELECT * FROM users WHERE type=$1 or type=$2 AND tenant_name=$2`
+		query := `SELECT * FROM users WHERE (type=$1 or type=$2) AND tenant_name=$3`
 		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_and_root_type", query)
 		if err != nil {
 			return []models.User{}, err
@@ -4742,7 +4742,7 @@ func GetGlobalTenant() (bool, models.Tenant, error) {
 		return false, models.Tenant{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tenants WHERE name = '$memphis' LIMIT 1`
+	query := `SELECT * FROM tenants WHERE name = 'memphis' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_global_tenant", query)
 	if err != nil {
 		return false, models.Tenant{}, err
