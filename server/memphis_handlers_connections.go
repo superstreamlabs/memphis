@@ -87,7 +87,7 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserByUsername(username, client.acc.GetName())
 	if err != nil {
 		errMsg := "User " + username + ": " + err.Error()
 		client.Errorf("handleConnectMessage: " + errMsg)
@@ -155,6 +155,14 @@ func handleConnectMessage(client *client) error {
 }
 
 func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string) (bool, error) {
+	exist, user, err := db.GetUserByUserId(userId)
+	if err != nil {
+		return false, err
+	}
+	if exist {
+		return false, err
+	}
+
 	createdByUsername = strings.ToLower(createdByUsername)
 	newConnection := models.Connection{
 		ID:                connectionId,
@@ -163,9 +171,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
+		TenantName:        strings.ToLower(user.TenantName),
 	}
 
-	err := db.InsertConnection(newConnection)
+	err = db.InsertConnection(newConnection, user.TenantName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return true, nil

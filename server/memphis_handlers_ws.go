@@ -201,7 +201,8 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	response, err := h.Monitoring.getMainOverviewDataDetails()
+	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
+	response, err := h.Monitoring.getMainOverviewDataDetails(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
@@ -213,8 +214,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-
-	exist, station, err := db.GetStationByName(sn.Ext())
+	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
+	exist, station, err := db.GetStationByName(sn.Ext(), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -272,7 +273,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 		return map[string]any{}, err
 	}
 
-	schema, err := h.Schemas.GetSchemaByStationName(sn)
+	schema, err := h.Schemas.GetSchemaByStationName(sn, station.TenantName)
 
 	if err != nil && err != ErrNoSchema {
 		return map[string]any{}, err
@@ -372,7 +373,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 }
 
 func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
-	schemas, err := h.Schemas.GetAllSchemasDetails()
+	//TODO: change tenant name
+	schemas, err := h.Schemas.GetAllSchemasDetails(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return schemas, err
 	}
@@ -380,7 +382,8 @@ func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, erro
 }
 
 func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDetails, error) {
-	stations, err := h.Stations.GetStationsDetails()
+	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
+	stations, err := h.Stations.GetStationsDetails(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return stations, err
 	}

@@ -922,7 +922,7 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewData, error) {
+func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (models.MainOverviewData, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	mainOverviewData := &models.MainOverviewData{}
@@ -931,7 +931,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 	wg.Add(3)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
 		if err != nil {
 			*generalErr = err
 			return
@@ -984,7 +984,13 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	response, err := mh.getMainOverviewDataDetails()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetMainOverviewData: Tag " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: " + err.Error())
@@ -996,7 +1002,6 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-main-overview")
 	}
 
@@ -1382,7 +1387,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1499,7 +1510,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1604,7 +1615,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-station-overview")
 	}
 

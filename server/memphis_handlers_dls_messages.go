@@ -35,7 +35,7 @@ func (s *Server) ListenForPoisonMessages() {
 }
 
 func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, _, _ string, msg []byte) {
+	return func(c *client, _, _ string, msg []byte) {
 		go s.handleNewPoisonMessage(copyBytes(msg))
 	}
 }
@@ -50,7 +50,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
-	_, station, err := db.GetStationByName(stationName.Ext())
+	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
+	_, station, err := db.GetStationByName(stationName.Ext(), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -121,7 +122,7 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -194,8 +195,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	if !exist {
 		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
 	}
-
-	exist, station, err := db.GetStationById(dlsMessage.StationId)
+	exist, station, err := db.GetStationById(dlsMessage.StationId, dlsMessage.TenantName)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}
@@ -298,7 +298,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 
 	schemaType := ""
 	if station.SchemaName != "" {
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}

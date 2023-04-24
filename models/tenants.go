@@ -11,34 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
-type Tag struct {
-	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	Color      string `json:"color"`
-	Users      []int  `json:"users"`
-	Stations   []int  `json:"stations"`
-	Schemas    []int  `json:"schemas"`
-	TenantName string `json:"tenant_name"`
-}
-
-type CreateTag struct {
-	Name  string `json:"name" binding:"required,min=1,max=20"`
-	Color string `json:"color"`
-}
-
-type RemoveTagSchema struct {
-	Name       string `json:"name"`
-	EntityType string `json:"entity_type"`
-	EntityName string `json:"entity_name"`
-}
-
-type UpdateTagsForEntitySchema struct {
-	TagsToAdd    []CreateTag `json:"tags_to_add"`
-	TagsToRemove []string    `json:"tags_to_remove"`
-	EntityType   string      `json:"entity_type"`
-	EntityName   string      `json:"entity_name"`
-}
-
-type GetTagsSchema struct {
-	EntityType string `json:"entity_type"`
+type Tenant struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }

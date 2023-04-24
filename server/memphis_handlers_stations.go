@@ -173,7 +173,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	exist, _, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -193,7 +193,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	var schemaDetails models.SchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName, c.acc.GetName())
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -296,12 +296,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	_, user, err := db.GetUserByUsername(username)
+	_, user, err := db.GetUserByUsername(username, c.acc.GetName())
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(s, reply, err)
 	}
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled)
+	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -356,7 +356,13 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	}
 	tagsHandler := TagsHandler{S: sh.S}
 	stationName := strings.ToLower(body.StationName)
-	exist, station, err := db.GetStationByName(stationName)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetStation: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, station, err := db.GetStationByName(stationName, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStation: Station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -405,9 +411,9 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	c.IndentedJSON(200, stationResponse)
 }
 
-func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails, error) {
+func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.ExtendedStationDetails, error) {
 	var exStations []models.ExtendedStationDetails
-	stations, err := db.GetActiveStations()
+	stations, err := db.GetActiveStationsPerTenant(tenantName)
 	if err != nil {
 		return []models.ExtendedStationDetails{}, err
 	}
@@ -425,7 +431,7 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 				stationTotalMsgs[streamName] = int(info.State.Msgs)
 			}
 		}
-		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs()
+		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
 		if err != nil {
 			return []models.ExtendedStationDetails{}, err
 		}
@@ -495,14 +501,18 @@ func (sh StationsHandler) GetStationsDetails() ([]models.ExtendedStationDetails,
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool) ([]models.ExtendedStation, uint64, uint64, error) {
+func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
+	var stations []models.ExtendedStation
 	totalMessages := uint64(0)
-	totalDlsMessages, err := db.GetTotalDlsMessages()
+	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
 	if err != nil {
 		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 	}
-
-	stations, err := db.GetAllStationsDetails()
+	if tenantName != "" {
+		stations, err = db.GetAllStationsDetailsPerTenant(tenantName)
+	} else {
+		stations, err = db.GetAllStationsDetails()
+	}
 	if err != nil {
 		return stations, totalMessages, totalDlsMessages, err
 	}
@@ -523,7 +533,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool) ([]models.Ex
 			}
 		}
 
-		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs()
+		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
 		if err != nil {
 			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 		}
@@ -592,7 +602,13 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool) ([]models.Ex
 }
 
 func (sh StationsHandler) GetStations(c *gin.Context) {
-	stations, err := sh.GetStationsDetails()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetStations: Station " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	stations, err := sh.GetStationsDetails(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -601,7 +617,6 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-stations-page")
 	}
 
@@ -611,7 +626,13 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 }
 
 func (sh StationsHandler) GetAllStations(c *gin.Context) {
-	stations, _, _, err := sh.GetAllStationsDetails(true)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllStations: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllStations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -635,7 +656,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	tenantName := user.TenantName
+	if err != nil {
+		serv.Errorf("CreateStation: At station" + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, _, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -648,17 +677,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-
 	var schemaVersionNumber int
 	schemaName := body.SchemaName
 	if schemaName != "" {
 		schemaName = strings.ToLower(body.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName)
+		exist, schema, err := db.GetSchemaByName(schemaName, tenantName)
 		if err != nil {
 			serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -739,7 +762,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName)
 
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
@@ -769,7 +792,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID)
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName)
 		if err != nil {
 			serv.Errorf("CreateStation: : Station " + body.Name + " Failed adding tags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -867,8 +890,14 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 
 		stationNames = append(stationNames, stationName.Ext())
+		user, err := getUserDetailsFromMiddleware(c)
+		if err != nil {
+			serv.Errorf("RemoveStation: " + err.Error())
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 
-		exist, station, err := db.GetStationByName(stationName.Ext())
+		exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 		if err != nil {
 			serv.Errorf("RemoveStation: Station " + stationName.external + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -889,7 +918,13 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 	}
 
-	err := db.DeleteStationsByNames(stationNames)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveStation: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	err = db.DeleteStationsByNames(stationNames, user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -898,7 +933,6 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-station")
 	}
 
@@ -951,7 +985,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
@@ -974,13 +1008,13 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	err = db.DeleteStation(stationName.Ext())
+	err = db.DeleteStation(stationName.Ext(), station.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}
-	_, user, err := db.GetUserByUsername(dsr.Username)
+	_, user, err := db.GetUserByUsername(dsr.Username, c.acc.GetName())
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1121,8 +1155,15 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("ResendPoisonMessages: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
 	stationName := strings.ToLower(body.StationName)
-	exist, _, err := db.GetStationByName(stationName)
+	exist, _, err := db.GetStationByName(stationName, user.TenantName)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1176,7 +1217,6 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-resend-poison-message")
 	}
 
@@ -1211,7 +1251,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetMessageDetails: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1378,8 +1425,16 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	tenantName := user.TenantName
 	schemaName := strings.ToLower(body.SchemaName)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, tenantName)
 	if err != nil {
 		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server Error"})
@@ -1405,12 +1460,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		SchemaType:       schema.Type,
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("UseSchema: Schema " + body.SchemaName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	for _, stationName := range body.StationNames {
 		stationName, err := StationNameFromStr(stationName)
@@ -1420,7 +1469,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		exist, station, err := db.GetStationByName(stationName.Ext())
+		exist, station, err := db.GetStationByName(stationName.Ext(), tenantName)
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1433,7 +1482,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			return
 		}
 
-		err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
+		err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber, station.TenantName)
 		if err != nil {
 			serv.Errorf("UseSchema: Schema " + body.SchemaName + " at station " + stationName.Ext() + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
@@ -1469,7 +1518,6 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		sh.S.updateStationProducersOfSchemaChange(stationName, update)
 
 		if shouldSendAnalytics {
-			user, _ := getUserDetailsFromMiddleware(c)
 			param1 := analytics.EventParam{
 				Name:  "station-name",
 				Value: stationName.Ext(),
@@ -1500,8 +1548,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(s, reply, err)
 		return
 	}
-
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	exist, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1515,7 +1562,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 	schemaName := strings.ToLower(asr.Name)
-	exist, schema, err := db.GetSchemaByName(schemaName)
+	exist, schema, err := db.GetSchemaByName(schemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1535,7 +1582,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber)
+	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber, station.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1545,7 +1592,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(asr.Username)
+	_, user, err := db.GetUserByUsername(asr.Username, c.acc.GetName())
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1594,8 +1641,8 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	respondWithErr(s, reply, nil)
 }
 
-func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
-	exist, _, err := db.GetStationByName(sn.Ext())
+func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantName string) error {
+	exist, station, err := db.GetStationByName(sn.Ext(), tenantName)
 	if err != nil {
 		return err
 	}
@@ -1604,7 +1651,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool) error {
 	}
 
 	if updateDB {
-		err = db.DetachSchemaFromStation(sn.Ext())
+		err = db.DetachSchemaFromStation(sn.Ext(), station.TenantName)
 		if err != nil {
 			return err
 		}
@@ -1632,7 +1679,7 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 		return
 	}
 
-	err = removeSchemaFromStation(serv, stationName, true)
+	err = removeSchemaFromStation(serv, stationName, true, c.acc.GetName())
 	if err != nil {
 		serv.Errorf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
@@ -1664,7 +1711,13 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1677,17 +1730,11 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	err = removeSchemaFromStation(sh.S, stationName, true)
+	err = removeSchemaFromStation(sh.S, stationName, true, strings.ToLower(station.TenantName))
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 	}
 	message := "Schema " + station.SchemaName + " has been deleted from station " + stationName.Ext() + " by user " + user.Username
 	serv.Noticef(message)
@@ -1727,7 +1774,14 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1740,7 +1794,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 		return
 	}
 
-	exist, schema, err := db.GetSchemaByName(station.SchemaName)
+	exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1755,7 +1809,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	}
 
 	schemasHandler := SchemasHandler{S: sh.S}
-	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.SchemaVersionNumber, schema)
+	extedndedSchemaDetails, err := schemasHandler.getExtendedSchemaDetailsUpdateAvailable(station.SchemaVersionNumber, schema, user.TenantName)
 
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation: At station" + body.StationName + ": " + err.Error())
@@ -1765,7 +1819,6 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-apply-schema-updates-on-station")
 	}
 
@@ -1796,7 +1849,14 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UpdateDlsConfig: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1812,7 +1872,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	poisonConfigChanged := station.DlsConfigurationPoison != body.Poison
 	schemaverseConfigChanged := station.DlsConfigurationSchemaverse != body.Schemaverse
 	if poisonConfigChanged || schemaverseConfigChanged {
-		err = db.UpdateStationDlsConfig(station.Name, body.Poison, body.Schemaverse)
+		err = db.UpdateStationDlsConfig(station.Name, body.Poison, body.Schemaverse, station.TenantName)
 		if err != nil {
 			serv.Errorf("DlsConfiguration: At station" + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1847,7 +1907,14 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("PurgeStation: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1880,7 +1947,6 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-purge-station")
 	}
 	c.IndentedJSON(200, gin.H{})
@@ -1904,7 +1970,14 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveMessages: At station" + body.StationName + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1931,7 +2004,6 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-remove-messages")
 	}
 
