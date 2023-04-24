@@ -85,6 +85,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	CREATE INDEX station_name
 	ON audit_logs (station_name);`
 
+	alterUsersTable := `
+	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR DEFAULT '$memphis_account';
+	ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS users_username_key;
+	ALTER TABLE IF EXISTS users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);`
+
 	usersTable := `
 	CREATE TYPE enum AS ENUM ('root', 'management', 'application');
 	CREATE TABLE IF NOT EXISTS users(
@@ -98,9 +103,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis_account',
-		UNIQUE(username, tenant_name),
-		PRIMARY KEY (id));`
+		UNIQUE(username),
+		PRIMARY KEY (id));
+	`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
@@ -284,7 +289,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable, tenantsTables}
+	tables := []string{alterUsersTable, usersTable, connectionsTable, auditLogsTable, configurationsTable, integrationsTable, schemasTable, tagsTable, stationsTable, consumersTable, schemaVersionsTable, producersTable, dlsMessagesTable, tenantsTables}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
