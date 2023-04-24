@@ -43,7 +43,7 @@ node {
       if (env.BRANCH_NAME ==~ /(master)/) { 
         sh """
           sudo npm uninstall memphis-dev-cli-beta -g
-          sudo npm i memphis-dev-cli-beta -g
+          sudo npm i memphis-dev-cli-beta -g --force
         """
       }
       else {
