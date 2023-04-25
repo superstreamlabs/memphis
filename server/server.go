@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"memphis/conf"
 	"memphis/logger"
 	"net"
 	"net/http"
@@ -292,7 +293,8 @@ type Server struct {
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
 
-	memphis srvMemphis
+	memphis     srvMemphis
+	memphisGacc *Account
 }
 
 // For tracking JS nodes.
@@ -741,6 +743,13 @@ func (s *Server) globalAccount() *Account {
 	return gacc
 }
 
+func (s *Server) memphisGlobalAccount() *Account {
+	s.mu.RLock()
+	mgacc := s.memphisGacc
+	s.mu.RUnlock()
+	return mgacc
+}
+
 // Used to setup Accounts.
 // Lock is held upon entry.
 func (s *Server) configureAccounts() error {
@@ -875,6 +884,17 @@ func (s *Server) configureAccounts() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Server) ConfigureMemphisGlobalAccount() error {
+	s.mu.RLock()
+	acc, err := s.lookupAccount(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	if err != nil {
+		return err
+	}
+	s.memphisGacc = acc
+	s.mu.RUnlock()
 	return nil
 }
 

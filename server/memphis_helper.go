@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
@@ -1082,7 +1083,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 	}
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
-			tenantsToUpsert := []string{MEMPHIS_GLOBAL_ACCOUNT}
+			tenantsToUpsert := []string{conf.MEMPHIS_GLOBAL_ACCOUNT_NAME}
 			for _, account := range opts.Accounts {
 				name := strings.ToLower(account.GetName())
 				tenantsToUpsert = append(tenantsToUpsert, name)
@@ -1114,8 +1115,8 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			}
 		}
 
-		//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-		users, err := db.GetAllUsersByType([]string{"application", "root"}, MEMPHIS_GLOBAL_ACCOUNT)
+		//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+		users, err := db.GetAllUsersByType([]string{"application", "root"}, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return Options{}, err
 		}

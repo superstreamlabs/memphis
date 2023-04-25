@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"strconv"
@@ -201,8 +202,8 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 }
 
 func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-	response, err := h.Monitoring.getMainOverviewDataDetails(MEMPHIS_GLOBAL_ACCOUNT)
+	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	response, err := h.Monitoring.getMainOverviewDataDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
@@ -214,8 +215,8 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-	exist, station, err := db.GetStationByName(sn.Ext(), MEMPHIS_GLOBAL_ACCOUNT)
+	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	exist, station, err := db.GetStationByName(sn.Ext(), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -374,7 +375,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 
 func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
 	//TODO: change tenant name
-	schemas, err := h.Schemas.GetAllSchemasDetails(MEMPHIS_GLOBAL_ACCOUNT)
+	schemas, err := h.Schemas.GetAllSchemasDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return schemas, err
 	}
@@ -382,8 +383,8 @@ func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, erro
 }
 
 func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDetails, error) {
-	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-	stations, err := h.Stations.GetStationsDetails(MEMPHIS_GLOBAL_ACCOUNT)
+	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	stations, err := h.Stations.GetStationsDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return stations, err
 	}

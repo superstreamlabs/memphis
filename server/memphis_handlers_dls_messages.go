@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sort"
@@ -50,8 +51,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
-	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-	_, station, err := db.GetStationByName(stationName.Ext(), MEMPHIS_GLOBAL_ACCOUNT)
+	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT_NAME
+	_, station, err := db.GetStationByName(stationName.Ext(), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return

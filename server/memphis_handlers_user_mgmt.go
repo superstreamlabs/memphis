@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -36,13 +37,12 @@ const (
 	JWT_EXPIRES_IN_MINUTES         = 15
 	ROOT_USERNAME                  = "root"
 	MEMPHIS_USERNAME               = "$memphis_user"
-	MEMPHIS_GLOBAL_ACCOUNT         = "memphis"
 )
 
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
+	exist, _, err := db.GetRootUser(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -52,7 +52,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
+	exist, user, err := db.GetRootUser(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -240,7 +240,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	hashedPwdString := string(hashedPwd)
 
 	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, MEMPHIS_GLOBAL_ACCOUNT)
+		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return err
 		}
@@ -278,7 +278,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 		}
 	} else {
-		_, user, err := db.GetUserByUsername(ROOT_USERNAME, MEMPHIS_GLOBAL_ACCOUNT)
+		_, user, err := db.GetUserByUsername(ROOT_USERNAME, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return err
 		}
@@ -424,7 +424,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	_, systemKey, err := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -570,7 +570,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
@@ -1042,7 +1042,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, MEMPHIS_GLOBAL_ACCOUNT)
+	err := db.EditConfigurationValue("analytics", flag, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

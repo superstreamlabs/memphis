@@ -25,8 +25,6 @@ type EventParam struct {
 	Value string `json:"value" binding:"required"`
 }
 
-const MEMPHIS_GLOBAL_ACCOUNT = "memphis"
-
 var configuration = conf.GetConfig()
 var deploymentId string
 var memphisVersion string
@@ -34,7 +32,7 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics(analyticsToken, memphisV string) error {
 	memphisVersion = memphisV
-	exist, deployment, err := db.GetSystemKey("deployment_id", MEMPHIS_GLOBAL_ACCOUNT)
+	exist, deployment, err := db.GetSystemKey("deployment_id", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -43,7 +41,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			return err
 		}
 		deploymentId = uid.String()
-		err = db.InsertSystemKey("deployment_id", deploymentId, MEMPHIS_GLOBAL_ACCOUNT)
+		err = db.InsertSystemKey("deployment_id", deploymentId, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return err
 		}
@@ -51,7 +49,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		deploymentId = deployment.Value
 	}
 
-	exist, _, err = db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	exist, _, err = db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -62,7 +60,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKey("analytics", value, MEMPHIS_GLOBAL_ACCOUNT)
+		err = db.InsertSystemKey("analytics", value, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return err
 		}
@@ -78,7 +76,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 }
 
 func Close() {
-	_, analytics, _ := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	_, analytics, _ := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if analytics.Value == "true" {
 		AnalyticsClient.Close()
 	}

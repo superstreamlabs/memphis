@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -40,7 +41,7 @@ var tieredStorageMapLock sync.Mutex
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			connInfo := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
+			connInfo := &ConnzOptions{Limit: s.memphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
@@ -55,7 +56,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 				if err != nil {
 					s.Errorf("ListenForZombieConnCheckRequests: " + err.Error())
 				} else {
-					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, bytes, true)
+					s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
 		}(copyBytes(msg))
@@ -206,7 +207,7 @@ func (s *Server) CalculateSelfThroughput() error {
 			Read:  currentRead,
 			Write: currentWrite,
 		}
-		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
+		s.sendInternalAccountMsg(s.memphisGlobalAccount(), subj, tpMsg)
 	}
 
 	return nil
@@ -394,8 +395,8 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
-			//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT
-			exist, station, err := db.GetStationByName(message.StationName, MEMPHIS_GLOBAL_ACCOUNT)
+			//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT_NAME
+			exist, station, err := db.GetStationByName(message.StationName, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return

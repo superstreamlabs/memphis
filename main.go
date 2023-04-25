@@ -145,6 +145,11 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		s.Errorf("Failed reloading: " + err.Error())
 	}
 
+	err = s.ConfigureMemphisGlobalAccount()
+	if err != nil {
+		s.Errorf("Failed to set Memphis global account: " + err.Error())
+	}
+
 	var env string
 	var message string
 	isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"

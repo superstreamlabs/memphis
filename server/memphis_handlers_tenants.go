@@ -12,6 +12,7 @@
 package server
 
 import (
+	"memphis/conf"
 	"memphis/db"
 )
 
@@ -32,7 +33,7 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 	}
 
 	if !exist {
-		_, err := db.CreateTenant(MEMPHIS_GLOBAL_ACCOUNT)
+		_, err := db.CreateTenant(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 		if err != nil {
 			return err
 		}

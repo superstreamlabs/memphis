@@ -102,7 +102,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	exist, systemKey, err := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		return false, err
 	}
@@ -162,3 +162,8 @@ func replaceDelimiters(name string) string {
 func revertDelimiters(name string) string {
 	return strings.Replace(name, delimiterReplacement, delimiterToReplace, -1)
 }
+
+// func (s *Server) SetMemphisGlobalAccount() error {
+// 	acc, err := s.LookupAccount(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+// 	s.globalAccount()
+// }
