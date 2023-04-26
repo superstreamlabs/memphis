@@ -499,6 +499,7 @@ func EditConfigurationValue(key string, value string, tenantName string) error {
 }
 
 // Configuration Functions
+// TODO: check if we nee this function
 func GetConfiguration(key string, tenantName string) (bool, models.ConfigurationsValue, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -601,7 +602,7 @@ func InsertConfiguration(key string, value string, tenantName string) error {
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return errors.New("configuration" + key + " already exists")
+					return errors.New("configuration " + key + " already exists")
 				} else {
 					return errors.New(pgErr.Detail)
 				}

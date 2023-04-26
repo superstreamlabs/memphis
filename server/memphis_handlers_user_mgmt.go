@@ -338,15 +338,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("Login: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
 	username := strings.ToLower(body.Username)
-	authenticated, user, err := authenticateUser(username, body.Password, user.TenantName)
+	//TODO: pass the tenant name instead of MEMPHIS_GLOBAL_ACCOUNT
+	authenticated, user, err := authenticateUser(username, body.Password, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
 	if err != nil {
 		serv.Errorf("Login : User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

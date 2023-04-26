@@ -16,7 +16,7 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
-const MEMPHIS_GLOBAL_ACCOUNT_NAME = "memphis"
+const MEMPHIS_GLOBAL_ACCOUNT_NAME = "$memphis"
 
 type Configuration struct {
 	DEV_ENV                 string
