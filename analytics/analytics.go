@@ -25,7 +25,7 @@ type EventParam struct {
 	Value string `json:"value" binding:"required"`
 }
 
-const MEMPHIS_GLOBAL_ACCOUNT = "memphis"
+const MEMPHIS_GLOBAL_ACCOUNT = "$memphis"
 
 var configuration = conf.GetConfig()
 var deploymentId string
