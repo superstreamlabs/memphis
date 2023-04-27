@@ -3616,27 +3616,14 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	if len(userType) == 1 {
-		query := `SELECT * FROM users WHERE type=$1 AND tenant_name=$2`
-		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_type", query)
-		if err != nil {
-			return []models.User{}, err
-		}
-		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0], strings.ToLower(tenantName))
-		if err != nil {
-			return []models.User{}, err
-		}
-	} else {
-		query := `SELECT * FROM users WHERE (type=$1 or type=$2) AND tenant_name=$3`
-		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_and_root_type", query)
-		if err != nil {
-			return []models.User{}, err
-		}
-		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0], userType[1], strings.ToLower(tenantName))
-		if err != nil {
-			return []models.User{}, err
-		}
-
+	query := `SELECT * FROM users WHERE type=ANY($1) AND tenant_name=$2`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
+	if err != nil {
+		return []models.User{}, err
+	}
+	rows, err = conn.Conn().Query(ctx, stmt.Name, userType, strings.ToLower(tenantName))
+	if err != nil {
+		return []models.User{}, err
 	}
 
 	defer rows.Close()
@@ -3659,27 +3646,14 @@ func GetAllUsersByType(userType []string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	if len(userType) == 1 {
-		query := `SELECT * FROM users WHERE type=$1`
-		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_type", query)
-		if err != nil {
-			return []models.User{}, err
-		}
-		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0])
-		if err != nil {
-			return []models.User{}, err
-		}
-	} else {
-		query := `SELECT * FROM users WHERE (type=$1 or type=$2)`
-		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_and_root_type", query)
-		if err != nil {
-			return []models.User{}, err
-		}
-		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0], userType[1])
-		if err != nil {
-			return []models.User{}, err
-		}
-
+	query := `SELECT * FROM users WHERE type=ANY($1)`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
+	if err != nil {
+		return []models.User{}, err
+	}
+	rows, err = conn.Conn().Query(ctx, stmt.Name, userType)
+	if err != nil {
+		return []models.User{}, err
 	}
 
 	defer rows.Close()
