@@ -105,7 +105,7 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username)
+		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
 			client.Errorf("handleConnectMessage: " + errMsg)
@@ -154,15 +154,7 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string) (bool, error) {
-	exist, user, err := db.GetUserByUserId(userId)
-	if err != nil {
-		return false, err
-	}
-	if exist {
-		return false, err
-	}
-
+func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string, tenantName string) (bool, error) {
 	createdByUsername = strings.ToLower(createdByUsername)
 	newConnection := models.Connection{
 		ID:                connectionId,
@@ -171,10 +163,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
-		TenantName:        strings.ToLower(user.TenantName),
+		TenantName:        strings.ToLower(tenantName),
 	}
 
-	err = db.InsertConnection(newConnection, user.TenantName)
+	err := db.InsertConnection(newConnection, tenantName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return true, nil

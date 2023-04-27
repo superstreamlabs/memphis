@@ -1907,7 +1907,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string) (models.Producer, int64, error) {
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string, tenantName string) (models.Producer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1926,8 +1926,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 		is_active, 
 		is_deleted, 
 		created_at, 
-		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+		type,
+		tenant_name) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
 	if err != nil {
@@ -1939,7 +1940,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	isActive := true
 	isDeleted := false
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType, strings.ToLower(tenantName))
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
