@@ -249,8 +249,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 				installationType = "cluster"
 				k8sClusterTimestamp, err := getK8sClusterTimestamp()
 				if err == nil {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
 					deviceIdValue = k8sClusterTimestamp
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
 				}
 			} else if configuration.DOCKER_ENV == "true" {
 				installationType = "stand-alone-docker"

@@ -360,7 +360,7 @@ func (s *Server) memphisDeleteStream(streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
 
 	var resp JSApiStreamCreateResponse
-	err := jsApiRequest(s, requestSubject, kindCreateStream, nil, &resp)
+	err := jsApiRequest(s, requestSubject, kindDeleteStream, nil, &resp)
 	if err != nil {
 		return err
 	}
