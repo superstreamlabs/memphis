@@ -31,6 +31,7 @@ type Consumer struct {
 	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
 	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
 	LastMessages        int64     `json:"last_messages"`
+	TenantName          string    `json:"tenant_name"`
 }
 
 type ExtendedConsumer struct {

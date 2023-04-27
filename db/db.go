@@ -2254,7 +2254,8 @@ func InsertNewConsumer(name string,
 	maxAckTime int,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
-	lastMessages int64) (bool, models.Consumer, int64, error) {
+	lastMessages int64,
+	tenantName string) (bool, models.Consumer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2278,8 +2279,9 @@ func InsertNewConsumer(name string,
 		max_msg_deliveries,
 		start_consume_from_seq,
 		last_msgs,
-		type) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+		type,
+		tenant_name) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
@@ -2293,7 +2295,7 @@ func InsertNewConsumer(name string,
 	isDeleted := false
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType)
+		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {

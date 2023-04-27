@@ -26,6 +26,7 @@ type Producer struct {
 	IsActive          bool      `json:"is_active"`
 	CreatedAt         time.Time `json:"created_at"`
 	IsDeleted         bool      `json:"is_deleted"`
+	TenantName        string    `json:"tenant_name"`
 }
 
 type ExtendedProducer struct {
