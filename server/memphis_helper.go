@@ -76,7 +76,7 @@ var (
 )
 
 func (s *Server) MemphisInitialized() bool {
-	return s.GlobalAccount().JetStreamEnabled()
+	return s.memphisGlobalAccount().JetStreamEnabled()
 }
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
@@ -95,21 +95,21 @@ func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) e
 
 	timeout := time.After(30 * time.Second)
 	respCh := make(chan []byte)
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
+	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
 		return err
 	}
 	// send on global account
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
+	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), subject, reply, nil, msg, true)
 
 	// wait for response to arrive
 	var rawResp []byte
 	select {
 	case rawResp = <-respCh:
-		s.unsubscribeOnGlobalAcc(sub)
+		s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
 		break
 	case <-timeout:
-		s.unsubscribeOnGlobalAcc(sub)
+		s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
 		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
 	}
 
@@ -793,10 +793,10 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 	reply := durableName + "_reply"
 	req := []byte(strconv.Itoa(amount))
 
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
 
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
@@ -832,7 +832,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 		return nil, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), subject, reply, nil, req, true)
 
 	var msgs []StoredMsg
 	timer := time.NewTimer(timeout)
@@ -847,7 +847,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(streamName, durableName) })
 
 	return msgs, nil
@@ -901,7 +901,7 @@ func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg
 }
 
 func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
-	acc := s.GlobalAccount()
+	acc := s.memphisGlobalAccount()
 	c := acc.ic
 
 	acc.mu.Lock()
@@ -966,7 +966,7 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		delete(hdrs, "producedBy")
 	}
 
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdrs, data)
+	s.sendInternalMsgWithHeaderLocked(s.memphisGlobalAccount(), subject, hdrs, data)
 	return nil
 }
 
@@ -1116,12 +1116,15 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		}
 
 		//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-		users, err := db.GetAllUsersByType([]string{"application", "root"}, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+		users, err := db.GetAllUsersByType([]string{"application", "root"})
 		if err != nil {
 			return Options{}, err
 		}
 
 		tenants, err := db.GetAllTenants()
+		if err != nil {
+			return Options{}, err
+		}
 		tenantsId := map[string]int{}
 		for _, tenant := range tenants {
 			name := strings.ToLower(tenant.Name)
@@ -1132,7 +1135,6 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		for _, user := range users {
 			name := strings.ToLower(user.TenantName)
 			account := &Account{Name: name}
-
 			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password, Account: account})
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenantsId[name]), Password: configuration.CONNECTION_TOKEN, Account: account})
 			accounts = append(accounts, account)

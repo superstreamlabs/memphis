@@ -109,6 +109,22 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 		os.Exit(1)
 	}
 
+	err = server.CreateRootUserOnFirstSystemLoad()
+	if err != nil {
+		s.Errorf("Failed to create root user: " + err.Error())
+		os.Exit(1)
+	}
+
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
+
+	err = s.ConfigureMemphisGlobalAccount()
+	if err != nil {
+		s.Errorf("Failed to set Memphis global account: " + err.Error())
+	}
+
 	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -123,12 +139,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	go s.CreateInternalJetStreamResources()
 
-	err = server.CreateRootUserOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create root user: " + err.Error())
-		os.Exit(1)
-	}
-
 	go http_server.InitializeHttpServer(s)
 
 	err = s.StartBackgroundTasks()
@@ -139,16 +149,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	// run only on the leader
 	go s.KillZombieResources()
-
-	err = s.Reload()
-	if err != nil {
-		s.Errorf("Failed reloading: " + err.Error())
-	}
-
-	err = s.ConfigureMemphisGlobalAccount()
-	if err != nil {
-		s.Errorf("Failed to set Memphis global account: " + err.Error())
-	}
 
 	var env string
 	var message string

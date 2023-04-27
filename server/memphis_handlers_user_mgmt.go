@@ -66,8 +66,8 @@ func isRootUserLoggedIn() (bool, error) {
 	}
 }
 
-func authenticateUser(username string, password string, tenantName string) (bool, models.User, error) {
-	exist, user, err := db.GetUserForLogin(username, tenantName)
+func authenticateUser(username string, password string) (bool, models.User, error) {
+	exist, user, err := db.GetUserForLogin(username)
 	if err != nil {
 		return false, models.User{}, err
 	} else if !exist {
@@ -339,8 +339,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	username := strings.ToLower(body.Username)
-	//TODO: pass the tenant name instead of MEMPHIS_GLOBAL_ACCOUNT
-	authenticated, user, err := authenticateUser(username, body.Password, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
 		serv.Errorf("Login : User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -784,7 +783,7 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
-	users, err := db.GetAllUsersByType([]string{"application"}, user.TenantName)
+	users, err := db.GetAllUsersByTypeAndTenantName([]string{"application"}, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

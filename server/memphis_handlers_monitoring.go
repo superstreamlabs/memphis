@@ -828,10 +828,10 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := serv.subscribeOnAcc(serv.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			serv.sendInternalAccountMsg(serv.memphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -866,7 +866,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 
 cleanup:
 	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
+	serv.unsubscribeOnAcc(serv.memphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(throughputStreamNameV1, durableName) })
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
@@ -1762,10 +1762,10 @@ func (s *Server) GetSystemLogs(amount uint64,
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1787,7 +1787,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		return models.SystemLogsResponse{}, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), subject, reply, nil, req, true)
 
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -1801,7 +1801,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log

@@ -367,7 +367,6 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			var pgErr *pgconn.PgError
 			errPg := errors.As(err, &pgErr)
 			if errPg && !strings.Contains(pgErr.Message, "already exists") {
-				fmt.Print(table)
 				return err
 			}
 		}
@@ -3521,7 +3520,7 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	return true, users[0], nil
 }
 
-func GetUserForLogin(username string, tenantName string) (bool, models.User, error) {
+func GetUserForLogin(username string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3529,12 +3528,12 @@ func GetUserForLogin(username string, tenantName string) (bool, models.User, err
 		return false, models.User{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' AND tenant_name=$2 LIMIT 1`
+	query := `SELECT * FROM users WHERE username = $1 AND NOT type = 'application' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login", query)
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3605,7 +3604,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
-func GetAllUsersByType(userType []string, tenantName string) ([]models.User, error) {
+func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3631,6 +3630,49 @@ func GetAllUsersByType(userType []string, tenantName string) ([]models.User, err
 			return []models.User{}, err
 		}
 		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0], userType[1], strings.ToLower(tenantName))
+		if err != nil {
+			return []models.User{}, err
+		}
+
+	}
+
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return []models.User{}, err
+	}
+	if len(users) == 0 {
+		return []models.User{}, nil
+	}
+	return users, nil
+}
+
+func GetAllUsersByType(userType []string) ([]models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.User{}, err
+	}
+	defer conn.Release()
+	var rows pgx.Rows
+	if len(userType) == 1 {
+		query := `SELECT * FROM users WHERE type=$1`
+		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_type", query)
+		if err != nil {
+			return []models.User{}, err
+		}
+		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0])
+		if err != nil {
+			return []models.User{}, err
+		}
+	} else {
+		query := `SELECT * FROM users WHERE (type=$1 or type=$2)`
+		stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_application_and_root_type", query)
+		if err != nil {
+			return []models.User{}, err
+		}
+		rows, err = conn.Conn().Query(ctx, stmt.Name, userType[0], userType[1])
 		if err != nil {
 			return []models.User{}, err
 		}
@@ -4777,7 +4819,7 @@ func GetGlobalTenant() (bool, models.Tenant, error) {
 		return false, models.Tenant{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tenants WHERE name = 'memphis' LIMIT 1`
+	query := `SELECT * FROM tenants WHERE name = '$memphis' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_global_tenant", query)
 	if err != nil {
 		return false, models.Tenant{}, err

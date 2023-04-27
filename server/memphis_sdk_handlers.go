@@ -213,7 +213,7 @@ func respondWithErr(s *Server, replySubject string, err error) {
 	if err != nil {
 		resp = []byte(err.Error())
 	}
-	s.respondOnGlobalAcc(replySubject, resp)
+	s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubject, resp)
 }
 
 func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
@@ -232,7 +232,7 @@ func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
 		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
-	s.respondOnGlobalAcc(replySubject, rawResp)
+	s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubject, rawResp)
 }
 
 func respondWithRespErr(s *Server, replySubject string, err error, resp memphisResponse) {
@@ -247,5 +247,5 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 		s.Errorf("SendUpdateToClients: " + err.Error())
 		return
 	}
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+	s.sendInternalAccountMsg(s.memphisGlobalAccount(), subject, msg)
 }

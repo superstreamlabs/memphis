@@ -39,7 +39,7 @@ var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
-	_, err := s.subscribeOnGlobalAcc(CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			connInfo := &ConnzOptions{Limit: s.memphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
@@ -68,7 +68,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnGlobalAcc(INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(c *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(c *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
@@ -97,7 +97,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 }
 
 func (s *Server) ListenForConfigReloadEvents() error {
-	_, err := s.subscribeOnGlobalAcc(CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
 			err := s.Reload()
@@ -304,7 +304,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		for i, msgs := range tieredStorageMsgsMap.m {
 			for _, msg := range msgs {
 				reply := msg.ReplySubject
-				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+				s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
 			}
 			tieredStorageMsgsMap.Delete(i)
 		}

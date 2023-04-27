@@ -69,7 +69,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 			for i, updateFiller := range values {
 				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+s.opts.ServerName)
-				if !s.GlobalAccount().SubscriptionInterest(replySubj) {
+				if !s.memphisGlobalAccount().SubscriptionInterest(replySubj) {
 					s.Debugf("removing memphis ws subscription %s", replySubj)
 					subs.Delete(k)
 					continue
@@ -87,7 +87,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 					continue
 				}
 
-				s.respondOnGlobalAcc(replySubj, updateRaw)
+				s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubj, updateRaw)
 			}
 		case <-quitCh:
 			ticker.Stop()
@@ -146,7 +146,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			return
 		}
 
-		s.sendInternalAccountMsg(s.GlobalAccount(), reply, serverName)
+		s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, serverName)
 	}
 }
 
