@@ -1115,7 +1115,6 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			}
 		}
 
-		//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 		users, err := db.GetAllUsersByType([]string{"application", "root"})
 		if err != nil {
 			return Options{}, err

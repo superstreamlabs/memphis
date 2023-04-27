@@ -952,7 +952,6 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 
 // Station Functions
 
-// TODO: check if need to add condition instead duplicate same functions
 func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1177,7 +1176,6 @@ func InsertNewStation(
 	return newStation, rowsAffected, nil
 }
 
-// TODO: check if need to add condition instead duplicate same functions
 func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4842,4 +4840,60 @@ func GetAllTenants() ([]models.Tenant, error) {
 		return []models.Tenant{}, nil
 	}
 	return tenants, nil
+}
+
+func GetTenantById(id int) (bool, models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tenants AS c WHERE id = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_id", query)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer rows.Close()
+	tenants, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tenant])
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	if len(tenants) == 0 {
+		return false, models.Tenant{}, nil
+	}
+	return true, tenants[0], nil
+}
+
+func GetTenantByName(name string) (bool, models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tenants AS c WHERE name = $1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_id", query)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	defer rows.Close()
+	tenants, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tenant])
+	if err != nil {
+		return false, models.Tenant{}, err
+	}
+	if len(tenants) == 0 {
+		return false, models.Tenant{}, nil
+	}
+	return true, tenants[0], nil
 }

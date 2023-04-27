@@ -172,7 +172,6 @@ type GetPoisonMessageJourneySchema struct {
 	MessageId int `form:"message_id" json:"message_id" binding:"required"`
 }
 
-// TODO: remove
 type GetMessageDetailsSchema struct {
 	IsDls       bool   `form:"is_dls" json:"is_dls"`
 	DlsType     string `form:"dls_type" json:"dls_type"`

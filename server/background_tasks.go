@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -395,8 +394,17 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
-			//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT_NAME
-			exist, station, err := db.GetStationByName(message.StationName, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+
+			exist, tenant, err := db.GetTenantById(message.AccountId)
+			if err != nil {
+				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				return
+			}
+			if !exist {
+				serv.Warnf("ListenForSchemaverseDlsEvents: Account couldn't been found")
+				return
+			}
+			exist, station, err := db.GetStationByName(message.StationName, tenant.Name)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
@@ -404,7 +412,6 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 			if !exist {
 				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
 				return
-
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
@@ -418,7 +425,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, station.TenantName)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenant.Name)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return

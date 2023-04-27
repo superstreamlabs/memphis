@@ -375,9 +375,17 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
-
-	// TODO: add get tenant id function
-	tenantId := 1
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("Login: User " + body.Username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	domain := ""
 	secure := false
@@ -405,7 +413,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
-		"account_id":              tenantId,
+		"account_id":              tenant.ID,
 	})
 }
 
@@ -489,8 +497,17 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		env = "docker"
 	}
 
-	// TODO: add get tenant id function
-	tenantId := 1
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	domain := ""
 	secure := true
@@ -519,7 +536,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
-		"account_id":              tenantId,
+		"account_id":              tenant.ID,
 	})
 }
 
