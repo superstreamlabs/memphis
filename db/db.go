@@ -2983,7 +2983,7 @@ func GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
 	          FROM schemas AS s
 	          LEFT JOIN schema_versions AS sv ON s.id = sv.schema_id AND sv.version_number = 1
 	          LEFT JOIN schema_versions AS asv ON s.id = asv.schema_id AND asv.active = true
-	          WHERE asv.id IS NOT NULL AND tenant_name = $1
+	          WHERE asv.id IS NOT NULL AND s.tenant_name = $1
 	          ORDER BY sv.created_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_schemas_details", query)
 	if err != nil {

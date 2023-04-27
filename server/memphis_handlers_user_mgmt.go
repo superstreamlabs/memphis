@@ -489,6 +489,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		env = "docker"
 	}
 
+	// TODO: add get tenant id function
+	tenantId := 1
+
 	domain := ""
 	secure := true
 	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
@@ -516,6 +519,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenantId,
 	})
 }
 

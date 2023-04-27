@@ -1134,7 +1134,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		accounts := []*Account{}
 		for _, user := range users {
 			name := strings.ToLower(user.TenantName)
-			account := &Account{Name: name}
+			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password, Account: account})
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenantsId[name]), Password: configuration.CONNECTION_TOKEN, Account: account})
 			accounts = append(accounts, account)
