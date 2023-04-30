@@ -12,6 +12,7 @@
 package server
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -164,7 +165,7 @@ func generateSchemaDescriptor(schemaName string, schemaVersionNum int, schemaCon
 	if err != nil {
 		return "", err
 	}
-	return string(descriptor), nil
+	return base64.StdEncoding.EncodeToString(descriptor), nil
 }
 
 func validateMessageStructName(messageStructName string) error {
