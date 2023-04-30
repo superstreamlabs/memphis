@@ -2216,7 +2216,6 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 	}
 
 	return count, nil
-
 }
 
 func CountActiveConsumersByStationID(stationId int) (int64, error) {
@@ -2984,7 +2983,6 @@ func DeleteIntegration(name string) error {
 	}
 
 	return nil
-
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -3315,6 +3313,28 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
+func CountAllUsers() (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_users", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func GetAllUsersByType(userType string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3548,7 +3568,6 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		Users:    userArr,
 	}
 	return newTag, nil
-
 }
 
 func InsertEntityToTag(tagName string, entity string, entity_id int) error {
@@ -3997,7 +4016,6 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	}
 
 	return true, message[0], nil
-
 }
 
 func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload) (int, error) {
@@ -4159,7 +4177,6 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 		return err
 	}
 	return nil
-
 }
 
 func DropDlsMessages(messageIds []int) error {
@@ -4257,7 +4274,6 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
 	}
 
 	return dlsMsgs, nil
-
 }
 
 func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {

@@ -513,17 +513,32 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	// 	return
 	// }
 
+	showSignup := true
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
 		serv.Errorf("GetSignUpFlag: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if loggedIn {
+		showSignup = false
+	} else {
+		count, err := db.CountAllUsers()
+		if err != nil {
+			serv.Errorf("GetSignUpFlag: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if count > 1 { // more than 1 user exists
+			showSignup = false
+		}
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent("", "user-open-ui")
 	}
-	c.IndentedJSON(200, gin.H{"show_signup": !loggedIn})
+	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
