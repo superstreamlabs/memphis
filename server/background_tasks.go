@@ -395,7 +395,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			exist, station, err := db.GetStationByName(message.StationName, message.AccountName)
+			exist, station, err := db.GetStationByName(message.StationName, message.TenantName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
@@ -416,7 +416,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, message.AccountName)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, message.TenantName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return

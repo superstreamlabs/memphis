@@ -70,6 +70,11 @@ type createProducerResponse struct {
 	Err                     string                          `json:"error"`
 }
 
+type getTenantNameResponse struct {
+	TenantName string `json:"tenant_name"`
+	Err        string `json:"error"`
+}
+
 type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
@@ -118,12 +123,20 @@ type destroyConsumerRequest struct {
 	Username     string `json:"username"`
 }
 
+type getTenantNameRequest struct {
+	TenantId int `json:"tenant_id"`
+}
+
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
 }
 
 func (ccr *createConsumerResponse) SetError(err error) {
 	ccr.Err = err.Error()
+}
+
+func (tnr *getTenantNameResponse) SetError(err error) {
+	tnr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {
@@ -158,6 +171,10 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
+
+	// tenants
+	s.queueSubscribe("$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
+		getTenantNameHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -199,6 +216,12 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.useSchemaDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func getTenantNameHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.getTenantName(c, reply, copyBytes(msg))
 	}
 }
 
