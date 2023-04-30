@@ -360,7 +360,7 @@ func (s *Server) memphisDeleteStream(streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
 
 	var resp JSApiStreamCreateResponse
-	err := jsApiRequest(s, requestSubject, kindCreateStream, nil, &resp)
+	err := jsApiRequest(s, requestSubject, kindDeleteStream, nil, &resp)
 	if err != nil {
 		return err
 	}
@@ -419,17 +419,16 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	}
 
 	var deliveryPolicy DeliverPolicy
-	streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
-	if err != nil {
-		return errors.New("Streaminfo: " + err.Error())
-	}
-	lastSeq := streamInfo.State.LastSeq
-
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
 	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
+		streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
+		if err != nil {
+			return err
+		}
+		lastSeq := streamInfo.State.LastSeq
 		lastMessages := (lastSeq - uint64(consumer.LastMessages)) + 1
 		if int(lastMessages) < 1 {
 			lastMessages = uint64(1)
@@ -1106,7 +1105,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			return Options{}, err
 		}
 		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
-		appUsers = append(appUsers, &User{Username: "$memphis_user", Password: configuration.CONNECTION_TOKEN})
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME, Password: configuration.CONNECTION_TOKEN})
 		for _, user := range users {
 			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
 		}

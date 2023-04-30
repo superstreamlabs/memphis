@@ -1,19 +1,19 @@
 .version-upgrade-container{
-    height: 100%;
+    min-height: 450px;
     width: 100%;
     display: flex;
     position: relative; 
     flex-direction: column;
-    justify-content: space-evenly;
-    padding-bottom: 15px;
+    padding-top: 5vh;
+    gap: 5vh;
+    padding-bottom: 5vh;
     p{
         margin: 0;
     }
     .banner-section{
         display: flex;
-        padding-left: 5%;
+        padding-left: 3%;
         align-items:center;
-        height: 30vh;
         .actions{
             position: absolute;
             left: 10%;
@@ -38,6 +38,7 @@
             .buttons{
                 display: flex;
                 justify-content:space-between;
+                gap: 10px;
                 .button-container{
                     margin-top: 10px;
                     button{
@@ -48,7 +49,7 @@
         }
     }
     .feature-list{
-        margin-left: 5%;
+        margin-left: 3%;
         display: flex;
         height: calc(100% - 35vh);
         position: relative;

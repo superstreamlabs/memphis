@@ -327,16 +327,12 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 		CACertPool := x509.NewCertPool()
 		CACertPool.AppendCertsFromPEM(CACert)
 
-		if configuration.METADATA_DB_TLS_MUTUAL {
-			cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
-			if err != nil {
-				return MetadataStorage{}, err
-			}
-
-			config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
-		} else {
-			config.ConnConfig.TLSConfig = &tls.Config{RootCAs: CACertPool, InsecureSkipVerify: true}
+		cert, err := tls.LoadX509KeyPair(configuration.METADATA_DB_TLS_CRT, configuration.METADATA_DB_TLS_KEY)
+		if err != nil {
+			return MetadataStorage{}, err
 		}
+
+		config.ConnConfig.TLSConfig = &tls.Config{Certificates: []tls.Certificate{cert}, RootCAs: CACertPool, InsecureSkipVerify: true}
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, config)
@@ -2036,7 +2032,13 @@ func InsertNewConsumer(name string,
 	}
 
 	if err := rows.Err(); err != nil {
-		return false, models.Consumer{}, 0, err
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			// Handle unique constraint violation error
+			return true, models.Consumer{}, 0, nil
+		} else {
+			return false, models.Consumer{}, 0, err
+		}
 	}
 
 	if err := rows.Err(); err != nil {
@@ -2215,7 +2217,6 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 	}
 
 	return count, nil
-
 }
 
 func CountActiveConsumersByStationID(stationId int) (int64, error) {
@@ -2983,7 +2984,6 @@ func DeleteIntegration(name string) error {
 	}
 
 	return nil
-
 }
 
 func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
@@ -3314,6 +3314,28 @@ func GetAllUsers() ([]models.FilteredGenericUser, error) {
 	return users, nil
 }
 
+func CountAllUsers() (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_users", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 func GetAllUsersByType(userType string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -3547,7 +3569,6 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		Users:    userArr,
 	}
 	return newTag, nil
-
 }
 
 func InsertEntityToTag(tagName string, entity string, entity_id int) error {
@@ -3996,7 +4017,6 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	}
 
 	return true, message[0], nil
-
 }
 
 func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload) (int, error) {
@@ -4158,7 +4178,6 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 		return err
 	}
 	return nil
-
 }
 
 func DropDlsMessages(messageIds []int) error {
@@ -4256,7 +4275,6 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
 	}
 
 	return dlsMsgs, nil
-
 }
 
 func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {

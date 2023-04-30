@@ -249,15 +249,17 @@ func CreateRootUserOnFirstSystemLoad() error {
 				installationType = "cluster"
 				k8sClusterTimestamp, err := getK8sClusterTimestamp()
 				if err == nil {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
 					deviceIdValue = k8sClusterTimestamp
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
 				}
 			} else if configuration.DOCKER_ENV == "true" {
 				installationType = "stand-alone-docker"
 				dockerMacAddress, err := getDockerMacAddress()
 				if err == nil {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
 					deviceIdValue = dockerMacAddress
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
 				}
 			}
 
@@ -511,17 +513,32 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	// 	return
 	// }
 
+	showSignup := true
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
 		serv.Errorf("GetSignUpFlag: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	if loggedIn {
+		showSignup = false
+	} else {
+		count, err := db.CountAllUsers()
+		if err != nil {
+			serv.Errorf("GetSignUpFlag: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if count > 1 { // more than 1 user exists
+			showSignup = false
+		}
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent("", "user-open-ui")
 	}
-	c.IndentedJSON(200, gin.H{"show_signup": !loggedIn})
+	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
@@ -551,6 +568,10 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exist") {
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
+			return
+		}
 		serv.Errorf("CreateUserSignUp error: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return

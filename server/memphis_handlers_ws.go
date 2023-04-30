@@ -75,7 +75,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh ch
 				}
 				update, err := updateFiller()
 				if err != nil {
-					if !IsNatsErr(err, JSStreamNotFoundErr) {
+					if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
 						s.Errorf("memphisWSLoop: " + err.Error())
 					}
 					continue
