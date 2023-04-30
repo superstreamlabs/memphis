@@ -395,22 +395,13 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			exist, tenant, err := db.GetTenantById(message.AccountId)
+			exist, station, err := db.GetStationByName(message.StationName, message.AccountName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: Account couldn't been found")
-				return
-			}
-			exist, station, err := db.GetStationByName(message.StationName, tenant.Name)
-			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
-				return
-			}
-			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + "couldn't been found")
+				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + " couldn't been found")
 				return
 			}
 
@@ -425,7 +416,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenant.Name)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, message.AccountName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
