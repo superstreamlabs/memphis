@@ -417,6 +417,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
+			message.Message.TimeSent = time.Now()
 			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
