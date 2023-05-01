@@ -54,7 +54,6 @@ function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
-    const [systemVersion, setSystemVersion] = useState('');
     const [popoverOpen, setPopoverOpen] = useState(false);
 
     const getCompanyLogo = useCallback(async () => {
@@ -73,8 +72,9 @@ function SideBar() {
             if (data) {
                 const latest = await GithubRequest(LATEST_RELEASE_URL);
                 let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', ''));
+                let system_version = data.version;
                 dispatch({ type: 'IS_LATEST', payload: is_latest });
-                setSystemVersion(data.version);
+                dispatch({ type: 'CURRENT_VERSION', payload: system_version });
             }
         } catch (error) {}
     }, []);
@@ -248,7 +248,7 @@ function SideBar() {
                     onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
                 >
                     {!state.isLatest && <div className="update-note" />}
-                    <p>v{systemVersion}</p>
+                    <p>v{state.currentVersion}</p>
                 </version>
             </div>
         </div>
