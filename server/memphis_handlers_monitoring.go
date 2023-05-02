@@ -1428,7 +1428,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station.Name, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

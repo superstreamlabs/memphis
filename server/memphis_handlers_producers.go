@@ -106,6 +106,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				CreatedBy:         connection.CreatedBy,
 				CreatedByUsername: connection.CreatedByUsername,
 				CreatedAt:         time.Now(),
+				TenantName:        user.TenantName,
 			}
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
@@ -150,6 +151,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			CreatedBy:         connection.CreatedBy,
 			CreatedByUsername: connection.CreatedByUsername,
 			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -405,6 +407,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
+		TenantName:        user.TenantName,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

@@ -141,7 +141,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = RemoveAllAuditLogsByStation(station.Name)
+	err = RemoveAllAuditLogsByStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
 	}
@@ -321,6 +321,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -810,6 +811,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
+		TenantName:        user.TenantName,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1034,6 +1036,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1507,6 +1510,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -1614,6 +1618,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
+		TenantName:        user.TenantName,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)
@@ -1755,6 +1760,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		CreatedBy:         user.ID,
 		CreatedByUsername: user.Username,
 		CreatedAt:         time.Now(),
+		TenantName:        user.TenantName,
 	}
 	auditLogs = append(auditLogs, newAuditLog)
 	err = CreateAuditLogs(auditLogs)

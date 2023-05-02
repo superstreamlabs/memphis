@@ -272,7 +272,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
-	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station)
+	auditLogs, err := h.AuditLogs.GetAuditLogsByStation(station.Name, tenantName)
 	if err != nil {
 		return map[string]any{}, err
 	}

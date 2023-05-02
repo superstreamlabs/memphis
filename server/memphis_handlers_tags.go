@@ -258,6 +258,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 			CreatedBy:         user.ID,
 			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
+			TenantName:        user.TenantName,
 		}
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
@@ -384,6 +385,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					CreatedBy:         user.ID,
 					CreatedByUsername: user.Username,
 					CreatedAt:         time.Now(),
+					TenantName:        user.TenantName,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)
@@ -441,6 +443,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					CreatedBy:         user.ID,
 					CreatedByUsername: user.Username,
 					CreatedAt:         time.Now(),
+					TenantName:        user.TenantName,
 				}
 
 				auditLogs = append(auditLogs, newAuditLog)

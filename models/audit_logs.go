@@ -22,6 +22,7 @@ type AuditLog struct {
 	CreatedBy         int       `json:"created_by"`
 	CreatedByUsername string    `json:"created_by_username"`
 	CreatedAt         time.Time `json:"created_at"`
+	TenantName        string    `json:"tenant_name"`
 }
 
 type GetAllAuditLogsByStationSchema struct {

@@ -87,9 +87,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMPTZ NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id));
-	CREATE INDEX station_name
-	ON audit_logs (station_name);`
+	CREATE INDEX audit_logs_station_tenant_idx ON audit_logs (station_name, tenant_name);`
 
 	alterUsersTable := `
 	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
@@ -840,15 +840,17 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	createdBy := auditLog[0].CreatedBy
 	createdAt := auditLog[0].CreatedAt
 	createdByUserName := auditLog[0].CreatedByUsername
+	tenantName := auditLog[0].TenantName
 
 	query := `INSERT INTO audit_logs ( 
 		station_name, 
 		message, 
 		created_by,
 		created_by_username,
-		created_at
+		created_at,
+		tenant_name
 		) 
-    VALUES($1, $2, $3, $4, $5) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_audit_logs", query)
 	if err != nil {
@@ -857,7 +859,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 
 	newAuditLog := models.AuditLog{}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		stationName, message, createdBy, createdByUserName, createdAt)
+		stationName, message, createdBy, createdByUserName, createdAt, tenantName)
 	if err != nil {
 		return err
 	}
@@ -876,7 +878,7 @@ func InsertAuditLogs(auditLogs []interface{}) error {
 	return nil
 }
 
-func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
+func GetAuditLogsByStation(name string, tenantName string) ([]models.AuditLog, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -884,13 +886,13 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 		return []models.AuditLog{}, err
 	}
 	defer conn.Release()
-	query := `SELECT a.id, a.station_name, a.message, a.created_by, a.created_by_username, a.created_at FROM audit_logs AS a 
-		WHERE a.station_name = $1`
+	query := `SELECT * FROM audit_logs AS a
+		WHERE a.station_name = $1 AND a.tenant_name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return []models.AuditLog{}, err
 	}
@@ -905,7 +907,7 @@ func GetAuditLogsByStation(name string) ([]models.AuditLog, error) {
 	return auditLogs, nil
 }
 
-func RemoveAllAuditLogsByStation(name string) error {
+func RemoveAllAuditLogsByStation(name string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -916,14 +918,14 @@ func RemoveAllAuditLogsByStation(name string) error {
 	defer conn.Release()
 
 	removeAuditLogs := `DELETE FROM audit_logs
-	WHERE station_name = $1`
+	WHERE station_name = $1 AND tenant_name = $2`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_station", removeAuditLogs)
 	if err != nil {
 		return err
 	}
 
-	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
 	}
