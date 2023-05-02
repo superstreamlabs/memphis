@@ -797,10 +797,15 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 	reply := durableName + "_reply"
 	req := []byte(strconv.Itoa(amount))
 
-	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return nil, err
+	}
+
+	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
 			// ack
-			s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(account, reply, []byte(_EMPTY_))
 
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
@@ -836,7 +841,7 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 		return nil, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, req, true)
 
 	var msgs []StoredMsg
 	timer := time.NewTimer(timeout)
@@ -851,7 +856,7 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
+	s.unsubscribeOnAcc(account, sub)
 	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, streamName, durableName) })
 
 	return msgs, nil
@@ -904,8 +909,11 @@ func (s *Server) memphisGetMessage(tenantName, streamName string, msgSeq uint64)
 	return resp.Message, nil
 }
 
-func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
-	acc := s.memphisGlobalAccount()
+func (s *Server) queueSubscribe(tenantName string, subj, queueGroupName string, cb simplifiedMsgHandler) error {
+	acc, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
 	c := acc.ic
 
 	acc.mu.Lock()
@@ -917,7 +925,7 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHan
 		cb(c, subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
+	_, err = c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
 
 	return err
 }
@@ -957,7 +965,7 @@ func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
 	s.sendInternalAccountMsg(acc, reply, msg)
 }
 
-func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error {
+func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers []byte) error {
 	hdrs := make(map[string]string)
 	err := json.Unmarshal(headers, &hdrs)
 	if err != nil {
@@ -970,7 +978,12 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		delete(hdrs, "producedBy")
 	}
 
-	s.sendInternalMsgWithHeaderLocked(s.memphisGlobalAccount(), subject, hdrs, data)
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
+
+	s.sendInternalMsgWithHeaderLocked(account, subject, hdrs, data)
 	return nil
 }
 

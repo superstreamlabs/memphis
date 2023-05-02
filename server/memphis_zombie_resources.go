@@ -14,7 +14,6 @@ package server
 import (
 	"encoding/json"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"strconv"
@@ -30,7 +29,7 @@ func (srv *Server) removeStaleStations() {
 	for _, s := range stations {
 		go func(srv *Server, s models.Station) {
 			stationName, _ := StationNameFromStr(s.Name)
-			_, err = srv.memphisStreamInfo(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, stationName.Intern())
+			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
 				err := db.DeleteStation(s.Name, s.TenantName)

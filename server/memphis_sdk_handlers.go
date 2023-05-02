@@ -139,41 +139,41 @@ func (tnr *getTenantNameResponse) SetError(err error) {
 	tnr.Err = err.Error()
 }
 
-func (s *Server) initializeSDKHandlers() {
+func (s *Server) initializeSDKHandlers(tenantName string) {
 	//stations
-	s.queueSubscribe("$memphis_station_creations",
+	s.queueSubscribe(tenantName, "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe("$memphis_station_destructions",
+	s.queueSubscribe(tenantName, "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe("$memphis_producer_creations",
+	s.queueSubscribe(tenantName, "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe("$memphis_producer_destructions",
+	s.queueSubscribe(tenantName, "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe("$memphis_consumer_creations",
+	s.queueSubscribe(tenantName, "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe("$memphis_consumer_destructions",
+	s.queueSubscribe(tenantName, "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
 	// schema attachements
-	s.queueSubscribe("$memphis_schema_attachments",
+	s.queueSubscribe(tenantName, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe("$memphis_schema_detachments",
+	s.queueSubscribe(tenantName, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
 
 	// tenants
-	s.queueSubscribe("$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
+	s.queueSubscribe(tenantName, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
 		getTenantNameHandler(s))
 }
 
@@ -231,12 +231,16 @@ func detachSchemaHandler(s *Server) simplifiedMsgHandler {
 	}
 }
 
-func respondWithErr(s *Server, replySubject string, err error) {
+func respondWithErr(tenantName string, s *Server, replySubject string, err error) {
 	resp := []byte("")
 	if err != nil {
 		resp = []byte(err.Error())
 	}
-	s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubject, resp)
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		resp = []byte(err.Error())
+	}
+	s.sendInternalAccountMsg(account, replySubject, resp)
 }
 
 func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
@@ -246,21 +250,27 @@ func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subje
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	respondWithErr(c.srv, reply, err)
+	tenantName := c.acc.GetName()
+	respondWithErr(tenantName, c.srv, reply, err)
 }
 
-func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
+func respondWithResp(tenantName string, s *Server, replySubject string, resp memphisResponse) {
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		serv.Errorf("respondWithResp: " + err.Error())
+		return
+	}
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
 		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
-	s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubject, rawResp)
+	s.sendInternalAccountMsg(account, replySubject, rawResp)
 }
 
-func respondWithRespErr(s *Server, replySubject string, err error, resp memphisResponse) {
+func respondWithRespErr(tenantName string, s *Server, replySubject string, err error, resp memphisResponse) {
 	resp.SetError(err)
-	respondWithResp(s, replySubject, resp)
+	respondWithResp(tenantName, s, replySubject, resp)
 }
 
 func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) {
@@ -270,5 +280,6 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 		s.Errorf("SendUpdateToClients: " + err.Error())
 		return
 	}
+	//TODO: pass tenant name
 	s.sendInternalAccountMsg(s.memphisGlobalAccount(), subject, msg)
 }

@@ -30,7 +30,7 @@ const (
 type PoisonMessagesHandler struct{ S *Server }
 
 func (s *Server) ListenForPoisonMessages() {
-	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
 		"$memphis_poison_messages_listeners_group",
 		createPoisonMessageHandler(s))
 }

@@ -800,7 +800,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(tenantName, throughputStreamNameV1)
+	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	streamInfo, err := serv.memphisStreamInfo(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -818,8 +819,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-
-	err = serv.memphisAddConsumer(tenantName, throughputStreamNameV1, &cc)
+	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	err = serv.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -829,9 +830,11 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
+	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 	sub, err := serv.subscribeOnAcc(serv.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
+			//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 			serv.sendInternalAccountMsg(serv.memphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
@@ -853,11 +856,12 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		return throughputs, err
 	}
 
-	account, err := serv.lookupAccount(tenantName)
-	if err != nil {
-		return throughputs, err
-	}
-	serv.sendInternalAccountMsgWithReply(account, subject, reply, nil, req, true)
+	// account, err := serv.lookupAccount(tenantName)
+	// if err != nil {
+	// 	return throughputs, err
+	// }
+	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), subject, reply, nil, req, true)
 	timeout := 300 * time.Millisecond
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -872,7 +876,10 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.memphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, throughputStreamNameV1, durableName) })
+	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	time.AfterFunc(500*time.Millisecond, func() {
+		serv.memphisRemoveConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1, durableName)
+	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)

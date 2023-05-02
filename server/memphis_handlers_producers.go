@@ -91,7 +91,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(station.TenantName,s, pStationName, connection.CreatedBy, user.Username)
+		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 			return false, false, err
@@ -180,24 +180,26 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
 	sn, err := StationNameFromStr(cpr.StationName)
+	tenantName := c.acc.GetName()
 	if err != nil {
-		respondWithErr(s, reply, err)
+		respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	_, _, err = s.createProducerDirectCommon(c, cpr.Name,
 		cpr.ProducerType, cpr.ConnectionId, sn)
-	respondWithErr(s, reply, err)
+	respondWithErr(tenantName, s, reply, err)
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequestV1
 	var resp createProducerResponse
+	tenantName := c.acc.GetName()
 
 	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
 		if err := json.Unmarshal(msg, &cprV0); err != nil {
 			s.Errorf("createProducerDirect: %v", err.Error())
-			respondWithRespErr(s, reply, err, &resp)
+			respondWithRespErr(tenantName, s, reply, err, &resp)
 			return
 		}
 		s.createProducerDirectV0(c, reply, cprV0)
@@ -207,13 +209,13 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(s, reply, err, &resp)
+		respondWithRespErr(tenantName, s, reply, err, &resp)
 		return
 	}
 
 	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
 	if err != nil {
-		respondWithRespErr(s, reply, err, &resp)
+		respondWithRespErr(tenantName, s, reply, err, &resp)
 		return
 	}
 
@@ -221,17 +223,17 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	resp.ClusterSendNotification = clusterSendNotification
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, c.acc.GetName())
 	if err == ErrNoSchema {
-		respondWithResp(s, reply, &resp)
+		respondWithResp(tenantName, s, reply, &resp)
 		return
 	}
 	if err != nil {
 		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(s, reply, err, &resp)
+		respondWithRespErr(tenantName, s, reply, err, &resp)
 		return
 	}
 
 	resp.SchemaUpdate = *schemaUpdate
-	respondWithResp(s, reply, &resp)
+	respondWithResp(tenantName, s, reply, &resp)
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -352,36 +354,37 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 
 func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var dpr destroyProducerRequest
+	tenantName := c.acc.GetName()
 	if err := json.Unmarshal(msg, &dpr); err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
-		respondWithErr(s, reply, err)
+		respondWithErr(tenantName, s, reply, err)
 		return
 	}
 
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithErr(tenantName, s, reply, err)
 		return
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(s, reply, err)
+		respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)
-		respondWithErr(s, reply, errors.New(errMsg))
+		respondWithErr(tenantName, s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -414,7 +417,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		analytics.SendEvent(username, "user-remove-producer-sdk")
 	}
 
-	respondWithErr(s, reply, nil)
+	respondWithErr(tenantName, s, reply, nil)
 }
 
 func (ph ProducersHandler) ReliveProducers(connectionId string) error {

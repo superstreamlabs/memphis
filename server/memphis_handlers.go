@@ -59,8 +59,12 @@ func (s *Server) InitializeMemphisHandlers() {
 	serv = s
 	s.memphis.nuid = nuid.New()
 
-	s.initializeSDKHandlers()
-	s.initWS()
+	accounts := s.opts.Accounts
+	for _, account := range accounts {
+		s.initializeSDKHandlers(account.GetName())
+		s.initWS(account.GetName())
+	}
+
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {

@@ -43,7 +43,7 @@ type memphisWSReqTenantsToFiller struct {
 	filler  memphisWSReqFiller
 }
 
-func (s *Server) initWS() {
+func (s *Server) initWS(tenantName string) {
 	ws := &s.memphis.ws
 	ws.subscriptions = NewConcurrentMap[memphisWSReqTenantsToFiller]()
 	handlers := Handlers{
@@ -56,7 +56,7 @@ func (s *Server) initWS() {
 		Schemas:    SchemasHandler{S: s},
 	}
 
-	s.queueSubscribe(memphisWS_Subj_Subs,
+	s.queueSubscribe(tenantName, memphisWS_Subj_Subs,
 		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 
@@ -184,7 +184,12 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			return
 		}
 
-		s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, serverName)
+		account, err := s.lookupAccount(tenantName)
+		if err != nil {
+			s.Errorf("memphis websocket: " + err.Error())
+			return
+		}
+		s.sendInternalAccountMsg(account, reply, serverName)
 	}
 }
 

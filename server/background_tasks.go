@@ -113,7 +113,7 @@ func (s *Server) ListenForConfigReloadEvents() error {
 }
 
 func (s *Server) ListenForNotificationEvents() error {
-	err := s.queueSubscribe(NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var notification models.Notification
 			err := json.Unmarshal(msg, &notification)
@@ -138,7 +138,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) ListenForPoisonMsgAcks() error {
-	err := s.queueSubscribe(PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var msgToAck models.PmAckMsg
 			err := json.Unmarshal(msg, &msgToAck)
@@ -331,7 +331,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
 	subject := TIERED_STORAGE_CONSUMER + "_reply"
-	err := serv.queueSubscribe(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	err := serv.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			//Ignore 409 Exceeded MaxWaiting cases
 			if reply != "" {
@@ -388,7 +388,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)
