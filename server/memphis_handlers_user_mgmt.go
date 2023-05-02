@@ -748,14 +748,8 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
-		account, err := serv.lookupAccount(user.TenantName)
-		if err != nil {
-			serv.Errorf("AddUser: User " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(account, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -879,14 +873,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
-		account, err := serv.lookupAccount(user.TenantName)
-		if err != nil {
-			serv.Errorf("AddUser: User " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(account, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
