@@ -104,7 +104,7 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.ID, tenantName)
+	err = db.UpdateConnectionsOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
 	}

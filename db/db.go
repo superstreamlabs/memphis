@@ -717,7 +717,7 @@ func UpdateConnection(connectionId string, isActive bool) error {
 	return nil
 }
 
-func UpdateConncetionsOfDeletedUser(userId int, tenantName string) error {
+func UpdateConnectionsOfDeletedUser(userId int, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -725,7 +725,7 @@ func UpdateConncetionsOfDeletedUser(userId int, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)' AND tenant_name = %2`
+	query := `UPDATE connections SET created_by = 0, created_by_username = CONCAT(created_by_username, '(deleted)') WHERE created_by = $1 AND created_by_username NOT LIKE '%(deleted)' AND tenant_name = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection_of_deleted_user", query)
 	if err != nil {
 		return err
