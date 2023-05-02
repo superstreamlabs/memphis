@@ -60,7 +60,7 @@ func (s *Server) initWS(tenantName string) {
 		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 
-	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
+	go memphisWSLoop(tenantName, s, ws.subscriptions, ws.quitCh)
 }
 
 func deleteTenantFromSub(tenantName string, subs *concurrentMap[memphisWSReqTenantsToFiller], key string) {
@@ -84,7 +84,7 @@ func addTenantToSub(tenantName string, subs *concurrentMap[memphisWSReqTenantsTo
 	return nil
 }
 
-func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], quitCh chan struct{}) {
+func memphisWSLoop(tenantName string, s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], quitCh chan struct{}) {
 	ticker := time.NewTicker(ws_updates_interval_sec * time.Second)
 	for {
 		select {
@@ -94,30 +94,32 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+s.opts.ServerName)
 				for tenant := range updateFiller.tenants {
-					acc, err := s.lookupAccount(tenant)
-					if err != nil {
-						s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
-						continue
-					}
-					if !acc.SubscriptionInterest(replySubj) {
-						s.Debugf("removing tenant "+tenant+" ws subscription %s", replySubj)
-						deleteTenantFromSub(tenant, subs, k)
-						continue
-					}
-					update, err := updateFiller.filler(tenant)
-					if err != nil {
-						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
+					if tenant == tenantName {
+						acc, err := s.lookupAccount(tenant)
+						if err != nil {
 							s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
+							continue
 						}
-						continue
-					}
-					updateRaw, err := json.Marshal(update)
-					if err != nil {
-						s.Errorf("memphisWSLoop: " + err.Error())
-						continue
-					}
+						if !acc.SubscriptionInterest(replySubj) {
+							s.Debugf("removing tenant "+tenant+" ws subscription %s", replySubj)
+							deleteTenantFromSub(tenant, subs, k)
+							continue
+						}
+						update, err := updateFiller.filler(tenant)
+						if err != nil {
+							if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
+								s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
+							}
+							continue
+						}
+						updateRaw, err := json.Marshal(update)
+						if err != nil {
+							s.Errorf("memphisWSLoop: " + err.Error())
+							continue
+						}
 
-					s.sendInternalAccountMsg(acc, replySubj, updateRaw)
+						s.sendInternalAccountMsg(acc, replySubj, updateRaw)
+					}
 				}
 			}
 		case <-quitCh:
