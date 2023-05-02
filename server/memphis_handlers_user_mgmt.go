@@ -701,7 +701,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
-			password = body.Password
+			password, err = EncryptAES([]byte(body.Password))
+			if err != nil {
+				serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 			avatarId = 1
 			if body.AvatarId > 0 {
 				avatarId = body.AvatarId
@@ -710,6 +715,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
+
 	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())

@@ -14,7 +14,13 @@
 package server
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/tls"
+	"encoding/base64"
+	"errors"
+	"fmt"
 )
 
 // Where we maintain all of the available ciphers
@@ -100,4 +106,69 @@ func defaultCurvePreferences() []tls.CurveID {
 		tls.CurveP384,
 		tls.CurveP521,
 	}
+}
+
+func EncryptAES(plaintext []byte) (string, error) {
+	key, err := getAESKey()
+	if err != nil {
+		return "", err
+	}
+
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	blockSize := c.BlockSize()
+	padding := blockSize - len(plaintext)%blockSize
+	paddedPlaintext := append(plaintext, bytes.Repeat([]byte{byte(padding)}, padding)...)
+
+	ciphertext := make([]byte, len(paddedPlaintext))
+	mode := cipher.NewCBCEncrypter(c, key[:blockSize])
+	mode.CryptBlocks(ciphertext, paddedPlaintext)
+	return base64.URLEncoding.EncodeToString(ciphertext), nil
+}
+
+func DecryptAES(encryptedValue string) (string, error) {
+	key, err := getAESKey()
+	if err != nil {
+		return "", err
+	}
+
+	ciphertextBytes, err := base64.URLEncoding.DecodeString(encryptedValue)
+	if err != nil {
+		return "", err
+	}
+
+	c, err := aes.NewCipher(key)
+	if err != nil {
+		return "", err
+	}
+
+	blockSize := c.BlockSize()
+	if len(ciphertextBytes) < blockSize {
+		return "", errors.New("ciphertext too short")
+	}
+
+	plaintext := make([]byte, len(ciphertextBytes))
+	mode := cipher.NewCBCDecrypter(c, key[:blockSize])
+	mode.CryptBlocks(plaintext, ciphertextBytes)
+
+	padSize := int(plaintext[len(plaintext)-1])
+	if padSize < 1 || padSize > aes.BlockSize {
+		return "", fmt.Errorf("invalid padding size")
+	}
+
+	unpadded := plaintext[:len(plaintext)-padSize]
+	return string(unpadded), nil
+}
+
+func getAESKey() ([]byte, error) {
+	var key []byte
+	if configuration.DOCKER_ENV == "true" {
+		key = []byte(ENCRYPTION_SECRET_KEY)
+	} else {
+		key = []byte(configuration.ENCRYPTION_SECRET_KEY)
+	}
+	return key, nil
 }

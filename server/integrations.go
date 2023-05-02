@@ -53,6 +53,19 @@ func InitializeConnection(integrationsType string) error {
 	} else if !exist {
 		return nil
 	}
+	if value, ok := integration.Keys["secret_key"]; ok {
+		decryptedValue, err := DecryptAES(value)
+		if err != nil {
+			return err
+		}
+		integration.Keys["secret_key"] = decryptedValue
+	} else if value, ok := integration.Keys["auth_token"]; ok {
+		decryptedValue, err := DecryptAES(value)
+		if err != nil {
+			return err
+		}
+		integration.Keys["auth_token"] = decryptedValue
+	}
 	CacheDetails(integrationsType, integration.Keys, integration.Properties)
 	return nil
 }
