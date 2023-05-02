@@ -21,6 +21,7 @@ import (
 	"io"
 	"math"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -794,12 +795,12 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": mh.S.MemphisVersion()})
 }
 
-func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputResponse, error) {
+func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.BrokerThroughputResponse, error) {
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(throughputStreamNameV1)
+	streamInfo, err := serv.memphisStreamInfo(tenantName, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -818,7 +819,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 		Replicas:      1,
 	}
 
-	err = serv.memphisAddConsumer(throughputStreamNameV1, &cc)
+	err = serv.memphisAddConsumer(tenantName, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -852,7 +853,11 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 		return throughputs, err
 	}
 
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	account, err := serv.lookupAccount(tenantName)
+	if err != nil {
+		return throughputs, err
+	}
+	serv.sendInternalAccountMsgWithReply(account, subject, reply, nil, req, true)
 	timeout := 300 * time.Millisecond
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -867,7 +872,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.memphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(throughputStreamNameV1, durableName) })
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, throughputStreamNameV1, durableName) })
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)
@@ -959,7 +964,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (model
 	}()
 
 	go func() {
-		brokersThroughputs, err := mh.GetBrokersThroughputs()
+		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
 		if err != nil {
 			*generalErr = err
 			return
@@ -1422,7 +1427,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
@@ -1715,7 +1720,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1752,7 +1757,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1802,7 +1807,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 cleanup:
 	timer.Stop()
 	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(syslogsStreamName, durableName) })
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {

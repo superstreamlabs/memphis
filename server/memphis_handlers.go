@@ -72,9 +72,9 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
+func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
-	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false)
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, 1, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}

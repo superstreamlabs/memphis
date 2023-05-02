@@ -123,7 +123,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 	}
 
 	if shouldDeleteStream {
-		err = s.RemoveStream(stationName.Intern())
+		err = s.RemoveStream(station.TenantName,stationName.Intern())
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			return err
 		}
@@ -173,7 +173,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
+	exist, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -282,7 +282,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if shouldCreateStream {
-		err = s.CreateStream(stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
+		err = s.CreateStream(station.TenantName,stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
 			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
@@ -421,7 +421,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 	if len(stations) == 0 {
 		return []models.ExtendedStationDetails{}, nil
 	} else {
-		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		allStreamInfo, err := serv.memphisAllStreamsInfo(tenantName)
 		if err != nil {
 			return []models.ExtendedStationDetails{}, err
 		}
@@ -521,7 +521,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	} else {
 		stationTotalMsgs := make(map[string]int)
 		tagsHandler := TagsHandler{S: sh.S}
-		allStreamInfo, err := serv.memphisAllStreamsInfo()
+		allStreamInfo, err := serv.memphisAllStreamsInfo(tenantName)
 		if err != nil {
 			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 		}
@@ -778,7 +778,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.CreateStream(stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
+	err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
 	if err != nil {
 		if IsNatsErr(err, JSInsufficientResourcesErr) {
 			serv.Warnf("CreateStation: Station " + body.Name + ": Station can not be created, probably since replicas count is larger than the cluster size")
@@ -1046,12 +1046,12 @@ func (s *Server) removeStationDirectIntern(c *client,
 	respondWithErr(s, reply, nil)
 }
 
-func (sh StationsHandler) GetTotalMessages(stationNameExt string) (int, error) {
+func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string) (int, error) {
 	stationName, err := StationNameFromStr(stationNameExt)
 	if err != nil {
 		return 0, err
 	}
-	totalMessages, err := sh.S.GetTotalMessagesInStation(stationName)
+	totalMessages, err := sh.S.GetTotalMessagesInStation(tenantName, stationName)
 	return totalMessages, err
 }
 
@@ -1272,7 +1272,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	sm, err := sh.S.GetMessage(stationName, uint64(body.MessageSeq))
+	sm, err := sh.S.GetMessage(station.TenantName, stationName, uint64(body.MessageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "The message was not found since it had probably already been deleted"})
@@ -1347,7 +1347,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(stationName, cg.CgName)
+			cgInfo, err := sh.S.GetCgInfo(station.TenantName,stationName, cg.CgName)
 			if err != nil {
 				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1515,7 +1515,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			UpdateType: models.SchemaUpdateTypeInit,
 			Init:       *updateContent,
 		}
-		sh.S.updateStationProducersOfSchemaChange(stationName, update)
+		sh.S.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
 
 		if shouldSendAnalytics {
 			param1 := analytics.EventParam{
@@ -1637,7 +1637,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		Init:       *updateContent,
 	}
 
-	serv.updateStationProducersOfSchemaChange(stationName, update)
+	serv.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
 	respondWithErr(s, reply, nil)
 }
 
@@ -1661,7 +1661,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantNam
 		UpdateType: models.SchemaUpdateTypeDrop,
 	}
 
-	s.updateStationProducersOfSchemaChange(sn, update)
+	s.updateStationProducersOfSchemaChange(station.TenantName, sn, update)
 	return nil
 }
 
@@ -1928,7 +1928,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeStation {
-		err = sh.S.PurgeStream(stationName.Intern())
+		err = sh.S.PurgeStream(station.TenantName,stationName.Intern())
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Errorf("PurgeStation: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1977,7 +1977,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName)
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveMessages: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1991,7 +1991,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	}
 
 	for _, msg := range body.MessageSeqs {
-		err = sh.S.RemoveMsg(stationName, msg)
+		err = sh.S.RemoveMsg(station.TenantName,stationName, msg)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
 				continue

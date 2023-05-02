@@ -122,8 +122,9 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
+	//TODO: pass tenant name
 	// send signal to reload config
-	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err := serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		serv.Errorf("EditConfigurations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -162,7 +163,8 @@ func changeLogsRetention(logsRetention int) error {
 	}
 
 	retentionDur := time.Duration(logsRetention) * time.Hour * 24
-	err = serv.memphisUpdateStream(&StreamConfig{
+		//TODO: pass tenant name
+	err = serv.memphisUpdateStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, &StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,

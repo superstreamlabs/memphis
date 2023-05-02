@@ -201,14 +201,20 @@ func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.
 	return generateSchemaUpdateInit(schema)
 }
 
-func (s *Server) updateStationProducersOfSchemaChange(sn StationName, schemaUpdate models.ProducerSchemaUpdate) {
+func (s *Server) updateStationProducersOfSchemaChange(tenantName string, sn StationName, schemaUpdate models.ProducerSchemaUpdate) {
 	subject := fmt.Sprintf(schemaUpdatesSubjectTemplate, sn.Intern())
 	msg, err := json.Marshal(schemaUpdate)
 	if err != nil {
 		s.Errorf("updateStationProducersOfSchemaChange: marshal failed at station " + sn.external)
 		return
 	}
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		s.Errorf("updateStationProducersOfSchemaChange " + err.Error())
+		return
+	}
+	s.sendInternalAccountMsg(account, subject, msg)
 }
 
 func getSchemaVersionsBySchemaId(id int) ([]models.SchemaVersion, error) {

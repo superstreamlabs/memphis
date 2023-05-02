@@ -149,7 +149,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(s, stationName, connection.CreatedBy, user.Username)
+		station, created, err = CreateDefaultStation(station.TenantName,s, stationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 			serv.Warnf("createConsumerDirectCommon: " + errMsg)
@@ -218,7 +218,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			}
 
 			if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
-				err := s.CreateConsumer(newConsumer, station)
+				err := s.CreateConsumer(station.TenantName,newConsumer, station)
 				if err != nil {
 					if IsNatsErr(err, JSStreamNotFoundErr) {
 						errMsg := "Consumer " + consumerName + " at station " + cStationName + ": station does not exist"
@@ -231,7 +231,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				}
 			}
 		} else {
-			err := s.CreateConsumer(newConsumer, station)
+			err := s.CreateConsumer(station.TenantName, newConsumer, station)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
 					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": station does not exist"
@@ -393,7 +393,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			cg.IsActive = false
 			cg.IsDeleted = true
 		} else { // not deleted
-			cgInfo, err := ch.S.GetCgInfo(stationName, cg.Name)
+			cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
 			if err != nil {
 				continue // ignoring cases where the consumer exist in memphis but not in nats
 			}
@@ -538,7 +538,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	deleted := false
 	if count == 0 { // no other members in this group
-		err = s.RemoveConsumer(stationName, consumer.ConsumersGroup)
+		err = s.RemoveConsumer(station.TenantName, stationName, consumer.ConsumersGroup)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)

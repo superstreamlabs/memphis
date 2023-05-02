@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -282,7 +283,8 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxAckPending: -1,
 				MaxDeliver:    1,
 			}
-			err := serv.memphisAddConsumer(tieredStorageStream, &cc)
+			//TODO: pass tenant name instead of global account
+			err := serv.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, tieredStorageStream, &cc)
 			if err != nil {
 				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
 				return
@@ -320,7 +322,7 @@ func (s *Server) sendPeriodicJsApiFetchTieredStorageMsgs() {
 			reply := durableName + "_reply"
 			amount := 1000
 			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+			serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), subject, reply, nil, req, true)
 		}
 	}
 }

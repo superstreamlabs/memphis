@@ -236,7 +236,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	totalMessages, err := h.Stations.GetTotalMessages(station.Name)
+	totalMessages, err := h.Stations.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		return map[string]any{}, err
 	}

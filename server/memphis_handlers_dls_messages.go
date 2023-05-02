@@ -64,8 +64,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	cgName := message["consumer"].(string)
 	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
-
-	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
+	//TODO: pass dynamic tenant name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	poisonMessageContent, err := s.memphisGetMessage(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -260,7 +260,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		for _, v := range pCg {
-			cgInfo, err := serv.GetCgInfo(sn, v)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
 				return models.DlsMessageResponse{}, err
 			}
@@ -347,7 +347,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}
-		cgInfo, err := serv.GetCgInfo(stationName, cg)
+		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}

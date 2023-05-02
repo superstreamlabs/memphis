@@ -669,7 +669,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	exist, _, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -683,14 +683,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf("CreateUser: " + userTypeError.Error())
+		serv.Warnf("AddUser: " + userTypeError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf("CreateUser: " + usernameError.Error())
+		serv.Warnf("AddUser: " + usernameError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
@@ -699,14 +699,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("CreateUser: Password was not provided for user " + username)
+			serv.Warnf("AddUser: Password was not provided for user " + username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -722,7 +722,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userType == "application" {
 		if configuration.USER_PASS_BASED_AUTH {
 			if body.Password == "" {
-				serv.Warnf("CreateUser: Password was not provided for user " + username)
+				serv.Warnf("AddUser: Password was not provided for user " + username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
@@ -737,7 +737,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, user.TenantName)
 	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -748,10 +748,16 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
-		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		account, err := serv.lookupAccount(user.TenantName)
 		if err != nil {
-			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("AddUser: User " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(account, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -873,8 +879,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
+		account, err := serv.lookupAccount(user.TenantName)
+		if err != nil {
+			serv.Errorf("AddUser: User " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(account, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
