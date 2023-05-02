@@ -1215,14 +1215,14 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	ON s.id = p.station_id 
 	LEFT JOIN consumers AS c 
 	ON s.id = c.station_id
-	WHERE s.is_deleted = false
+	WHERE s.is_deleted = false AND s.tenant_name = $1
 	GROUP BY s.id,p.id,c.id`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details_per_tenant", query)
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}
 
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ExtendedStation{}, err
 	}

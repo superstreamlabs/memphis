@@ -51,7 +51,7 @@ type srvMemphis struct {
 }
 
 type memphisWS struct {
-	subscriptions *concurrentMap[memphisWSReqFiller]
+	subscriptions *concurrentMap[memphisWSReqTenantsToFiller]
 	quitCh        chan struct{}
 }
 
@@ -162,8 +162,3 @@ func replaceDelimiters(name string) string {
 func revertDelimiters(name string) string {
 	return strings.Replace(name, delimiterReplacement, delimiterToReplace, -1)
 }
-
-// func (s *Server) SetMemphisGlobalAccount() error {
-// 	acc, err := s.LookupAccount(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
-// 	s.globalAccount()
-// }
