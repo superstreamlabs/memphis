@@ -12,6 +12,7 @@
 package server
 
 import (
+	"encoding/json"
 	"memphis/conf"
 	"memphis/db"
 )
@@ -39,4 +40,28 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) getTenantName(c *client, reply string, msg []byte) {
+	var tnr getTenantNameRequest
+	var resp getTenantNameResponse
+	if err := json.Unmarshal(msg, &tnr); err != nil {
+		s.Errorf("getTenantName: failed get tenant id: " + err.Error())
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+	exist, tenant, err := db.GetTenantById(tnr.TenantId)
+	if err != nil {
+		serv.Errorf("getTenantName: " + err.Error())
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+	if !exist {
+		serv.Warnf("getTenantName: tenant couldn't been found")
+		respondWithRespErr(s, reply, err, &resp)
+		return
+	}
+
+	resp.TenantName = tenant.Name
+	respondWithResp(s, reply, &resp)
 }

@@ -57,7 +57,7 @@ type SchemaVerseDlsMessageSdk struct {
 	Producer        ProducerDetails `json:"producer"`
 	Message         MessagePayload  `json:"message"`
 	ValidationError string          `json:"validation_error"`
-	AccountId       int             `json:"account_id"`
+	TenantName      string          `json:"tenant_name"`
 }
 
 type DlsMessage struct {
