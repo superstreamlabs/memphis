@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"strconv"
@@ -38,11 +37,15 @@ const (
 	ws_updates_interval_sec             = 5
 )
 
-type memphisWSReqFiller func() (any, error)
+type memphisWSReqFiller func(tenantName string) (any, error)
+type memphisWSReqTenantsToFiller struct {
+	tenants map[string]bool
+	filler  memphisWSReqFiller
+}
 
 func (s *Server) initWS() {
 	ws := &s.memphis.ws
-	ws.subscriptions = NewConcurrentMap[memphisWSReqFiller]()
+	ws.subscriptions = NewConcurrentMap[memphisWSReqTenantsToFiller]()
 	handlers := Handlers{
 		Producers:  ProducersHandler{S: s},
 		Consumers:  ConsumersHandler{S: s},
@@ -60,34 +63,63 @@ func (s *Server) initWS() {
 	go memphisWSLoop(s, ws.subscriptions, ws.quitCh)
 }
 
-func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqFiller], quitCh chan struct{}) {
+func deleteTenantFromSub(tenantName string, subs *concurrentMap[memphisWSReqTenantsToFiller], key string) {
+	subs.Lock()
+	defer subs.Unlock()
+	if f, ok := subs.m[key]; ok {
+		delete(f.tenants, tenantName)
+		subs.m[key] = f
+	}
+}
+
+func addTenantToSub(tenantName string, subs *concurrentMap[memphisWSReqTenantsToFiller], key string) error {
+	subs.Lock()
+	defer subs.Unlock()
+	if f, ok := subs.m[key]; ok {
+		f.tenants[tenantName] = true
+		subs.m[key] = f
+	} else {
+		return errors.New("addTenantToSub: sub not found")
+	}
+	return nil
+}
+
+func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], quitCh chan struct{}) {
 	ticker := time.NewTicker(ws_updates_interval_sec * time.Second)
 	for {
 		select {
 		case <-ticker.C:
 			keys, values := subs.Array()
 			for i, updateFiller := range values {
+				fmt.Println(keys[i])
 				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+s.opts.ServerName)
-				if !s.memphisGlobalAccount().SubscriptionInterest(replySubj) {
-					s.Debugf("removing memphis ws subscription %s", replySubj)
-					subs.Delete(k)
-					continue
-				}
-				update, err := updateFiller()
-				if err != nil {
-					if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
-						s.Errorf("memphisWSLoop: " + err.Error())
+				for tenant := range updateFiller.tenants {
+					acc, err := s.lookupAccount(tenant)
+					if err != nil {
+						s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
+						continue
 					}
-					continue
-				}
-				updateRaw, err := json.Marshal(update)
-				if err != nil {
-					s.Errorf("memphisWSLoop: " + err.Error())
-					continue
-				}
+					if !acc.SubscriptionInterest(replySubj) {
+						s.Debugf("removing tenant "+tenant+" ws subscription %s", replySubj)
+						deleteTenantFromSub(tenant, subs, k)
+						continue
+					}
+					update, err := updateFiller.filler(tenant)
+					if err != nil {
+						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
+							s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
+						}
+						continue
+					}
+					updateRaw, err := json.Marshal(update)
+					if err != nil {
+						s.Errorf("memphisWSLoop: " + err.Error())
+						continue
+					}
 
-				s.sendInternalAccountMsg(s.memphisGlobalAccount(), replySubj, updateRaw)
+					s.sendInternalAccountMsg(acc, replySubj, updateRaw)
+				}
 			}
 		case <-quitCh:
 			ticker.Stop()
@@ -115,6 +147,7 @@ func tokensFromToEnd(subject string, index uint8) string {
 
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
+		tenantName := c.acc.GetName()
 		s.Debugf("memphisWS registration - %s,%s", subj, string(msg))
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
@@ -122,12 +155,17 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		switch trimmedMsg {
 		case memphisWS_SubscribeMsg:
 			if _, ok := subscriptions.Load(filteredSubj); !ok {
-				reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj)
+				reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj, tenantName)
 				if err != nil {
 					s.Errorf("memphis websocket: " + err.Error())
 					return
 				}
-				subscriptions.Add(filteredSubj, reqFiller)
+				subscriptions.Add(filteredSubj, memphisWSReqTenantsToFiller{tenants: map[string]bool{c.acc.GetName(): true}, filler: reqFiller})
+			} else {
+				err := addTenantToSub(tenantName, subscriptions, filteredSubj)
+				if err != nil {
+					s.Errorf("memphis websocket: " + err.Error())
+				}
 			}
 
 		default:
@@ -150,25 +188,25 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	}
 }
 
-func unwrapHandlersFunc[T interface{}](f func(*Handlers) (T, error), h *Handlers) func() (any, error) {
-	return func() (any, error) {
-		return f(h)
+func unwrapHandlersFunc[T interface{}](f func(*Handlers, string) (T, error), h *Handlers, tenantName string) func(string) (any, error) {
+	return func(string) (any, error) {
+		return f(h, tenantName)
 	}
 }
 
-func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphisWSReqFiller, error) {
+func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantName string) (memphisWSReqFiller, error) {
 	subjectHead := tokenAt(subj, 1)
 	switch subjectHead {
 	case memphisWS_Subj_MainOverviewData:
-		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h), nil
+		return unwrapHandlersFunc(memphisWSGetMainOverviewData, h, tenantName), nil
 
 	case memphisWS_Subj_StationOverviewData:
 		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
 		if stationName == _EMPTY_ {
 			return nil, errors.New("invalid station name")
 		}
-		return func() (any, error) {
-			return memphisWSGetStationOverviewData(s, h, stationName)
+		return func(string) (any, error) {
+			return memphisWSGetStationOverviewData(s, h, stationName, tenantName)
 		}, nil
 
 	case memphisWS_Subj_PoisonMsgJourneyData:
@@ -180,43 +218,41 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string) (memphis
 		if poisonMsgId == _EMPTY_ {
 			return nil, errors.New("invalid poison msg id")
 		}
-		return func() (any, error) {
-			return h.PoisonMsgs.GetDlsMessageDetailsById(poisonMsgIdInt, "poison")
+		return func(string) (any, error) {
+			return h.PoisonMsgs.GetDlsMessageDetailsById(poisonMsgIdInt, "poison", tenantName)
 		}, nil
 
 	case memphisWS_Subj_AllStationsData:
-		return unwrapHandlersFunc(memphisWSGetStationsOverviewData, h), nil
+		return unwrapHandlersFunc(memphisWSGetStationsOverviewData, h, tenantName), nil
 
 	case memphisWS_Subj_SysLogsData:
 		logLevel := tokenAt(subj, 2)
 		logSource := tokenAt(subj, 3)
-		return func() (any, error) {
+		return func(string) (any, error) {
 			return memphisWSGetSystemLogs(h, logLevel, logSource)
 		}, nil
 
 	case memphisWS_Subj_AllSchemasData:
-		return unwrapHandlersFunc(memphisWSGetSchemasOverviewData, h), nil
+		return unwrapHandlersFunc(memphisWSGetSchemasOverviewData, h, tenantName), nil
 	default:
 		return nil, errors.New("invalid subject")
 	}
 }
 
-func memphisWSGetMainOverviewData(h *Handlers) (models.MainOverviewData, error) {
-	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	response, err := h.Monitoring.getMainOverviewDataDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+func memphisWSGetMainOverviewData(h *Handlers, tenantName string) (models.MainOverviewData, error) {
+	response, err := h.Monitoring.getMainOverviewDataDetails(tenantName)
 	if err != nil {
 		return models.MainOverviewData{}, err
 	}
 	return response, nil
 }
 
-func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string) (map[string]any, error) {
+func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string, tenantName string) (map[string]any, error) {
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return map[string]any{}, err
 	}
-	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	exist, station, err := db.GetStationByName(sn.Ext(), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, station, err := db.GetStationByName(sn.Ext(), tenantName)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -373,18 +409,16 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string)
 	return response, nil
 }
 
-func memphisWSGetSchemasOverviewData(h *Handlers) ([]models.ExtendedSchema, error) {
-	//TODO: change tenant name
-	schemas, err := h.Schemas.GetAllSchemasDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+func memphisWSGetSchemasOverviewData(h *Handlers, tenantName string) ([]models.ExtendedSchema, error) {
+	schemas, err := h.Schemas.GetAllSchemasDetails(tenantName)
 	if err != nil {
 		return schemas, err
 	}
 	return schemas, nil
 }
 
-func memphisWSGetStationsOverviewData(h *Handlers) ([]models.ExtendedStationDetails, error) {
-	//TODO: need to pass tenant_name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	stations, err := h.Stations.GetStationsDetails(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+func memphisWSGetStationsOverviewData(h *Handlers, tenantName string) ([]models.ExtendedStationDetails, error) {
+	stations, err := h.Stations.GetStationsDetails(tenantName)
 	if err != nil {
 		return stations, err
 	}

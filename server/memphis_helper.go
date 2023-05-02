@@ -1129,18 +1129,20 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			return Options{}, err
 		}
 		tenantsId := map[string]int{}
+		appUsers := []*User{}
+		accounts := []*Account{}
+		addedTenant := map[string]*Account{}
 		for _, tenant := range tenants {
 			name := strings.ToLower(tenant.Name)
 			tenantsId[name] = tenant.ID
+			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
+			accounts = append(accounts, account)
+			addedTenant[name] = account
 		}
-		appUsers := []*User{}
-		accounts := []*Account{}
 		for _, user := range users {
 			name := strings.ToLower(user.TenantName)
-			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: account})
-			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenantsId[name]), Password: configuration.CONNECTION_TOKEN, Account: account})
-			accounts = append(accounts, account)
+			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
 		}
 		opts.Accounts = accounts
 		opts.Users = appUsers
