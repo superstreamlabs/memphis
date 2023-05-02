@@ -146,7 +146,7 @@ func tokensFromToEnd(subject string, index uint8) string {
 
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
-		tenantName := c.acc.GetName()
+		tenantName := c.Account().GetName()
 		s.Debugf("memphisWS registration - %s,%s", subj, string(msg))
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
@@ -159,7 +159,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 					s.Errorf("memphis websocket: " + err.Error())
 					return
 				}
-				subscriptions.Add(filteredSubj, memphisWSReqTenantsToFiller{tenants: map[string]bool{c.acc.GetName(): true}, filler: reqFiller})
+				subscriptions.Add(filteredSubj, memphisWSReqTenantsToFiller{tenants: map[string]bool{c.Account().GetName(): true}, filler: reqFiller})
 			} else {
 				err := addTenantToSub(tenantName, subscriptions, filteredSubj)
 				if err != nil {

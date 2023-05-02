@@ -250,7 +250,7 @@ func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subje
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 

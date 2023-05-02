@@ -151,7 +151,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &csr); err != nil {
 		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -167,7 +167,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	stationName, err := StationNameFromStr(csr.StationName)
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -175,7 +175,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
+	exist, _, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -195,7 +195,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	var schemaDetails models.SchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName, c.acc.GetName())
+		exist, schema, err := db.GetSchemaByName(schemaName, c.Account().GetName())
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -298,7 +298,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	_, user, err := db.GetUserByUsername(username, c.acc.GetName())
+	_, user, err := db.GetUserByUsername(username, c.Account().GetName())
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -964,7 +964,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeStationDirect: " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -979,7 +979,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 	shouldDeleteStream bool) {
 	isNative := shouldDeleteStream
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
@@ -989,7 +989,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
+	exist, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
@@ -1018,7 +1018,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		respondWithErr(tenantName, s, reply, err)
 		return
 	}
-	_, user, err := db.GetUserByUsername(dsr.Username, c.acc.GetName())
+	_, user, err := db.GetUserByUsername(dsr.Username, c.Account().GetName())
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1544,7 +1544,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &asr); err != nil {
 		errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
 		s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
@@ -1557,7 +1557,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		respondWithErr(tenantName, s, reply, err)
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
+	exist, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1601,7 +1601,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(asr.Username, c.acc.GetName())
+	_, user, err := db.GetUserByUsername(asr.Username, c.Account().GetName())
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1676,7 +1676,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantNam
 
 func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
 	var dsr detachSchemaRequest
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1689,7 +1689,7 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 		return
 	}
 
-	err = removeSchemaFromStation(serv, stationName, true, c.acc.GetName())
+	err = removeSchemaFromStation(serv, stationName, true, c.Account().GetName())
 	if err != nil {
 		serv.Errorf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)

@@ -76,7 +76,7 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 }
 
 func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(tenantName, s, reply, err)
 }
@@ -275,7 +275,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequestV1
 	var resp createConsumerResponse
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &ccr); err != nil || ccr.RequestVersion < 1 {
 		var ccrV0 createConsumerRequestV0
 		if err := json.Unmarshal(msg, &ccrV0); err != nil {
@@ -493,7 +493,7 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var dcr destroyConsumerRequest
-	tenantName := c.acc.GetName()
+	tenantName := c.Account().GetName()
 	if err := json.Unmarshal(msg, &dcr); err != nil {
 		s.Errorf("destroyConsumerDirect: %v", err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -509,7 +509,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	name := strings.ToLower(dcr.ConsumerName)
-	_, station, err := db.GetStationByName(stationName.Ext(), c.acc.GetName())
+	_, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
@@ -565,7 +565,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if username == "" {
 			username = dcr.Username
 		}
-		_, user, err := db.GetUserByUsername(username, c.acc.GetName())
+		_, user, err := db.GetUserByUsername(username, c.Account().GetName())
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
