@@ -265,7 +265,7 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Key:    aws.String("memphis"),
 	})
 	if err != nil {
-		err = errors.New("could not upload objects - " + err.Error())
+		err = errors.New("could not delete objects - " + err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
