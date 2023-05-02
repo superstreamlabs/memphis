@@ -91,7 +91,6 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 		case <-ticker.C:
 			keys, values := subs.Array()
 			for i, updateFiller := range values {
-				fmt.Println(keys[i])
 				k := keys[i]
 				replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, k+"."+s.opts.ServerName)
 				for tenant := range updateFiller.tenants {
