@@ -148,13 +148,13 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		encryptedKeys := &keys
+		cloneKeys := copyMaps(keys)
 		encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
 		if err != nil {
 			return models.Integration{}, err
 		}
-		(*encryptedKeys)["secret_key"] = encryptedValue
-		integrationRes, insertErr := db.InsertNewIntegration("s3", *encryptedKeys, properties)
+		cloneKeys["secret_key"] = encryptedValue
+		integrationRes, insertErr := db.InsertNewIntegration("s3", cloneKeys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
@@ -181,13 +181,13 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 }
 
 func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	encryptedKeys := &keys
+	cloneKeys := copyMaps(keys)
 	encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
 	if err != nil {
 		return models.Integration{}, err
 	}
-	(*encryptedKeys)["secret_key"] = encryptedValue
-	s3Integration, err := db.UpdateIntegration("s3", *encryptedKeys, properties)
+	cloneKeys["secret_key"] = encryptedValue
+	s3Integration, err := db.UpdateIntegration("s3", cloneKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}

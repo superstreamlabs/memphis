@@ -334,3 +334,16 @@ func copyStrings(src []string) []string {
 	copy(dst, src)
 	return dst
 }
+
+// copyMaps make a new map of the same size than `src` and copy its content.
+// If `src` is nil, then this returns `nil`
+func copyMaps(src map[string]string) map[string]string {
+	if src == nil {
+		return nil
+	}
+	dst := make(map[string]string, len(src))
+	for k, v := range src {
+		dst[k] = v
+	}
+	return dst
+}
