@@ -189,26 +189,17 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		if err != nil {
 			return slackIntegration, err
 		}
-
-		var integrationRes models.Integration
-		var insertErr error
-		if value, ok := keys["auth_token"]; ok {
-			encryptedKeys := &keys
-			encryptedValue, err := EncryptAES([]byte(value))
-			if err != nil {
-				return models.Integration{}, err
-			}
-			(*encryptedKeys)["auth_token"] = encryptedValue
-			integrationRes, insertErr = db.InsertNewIntegration("slack", *encryptedKeys, properties)
-			if insertErr != nil {
-				return slackIntegration, insertErr
-			}
-		} else {
-			integrationRes, insertErr = db.InsertNewIntegration("slack", keys, properties)
-			if insertErr != nil {
-				return slackIntegration, insertErr
-			}
+		encryptedKeys := &keys
+		encryptedValue, err := EncryptAES([]byte(keys["auth_token"]))
+		if err != nil {
+			return models.Integration{}, err
 		}
+		(*encryptedKeys)["auth_token"] = encryptedValue
+		integrationRes, insertErr := db.InsertNewIntegration("slack", *encryptedKeys, properties)
+		if insertErr != nil {
+			return slackIntegration, insertErr
+		}
+
 		slackIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "slack",
@@ -252,22 +243,15 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		return slackIntegration, err
 	}
 	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
-	if value, ok := keys["auth_token"]; ok {
-		encryptedKeys := &keys
-		encryptedValue, err := EncryptAES([]byte(value))
-		if err != nil {
-			return models.Integration{}, err
-		}
-		(*encryptedKeys)["auth_token"] = encryptedValue
-		slackIntegration, err = db.UpdateIntegration("slack", *encryptedKeys, properties)
-		if err != nil {
-			return models.Integration{}, err
-		}
-	} else {
-		slackIntegration, err = db.UpdateIntegration("slack", keys, properties)
-		if err != nil {
-			return models.Integration{}, err
-		}
+	encryptedKeys := &keys
+	encryptedValue, err := EncryptAES([]byte(authToken))
+	if err != nil {
+		return models.Integration{}, err
+	}
+	(*encryptedKeys)["auth_token"] = encryptedValue
+	slackIntegration, err = db.UpdateIntegration("slack", *encryptedKeys, properties)
+	if err != nil {
+		return models.Integration{}, err
 	}
 
 	integrationToUpdate := models.CreateIntegrationSchema{

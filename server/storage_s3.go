@@ -148,24 +148,15 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		var integrationRes models.Integration
-		var insertErr error
-		if value, ok := keys["secret_key"]; ok {
-			encryptedKeys := &keys
-			encryptedValue, err := EncryptAES([]byte(value))
-			if err != nil {
-				return models.Integration{}, err
-			}
-			(*encryptedKeys)["secret_key"] = encryptedValue
-			integrationRes, insertErr = db.InsertNewIntegration("s3", *encryptedKeys, properties)
-			if insertErr != nil {
-				return models.Integration{}, insertErr
-			}
-		} else {
-			integrationRes, insertErr = db.InsertNewIntegration("s3", keys, properties)
-			if insertErr != nil {
-				return models.Integration{}, insertErr
-			}
+		encryptedKeys := &keys
+		encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+		if err != nil {
+			return models.Integration{}, err
+		}
+		(*encryptedKeys)["secret_key"] = encryptedValue
+		integrationRes, insertErr := db.InsertNewIntegration("s3", *encryptedKeys, properties)
+		if insertErr != nil {
+			return models.Integration{}, insertErr
 		}
 
 		s3Integration = integrationRes
@@ -190,24 +181,15 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 }
 
 func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	var s3Integration models.Integration
-	var err error
-	if value, ok := keys["secret_key"]; ok {
-		encryptedKeys := &keys
-		encryptedValue, err := EncryptAES([]byte(value))
-		if err != nil {
-			return models.Integration{}, err
-		}
-		(*encryptedKeys)["secret_key"] = encryptedValue
-		s3Integration, err = db.UpdateIntegration("s3", *encryptedKeys, properties)
-		if err != nil {
-			return models.Integration{}, err
-		}
-	} else {
-		s3Integration, err = db.UpdateIntegration("s3", keys, properties)
-		if err != nil {
-			return models.Integration{}, err
-		}
+	encryptedKeys := &keys
+	encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+	if err != nil {
+		return models.Integration{}, err
+	}
+	(*encryptedKeys)["secret_key"] = encryptedValue
+	s3Integration, err := db.UpdateIntegration("s3", *encryptedKeys, properties)
+	if err != nil {
+		return models.Integration{}, err
 	}
 
 	integrationToUpdate := models.CreateIntegrationSchema{
