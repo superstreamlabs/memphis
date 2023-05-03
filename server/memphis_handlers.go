@@ -59,11 +59,8 @@ func (s *Server) InitializeMemphisHandlers() {
 	serv = s
 	s.memphis.nuid = nuid.New()
 
-	accounts := s.opts.Accounts
-	for _, account := range accounts {
-		s.initializeSDKHandlers(account.GetName())
-		s.initWS(account.GetName())
-	}
+	s.initializeSDKHandlers()
+	s.initWS()
 
 }
 

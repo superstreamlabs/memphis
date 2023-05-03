@@ -13,6 +13,7 @@ package server
 
 import (
 	"encoding/json"
+	"memphis/conf"
 	"memphis/models"
 )
 
@@ -139,41 +140,41 @@ func (tnr *getTenantNameResponse) SetError(err error) {
 	tnr.Err = err.Error()
 }
 
-func (s *Server) initializeSDKHandlers(tenantName string) {
+func (s *Server) initializeSDKHandlers() {
 	//stations
-	s.queueSubscribe(tenantName, "$memphis_station_creations",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe(tenantName, "$memphis_station_destructions",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe(tenantName, "$memphis_producer_creations",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe(tenantName, "$memphis_producer_destructions",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe(tenantName, "$memphis_consumer_creations",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe(tenantName, "$memphis_consumer_destructions",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
 	// schema attachements
-	s.queueSubscribe(tenantName, "$memphis_schema_attachments",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe(tenantName, "$memphis_schema_detachments",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
 
 	// tenants
-	s.queueSubscribe(tenantName, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
+	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
 		getTenantNameHandler(s))
 }
 

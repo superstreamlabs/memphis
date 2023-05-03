@@ -52,6 +52,18 @@ const (
 	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
 
+var subjects = []string{"$memphis_station_creations",
+	"$memphis_station_destructions",
+	"$memphis_producer_creations",
+	"$memphis_producer_destructions",
+	"$memphis_consumer_creations",
+	"$memphis_consumer_destructions",
+	"$memphis_schema_attachments",
+	"$memphis_schema_detachments",
+	"$memphis_get_tenant_name",
+	"$memphis_ws_subs.>",
+	"$memphis_ws_pubs.%s"}
+
 // JetStream API request kinds
 const (
 	kindStreamInfo     = "$memphis_stream_info"
@@ -1131,13 +1143,24 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 				return Options{}, err
 			}
 		}
+		memphisGlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+		globalStreamsImport := []*streamImport{}
+		globalServicesExport := map[string]*serviceExport{}
+		globalStreamsExportForAllAccounts := map[string]*streamExport{}
+		globalServiceImportForAllAccounts := map[string]*serviceImport{}
+
+		for _, subj := range subjects {
+			globalServicesExport[subj] = &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}}
+			globalStreamsExportForAllAccounts[subj] = &streamExport{exportAuth{approved: map[string]*Account{subj: memphisGlobalAccount}}}
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, from: subj, to: subj, usePub: true}
+		}
 
 		users, err := db.GetAllUsersByType([]string{"application", "root"})
 		if err != nil {
 			return Options{}, err
 		}
 
-		tenants, err := db.GetAllTenants()
+		tenants, err := db.GetAllTenantsWithoutGlobal()
 		if err != nil {
 			return Options{}, err
 		}
@@ -1148,18 +1171,31 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		for _, tenant := range tenants {
 			name := strings.ToLower(tenant.Name)
 			tenantsId[name] = tenant.ID
-			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}, exports: exportMap{streams: globalStreamsExportForAllAccounts}, imports: importMap{services: globalServiceImportForAllAccounts}}
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
 			accounts = append(accounts, account)
 			addedTenant[name] = account
+			globalStreamsImport = append(globalStreamsImport, getStreamsImportForAccout(account)[:]...)
 		}
 		for _, user := range users {
 			name := strings.ToLower(user.TenantName)
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
 		}
+		memphisGlobalAccount.exports = exportMap{services: globalServicesExport}
+		memphisGlobalAccount.imports = importMap{streams: globalStreamsImport}
+		accounts = append(accounts, memphisGlobalAccount)
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: memphisGlobalAccount})
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
 
 	return opts, nil
+}
+
+func getStreamsImportForAccout(acc *Account) []*streamImport {
+	streamsImport := []*streamImport{}
+	for _, subj := range subjects {
+		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
+	}
+	return streamsImport
 }

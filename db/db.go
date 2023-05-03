@@ -4844,6 +4844,34 @@ func GetAllTenants() ([]models.Tenant, error) {
 	return tenants, nil
 }
 
+func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Tenant{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tenants WHERE name != $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_tenants", query)
+	if err != nil {
+		return []models.Tenant{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	if err != nil {
+		return []models.Tenant{}, err
+	}
+	defer rows.Close()
+	tenants, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tenant])
+	if err != nil {
+		return []models.Tenant{}, err
+	}
+	if len(tenants) == 0 {
+		return []models.Tenant{}, nil
+	}
+	return tenants, nil
+}
+
 func GetTenantById(id int) (bool, models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
