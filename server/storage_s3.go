@@ -158,7 +158,6 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
-
 		s3Integration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "s3",

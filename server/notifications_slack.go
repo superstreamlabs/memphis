@@ -199,7 +199,6 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
-
 		slackIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
 			Name:       "slack",

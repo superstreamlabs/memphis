@@ -715,7 +715,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-
 	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
 	if err != nil {
 		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
