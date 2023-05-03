@@ -52,7 +52,7 @@ const (
 	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
 
-var subjects = []string{"$memphis_station_creations",
+var memphisSubjects = []string{"$memphis_station_creations",
 	"$memphis_station_destructions",
 	"$memphis_producer_creations",
 	"$memphis_producer_destructions",
@@ -1149,7 +1149,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		globalStreamsExportForAllAccounts := map[string]*streamExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
-		for _, subj := range subjects {
+		for _, subj := range memphisSubjects {
 			globalServicesExport[subj] = &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}}
 			globalStreamsExportForAllAccounts[subj] = &streamExport{exportAuth{approved: map[string]*Account{subj: memphisGlobalAccount}}}
 			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, from: subj, to: subj, usePub: true}
@@ -1177,14 +1177,15 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			addedTenant[name] = account
 			globalStreamsImport = append(globalStreamsImport, getStreamsImportForAccout(account)[:]...)
 		}
-		for _, user := range users {
-			name := strings.ToLower(user.TenantName)
-			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
-		}
 		memphisGlobalAccount.exports = exportMap{services: globalServicesExport}
 		memphisGlobalAccount.imports = importMap{streams: globalStreamsImport}
 		accounts = append(accounts, memphisGlobalAccount)
 		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: memphisGlobalAccount})
+		addedTenant[conf.MEMPHIS_GLOBAL_ACCOUNT_NAME] = memphisGlobalAccount
+		for _, user := range users {
+			name := strings.ToLower(user.TenantName)
+			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
+		}
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
@@ -1194,7 +1195,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 
 func getStreamsImportForAccout(acc *Account) []*streamImport {
 	streamsImport := []*streamImport{}
-	for _, subj := range subjects {
+	for _, subj := range memphisSubjects {
 		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
 	}
 	return streamsImport
