@@ -223,5 +223,5 @@ const (
 	// DEFAULT_FETCH_TIMEOUT is the default time that the system will wait for an account fetch to return.
 	DEFAULT_ACCOUNT_FETCH_TIMEOUT = 1900 * time.Millisecond
 
-	ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
+	DEFAULT_ENCRYPTION_SECRET_KEY = "thisis32bitlongpassphraseimusing"
 )

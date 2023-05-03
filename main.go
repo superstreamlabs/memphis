@@ -113,6 +113,11 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	s.InitializeMemphisHandlers()
 
+	err = server.EncryptUnencryptedRelevantValues()
+	if err != nil {
+		s.Errorf("Failed encrypt unencrypted values: " + err.Error())
+	}
+
 	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())

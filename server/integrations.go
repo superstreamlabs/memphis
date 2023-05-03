@@ -84,3 +84,77 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 	}
 
 }
+
+func EncryptUnencryptedRelevantValues() error {
+	err := encryptUnencryptedKeysByIntegrationType("s3", "secret_key")
+	if err != nil {
+		return err
+	}
+
+	err = encryptUnencryptedKeysByIntegrationType("slack", "auth_token")
+	if err != nil {
+		return err
+	}
+
+	err = encryptUnencryptedAppUsersPasswords()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string) error {
+	exist, integration, err := db.GetIntegration(integrationType)
+	needToEncrypt := false
+	if err != nil {
+		return err
+	} else if !exist {
+		return nil
+	}
+	if value, ok := integration.Keys["secret_key"]; ok {
+		_, err := DecryptAES(value)
+		if err != nil {
+			needToEncrypt = true
+		}
+	} else if value, ok := integration.Keys["auth_token"]; ok {
+		_, err := DecryptAES(value)
+		if err != nil {
+			needToEncrypt = true
+		}
+	}
+	if needToEncrypt {
+		cloneKeys := copyMaps(integration.Keys)
+		encryptedValue, err := EncryptAES([]byte(integration.Keys[keyTitle]))
+		if err != nil {
+			return err
+		}
+		cloneKeys[keyTitle] = encryptedValue
+		_, err = db.UpdateIntegration(integrationType, cloneKeys, integration.Properties)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func encryptUnencryptedAppUsersPasswords() error {
+	users, err := db.GetAllUsersByType("application")
+	if err != nil {
+		return err
+	}
+	for _, user := range users {
+		_, err := DecryptAES(user.Password)
+		if err != nil {
+			password, err := EncryptAES([]byte(user.Password))
+			if err != nil {
+				return err
+			}
+
+			err = db.ChangeUserPassword(user.Username, password)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
