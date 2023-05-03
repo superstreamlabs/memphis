@@ -85,7 +85,7 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 
 }
 
-func EncryptUnencryptedRelevantValues() error {
+func EncryptUnencryptedValues() error {
 	err := encryptUnencryptedKeysByIntegrationType("s3", "secret_key")
 	if err != nil {
 		return err
@@ -123,13 +123,12 @@ func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string) e
 		}
 	}
 	if needToEncrypt {
-		cloneKeys := copyMaps(integration.Keys)
 		encryptedValue, err := EncryptAES([]byte(integration.Keys[keyTitle]))
 		if err != nil {
 			return err
 		}
-		cloneKeys[keyTitle] = encryptedValue
-		_, err = db.UpdateIntegration(integrationType, cloneKeys, integration.Properties)
+		integration.Keys[keyTitle] = encryptedValue
+		_, err = db.UpdateIntegration(integrationType, integration.Keys, integration.Properties)
 		if err != nil {
 			return err
 		}
