@@ -62,7 +62,7 @@ var subjects = []string{"$memphis_station_creations",
 	"$memphis_schema_detachments",
 	"$memphis_get_tenant_name",
 	"$memphis_ws_subs.>",
-	"$memphis_ws_pubs.%s"}
+	"$memphis_ws_pubs.>"}
 
 // JetStream API request kinds
 const (

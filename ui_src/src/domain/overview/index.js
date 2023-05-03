@@ -131,7 +131,7 @@ function OverView() {
         getOverviewData();
         setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
-            localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+            localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ' ' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                 ? capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_FULL_NAME))
                 : capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME))
         );
