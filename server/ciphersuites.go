@@ -109,11 +109,7 @@ func defaultCurvePreferences() []tls.CurveID {
 }
 
 func EncryptAES(plaintext []byte) (string, error) {
-	key, err := getAESKey()
-	if err != nil {
-		return "", err
-	}
-
+	key := getAESKey()
 	c, err := aes.NewCipher(key)
 	if err != nil {
 		return "", err
@@ -130,11 +126,7 @@ func EncryptAES(plaintext []byte) (string, error) {
 }
 
 func DecryptAES(encryptedValue string) (string, error) {
-	key, err := getAESKey()
-	if err != nil {
-		return "", err
-	}
-
+	key := getAESKey()
 	ciphertextBytes, err := base64.URLEncoding.DecodeString(encryptedValue)
 	if err != nil {
 		return "", err
@@ -163,12 +155,12 @@ func DecryptAES(encryptedValue string) (string, error) {
 	return string(unpadded), nil
 }
 
-func getAESKey() ([]byte, error) {
+func getAESKey() []byte {
 	var key []byte
 	if configuration.DOCKER_ENV == "true" {
 		key = []byte(ENCRYPTION_SECRET_KEY)
 	} else {
 		key = []byte(configuration.ENCRYPTION_SECRET_KEY)
 	}
-	return key, nil
+	return key
 }

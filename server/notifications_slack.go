@@ -190,16 +190,24 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 			return slackIntegration, err
 		}
 
+		var integrationRes models.Integration
+		var insertErr error
 		if value, ok := keys["auth_token"]; ok {
+			encryptedKeys := &keys
 			encryptedValue, err := EncryptAES([]byte(value))
 			if err != nil {
 				return models.Integration{}, err
 			}
-			keys["auth_token"] = encryptedValue
-		}
-		integrationRes, insertErr := db.InsertNewIntegration("slack", keys, properties)
-		if insertErr != nil {
-			return slackIntegration, insertErr
+			(*encryptedKeys)["auth_token"] = encryptedValue
+			integrationRes, insertErr = db.InsertNewIntegration("slack", *encryptedKeys, properties)
+			if insertErr != nil {
+				return slackIntegration, insertErr
+			}
+		} else {
+			integrationRes, insertErr = db.InsertNewIntegration("slack", keys, properties)
+			if insertErr != nil {
+				return slackIntegration, insertErr
+			}
 		}
 		slackIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegrationSchema{
@@ -245,16 +253,23 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 	}
 	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
 	if value, ok := keys["auth_token"]; ok {
+		encryptedKeys := &keys
 		encryptedValue, err := EncryptAES([]byte(value))
 		if err != nil {
 			return models.Integration{}, err
 		}
-		keys["auth_token"] = encryptedValue
+		(*encryptedKeys)["auth_token"] = encryptedValue
+		slackIntegration, err = db.UpdateIntegration("slack", *encryptedKeys, properties)
+		if err != nil {
+			return models.Integration{}, err
+		}
+	} else {
+		slackIntegration, err = db.UpdateIntegration("slack", keys, properties)
+		if err != nil {
+			return models.Integration{}, err
+		}
 	}
-	slackIntegration, err = db.UpdateIntegration("slack", keys, properties)
-	if err != nil {
-		return models.Integration{}, err
-	}
+
 	integrationToUpdate := models.CreateIntegrationSchema{
 		Name:       "slack",
 		Keys:       keys,
