@@ -1182,6 +1182,7 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		accounts = append(accounts, memphisGlobalAccount)
 		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: memphisGlobalAccount})
 		addedTenant[conf.MEMPHIS_GLOBAL_ACCOUNT_NAME] = memphisGlobalAccount
+		tenantsId[conf.MEMPHIS_GLOBAL_ACCOUNT_NAME] = 1
 		for _, user := range users {
 			name := strings.ToLower(user.TenantName)
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
