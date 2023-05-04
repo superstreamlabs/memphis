@@ -312,12 +312,12 @@ export const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Jav
 export const PROTOCOL_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',
-        producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single'
---header 'Authorization: Bearer <jwt>'
---header 'Content-Type: application/json'
+        producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single' \\
+--header 'Authorization: Bearer <jwt>' \\
+--header 'Content-Type: application/json' \\
 --data-raw '{"message": "New Message"}'`,
-        tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate'
---header 'Content-Type: application/json'
+        tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate' \\
+--header 'Content-Type: application/json' \\
 --data-raw '{
     "username": "<application type username>",
     "connection_token": "<broker-token>",

@@ -417,7 +417,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				serv.Warnf("ListenForSchemaverseDlsEvents: producer " + p.Name + " couldn't been found")
 				return
 			}
-
+			message.Message.TimeSent = time.Now()
 			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, message.TenantName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())

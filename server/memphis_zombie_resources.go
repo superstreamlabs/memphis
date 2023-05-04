@@ -42,50 +42,47 @@ func (srv *Server) removeStaleStations() {
 }
 
 func updateSystemLiveness() {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
-		if err != nil {
-			serv.Warnf("updateSystemLiveness: " + err.Error())
-			return
-		}
-
-		producersCount, err := db.CountAllActiveProudcers()
-		if err != nil {
-			serv.Warnf("updateSystemLiveness: " + err.Error())
-			return
-		}
-
-		consumersCount, err := db.CountAllActiveConsumers()
-		if err != nil {
-			serv.Warnf("updateSystemLiveness: " + err.Error())
-			return
-		}
-
-		param1 := analytics.EventParam{
-			Name:  "total-messages",
-			Value: strconv.Itoa(int(totalMessages)),
-		}
-		param2 := analytics.EventParam{
-			Name:  "total-dls-messages",
-			Value: strconv.Itoa(int(totalDlsMsgs)),
-		}
-		param3 := analytics.EventParam{
-			Name:  "total-stations",
-			Value: strconv.Itoa(len(stations)),
-		}
-		param4 := analytics.EventParam{
-			Name:  "active-producers",
-			Value: strconv.Itoa(int(producersCount)),
-		}
-		param5 := analytics.EventParam{
-			Name:  "active-consumers",
-			Value: strconv.Itoa(int(consumersCount)),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-		analytics.SendEventWithParams("", analyticsParams, "system-is-up")
+	stationsHandler := StationsHandler{S: serv}
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: " + err.Error())
+		return
 	}
+
+	producersCount, err := db.CountAllActiveProudcers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: " + err.Error())
+		return
+	}
+
+	consumersCount, err := db.CountAllActiveConsumers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: " + err.Error())
+		return
+	}
+
+	param1 := analytics.EventParam{
+		Name:  "total-messages",
+		Value: strconv.Itoa(int(totalMessages)),
+	}
+	param2 := analytics.EventParam{
+		Name:  "total-dls-messages",
+		Value: strconv.Itoa(int(totalDlsMsgs)),
+	}
+	param3 := analytics.EventParam{
+		Name:  "total-stations",
+		Value: strconv.Itoa(len(stations)),
+	}
+	param4 := analytics.EventParam{
+		Name:  "active-producers",
+		Value: strconv.Itoa(int(producersCount)),
+	}
+	param5 := analytics.EventParam{
+		Name:  "active-consumers",
+		Value: strconv.Itoa(int(consumersCount)),
+	}
+	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
+	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {

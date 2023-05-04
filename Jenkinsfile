@@ -43,7 +43,7 @@ node {
       if (env.BRANCH_NAME ==~ /(master)/) { 
         sh """
           sudo npm uninstall memphis-dev-cli-beta -g
-          sudo npm i memphis-dev-cli-beta -g
+          sudo npm i memphis-dev-cli-beta -g --force
         """
       }
       else {
@@ -152,7 +152,7 @@ node {
 	  """
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-	    sh 'helm install my-memphis memphis --set analytics="false",cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --create-namespace --namespace memphis --wait'
+	    sh 'helm install my-memphis memphis --set analytics="false",global.cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --create-namespace --namespace memphis --wait'
 	  }
           sh "rm -rf memphis-k8s"
 	}

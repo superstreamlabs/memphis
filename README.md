@@ -58,7 +58,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Features [v1.0.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.1)
+## ✨ Features [v1.0.2](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.2)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -75,6 +75,9 @@ And the list continues...<br>
 <div align="center">
 <img src="https://user-images.githubusercontent.com/70286779/225559098-726d57bd-96f6-40d4-bc35-c2648a5c463a.png" style="width:800px;">
 </div>
+
+## Case studies by companies
+- [Gastromatic](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
 
 ## 🚀 Getting Started
 Helm for Kubernetes☸

@@ -717,8 +717,8 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		}
 
 		data := hex.EncodeToString(msg.Data)
-		if len(data) > 40 { // get the first chars for preview needs
-			data = data[0:40]
+		if len(data) > 80 { // get the first chars for preview needs
+			data = data[0:80]
 		}
 		messageDetails.Data = data
 
