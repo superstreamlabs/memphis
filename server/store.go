@@ -296,9 +296,6 @@ const (
 	infinitePolicyString  = "infiniteretention"
 )
 
-func (rp *RetentionPolicy) AckRequired() bool {
-	return *rp == LimitsPolicy || *rp == InfinitePolicy
-}
 func (rp RetentionPolicy) String() string {
 	switch rp {
 	case LimitsPolicy:
