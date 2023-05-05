@@ -4390,7 +4390,7 @@ func (o *consumer) processReplicatedAck(dseq, sseq uint64) {
 	o.store.UpdateAcks(dseq, sseq)
 
 	mset := o.mset
-	if mset == nil || o.retention == LimitsPolicy {
+	if mset == nil || (o.retention == LimitsPolicy || o.retention == InfinitePolicy) {
 		o.mu.Unlock()
 		return
 	}
@@ -6480,7 +6480,7 @@ func (s *Server) jsClusteredConsumerRequest(ci *ClientInfo, acc *Account, subjec
 		if !isDurableConsumer(cfg) {
 			// We chose to have ephemerals be R=1 unless stream is interest or workqueue.
 			// Consumer can override.
-			if sa.Config.Retention == LimitsPolicy && cfg.Replicas <= 1 {
+			if (sa.Config.Retention == LimitsPolicy || sa.Config.Retention == InfinitePolicy) && cfg.Replicas <= 1 {
 				rg.Peers = []string{rg.Preferred}
 				rg.Name = groupNameForConsumer(rg.Peers, rg.Storage)
 			}

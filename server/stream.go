@@ -451,7 +451,7 @@ func (a *Account) addStreamWithAssignment(config *StreamConfig, fsConfig *FileSt
 	go mset.signalConsumersLoop()
 
 	// For no-ack consumers when we are interest retention.
-	if cfg.Retention != LimitsPolicy {
+	if cfg.Retention != LimitsPolicy && cfg.Retention != InfinitePolicy {
 		mset.ackq = newIPQueue[uint64](s, qpfx+"acks")
 	}
 
@@ -4828,7 +4828,7 @@ func (mset *stream) checkInterest(seq uint64, obs *consumer) bool {
 
 // ackMsg is called into from a consumer when we have a WorkQueue or Interest Retention Policy.
 func (mset *stream) ackMsg(o *consumer, seq uint64) {
-	if mset.cfg.Retention == LimitsPolicy {
+	if mset.cfg.Retention == LimitsPolicy || mset.cfg.Retention == InfinitePolicy {
 		return
 	}
 

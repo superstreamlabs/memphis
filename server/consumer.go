@@ -2435,7 +2435,7 @@ func (o *consumer) processAckMsg(sseq, dseq, dc uint64, doSample bool) {
 	// Let the owning stream know if we are interest or workqueue retention based.
 	// If this consumer is clustered this will be handled by processReplicatedAck
 	// after the ack has propagated.
-	if !clustered && mset != nil && mset.cfg.Retention != LimitsPolicy {
+	if !clustered && mset != nil && mset.cfg.Retention != LimitsPolicy && mset.cfg.Retention != InfinitePolicy {
 		if sagap > 1 {
 			// FIXME(dlc) - This is very inefficient, will need to fix.
 			for seq := sseq; seq > sseq-sagap; seq-- {
@@ -3587,7 +3587,7 @@ func (o *consumer) deliverMsg(dsubj, ackReply string, pmsg *jsPubMsg, dc uint64,
 	o.updateDelivered(dseq, seq, dc, ts)
 
 	// If we are ack none and mset is interest only we should make sure stream removes interest.
-	if ap == AckNone && rp != LimitsPolicy {
+	if ap == AckNone && (rp != LimitsPolicy && rp != InfinitePolicy) {
 		if o.node == nil || o.cfg.Direct {
 			mset.ackq.push(seq)
 		} else {

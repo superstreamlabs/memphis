@@ -122,6 +122,8 @@ const (
 	InterestPolicy
 	// WorkQueuePolicy specifies that when the first worker or subscriber acknowledges the message it can be removed.
 	WorkQueuePolicy
+	// InfinitePolicy specifies that messages has infinite lifetime and won't be removed.
+	InfinitePolicy
 )
 
 // Discard Policy determines how we proceed when limits of messages or bytes are hit. The default, DicscardOld will
@@ -291,8 +293,12 @@ const (
 	limitsPolicyString    = "limits"
 	interestPolicyString  = "interest"
 	workQueuePolicyString = "workqueue"
+	infinitePolicyString  = "infiniteretention"
 )
 
+func (rp *RetentionPolicy) AckRequired() bool {
+	return *rp == LimitsPolicy || *rp == InfinitePolicy
+}
 func (rp RetentionPolicy) String() string {
 	switch rp {
 	case LimitsPolicy:
@@ -301,6 +307,8 @@ func (rp RetentionPolicy) String() string {
 		return "Interest"
 	case WorkQueuePolicy:
 		return "WorkQueue"
+	case InfinitePolicy:
+		return "Infinite"
 	default:
 		return "Unknown Retention Policy"
 	}
@@ -314,6 +322,8 @@ func (rp RetentionPolicy) MarshalJSON() ([]byte, error) {
 		return json.Marshal(interestPolicyString)
 	case WorkQueuePolicy:
 		return json.Marshal(workQueuePolicyString)
+	case InfinitePolicy:
+		return json.Marshal(interestPolicyString)
 	default:
 		return nil, fmt.Errorf("can not marshal %v", rp)
 	}
@@ -327,6 +337,8 @@ func (rp *RetentionPolicy) UnmarshalJSON(data []byte) error {
 		*rp = InterestPolicy
 	case jsonString(workQueuePolicyString):
 		*rp = WorkQueuePolicy
+	case jsonString(infinitePolicyString):
+		*rp = InfinitePolicy
 	default:
 		return fmt.Errorf("can not unmarshal %q", data)
 	}
