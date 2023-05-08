@@ -1187,6 +1187,10 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			name := strings.ToLower(user.TenantName)
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
 		}
+		gacc := NewAccount(globalAccountName)
+		gacc.EnableJetStream(nil)
+		s.gacc = gacc
+		accounts = append(accounts, gacc)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
