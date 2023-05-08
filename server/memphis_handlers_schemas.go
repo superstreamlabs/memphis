@@ -234,8 +234,8 @@ func getActiveVersionBySchemaId(id int) (models.SchemaVersion, error) {
 	return schemaVersion, nil
 }
 
+// TODO: make 1 function with join
 func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, error) {
-
 	exist, station, err := db.GetStationByName(sn.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("getSchemaByStation: At station " + sn.external + ": " + err.Error())
@@ -263,6 +263,7 @@ func getSchemaByStationName(sn StationName, tenantName string) (models.Schema, e
 	return schema, nil
 }
 
+// TODO: remove
 func (sh SchemasHandler) GetSchemaByStationName(stationName StationName, tenantName string) (models.Schema, error) {
 	return getSchemaByStationName(stationName, tenantName)
 }

@@ -316,7 +316,22 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, err
 	}
 
-	schema, err := h.Schemas.GetSchemaByStationName(sn, station.TenantName)
+	schema := models.Schema{}
+	if station.SchemaName != "" {
+		exist, schemaRes, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
+		if err != nil {
+			serv.Errorf("getSchemaByStation: Schema" + station.SchemaName + "at station " + station.Name + err.Error())
+			return map[string]any{}, err
+		}
+		if !exist {
+			serv.Warnf("getSchemaByStation: Schema " + station.SchemaName + " does not exist")
+			return map[string]any{}, err
+		}
+		schema = schemaRes
+	}
+
+	// TODO: remove
+	// schema, err := h.Schemas.GetSchemaByStationName(sn, station.TenantName)
 
 	if err != nil && err != ErrNoSchema {
 		return map[string]any{}, err
