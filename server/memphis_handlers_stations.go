@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -524,6 +525,8 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	} else {
 		stationTotalMsgs := make(map[string]int)
 		tagsHandler := TagsHandler{S: sh.S}
+		// TODO: for loop on all accounts
+		tenantName := conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 		allStreamInfo, err := serv.memphisAllStreamsInfo(tenantName)
 		if err != nil {
 			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
