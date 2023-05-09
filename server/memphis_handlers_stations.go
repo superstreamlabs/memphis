@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"math"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -81,7 +82,7 @@ func StationNameFromStreamName(streamName string) StationName {
 }
 
 func validateRetentionType(retentionType string) error {
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" && retentionType != "infinite" {
 		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
 	}
 
@@ -685,7 +686,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	var retentionType string
-	if body.RetentionType != "" && body.RetentionValue > 0 {
+	if body.RetentionType != "" {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
@@ -693,9 +694,10 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-	} else {
-		retentionType = "message_age_sec"
-		body.RetentionValue = 604800 // 1 week
+	}
+
+	if retentionType == "infinite" {
+		body.RetentionValue = math.MaxInt32 // ~68 years. use of math.MaxInt64 or math.MaxInt can cause overflow
 	}
 
 	if body.StorageType != "" {

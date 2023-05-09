@@ -181,7 +181,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true`
 
 	stationsTable := `
-	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
+	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes', 'infinite');
 	CREATE TYPE enum_storage_type AS ENUM ('file', 'memory');
 	CREATE TABLE IF NOT EXISTS stations(
 		id SERIAL NOT NULL,

@@ -142,7 +142,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 	}
 
 	var maxAge time.Duration
-	if retentionType == "message_age_sec" && retentionValue > 0 {
+	if (retentionType == "message_age_sec" || retentionType == "infinite") && retentionValue > 0 {
 		maxAge = time.Duration(retentionValue) * time.Second
 	} else {
 		maxAge = time.Duration(0)

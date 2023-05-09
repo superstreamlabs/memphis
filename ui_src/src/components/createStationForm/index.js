@@ -48,6 +48,11 @@ const retanionOptions = [
         id: 3,
         value: 'messages',
         label: 'Messages'
+    },
+    {
+        id: 4,
+        value: 'infinite',
+        label: 'Infinite'
     }
 ];
 const storageTierOneOptions = [
@@ -517,6 +522,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         />
                                     </Form.Item>
                                     <p>messages</p>
+                                </div>
+                            )}
+                            {retentionType === 'infinite' && (
+                                <div className="retention-type">
+                                {/*    TODO for test purpose. remove before final PR*/}
                                 </div>
                             )}
                         </div>
