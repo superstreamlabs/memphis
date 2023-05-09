@@ -564,6 +564,9 @@ func (ms *memStore) resetAgeChk(delta int64) {
 
 // Will expire msgs that are too old.
 func (ms *memStore) expireMsgs() {
+	if ms.cfg.Retention == InfinitePolicy {
+		return
+	}
 	ms.mu.Lock()
 	defer ms.mu.Unlock()
 
