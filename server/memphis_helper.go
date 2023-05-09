@@ -1144,6 +1144,10 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			}
 		}
 		memphisGlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+		err := memphisGlobalAccount.EnableJetStream(nil)
+		if err != nil {
+			fmt.Println("enable jetstream: " + err.Error())
+		}
 		globalStreamsImport := []*streamImport{}
 		globalServicesExport := map[string]*serviceExport{}
 		globalStreamsExportForAllAccounts := map[string]*streamExport{}
@@ -1173,6 +1177,10 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			tenantsId[name] = tenant.ID
 			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}, exports: exportMap{streams: globalStreamsExportForAllAccounts}, imports: importMap{services: globalServiceImportForAllAccounts}}
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
+			err = account.EnableJetStream(nil)
+			if err != nil {
+				fmt.Println("enable jetstream: " + err.Error())
+			}
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 			globalStreamsImport = append(globalStreamsImport, getStreamsImportForAccout(account)[:]...)
