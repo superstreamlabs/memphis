@@ -153,6 +153,12 @@ function SchemaList({ createNew }) {
                     />
                 </div>
             </div>
+            <span className="description">
+                The new way to enforce schemas! Get started&nbsp;
+                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
+                    here
+                </a>
+            </span>
             <div className="schema-list">
                 {isLoading && (
                     <div className="loader-uploading">

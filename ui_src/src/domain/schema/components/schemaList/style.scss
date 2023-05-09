@@ -4,8 +4,8 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-    
-    .action-section{
+
+    .action-section {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
@@ -35,7 +35,7 @@
                 margin-bottom: 30px;
             }
             .title {
-                color: #1D1D1D ;
+                color: #1d1d1d;
                 font-family: 'InterSemiBold';
                 font-size: 24px;
                 line-height: 22px;
@@ -45,15 +45,22 @@
                 font-size: 14px;
                 line-height: 17px;
                 margin-bottom: 30px;
-                color: #8F8F8F;
-
+                color: #8f8f8f;
             }
         }
-        .ant-checkbox-wrapper{
+        .ant-checkbox-wrapper {
             position: absolute;
             padding-top: 22px;
             padding-left: 20px;
+        }
+    }
+    .description {
+        color: #667085;
+        size: 14px;
 
+        .learn-more {
+            color: #6557ff;
+            cursor: pointer;
         }
     }
 }
@@ -63,6 +70,6 @@
     max-height: calc(74%);
 }
 
-.ant-drawer-header{
-    border-bottom-color: #ECECEC;
+.ant-drawer-header {
+    border-bottom-color: #ececec;
 }
