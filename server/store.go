@@ -293,7 +293,7 @@ const (
 	limitsPolicyString    = "limits"
 	interestPolicyString  = "interest"
 	workQueuePolicyString = "workqueue"
-	infinitePolicyString  = "infiniteretention"
+	infinitePolicyString  = "infinite"
 )
 
 func (rp RetentionPolicy) String() string {
