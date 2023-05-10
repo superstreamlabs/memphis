@@ -15,11 +15,6 @@
             color: #1d1d1d;
             margin-bottom: 0px;
         }
-        .sub-header {
-            font-family: 'Inter';
-            font-size: 12px;
-            color: rgba(74, 73, 92, 0.8);
-        }
         .side-menu {
             margin-top: 30px;
             .menu-item {
@@ -47,7 +42,7 @@
                 opacity: 50%;
                 cursor: not-allowed;
             }
-            .update-available{
+            .update-available {
                 background: var(--purple);
                 color: white;
                 border-radius: 15px;

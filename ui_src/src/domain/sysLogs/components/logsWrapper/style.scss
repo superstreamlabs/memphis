@@ -3,7 +3,7 @@
     width: 100%;
     position: relative;
     gap: 30px;
-    height: calc(100% - 90px);
+    height: calc(100% - 110px);
     overflow-wrap: anywhere;
     margin-top: 25px;
     logs {
@@ -46,7 +46,7 @@
                 border-radius: 4px;
             }
         }
-        .placeholder{
+        .placeholder {
             width: 100%;
             height: calc(100% - 90px);
             display: flex;
@@ -54,13 +54,13 @@
             flex-direction: column;
             justify-content: center;
             gap: 20px;
-            p{
+            p {
                 font-family: 'InterSemiBold';
                 font-size: 22px;
-                color: #CED6E2;
+                color: #ced6e2;
             }
         }
-        .loader{
+        .loader {
             width: 100%;
             height: calc(100% - 90px);
             display: flex;

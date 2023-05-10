@@ -82,7 +82,7 @@ function Users() {
         setUsersList(newUserList);
         setCopyOfUserList(newUserList);
         addUserModalFlip(false);
-        if (userData.user_type === 'application' &&  localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
+        if (userData.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
             setUserDetailsModal(true);
         }
     };
@@ -121,6 +121,7 @@ function Users() {
                     />
                 </div>
             </div>
+            <span className="memphis-label">For client authentication, choose "Application". For management only, choose "Management".</span>
             <div className="users-list-container">
                 <div className="users-list-header">
                     <p className="user-name-title">Username</p>
