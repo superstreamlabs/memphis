@@ -108,7 +108,7 @@ const Integrations = () => {
             <div className="header-preferences">
                 <div className="left">
                     <p className="main-header">Integrations</p>
-                    <p className="sub-header">Integrations for notifications, monitoring, API calls, and more</p>
+                    <p className="memphis-label">Integrations for notifications, monitoring, API calls, and more</p>
                 </div>
                 <Button
                     width="140px"
