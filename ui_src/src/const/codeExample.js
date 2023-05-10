@@ -305,6 +305,126 @@ async def main():
         
 if __name__ == "__main__":
     asyncio.run(main())`
+    },
+
+    '.NET (C#)': {
+        langCode: "C#",
+        installation: `dotnet add package Memphis.Client`,
+        producer: `using System.Collections.Specialized;
+using System.Text;
+using Memphis.Client;
+using Memphis.Client.Producer;
+
+namespace Producer
+{
+    class ProducerApp
+    {
+        public static async Task Main(string[] args)
+        {
+            try
+            {
+                var options = MemphisClientFactory.GetDefaultOptions();
+                options.Host = "<memphis-host>";
+                options.Username = "<application type username>";
+                options.ConnectionToken = "<broker-token>";
+                var client = await MemphisClientFactory.CreateClient(options);
+
+                var producer = await client.CreateProducer(new MemphisProducerOptions
+                {
+                    StationName = "<memphis-station-name>",
+                    ProducerName = "<memphis-producer-name>",
+                    GenerateUniqueSuffix = true
+                });
+
+                var commonHeaders = new NameValueCollection();
+                commonHeaders.Add("key-1", "value-1");
+
+                for (int i = 0; i < 10_000000; i++)
+                {
+                    await Task.Delay(1_000);
+                    var text = $"Message #{i}: Welcome to Memphis";
+                    await producer.ProduceAsync(Encoding.UTF8.GetBytes(text), commonHeaders);
+                    Console.WriteLine($"Message #{i} sent successfully");
+                }
+
+                await producer.DestroyAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("Exception: " + ex.Message);
+                Console.Error.WriteLine(ex);
+            }
+        }
+    }
+}
+        `,
+        consumer: `using System.Text;
+using Memphis.Client;
+using Memphis.Client.Consumer;
+
+namespace Consumer
+{
+    class ConsumerApp
+    {
+        public static async Task Main(string[] args)
+        {
+            try
+            {
+                var options = MemphisClientFactory.GetDefaultOptions();
+                options.Host = "<memphis-host>";
+                options.Username = "<application type username>";
+                options.ConnectionToken = "<broker-token>";
+                var client = await MemphisClientFactory.CreateClient(options);
+
+                var consumer = await client.CreateConsumer(new MemphisConsumerOptions
+                {
+                    StationName = "<station-name>",
+                    ConsumerName = "<consumer-name>",
+                    ConsumerGroup = "<consumer-group-name>",
+                });
+
+                consumer.MessageReceived += (sender, args) =>
+                {
+                    if (args.Exception != null)
+                    {
+                        Console.Error.WriteLine(args.Exception);
+                        return;
+                    }
+
+                    foreach (var msg in args.MessageList)
+                    {
+                        //print message itself
+                        Console.WriteLine("Received data: " + Encoding.UTF8.GetString(msg.GetData()));
+
+
+                        // print message headers
+                        foreach (var headerKey in msg.GetHeaders().Keys)
+                        {
+                            Console.WriteLine(
+                                $"Header Key: {headerKey}, value: {msg.GetHeaders()[headerKey.ToString()]}");
+                        }
+
+                        Console.WriteLine("---------");
+                        msg.Ack();
+                    }
+                    Console.WriteLine("destroyed");
+                };
+
+                consumer.ConsumeAsync();
+
+                // Wait 10 seconds, consumer starts to consume, if you need block main thread use await keyword.
+                await Task.Delay(10_000);
+                await consumer.DestroyAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine("Exception: " + ex.Message);
+                Console.Error.WriteLine(ex);
+            }
+        }
+    }
+}
+        `
     }
 };
 
@@ -604,5 +724,56 @@ console.log(response);
 $.ajax(settings).done(function (response) {
 console.log(response);
 });`
+    },
+    '.NET (C#)': {
+        langCode: 'C#',
+        producer: `using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+internal class Program
+{
+    private static async Task Main(string[] args)
+    {
+        var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:4444/stations/test/produce/single");
+        request.Headers.Add("Authorization", "Bearer <jwt>");
+        var content = new StringContent("""
+        {
+            "message": "New Message"
+        }
+        """, null, "application/json");
+        request.Content = content;
+        var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
+    }
+}
+        `,
+        tokenGenerate: `using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+
+internal class Program
+{
+    private static async Task Main(string[] args)
+    {
+        var client = new HttpClient();
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:4444/auth/authenticate");
+        var content = new StringContent("""
+        { 
+            "username": "<application type username>",    
+            "password": "<password>",
+            "token_expiry_in_minutes": 123,
+            "refresh_token_expiry_in_minutes": 10000092
+        }
+        """, null, "application/json");
+        request.Content = content;
+        var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        Console.WriteLine(await response.Content.ReadAsStringAsync());
+    }
+}
+        `
     }
 };
