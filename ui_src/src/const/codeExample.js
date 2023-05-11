@@ -326,7 +326,7 @@ namespace Producer
                 var options = MemphisClientFactory.GetDefaultOptions();
                 options.Host = "<memphis-host>";
                 options.Username = "<application type username>";
-                options.ConnectionToken = "<broker-token>";
+                options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
 
                 var producer = await client.CreateProducer(new MemphisProducerOptions
@@ -373,7 +373,7 @@ namespace Consumer
                 var options = MemphisClientFactory.GetDefaultOptions();
                 options.Host = "<memphis-host>";
                 options.Username = "<application type username>";
-                options.ConnectionToken = "<broker-token>";
+                options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
 
                 var consumer = await client.CreateConsumer(new MemphisConsumerOptions
