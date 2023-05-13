@@ -1208,7 +1208,7 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	COALESCE(c.is_deleted, false), 
 	COALESCE(c.max_msg_deliveries, 0), 
 	COALESCE(c.start_consume_from_seq, 0),
-	 COALESCE(c.last_msgs, 0) 
+	COALESCE(c.last_msgs, 0) 
 	FROM stations AS s
 	LEFT JOIN producers AS p
 	ON s.id = p.station_id 
@@ -1347,7 +1347,8 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	COALESCE(p.created_by_username, ''), 
 	COALESCE(p.is_active, false), 
 	COALESCE(p.created_at, CURRENT_TIMESTAMP), 
-	COALESCE(p.is_deleted, false), 
+	COALESCE(p.is_deleted, false),
+	COALESCE(p.tenant_name, ''),  
 	COALESCE(c.id, 0),  
 	COALESCE(c.name, ''), 
 	COALESCE(c.station_id, 0), 
@@ -1362,7 +1363,8 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	COALESCE(c.is_deleted, false), 
 	COALESCE(c.max_msg_deliveries, 0), 
 	COALESCE(c.start_consume_from_seq, 0),
-	 COALESCE(c.last_msgs, 0) 
+	COALESCE(c.last_msgs, 0),
+	COALESCE(c.tenant_name, '') 
 	FROM stations AS s
 	LEFT JOIN producers AS p
 	ON s.id = p.station_id 
@@ -1407,6 +1409,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&stationRes.DlsConfigurationPoison,
 			&stationRes.DlsConfigurationSchemaverse,
 			&stationRes.TieredStorageEnabled,
+			&stationRes.TenantName,
 			&producer.ID,
 			&producer.Name,
 			&producer.StationId,
@@ -1417,6 +1420,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&producer.IsActive,
 			&producer.CreatedAt,
 			&producer.IsDeleted,
+			&producer.TenantName,
 			&consumer.ID,
 			&consumer.Name,
 			&consumer.StationId,
@@ -1432,6 +1436,7 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&consumer.MaxMsgDeliveries,
 			&consumer.StartConsumeFromSeq,
 			&consumer.LastMessages,
+			&consumer.TenantName,
 		); err != nil {
 			return []models.ExtendedStation{}, err
 		}
@@ -2778,8 +2783,8 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 			SchemaContent:     v.SchemaContent,
 			SchemaId:          v.SchemaId,
 			MessageStructName: v.MessageStructName,
-Descriptor:        base64.StdEncoding.EncodeToString(v.Descriptor),
-TenantName:        strings.ToLower(v.TenantName),
+			Descriptor:        base64.StdEncoding.EncodeToString(v.Descriptor),
+			TenantName:        strings.ToLower(v.TenantName),
 		}
 
 		schemaVersions = append(schemaVersions, version)
