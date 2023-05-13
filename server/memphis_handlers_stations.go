@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -151,7 +152,13 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
+
 	if err := json.Unmarshal(msg, &csr); err != nil {
 		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -166,8 +173,15 @@ func (s *Server) createStationDirectIntern(c *client,
 	shouldCreateStream bool) {
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
+	account, err := s.lookupAccount(csr.TenantName)
+	if err != nil {
+		serv.Errorf("createStationDirectIntern: lookup account " + csr.TenantName + ": " + err.Error())
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiResp(!isNative, c, account, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+	c.acc = account
 	stationName, err := StationNameFromStr(csr.StationName)
-	tenantName := c.Account().GetName()
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -175,7 +189,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
+	exist, _, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -195,7 +209,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	var schemaDetails models.SchemaDetails
 	if schemaName != "" {
 		schemaName = strings.ToLower(csr.SchemaName)
-		exist, schema, err := db.GetSchemaByName(schemaName, c.Account().GetName())
+		exist, schema, err := db.GetSchemaByName(schemaName, csr.TenantName)
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -284,31 +298,31 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if shouldCreateStream {
-		err = s.CreateStream(tenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
+		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
 		if err != nil {
 			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
-				respondWithErr(tenantName, s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+				respondWithErr(csr.TenantName, s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}
 
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(tenantName, s, reply, err)
+			respondWithErr(csr.TenantName, s, reply, err)
 			return
 		}
 	}
 
-	_, user, err := db.GetUserByUsername(username, c.Account().GetName())
+	_, user, err := db.GetUserByUsername(username, csr.TenantName)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(csr.TenantName, s, reply, err)
 	}
 	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		}
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(csr.TenantName, s, reply, err)
 		return
 	}
 	if rowsUpdated > 0 {
@@ -348,7 +362,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	respondWithErr(tenantName, s, reply, nil)
+	respondWithErr(csr.TenantName, s, reply, nil)
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
@@ -966,7 +980,12 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeStationDirect: " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -981,7 +1000,15 @@ func (s *Server) removeStationDirectIntern(c *client,
 	shouldDeleteStream bool) {
 	isNative := shouldDeleteStream
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
-	tenantName := c.Account().GetName()
+	tenantName := dsr.TenantName
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		serv.Warnf("removeStationDirectIntern: lookup tenant " + tenantName + ": " + err.Error())
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiResp(!isNative, c, account, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+	c.acc = account
 
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
@@ -991,7 +1018,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
+	exist, station, err := db.GetStationByName(stationName.Ext(), tenantName)
 	if err != nil {
 		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
@@ -1548,7 +1575,12 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &asr); err != nil {
 		errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
 		s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
@@ -1558,57 +1590,57 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	stationName, err := StationNameFromStr(asr.StationName)
 	if err != nil {
 		serv.Warnf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
+	exist, station, err := db.GetStationByName(stationName.Ext(), asr.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
 
 	if !exist {
 		errMsg := "Station " + stationName.external + " does not exist"
 		serv.Warnf("useSchemaDirect: " + errMsg)
-		respondWithErr(tenantName, s, reply, errors.New("memphis: "+errMsg))
+		respondWithErr(asr.TenantName, s, reply, errors.New("memphis: "+errMsg))
 		return
 	}
 	schemaName := strings.ToLower(asr.Name)
 	exist, schema, err := db.GetSchemaByName(schemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := "Schema " + schemaName + " does not exist"
 		serv.Warnf("useSchemaDirect: " + errMsg)
-		respondWithErr(tenantName, s, reply, errors.New(errMsg))
+		respondWithErr(asr.TenantName, s, reply, errors.New(errMsg))
 		return
 	}
 
 	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
 
 	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber, station.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
 
 	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
-	_, user, err := db.GetUserByUsername(asr.Username, c.Account().GetName())
+	_, user, err := db.GetUserByUsername(asr.Username, asr.TenantName)
 	if err != nil {
 		serv.Errorf("useSchemaDirect: Schema " + asr.Name + " at station " + asr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(asr.TenantName, s, reply, err)
 		return
 	}
 	var auditLogs []interface{}
@@ -1652,7 +1684,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 
 	serv.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
-	respondWithErr(tenantName, s, reply, nil)
+	respondWithErr(asr.TenantName, s, reply, nil)
 }
 
 func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantName string) error {
@@ -1681,7 +1713,12 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantNam
 
 func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
 	var dsr detachSchemaRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1690,14 +1727,14 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dsr.TenantName, s, reply, err)
 		return
 	}
 
-	err = removeSchemaFromStation(serv, stationName, true, c.Account().GetName())
+	err = removeSchemaFromStation(serv, stationName, true, dsr.TenantName)
 	if err != nil {
 		serv.Errorf("removeSchemaFromStationDirect: At station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dsr.TenantName, s, reply, err)
 		return
 	}
 
@@ -1706,7 +1743,7 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 		analytics.SendEvent(dsr.Username, "user-detach-schema-from-station-sdk")
 	}
 
-	respondWithErr(tenantName, s, reply, nil)
+	respondWithErr(dsr.TenantName, s, reply, nil)
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {

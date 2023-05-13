@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -136,7 +137,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
 		return false, false, errors.New("memphis: " + errMsg)
 	}
-	newProducer, rowsUpdated, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy, user.Username, c.Account().GetName())
+	newProducer, rowsUpdated, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy, user.Username, station.TenantName)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: " + err.Error())
 		return false, false, err
@@ -181,8 +182,8 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 }
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
-	sn, err := StationNameFromStr(cpr.StationName)
 	tenantName := c.Account().GetName()
+	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		respondWithErr(tenantName, s, reply, err)
 		return
@@ -195,7 +196,19 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequestV1
 	var resp createProducerResponse
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+		account, err := s.lookupAccount(tenantName)
+		if err != nil {
+			s.Errorf("createProducerDirect: %v", err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+			return
+		}
+		c.acc = account
+	} else {
+		tenantName = c.Account().GetName()
+	}
 
 	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
@@ -211,31 +224,31 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
+		respondWithRespErr(cpr.TenantName, s, reply, err, &resp)
 		return
 	}
 
 	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
 	if err != nil {
-		respondWithRespErr(tenantName, s, reply, err, &resp)
+		respondWithRespErr(cpr.TenantName, s, reply, err, &resp)
 		return
 	}
 
 	resp.SchemaVerseToDls = schemaVerseToDls
 	resp.ClusterSendNotification = clusterSendNotification
-	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, c.Account().GetName())
+	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, cpr.TenantName)
 	if err == ErrNoSchema {
-		respondWithResp(tenantName, s, reply, &resp)
+		respondWithResp(cpr.TenantName, s, reply, &resp)
 		return
 	}
 	if err != nil {
 		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
+		respondWithRespErr(cpr.TenantName, s, reply, err, &resp)
 		return
 	}
 
 	resp.SchemaUpdate = *schemaUpdate
-	respondWithResp(tenantName, s, reply, &resp)
+	respondWithResp(cpr.TenantName, s, reply, &resp)
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -356,7 +369,12 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 
 func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var dpr destroyProducerRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &dpr); err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -366,27 +384,27 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dpr.TenantName, s, reply, err)
 		return
 	}
 	name := strings.ToLower(dpr.ProducerName)
-	_, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
+	_, station, err := db.GetStationByName(stationName.Ext(), dpr.TenantName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dpr.TenantName, s, reply, err)
 		return
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dpr.TenantName, s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)
-		respondWithErr(tenantName, s, reply, errors.New(errMsg))
+		respondWithErr(dpr.TenantName, s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -394,7 +412,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	if username == "" {
 		username = dpr.Username
 	}
-	_, user, err := db.GetUserByUsername(username, c.Account().GetName())
+	_, user, err := db.GetUserByUsername(username, dpr.TenantName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
 	}
@@ -420,7 +438,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		analytics.SendEvent(username, "user-remove-producer-sdk")
 	}
 
-	respondWithErr(tenantName, s, reply, nil)
+	respondWithErr(dpr.TenantName, s, reply, nil)
 }
 
 func (ph ProducersHandler) ReliveProducers(connectionId string) error {

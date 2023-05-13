@@ -45,7 +45,12 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
 	var tnr getTenantNameRequest
 	var resp getTenantNameResponse
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &tnr); err != nil {
 		s.Errorf("getTenantName: failed get tenant id: " + err.Error())
 		respondWithRespErr(tenantName, s, reply, err, &resp)

@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -277,7 +278,20 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequestV1
 	var resp createConsumerResponse
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+		account, err := s.lookupAccount(tenantName)
+		if err != nil {
+			s.Errorf("createConsumerDirect: Failed lookup account: %v\n", err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+			return
+		}
+		c.acc = account
+	} else {
+		tenantName = c.Account().GetName()
+	}
+
 	if err := json.Unmarshal(msg, &ccr); err != nil || ccr.RequestVersion < 1 {
 		var ccrV0 createConsumerRequestV0
 		if err := json.Unmarshal(msg, &ccrV0); err != nil {
@@ -292,26 +306,26 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	if ccr.StartConsumeFromSequence <= 0 {
 		errMsg := errors.New("startConsumeFromSequence has to be a positive number")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
-		respondWithErr(tenantName, s, reply, errMsg)
+		respondWithErr(ccr.TenantName, s, reply, errMsg)
 		return
 	}
 
 	if ccr.LastMessages < -1 {
 		errMsg := errors.New("min value for LastMessages is -1")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
-		respondWithErr(tenantName, s, reply, errMsg)
+		respondWithErr(ccr.TenantName, s, reply, errMsg)
 		return
 	}
 
 	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
 		errMsg := errors.New("consumer creation options can't contain both startConsumeFromSequence and lastMessages")
 		serv.Warnf("createConsumerDirect: " + errMsg.Error())
-		respondWithErr(tenantName, s, reply, errMsg)
+		respondWithErr(ccr.TenantName, s, reply, errMsg)
 		return
 	}
 
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
-	respondWithErr(tenantName, s, reply, err)
+	respondWithErr(ccr.TenantName, s, reply, err)
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
@@ -495,7 +509,12 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var dcr destroyConsumerRequest
-	tenantName := c.Account().GetName()
+	var tenantName string
+	if c.acc == nil {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	} else {
+		tenantName = c.Account().GetName()
+	}
 	if err := json.Unmarshal(msg, &dcr); err != nil {
 		s.Errorf("destroyConsumerDirect: %v", err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -506,29 +525,29 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dcr.TenantName, s, reply, err)
 		return
 	}
 
 	name := strings.ToLower(dcr.ConsumerName)
-	_, station, err := db.GetStationByName(stationName.Ext(), c.Account().GetName())
+	_, station, err := db.GetStationByName(stationName.Ext(), dcr.TenantName)
 	if err != nil {
 		errMsg := "Station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dcr.TenantName, s, reply, err)
 		return
 	}
 	exist, consumer, err := db.DeleteConsumer(name, station.ID)
 	if !exist {
 		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + " does not exist"
 		serv.Warnf("DestroyConsumer: " + errMsg)
-		respondWithErr(tenantName, s, reply, errors.New(errMsg))
+		respondWithErr(dcr.TenantName, s, reply, errors.New(errMsg))
 		return
 	}
 	if err != nil {
 		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dcr.TenantName, s, reply, err)
 		return
 	}
 
@@ -537,7 +556,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	if err != nil {
 		errMsg := "Consumer " + dcr.ConsumerName + " at station " + dcr.StationName + ": " + err.Error()
 		serv.Errorf("DestroyConsumer: " + errMsg)
-		respondWithErr(tenantName, s, reply, err)
+		respondWithErr(dcr.TenantName, s, reply, err)
 		return
 	}
 
@@ -547,7 +566,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
-			respondWithErr(tenantName, s, reply, err)
+			respondWithErr(dcr.TenantName, s, reply, err)
 			return
 		}
 		if err == nil {
@@ -557,7 +576,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
-			respondWithErr(tenantName, s, reply, err)
+			respondWithErr(dcr.TenantName, s, reply, err)
 			return
 		}
 	}
@@ -567,11 +586,11 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if username == "" {
 			username = dcr.Username
 		}
-		_, user, err := db.GetUserByUsername(username, c.Account().GetName())
+		_, user, err := db.GetUserByUsername(username, dcr.TenantName)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := "Consumer group " + consumer.ConsumersGroup + " at station " + dcr.StationName + ": " + err.Error()
 			serv.Errorf("DestroyConsumer: " + errMsg)
-			respondWithErr(tenantName, s, reply, err)
+			respondWithErr(dcr.TenantName, s, reply, err)
 			return
 		}
 		message := "Consumer " + name + " has been deleted by user " + username
@@ -598,7 +617,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	respondWithErr(tenantName, s, reply, nil)
+	respondWithErr(dcr.TenantName, s, reply, nil)
 }
 
 func (ch ConsumersHandler) ReliveConsumers(connectionId string) error {

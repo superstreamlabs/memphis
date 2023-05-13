@@ -36,11 +36,13 @@ type createStationRequest struct {
 	DlsConfiguration     models.DlsConfiguration `json:"dls_configuration"`
 	Username             string                  `json:"username"`
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
+	TenantName           string                  `json:"tenant_name"`
 }
 
 type destroyStationRequest struct {
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type createProducerRequestV0 struct {
@@ -58,6 +60,7 @@ type createProducerRequestV1 struct {
 	ProducerType   string `json:"producer_type"`
 	RequestVersion int    `json:"req_version"`
 	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
 }
 
 type createConsumerResponse struct {
@@ -80,6 +83,7 @@ type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
 	Username     string `json:"username"`
+	TenantName   string `json:"tenant_name"`
 }
 
 type createConsumerRequestV0 struct {
@@ -105,23 +109,27 @@ type createConsumerRequestV1 struct {
 	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
 	LastMessages             int64  `json:"last_messages"`
 	RequestVersion           int    `json:"req_version"`
+	TenantName               string `json:"tenant_name"`
 }
 
 type attachSchemaRequest struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type detachSchemaRequest struct {
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
 	Username     string `json:"username"`
+	TenantName   string `json:"tenant_name"`
 }
 
 type getTenantNameRequest struct {
