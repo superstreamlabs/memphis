@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -44,58 +43,60 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName) (bool, bool, error) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName) (bool, bool, string, error) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+		return false, false, "", err
 	}
 
 	producerType := strings.ToLower(pType)
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+		return false, false, "", err
 	}
 
 	exist, connection, err := db.GetConnectionByID(pConnectionId)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 	if !exist {
 		errMsg := "Connection ID " + pConnectionId + " was not found"
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
+		return false, false, connection.TenantName, errors.New("memphis: " + errMsg)
 	}
 	if !connection.IsActive {
 		errMsg := "Connection with ID " + pConnectionId + " is not active"
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
+		return false, false, connection.TenantName, errors.New("memphis: " + errMsg)
 	}
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 	if !exist {
 		serv.Warnf("createProducerDirectCommon: user" + user.Username + "is not exists")
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 
 	exist, station, err := db.GetStationByName(pStationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 	if !exist {
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, connection.CreatedBy, user.Username)
 		if err != nil {
 			serv.Errorf("createProducerDirectCommon: creating default station error - producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-			return false, false, err
+			return false, false, connection.TenantName, err
 		}
 		if created {
 			message := "Station " + pStationName.Ext() + " has been created by user " + user.Username
@@ -130,17 +131,17 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	exist, _, err = db.GetActiveProducerByStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 	if exist {
 		errMsg := "Producer name (" + pName + ") has to be unique per station (" + pStationName.external + ")"
 		serv.Warnf("createProducerDirectCommon: " + errMsg)
-		return false, false, errors.New("memphis: " + errMsg)
+		return false, false, connection.TenantName, errors.New("memphis: " + errMsg)
 	}
 	newProducer, rowsUpdated, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, connection.CreatedBy, user.Username, station.TenantName)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: " + err.Error())
-		return false, false, err
+		return false, false, connection.TenantName, err
 	}
 	if rowsUpdated == 1 {
 		message := "Producer " + name + " has been created by user " + user.Username
@@ -178,17 +179,17 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 	}
 
-	return shouldSendNotifications, station.DlsConfigurationSchemaverse, nil
+	return shouldSendNotifications, station.DlsConfigurationSchemaverse, connection.TenantName, nil
 }
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
-	tenantName := c.Account().GetName()
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
-	_, _, err = s.createProducerDirectCommon(c, cpr.Name,
+	_, _, tenantName, err := s.createProducerDirectCommon(c, cpr.Name,
 		cpr.ProducerType, cpr.ConnectionId, sn)
 	respondWithErr(tenantName, s, reply, err)
 }
@@ -196,25 +197,13 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequestV1
 	var resp createProducerResponse
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-		account, err := s.lookupAccount(tenantName)
-		if err != nil {
-			s.Errorf("createProducerDirect: %v", err.Error())
-			respondWithRespErr(tenantName, s, reply, err, &resp)
-			return
-		}
-		c.acc = account
-	} else {
-		tenantName = c.Account().GetName()
-	}
 
 	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
 		if err := json.Unmarshal(msg, &cprV0); err != nil {
 			s.Errorf("createProducerDirect: %v", err.Error())
-			respondWithRespErr(tenantName, s, reply, err, &resp)
+			// TODO:pass the client in the internal connection between brokers
+			// respondWithRespErr(tenantName, s, reply, err, &resp)
 			return
 		}
 		s.createProducerDirectV0(c, reply, cprV0)
@@ -228,7 +217,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
+	clusterSendNotification, schemaVerseToDls, _, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
 	if err != nil {
 		respondWithRespErr(cpr.TenantName, s, reply, err, &resp)
 		return
@@ -369,15 +358,10 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 
 func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var dpr destroyProducerRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
 	if err := json.Unmarshal(msg, &dpr); err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
 

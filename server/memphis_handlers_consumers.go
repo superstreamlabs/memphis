@@ -18,7 +18,6 @@ import (
 	"strconv"
 
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -77,17 +76,17 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 }
 
 func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
-	tenantName := c.Account().GetName()
-	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
+	tenantName, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(tenantName, s, reply, err)
 }
 
-func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
+func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) (string, error) {
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
 		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
-		return err
+		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+		return "", err
 	}
 
 	consumerGroup := strings.ToLower(cGroup)
@@ -95,7 +94,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
 			serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
-			return err
+			// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+			return "", err
 		}
 	} else {
 		consumerGroup = name
@@ -105,48 +105,50 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	err = validateConsumerType(consumerType)
 	if err != nil {
 		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": " + err.Error())
-		return err
+		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+		return "", err
 	}
 
 	exist, connection, err := db.GetConnectionByID(connectionId)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
+		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
+		return "", err
 	}
 	if !exist {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Connection ID " + connectionId + " was not found"
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New(errMsg)
+		return connection.TenantName, errors.New(errMsg)
 	}
 	if !connection.IsActive {
 		serv.Warnf("createConsumerDirectCommon: Failed creating consumer " + consumerName + " at station " + cStationName + ": Connection is not active")
-		return errors.New("connection is not active")
+		return connection.TenantName, errors.New("connection is not active")
 	}
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return err
+		return connection.TenantName, err
 	}
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
+		return connection.TenantName, err
 	}
 	if !exist {
 		serv.Warnf("createProducerDirectCommon: user %v is not exists", connection.CreatedBy)
-		return err
+		return connection.TenantName, err
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
+		return connection.TenantName, err
 	}
 
 	if !exist {
@@ -155,7 +157,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		if err != nil {
 			errMsg := "creating default station error: Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 			serv.Warnf("createConsumerDirectCommon: " + errMsg)
-			return err
+			return connection.TenantName, err
 		}
 
 		if created {
@@ -193,19 +195,19 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
+		return connection.TenantName, err
 	}
 
 	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, connection.TenantName)
 	if err != nil {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 		serv.Errorf("createConsumerDirectCommon: " + errMsg)
-		return err
+		return connection.TenantName, err
 	}
 	if exist {
 		errMsg := "Consumer " + consumerName + " at station " + cStationName + ": Consumer name has to be unique per station"
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New("memphis: " + errMsg)
+		return connection.TenantName, errors.New("memphis: " + errMsg)
 	}
 
 	if rowsUpdated == 1 {
@@ -216,7 +218,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {
 					errMsg := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
 					serv.Warnf("createConsumerDirectCommon: " + errMsg.Error())
-					return errMsg
+					return connection.TenantName, errMsg
 				}
 			}
 
@@ -230,7 +232,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 						errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 						serv.Errorf("createConsumerDirectCommon: " + errMsg)
 					}
-					return err
+					return connection.TenantName, err
 				}
 			}
 		} else {
@@ -243,7 +245,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 					errMsg := "Consumer " + consumerName + " at station " + cStationName + ": " + err.Error()
 					serv.Errorf("createConsumerDirectCommon: " + errMsg)
 				}
-				return err
+				return connection.TenantName, err
 			}
 		}
 		var auditLogs []interface{}
@@ -272,31 +274,19 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-consumer-sdk")
 		}
 	}
-	return nil
+	return connection.TenantName, nil
 }
 
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequestV1
-	var resp createConsumerResponse
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-		account, err := s.lookupAccount(tenantName)
-		if err != nil {
-			s.Errorf("createConsumerDirect: Failed lookup account: %v\n", err.Error())
-			respondWithRespErr(tenantName, s, reply, err, &resp)
-			return
-		}
-		c.acc = account
-	} else {
-		tenantName = c.Account().GetName()
-	}
+	// var resp createConsumerResponse
 
 	if err := json.Unmarshal(msg, &ccr); err != nil || ccr.RequestVersion < 1 {
 		var ccrV0 createConsumerRequestV0
 		if err := json.Unmarshal(msg, &ccrV0); err != nil {
 			s.Errorf("createConsumerDirect: Failed creating consumer: %v\n%v", err.Error(), string(msg))
-			respondWithRespErr(tenantName, s, reply, err, &resp)
+			// TODO:pass the client in the internal connection between brokers and return return a tenanName as c.Account().GetName()
+			// respondWithRespErr(tenantName, s, reply, err, &resp)
 			return
 		}
 		s.createConsumerDirectV0(c, reply, ccrV0, ccr.RequestVersion)
@@ -324,7 +314,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
+	_, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	respondWithErr(ccr.TenantName, s, reply, err)
 }
 
@@ -509,15 +499,10 @@ func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for RES
 
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var dcr destroyConsumerRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
 	if err := json.Unmarshal(msg, &dcr); err != nil {
 		s.Errorf("destroyConsumerDirect: %v", err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers and return a tenanName as c.Account().GetName()
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
 

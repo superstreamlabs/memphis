@@ -152,16 +152,10 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
-
 	if err := json.Unmarshal(msg, &csr); err != nil {
 		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	s.createStationDirectIntern(c, reply, &csr, true)
@@ -982,15 +976,10 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	var dsr destroyStationRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeStationDirect: " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	s.removeStationDirectIntern(c, reply, &dsr, true)
@@ -1049,7 +1038,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		respondWithErr(tenantName, s, reply, err)
 		return
 	}
-	_, user, err := db.GetUserByUsername(dsr.Username, c.Account().GetName())
+	_, user, err := db.GetUserByUsername(dsr.Username, tenantName)
 	if err != nil {
 		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(tenantName, s, reply, err)
@@ -1577,16 +1566,11 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 
 func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	var asr attachSchemaRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
 	if err := json.Unmarshal(msg, &asr); err != nil {
 		errMsg := "failed attaching schema " + asr.Name + ": " + err.Error()
 		s.Errorf("useSchemaDirect: At station " + asr.StationName + " " + errMsg)
-		respondWithErr(tenantName, s, reply, errors.New(errMsg))
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, errors.New(errMsg))
 		return
 	}
 	stationName, err := StationNameFromStr(asr.StationName)
@@ -1636,7 +1620,6 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	username := c.getClientInfo(true).Name
 	message := "Schema " + schemaName + " has been attached to station " + stationName.Ext() + " by user " + asr.Username
 	serv.Noticef(message)
 	_, user, err := db.GetUserByUsername(asr.Username, asr.TenantName)
@@ -1671,7 +1654,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 			Value: schemaName,
 		}
 		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(username, analyticsParams, "user-attach-schema-to-station")
+		analytics.SendEventWithParams(user.Username, analyticsParams, "user-attach-schema-to-station")
 	}
 
 	updateContent, err := generateSchemaUpdateInit(schema)
@@ -1715,15 +1698,10 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantNam
 
 func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []byte) {
 	var dsr detachSchemaRequest
-	var tenantName string
-	if c.acc == nil {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	} else {
-		tenantName = c.Account().GetName()
-	}
 	if err := json.Unmarshal(msg, &dsr); err != nil {
 		s.Errorf("removeSchemaFromStationDirect: failed removing schema at station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(tenantName, s, reply, err)
+		// TODO:pass the client in the internal connection between brokers
+		// respondWithErr(tenantName, s, reply, err)
 		return
 	}
 	stationName, err := StationNameFromStr(dsr.StationName)
