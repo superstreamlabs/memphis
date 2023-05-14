@@ -716,12 +716,12 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-			//This check for backward compatability
+			// This check for backward compatability
 			if connectionIdHeader == "" || producedByHeader == "" {
 				connectionIdHeader = headersJson["connectionId"]
 				producedByHeader = strings.ToLower(headersJson["producedBy"])
 				if connectionIdHeader == "" || producedByHeader == "" {
-					return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+					return []models.MessageDetails{}, errors.New("missing mandatory message headers, please upgrade the SDK version you are using")
 				}
 			}
 
@@ -986,6 +986,11 @@ func (s *Server) sendInternalMsgWithHeaderLocked(acc *Account, subj string, hdr 
 func DecodeHeader(buf []byte) (map[string]string, error) {
 	tp := textproto.NewReader(bufio.NewReader(bytes.NewReader(buf)))
 	l, err := tp.ReadLine()
+	hdr := make(map[string]string)
+	if l == _EMPTY_ {
+		return hdr, nil
+	}
+	
 	if err != nil || len(l) < hdrPreEnd || l[:hdrPreEnd] != hdrLine[:hdrPreEnd] {
 		return nil, ErrBadHeader
 	}
@@ -1010,7 +1015,6 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 		}
 	}
 
-	hdr := make(map[string]string)
 	for k, v := range mh {
 		hdr[k] = v[0]
 	}
