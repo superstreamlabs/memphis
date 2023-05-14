@@ -113,9 +113,9 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	s.InitializeMemphisHandlers()
 
-	err = server.EncryptUnencryptedValues()
+	err = server.EncryptOldUnencryptedValues()
 	if err != nil {
-		s.Errorf("Failed encrypt unencrypted values: " + err.Error())
+		s.Errorf("Failed encrypt old unencrypted values: " + err.Error())
 	}
 
 	err = server.InitializeIntegrations()

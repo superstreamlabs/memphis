@@ -85,7 +85,7 @@ func CacheDetails(integrationType string, keys map[string]string, properties map
 
 }
 
-func EncryptUnencryptedValues() error {
+func EncryptOldUnencryptedValues() error {
 	err := encryptUnencryptedKeysByIntegrationType("s3", "secret_key")
 	if err != nil {
 		return err
