@@ -1111,7 +1111,11 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
 		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME, Password: configuration.CONNECTION_TOKEN})
 		for _, user := range users {
-			appUsers = append(appUsers, &User{Username: user.Username, Password: user.Password})
+			decryptedUserPassword, err := DecryptAES(user.Password)
+			if err != nil {
+				return Options{}, err
+			}
+			appUsers = append(appUsers, &User{Username: user.Username, Password: decryptedUserPassword})
 		}
 		opts.Users = appUsers
 	}

@@ -101,6 +101,13 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 		if !exist {
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
+		if value, ok := integrationFromDb.Keys["secret_key"]; ok {
+			decryptedValue, err := DecryptAES(value)
+			if err != nil {
+				return 500, map[string]string{}, err
+			}
+			integrationFromDb.Keys["secret_key"] = decryptedValue
+		}
 		secretKey = integrationFromDb.Keys["secret_key"]
 		keys["secret_key"] = secretKey
 	}
@@ -141,7 +148,13 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		integrationRes, insertErr := db.InsertNewIntegration("s3", keys, properties)
+		cloneKeys := copyMaps(keys)
+		encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+		if err != nil {
+			return models.Integration{}, err
+		}
+		cloneKeys["secret_key"] = encryptedValue
+		integrationRes, insertErr := db.InsertNewIntegration("s3", cloneKeys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
@@ -167,7 +180,13 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 }
 
 func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	s3Integration, err := db.UpdateIntegration("s3", keys, properties)
+	cloneKeys := copyMaps(keys)
+	encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+	if err != nil {
+		return models.Integration{}, err
+	}
+	cloneKeys["secret_key"] = encryptedValue
+	s3Integration, err := db.UpdateIntegration("s3", cloneKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}

@@ -37,6 +37,7 @@ type Configuration struct {
 	METADATA_DB_TLS_CA      string
 	USER_PASS_BASED_AUTH    bool
 	CONNECTION_TOKEN        string
+	ENCRYPTION_SECRET_KEY   string
 	// SANDBOX_SLACK_BOT_TOKEN        string
 	// SANDBOX_SLACK_CHANNEL_ID       string
 	// SANDBOX_UI_URL                 string
