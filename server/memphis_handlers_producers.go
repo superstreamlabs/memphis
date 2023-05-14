@@ -206,7 +206,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
+		s.Warnf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
 		respondWithRespErr(s, reply, err, &resp)
 		return
 	}
@@ -353,7 +353,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
-		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
+		serv.Warnf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
 		respondWithErr(s, reply, err)
 		return
 	}

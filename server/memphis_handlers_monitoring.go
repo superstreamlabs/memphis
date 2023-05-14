@@ -934,6 +934,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -949,6 +950,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -962,6 +964,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 		brokersThroughputs, err := mh.GetBrokersThroughputs()
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -1378,7 +1381,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Warnf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

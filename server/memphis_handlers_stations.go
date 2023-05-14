@@ -905,8 +905,8 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	for _, name := range body.StationNames {
 		stationName, err := StationNameFromStr(name)
 		if err != nil {
-			serv.Errorf("RemoveStation: Station " + name + ": " + err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			serv.Warnf("RemoveStation: Station " + name + ": " + err.Error())
+			continue
 		}
 
 		user, err := getUserDetailsFromMiddleware(c)

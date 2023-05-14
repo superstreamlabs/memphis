@@ -229,7 +229,6 @@ func getActiveVersionBySchemaId(id int) (models.SchemaVersion, error) {
 }
 
 func getSchemaByStationName(sn StationName) (models.Schema, error) {
-
 	exist, station, err := db.GetStationByName(sn.Ext())
 	if err != nil {
 		serv.Errorf("getSchemaByStation: At station " + sn.external + ": " + err.Error())
