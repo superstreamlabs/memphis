@@ -2383,7 +2383,7 @@ func (c *connString) RemoteAddr() net.Addr {
 }
 
 func TestClientConnectionName(t *testing.T) {
-	s, err := NewServer(DefaultOptions())
+	s, _, err := NewServer(DefaultOptions())
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -2462,7 +2462,7 @@ func TestClientLimits(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error obtaining publicKey: %v", err)
 	}
-	s, err := NewServer(DefaultOptions())
+	s, _, err := NewServer(DefaultOptions())
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}

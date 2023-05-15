@@ -857,7 +857,7 @@ func (s *Server) Reload() error {
 		return err
 	}
 
-	memphisOpts, err := s.GetMemphisOpts(*newOpts)
+	memphisOpts, err := GetMemphisOpts(*newOpts)
 	if err != nil {
 		return err
 	}

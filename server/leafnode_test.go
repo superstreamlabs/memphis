@@ -362,7 +362,7 @@ func TestLeafNodeAccountNotFound(t *testing.T) {
 		},
 	}
 	// Expected to fail
-	if _, err := NewServer(oa); err == nil || !strings.Contains(err.Error(), "local account") {
+	if _, _, err := NewServer(oa); err == nil || !strings.Contains(err.Error(), "local account") {
 		t.Fatalf("Expected server to fail with error about no local account, got %v", err)
 	}
 	oa.Accounts = []*Account{NewAccount("foo")}
@@ -579,7 +579,7 @@ func TestLeafNodeValidateAuthOptions(t *testing.T) {
 	opts.LeafNode.Username = "user1"
 	opts.LeafNode.Password = "pwd"
 	opts.LeafNode.Users = []*User{{Username: "user", Password: "pwd"}}
-	if _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(),
+	if _, _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(),
 		"can not have a single user/pass and a users array") {
 		t.Fatalf("Expected error about mixing single/multi users, got %v", err)
 	}
@@ -588,7 +588,7 @@ func TestLeafNodeValidateAuthOptions(t *testing.T) {
 	opts.LeafNode.Username = _EMPTY_
 	opts.LeafNode.Password = _EMPTY_
 	opts.LeafNode.Users = append(opts.LeafNode.Users, &User{Username: "user", Password: "pwd"})
-	if _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "duplicate user") {
+	if _, _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "duplicate user") {
 		t.Fatalf("Expected error about duplicate user, got %v", err)
 	}
 }
@@ -597,7 +597,7 @@ func TestLeafNodeBasicAuthSingleton(t *testing.T) {
 	opts := DefaultOptions()
 	opts.LeafNode.Port = -1
 	opts.LeafNode.Account = "unknown"
-	if s, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "cannot find") {
+	if s, _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "cannot find") {
 		if s != nil {
 			s.Shutdown()
 		}
@@ -2221,7 +2221,7 @@ func TestLeafNodeTwoRemotesBindToSameAccount(t *testing.T) {
 		t.Fatalf("Error loading config file: %v", err)
 	}
 	lopts.NoLog = false
-	ln, err := NewServer(lopts)
+	ln, _, err := NewServer(lopts)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -2565,7 +2565,7 @@ func TestLeafNodeOperatorBadCfg(t *testing.T) {
 
 			conf := createConfFile(t, []byte(fmt.Sprintf(configTmpl, ojwt, sysAccPk, tmpDir, c.cfg)))
 			opts := LoadConfig(conf)
-			s, err := NewServer(opts)
+			s, _, err := NewServer(opts)
 			if err == nil {
 				s.Shutdown()
 				t.Fatal("Expected an error")
@@ -2780,7 +2780,7 @@ func TestLeafNodeWSMixURLs(t *testing.T) {
 			}
 			remote.URLs = urls
 			o.LeafNode.Remotes = []*RemoteLeafOpts{remote}
-			s, err := NewServer(o)
+			s, _, err := NewServer(o)
 			if err == nil || !strings.Contains(err.Error(), "mix") {
 				if s != nil {
 					s.Shutdown()
@@ -3055,7 +3055,7 @@ func TestLeafNodeWSFailedConnection(t *testing.T) {
 	lo = DefaultOptions()
 	lo.LeafNode.Remotes = []*RemoteLeafOpts{{URLs: []*url.URL{u}}}
 	lo.LeafNode.ReconnectInterval = 10 * time.Millisecond
-	ln, _ = NewServer(lo)
+	ln, _, _ = NewServer(lo)
 	el = &captureErrorLogger{errCh: make(chan string, 100)}
 	ln.SetLogger(el, false, false)
 
@@ -4238,7 +4238,7 @@ func TestLeafNodeMinVersion(t *testing.T) {
 			o.Port = -1
 			o.LeafNode.Port = -1
 			o.LeafNode.MinVersion = test.version
-			if s, err := NewServer(o); err == nil || !strings.Contains(err.Error(), test.err) {
+			if s, _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), test.err) {
 				if s != nil {
 					s.Shutdown()
 				}

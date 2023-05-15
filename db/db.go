@@ -375,7 +375,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	return nil
 }
 
-func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
+func InitalizeMetadataDbConnection() (MetadataStorage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 
 	defer cancelfunc()
@@ -427,7 +427,6 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 	if err != nil {
 		return MetadataStorage{}, err
 	}
-	l.Noticef("Established connection with the meta-data storage")
 	client := MetadataStorage{Ctx: ctx, Cancel: cancelfunc, Client: pool}
 	err = createTables(client)
 	if err != nil {

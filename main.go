@@ -95,32 +95,9 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.MetadataStorage {
+func runMemphis(s *server.Server) {
 
-	metadataDb, err := db.InitalizeMetadataDbConnection(s)
-	if err != nil {
-		s.Errorf("Failed initializing connection with the metadata db: " + err.Error())
-		os.Exit(1)
-	}
-
-	err = server.CreateGlobalTenantOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create global tenant: " + err.Error())
-		os.Exit(1)
-	}
-
-	err = server.CreateRootUserOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create root user: " + err.Error())
-		os.Exit(1)
-	}
-
-	err = s.Reload()
-	if err != nil {
-		s.Errorf("Failed reloading: " + err.Error())
-	}
-
-	err = s.ConfigureMemphisGlobalAccount()
+	err := s.ConfigureMemphisGlobalAccount()
 	if err != nil {
 		s.Errorf("Failed to set Memphis global account: " + err.Error())
 	}
@@ -174,7 +151,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return metadataDb
 }
 
 func main() {
@@ -197,7 +173,7 @@ func main() {
 	}
 
 	// Create the server with appropriate options.
-	s, err := server.NewServer(opts)
+	s, metadataDb, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
@@ -219,8 +195,9 @@ func main() {
 		// Reset these from the snapshots from init for monitor.go
 		server.SnapshotMonitorInfo()
 	}
+	s.Noticef("Established connection with the meta-data storage")
 
-	metadataDb := runMemphis(s)
+	runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
