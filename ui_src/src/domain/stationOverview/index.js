@@ -93,7 +93,7 @@ const StationOverview = () => {
         const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         try {
             (async () => {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
             })();

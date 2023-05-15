@@ -126,11 +126,10 @@ const LogsWrapper = () => {
     const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         if (logType === 'external' && logSource === '') {
             try {
                 (async () => {
-                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
                 })();
@@ -144,7 +143,7 @@ const LogsWrapper = () => {
                     if (logSource === '') {
                         logFilter = `${logType}`;
                     }
-                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logFilter}`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data.${logFilter}`, sc.encode('SUB'));
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${logFilter}.${brokerName}`);
                 })();
