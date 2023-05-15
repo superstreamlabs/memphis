@@ -26,6 +26,7 @@ import { Context } from '../../hooks/store';
 import SearchInput from '../searchInput';
 import Reducer from './hooks/reducer';
 import Button from '../button';
+import { LOCAL_STORAGE_ACCOUNT_ID } from '../../const/localStorageConsts';
 
 const initialState = {
     isOpen: false,
@@ -72,13 +73,14 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         let sub;
         let jc;
         let sc;
+        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         switch (filterComponent) {
             case 'stations':
                 jc = JSONCodec();
                 sc = StringCodec();
                 try {
                     (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
                     })();
@@ -105,7 +107,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 sc = StringCodec();
                 try {
                     (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, jc.encode({request_type: 'SUB', tenant_id: account_id}));
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
                     })();

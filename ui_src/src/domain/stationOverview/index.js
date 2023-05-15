@@ -25,6 +25,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
+import { LOCAL_STORAGE_ACCOUNT_ID } from '../../const/localStorageConsts';
 
 const initializeState = {
     stationMetaData: { is_native: true },
@@ -89,9 +90,10 @@ const StationOverview = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
+        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         try {
             (async () => {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
             })();

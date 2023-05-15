@@ -24,7 +24,8 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_WELCOME_MESSAGE,
-    LOCAL_STORAGE_SKIP_GET_STARTED
+    LOCAL_STORAGE_SKIP_GET_STARTED,
+    LOCAL_STORAGE_ACCOUNT_ID
 } from '../../const/localStorageConsts';
 import installationIcon from '../../assets/images/installationIcon.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';
@@ -142,9 +143,11 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
+        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
+        
         try {
             (async () => {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, jc.encode({'request_type': 'SUB', 'tenant_id': account_id}));
                 const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                 sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
             })();

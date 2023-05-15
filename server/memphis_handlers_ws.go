@@ -146,24 +146,47 @@ func tokensFromToEnd(subject string, index uint8) string {
 	return _EMPTY_
 }
 
+type wsRegistrationMsg struct {
+	ReqType  string `json:"request_type"`
+	TenantId string `json:"tenant_id"`
+}
+
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
-		tenantName := c.Account().GetName()
+		var wsr wsRegistrationMsg
+		if err := json.Unmarshal(msg, &wsr); err != nil {
+			s.Errorf("createWSRegistrationHandler: " + err.Error())
+			return
+		}
+		tenantId, err := strconv.Atoi(wsr.TenantId)
+		if err != nil {
+			s.Errorf("createWSRegistrationHandler: " + err.Error())
+			return
+		}
+		exist, tenant, err := db.GetTenantById(tenantId)
+		if !exist {
+			s.Errorf("createWSRegistrationHandler: Tenant does not exist")
+			return
+		}
+		if err != nil {
+			s.Errorf("createWSRegistrationHandler: " + err.Error())
+			return
+		}
 		s.Debugf("memphisWS registration - %s,%s", subj, string(msg))
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
-		trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
-		switch trimmedMsg {
+		// trimmedMsg := strings.TrimSuffix(string(msg), "\r\n")
+		switch wsr.ReqType {
 		case memphisWS_SubscribeMsg:
-			reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj, tenantName)
+			reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj, tenant.Name)
 			if err != nil {
 				s.Errorf("memphis websocket: " + err.Error())
 				return
 			}
 			if _, ok := subscriptions.Load(filteredSubj); !ok {
-				subscriptions.Add(filteredSubj, memphisWSReqTenantsToFiller{tenants: map[string]memphisWSReqFiller{c.Account().GetName(): reqFiller}})
+				subscriptions.Add(filteredSubj, memphisWSReqTenantsToFiller{tenants: map[string]memphisWSReqFiller{tenant.Name: reqFiller}})
 			} else {
-				err := addTenantToSub(tenantName, subscriptions, filteredSubj, reqFiller)
+				err := addTenantToSub(tenant.Name, subscriptions, filteredSubj, reqFiller)
 				if err != nil {
 					s.Errorf("memphis websocket: " + err.Error())
 				}
@@ -184,13 +207,14 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			s.Errorf("memphis websocket: " + err.Error())
 			return
 		}
-
-		account, err := s.lookupAccount(tenantName)
-		if err != nil {
-			s.Errorf("memphis websocket: " + err.Error())
-			return
+		if tenant.Name != "" {
+			account, err := s.lookupAccount(tenant.Name)
+			if err != nil {
+				s.Errorf("memphis websocket: " + err.Error())
+				return
+			}
+			s.sendInternalAccountMsg(account, reply, serverName)
 		}
-		s.sendInternalAccountMsg(account, reply, serverName)
 	}
 }
 
