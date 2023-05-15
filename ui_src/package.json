@@ -1,6 +1,6 @@
 {
   "name": "memphis-ui",
-  "version": "0.2.0",
+  "version": "0.2.0",o
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.12.3",
