@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"memphis/conf"
 	"memphis/db"
+	"strings"
 )
 
 func isGlobalTenantExist() (bool, error) {
@@ -42,28 +43,34 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 	return nil
 }
 
+type getTenantMsg struct {
+	Acc string `json:"acc"`
+	Rtt int    `json:"rtt"`
+}
+
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
-	var tnr getTenantNameRequest
 	var resp getTenantNameResponse
-	if err := json.Unmarshal(msg, &tnr); err != nil {
-		s.Errorf("getTenantName: failed get tenant id: " + err.Error())
-		// TODO:pass the client in the internal connection between brokers
-		// respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	}
-	exist, tenant, err := db.GetTenantById(tnr.TenantId)
-	if err != nil {
-		serv.Errorf("getTenantName: " + err.Error())
-		// TODO:pass the client in the internal connection between brokers
-		// respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	}
-	if !exist {
-		serv.Warnf("getTenantName: tenant couldn't been found")
-		respondWithRespErr(tenant.Name, s, reply, err, &resp)
-		return
+	var gtm getTenantMsg
+	message := string(msg)
+	var tenantName string
+
+	if strings.Contains(message, "acc") {
+		splittedMsg := strings.Split(message, "\r\n\r\n")
+		if len(splittedMsg) != 2 {
+			s.Errorf("createWSRegistrationHandler: error parsing message")
+			return
+		}
+		trimmedForMarshal := strings.TrimPrefix(splittedMsg[0], "NATS/1.0\r\nNats-Request-Info: ")
+		if err := json.Unmarshal([]byte(trimmedForMarshal), &gtm); err != nil {
+			s.Errorf("createWSRegistrationHandler: " + err.Error())
+			return
+		}
+		tenantName = gtm.Acc
+		message = splittedMsg[1]
+	} else {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 	}
 
-	resp.TenantName = tenant.Name
-	respondWithResp(tenant.Name, s, reply, &resp)
+	resp.TenantName = tenantName
+	respondWithResp(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, &resp)
 }
