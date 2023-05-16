@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 	if !exist {
-		serv.Warnf("createProducerDirectCommon: user %v is not exists", connection.CreatedBy)
+		serv.Warnf("createConsumerDirectCommon: user %v is not exists", connection.CreatedBy)
 		return err
 	}
 
