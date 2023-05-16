@@ -87,28 +87,30 @@ const Component = ({ comp, i }) => {
                             <Divider type="vertical" />
                         </>
                     )}
-                    <div className="ports">
-                        <label className="comp-label">Ports</label>
-                        <label className="value">{comp?.ports.length > 0 ? comp?.ports[0] : 'None'}</label>
-                        {comp?.ports?.length > 1 && (
-                            <Popover
-                                overlayInnerStyle={remainingPorstPopInnerStyle}
-                                placement="bottomLeft"
-                                content={comp?.ports?.slice(1)?.map((port) => {
-                                    return (
-                                        <p className="comp-plus-popover" onClick={handleIconClick}>
-                                            {port}
-                                        </p>
-                                    );
-                                })}
-                            >
-                                <div className="plus-comp" onClick={handleIconClick}>
-                                    <Add className="add" />
-                                    <p>{comp?.ports?.length - 1}</p>
-                                </div>
-                            </Popover>
-                        )}
-                    </div>
+                    {comp?.ports && (
+                        <div className="ports">
+                            <label className="comp-label">Ports</label>
+                            <label className="value">{comp?.ports.length > 0 ? comp?.ports[0] : 'None'}</label>
+                            {comp?.ports?.length > 1 && (
+                                <Popover
+                                    overlayInnerStyle={remainingPorstPopInnerStyle}
+                                    placement="bottomLeft"
+                                    content={comp?.ports?.slice(1)?.map((port) => {
+                                        return (
+                                            <p className="comp-plus-popover" onClick={handleIconClick}>
+                                                {port}
+                                            </p>
+                                        );
+                                    })}
+                                >
+                                    <div className="plus-comp" onClick={handleIconClick}>
+                                        <Add className="add" />
+                                        <p>{comp?.ports?.length - 1}</p>
+                                    </div>
+                                </Popover>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
