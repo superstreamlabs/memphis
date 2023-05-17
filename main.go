@@ -96,7 +96,6 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) {
-
 	err := s.ConfigureMemphisGlobalAccount()
 	if err != nil {
 		s.Errorf("Failed to set Memphis global account: " + err.Error())

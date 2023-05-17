@@ -331,6 +331,7 @@ func New(opts *Options) *Server {
 // NewServer will setup a new server struct after parsing the options.
 // Could return an error if options can not be validated.
 func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
+	// ** added by Memphis
 	metadataDb, err := db.InitalizeMetadataDbConnection()
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
@@ -345,33 +346,37 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
+	// added by Memphis **
 
+	setBaselineOptions(opts)
+	// ** added by Memphis
 	memphisOpts, err := GetMemphisOpts(*opts)
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
-	setBaselineOptions(&memphisOpts)
+	*opts = memphisOpts
+	// added by Memphis **
 
 	// Process TLS options, including whether we require client certificates.
-	tlsReq := memphisOpts.TLSConfig != nil
-	verify := (tlsReq && memphisOpts.TLSConfig.ClientAuth == tls.RequireAndVerifyClientCert)
+	tlsReq := opts.TLSConfig != nil
+	verify := (tlsReq && opts.TLSConfig.ClientAuth == tls.RequireAndVerifyClientCert)
 
 	// Created server's nkey identity.
 	kp, _ := nkeys.CreateServer()
 	pub, _ := kp.PublicKey()
 
 	serverName := pub
-	if memphisOpts.ServerName != _EMPTY_ {
-		serverName = memphisOpts.ServerName
+	if opts.ServerName != _EMPTY_ {
+		serverName = opts.ServerName
 	}
 
-	httpBasePath := normalizeBasePath(memphisOpts.HTTPBasePath)
+	httpBasePath := normalizeBasePath(opts.HTTPBasePath)
 
 	// Validate some options. This is here because we cannot assume that
 	// server will always be started with configuration parsing (that could
 	// report issues). Its options can be (incorrectly) set by hand when
 	// server is embedded. If there is an error, return nil.
-	if err := validateOptions(&memphisOpts); err != nil {
+	if err := validateOptions(opts); err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
 
@@ -382,16 +387,16 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		GitCommit:    gitCommit,
 		GoVersion:    runtime.Version(),
 		Name:         serverName,
-		Host:         memphisOpts.Host,
-		Port:         memphisOpts.Port,
+		Host:         opts.Host,
+		Port:         opts.Port,
 		AuthRequired: false,
-		TLSRequired:  tlsReq && !memphisOpts.AllowNonTLS,
+		TLSRequired:  tlsReq && !opts.AllowNonTLS,
 		TLSVerify:    verify,
-		MaxPayload:   memphisOpts.MaxPayload,
-		JetStream:    memphisOpts.JetStream,
-		Headers:      !memphisOpts.NoHeaderSupport,
-		Cluster:      memphisOpts.Cluster.Name,
-		Domain:       memphisOpts.JetStreamDomain,
+		MaxPayload:   opts.MaxPayload,
+		JetStream:    opts.JetStream,
+		Headers:      !opts.NoHeaderSupport,
+		Cluster:      opts.Cluster.Name,
+		Domain:       opts.JetStreamDomain,
 	}
 
 	if tlsReq && !info.TLSRequired {
@@ -402,9 +407,9 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	s := &Server{
 		kp:                 kp,
-		configFile:         memphisOpts.ConfigFile,
+		configFile:         opts.ConfigFile,
 		info:               info,
-		opts:               &memphisOpts,
+		opts:               opts,
 		done:               make(chan bool, 1),
 		start:              now,
 		configTime:         now,
@@ -414,7 +419,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		routesToSelf:       make(map[string]struct{}),
 		httpReqStats:       make(map[string]uint64), // Used to track HTTP requests
 		rateLimitLoggingCh: make(chan time.Duration, 1),
-		leafNodeEnabled:    memphisOpts.LeafNode.Port != 0 || len(memphisOpts.LeafNode.Remotes) > 0,
+		leafNodeEnabled:    opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0,
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
 
@@ -424,8 +429,8 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		s.syncOutSem <- struct{}{}
 	}
 
-	if memphisOpts.TLSRateLimit > 0 {
-		s.connRateCounter = newRateCounter(memphisOpts.tlsConfigOpts.RateLimit)
+	if opts.TLSRateLimit > 0 {
+		s.connRateCounter = newRateCounter(opts.tlsConfigOpts.RateLimit)
 	}
 
 	// Trusted root operator keys.
@@ -435,14 +440,14 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	// If we have solicited leafnodes but no clustering and no clustername.
 	// However we may need a stable clustername so use the server name.
-	if len(memphisOpts.LeafNode.Remotes) > 0 && memphisOpts.Cluster.Port == 0 && memphisOpts.Cluster.Name == _EMPTY_ {
-		memphisOpts.Cluster.Name = memphisOpts.ServerName
+	if len(opts.LeafNode.Remotes) > 0 && opts.Cluster.Port == 0 && opts.Cluster.Name == _EMPTY_ {
+		opts.Cluster.Name = opts.ServerName
 	}
 
-	if memphisOpts.Cluster.Name != _EMPTY_ {
+	if opts.Cluster.Name != _EMPTY_ {
 		// Also place into mapping cn with cnMu lock.
 		s.cnMu.Lock()
-		s.cn = memphisOpts.Cluster.Name
+		s.cn = opts.Cluster.Name
 		s.cnMu.Unlock()
 	}
 
@@ -450,22 +455,22 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	defer s.mu.Unlock()
 
 	// Place ourselves in the JetStream nodeInfo if needed.
-	if memphisOpts.JetStream {
+	if opts.JetStream {
 		ourNode := getHash(serverName)
 		s.nodeToInfo.Store(ourNode, nodeInfo{
 			serverName,
 			VERSION,
-			memphisOpts.Cluster.Name,
-			memphisOpts.JetStreamDomain,
+			opts.Cluster.Name,
+			opts.JetStreamDomain,
 			info.ID,
-			memphisOpts.Tags,
-			&JetStreamConfig{MaxMemory: memphisOpts.JetStreamMaxMemory, MaxStore: memphisOpts.JetStreamMaxStore, CompressOK: true},
+			opts.Tags,
+			&JetStreamConfig{MaxMemory: opts.JetStreamMaxMemory, MaxStore: opts.JetStreamMaxStore, CompressOK: true},
 			nil,
 			false, true,
 		})
 	}
 
-	s.routeResolver = memphisOpts.Cluster.resolver
+	s.routeResolver = opts.Cluster.resolver
 	if s.routeResolver == nil {
 		s.routeResolver = net.DefaultResolver
 	}
@@ -487,16 +492,16 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	// Call this even if there is no gateway defined. It will
 	// initialize the structure so we don't have to check for
 	// it to be nil or not in various places in the code.
-	if err := s.newGateway(&memphisOpts); err != nil {
+	if err := s.newGateway(opts); err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
 
 	// If we have a cluster definition but do not have a cluster name, create one.
-	if memphisOpts.Cluster.Port != 0 && memphisOpts.Cluster.Name == _EMPTY_ {
+	if opts.Cluster.Port != 0 && opts.Cluster.Name == _EMPTY_ {
 		s.info.Cluster = nuid.Next()
-	} else if memphisOpts.Cluster.Name != _EMPTY_ {
+	} else if opts.Cluster.Name != _EMPTY_ {
 		// Likewise here if we have a cluster name set.
-		s.info.Cluster = memphisOpts.Cluster.Name
+		s.info.Cluster = opts.Cluster.Name
 	}
 
 	// This is normally done in the AcceptLoop, once the
@@ -509,7 +514,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	s.clients = make(map[uint64]*client)
 
 	// For tracking closed clients.
-	s.closed = newClosedRingBuffer(memphisOpts.MaxClosedClients)
+	s.closed = newClosedRingBuffer(opts.MaxClosedClients)
 
 	// For tracking connections that are not yet registered
 	// in s.routes, but for which readLoop has started.
@@ -539,7 +544,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		return nil, db.MetadataStorage{}, err
 	}
 	// If there is an URL account resolver, do basic test to see if anyone is home.
-	if ar := memphisOpts.AccountResolver; ar != nil {
+	if ar := opts.AccountResolver; ar != nil {
 		if ur, ok := ar.(*URLAccResolver); ok {
 			if _, err := ur.Fetch(_EMPTY_); err != nil {
 				return nil, db.MetadataStorage{}, err
@@ -549,8 +554,8 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	// For other resolver:
 	// In operator mode, when the account resolver depends on an external system and
 	// the system account can't be fetched, inject a temporary one.
-	if ar := s.accResolver; len(memphisOpts.TrustedOperators) == 1 && ar != nil &&
-		memphisOpts.SystemAccount != _EMPTY_ && memphisOpts.SystemAccount != DEFAULT_SYSTEM_ACCOUNT {
+	if ar := s.accResolver; len(opts.TrustedOperators) == 1 && ar != nil &&
+		opts.SystemAccount != _EMPTY_ && opts.SystemAccount != DEFAULT_SYSTEM_ACCOUNT {
 		if _, ok := ar.(*MemAccResolver); !ok {
 			s.mu.Unlock()
 			var a *Account
