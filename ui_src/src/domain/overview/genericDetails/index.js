@@ -49,6 +49,14 @@ const GenericDetails = () => {
                         <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
                     </div>
                 </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Attached schema</span>
+                        <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -238,7 +238,7 @@ const StationOverviewHeader = () => {
                                                 placeholder={
                                                     <div className="use-schema-button">
                                                         <Add />
-                                                        <p>Attach schema</p>
+                                                        <p>Enforce schema</p>
                                                     </div>
                                                 }
                                                 tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
@@ -353,7 +353,7 @@ const StationOverviewHeader = () => {
                     <Auditing />
                 </Modal>
                 <Modal
-                    header="Attach schema"
+                    header="Enforce schema"
                     displayButtons={false}
                     height="400px"
                     width="352px"

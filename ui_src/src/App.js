@@ -25,7 +25,6 @@ import StationOverview from './domain/stationOverview';
 import MessageJourney from './domain/messageJourney';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
-import SandboxLogin from './domain/sandboxLogin';
 import Administration from './domain/administration';
 import Profile from './domain/profile';
 import SchemaManagment from './domain/schema';
@@ -85,7 +84,7 @@ const App = withRouter(() => {
                 if (firstTime) {
                     try {
                         let conn;
-                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             conn = await connect({
                                 servers: [SOCKET_URL],
@@ -96,7 +95,7 @@ const App = withRouter(() => {
                         } else {
                             conn = await connect({
                                 servers: [SOCKET_URL],
-                                token: '::'+connection_token,
+                                token: '::' + connection_token,
                                 timeout: '5000'
                             });
                         }
@@ -116,9 +115,8 @@ const App = withRouter(() => {
                 {' '}
                 {!authCheck && (
                     <Switch>
-                        {process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={SandboxLogin} />}
-                        {!process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.signup} component={Signup} />}
-                        {!process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={Login} />}
+                        <Route exact path={pathDomains.signup} component={Signup} />
+                        <Route exact path={pathDomains.login} component={Login} />
                         <PrivateRoute
                             exact
                             path={pathDomains.overview}

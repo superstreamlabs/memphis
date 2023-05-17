@@ -12,7 +12,6 @@
 
 export const LOCAL_STORAGE_SKIP_GET_STARTED = 'local_storage_skip_get_started';
 export const LOCAL_STORAGE_ALREADY_LOGGED_IN = 'already_logged_in';
-export const LOCAL_STORAGE_WELCOME_MESSAGE = 'welcome_message';
 export const LOCAL_STORAGE_CREATION_DATE = 'created_at';
 export const LOCAL_STORAGE_COMPANY_LOGO = 'company_logo';
 export const LOCAL_STORAGE_EXPIRED_TOKEN = 'expires_in';
@@ -34,3 +33,4 @@ export const LOCAL_STORAGE_HTTP_PORT = 'http_port';
 export const LOCAL_STORAGE_REST_GW_PORT = 'rest_gw_port';
 export const LOCAL_STORAGE_USER_PASS_BASED_AUTH = 'user_pass_based_auth';
 export const LOCAL_STORAGE_CONNECTION_TOKEN = 'connection_token';
+export const LOCAL_STORAGE_CLOUD_ENV = 'cloud_env';

@@ -357,7 +357,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 {!getStarted && (
                     <div className="schema-type">
                         <div className="toggle-add-schema">
-                            <TitleComponent headerTitle="Attach schema" typeTitle="sub-header" headerDescription="Enforcing schema will increase produced data quality" />
+                            <TitleComponent
+                                headerTitle="Enforce schema"
+                                typeTitle="sub-header"
+                                headerDescription="Enforcing schema will increase produced data quality"
+                            />
                             <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
                         </div>
                         {!getStarted && useSchema && (

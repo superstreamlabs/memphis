@@ -68,24 +68,14 @@ function Profile() {
                 <div className="avatar-section">
                     <p className="title">Avatar</p>
                     <div className="avatar-images">
-                        {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic') && (
+                        {localStorage.getItem('profile_pic') && (
                             <div className={'avatar-img selected'}>
                                 <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
                             </div>
                         )}
                         {Array.from(Array(8).keys()).map((item, index) => {
                             return (
-                                <div
-                                    key={index}
-                                    className={
-                                        process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
-                                            ? 'avatar-img avatar-disable'
-                                            : avatar === item + 1
-                                            ? 'avatar-img selected'
-                                            : 'avatar-img'
-                                    }
-                                    onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
-                                >
+                                <div key={index} className={avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'} onClick={() => editAvatar(item + 1)}>
                                     <img src={require(`../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                                 </div>
                             );
