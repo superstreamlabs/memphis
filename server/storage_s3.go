@@ -223,8 +223,11 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		if strings.Contains(err.Error(), "Forbidden") {
 			err = errors.New("invalid access key or secret key")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
-		} else if strings.Contains(err.Error(), "NotFound: Not Found") {
-			err = errors.New("bucket name does not exist")
+		} else if strings.Contains(err.Error(), "404") {
+			err = errors.New("bucket does not exist")
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "Moved Permanently") {
+			err = errors.New("bucket name does not exist in the selected region, it is probably placed in another region")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "send request failed") {
 			err = errors.New("upload failed")
@@ -247,7 +250,6 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		} else {
 			statusCode = 500
 		}
-		err = errors.New("create a S3 client with additional configuration failure: " + err.Error())
 		return statusCode, err
 	}
 
