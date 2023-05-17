@@ -59,22 +59,25 @@ const SysComponents = () => {
                 </div>
                 <div className="component-list">
                     {state?.monitor_data?.system_components?.map((comp, i) => {
+                        const childrenData = getBrokers(comp);
                         return (
                             <Tree
                                 key={`tree-node${i}`}
                                 blockNode
-                                showLine
-                                selectable={true}
+                                showLine={childrenData.length > 0}
+                                selectable={childrenData.length > 0}
                                 expandedKeys={expandedNodes}
-                                switcherIcon={({ expanded }) => (
-                                    <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
-                                )}
+                                switcherIcon={({ expanded }) =>
+                                    childrenData.length > 0 && (
+                                        <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
+                                    )
+                                }
                                 rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
                                 onSelect={(_, info) => {
                                     if (!expandedNodes?.includes(info.node.key)) setExpandedNodes([...expandedNodes, info.node.key]);
                                     else setExpandedNodes(expandedNodes.filter((node) => node !== info.node.key));
                                 }}
-                                defaultExpandedKeys={['0-0']}
+                                defaultExpandedKeys={childrenData.length > 0 ? ['0-0'] : []}
                                 onExpand={(_, { expanded }) => {
                                     if (expanded) setExpandedNodes([...expandedNodes, `0-${i}`]);
                                     else setExpandedNodes(expandedNodes.filter((node) => node !== `0-${i}`));
@@ -83,7 +86,7 @@ const SysComponents = () => {
                                     {
                                         title: <Component comp={comp} i={i} />,
                                         key: `0-${i}`,
-                                        children: getBrokers(comp)
+                                        children: childrenData
                                     }
                                 ]}
                             />

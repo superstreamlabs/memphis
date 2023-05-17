@@ -30,6 +30,11 @@ const Reducer = (state, action) => {
                 ...state,
                 isLatest: action.payload
             };
+        case 'CURRENT_VERSION':
+            return {
+                ...state,
+                currentVersion: action.payload
+            };
         case 'SET_LOADER':
             return {
                 ...state,

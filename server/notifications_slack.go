@@ -189,7 +189,13 @@ func createSlackIntegration(keys map[string]string, properties map[string]bool, 
 		if err != nil {
 			return slackIntegration, err
 		}
-		integrationRes, insertErr := db.InsertNewIntegration("slack", keys, properties)
+		cloneKeys := copyMaps(keys)
+		encryptedValue, err := EncryptAES([]byte(keys["auth_token"]))
+		if err != nil {
+			return models.Integration{}, err
+		}
+		cloneKeys["auth_token"] = encryptedValue
+		integrationRes, insertErr := db.InsertNewIntegration("slack", cloneKeys, properties)
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
@@ -236,10 +242,17 @@ func updateSlackIntegration(authToken string, channelID string, pmAlert bool, sv
 		return slackIntegration, err
 	}
 	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "")
-	slackIntegration, err = db.UpdateIntegration("slack", keys, properties)
+	cloneKeys := copyMaps(keys)
+	encryptedValue, err := EncryptAES([]byte(authToken))
 	if err != nil {
 		return models.Integration{}, err
 	}
+	cloneKeys["auth_token"] = encryptedValue
+	slackIntegration, err = db.UpdateIntegration("slack", cloneKeys, properties)
+	if err != nil {
+		return models.Integration{}, err
+	}
+
 	integrationToUpdate := models.CreateIntegrationSchema{
 		Name:       "slack",
 		Keys:       keys,

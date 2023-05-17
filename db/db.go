@@ -14,7 +14,6 @@ package db
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -2499,7 +2498,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 			SchemaContent:     v.SchemaContent,
 			SchemaId:          v.SchemaId,
 			MessageStructName: v.MessageStructName,
-			Descriptor:        base64.StdEncoding.EncodeToString(v.Descriptor),
+			Descriptor:        string(v.Descriptor),
 		}
 
 		schemaVersions = append(schemaVersions, version)
@@ -2542,7 +2541,7 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		SchemaContent:     schemas[0].SchemaContent,
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
-		Descriptor:        base64.StdEncoding.EncodeToString(schemas[0].Descriptor),
+		Descriptor:        string(schemas[0].Descriptor),
 	}
 
 	return schemaVersion, nil
@@ -2633,7 +2632,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		SchemaContent:     schemas[0].SchemaContent,
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
-		Descriptor:        base64.StdEncoding.EncodeToString(schemas[0].Descriptor),
+		Descriptor:        string(schemas[0].Descriptor),
 	}
 	return true, schemaVersion, nil
 }

@@ -1282,8 +1282,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		connectionIdHeader = headersJson["connectionId"]
 		producedByHeader = strings.ToLower(headersJson["producedBy"])
 		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("GetMessageDetails: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using"})
+			serv.Warnf("GetMessageDetails: missing mandatory message headers, please upgrade the SDK version you are using")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "missing mandatory message headers, please upgrade the SDK version you are using"})
 			return
 		}
 	}
