@@ -102,7 +102,9 @@ const App = withRouter(() => {
                             });
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {}
+                    } catch (error) {
+                        return;
+                    }
                 }
                 return true;
             }

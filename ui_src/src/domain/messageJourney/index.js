@@ -65,7 +65,6 @@ const MessageJourney = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.poison_message_journey_data.${messageId}`,  sc.encode('SUB'));

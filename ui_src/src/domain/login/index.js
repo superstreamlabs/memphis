@@ -107,7 +107,9 @@ const Login = (props) => {
                             });
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {}
+                    } catch (error) {
+                        return;
+                    }
                     dispatch({ type: 'SET_USER_DATA', payload: data });
                     history.push(referer);
                 }
