@@ -13,6 +13,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -22,12 +23,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/aws/smithy-go"
 )
 
 type TieredStorageMsg struct {
@@ -111,12 +113,9 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 		secretKey = integrationFromDb.Keys["secret_key"]
 		keys["secret_key"] = secretKey
 	}
-	provider := &credentials.StaticProvider{Value: credentials.Value{
-		AccessKeyID:     accessKey,
-		SecretAccessKey: secretKey,
-	}}
 
-	_, err := provider.Retrieve()
+	provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
+	_, err := provider.Retrieve(context.Background())
 	if err != nil {
 		if strings.Contains(err.Error(), "static credentials are empty") {
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("credentials are empty")
@@ -125,18 +124,21 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 		}
 	}
 
-	credentials := credentials.NewCredentials(provider)
-	sess, err := session.NewSession(&aws.Config{
-		Region:      aws.String(region),
-		Credentials: credentials},
+	cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+		awsconfig.WithCredentialsProvider(provider),
+		awsconfig.WithRegion(region),
 	)
+	if err != nil {
+		return 500, map[string]string{}, err
+	}
+
+	svc := s3.NewFromConfig(cfg)
 	if err != nil {
 		err = errors.New("NewSession failure " + err.Error())
 		return 500, map[string]string{}, err
 	}
 
-	svc := s3.New(sess)
-	statusCode, err := testS3Integration(sess, svc, bucketName)
+	statusCode, err := testS3Integration(svc, bucketName)
 	if err != nil {
 		return statusCode, map[string]string{}, err
 	}
@@ -212,8 +214,8 @@ func updateS3Integration(keys map[string]string, properties map[string]bool) (mo
 	return s3Integration, nil
 }
 
-func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (int, error) {
-	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
+	_, err := svc.HeadBucket(context.Background(), &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	})
 	var statusCode int
@@ -222,21 +224,25 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 			err = errors.New("invalid access key or secret key")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "NotFound: Not Found") {
-			err = errors.New("bucket name is not exists")
+			err = errors.New("bucket name does not exist")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "send request failed") {
-			err = errors.New("invalid region name")
+			err = errors.New("upload failed")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "could not find region configuration") {
-			awsErr := err.(awserr.Error)
-			err = errors.New(awsErr.Message() + " : region name is empty")
+			var oe *smithy.OperationError
+			if errors.As(err, &oe) {
+				err = errors.New(oe.Error() + " : region name is empty")
+			}
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "validation error(s) found") || strings.Contains(err.Error(), "BadRequest: Bad Request") {
 			err = errors.New("invalid bucket name")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "incorrect region") {
-			awsErr := err.(awserr.Error)
-			err = errors.New(awsErr.Message())
+			var oe *smithy.OperationError
+			if errors.As(err, &oe) {
+				err = errors.New(oe.Error() + " : incorrect region")
+			}
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
@@ -245,7 +251,7 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		return statusCode, err
 	}
 
-	acl, err := svc.GetBucketAcl(&s3.GetBucketAclInput{
+	acl, err := svc.GetBucketAcl(context.Background(), &s3.GetBucketAclInput{
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
@@ -253,18 +259,17 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		return 500, err
 	}
 
-	permission := *acl.Grants[0].Permission
-	permissionValue := permission
+	permission := acl.Grants[0].Permission
 
-	if permissionValue != "FULL_CONTROL" {
+	if permission != types.PermissionFullControl {
 		err = errors.New("creds should have full access on this bucket")
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
-	uploader := s3manager.NewUploader(sess)
+	uploader := manager.NewUploader(svc)
 	reader := strings.NewReader(string("test"))
 	// Upload the object to S3.
-	_, err = uploader.Upload(&s3manager.UploadInput{
+	_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String("memphis"),
 		Body:   reader,
@@ -274,19 +279,15 @@ func testS3Integration(sess *session.Session, svc *s3.S3, bucketName string) (in
 		err = errors.New("could not upload objects - " + err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
-	_, err = svc.DeleteObject(&s3.DeleteObjectInput{Bucket: aws.String(bucketName), Key: aws.String("memphis")})
-	if err != nil {
-		err = errors.New("could not upload objects - " + err.Error())
-		return SHOWABLE_ERROR_STATUS_CODE, err
-	}
-	err = svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+	_, err = svc.DeleteObject(context.Background(), &s3.DeleteObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String("memphis"),
 	})
 	if err != nil {
-		err = errors.New("error occurred while waiting for object to be deleted - " + err.Error())
+		err = errors.New("could not delete objects - " + err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
+
 	return 0, nil
 }
 
@@ -308,27 +309,27 @@ type Msg struct {
 func (s *Server) uploadToS3Storage() error {
 	if len(tieredStorageMsgsMap.m) > 0 {
 		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
-		provider := &credentials.StaticProvider{Value: credentials.Value{
-			AccessKeyID:     credentialsMap.Keys["access_key"],
-			SecretAccessKey: credentialsMap.Keys["secret_key"],
-		}}
 
-		_, err := provider.Retrieve()
+		provider := credentials.NewStaticCredentialsProvider(
+			credentialsMap.Keys["access_key"],
+			credentialsMap.Keys["secret_key"],
+			"",
+		)
+		_, err := provider.Retrieve(context.Background())
 		if err != nil {
 			err = errors.New("uploadToS3Storage: Invalid credentials")
 			return err
 		}
-		credentials := credentials.NewCredentials(provider)
-		sess, err := session.NewSession(&aws.Config{
-			Region:      aws.String(credentialsMap.Keys["region"]),
-			Credentials: credentials},
+		cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+			awsconfig.WithCredentialsProvider(provider),
+			awsconfig.WithRegion(credentialsMap.Keys["region"]),
 		)
+		svc := s3.NewFromConfig(cfg)
 		if err != nil {
 			err = errors.New("uploadToS3Storage failure " + err.Error())
 			return err
 		}
-
-		uploader := s3manager.NewUploader(sess)
+		uploader := manager.NewUploader(svc)
 		uid := serv.memphis.nuid.Next()
 		var objectName string
 
@@ -364,7 +365,7 @@ func (s *Server) uploadToS3Storage() error {
 			if err != nil {
 				return err
 			}
-			_, err = uploader.Upload(&s3manager.UploadInput{
+			_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
 				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
 				Key:    aws.String(objectName),
 				Body:   &buf,
