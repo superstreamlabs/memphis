@@ -37,7 +37,8 @@ const initialState = {
     schemaFilteredList: [],
     logsFilter: [],
     integrationsList: [],
-    isLatest: true
+    isLatest: true,
+    currentVersion: ''
 };
 
 const Store = ({ children }) => {
