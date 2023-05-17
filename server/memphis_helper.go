@@ -1143,13 +1143,13 @@ func GetMemphisOpts(opts Options) (Options, error) {
 				return Options{}, err
 			}
 		}
-		memphisGlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+		memphisGlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
 		for _, subj := range memphisSubjects {
 			globalServicesExport[subj] = &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}}
-			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, from: subj, to: subj, usePub: false}
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: &serviceExport{}}
 		}
 
 		users, err := db.GetAllUsersByType([]string{"application", "root"})
@@ -1192,7 +1192,7 @@ func GetMemphisOpts(opts Options) (Options, error) {
 func getStreamsImportForAccout(acc *Account) []*streamImport {
 	streamsImport := []*streamImport{}
 	for _, subj := range memphisSubjects {
-		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
+		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: false})
 	}
 	return streamsImport
 }
