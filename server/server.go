@@ -348,7 +348,6 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	}
 	// added by Memphis **
 
-	setBaselineOptions(opts)
 	// ** added by Memphis
 	memphisOpts, err := GetMemphisOpts(*opts)
 	if err != nil {
@@ -356,6 +355,8 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	}
 	*opts = memphisOpts
 	// added by Memphis **
+
+	setBaselineOptions(opts)
 
 	// Process TLS options, including whether we require client certificates.
 	tlsReq := opts.TLSConfig != nil

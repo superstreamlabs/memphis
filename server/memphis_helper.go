@@ -52,7 +52,8 @@ const (
 	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
 
-var memphisSubjects = []string{"$memphis_station_creations",
+var memphisSubjects = []string{
+	"$memphis_station_creations",
 	"$memphis_station_destructions",
 	"$memphis_producer_creations",
 	"$memphis_producer_destructions",
@@ -62,7 +63,8 @@ var memphisSubjects = []string{"$memphis_station_creations",
 	"$memphis_schema_detachments",
 	"$memphis_get_tenant_name",
 	"$memphis_ws_subs.>",
-	"$memphis_ws_pubs.>"}
+	"$memphis_ws_pubs.>",
+}
 
 // JetStream API request kinds
 const (

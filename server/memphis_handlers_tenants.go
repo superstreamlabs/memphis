@@ -12,10 +12,11 @@
 package server
 
 import (
-	"encoding/json"
+	// "encoding/json"
+	"fmt"
 	"memphis/conf"
 	"memphis/db"
-	"strings"
+	// "strings"
 )
 
 func isGlobalTenantExist() (bool, error) {
@@ -49,28 +50,30 @@ type getTenantMsg struct {
 }
 
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
+	// var resp getTenantNameResponse
+	// var gtm getTenantMsg
+	// message := string(msg)
+	// var tenantName string
+
+	// if strings.Contains(message, "acc") {
+	// 	splittedMsg := strings.Split(message, "\r\n\r\n")
+	// 	if len(splittedMsg) != 2 {
+	// 		s.Errorf("createWSRegistrationHandler: error parsing message")
+	// 		return
+	// 	}
+	// 	trimmedForMarshal := strings.TrimPrefix(splittedMsg[0], "NATS/1.0\r\nNats-Request-Info: ")
+	// 	if err := json.Unmarshal([]byte(trimmedForMarshal), &gtm); err != nil {
+	// 		s.Errorf("createWSRegistrationHandler: " + err.Error())
+	// 		return
+	// 	}
+	// 	tenantName = gtm.Acc
+	// 	message = splittedMsg[1]
+	// } else {
+	// 	tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	// }
+
+	fmt.Println("getTenantName")
 	var resp getTenantNameResponse
-	var gtm getTenantMsg
-	message := string(msg)
-	var tenantName string
-
-	if strings.Contains(message, "acc") {
-		splittedMsg := strings.Split(message, "\r\n\r\n")
-		if len(splittedMsg) != 2 {
-			s.Errorf("createWSRegistrationHandler: error parsing message")
-			return
-		}
-		trimmedForMarshal := strings.TrimPrefix(splittedMsg[0], "NATS/1.0\r\nNats-Request-Info: ")
-		if err := json.Unmarshal([]byte(trimmedForMarshal), &gtm); err != nil {
-			s.Errorf("createWSRegistrationHandler: " + err.Error())
-			return
-		}
-		tenantName = gtm.Acc
-		message = splittedMsg[1]
-	} else {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	}
-
-	resp.TenantName = tenantName
-	respondWithResp(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, &resp)
+	resp.TenantName = "tenantName"
+	respondWithResp("$memphis", s, reply, &resp)
 }

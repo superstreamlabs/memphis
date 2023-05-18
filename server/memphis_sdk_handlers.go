@@ -274,7 +274,7 @@ func respondWithResp(tenantName string, s *Server, replySubject string, resp mem
 		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
-	s.sendInternalAccountMsg(account, replySubject, rawResp)
+	s.sendInternalAccountMsgWithEcho(account, replySubject, rawResp)
 }
 
 func respondWithRespErr(tenantName string, s *Server, replySubject string, err error, resp memphisResponse) {

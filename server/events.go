@@ -478,6 +478,11 @@ func (s *Server) sendInternalAccountMsgWithHeaders(a *Account, subject string, m
 	return s.sendInternalAccountMsgWithReply(a, subject, _EMPTY_, hdrs, msg, false)
 }
 
+// Used to send an internal message to an arbitrary account with enabled echo.
+func (s *Server) sendInternalAccountMsgWithEcho(a *Account, subject string, msg interface{}) error {
+	return s.sendInternalAccountMsgWithReply(a, subject, _EMPTY_, nil, msg, true)
+}
+
 // Used to send an internal message to an arbitrary account.
 func (s *Server) sendInternalAccountMsg(a *Account, subject string, msg interface{}) error {
 	return s.sendInternalAccountMsgWithReply(a, subject, _EMPTY_, nil, msg, false)
