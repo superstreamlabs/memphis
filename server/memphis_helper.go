@@ -1148,8 +1148,9 @@ func GetMemphisOpts(opts Options) (Options, error) {
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
 		for _, subj := range memphisSubjects {
-			globalServicesExport[subj] = &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}}
-			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: &serviceExport{}}
+			se := &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+			globalServicesExport[subj] = se
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
 		}
 
 		users, err := db.GetAllUsersByType([]string{"application", "root"})
