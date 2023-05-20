@@ -181,12 +181,12 @@ func (s *Server) createStationDirectIntern(c *client,
 	shouldCreateStream bool) {
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-	c.acc = s.memphisGlobalAccount()
+	memphisGlobalAcc := s.memphisGlobalAccount()
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -194,7 +194,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiRespWithEco(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -202,7 +202,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		errMsg := "Station " + stationName.Ext() + " already exists"
 		serv.Warnf("createStationDirect: " + errMsg)
 		jsApiResp.Error = NewJSStreamNameExistError()
-		respondWithErrOrJsApiRespWithEco(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -214,14 +214,14 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		if !exist {
 			errMsg := "Schema " + csr.SchemaName + " does not exist"
 			serv.Warnf("createStationDirect: " + errMsg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 
@@ -229,7 +229,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		schemaDetails = models.SchemaDetails{SchemaName: schemaName, VersionNumber: schemaVersion.VersionNumber}
@@ -243,7 +243,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		retentionValue = csr.RetentionValue
@@ -259,7 +259,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -272,7 +272,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 	} else {
@@ -289,7 +289,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -303,12 +303,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 				serv.Warnf("CreateStationDirect: Station " + stationName.Ext() + ": Station can not be created, probably since replicas count is larger than the cluster size")
-				respondWithErr(csr.TenantName, s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+				respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}
 
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
-			respondWithErr(csr.TenantName, s, reply, err)
+			respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 			return
 		}
 	}
@@ -316,14 +316,14 @@ func (s *Server) createStationDirectIntern(c *client,
 	_, user, err := db.GetUserByUsername(username, csr.TenantName)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
-		respondWithErr(csr.TenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 	}
 	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		}
-		respondWithErr(csr.TenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
 	if rowsUpdated > 0 {
