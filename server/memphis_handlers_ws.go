@@ -174,7 +174,6 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		} else {
 			tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 		}
-		fmt.Println(tenantName)
 		s.Debugf("memphisWS registration - %s,%s", subj, message)
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
