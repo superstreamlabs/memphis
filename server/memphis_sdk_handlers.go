@@ -272,7 +272,7 @@ func respondWithErrOrJsApiRespWithEco[T any](jsApi bool, c *client, acc *Account
 		s.sendAPIErrResponseWithEco(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	tenantName := c.Account().GetName()
+	tenantName := conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 

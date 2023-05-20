@@ -12,11 +12,9 @@
 package server
 
 import (
-	// "encoding/json"
 	"encoding/json"
 	"memphis/conf"
 	"memphis/db"
-	// "strings"
 )
 
 func isGlobalTenantExist() (bool, error) {
@@ -49,6 +47,7 @@ type getTenantMsg struct {
 	Rtt int    `json:"rtt"`
 }
 
+// TODO: remove
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
 	var resp getTenantNameResponse
 	var tenantName string
