@@ -13,7 +13,7 @@ package server
 
 import (
 	// "encoding/json"
-	"fmt"
+	"encoding/json"
 	"memphis/conf"
 	"memphis/db"
 	// "strings"
@@ -50,30 +50,21 @@ type getTenantMsg struct {
 }
 
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
-	// var resp getTenantNameResponse
-	// var gtm getTenantMsg
-	// message := string(msg)
-	// var tenantName string
-
-	// if strings.Contains(message, "acc") {
-	// 	splittedMsg := strings.Split(message, "\r\n\r\n")
-	// 	if len(splittedMsg) != 2 {
-	// 		s.Errorf("createWSRegistrationHandler: error parsing message")
-	// 		return
-	// 	}
-	// 	trimmedForMarshal := strings.TrimPrefix(splittedMsg[0], "NATS/1.0\r\nNats-Request-Info: ")
-	// 	if err := json.Unmarshal([]byte(trimmedForMarshal), &gtm); err != nil {
-	// 		s.Errorf("createWSRegistrationHandler: " + err.Error())
-	// 		return
-	// 	}
-	// 	tenantName = gtm.Acc
-	// 	message = splittedMsg[1]
-	// } else {
-	// 	tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	// }
-
-	fmt.Println("getTenantName")
 	var resp getTenantNameResponse
-	resp.TenantName = "tenantName"
-	respondWithResp("$memphis", s, reply, &resp)
+	var tenantName string
+	var ci ClientInfo
+
+	hdr := getHeader(ClientInfoHdr, msg)
+	if len(hdr) > 0 {
+		if err := json.Unmarshal(hdr, &ci); err != nil {
+			s.Errorf("getTenantName: " + err.Error())
+			return
+		}
+		tenantName = ci.Account
+	} else {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	}
+
+	resp.TenantName = tenantName
+	respondWithResp(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, &resp)
 }

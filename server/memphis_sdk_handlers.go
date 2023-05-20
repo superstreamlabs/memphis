@@ -249,7 +249,7 @@ func respondWithErr(tenantName string, s *Server, replySubject string, err error
 	if err != nil {
 		resp = []byte(err.Error())
 	}
-	s.sendInternalAccountMsg(account, replySubject, resp)
+	s.sendInternalAccountMsgWithEcho(account, replySubject, resp)
 }
 
 func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {

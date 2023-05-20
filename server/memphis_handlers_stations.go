@@ -152,12 +152,26 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var csr createStationRequest
-	if err := json.Unmarshal(msg, &csr); err != nil {
+	var tenantName string
+	var ci ClientInfo
+	message := string(msg)
+	hdr := getHeader(ClientInfoHdr, msg)
+	if len(hdr) > 0 {
+		if err := json.Unmarshal(hdr, &ci); err != nil {
+			s.Errorf("getTenantName: " + err.Error())
+			return
+		}
+		tenantName = ci.Account
+		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
+	} else {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	}
+	if err := json.Unmarshal([]byte(message), &csr); err != nil {
 		s.Errorf("createStationDirect: failed creating station: %v", err.Error())
-		// TODO:pass the client in the internal connection between brokers
-		// respondWithErr(tenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
+	csr.TenantName = tenantName
 	s.createStationDirectIntern(c, reply, &csr, true)
 }
 
