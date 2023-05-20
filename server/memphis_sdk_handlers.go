@@ -265,11 +265,11 @@ func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subje
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 
-func respondWithErrOrJsApiRespWithEco[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
+func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
 	if jsApi {
 		s := c.srv
 		ci := c.getClientInfo(false)
-		s.sendAPIErrResponseWithEco(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		s.sendAPIErrResponseWithEcho(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
 	tenantName := conf.MEMPHIS_GLOBAL_ACCOUNT_NAME

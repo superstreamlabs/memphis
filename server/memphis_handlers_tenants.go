@@ -12,7 +12,6 @@
 package server
 
 import (
-	"encoding/json"
 	"memphis/conf"
 	"memphis/db"
 )
@@ -50,18 +49,10 @@ type getTenantMsg struct {
 // TODO: remove
 func (s *Server) getTenantName(c *client, reply string, msg []byte) {
 	var resp getTenantNameResponse
-	var tenantName string
-	var ci ClientInfo
-
-	hdr := getHeader(ClientInfoHdr, msg)
-	if len(hdr) > 0 {
-		if err := json.Unmarshal(hdr, &ci); err != nil {
-			s.Errorf("getTenantName: " + err.Error())
-			return
-		}
-		tenantName = ci.Account
-	} else {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	tenantName, _, err := s.getTenantNameAndMessage(msg)
+	if err != nil {
+		s.Errorf("getTenantName: " + err.Error())
+		return
 	}
 
 	resp.TenantName = tenantName

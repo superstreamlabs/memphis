@@ -1199,3 +1199,22 @@ func getStreamsImportForAccout(acc *Account) []*streamImport {
 	}
 	return streamsImport
 }
+
+func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
+	var ci ClientInfo
+	var tenantName string
+	message := string(msg)
+
+	hdr := getHeader(ClientInfoHdr, msg)
+	if len(hdr) > 0 {
+		if err := json.Unmarshal(hdr, &ci); err != nil {
+			return tenantName, message, err
+		}
+		tenantName = ci.Account
+		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
+	} else {
+		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	}
+
+	return tenantName, message, nil
+}

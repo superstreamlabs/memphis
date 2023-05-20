@@ -890,7 +890,7 @@ func (s *Server) sendAPIErrResponse(ci *ClientInfo, acc *Account, subject, reply
 	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)
 }
 
-func (s *Server) sendAPIErrResponseWithEco(ci *ClientInfo, acc *Account, subject, reply, request, response string) {
+func (s *Server) sendAPIErrResponseWithEcho(ci *ClientInfo, acc *Account, subject, reply, request, response string) {
 	acc.trackAPIErr()
 	if reply != _EMPTY_ {
 		s.sendInternalAccountMsgWithEcho(nil, reply, response)

@@ -49,7 +49,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
 		return false, false, err
 	}
 
@@ -57,7 +56,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	err = validateProducerType(producerType)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
-		// TODO:pass the client in the internal connection between brokers and return c.Account().GetName()
 		return false, false, err
 	}
 
@@ -198,20 +196,12 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	var cpr createProducerRequestV1
 	var resp createProducerResponse
 
-	var tenantName string
-	var ci ClientInfo
-	message := string(msg)
-	hdr := getHeader(ClientInfoHdr, msg)
-	if len(hdr) > 0 {
-		if err := json.Unmarshal(hdr, &ci); err != nil {
-			s.Errorf("createProducerDirect: " + err.Error())
-			return
-		}
-		tenantName = ci.Account
-		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
-	} else {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	tenantName, message, err := s.getTenantNameAndMessage(msg)
+	if err != nil {
+		s.Errorf("createProducerDirect: " + err.Error())
+		return
 	}
+
 	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
 		if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
@@ -371,37 +361,43 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 
 func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var dpr destroyProducerRequest
-	if err := json.Unmarshal(msg, &dpr); err != nil {
+	tenantName, destoryMessage, err := s.getTenantNameAndMessage(msg)
+	if err != nil {
+		s.Errorf("destroyProducerDirect: " + err.Error())
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
+		return
+	}
+	if err := json.Unmarshal([]byte(destoryMessage), &dpr); err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
-		// TODO:pass the client in the internal connection between brokers
-		// respondWithErr(tenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
 
+	dpr.TenantName = tenantName
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(dpr.TenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := db.GetStationByName(stationName.Ext(), dpr.TenantName)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + dpr.ProducerName + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(dpr.TenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("destroyProducerDirect: Producer " + name + " at station " + dpr.StationName + ": " + err.Error())
-		respondWithErr(dpr.TenantName, s, reply, err)
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := "Producer " + name + " at station " + dpr.StationName + " does not exist"
 		serv.Warnf("destroyProducerDirect: " + errMsg)
-		respondWithErr(dpr.TenantName, s, reply, errors.New(errMsg))
+		respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -435,7 +431,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		analytics.SendEvent(username, "user-remove-producer-sdk")
 	}
 
-	respondWithErr(dpr.TenantName, s, reply, nil)
+	respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, nil)
 }
 
 func (ph ProducersHandler) ReliveProducers(connectionId string) error {
