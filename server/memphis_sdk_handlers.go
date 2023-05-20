@@ -182,6 +182,7 @@ func (s *Server) initializeSDKHandlers() {
 		detachSchemaHandler(s))
 
 	// tenants
+	// TODO: remove
 	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
 		getTenantNameHandler(s))
 }
@@ -228,6 +229,7 @@ func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 	}
 }
 
+// TODO: remove
 func getTenantNameHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.getTenantName(c, reply, copyBytes(msg))
@@ -257,6 +259,17 @@ func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subje
 		s := c.srv
 		ci := c.getClientInfo(false)
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		return
+	}
+	tenantName := c.Account().GetName()
+	respondWithErr(tenantName, c.srv, reply, err)
+}
+
+func respondWithErrOrJsApiRespWithEco[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
+	if jsApi {
+		s := c.srv
+		ci := c.getClientInfo(false)
+		s.sendAPIErrResponseWithEco(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
 	tenantName := c.Account().GetName()

@@ -181,14 +181,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	shouldCreateStream bool) {
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
-	account, err := s.lookupAccount(csr.TenantName)
-	if err != nil {
-		serv.Errorf("createStationDirectIntern: lookup account " + csr.TenantName + ": " + err.Error())
-		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, account, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
-	}
-	c.acc = account
+	c.acc = s.memphisGlobalAccount()
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -201,7 +194,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -209,7 +202,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		errMsg := "Station " + stationName.Ext() + " already exists"
 		serv.Warnf("createStationDirect: " + errMsg)
 		jsApiResp.Error = NewJSStreamNameExistError()
-		respondWithErrOrJsApiResp(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		respondWithErrOrJsApiRespWithEco(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 
@@ -370,7 +363,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	respondWithErr(csr.TenantName, s, reply, nil)
+	respondWithErr(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, nil)
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
