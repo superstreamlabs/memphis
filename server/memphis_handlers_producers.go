@@ -14,7 +14,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"memphis/analytics"
 	"memphis/conf"
 	"memphis/db"
@@ -205,7 +204,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	hdr := getHeader(ClientInfoHdr, msg)
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(hdr, &ci); err != nil {
-			s.Errorf("getTenantName: " + err.Error())
+			s.Errorf("createProducerDirect: " + err.Error())
 			return
 		}
 		tenantName = ci.Account
@@ -213,7 +212,6 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	} else {
 		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
 	}
-	fmt.Println(tenantName)
 	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 1 {
 		var cprV0 createProducerRequestV0
 		if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
@@ -224,7 +222,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		s.createProducerDirectV0(c, reply, cprV0)
 		return
 	}
-
+	cpr.TenantName = tenantName
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())

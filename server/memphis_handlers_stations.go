@@ -158,7 +158,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	hdr := getHeader(ClientInfoHdr, msg)
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(hdr, &ci); err != nil {
-			s.Errorf("getTenantName: " + err.Error())
+			s.Errorf("createStationDirect: " + err.Error())
 			return
 		}
 		tenantName = ci.Account
