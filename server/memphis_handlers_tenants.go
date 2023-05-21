@@ -32,21 +32,3 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 	}
 	return nil
 }
-
-type getTenantMsg struct {
-	Acc string `json:"acc"`
-	Rtt int    `json:"rtt"`
-}
-
-// TODO: remove
-func (s *Server) getTenantName(c *client, reply string, msg []byte) {
-	var resp getTenantNameResponse
-	tenantName, _, err := s.getTenantNameAndMessage(msg)
-	if err != nil {
-		s.Errorf("getTenantName: " + err.Error())
-		return
-	}
-
-	resp.TenantName = tenantName
-	respondWithResp(globalAccountName, s, reply, &resp)
-}

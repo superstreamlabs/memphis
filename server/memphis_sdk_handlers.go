@@ -180,10 +180,6 @@ func (s *Server) initializeSDKHandlers() {
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
 
-	// tenants
-	// TODO: remove
-	s.queueSubscribe(globalAccountName, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
-		getTenantNameHandler(s))
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -225,13 +221,6 @@ func destroyConsumerHandler(s *Server) simplifiedMsgHandler {
 func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.useSchemaDirect(c, reply, copyBytes(msg))
-	}
-}
-
-// TODO: remove
-func getTenantNameHandler(s *Server) simplifiedMsgHandler {
-	return func(c *client, subject, reply string, msg []byte) {
-		go s.getTenantName(c, reply, copyBytes(msg))
 	}
 }
 
