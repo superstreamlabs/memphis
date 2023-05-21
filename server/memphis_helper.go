@@ -62,8 +62,19 @@ var memphisSubjects = []string{
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
 	"$memphis_get_tenant_name",
-	"$memphis_ws_subs.>",
-	"$memphis_ws_pubs.>",
+	"$memphis_ws_subs." + memphisWS_Subj_MainOverviewData,
+	"$memphis_ws_subs." + memphisWS_Subj_StationOverviewData,
+	"$memphis_ws_subs." + memphisWS_Subj_PoisonMsgJourneyData,
+	"$memphis_ws_subs." + memphisWS_Subj_AllStationsData,
+	"$memphis_ws_subs." + memphisWS_Subj_SysLogsData,
+	"$memphis_ws_subs." + memphisWS_Subj_AllSchemasData,
+	"$memphis_ws_pubs." + memphisWS_Subj_MainOverviewData,
+	"$memphis_ws_pubs." + memphisWS_Subj_StationOverviewData,
+	"$memphis_ws_pubs." + memphisWS_Subj_PoisonMsgJourneyData,
+	"$memphis_ws_pubs." + memphisWS_Subj_AllStationsData,
+	"$memphis_ws_pubs." + memphisWS_Subj_SysLogsData,
+	"$memphis_ws_pubs." + memphisWS_Subj_AllSchemasData,
+	"$memphis_ws_subs_cg",
 }
 
 // JetStream API request kinds
