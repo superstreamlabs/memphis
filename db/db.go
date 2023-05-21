@@ -81,6 +81,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
 		PRIMARY KEY (id));`
 
+	alterAuditLogsTable := `
+	ALTER TABLE IF EXISTS audit_logs ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+	DROP INDEX IF EXISTS station_name;
+	CREATE INDEX audit_logs_station_tenant_id ON audit_logs (station_name, tenant_name);`
+
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
 		station_name VARCHAR NOT NULL,
@@ -90,7 +95,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id));
-	CREATE INDEX audit_logs_station_tenant_idx ON audit_logs (station_name, tenant_name);`
+	CREATE INDEX audit_logs_station_tenant_id ON audit_logs (station_name, tenant_name);`
 
 	alterUsersTable := `
 	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
@@ -119,7 +124,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterConfigurationsTable := `
-		ALTER TABLE IF EXISTS configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS configurations DROP CONSTRAINT IF EXISTS configurations_key_key;
+		ALTER TABLE IF EXISTS configurations ADD CONSTRAINT configurations_key_tenant_name UNIQUE(key, tenant_name);
+		ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
+		`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
@@ -134,7 +143,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterConnectionsTable := `
-		ALTER TABLE IF EXISTS connections ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS connections ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS connections ADD CONSTRAINT fk_tenant_name_connections FOREIGN KEY(tenant_name)
+		REFERENCES tenants(name)`
 
 	connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
 		id VARCHAR NOT NULL,
@@ -150,16 +161,23 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 		);`
 
+	alterIntegrationTable := `ALTER TABLE IF EXISTS integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
+		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id)
 		);`
 
 	alterSchemasTable := `
-		ALTER TABLE IF EXISTS schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS schemas DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE IF EXISTS schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
+		ALTER TABLE IF EXISTS schemas ADD CONSTRAINT fk_tenant_name_schemas FOREIGN KEY(tenant_name)
+		REFERENCES tenants(name);`
 
 	schemasTable := `
 	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
@@ -179,7 +197,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ON schemas (name);`
 
 	alterTagsTable := `
-		ALTER TABLE IF EXISTS tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS tags DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE IF EXISTS tags ADD CONSTRAINT tags_name_tenant_name_key UNIQUE(name, tenant_name);
+		ALTER TABLE IF EXISTS tags ADD CONSTRAINT fk_tenant_name_tags FOREIGN KEY(tenant_name)
+		REFERENCES tenants(name);`
 
 	tagsTable := `CREATE TABLE IF NOT EXISTS tags(
 		id SERIAL NOT NULL,
@@ -199,7 +221,10 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ON tags (name);`
 
 	alterConsumersTable := `
-		ALTER TABLE IF EXISTS consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS consumers ADD CONSTRAINT fk_tenant_name_consumers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
+		DROP INDEX IF EXISTS unique_consumer_table;
+		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	consumersTable := `
 	CREATE TYPE enum_type_consumer AS ENUM ('application', 'connector');
@@ -233,10 +258,13 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX station_id ON consumers (station_id);
 		CREATE INDEX connection_id ON consumers (connection_id);
-		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active) WHERE is_active = true;`
+		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterStationsTable := `
-		ALTER TABLE IF EXISTS stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS stations ADD CONSTRAINT fk_tenant_name_stations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
+		DROP INDEX IF EXISTS unique_station_name_deleted;
+		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
 	stationsTable := `
 	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
@@ -269,7 +297,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
 	alterSchemaVerseTable := `
-		ALTER TABLE IF EXISTS schema_versions ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS schema_versions ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS schema_versions ADD CONSTRAINT fk_tenant_name_schemaverse FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
 		id SERIAL NOT NULL,
@@ -294,7 +323,10 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterProducersTable := `
-		ALTER TABLE IF EXISTS producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS producers ADD CONSTRAINT fk_tenant_name_producers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
+		DROP INDEX IF EXISTS unique_producer_table;
+		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	producersTable := `
 	CREATE TYPE enum_producer_type AS ENUM ('application', 'connector');
@@ -325,10 +357,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ON producers(station_id);
 		CREATE INDEX producer_connection_id
 		ON producers(connection_id);
-		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active) WHERE is_active = true;`
+		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterDlsMsgsTable := `
-		ALTER TABLE IF EXISTS dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+		ALTER TABLE IF EXISTS dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS dls_messages ADD CONSTRAINT fk_tenant_name_dls_msgs FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
 	dlsMessagesTable := `
 	CREATE TABLE IF NOT EXISTS dls_messages(
 		id SERIAL NOT NULL,    
@@ -360,7 +393,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{tenantsTable, usersTable, alterUsersTable, alterConnectionsTable, connectionsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
+	tables := []string{tenantsTable, usersTable, alterUsersTable, connectionsTable, alterConnectionsTable, auditLogsTable, alterAuditLogsTable, configurationsTable, alterConfigurationsTable, integrationsTable, alterIntegrationTable, schemasTable, alterSchemasTable, tagsTable, alterTagsTable, stationsTable, alterStationsTable, consumersTable, alterConsumersTable, schemaVersionsTable, alterSchemaVerseTable, producersTable, alterProducersTable, dlsMessagesTable, alterDlsMsgsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
