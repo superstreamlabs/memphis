@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -39,9 +38,9 @@ var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
-	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			connInfo := &ConnzOptions{Limit: s.memphisGlobalAccount().MaxActiveConnections()}
+			connInfo := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
@@ -56,7 +55,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 				if err != nil {
 					s.Errorf("ListenForZombieConnCheckRequests: " + err.Error())
 				} else {
-					s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
+					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
 		}(copyBytes(msg))
@@ -68,7 +67,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(c *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(c *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
@@ -97,7 +96,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 }
 
 func (s *Server) ListenForConfigReloadEvents() error {
-	_, err := s.subscribeOnAcc(s.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
 			err := s.Reload()
@@ -113,7 +112,7 @@ func (s *Server) ListenForConfigReloadEvents() error {
 }
 
 func (s *Server) ListenForNotificationEvents() error {
-	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(globalAccountName, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var notification models.Notification
 			err := json.Unmarshal(msg, &notification)
@@ -138,7 +137,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) ListenForPoisonMsgAcks() error {
-	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(globalAccountName, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var msgToAck models.PmAckMsg
 			err := json.Unmarshal(msg, &msgToAck)
@@ -207,7 +206,7 @@ func (s *Server) CalculateSelfThroughput() error {
 			Read:  currentRead,
 			Write: currentWrite,
 		}
-		s.sendInternalAccountMsg(s.memphisGlobalAccount(), subj, tpMsg)
+		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
 	}
 
 	return nil
@@ -284,7 +283,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxDeliver:    1,
 			}
 			//TODO: pass tenant name instead of global account
-			err := serv.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, tieredStorageStream, &cc)
+			err := serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
 			if err != nil {
 				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
 				return
@@ -305,7 +304,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		for i, msgs := range tieredStorageMsgsMap.m {
 			for _, msg := range msgs {
 				reply := msg.ReplySubject
-				s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
+				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 			}
 			tieredStorageMsgsMap.Delete(i)
 		}
@@ -322,7 +321,7 @@ func (s *Server) sendPeriodicJsApiFetchTieredStorageMsgs() {
 			reply := durableName + "_reply"
 			amount := 1000
 			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), subject, reply, nil, req, true)
+			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
 		}
 	}
 }
@@ -331,7 +330,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
 
 	subject := TIERED_STORAGE_CONSUMER + "_reply"
-	err := serv.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	err := serv.queueSubscribe(globalAccountName, subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
 			//Ignore 409 Exceeded MaxWaiting cases
 			if reply != "" {
@@ -388,7 +387,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(globalAccountName, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var message models.SchemaVerseDlsMessageSdk
 			err := json.Unmarshal(msg, &message)

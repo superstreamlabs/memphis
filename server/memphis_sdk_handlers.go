@@ -13,7 +13,6 @@ package server
 
 import (
 	"encoding/json"
-	"memphis/conf"
 	"memphis/models"
 )
 
@@ -150,40 +149,40 @@ func (tnr *getTenantNameResponse) SetError(err error) {
 
 func (s *Server) initializeSDKHandlers() {
 	//stations
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_station_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_station_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_producer_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_producer_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_consumer_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_consumer_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
 	// schema attachements
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_schema_attachments",
+	s.queueSubscribe(globalAccountName, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_schema_detachments",
+	s.queueSubscribe(globalAccountName, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
 
 	// tenants
 	// TODO: remove
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
+	s.queueSubscribe(globalAccountName, "$memphis_get_tenant_name", "memphis_get_tenant_name_listeners_group",
 		getTenantNameHandler(s))
 }
 
@@ -272,7 +271,7 @@ func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Accoun
 		s.sendAPIErrResponseWithEcho(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	tenantName := conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	tenantName := globalAccountName
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 
@@ -303,5 +302,5 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 		return
 	}
 	//TODO: pass tenant name
-	s.sendInternalAccountMsg(s.memphisGlobalAccount(), subject, msg)
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }

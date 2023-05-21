@@ -856,12 +856,7 @@ func (s *Server) Reload() error {
 		// TODO: Dump previous good config to a .bak file?
 		return err
 	}
-
-	memphisOpts, err := GetMemphisOpts(*newOpts)
-	if err != nil {
-		return err
-	}
-	return s.ReloadOptions(&memphisOpts)
+	return s.ReloadOptions(newOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option
@@ -900,7 +895,15 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	if FlagSnapshot != nil {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
-
+	// ** added by Memphis
+	gacc, memphisOpts, err := GetMemphisOpts(*newOpts)
+	if err != nil {
+		return err
+	}
+	*newOpts = memphisOpts
+	gacc.srv = s
+	s.gacc = gacc
+	// added by Memphis **
 	setBaselineOptions(newOpts)
 
 	// setBaselineOptions sets Port to 0 if set to -1 (RANDOM port)
@@ -1680,7 +1683,7 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		s.gacc = nil
+		// s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()

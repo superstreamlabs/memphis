@@ -307,7 +307,7 @@ func (s *Server) sendLogToSubject(label string, log []byte) {
 	}
 
 	subject := fmt.Sprintf("%s.%s.%s", syslogsStreamName, s.getLogSource(), subjectSuffix)
-	s.sendInternalAccountMsg(s.memphisGlobalAccount(), subject, log)
+	s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
 }
 
 func (s *Server) sendLogToAnalytics(label string, log []byte) {

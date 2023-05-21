@@ -12,7 +12,6 @@
 package server
 
 import (
-	"memphis/conf"
 	"memphis/db"
 )
 
@@ -27,16 +26,9 @@ func isGlobalTenantExist() (bool, error) {
 }
 
 func CreateGlobalTenantOnFirstSystemLoad() error {
-	exist, _, err := db.GetGlobalTenant()
+	_, err := db.UpsertTenant(globalAccountName)
 	if err != nil {
 		return err
-	}
-
-	if !exist {
-		_, err := db.CreateTenant(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -56,5 +48,5 @@ func (s *Server) getTenantName(c *client, reply string, msg []byte) {
 	}
 
 	resp.TenantName = tenantName
-	respondWithResp(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, s, reply, &resp)
+	respondWithResp(globalAccountName, s, reply, &resp)
 }

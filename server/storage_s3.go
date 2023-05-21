@@ -155,7 +155,7 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 		if err != nil {
 			return models.Integration{}, err
 		}
-		err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
 			return models.Integration{}, err
 		}
@@ -182,7 +182,7 @@ func updateS3Integration(keys map[string]string, properties map[string]bool) (mo
 	if err != nil {
 		return s3Integration, err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return s3Integration, err
 	}

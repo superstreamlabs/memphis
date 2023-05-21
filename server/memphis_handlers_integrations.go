@@ -240,7 +240,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 	//TODO: pass tenant name
-	err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

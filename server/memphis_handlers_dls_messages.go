@@ -15,7 +15,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"sort"
@@ -30,7 +29,7 @@ const (
 type PoisonMessagesHandler struct{ S *Server }
 
 func (s *Server) ListenForPoisonMessages() {
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
+	s.queueSubscribe(globalAccountName, "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
 		"$memphis_poison_messages_listeners_group",
 		createPoisonMessageHandler(s))
 }
@@ -51,8 +50,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
-	//TODO: need to pass tenant_name instead of MEMPHIS_GLOBAL_ACCOUNT_NAME
-	_, station, err := db.GetStationByName(stationName.Ext(), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	//TODO: need to pass tenant_name instead of globalAccountName
+	_, station, err := db.GetStationByName(stationName.Ext(), globalAccountName)
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return
@@ -64,8 +63,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	cgName := message["consumer"].(string)
 	cgName = revertDelimiters(cgName)
 	messageSeq := message["stream_seq"].(float64)
-	//TODO: pass dynamic tenant name instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	poisonMessageContent, err := s.memphisGetMessage(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, stationName.Intern(), uint64(messageSeq))
+	//TODO: pass dynamic tenant name instead of globalAccountName
+	poisonMessageContent, err := s.memphisGetMessage(globalAccountName, stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
 		return

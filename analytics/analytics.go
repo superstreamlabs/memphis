@@ -32,7 +32,7 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics(analyticsToken, memphisV string) error {
 	memphisVersion = memphisV
-	exist, deployment, err := db.GetSystemKey("deployment_id", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, deployment, err := db.GetSystemKey("deployment_id", conf.GlobalAccountName)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -41,7 +41,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			return err
 		}
 		deploymentId = uid.String()
-		err = db.InsertSystemKey("deployment_id", deploymentId, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+		err = db.InsertSystemKey("deployment_id", deploymentId, conf.GlobalAccountName)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		deploymentId = deployment.Value
 	}
 
-	exist, _, err = db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, _, err = db.GetSystemKey("analytics", conf.GlobalAccountName)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -60,7 +60,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKey("analytics", value, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+		err = db.InsertSystemKey("analytics", value, conf.GlobalAccountName)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 }
 
 func Close() {
-	_, analytics, _ := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	_, analytics, _ := db.GetSystemKey("analytics", conf.GlobalAccountName)
 	if analytics.Value == "true" {
 		AnalyticsClient.Close()
 	}

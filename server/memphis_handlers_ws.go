@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"strconv"
@@ -56,7 +55,7 @@ func (s *Server) initWS() {
 		Schemas:    SchemasHandler{S: s},
 	}
 
-	s.queueSubscribe(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, memphisWS_Subj_Subs,
+	s.queueSubscribe(globalAccountName, memphisWS_Subj_Subs,
 		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 
@@ -172,7 +171,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			tenantName = wsr.Acc
 			message = splittedMsg[1]
 		} else {
-			tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+			tenantName = globalAccountName
 		}
 		s.Debugf("memphisWS registration - %s,%s", subj, message)
 		subscriptions := s.memphis.ws.subscriptions
