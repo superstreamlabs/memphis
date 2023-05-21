@@ -24,7 +24,6 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/logger"
 	"net"
@@ -294,8 +293,8 @@ type Server struct {
 	// Queue to process JS API requests that come from routes (or gateways)
 	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
 
-	memphis     srvMemphis
-	memphisGacc *Account
+	memphis srvMemphis
+	// memphisGacc *Account
 }
 
 // For tracking JS nodes.
@@ -346,10 +345,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
-	// added by Memphis **
-
-	// ** added by Memphis
-	memphisOpts, err := GetMemphisOpts(*opts)
+	gacc, memphisOpts, err := GetMemphisOpts(*opts)
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
@@ -423,6 +419,10 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		leafNodeEnabled:    opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0,
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
+	// ** added by Memphis
+	gacc.srv = s
+	s.gacc = gacc
+	// added by Memphis **
 
 	// Fill up the maximum in flight syncRequests for this server.
 	// Used in JetStream catchup semantics.
@@ -769,12 +769,12 @@ func (s *Server) globalAccount() *Account {
 	return gacc
 }
 
-func (s *Server) memphisGlobalAccount() *Account {
-	s.mu.RLock()
-	mgacc := s.memphisGacc
-	s.mu.RUnlock()
-	return mgacc
-}
+// func (s *Server) memphisGlobalAccount() *Account {
+// 	s.mu.RLock()
+// 	mgacc := s.memphisGacc
+// 	s.mu.RUnlock()
+// 	return mgacc
+// }
 
 // Used to setup Accounts.
 // Lock is held upon entry.
@@ -913,16 +913,16 @@ func (s *Server) configureAccounts() error {
 	return nil
 }
 
-func (s *Server) ConfigureMemphisGlobalAccount() error {
-	s.mu.RLock()
-	acc, err := s.lookupAccount(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
-	if err != nil {
-		return err
-	}
-	s.memphisGacc = acc
-	s.mu.RUnlock()
-	return nil
-}
+// func (s *Server) ConfigureMemphisGlobalAccount() error {
+// 	s.mu.RLock()
+// 	acc, err := s.lookupAccount(globalAccountName)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	s.memphisGacc = acc
+// 	s.mu.RUnlock()
+// 	return nil
+// }
 
 // Setup the account resolver. For memory resolver, make sure the JWTs are
 // properly formed but do not enforce expiration etc.

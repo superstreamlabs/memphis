@@ -82,14 +82,14 @@ func updateSystemLiveness() {
 		Value: strconv.Itoa(int(consumersCount)),
 	}
 	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
+ 	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {
 	connectionIds := make(map[string]string)
 	var lock sync.Mutex
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
-	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
@@ -110,10 +110,10 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	}
 
 	// send message to all brokers to get their connections
-	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
 	timeout := time.After(50 * time.Second)
 	<-timeout
-	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
+	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
 	return connectionIds, nil
 }
 

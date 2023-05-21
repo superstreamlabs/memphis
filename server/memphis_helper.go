@@ -90,7 +90,7 @@ var (
 )
 
 func (s *Server) MemphisInitialized() bool {
-	return s.memphisGlobalAccount().JetStreamEnabled()
+	return s.GlobalAccount().JetStreamEnabled()
 }
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
@@ -253,7 +253,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// system logs stream
-	err = s.memphisAddStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, &StreamConfig{
+	err = s.memphisAddStream(globalAccountName, &StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -277,7 +277,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
-	err = s.memphisAddStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, &StreamConfig{
+	err = s.memphisAddStream(globalAccountName, &StreamConfig{
 		Name:         tieredStorageStream,
 		Subjects:     []string{tieredStorageStream + ".>"},
 		Retention:    WorkQueuePolicy,
@@ -307,7 +307,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		MaxAckPending: -1,
 		MaxDeliver:    1,
 	}
-	err = serv.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, tieredStorageStream, &cc)
+	err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
 	if err != nil {
 		successCh <- err
 		return
@@ -315,14 +315,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	TIERED_STORAGE_CONSUMER_CREATED = true
 
 	// delete the old version throughput stream
-	err = s.memphisDeleteStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamName)
+	err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
 	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 
 	}
 
 	// throughput kv
-	err = s.memphisAddStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, &StreamConfig{
+	err = s.memphisAddStream(globalAccountName, &StreamConfig{
 		Name:         (throughputStreamNameV1),
 		Subjects:     []string{throughputStreamNameV1 + ".>"},
 		Retention:    LimitsPolicy,
@@ -1084,10 +1084,10 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func GetMemphisOpts(opts Options) (Options, error) {
+func GetMemphisOpts(opts Options) (*Account, Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
-		return Options{}, err
+		return &Account{}, Options{}, err
 	}
 
 	for _, conf := range configs {
@@ -1112,16 +1112,26 @@ func GetMemphisOpts(opts Options) (Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
+	var gacc *Account
+	if serv == nil {
+		gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+	} else {
+		if serv.gacc != nil {
+			gacc = serv.gacc
+		} else {
+			gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+		}
+	}
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
-			tenantsToUpsert := []string{conf.MEMPHIS_GLOBAL_ACCOUNT_NAME}
+			tenantsToUpsert := []string{globalAccountName}
 			for _, account := range opts.Accounts {
 				name := strings.ToLower(account.GetName())
 				tenantsToUpsert = append(tenantsToUpsert, name)
 			}
 			err = db.UpsertBatchOfTenants(tenantsToUpsert)
 			if err != nil {
-				return Options{}, err
+				return &Account{}, Options{}, err
 			}
 		}
 		if len(opts.Users) > 0 {
@@ -1142,27 +1152,27 @@ func GetMemphisOpts(opts Options) (Options, error) {
 			}
 			err = db.UpsertBatchOfUsers(usersToUpsert)
 			if err != nil {
-				return Options{}, err
+				return &Account{}, Options{}, err
 			}
 		}
-		memphisGlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+		// GlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
 		for _, subj := range memphisSubjects {
-			se := &serviceExport{acc: memphisGlobalAccount, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+			se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 			globalServicesExport[subj] = se
-			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: memphisGlobalAccount, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
 		}
 
-		users, err := db.GetAllUsersByType([]string{"application", "root"})
+		users, err := db.GetAllUsersByType([]string{"application"})
 		if err != nil {
-			return Options{}, err
+			return &Account{}, Options{}, err
 		}
 
 		tenants, err := db.GetAllTenantsWithoutGlobal()
 		if err != nil {
-			return Options{}, err
+			return &Account{}, Options{}, err
 		}
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
@@ -1176,20 +1186,23 @@ func GetMemphisOpts(opts Options) (Options, error) {
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
-		memphisGlobalAccount.exports = exportMap{services: globalServicesExport}
-		accounts = append(accounts, memphisGlobalAccount)
-		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: memphisGlobalAccount})
-		addedTenant[conf.MEMPHIS_GLOBAL_ACCOUNT_NAME] = memphisGlobalAccount
-		tenantsId[conf.MEMPHIS_GLOBAL_ACCOUNT_NAME] = 1
+		// GlobalAccount.exports = exportMap{services: globalServicesExport}
+		gacc.exports = exportMap{services: globalServicesExport}
+		// accounts = append(accounts, GlobalAccount)
+		appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: gacc})
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
+		addedTenant[conf.GlobalAccountName] = gacc
+		tenantsId[globalAccountName] = 1
 		for _, user := range users {
-			name := strings.ToLower(user.TenantName)
+			name := user.TenantName
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
 		}
+		accounts = append(accounts, gacc)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
 
-	return opts, nil
+	return gacc, opts, nil
 }
 
 func getStreamsImportForAccout(acc *Account) []*streamImport {
@@ -1213,7 +1226,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 		tenantName = ci.Account
 		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
 	} else {
-		tenantName = conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+		tenantName = globalAccountName
 	}
 
 	return tenantName, message, nil

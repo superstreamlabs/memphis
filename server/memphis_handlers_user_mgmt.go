@@ -15,7 +15,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -42,7 +41,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, _, err := db.GetRootUser(globalAccountName)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -52,7 +51,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, user, err := db.GetRootUser(globalAccountName)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -227,11 +226,6 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	exist, err := isRootUserExist()
-	if err != nil {
-		return err
-	}
-
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -239,53 +233,42 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
-		if err != nil {
-			return err
-		}
+	_, err = db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	if err != nil {
+		return err
+	}
 
-		if configuration.ANALYTICS == "true" {
-			var deviceIdValue string
-			installationType := "stand-alone-k8s"
-			if serv.JetStreamIsClustered() {
-				installationType = "cluster"
-				k8sClusterTimestamp, err := getK8sClusterTimestamp()
-				if err == nil {
-					deviceIdValue = k8sClusterTimestamp
-				} else {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
-				}
-			} else if configuration.DOCKER_ENV == "true" {
-				installationType = "stand-alone-docker"
-				dockerMacAddress, err := getDockerMacAddress()
-				if err == nil {
-					deviceIdValue = dockerMacAddress
-				} else {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
-				}
+	if configuration.ANALYTICS == "true" {
+		var deviceIdValue string
+		installationType := "stand-alone-k8s"
+		if serv.JetStreamIsClustered() {
+			installationType = "cluster"
+			k8sClusterTimestamp, err := getK8sClusterTimestamp()
+			if err == nil {
+				deviceIdValue = k8sClusterTimestamp
+			} else {
+				serv.Errorf("Generate host unique id failed: %s", err.Error())
 			}
-
-			param := analytics.EventParam{
-				Name:  "installation-type",
-				Value: installationType,
-			}
-			analyticsParams := []analytics.EventParam{param}
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analytics.SendEventWithParams("", analyticsParams, "installation")
-
-			if configuration.EXPORTER {
-				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+		} else if configuration.DOCKER_ENV == "true" {
+			installationType = "stand-alone-docker"
+			dockerMacAddress, err := getDockerMacAddress()
+			if err == nil {
+				deviceIdValue = dockerMacAddress
+			} else {
+				serv.Errorf("Generate host unique id failed: %s", err.Error())
 			}
 		}
-	} else {
-		_, user, err := db.GetUserByUsername(ROOT_USERNAME, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
-		if err != nil {
-			return err
+
+		param := analytics.EventParam{
+			Name:  "installation-type",
+			Value: installationType,
 		}
-		err = db.ChangeUserPassword(ROOT_USERNAME, hashedPwdString, user.TenantName)
-		if err != nil {
-			return err
+		analyticsParams := []analytics.EventParam{param}
+		analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
+		analytics.SendEventWithParams("", analyticsParams, "installation")
+
+		if configuration.EXPORTER {
+			analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
 		}
 	}
 
@@ -426,7 +409,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -600,7 +583,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
@@ -765,7 +748,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -890,7 +873,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1072,7 +1055,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

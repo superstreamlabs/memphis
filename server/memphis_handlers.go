@@ -103,7 +103,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
 	if err != nil {
 		return false, err
 	}

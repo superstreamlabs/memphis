@@ -78,7 +78,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
+		name VARCHAR NOT NULL UNIQUE DEFAULT '$G',
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -93,12 +93,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_by INTEGER NOT NULL,
 		created_by_username VARCHAR NOT NULL,
 		created_at TIMESTAMPTZ NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id));
 	CREATE INDEX IF NOT EXISTS station_name ON audit_logs (station_name);`
 
 	alterUsersTable := `
-	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	ALTER TABLE IF EXISTS users DROP CONSTRAINT IF EXISTS users_username_key;
 	ALTER TABLE IF EXISTS users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);`
 
@@ -115,7 +115,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		full_name VARCHAR,
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -124,7 +124,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterConfigurationsTable := `
-		ALTER TABLE IF EXISTS configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS configurations DROP CONSTRAINT IF EXISTS configurations_key_key;
 		ALTER TABLE IF EXISTS configurations ADD CONSTRAINT configurations_key_tenant_name UNIQUE(key, tenant_name);
 		`
@@ -133,7 +133,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		id SERIAL NOT NULL,
 		key VARCHAR NOT NULL UNIQUE,
 		value TEXT NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		UNIQUE(key, tenant_name),
 		CONSTRAINT fk_tenant_name_configurations
@@ -142,7 +142,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterConnectionsTable := `
-		ALTER TABLE IF EXISTS connections ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS connections ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS connections ADD CONSTRAINT fk_tenant_name_connections FOREIGN KEY(tenant_name)
 		REFERENCES tenants(name)`
 
@@ -153,7 +153,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT false,
 		created_at TIMESTAMPTZ NOT NULL,
 		client_address VARCHAR NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_connections
 			FOREIGN KEY(tenant_name)
@@ -172,7 +172,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterSchemasTable := `
-		ALTER TABLE IF EXISTS schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS schemas DROP CONSTRAINT IF EXISTS name;
 		ALTER TABLE IF EXISTS schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
 		ALTER TABLE IF EXISTS schemas ADD CONSTRAINT fk_tenant_name_schemas FOREIGN KEY(tenant_name)
@@ -185,7 +185,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		name VARCHAR NOT NULL,
 		type enum_type NOT NULL DEFAULT 'protobuf',
 		created_by_username VARCHAR NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_schemas
 			FOREIGN KEY(tenant_name)
@@ -195,7 +195,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE INDEX IF NOT EXISTS name ON schemas (name);`
 
 	alterTagsTable := `
-		ALTER TABLE IF EXISTS tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS tags DROP CONSTRAINT IF EXISTS name;
 		ALTER TABLE IF EXISTS tags ADD CONSTRAINT tags_name_tenant_name_key UNIQUE(name, tenant_name);
 		ALTER TABLE IF EXISTS tags ADD CONSTRAINT fk_tenant_name_tags FOREIGN KEY(tenant_name)
@@ -208,7 +208,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		users INTEGER[] ,
 		stations INTEGER[],
 		schemas INTEGER[],
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_tags
 			FOREIGN KEY(tenant_name)
@@ -218,7 +218,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE INDEX IF NOT EXISTS name_tag ON tags (name);`
 
 	alterConsumersTable := `
-		ALTER TABLE IF EXISTS consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS consumers ADD CONSTRAINT fk_tenant_name_consumers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 		DROP INDEX IF EXISTS unique_consumer_table;
 		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
@@ -241,7 +241,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
@@ -258,7 +258,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE UNIQUE INDEX IF NOT EXISTS unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterStationsTable := `
-		ALTER TABLE IF EXISTS stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS stations ADD CONSTRAINT fk_tenant_name_stations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
@@ -285,7 +285,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		dls_configuration_poison BOOL NOT NULL DEFAULT true,
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -294,7 +294,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE UNIQUE INDEX IF NOT EXISTS unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
 	alterSchemaVerseTable := `
-		ALTER TABLE IF EXISTS schema_versions ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS schema_versions ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS schema_versions ADD CONSTRAINT fk_tenant_name_schemaverse FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
 
 	schemaVersionsTable := `CREATE TABLE IF NOT EXISTS schema_versions(
@@ -308,7 +308,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		schema_id INTEGER NOT NULL,
 		msg_struct_name VARCHAR DEFAULT '',
 		descriptor bytea,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		UNIQUE(version_number, schema_id),
 		CONSTRAINT fk_schema_id
@@ -320,7 +320,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);`
 
 	alterProducersTable := `
-		ALTER TABLE IF EXISTS producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS producers ADD CONSTRAINT fk_tenant_name_producers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 		DROP INDEX IF EXISTS unique_producer_table;
 		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
@@ -338,7 +338,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		created_at TIMESTAMPTZ NOT NULL,
 		is_deleted BOOL NOT NULL DEFAULT false,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -355,7 +355,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE UNIQUE INDEX IF NOT EXISTS unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterDlsMsgsTable := `
-		ALTER TABLE IF EXISTS dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE IF EXISTS dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS dls_messages ADD CONSTRAINT fk_tenant_name_dls_msgs FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
 
 	dlsMessagesTable := `
@@ -369,7 +369,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -479,7 +479,10 @@ func GetSystemKey(key string, tenantName string) (bool, models.SystemKey, error)
 	if err != nil {
 		return false, models.SystemKey{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, key, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key, tenantName)
 	if err != nil {
 		return false, models.SystemKey{}, err
 	}
@@ -495,7 +498,10 @@ func GetSystemKey(key string, tenantName string) (bool, models.SystemKey, error)
 }
 
 func InsertSystemKey(key string, value string, tenantName string) error {
-	err := InsertConfiguration(key, value, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	err := InsertConfiguration(key, value, tenantName)
 	if err != nil {
 		return err
 	}
@@ -515,7 +521,10 @@ func EditConfigurationValue(key string, value string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, tenantName)
 	if err != nil {
 		return err
 	}
@@ -537,7 +546,10 @@ func GetConfiguration(key string, tenantName string) (bool, models.Configuration
 	if err != nil {
 		return false, models.ConfigurationsValue{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, key, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, key, tenantName)
 	if err != nil {
 		return false, models.ConfigurationsValue{}, err
 	}
@@ -607,8 +619,11 @@ func InsertConfiguration(key string, value string, tenantName string) error {
 	}
 
 	newConfiguration := models.ConfigurationsValue{}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		key, value, strings.ToLower(tenantName))
+		key, value, tenantName)
 	if err != nil {
 		return err
 	}
@@ -655,7 +670,10 @@ func UpsertConfiguration(key string, value string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, tenantName)
 	if err != nil {
 		return err
 	}
@@ -689,9 +707,11 @@ func InsertConnection(connection models.Connection, tenantName string) error {
 	}
 
 	createdAt := time.Now()
-
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
-		connection.CreatedBy, connection.CreatedByUsername, connection.IsActive, createdAt, connection.ClientAddress, strings.ToLower(tenantName))
+		connection.CreatedBy, connection.CreatedByUsername, connection.IsActive, createdAt, connection.ClientAddress, tenantName)
 	if err != nil {
 		return err
 	}
@@ -755,7 +775,10 @@ func UpdateConnectionsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -992,7 +1015,10 @@ func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 	if err != nil {
 		return []models.Station{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.Station{}, err
 	}
@@ -1048,7 +1074,10 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	if err != nil {
 		return false, models.Station{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Station{}, err
 	}
@@ -1076,7 +1105,10 @@ func GetStationById(messageId int, tenantName string) (bool, models.Station, err
 	if err != nil {
 		return false, models.Station{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId, tenantName)
 	if err != nil {
 		return false, models.Station{}, err
 	}
@@ -1145,10 +1177,12 @@ func InsertNewStation(
 	createAt := time.Now()
 	updatedAt := time.Now()
 	var stationId int
-
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, strings.ToLower(tenantName))
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1176,6 +1210,9 @@ func InsertNewStation(
 			return models.Station{}, 0, err
 		}
 	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 
 	newStation := models.Station{
 		ID:                          stationId,
@@ -1196,7 +1233,7 @@ func InsertNewStation(
 		DlsConfigurationPoison:      dlsConfiguration.Poison,
 		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
 		TieredStorageEnabled:        tieredStorageEnabled,
-		TenantName:                  strings.ToLower(tenantName),
+		TenantName:                  tenantName,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1328,6 +1365,9 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			if consumer.ID != 0 {
 				consumers = append(consumers, consumer)
 			}
+			if tenantName != conf.GlobalAccountName {
+				tenantName = strings.ToLower(tenantName)
+			}
 			station := models.ExtendedStation{
 				ID:                          stationRes.ID,
 				Name:                        stationRes.Name,
@@ -1345,7 +1385,7 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 				Producers:                   producers,
 				Consumers:                   consumers,
 				TieredStorageEnabled:        stationRes.TieredStorageEnabled,
-				TenantName:                  strings.ToLower(tenantName),
+				TenantName:                  tenantName,
 			}
 			stationsMap[station.ID] = station
 		}
@@ -1570,7 +1610,10 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1594,7 +1637,10 @@ func DeleteStation(name string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1615,7 +1661,10 @@ func AttachSchemaToStation(stationName string, schemaName string, versionNumber 
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, schemaName, versionNumber, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, schemaName, versionNumber, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1636,7 +1685,10 @@ func DetachSchemaFromStation(stationName string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1657,7 +1709,10 @@ func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool, t
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, poison, schemaverse, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, poison, schemaverse, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1677,7 +1732,10 @@ func UpdateStationsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1701,7 +1759,10 @@ func GetStationNamesUsingSchema(schemaName string, tenantName string) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, tenantName)
 	if err != nil {
 		return nil, err
 	}
@@ -1738,7 +1799,10 @@ func GetCountStationsUsingSchema(schemaName string, tenantName string) (int, err
 		return 0, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaName, strings.ToLower(tenantName)).Scan(&count)
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaName, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -1759,7 +1823,10 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, schemaName, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, schemaName, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1969,8 +2036,10 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	createAt := time.Now()
 	isActive := true
 	isDeleted := false
-
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType, tenantName)
 	if err != nil {
 		return models.Producer{}, 0, err
 	}
@@ -2758,7 +2827,10 @@ func GetSchemaByName(name string, tenantName string) (bool, models.Schema, error
 	if err != nil {
 		return false, models.Schema{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Schema{}, err
 	}
@@ -2881,7 +2953,10 @@ func UpdateSchemasOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -2907,7 +2982,10 @@ func UpdateSchemaVersionsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, userId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -2995,7 +3073,10 @@ func GetShcemaVersionsCount(schemaId int, tenantName string) (int, error) {
 		return 0, err
 	}
 	var count int
-	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, strings.ToLower(tenantName)).Scan(&count)
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -3021,8 +3102,10 @@ func GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
@@ -3106,7 +3189,10 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	}
 
 	var schemaId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, tenantName)
 	if err != nil {
 		return models.Schema{}, 0, err
 	}
@@ -3175,8 +3261,10 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 
 	var schemaVersionId int
 	createdAt := time.Now()
-
-	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), tenantName)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
 	}
@@ -3432,7 +3520,10 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -3460,7 +3551,9 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 			return models.User{}, err
 		}
 	}
-
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	newUser := models.User{
 		ID:              userId,
 		Username:        username,
@@ -3471,7 +3564,91 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		CreatedAt:       createdAt,
 		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
-		TenantName:      strings.ToLower(tenantName),
+		TenantName:      tenantName,
+	}
+	return newUser, nil
+}
+
+func UpsertUserUpdatePassword(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO users (
+		username,
+		password,
+		type,
+		already_logged_in,
+		created_at,
+		avatar_id,
+		full_name, 
+		subscription,
+		skip_get_started,
+		tenant_name
+	) 
+	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+	ON CONFLICT (username, tenant_name	) DO UPDATE SET password = excluded.password
+	RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_user_update_password", query)
+	if err != nil {
+		return models.User{}, err
+	}
+	createdAt := time.Now()
+	skipGetStarted := false
+	alreadyLoggedIn := false
+
+	var userId int
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.User{}, errors.New("User " + username + " already exists")
+				} else {
+					return models.User{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.User{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.User{}, err
+		}
+	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	newUser := models.User{
+		ID:              userId,
+		Username:        username,
+		Password:        hashedPassword,
+		FullName:        fullName,
+		Subscribtion:    subscription,
+		UserType:        userType,
+		CreatedAt:       createdAt,
+		AlreadyLoggedIn: alreadyLoggedIn,
+		AvatarId:        avatarId,
+		TenantName:      tenantName,
 	}
 	return newUser, nil
 }
@@ -3489,7 +3666,10 @@ func ChangeUserPassword(username string, hashedPassword string, tenantName strin
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, tenantName)
 	if err != nil {
 		return err
 	}
@@ -3509,7 +3689,10 @@ func GetRootUser(tenantName string) (bool, models.User, error) {
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3537,7 +3720,10 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	if err != nil {
 		return false, models.User{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return false, models.User{}, err
 	}
@@ -3621,7 +3807,10 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
@@ -3672,7 +3861,10 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	if err != nil {
 		return []models.User{}, err
 	}
-	rows, err = conn.Conn().Query(ctx, stmt.Name, userType, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err = conn.Conn().Query(ctx, stmt.Name, userType, tenantName)
 	if err != nil {
 		return []models.User{}, err
 	}
@@ -3745,7 +3937,10 @@ func UpdateSkipGetStarted(username string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return err
 	}
@@ -3768,8 +3963,10 @@ func DeleteUser(username string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = conn.Conn().Exec(ctx, stmt.Name, username, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return err
 	}
@@ -3790,7 +3987,10 @@ func EditAvatar(username string, avatarId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -3815,7 +4015,10 @@ func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
@@ -3887,7 +4090,10 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	}
 
 	var tagId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr, tenantName)
 	if err != nil {
 		return models.Tag{}, err
 	}
@@ -3915,7 +4121,9 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 			return models.Tag{}, err
 		}
 	}
-
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	newTag := models.Tag{
 		ID:         tagId,
 		Name:       name,
@@ -3923,7 +4131,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 		Stations:   stationArr,
 		Schemas:    schemaArr,
 		Users:      userArr,
-		TenantName: strings.ToLower(tenantName),
+		TenantName: tenantName,
 	}
 	return newTag, nil
 }
@@ -4077,7 +4285,10 @@ func GetTagsByEntityType(entity string, tenantName string) ([]models.Tag, error)
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
 	}
@@ -4105,7 +4316,10 @@ func GetAllUsedTags(tenantName string) ([]models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
 	}
@@ -4133,7 +4347,10 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 	if err != nil {
 		return false, models.Tag{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Tag{}, err
 	}
@@ -4202,7 +4419,10 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 
 // Image Functions
 func InsertImage(name string, base64Encoding string, tenantName string) error {
-	err := InsertConfiguration(name, base64Encoding, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	err := InsertConfiguration(name, base64Encoding, tenantName)
 	if err != nil {
 		return err
 	}
@@ -4226,8 +4446,10 @@ func DeleteImage(name string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-
-	_, err = conn.Conn().Exec(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
 	}
@@ -4247,7 +4469,10 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 	if err != nil {
 		return false, models.Image{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Image{}, err
 	}
@@ -4291,7 +4516,10 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		return models.DlsMessage{}, err
 	}
 	updatedAt := time.Now()
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -4307,7 +4535,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
-
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	deadLetterPayload := models.DlsMessage{
 		ID:          messagePayloadId,
 		StationId:   stationId,
@@ -4321,7 +4551,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 			Headers:  messageDetails.Headers,
 		},
 		UpdatedAt:  updatedAt,
-		TenantName: strings.ToLower(tenantName),
+		TenantName: tenantName,
 	}
 
 	if err := rows.Err(); err != nil {
@@ -4399,8 +4629,10 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 	if err != nil {
 		return 0, err
 	}
-
-	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName)
 	if err != nil {
 		return 0, err
 	}
@@ -4432,7 +4664,10 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "", strings.ToLower(tenantName))
+		if tenantName != conf.GlobalAccountName {
+			tenantName = strings.ToLower(tenantName)
+		}
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
 		if err != nil {
 			return 0, err
 		}
@@ -4467,7 +4702,10 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, strings.ToLower(tenantName))
+		if tenantName != conf.GlobalAccountName {
+			tenantName = strings.ToLower(tenantName)
+		}
+		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
 		if err != nil {
 			return 0, err
 		}
@@ -4700,7 +4938,10 @@ func GetTotalDlsMessages(tenantName string) (uint64, error) {
 		return 0, err
 	}
 	var count uint64
-	err = conn.Conn().QueryRow(ctx, stmt.Name, strings.ToLower(tenantName)).Scan(&count)
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -4721,8 +4962,10 @@ func GetStationIdsFromDlsMsgs(tenantName string) ([]int, error) {
 	if err != nil {
 		return []int{}, err
 	}
-
-	rows, err := conn.Conn().Query(ctx, stmt.Name, strings.ToLower(tenantName))
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []int{}, err
 	}
@@ -4805,7 +5048,68 @@ func CreateTenant(name string) (models.Tenant, error) {
 		return models.Tenant{}, err
 	}
 	return newTenant, nil
+}
 
+func UpsertTenant(name string) (models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tenants (name) VALUES($1) ON CONFLICT (name) DO NOTHING`
+
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_tenant", query)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+
+	var tenantId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&tenantId)
+		if err != nil {
+			return models.Tenant{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tenant{}, errors.New("Tenant " + name + " already exists")
+				} else {
+					return models.Tenant{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tenant{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tenant{}, err
+		}
+
+	}
+
+	newTenant := models.Tenant{
+		Name: name,
+	}
+
+	//After creation a tenant we update the users table and create fk
+	//(we can't do alter and create fk in users table before memphis account exists in tenants table)
+	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);`
+	_, err = conn.Conn().Query(ctx, queryAlterUsersTable)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	return newTenant, nil
 }
 
 func UpsertBatchOfTenants(tenants []string) error {
@@ -4844,7 +5148,7 @@ func GetGlobalTenant() (bool, models.Tenant, error) {
 		return false, models.Tenant{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tenants WHERE name = '$memphis' LIMIT 1`
+	query := `SELECT * FROM tenants WHERE name = '$G' LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_global_tenant", query)
 	if err != nil {
 		return false, models.Tenant{}, err
@@ -4905,7 +5209,7 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 	if err != nil {
 		return []models.Tenant{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.GlobalAccountName)
 	if err != nil {
 		return []models.Tenant{}, err
 	}

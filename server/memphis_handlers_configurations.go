@@ -13,7 +13,6 @@ package server
 
 import (
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -124,7 +123,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 
 	//TODO: pass tenant name
 	// send signal to reload config
-	err := serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		serv.Errorf("EditConfigurations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -149,7 +148,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 }
 
 func changeDlsRetention(dlsRetention int) error {
-	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), globalAccountName)
 	if err != nil {
 		return err
 	}
@@ -157,14 +156,14 @@ func changeDlsRetention(dlsRetention int) error {
 }
 
 func changeLogsRetention(logsRetention int) error {
-	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), globalAccountName)
 	if err != nil {
 		return err
 	}
 
 	retentionDur := time.Duration(logsRetention) * time.Hour * 24
-		//TODO: pass tenant name
-	err = serv.memphisUpdateStream(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, &StreamConfig{
+	//TODO: pass tenant name
+	err = serv.memphisUpdateStream(globalAccountName, &StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -180,7 +179,7 @@ func changeLogsRetention(logsRetention int) error {
 }
 
 func changeTSTime(tsTime int) error {
-	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), globalAccountName)
 	if err != nil {
 		return err
 	}
@@ -191,7 +190,7 @@ func changeTSTime(tsTime int) error {
 func EditClusterCompHost(key string, host string) error {
 	key = strings.ToLower(key)
 	host = strings.ToLower(host)
-	err := db.UpsertConfiguration(key, host, conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.UpsertConfiguration(key, host, globalAccountName)
 	if err != nil {
 		return err
 	}
@@ -200,7 +199,7 @@ func EditClusterCompHost(key string, host string) error {
 }
 
 func changeMaxMsgSize(newSize int) error {
-	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), conf.MEMPHIS_GLOBAL_ACCOUNT_NAME)
+	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), globalAccountName)
 	if err != nil {
 		return err
 	}

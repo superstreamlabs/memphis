@@ -21,7 +21,6 @@ import (
 	"io"
 	"math"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -800,8 +799,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	streamInfo, err := serv.memphisStreamInfo(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1)
+	//TODO: pass tenantName instead of globalAccountName
+	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -819,8 +818,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	err = serv.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1, &cc)
+	//TODO: pass tenantName instead of globalAccountName
+	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -830,12 +829,12 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	sub, err := serv.subscribeOnAcc(serv.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	//TODO: pass tenantName instead of globalAccountName
+	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-			serv.sendInternalAccountMsg(serv.memphisGlobalAccount(), reply, []byte(_EMPTY_))
+			//TODO: pass tenantName instead of globalAccountName
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -860,8 +859,8 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	// if err != nil {
 	// 	return throughputs, err
 	// }
-	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
-	serv.sendInternalAccountMsgWithReply(serv.memphisGlobalAccount(), subject, reply, nil, req, true)
+	//TODO: pass tenantName instead of globalAccountName
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
 	timeout := 300 * time.Millisecond
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -875,10 +874,10 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 
 cleanup:
 	timer.Stop()
-	serv.unsubscribeOnAcc(serv.memphisGlobalAccount(), sub)
-	//TODO: pass tenantName instead of conf.MEMPHIS_GLOBAL_ACCOUNT_NAME
+	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
+	//TODO: pass tenantName instead of globalAccountName
 	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, throughputStreamNameV1, durableName)
+		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
 	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
@@ -946,6 +945,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (model
 		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -961,6 +961,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (model
 		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -974,6 +975,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (model
 		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
 		if err != nil {
 			*generalErr = err
+			wg.Done()
 			return
 		}
 		mu.Lock()
@@ -1727,7 +1729,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(globalAccountName, syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1764,7 +1766,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(globalAccountName, syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1774,10 +1776,10 @@ func (s *Server) GetSystemLogs(amount uint64,
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := s.subscribeOnAcc(s.memphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			s.sendInternalAccountMsg(s.memphisGlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1799,7 +1801,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		return models.SystemLogsResponse{}, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.memphisGlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
 
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -1813,8 +1815,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnAcc(s.memphisGlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, syslogsStreamName, durableName) })
+	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(globalAccountName, syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
@@ -2197,7 +2199,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if (iface.HardwareAddr == nil) {
+		if iface.HardwareAddr == nil {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()
