@@ -255,7 +255,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX IF NOT EXISTS station_id ON consumers (station_id);
 		CREATE INDEX IF NOT EXISTS connection_id ON consumers (connection_id);
-		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
+		CREATE UNIQUE INDEX IF NOT EXISTS unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterStationsTable := `
 		ALTER TABLE IF EXISTS stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
@@ -291,7 +291,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(name)
 		);
-		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
+		CREATE UNIQUE INDEX IF NOT EXISTS unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;`
 
 	alterSchemaVerseTable := `
 		ALTER TABLE IF EXISTS schema_versions ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
@@ -352,7 +352,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		);
 		CREATE INDEX IF NOT EXISTS producer_station_id ON producers(station_id);
 		CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
-		CREATE UNIQUE INDEX unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
+		CREATE UNIQUE INDEX IF NOT EXISTS unique_producer_table ON producers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
 
 	alterDlsMsgsTable := `
 		ALTER TABLE IF EXISTS dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
