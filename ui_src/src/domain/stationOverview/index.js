@@ -90,7 +90,6 @@ const StationOverview = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));

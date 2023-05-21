@@ -101,7 +101,6 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 						continue
 					}
 					if !acc.SubscriptionInterest(replySubj) {
-						fmt.Println("removing tenant "+tenant+" ws subscription %s", replySubj)
 						s.Debugf("removing tenant "+tenant+" ws subscription %s", replySubj)
 						deleteTenantFromSub(tenant, subs, k)
 						continue
@@ -119,7 +118,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 						continue
 					}
 
-					s.sendInternalAccountMsg(acc, replySubj, updateRaw)
+					s.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
 				}
 			}
 		case <-quitCh:
@@ -153,25 +152,10 @@ type wsRegistrationMsg struct {
 
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
-		fmt.Println("register")
-		message := string(msg)
-		tenantName := ""
-		if strings.Contains(message, "acc") {
-			var wsr wsRegistrationMsg
-			splittedMsg := strings.Split(message, "\r\n\r\n")
-			if len(splittedMsg) != 2 {
-				s.Errorf("createWSRegistrationHandler: error parsing message")
-				return
-			}
-			trimmedForMarshal := strings.TrimPrefix(splittedMsg[0], "NATS/1.0\r\nNats-Request-Info: ")
-			if err := json.Unmarshal([]byte(trimmedForMarshal), &wsr); err != nil {
-				s.Errorf("createWSRegistrationHandler: " + err.Error())
-				return
-			}
-			tenantName = wsr.Acc
-			message = splittedMsg[1]
-		} else {
-			tenantName = globalAccountName
+		tenantName, message, err := s.getTenantNameAndMessage(msg)
+		if err != nil {
+			s.Errorf("memphis websocket: " + err.Error())
+			return
 		}
 		s.Debugf("memphisWS registration - %s,%s", subj, message)
 		subscriptions := s.memphis.ws.subscriptions
@@ -208,14 +192,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			s.Errorf("memphis websocket: " + err.Error())
 			return
 		}
-		if tenantName != "" {
-			account, err := s.lookupAccount(tenantName)
-			if err != nil {
-				s.Errorf("memphis websocket: " + err.Error())
-				return
-			}
-			s.sendInternalAccountMsg(account, reply, serverName)
-		}
+		s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), reply, serverName)
 	}
 }
 
