@@ -4798,9 +4798,14 @@ func CreateTenant(name string) (models.Tenant, error) {
 
 	//After creation a tenant we update the users table and create fk
 	//(we can't do alter and create fk in users table before memphis account exists in tenants table)
-	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
-	ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
-	_, err = conn.Conn().Query(ctx, queryAlterUsersTable)
+	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);`
+	_, err = conn.Conn().Exec(ctx, queryAlterUsersTable)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+
+	queryAlterConfigurations := `ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
+	_, err = conn.Conn().Exec(ctx, queryAlterConfigurations)
 	if err != nil {
 		return models.Tenant{}, err
 	}
