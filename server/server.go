@@ -294,6 +294,7 @@ type Server struct {
 	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
 
 	memphis srvMemphis
+	//TODO: remove
 	// memphisGacc *Account
 }
 
@@ -769,6 +770,7 @@ func (s *Server) globalAccount() *Account {
 	return gacc
 }
 
+// TODO: remove
 // func (s *Server) memphisGlobalAccount() *Account {
 // 	s.mu.RLock()
 // 	mgacc := s.memphisGacc
@@ -913,6 +915,7 @@ func (s *Server) configureAccounts() error {
 	return nil
 }
 
+// TODO: remove
 // func (s *Server) ConfigureMemphisGlobalAccount() error {
 // 	s.mu.RLock()
 // 	acc, err := s.lookupAccount(globalAccountName)

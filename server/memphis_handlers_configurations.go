@@ -121,7 +121,6 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 
-	//TODO: pass tenant name
 	// send signal to reload config
 	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
