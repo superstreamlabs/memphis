@@ -1683,7 +1683,9 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
+		// ** removed by memphis
 		// s.gacc = nil
+		// removed by memphis **
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()
