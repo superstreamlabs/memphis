@@ -1197,9 +1197,7 @@ func GetMemphisOpts(opts Options) (*Account, Options, error) {
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
-		// GlobalAccount.exports = exportMap{services: globalServicesExport}
 		gacc.exports = exportMap{services: globalServicesExport}
-		// accounts = append(accounts, GlobalAccount)
 		appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: gacc})
 		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
 		addedTenant[conf.GlobalAccountName] = gacc

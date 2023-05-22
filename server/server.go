@@ -770,14 +770,6 @@ func (s *Server) globalAccount() *Account {
 	return gacc
 }
 
-// TODO: remove
-// func (s *Server) memphisGlobalAccount() *Account {
-// 	s.mu.RLock()
-// 	mgacc := s.memphisGacc
-// 	s.mu.RUnlock()
-// 	return mgacc
-// }
-
 // Used to setup Accounts.
 // Lock is held upon entry.
 func (s *Server) configureAccounts() error {
@@ -914,18 +906,6 @@ func (s *Server) configureAccounts() error {
 
 	return nil
 }
-
-// TODO: remove
-// func (s *Server) ConfigureMemphisGlobalAccount() error {
-// 	s.mu.RLock()
-// 	acc, err := s.lookupAccount(globalAccountName)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	s.memphisGacc = acc
-// 	s.mu.RUnlock()
-// 	return nil
-// }
 
 // Setup the account resolver. For memory resolver, make sure the JWTs are
 // properly formed but do not enforce expiration etc.

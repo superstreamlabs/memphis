@@ -1547,7 +1547,7 @@ func (s *Server) applyOptions(ctx *reloadContext, opts []option) {
 	if reloadClientTrcLvl {
 		s.reloadClientTraceLevel()
 	}
-	if reloadAuth {
+	if reloadAuth && !configuration.USER_PASS_BASED_AUTH {
 		s.reloadAuthorization()
 	}
 	if reloadClusterPerms {
