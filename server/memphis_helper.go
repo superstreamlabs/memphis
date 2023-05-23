@@ -1085,7 +1085,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
+func GetMemphisOpts(opts Options) (*Account, Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
 		return &Account{}, Options{}, err
@@ -1152,11 +1152,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
 		for _, subj := range memphisSubjects {
-			if reload {
-				se := &serviceExport{acc: serv.GlobalAccount(), latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
-				globalServicesExport[subj] = se
-				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.GlobalAccount(), claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
-			}
 			se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 			globalServicesExport[subj] = se
 			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}

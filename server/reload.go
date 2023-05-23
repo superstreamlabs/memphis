@@ -896,7 +896,7 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
 	// ** added by Memphis
-	gacc, memphisOpts, err := GetMemphisOpts(*newOpts, true)
+	gacc, memphisOpts, err := GetMemphisOpts(*newOpts)
 	if err != nil {
 		return err
 	}

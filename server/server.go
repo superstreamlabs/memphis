@@ -346,7 +346,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
-	gacc, memphisOpts, err := GetMemphisOpts(*opts, false)
+	gacc, memphisOpts, err := GetMemphisOpts(*opts)
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
