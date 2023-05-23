@@ -938,8 +938,10 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	s.configTime = time.Now().UTC()
 	s.updateVarzConfigReloadableFields(s.varz)
 	s.mu.Unlock()
-	if err := s.gacc.EnableJetStream(map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}); err != nil {
-		return err
+	if !s.gacc.JetStreamEnabled() {
+		if err := s.gacc.EnableJetStream(map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
