@@ -902,7 +902,6 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	}
 	*newOpts = memphisOpts
 	gacc.srv = s
-	s.gacc = gacc
 	// added by Memphis **
 	setBaselineOptions(newOpts)
 
@@ -939,6 +938,9 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	s.configTime = time.Now().UTC()
 	s.updateVarzConfigReloadableFields(s.varz)
 	s.mu.Unlock()
+	if err := s.gacc.EnableJetStream(map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}); err != nil {
+		return err
+	}
 	return nil
 }
 func applyBoolFlags(newOpts, flagOpts *Options) {
@@ -1547,7 +1549,7 @@ func (s *Server) applyOptions(ctx *reloadContext, opts []option) {
 	if reloadClientTrcLvl {
 		s.reloadClientTraceLevel()
 	}
-	if reloadAuth && !configuration.USER_PASS_BASED_AUTH {
+	if reloadAuth {
 		s.reloadAuthorization()
 	}
 	if reloadClusterPerms {
@@ -1683,9 +1685,7 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		// ** removed by memphis
-		// s.gacc = nil
-		// removed by memphis **
+		s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()

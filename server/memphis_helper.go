@@ -1123,16 +1123,7 @@ func GetMemphisOpts(opts Options) (*Account, Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
-	var gacc *Account
-	if serv == nil {
-		gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-	} else {
-		if serv.gacc != nil {
-			gacc = serv.gacc
-		} else {
-			gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-		}
-	}
+	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
 			tenantsToUpsert := []string{globalAccountName}
