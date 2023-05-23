@@ -195,9 +195,8 @@ export const diffDate = (date) => {
 };
 
 export const hex_to_ascii = (str1) => {
-    var hex = str1.toString();
-    var str = '';
-    str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
+    const hex = str1.toString();
+    const str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
     return str;
 };
 
