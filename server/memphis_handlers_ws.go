@@ -145,11 +145,6 @@ func tokensFromToEnd(subject string, index uint8) string {
 	return _EMPTY_
 }
 
-type wsRegistrationMsg struct {
-	Acc string `json:"acc"`
-	Rtt int    `json:"rtt"`
-}
-
 func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
 		tenantName, message, err := s.getTenantNameAndMessage(msg)

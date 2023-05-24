@@ -61,7 +61,6 @@ var memphisSubjects = []string{
 	"$memphis_consumer_destructions",
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
-	"$memphis_get_tenant_name",
 	"$memphis_ws_subs.>",
 	"$memphis_ws_pubs.>",
 	"$memphis_ws_subs_cg",
