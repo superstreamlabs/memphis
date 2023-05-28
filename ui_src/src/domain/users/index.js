@@ -90,7 +90,10 @@ function Users() {
     return (
         <div className="users-container">
             <div className="header-wraper">
-                <label className="main-header-h1">Users</label>
+                <div className="main-header-wrapper">
+                    <label className="main-header-h1">Users</label>
+                    <span className="memphis-label">For client authentication, choose "Application". For management only, choose "Management".</span>
+                </div>
                 <div className="add-search-user">
                     <SearchInput
                         placeholder="Search here"
@@ -121,7 +124,6 @@ function Users() {
                     />
                 </div>
             </div>
-            <span className="memphis-label">For client authentication, choose "Application". For management only, choose "Management".</span>
             <div className="users-list-container">
                 <div className="users-list-header">
                     <p className="user-name-title">Username</p>

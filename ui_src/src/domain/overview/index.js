@@ -191,9 +191,11 @@ function OverView() {
                             />
                         </div>
                     </div>
+                    <div className="top-component">
+                        <GenericDetails />
+                    </div>
                     <div className="overview-components">
                         <div className="left-side">
-                            <GenericDetails />
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>

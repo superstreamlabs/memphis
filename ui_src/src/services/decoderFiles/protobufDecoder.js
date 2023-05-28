@@ -15,7 +15,7 @@ export class BufferReader {
 
     readBuffer(length) {
         this.checkByte(length);
-        const result = this.buffer.slice(this.offset, this.offset + length);
+        const result = this.buffer?.slice(this.offset, this.offset + length);
         this.offset += length;
 
         return result;

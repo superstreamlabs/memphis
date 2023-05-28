@@ -71,6 +71,8 @@ export function getBackgroundColor(backgroundColor) {
     switch (backgroundColor) {
         case 'purple':
             return '#6557FF';
+        case 'purple-light':
+            return '#D0CCFF';
         case 'white':
             return '#FFFFFF';
         case 'orange':

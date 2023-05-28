@@ -157,10 +157,10 @@ const LogsWrapper = () => {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
-                        const uniqueItems = data.logs.slice(0, lastMgsSeqIndex);
+                        const uniqueItems = data.logs?.slice(0, lastMgsSeqIndex);
                         if (stateRef.current[4]) {
-                            setSelectedRow(data.logs[0].message_seq);
-                            setDisplayedLog(data.logs[0]);
+                            setSelectedRow(data?.logs[0]?.message_seq);
+                            setDisplayedLog(data?.logs[0]);
                         }
                         setLastMgsSeq(data.logs[0].message_seq);
                         setLogs((users) => [...uniqueItems, ...users]);

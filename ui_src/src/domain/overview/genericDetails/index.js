@@ -18,6 +18,7 @@ import { numberWithCommas } from '../../../services/valueConvertor';
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
+import AttachedSchema from '../../../assets/images/AttachedSchema.svg';
 import { Divider } from 'antd';
 
 const GenericDetails = () => {
@@ -51,7 +52,7 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
-                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <img src={AttachedSchema} width={50} height={50} alt="AttachedSchema" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Attached schema</span>
                         <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
