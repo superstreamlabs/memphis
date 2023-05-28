@@ -1160,13 +1160,13 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			for _, subj := range memphisSubjects {
 				se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 				globalServicesExport[subj] = se
-				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
 			}
 		} else {
 			for _, subj := range memphisSubjects {
 				se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 				globalServicesExport[subj] = se
-				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
 			}
 		}
 
@@ -1220,7 +1220,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 func getStreamsImportForAccout(acc *Account) []*streamImport {
 	streamsImport := []*streamImport{}
 	for _, subj := range memphisSubjects {
-		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: false})
+		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
 	}
 	return streamsImport
 }
