@@ -896,12 +896,12 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
 	// ** added by Memphis
-	gacc, memphisOpts, err := GetMemphisOpts(*newOpts)
+	_, memphisOpts, err := GetMemphisOpts(*newOpts, true)
 	if err != nil {
 		return err
 	}
 	*newOpts = memphisOpts
-	gacc.srv = s
+	// gacc.srv = s
 	// added by Memphis **
 	setBaselineOptions(newOpts)
 
@@ -1678,6 +1678,9 @@ func (s *Server) reloadAuthorization() {
 		oldAccounts := make(map[string]*Account)
 		s.accounts.Range(func(k, v interface{}) bool {
 			acc := v.(*Account)
+			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT {
+				return true
+			}
 			acc.mu.Lock()
 			oldAccounts[acc.Name] = acc
 			// Need to clear out eventing timers since they close over this account and not the new one.
@@ -1687,7 +1690,7 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		s.gacc = nil
+		// s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()

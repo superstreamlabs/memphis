@@ -1084,7 +1084,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func GetMemphisOpts(opts Options) (*Account, Options, error) {
+func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
 		return &Account{}, Options{}, err
@@ -1112,7 +1112,13 @@ func GetMemphisOpts(opts Options) (*Account, Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
+	// var gacc *Account
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+	// if reload {
+	// 	gacc = serv.gacc.shallowCopy()
+	// } else {
+	// 	gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
+	// }
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
 			tenantsToUpsert := []string{globalAccountName}
@@ -1150,10 +1156,18 @@ func GetMemphisOpts(opts Options) (*Account, Options, error) {
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 
-		for _, subj := range memphisSubjects {
-			se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
-			globalServicesExport[subj] = se
-			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+		if reload {
+			for _, subj := range memphisSubjects {
+				se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+				globalServicesExport[subj] = se
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+			}
+		} else {
+			for _, subj := range memphisSubjects {
+				se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+				globalServicesExport[subj] = se
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: false, se: se}
+			}
 		}
 
 		users, err := db.GetAllUsersByType([]string{"application"})
@@ -1177,20 +1191,29 @@ func GetMemphisOpts(opts Options) (*Account, Options, error) {
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
-		gacc.exports = exportMap{services: globalServicesExport}
-		appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: gacc})
-		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
-		addedTenant[conf.GlobalAccountName] = gacc
+		if reload {
+			serv.gacc.exports = exportMap{services: globalServicesExport}
+		} else {
+			gacc.exports = exportMap{services: globalServicesExport}
+			accounts = append(accounts, gacc)
+		}
+		if reload {
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
+			addedTenant[conf.GlobalAccountName] = serv.gacc
+		} else {
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: gacc})
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
+			addedTenant[conf.GlobalAccountName] = gacc
+		}
 		tenantsId[globalAccountName] = 1
 		for _, user := range users {
 			name := user.TenantName
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
 		}
-		accounts = append(accounts, gacc)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
-
 	return gacc, opts, nil
 }
 
