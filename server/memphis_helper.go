@@ -53,6 +53,9 @@ const (
 )
 
 var memphisSubjects = []string{
+	"$memphis_ws_pubs.>",
+}
+var memphisServices = []string{
 	"$memphis_station_creations",
 	"$memphis_station_destructions",
 	"$memphis_producer_creations",
@@ -62,8 +65,6 @@ var memphisSubjects = []string{
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
 	"$memphis_ws_subs.>",
-	// "$memphis_ws_pubs.>",
-	"$memphis_ws_subs_cg",
 }
 
 // JetStream API request kinds
@@ -1112,13 +1113,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
-	// var gacc *Account
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-	// if reload {
-	// 	gacc = serv.gacc.shallowCopy()
-	// } else {
-	// 	gacc = &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-	// }
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
 			tenantsToUpsert := []string{globalAccountName}
@@ -1155,21 +1150,25 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		// GlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
-		var siList []*streamImport
+		siList := []*streamImport{}
 		if reload {
-			for _, subj := range memphisSubjects {
+			for _, subj := range memphisServices {
 				se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 				globalServicesExport[subj] = se
 				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
 			}
-			siList = []*streamImport{{acc: serv.gacc, claim: nil, tr: nil, rtr: nil, from: "$memphis_ws_pubs.>", to: "$memphis_ws_pubs.>", usePub: true}}
-		} else {
 			for _, subj := range memphisSubjects {
+				siList = append(siList, &streamImport{acc: serv.gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
+			}
+		} else {
+			for _, subj := range memphisServices {
 				se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
 				globalServicesExport[subj] = se
 				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
 			}
-			siList = []*streamImport{{acc: gacc, claim: nil, tr: nil, rtr: nil, from: "$memphis_ws_pubs.>", to: "$memphis_ws_pubs.>", usePub: true}}
+			for _, subj := range memphisSubjects {
+				siList = append(siList, &streamImport{acc: gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
+			}
 		}
 
 		users, err := db.GetAllUsersByType([]string{"application"})
@@ -1193,15 +1192,18 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
-		ea := streamExport{}
-		//TODO: make "$memphis_ws_pubs.>" not hard coded
-		if err := setExportAuth(&ea.exportAuth, "$memphis_ws_pubs.>", []*Account{}, 0); err != nil {
-			return &Account{}, Options{}, err
+		globalStreamsExport := map[string]*streamExport{}
+		for _, subj := range memphisSubjects {
+			ea := streamExport{}
+			if err := setExportAuth(&ea.exportAuth, subj, []*Account{}, 0); err != nil {
+				return &Account{}, Options{}, err
+			}
+			globalStreamsExport[subj] = &ea
 		}
 		if reload {
-			serv.gacc.exports = exportMap{services: globalServicesExport, streams: map[string]*streamExport{"$memphis_ws_pubs.>": &ea}}
+			serv.gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
 		} else {
-			gacc.exports = exportMap{services: globalServicesExport, streams: map[string]*streamExport{"$memphis_ws_pubs.>": &ea}}
+			gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
 			accounts = append(accounts, gacc)
 		}
 		if reload {
@@ -1226,7 +1228,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 
 func getStreamsImportForAccout(acc *Account) []*streamImport {
 	streamsImport := []*streamImport{}
-	for _, subj := range memphisSubjects {
+	for _, subj := range memphisServices {
 		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
 	}
 	return streamsImport
