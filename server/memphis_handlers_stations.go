@@ -1779,7 +1779,12 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	err = removeSchemaFromStation(sh.S, stationName, true, strings.ToLower(station.TenantName))
+	tenantName := station.TenantName
+	if station.TenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(station.TenantName)
+	}
+
+	err = removeSchemaFromStation(sh.S, stationName, true, tenantName)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation: At station" + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
