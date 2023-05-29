@@ -513,52 +513,51 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 
 func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
 	var stations []models.ExtendedStation
-	totalMessages := map[string]uint64{}
-	totalMessages[tenantName] = uint64(0)
+	totalMessages := uint64(0)
 	if tenantName == "" {
 		tenantName = conf.GlobalAccountName
 	}
 	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
 	if err != nil {
-		return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, err
+		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 	}
 
 	stations, err = db.GetAllStationsDetailsPerTenant(tenantName)
 	if err != nil {
-		return stations, totalMessages[tenantName], totalDlsMessages, err
+		return stations, totalMessages, totalDlsMessages, err
 	}
 	if len(stations) == 0 {
-		return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, nil
+		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
 	} else {
-		stationTotalMsgs := make(map[string]map[string]int)
-		stationTotalMsgs = map[string]map[string]int{}
+		stationTotalMsgs := make(map[string]int)
 		tagsHandler := TagsHandler{S: sh.S}
-		for _, acc := range sh.S.opts.Accounts {
-			accName := acc.Name
-			allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
-			if err != nil {
-				return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, err
-			}
-			stationTotalMsgs[accName] = map[string]int{}
-			for _, info := range allStreamInfo {
-				streamName := info.Config.Name
-				if !strings.Contains(streamName, "$memphis") {
-					totalMessages[accName] += info.State.Msgs
-					stationTotalMsgs[accName][streamName] = int(info.State.Msgs)
-				}
+		acc, err := sh.S.lookupAccount(tenantName)
+		if err != nil {
+			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
+		}
+		accName := acc.Name
+		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+		if err != nil {
+			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
+				stationTotalMsgs[streamName] = int(info.State.Msgs)
 			}
 		}
 
 		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
 		if err != nil {
-			return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, err
+			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 		}
 
 		var extStations []models.ExtendedStation
 		for i := 0; i < len(stations); i++ {
 			fullStationName, err := StationNameFromStr(stations[i].Name)
 			if err != nil {
-				return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, err
+				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
 			hasDlsMsgs := false
 			for _, stationId := range stationIdsDlsMsgs {
@@ -570,12 +569,12 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			if shouldGetTags {
 				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 				if err != nil {
-					return []models.ExtendedStation{}, totalMessages[tenantName], totalDlsMessages, err
+					return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 				}
 				stations[i].Tags = tags
 			}
 
-			stations[i].TotalMessages = stationTotalMsgs[tenantName][fullStationName.Intern()]
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
 			stations[i].HasDlsMsgs = hasDlsMsgs
 
 			found := false
@@ -613,7 +612,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 
 			extStations = append(extStations, stationRes)
 		}
-		return extStations, totalMessages[tenantName], totalDlsMessages, nil
+		return extStations, totalMessages, totalDlsMessages, nil
 	}
 }
 
