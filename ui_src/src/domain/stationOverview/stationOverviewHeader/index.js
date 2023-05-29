@@ -17,7 +17,7 @@ import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { MinusOutlined } from '@ant-design/icons';
 
-import { convertBytes, convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
+import { convertBytes, convertSecondsToDate } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import purgeWrapperIcon from '../../../assets/images/purgeWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
@@ -64,10 +64,10 @@ const StationOverviewHeader = () => {
                 setRetentionValue(convertSecondsToDate(stationState?.stationMetaData?.retention_value));
                 break;
             case 'bytes':
-                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} bytes`);
+                setRetentionValue(`${stationState?.stationMetaData?.retention_value?.toLocaleString()} bytes`);
                 break;
             case 'messages':
-                setRetentionValue(`${numberWithCommas(stationState?.stationMetaData?.retention_value)} messages`);
+                setRetentionValue(`${stationState?.stationMetaData?.retention_value?.toLocaleString()} messages`);
                 break;
             default:
                 break;
@@ -291,7 +291,7 @@ const StationOverviewHeader = () => {
                         </div>
                         <div className="more-details">
                             <p className="title">Total messages</p>
-                            <p className="number">{numberWithCommas(stationState?.stationSocketData?.total_messages) || 0}</p>
+                            <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
                         </div>
                     </div>
                     <div className="details-wrapper pointer">

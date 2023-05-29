@@ -18,7 +18,7 @@ import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import Lottie from 'lottie-react';
 
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
-import { numberWithCommas, parsingDate } from '../../../services/valueConvertor';
+import { parsingDate } from '../../../services/valueConvertor';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
@@ -66,8 +66,8 @@ const FailedStations = ({ createStationTrigger }) => {
                                             <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
                                                 {parsingDate(station.created_at)}
                                             </OverflowTip>
-                                            <OverflowTip className="station-details total" text={numberWithCommas(station.total_messages)}>
-                                                <span className="centered">{numberWithCommas(station.total_messages)}</span>
+                                            <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
+                                                <span className="centered">{station.total_messages?.toLocaleString()}</span>
                                             </OverflowTip>
                                             <div className="centered lottie">
                                                 {station?.has_dls_messages ? (

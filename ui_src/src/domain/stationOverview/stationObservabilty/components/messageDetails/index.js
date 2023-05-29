@@ -15,7 +15,7 @@ import { useHistory } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import { Space } from 'antd';
 
-import { convertBytes, numberWithCommas, parsingDate } from '../../../../../services/valueConvertor';
+import { convertBytes, parsingDate } from '../../../../../services/valueConvertor';
 import attachedPlaceholder from '../../../../../assets/images/attachedPlaceholder.svg';
 import animationData from '../../../../../assets/lotties/MemphisGif.json';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
@@ -75,19 +75,19 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     details: [
                         {
                             name: 'Unacked messages',
-                            value: numberWithCommas(row?.total_poison_messages)
+                            value: row?.total_poison_messages?.toLocaleString()
                         },
                         {
                             name: 'Unprocessed messages',
-                            value: numberWithCommas(row?.unprocessed_messages)
+                            value: row?.unprocessed_messages?.toLocaleString()
                         },
                         {
                             name: 'In process message',
-                            value: numberWithCommas(row?.in_process_messages)
+                            value: row?.in_process_messages?.toLocaleString()
                         },
                         {
                             name: 'Max ack time',
-                            value: `${numberWithCommas(row?.max_ack_time_ms)}ms`
+                            value: `${row?.max_ack_time_ms?.toLocaleString()}ms`
                         },
                         {
                             name: 'Max message deliveries',
