@@ -423,7 +423,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("refreshToken: " + err.Error())
+		serv.Warnf("refreshToken: user " +username +" does not exist")
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 		// exist, sandboxUser, err := IsSandboxUserExist(username)
