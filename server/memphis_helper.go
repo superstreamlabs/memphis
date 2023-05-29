@@ -62,8 +62,6 @@ var memphisSubjects = []string{
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
 	"$memphis_ws_subs.>",
-	// "$memphis_ws_pubs.>",
-	"$memphis_ws_subs_cg",
 }
 
 // JetStream API request kinds
