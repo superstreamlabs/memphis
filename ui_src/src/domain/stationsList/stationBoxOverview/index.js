@@ -17,7 +17,7 @@ import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 
-import { convertSecondsToDate, numberWithCommas } from '../../../services/valueConvertor';
+import { convertSecondsToDate } from '../../../services/valueConvertor';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
@@ -138,7 +138,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </div>
 
                             <p className="data-info">
-                                {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : numberWithCommas(station?.total_messages)}
+                                {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : station?.total_messages?.toLocaleString()}
                             </p>
                         </div>
                         <div className="station-meta poison">
