@@ -15,15 +15,10 @@ import './style.scss';
 import React, { useContext, useState, useEffect } from 'react';
 
 import { Context } from '../../hooks/store';
-import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
-import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
-import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
-import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
-import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
-import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
 import Integrations from './integrations';
 import AccountMenu from './accountMenu';
 import BillingMenu from './billing/billingMenu';
+import Payments from './billing/payments';
 import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
@@ -59,6 +54,20 @@ function Administration({ step }) {
                     return <VersionUpgrade />;
                 } else {
                     history.replace(`${pathDomains.administration}/version_upgrade`);
+                    break;
+                }
+            case 'requests':
+                if (window.location.href.split('/requests').length > 1) {
+                    return <Integrations />;
+                } else {
+                    history.replace(`${pathDomains.administration}/requests`);
+                    break;
+                }
+            case 'payments':
+                if (window.location.href.split('/payments').length > 1) {
+                    return <Payments />;
+                } else {
+                    history.replace(`${pathDomains.administration}/payments`);
                     break;
                 }
             default:
