@@ -315,7 +315,7 @@ func InitalizeMetadataDbConnection(l logger) (MetadataStorage, error) {
 	if err != nil {
 		return MetadataStorage{}, err
 	}
-	config.MaxConns = 5
+	config.MaxConns = 10
 
 	if configuration.METADATA_DB_TLS_ENABLED {
 		CACert, err := os.ReadFile(configuration.METADATA_DB_TLS_CA)

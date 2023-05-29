@@ -373,10 +373,10 @@ func (s *Server) uploadToS3Storage() error {
 				Body:   &buf,
 			})
 			if err != nil {
-				err = errors.New("uploadToS3Storage: failed to upload the object to S3 " + err.Error())
+				err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
 				return err
 			}
-			serv.Noticef("file upload to S3 storage: %s", objectName)
+			serv.Noticef("new file has been uploaded to S3: %s", objectName)
 		}
 	}
 	return nil

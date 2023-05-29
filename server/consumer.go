@@ -2943,6 +2943,11 @@ func (o *consumer) incDeliveryCount(sseq uint64) uint64 {
 
 // send a delivery exceeded advisory.
 func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64) {
+	// *** added by memphis
+	if strings.HasPrefix(o.stream, "$memphis") { // skipping memphis streams max deliveries events
+		return
+	}
+	// added by memphis ***
 	e := JSConsumerDeliveryExceededAdvisory{
 		TypedEvent: TypedEvent{
 			Type: JSConsumerDeliveryExceededAdvisoryType,

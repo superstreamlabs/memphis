@@ -30,6 +30,7 @@ const CONFIGURATIONS_RELOAD_SIGNAL_SUBJ = "$memphis_config_reload_signal"
 const NOTIFICATION_EVENTS_SUBJ = "$memphis_notifications"
 const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
+const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
 var LastReadThroughput models.Throughput
@@ -213,7 +214,6 @@ func (s *Server) CalculateSelfThroughput() error {
 }
 
 func (s *Server) StartBackgroundTasks() error {
-	s.ListenForPoisonMessages()
 	err := s.ListenForZombieConnCheckRequests()
 	if err != nil {
 		return errors.New("Failed subscribing for zombie conns check requests: " + err.Error())
@@ -239,16 +239,17 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
 
-	// creating consumer + start listening
 	err = s.ListenForTieredStorageMessages()
 	if err != nil {
-		return errors.New("Failed to subscribe for tiered storage messages" + err.Error())
+		return errors.New("Failed to subscribing for tiered storage messages" + err.Error())
 	}
 
 	err = s.ListenForSchemaverseDlsEvents()
 	if err != nil {
-		return errors.New("Failed to subscribe for schemaverse dls" + err.Error())
+		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
+
+	go s.ConsumeUnackedMessages()
 	go s.RemoveOldDlsMsgs()
 
 	// send JS API request to get more messages
@@ -270,17 +271,14 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			currentTimeFrame = s.opts.TieredStorageUploadIntervalSec
 			ticker.Reset(time.Duration(currentTimeFrame) * time.Second)
 			// update consumer when TIERED_STORAGE_TIME_FRAME_SEC configuration was changed
-			durableName := TIERED_STORAGE_CONSUMER
-			tieredStorageTimeFrame := time.Duration(currentTimeFrame) * time.Second
-			filterSubject := tieredStorageStream + ".>"
 			cc := ConsumerConfig{
 				DeliverPolicy: DeliverAll,
 				AckPolicy:     AckExplicit,
-				Durable:       durableName,
-				FilterSubject: filterSubject,
-				AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+				Durable:       TIERED_STORAGE_CONSUMER,
+				FilterSubject: tieredStorageStream + ".>",
+				AckWait:       time.Duration(2) * time.Duration(currentTimeFrame) * time.Second,
 				MaxAckPending: -1,
-				MaxDeliver:    1,
+				MaxDeliver:    10,
 			}
 			err := serv.memphisAddConsumer(tieredStorageStream, &cc)
 			if err != nil {
@@ -300,6 +298,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			}
 		}
 
+		// ack all messages uploaded to tiered 2 storage
 		for i, msgs := range tieredStorageMsgsMap.m {
 			for _, msg := range msgs {
 				reply := msg.ReplySubject
@@ -311,16 +310,81 @@ func (s *Server) uploadMsgsToTier2Storage() {
 	}
 }
 
+// send fetch requests to JS API to consume messages from tiered storage stream
 func (s *Server) sendPeriodicJsApiFetchTieredStorageMsgs() {
 	ticker := time.NewTicker(2 * time.Second)
 	for range ticker.C {
 		if TIERED_STORAGE_CONSUMER_CREATED && TIERED_STORAGE_STREAM_CREATED {
-			durableName := TIERED_STORAGE_CONSUMER
-			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, durableName)
-			reply := durableName + "_reply"
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, TIERED_STORAGE_CONSUMER)
+			reply := TIERED_STORAGE_CONSUMER + "_reply"
 			amount := 1000
 			req := []byte(strconv.FormatUint(uint64(amount), 10))
 			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+		}
+	}
+}
+
+func (s *Server) ConsumeUnackedMessages() {
+	type unAckedMsg struct {
+		Msg          []byte
+		ReplySubject string
+	}
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if DLS_UNACKED_CONSUMER_CREATED && DLS_UNACKED_STREAM_CREATED {
+			resp := make(chan unAckedMsg)
+			replySubj := DLS_UNACKED_CONSUMER + "_reply_" + s.memphis.nuid.Next()
+
+			// subscribe to unacked messages
+			sub, err := s.subscribeOnGlobalAcc(replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != "" {
+						message := unAckedMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to unacked messages: " + err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, dlsUnackedStream, DLS_UNACKED_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]unAckedMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					break
+				}
+				select {
+				case unAckedMsg := <-resp:
+					msgs = append(msgs, unAckedMsg)
+					if len(msgs) == amount {
+						stop = true
+					}
+				case <-timeout.C:
+					stop = true
+				}
+			}
+			for _, msg := range msgs {
+				err := s.handleNewUnackedMsg(msg.Msg)
+				if err == nil {
+					// send ack
+					s.sendInternalAccountMsg(s.GlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
+				}
+			}
+		} else {
+			time.Sleep(2 * time.Second)
 		}
 	}
 }
@@ -331,7 +395,7 @@ func (s *Server) ListenForTieredStorageMessages() error {
 	subject := TIERED_STORAGE_CONSUMER + "_reply"
 	err := serv.queueSubscribe(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(subject, reply string, msg []byte) {
-			//Ignore 409 Exceeded MaxWaiting cases
+			// Ignore 409 Exceeded MaxWaiting cases
 			if reply != "" {
 				rawMsg := strings.Split(string(msg), CR_LF+CR_LF)
 				var tieredStorageMsg TieredStorageMsg
@@ -378,7 +442,6 @@ func (s *Server) ListenForTieredStorageMessages() error {
 		}(subject, reply, copyBytes(msg))
 	})
 	if err != nil {
-		serv.Errorf("ListenForTieredStorageMessages: Failed queueSubscribe tiered storage: " + err.Error())
 		return err
 	}
 
@@ -432,15 +495,13 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 	return nil
 }
 
-func (s *Server) RemoveOldDlsMsgs() error {
+func (s *Server) RemoveOldDlsMsgs() {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
 		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
 		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
 			serv.Errorf("RemoveOldDlsMsgs: " + err.Error())
-			return err
 		}
 	}
-	return nil
 }
