@@ -109,6 +109,7 @@ func runMemphis(s *server.Server) {
 
 	s.InitializeMemphisHandlers()
 
+
 	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())

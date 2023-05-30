@@ -417,7 +417,7 @@ func InitalizeMetadataDbConnection() (MetadataStorage, error) {
 	if err != nil {
 		return MetadataStorage{}, err
 	}
-	config.MaxConns = 5
+	config.MaxConns = 10
 
 	if configuration.METADATA_DB_TLS_ENABLED {
 		CACert, err := os.ReadFile(configuration.METADATA_DB_TLS_CA)
@@ -2649,8 +2649,8 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.is_deleted,
 			c.created_by,
 			c.created_by_username,
-			c.max_ack_time_ms,
-			c.max_msg_deliveries
+			c.max_msg_deliveries,
+			c.max_ack_time_ms
 		FROM
 			consumers AS c
 			INNER JOIN connections AS con ON c.connection_id = con.id

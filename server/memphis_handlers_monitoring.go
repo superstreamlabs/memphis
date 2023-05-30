@@ -1397,7 +1397,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Warnf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -2199,7 +2199,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if iface.HardwareAddr == nil {
+		if (iface.HardwareAddr == nil) {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()

@@ -44,7 +44,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                                         </div>
                                     </div>
                                 )}
-                                {length && length[index] && !icon && <label className="dls-size"> {length[index]}</label>}
+                                {length && length[index] && !icon && <label className="dls-size"> {length[index].toLocaleString()}</label>}
                             </label>
                         )
                     };

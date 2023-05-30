@@ -43,6 +43,7 @@ const SysLogs = () => {
         <div className="logs-container">
             <div className="header-wraper">
                 <h1 className="main-header-h1">System Logs</h1>
+
                 <Button
                     className="modal-btn"
                     width="160px"
@@ -58,7 +59,7 @@ const SysLogs = () => {
                     onClick={downloadLogs}
                 />
             </div>
-
+            <span className="memphis-label">Memphis platform system logs.</span>
             <LogsWrapper />
         </div>
     );

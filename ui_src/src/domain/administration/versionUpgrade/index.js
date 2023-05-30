@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 
 import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
-import { ExtractAddedFeatures, GithubRequest } from '../../../services/githubRequests';
+import { ExtractFeatures, GithubRequest } from '../../../services/githubRequests';
 import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
 import upgradeBanner from '../../../assets/images/upgradeBanner.svg';
 import uptodateIcon from '../../../assets/images/uptodateIcon.svg';
@@ -28,7 +28,8 @@ import Loader from '../../../components/loader';
 function VersionUpgrade() {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setIsLoading] = useState(true);
-    const [features, setFeatures] = useState([]);
+    const [features, setFeatures] = useState({});
+    const [selectedfeatures, setSelectedfeatures] = useState('Added Features');
     const [version, setVersion] = useState([]);
     const [versionUrl, setversionUrl] = useState('');
 
@@ -51,8 +52,32 @@ function VersionUpgrade() {
             const mdFile = mdFiles[0];
             setversionUrl(`${RELEASE_DOCS_URL}${mdFile.name.replace('.md', '')}`);
             const file = await GithubRequest(mdFile.download_url);
-            const addedFeatures = ExtractAddedFeatures(file);
-            setFeatures(addedFeatures);
+            const featuresHeadlines = ['Added Features', 'Enhancements', 'Fixed Bugs', 'Known Issues'];
+            let regex = /###\s*!\[:sparkles:\].*?Added\s*features\s*(.*?)\s*(?=###|$)/is;
+            let FetchFeatures = {};
+
+            featuresHeadlines.map((featureHeadline) => {
+                switch (featureHeadline) {
+                    case 'Added Features':
+                        regex = /###\s*!\[:sparkles:\].*?Added\s*features\s*(.*?)\s*(?=###|$)/is;
+                        break;
+                    case 'Enhancements':
+                        regex = /###\s*!\[:sparkles:\].*?Enhancements\s*(.*?)\s*(?=###|$)/is;
+                        break;
+                    case 'Fixed Bugs':
+                        regex = /###\s*!\[:sparkles:\].*?Fixed\s*bugs\s*(.*?)\s*(?=###|$)/is;
+                        break;
+                    case 'Known Issues':
+                        regex = /###\s*!\[:sparkles:\].*?Known\s*issues\s*(.*?)\s*(?=###|$)/is;
+                        break;
+                }
+
+                const featuresList = ExtractFeatures(file, regex);
+                if (featuresList.length !== 0) {
+                    FetchFeatures[featureHeadline] = featuresList;
+                }
+            });
+            setFeatures(FetchFeatures);
             setIsLoading(false);
         } catch (err) {
             setIsLoading(false);
@@ -82,6 +107,11 @@ function VersionUpgrade() {
                     <div className="banner-section">
                         <img src={upgradeBanner} width="97%" alt="upgradeBanner" />
                         <div className="actions">
+                            <div className="current-version-wrapper">
+                                <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
+                                    <p className="current-version">Current Version: v{state.currentVersion}</p>
+                                </version>
+                            </div>
                             <div className="logo">
                                 <img src={fullLogo} alt="fullLogo" />
                                 <div className="version-wrapper">
@@ -92,37 +122,53 @@ function VersionUpgrade() {
                             <div className="buttons">
                                 <Button
                                     width="180px"
-                                    height="45px"
+                                    height="40px"
                                     placeholder="View Full Changes"
                                     colorType="black"
                                     radiusType="circle"
                                     backgroundColorType="white"
-                                    fontSize="14px"
+                                    fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => window.open(versionUrl, '_blank')}
                                 />
                                 <Button
                                     width="180px"
-                                    height="45px"
+                                    height="40px"
                                     placeholder="How to upgrade"
-                                    colorType="black"
+                                    colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType="white"
-                                    fontSize="14px"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => howToUpgrade()}
                                 />
                             </div>
                         </div>
                     </div>
-
+                    <div className="feature-buttons">
+                        {Object.keys(features).map((key) => (
+                            <Button
+                                width="180px"
+                                height="40px"
+                                placeholder={key}
+                                colorType={selectedfeatures === key ? 'purple' : 'black'}
+                                radiusType="circle"
+                                border={selectedfeatures !== key && 'black'}
+                                backgroundColorType={selectedfeatures !== key && 'white'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => setSelectedfeatures(key)}
+                            />
+                        ))}
+                    </div>
                     <div className="feature-list">
                         {isLoading && (
                             <div className="loading">
                                 <Loader background={false} />
                             </div>
                         )}
-                        {!isLoading && features.map((feature, index) => <NoteItem key={index} feature={feature} />)}
+
+                        {!isLoading && features[selectedfeatures].map((feature) => <NoteItem key={feature} feature={feature} />)}
                     </div>
                 </>
             )}

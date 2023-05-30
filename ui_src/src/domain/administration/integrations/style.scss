@@ -1,19 +1,19 @@
 .alerts-integrations-container {
-    .header-preferences{
+    .header-preferences {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 40px 40px 0px 40px;
     }
-    .categories-list{
+    .categories-list {
         display: flex;
         gap: 5px;
         padding: 0 40px;
-        .tag-wrapper{
+        .tag-wrapper {
             cursor: pointer;
         }
     }
-    .loading{
+    .loading {
         .loader-container {
             height: calc(95vh - 174px);
             width: 100%;
@@ -21,14 +21,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            .memphis-gif{
+            .memphis-gif {
                 top: unset !important;
                 transform: unset !important;
                 left: unset !important;
             }
         }
     }
-    .integration-list{
+    .integration-list {
         padding: 0 40px;
         height: calc(95vh - 174px);
         width: 100%;
@@ -40,22 +40,22 @@
         gap: 20px;
         align-content: flex-start;
         flex-wrap: wrap;
-        .cloud-wrapper{
-            .dark-background{
-                position:absolute;
-                background: rgba(0,0,0,0.3);
+        .cloud-wrapper {
+            .dark-background {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.3);
                 width: 270px;
                 height: 300px;
                 border-radius: 8px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                img{
+                img {
                     position: absolute;
                     left: -8px;
                     top: 8px;
                 }
-                .cloud-icon{
+                .cloud-icon {
                     width: 90px;
                     height: 90px;
                     background: rgba(255, 255, 255, 0.3);
@@ -63,24 +63,24 @@
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    svg{
+                    svg {
                         color: white;
                         width: 45px;
                         height: 45px;
                     }
                 }
             }
-            
-            integ-item{
+
+            integ-item {
                 border: unset !important;
             }
         }
-        .experimental-badge{
-            position:absolute;
+        .experimental-badge {
+            position: absolute;
             display: flex;
             align-items: center;
             justify-content: center;
-            img{
+            img {
                 position: absolute;
                 left: -8px;
                 top: 8px;
@@ -88,16 +88,15 @@
         }
     }
 }
-.request-integration-modal{
-    .ant-modal-content{
+.request-integration-modal {
+    .ant-modal-content {
         border-radius: 16px;
     }
-    .ant-modal-header{
-        border-bottom:unset !important;
+    .ant-modal-header {
+        border-bottom: unset !important;
         border-radius: 16px;
     }
-    .ant-modal-body{
+    .ant-modal-body {
         padding-top: 0px;
     }
-    
 }

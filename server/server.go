@@ -346,6 +346,13 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	if err != nil {
 		return nil, db.MetadataStorage{}, err
 	}
+
+	err = EncryptOldUnencryptedValues()
+	if err != nil {
+		err = errors.New("Failed encrypt old unencrypted values: " + err.Error())
+		return nil, db.MetadataStorage{}, err
+	}
+
 	gacc, memphisOpts, err := GetMemphisOpts(*opts, false)
 	if err != nil {
 		return nil, db.MetadataStorage{}, err

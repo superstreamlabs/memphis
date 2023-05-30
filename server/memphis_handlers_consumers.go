@@ -136,7 +136,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 	if !exist {
-		serv.Warnf("createProducerDirectCommon: user %v is not exists", connection.CreatedBy)
+		serv.Warnf("createConsumerDirectCommon: user %v is not exists", connection.CreatedBy)
 		return err
 	}
 
@@ -369,6 +369,12 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
+			m[consumer.ConsumersGroup].Name = consumer.ConsumersGroup
+			m[consumer.ConsumersGroup].MaxAckTimeMs = consumer.MaxAckTimeMs
+			m[consumer.ConsumersGroup].MaxMsgDeliveries = consumer.MaxMsgDeliveries
+			m[consumer.ConsumersGroup].IsActive = consumer.IsActive
+			m[consumer.ConsumersGroup].IsDeleted = consumer.IsDeleted
+			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.CreatedAt
 			cg = m[consumer.ConsumersGroup]
 		}
 

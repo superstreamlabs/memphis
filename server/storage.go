@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func flushMapToTire2Storage() error {
@@ -95,4 +96,47 @@ func (s *Server) storeInTieredStorageMap(msg StoredMsg) {
 
 	tieredStorageMsgsMap.m[stationName] = append(tieredStorageMsgsMap.m[stationName], msg)
 	tieredStorageMapLock.Unlock()
+}
+
+func (s *Server) handleNewTieredStorageMsg(msg []byte, reply string) {
+	rawMsg := strings.Split(string(msg), CR_LF+CR_LF)
+	var tieredStorageMsg TieredStorageMsg
+	if len(rawMsg) == 2 {
+		err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
+		if err != nil {
+			s.Errorf("ListenForTieredStorageMessages: Failed unmarshalling tiered storage message: " + err.Error())
+			return
+		}
+	} else {
+		s.Errorf("ListenForTieredStorageMessages: Invalid tiered storage message structure: message must contains msg-id header")
+		return
+	}
+	payload := tieredStorageMsg.Buf
+	rawTs := tokenAt(reply, 8)
+	seq, _, _ := ackReplyInfo(reply)
+	intTs, err := strconv.Atoi(rawTs)
+	if err != nil {
+		s.Errorf("ListenForTieredStorageMessages: Failed convert rawTs from string to int")
+		return
+	}
+
+	dataFirstIdx := 0
+	dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
+	if dataFirstIdx > len(payload)-len(CR_LF) {
+		s.Errorf("ListenForTieredStorageMessages: memphis error while parsing headers")
+		return
+	}
+	dataLen := len(payload) - dataFirstIdx
+	header := payload[:dataFirstIdx]
+	data := payload[dataFirstIdx : dataFirstIdx+dataLen]
+	message := StoredMsg{
+		Subject:      tieredStorageMsg.StationName,
+		Sequence:     uint64(seq),
+		Data:         data,
+		Header:       header,
+		Time:         time.Unix(0, int64(intTs)),
+		ReplySubject: reply,
+	}
+
+	s.storeInTieredStorageMap(message)
 }

@@ -258,6 +258,16 @@ func CreateRootUserOnFirstSystemLoad() error {
 				serv.Errorf("Generate host unique id failed: %s", err.Error())
 			}
 		}
+		// }
+		// else if configuration.DOCKER_ENV == "true" {
+		// 	installationType = "stand-alone-docker"
+		// 	dockerMacAddress, err := getDockerMacAddress()
+		// 	if err == nil {
+		// 		deviceIdValue = dockerMacAddress
+		// 	} else {
+		// 		serv.Errorf("Generate host unique id failed: %s", err.Error())
+		// 	}
+		// }
 
 		param := analytics.EventParam{
 			Name:  "installation-type",
@@ -423,7 +433,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("refreshToken: user " +username +" does not exist")
+		serv.Warnf("refreshToken: user " + username + " does not exist")
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 		// exist, sandboxUser, err := IsSandboxUserExist(username)
@@ -725,7 +735,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
-			password = body.Password
+			password, err = EncryptAES([]byte(body.Password))
+			if err != nil {
+				serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 			avatarId = 1
 			if body.AvatarId > 0 {
 				avatarId = body.AvatarId

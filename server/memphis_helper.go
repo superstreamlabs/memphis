@@ -47,6 +47,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
+	dlsUnackedStream   = "$memphis_dls_unacked"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -88,6 +89,8 @@ var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
+	DLS_UNACKED_CONSUMER_CREATED    bool
+	DLS_UNACKED_STREAM_CREATED      bool
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -296,17 +299,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	TIERED_STORAGE_STREAM_CREATED = true
 
 	// create tiered storage consumer
-	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second
-	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filterSubject,
-		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+		Durable:       TIERED_STORAGE_CONSUMER,
+		FilterSubject: tieredStorageStream + ".>",
+		AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
 		MaxAckPending: -1,
-		MaxDeliver:    1,
+		MaxDeliver:    10,
 	}
 	err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
 	if err != nil {
@@ -315,11 +315,43 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 	TIERED_STORAGE_CONSUMER_CREATED = true
 
+	// dls unacked messages stream
+	err = s.memphisAddStream(globalAccountName, &StreamConfig{
+		Name:         dlsUnackedStream,
+		Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
+		Retention:    WorkQueuePolicy,
+		MaxAge:       time.Hour * 24,
+		MaxConsumers: -1,
+		Discard:      DiscardOld,
+		Storage:      FileStorage,
+		Replicas:     replicas,
+	})
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		successCh <- err
+		return
+	}
+	DLS_UNACKED_STREAM_CREATED = true
+
+	// create dls unacked consumer
+	cc = ConsumerConfig{
+		DeliverPolicy: DeliverAll,
+		AckPolicy:     AckExplicit,
+		Durable:       DLS_UNACKED_CONSUMER,
+		AckWait:       time.Duration(80) * time.Second,
+		MaxAckPending: -1,
+		MaxDeliver:    10,
+	}
+	err = serv.memphisAddConsumer(globalAccountName,dlsUnackedStream, &cc)
+	if err != nil {
+		successCh <- err
+		return
+	}
+	DLS_UNACKED_CONSUMER_CREATED = true
+
 	// delete the old version throughput stream
 	err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
 	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
-
 	}
 
 	// throughput kv
@@ -736,12 +768,12 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-			//This check for backward compatability
+			// This check for backward compatability
 			if connectionIdHeader == "" || producedByHeader == "" {
 				connectionIdHeader = headersJson["connectionId"]
 				producedByHeader = strings.ToLower(headersJson["producedBy"])
 				if connectionIdHeader == "" || producedByHeader == "" {
-					return []models.MessageDetails{}, errors.New("Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+					return []models.MessageDetails{}, errors.New("missing mandatory message headers, please upgrade the SDK version you are using")
 				}
 			}
 
@@ -902,9 +934,7 @@ func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string
 
 func (s *Server) memphisGetMessage(tenantName, streamName string, msgSeq uint64) (*StoredMsg, error) {
 	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
-
 	request := JSApiMsgGetRequest{Seq: msgSeq}
-
 	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -1019,6 +1049,11 @@ func (s *Server) sendInternalMsgWithHeaderLocked(acc *Account, subj string, hdr 
 func DecodeHeader(buf []byte) (map[string]string, error) {
 	tp := textproto.NewReader(bufio.NewReader(bytes.NewReader(buf)))
 	l, err := tp.ReadLine()
+	hdr := make(map[string]string)
+	if l == _EMPTY_ {
+		return hdr, nil
+	}
+
 	if err != nil || len(l) < hdrPreEnd || l[:hdrPreEnd] != hdrLine[:hdrPreEnd] {
 		return nil, ErrBadHeader
 	}
@@ -1043,7 +1078,6 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 		}
 	}
 
-	hdr := make(map[string]string)
 	for k, v := range mh {
 		hdr[k] = v[0]
 	}
@@ -1218,7 +1252,12 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		tenantsId[globalAccountName] = 1
 		for _, user := range users {
 			name := user.TenantName
-			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: user.Password, Account: addedTenant[name]})
+			decryptedUserPassword, err := DecryptAES(user.Password)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: decryptedUserPassword, Account: addedTenant[name]})
+
 		}
 		opts.Accounts = accounts
 		opts.Users = appUsers

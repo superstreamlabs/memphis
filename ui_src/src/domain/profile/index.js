@@ -63,7 +63,7 @@ function Profile() {
             <div className="profile-container">
                 <div className="header-preferences">
                     <p className="main-header">Profile</p>
-                    <p className="sub-header">Modify your profile information and preferences</p>
+                    <p className="memphis-label">Modify your profile information and preferences</p>
                 </div>
                 <div className="avatar-section">
                     <p className="title">Avatar</p>

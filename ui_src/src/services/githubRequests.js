@@ -39,11 +39,10 @@ export async function GithubRequest(serverUrl) {
     }
 }
 
-export function ExtractAddedFeatures(mdFile) {
+export function ExtractFeatures(mdFile, regex) {
     if (!mdFile) {
         return [];
     }
-    const regex = /###\s*!\[:sparkles:\].*?Added\s*features\s*(.*?)\s*(?=###|$)/is;
     const match = mdFile.match(regex);
     if (!match) {
         return [];
