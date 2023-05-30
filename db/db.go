@@ -82,7 +82,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
-	ALTER TABLE IF EXISTS audit_logs ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+	ALTER TABLE IF EXISTS audit_logs ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	DROP INDEX IF EXISTS station_name;
 	CREATE INDEX audit_logs_station_tenant_id ON audit_logs (station_name, tenant_name);`
 
@@ -158,15 +158,23 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 		);`
 
-	alterIntegrationTable := `ALTER TABLE IF EXISTS integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';`
+	alterIntegrationTable := `
+	ALTER TABLE IF EXISTS integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
+	ALTER TABLE IF EXISTS integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
+	ALTER TABLE IF EXISTS integrations ADD CONSTRAINT tenant_name_name UNIQUE(name, tenant_name);
+	`
 
 	integrationsTable := `CREATE TABLE IF NOT EXISTS integrations(
 		id SERIAL NOT NULL,
-		name VARCHAR NOT NULL UNIQUE,
+		name VARCHAR NOT NULL,
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
-		PRIMARY KEY (id)
+		tenant_name VARCHAR NOT NULL DEFAULT '$G',
+		PRIMARY KEY (id),
+		CONSTRAINT fk_tenant_name
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(name),
+		UNIQUE(name, tenant_name)
 		);`
 
 	alterSchemasTable := `
@@ -3301,7 +3309,38 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 
 // Integration Functions
 // TODO: add tenants
-func GetIntegration(name string) (bool, models.Integration, error) {
+// func GetIntegration(name string) (bool, models.Integration, error) {
+// 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+// 	defer cancelfunc()
+// 	conn, err := MetadataDbClient.Client.Acquire(ctx)
+// 	if err != nil {
+// 		return false, models.Integration{}, err
+// 	}
+// 	defer conn.Release()
+// 	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
+// 	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
+// 	if err != nil {
+// 		return false, models.Integration{}, err
+// 	}
+// 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+// 	if err != nil {
+// 		return false, models.Integration{}, err
+// 	}
+// 	defer rows.Close()
+// 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+// 	if err != nil {
+// 		return false, models.Integration{}, err
+// 	}
+// 	if len(integrations) == 0 {
+// 		return false, models.Integration{}, nil
+// 	}
+// 	return true, integrations[0], nil
+// }
+
+func GetIntegration(name string, tenantName string) (bool, models.Integration, error) {
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3309,12 +3348,12 @@ func GetIntegration(name string) (bool, models.Integration, error) {
 		return false, models.Integration{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
+	query := `SELECT * FROM integrations WHERE name=$1 AND tenant_name=$2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
 	if err != nil {
 		return false, models.Integration{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Integration{}, err
 	}
@@ -3357,7 +3396,38 @@ func GetAllIntegrations() (bool, []models.Integration, error) {
 	return true, integrations, nil
 }
 
-func DeleteIntegration(name string) error {
+func GetAllIntegrationsByTenant(tenantName string) (bool, []models.Integration, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.Integration{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM integrations WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_integrations_by_tenant", query)
+	if err != nil {
+		return false, []models.Integration{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return false, []models.Integration{}, err
+	}
+	defer rows.Close()
+	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
+	if err != nil {
+		return false, []models.Integration{}, err
+	}
+	if len(integrations) == 0 {
+		return false, []models.Integration{}, nil
+	}
+	return true, integrations, nil
+}
+
+func DeleteIntegration(name string, tenantName string) error {
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3367,15 +3437,14 @@ func DeleteIntegration(name string) error {
 	}
 	defer conn.Release()
 
-	removeIntegrationQuery := `DELETE FROM integrations
-	WHERE name = $1`
+	removeIntegrationQuery := `DELETE FROM integrations WHERE name = $1 AND tenant_name = $2`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_integration", removeIntegrationQuery)
 	if err != nil {
 		return err
 	}
 
-	_, err = conn.Conn().Exec(ctx, stmt.Name, name)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
 	}
@@ -3383,7 +3452,10 @@ func DeleteIntegration(name string) error {
 	return nil
 }
 
-func InsertNewIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func InsertNewIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3396,8 +3468,9 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 	query := `INSERT INTO integrations ( 
 		name, 
 		keys,
-		properties) 
-    VALUES($1, $2, $3) RETURNING id`
+		properties,
+		tenant_name) 
+    VALUES($1, $2, $3, $4) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
 	if err != nil {
@@ -3405,7 +3478,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 	}
 
 	var integrationId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -3422,7 +3495,7 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Integration{}, errors.New("Integration" + name + " already exists")
+					return models.Integration{}, errors.New("Integration " + name + " already exists")
 				} else {
 					return models.Integration{}, errors.New(pgErr.Detail)
 				}
@@ -3442,7 +3515,10 @@ func InsertNewIntegration(name string, keys map[string]string, properties map[st
 	return newIntegration, nil
 }
 
-func UpdateIntegration(name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func UpdateIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3451,9 +3527,9 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 	}
 	defer conn.Release()
 	query := `
-	INSERT INTO integrations(name, keys, properties)
-	VALUES($1, $2, $3)
-	ON CONFLICT(name) DO UPDATE
+	INSERT INTO integrations(name, keys, properties, tenant_name)
+	VALUES($1, $2, $3, $4)
+	ON CONFLICT(name, tenant_name) DO UPDATE
 	SET keys = excluded.keys, properties = excluded.properties
 	RETURNING id, name, keys, properties
 `
@@ -3461,7 +3537,7 @@ func UpdateIntegration(name string, keys map[string]string, properties map[strin
 	if err != nil {
 		return models.Integration{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -3581,7 +3657,7 @@ func UpsertUserUpdatePassword(username string, userType string, hashedPassword s
 		tenant_name
 	) 
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
-	ON CONFLICT (username, tenant_name	) DO UPDATE SET password = excluded.password
+	ON CONFLICT (username, tenant_name) DO UPDATE SET password = excluded.password
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_user_update_password", query)
@@ -5200,7 +5276,7 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tenants WHERE name != $1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_tenants", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_tenants_without_global", query)
 	if err != nil {
 		return []models.Tenant{}, err
 	}

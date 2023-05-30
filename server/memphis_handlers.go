@@ -70,7 +70,6 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	if len(userModel.Username) == 0 {
 		return userModel, errors.New("username is empty")
 	}
-	// TODO: check
 	if userModel.TenantName == strings.ToLower(DEFAULT_GLOBAL_ACCOUNT) {
 		userModel.TenantName = DEFAULT_GLOBAL_ACCOUNT
 	}

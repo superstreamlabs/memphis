@@ -394,9 +394,15 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		station.StorageType = "disk"
 	}
 
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); !ok {
 		station.TieredStorageEnabled = false
+	} else {
+		_, ok = tenantInetgrations["s3"].(models.Integration)
+		if !ok {
+			station.TieredStorageEnabled = false
+		} else {
+			station.TieredStorageEnabled = true
+		}
 	}
 
 	stationResponse := models.GetStationResponseSchema{
@@ -483,9 +489,15 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 					activity = true
 				}
 			}
-			_, ok := IntegrationsCache["s3"].(models.Integration)
-			if !ok {
+			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 				station.TieredStorageEnabled = false
+			} else {
+				_, ok = tenantInetgrations["s3"].(models.Integration)
+				if !ok {
+					station.TieredStorageEnabled = false
+				} else {
+					station.TieredStorageEnabled = true
+				}
 			}
 
 			stationRes := models.Station{
@@ -594,10 +606,15 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 					}
 				}
 			}
-
-			_, ok := IntegrationsCache["s3"].(models.Integration)
-			if !ok {
+			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 				stations[i].TieredStorageEnabled = false
+			} else {
+				_, ok = tenantInetgrations["s3"].(models.Integration)
+				if !ok {
+					stations[i].TieredStorageEnabled = false
+				} else {
+					stations[i].TieredStorageEnabled = true
+				}
 			}
 
 			stationRes := models.ExtendedStation{

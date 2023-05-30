@@ -31,18 +31,26 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	// if err := DenyForSandboxEnv(c); err != nil {
 	// 	return
 	// }
-
+	var message string
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
 	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		message = "ListenForIntegrationsUpdateEvents: " + err.Error()
+		serv.Errorf(message)
+		c.AbortWithStatusJSON(500, gin.H{"message": message})
+		return
+	}
+	body.TenantName = user.TenantName
 	var integration models.Integration
-	var message string
+
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
-		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(integrationType, body)
+		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(body)
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("CreateSlackIntegration: " + err.Error())
@@ -56,7 +64,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
-		s3Integration, errorCode, err := it.handleCreateS3Integration(body.Keys, "s3")
+		s3Integration, errorCode, err := it.handleCreateS3Integration(body.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("CreateS3Integration: " + err.Error())
@@ -160,7 +168,13 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	if !ok {
 		return
 	}
-	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name))
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetIntegrationDetails: Integration " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetIntegrationDetails: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -182,7 +196,13 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	_, integrations, err := db.GetAllIntegrations()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllIntegrations: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	_, integrations, err := db.GetAllIntegrationsByTenant(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -218,9 +238,15 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	if !ok {
 		return
 	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	integrationType := strings.ToLower(body.Name)
-	err := db.DeleteIntegration(integrationType)
+	err = db.DeleteIntegration(integrationType, user.TenantName)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

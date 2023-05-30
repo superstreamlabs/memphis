@@ -66,6 +66,7 @@ var memphisServices = []string{
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
 	"$memphis_ws_subs.>",
+	"$memphis_integration_updates",
 }
 
 // JetStream API request kinds

@@ -123,7 +123,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 
 	idForUrl := string(rune(dlsMsgId))
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
+	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
 		serv.Warnf("handleNewUnackedMsg: Error while sending a poison message notification: " + err.Error())
 		return nil

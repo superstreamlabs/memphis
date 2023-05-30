@@ -1513,10 +1513,15 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 		return
 	}
-
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); !ok {
 		station.TieredStorageEnabled = false
+	} else {
+		_, ok = tenantInetgrations["s3"].(models.Integration)
+		if !ok {
+			station.TieredStorageEnabled = false
+		} else {
+			station.TieredStorageEnabled = true
+		}
 	}
 	var response gin.H
 
@@ -2199,7 +2204,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if (iface.HardwareAddr == nil) {
+		if iface.HardwareAddr == nil {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()

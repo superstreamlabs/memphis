@@ -81,9 +81,9 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				if s.opts.UiHost == "" {
 					EditClusterCompHost("ui_host", integrationUpdate.UIUrl)
 				}
-				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties)
+				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			case "s3":
-				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties)
+				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			default:
 				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
@@ -115,8 +115,13 @@ func (s *Server) ListenForConfigReloadEvents() error {
 func (s *Server) ListenForNotificationEvents() error {
 	err := s.queueSubscribe(globalAccountName, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
+			tenantName, message, err := s.getTenantNameAndMessage(msg)
+			if err != nil {
+				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				return
+			}
 			var notification models.Notification
-			err := json.Unmarshal(msg, &notification)
+			err = json.Unmarshal([]byte(message), &notification)
 			if err != nil {
 				s.Errorf("ListenForNotificationEvents: " + err.Error())
 				return
@@ -125,7 +130,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != "" {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = SendNotification(notification.Title, notificationMsg, notification.Type)
+			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}

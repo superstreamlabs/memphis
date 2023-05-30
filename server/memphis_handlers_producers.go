@@ -172,7 +172,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			}
 		}
 	}
-	shouldSendNotifications, err := IsSlackEnabled()
+	shouldSendNotifications, err := IsSlackEnabled(user.TenantName)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon: Producer " + pName + " at station " + pStationName.external + ": " + err.Error())
 	}

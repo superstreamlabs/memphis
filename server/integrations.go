@@ -12,10 +12,11 @@
 package server
 
 import (
+	"errors"
 	"memphis/db"
 )
 
-var IntegrationsCache map[string]interface{}
+var IntegrationsConcurrentCache *concurrentMap[map[string]interface{}]
 var NotificationFunctionsMap map[string]interface{}
 var StorageFunctionsMap map[string]interface{}
 
@@ -24,17 +25,13 @@ const SchemaVAlert = "schema_validation_fail_alert"
 const DisconEAlert = "disconnection_events_alert"
 
 func InitializeIntegrations() error {
-	IntegrationsCache = make(map[string]interface{})
+	IntegrationsConcurrentCache = NewConcurrentMap[map[string]interface{}]()
 	NotificationFunctionsMap = make(map[string]interface{})
 	StorageFunctionsMap = make(map[string]interface{})
 	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
 	StorageFunctionsMap["s3"] = serv.uploadToS3Storage
 
-	err := InitializeConnection("slack")
-	if err != nil {
-		return err
-	}
-	err = InitializeConnection("s3")
+	err := InitializeConnections()
 	if err != nil {
 		return err
 	}
@@ -46,54 +43,57 @@ func InitializeIntegrations() error {
 	return nil
 }
 
-func InitializeConnection(integrationsType string) error {
-	exist, integration, err := db.GetIntegration(integrationsType)
+func InitializeConnections() error {
+	exist, integrations, err := db.GetAllIntegrations()
 	if err != nil {
 		return err
 	} else if !exist {
 		return nil
 	}
-	if value, ok := integration.Keys["secret_key"]; ok {
-		decryptedValue, err := DecryptAES(value)
-		if err != nil {
-			return err
+	for _, integration := range integrations {
+		if value, ok := integration.Keys["secret_key"]; ok {
+			decryptedValue, err := DecryptAES(value)
+			if err != nil {
+				return err
+			}
+			integration.Keys["secret_key"] = decryptedValue
+		} else if value, ok := integration.Keys["auth_token"]; ok {
+			decryptedValue, err := DecryptAES(value)
+			if err != nil {
+				return err
+			}
+			integration.Keys["auth_token"] = decryptedValue
 		}
-		integration.Keys["secret_key"] = decryptedValue
-	} else if value, ok := integration.Keys["auth_token"]; ok {
-		decryptedValue, err := DecryptAES(value)
-		if err != nil {
-			return err
-		}
-		integration.Keys["auth_token"] = decryptedValue
+		CacheDetails(integration.Name, integration.Keys, integration.Properties, integration.TenantName)
 	}
-	CacheDetails(integrationsType, integration.Keys, integration.Properties)
 	return nil
 }
 
-func clearCache(integrationsType string) {
-	delete(IntegrationsCache, integrationsType)
-}
-
-func CacheDetails(integrationType string, keys map[string]string, properties map[string]bool) {
+func CacheDetails(integrationType string, keys map[string]string, properties map[string]bool, tenantName string) {
 	switch integrationType {
 	case "slack":
-		cacheDetailsSlack(keys, properties)
+		cacheDetailsSlack(keys, properties, tenantName)
 	case "s3":
-		cacheDetailsS3(keys, properties)
+		cacheDetailsS3(keys, properties, tenantName)
 
 	}
-
 }
 
 func EncryptOldUnencryptedValues() error {
-	err := encryptUnencryptedKeysByIntegrationType("s3", "secret_key")
+	tenants, err := db.GetAllTenants()
 	if err != nil {
 		return err
 	}
+	for _, tenant := range tenants {
+		err := encryptUnencryptedKeysByIntegrationType("s3", "secret_key", tenant.Name)
+		if err != nil {
+			return err
+		}
 
-	err = encryptUnencryptedKeysByIntegrationType("slack", "auth_token")
-	if err != nil {
-		return err
+		err = encryptUnencryptedKeysByIntegrationType("slack", "auth_token", tenant.Name)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = encryptUnencryptedAppUsersPasswords()
@@ -102,9 +102,8 @@ func EncryptOldUnencryptedValues() error {
 	}
 	return nil
 }
-
-func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string) error {
-	exist, integration, err := db.GetIntegration(integrationType)
+func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string, tenantName string) error {
+	exist, integration, err := db.GetIntegration(integrationType, tenantName)
 	needToEncrypt := false
 	if err != nil {
 		return err
@@ -128,7 +127,7 @@ func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string) e
 			return err
 		}
 		integration.Keys[keyTitle] = encryptedValue
-		_, err = db.UpdateIntegration(integrationType, integration.Keys, integration.Properties)
+		_, err = db.UpdateIntegration(integration.TenantName, integrationType, integration.Keys, integration.Properties)
 		if err != nil {
 			return err
 		}
@@ -156,4 +155,25 @@ func encryptUnencryptedAppUsersPasswords() error {
 		}
 	}
 	return nil
+}
+
+func addIntegrationToTenant(tenantName string, integrationType string, integrations *concurrentMap[map[string]interface{}], integration interface{}) error {
+	integrations.Lock()
+	defer integrations.Unlock()
+	if i, ok := integrations.m[tenantName]; ok {
+		i[integrationType] = integration
+		integrations.m[tenantName] = i
+	} else {
+		return errors.New("AddIntegrationToTenant: tenant not found")
+	}
+	return nil
+}
+
+func deleteIntegrationFromTenant(tenantName string, integrationType string, integrations *concurrentMap[map[string]interface{}]) {
+	integrations.Lock()
+	defer integrations.Unlock()
+	if i, ok := integrations.m[tenantName]; ok {
+		delete(i, integrationType)
+		integrations.m[tenantName] = i
+	}
 }

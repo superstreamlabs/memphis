@@ -37,15 +37,12 @@ type TieredStorageMsg struct {
 	StationName string `json:"station_name"`
 }
 
-func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
-	s3Integration, ok := IntegrationsCache["s3"].(models.Integration)
-	if !ok {
-		s3Integration = models.Integration{}
-		s3Integration.Keys = make(map[string]string)
-		s3Integration.Properties = make(map[string]bool)
-	}
+func cacheDetailsS3(keys map[string]string, properties map[string]bool, tenantName string) {
+	s3Integration := models.Integration{}
+	s3Integration.Keys = make(map[string]string)
+	s3Integration.Properties = make(map[string]bool)
 	if keys == nil {
-		clearCache("s3")
+		deleteIntegrationFromTenant(tenantName, "s3", IntegrationsConcurrentCache)
 		return
 	}
 
@@ -54,17 +51,25 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool) {
 	s3Integration.Keys["bucket_name"] = keys["bucket_name"]
 	s3Integration.Keys["region"] = keys["region"]
 	s3Integration.Name = "s3"
-	IntegrationsCache["s3"] = s3Integration
+	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+		IntegrationsConcurrentCache.Add(tenantName, map[string]interface{}{"s3": s3Integration})
+	} else {
+		err := addIntegrationToTenant(tenantName, "s3", IntegrationsConcurrentCache, s3Integration)
+		if err != nil {
+			serv.Errorf("cacheDetailsSlack: " + err.Error())
+			return
+		}
+	}
 }
 
-func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, integrationType string) (models.Integration, int, error) {
-	statusCode, _, err := it.handleS3Integrtation(keys)
+func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys map[string]string) (models.Integration, int, error) {
+	statusCode, _, err := it.handleS3Integrtation(tenantName, keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
-	s3Integration, err := createS3Integration(keys, properties)
+	keys, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+	s3Integration, err := createS3Integration(tenantName, keys, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
@@ -76,27 +81,27 @@ func (it IntegrationsHandler) handleCreateS3Integration(keys map[string]string, 
 }
 
 func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	statusCode, keys, err := it.handleS3Integrtation(body.Keys)
+	statusCode, keys, err := it.handleS3Integrtation(body.TenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
-	s3Integration, err := updateS3Integration(keys, properties)
+	s3Integration, err := updateS3Integration(body.TenantName, keys, properties)
 	if err != nil {
 		return s3Integration, 500, err
 	}
 	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int, map[string]string, error) {
+func (it IntegrationsHandler) handleS3Integrtation(tenantName string, keys map[string]string) (int, map[string]string, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
 	bucketName := keys["bucket_name"]
 
 	if keys["secret_key"] == "" {
-		exist, integrationFromDb, err := db.GetIntegration("s3")
+		exist, integrationFromDb, err := db.GetIntegration("s3", tenantName)
 		if err != nil {
 			return 500, map[string]string{}, err
 		}
@@ -145,8 +150,8 @@ func (it IntegrationsHandler) handleS3Integrtation(keys map[string]string) (int,
 	return statusCode, keys, nil
 }
 
-func createS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	exist, s3Integration, err := db.GetIntegration("s3")
+func createS3Integration(tenantName string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+	exist, s3Integration, err := db.GetIntegration("s3", tenantName)
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
@@ -156,7 +161,7 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 			return models.Integration{}, err
 		}
 		cloneKeys["secret_key"] = encryptedValue
-		integrationRes, insertErr := db.InsertNewIntegration("s3", cloneKeys, properties)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "s3", cloneKeys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
@@ -165,6 +170,7 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
+			TenantName: tenantName,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -181,14 +187,14 @@ func createS3Integration(keys map[string]string, properties map[string]bool) (mo
 
 }
 
-func updateS3Integration(keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func updateS3Integration(tenantName string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
 	cloneKeys := copyMaps(keys)
 	encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
 	if err != nil {
 		return models.Integration{}, err
 	}
 	cloneKeys["secret_key"] = encryptedValue
-	s3Integration, err := db.UpdateIntegration("s3", cloneKeys, properties)
+	s3Integration, err := db.UpdateIntegration(tenantName, "s3", cloneKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -309,76 +315,87 @@ type Msg struct {
 }
 
 func (s *Server) uploadToS3Storage() error {
-	if len(tieredStorageMsgsMap.m) > 0 {
-		credentialsMap, _ := IntegrationsCache["s3"].(models.Integration)
-
-		provider := credentials.NewStaticCredentialsProvider(
-			credentialsMap.Keys["access_key"],
-			credentialsMap.Keys["secret_key"],
-			"",
-		)
-		_, err := provider.Retrieve(context.Background())
-		if err != nil {
-			err = errors.New("uploadToS3Storage: Invalid credentials")
-			return err
-		}
-		cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
-			awsconfig.WithCredentialsProvider(provider),
-			awsconfig.WithRegion(credentialsMap.Keys["region"]),
-		)
-		svc := s3.NewFromConfig(cfg)
-		if err != nil {
-			err = errors.New("uploadToS3Storage failure " + err.Error())
-			return err
-		}
-		uploader := manager.NewUploader(svc)
-		uid := serv.memphis.nuid.Next()
-		var objectName string
-
-		for k, msgs := range tieredStorageMsgsMap.m {
-			var messages []Msg
-			for _, msg := range msgs {
-				objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
-
-				var headers string
-				hdrs := map[string]string{}
-				if len(msg.Header) > 0 {
-					headers = strings.ToLower(string(msg.Header))
-					headersSplit := strings.Split(headers, CR_LF)
-					for _, header := range headersSplit {
-						if header != "" && !strings.Contains(header, "nats") {
-							keyVal := strings.Split(header, ":")
-							key := strings.TrimSpace(keyVal[0])
-							value := strings.TrimSpace(keyVal[1])
-							hdrs[key] = value
-						}
-					}
-				} else {
-					headers = ""
+	//TODO: remove GetAllTenants and iterate the concurrent map
+	tenants, _ := db.GetAllTenants()
+	for _, tenant := range tenants {
+		if len(tieredStorageMsgsMap.m) > 0 {
+			var credentialsMap models.Integration
+			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant.Name); !ok {
+				continue
+			} else {
+				if credentialsMap, ok = tenantIntegrations["s3"].(models.Integration); !ok {
+					continue
 				}
+			}
+			provider := credentials.NewStaticCredentialsProvider(
+				credentialsMap.Keys["access_key"],
+				credentialsMap.Keys["secret_key"],
+				"",
+			)
+			_, err := provider.Retrieve(context.Background())
+			if err != nil {
+				err = errors.New("uploadToS3Storage: Invalid credentials")
+				return err
+			}
+			cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+				awsconfig.WithCredentialsProvider(provider),
+				awsconfig.WithRegion(credentialsMap.Keys["region"]),
+			)
+			svc := s3.NewFromConfig(cfg)
+			if err != nil {
+				err = errors.New("uploadToS3Storage failure " + err.Error())
+				return err
+			}
+			uploader := manager.NewUploader(svc)
+			uid := serv.memphis.nuid.Next()
+			var objectName string
 
-				encodedMsg := hex.EncodeToString(msg.Data)
-				message := Msg{Payload: encodedMsg, Headers: hdrs}
-				messages = append(messages, message)
+			for k, msgs := range tieredStorageMsgsMap.m {
+				var messages []Msg
+				for _, msg := range msgs {
+					objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
+
+					var headers string
+					hdrs := map[string]string{}
+					if len(msg.Header) > 0 {
+						headers = strings.ToLower(string(msg.Header))
+						headersSplit := strings.Split(headers, CR_LF)
+						for _, header := range headersSplit {
+							if header != "" && !strings.Contains(header, "nats") {
+								keyVal := strings.Split(header, ":")
+								key := strings.TrimSpace(keyVal[0])
+								value := strings.TrimSpace(keyVal[1])
+								hdrs[key] = value
+							}
+						}
+					} else {
+						headers = ""
+					}
+
+					encodedMsg := hex.EncodeToString(msg.Data)
+					message := Msg{Payload: encodedMsg, Headers: hdrs}
+					messages = append(messages, message)
+				}
+				// Upload the object to S3.
+				var buf bytes.Buffer
+				err := json.NewEncoder(&buf).Encode(messages)
+				if err != nil {
+					return err
+				}
+				_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
+					Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
+					Key:    aws.String(objectName),
+					Body:   &buf,
+				})
+				if err != nil {
+					err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
+					return err
+				}
+				serv.Noticef("new file has been uploaded to S3: %s", objectName)
 			}
-			// Upload the object to S3.
-			var buf bytes.Buffer
-			err := json.NewEncoder(&buf).Encode(messages)
-			if err != nil {
-				return err
-			}
-			_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-				Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
-				Key:    aws.String(objectName),
-				Body:   &buf,
-			})
-			if err != nil {
-				err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
-				return err
-			}
-			serv.Noticef("new file has been uploaded to S3: %s", objectName)
 		}
 	}
+
 	return nil
 
 }

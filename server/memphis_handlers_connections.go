@@ -34,10 +34,11 @@ const (
 	connectConfigUpdatesSubjectTemplate = "$memphis_configurations_updates.init.%s"
 )
 
+// TODO: check if works with c.acc.GetName()?
 func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
-	slackEnabled, err := IsSlackEnabled()
+	slackEnabled, err := IsSlackEnabled(c.acc.GetName())
 	if err != nil {
 		c.Errorf("updateNewClientWithConfig: " + err.Error())
 	}
@@ -232,9 +233,16 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	err = SendNotification("Disconnection events", msg, DisconEAlert)
+	//TODO: try to remove this db query
+	exist, conn, err := db.GetConnectionByID(mci.connectionId)
 	if err != nil {
 		return err
+	}
+	if exist {
+		err = SendNotification(conn.TenantName, "Disconnection events", msg, DisconEAlert)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
