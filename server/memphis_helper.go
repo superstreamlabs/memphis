@@ -46,6 +46,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
+	dlsUnackedStream   = "$memphis_dls_unacked"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -72,6 +73,8 @@ var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
+	DLS_UNACKED_CONSUMER_CREATED    bool
+	DLS_UNACKED_STREAM_CREATED      bool
 )
 
 func (s *Server) MemphisInitialized() bool {
@@ -276,17 +279,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	TIERED_STORAGE_STREAM_CREATED = true
 
 	// create tiered storage consumer
-	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second
-	filterSubject := tieredStorageStream + ".>"
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filterSubject,
-		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
+		Durable:       TIERED_STORAGE_CONSUMER,
+		FilterSubject: tieredStorageStream + ".>",
+		AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
 		MaxAckPending: -1,
-		MaxDeliver:    1,
+		MaxDeliver:    10,
 	}
 	err = serv.memphisAddConsumer(tieredStorageStream, &cc)
 	if err != nil {
@@ -295,11 +295,43 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 	TIERED_STORAGE_CONSUMER_CREATED = true
 
+	// dls unacked messages stream
+	err = s.memphisAddStream(&StreamConfig{
+		Name:         dlsUnackedStream,
+		Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
+		Retention:    WorkQueuePolicy,
+		MaxAge:       time.Hour * 24,
+		MaxConsumers: -1,
+		Discard:      DiscardOld,
+		Storage:      FileStorage,
+		Replicas:     replicas,
+	})
+	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+		successCh <- err
+		return
+	}
+	DLS_UNACKED_STREAM_CREATED = true
+
+	// create dls unacked consumer
+	cc = ConsumerConfig{
+		DeliverPolicy: DeliverAll,
+		AckPolicy:     AckExplicit,
+		Durable:       DLS_UNACKED_CONSUMER,
+		AckWait:       time.Duration(80) * time.Second,
+		MaxAckPending: -1,
+		MaxDeliver:    10,
+	}
+	err = serv.memphisAddConsumer(dlsUnackedStream, &cc)
+	if err != nil {
+		successCh <- err
+		return
+	}
+	DLS_UNACKED_CONSUMER_CREATED = true
+
 	// delete the old version throughput stream
 	err = s.memphisDeleteStream(throughputStreamName)
 	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
-
 	}
 
 	// throughput kv
@@ -877,9 +909,7 @@ func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string
 
 func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
 	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
-
 	request := JSApiMsgGetRequest{Seq: msgSeq}
-
 	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -990,7 +1020,7 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 	if l == _EMPTY_ {
 		return hdr, nil
 	}
-	
+
 	if err != nil || len(l) < hdrPreEnd || l[:hdrPreEnd] != hdrLine[:hdrPreEnd] {
 		return nil, ErrBadHeader
 	}

@@ -28,35 +28,23 @@ const (
 
 type PoisonMessagesHandler struct{ S *Server }
 
-func (s *Server) ListenForPoisonMessages() {
-	s.queueSubscribe("$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>",
-		"$memphis_poison_messages_listeners_group",
-		createPoisonMessageHandler(s))
-}
-
-func createPoisonMessageHandler(s *Server) simplifiedMsgHandler {
-	return func(_ *client, _, _ string, msg []byte) {
-		go s.handleNewPoisonMessage(copyBytes(msg))
-	}
-}
-
-func (s *Server) handleNewPoisonMessage(msg []byte) {
+func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	var message map[string]interface{}
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-		return
+		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		return err
 	}
 
 	streamName := message["stream"].(string)
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext())
 	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-		return
+		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		return err
 	}
 	if !station.DlsConfigurationPoison {
-		return
+		return nil
 	}
 
 	cgName := message["consumer"].(string)
@@ -65,8 +53,11 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
 	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-		return
+		if IsNatsErr(err, JSNoMessageFoundErr) {
+			return nil
+		}
+		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		return err
 	}
 
 	producedByHeader := ""
@@ -74,8 +65,8 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 	if poisonMessageContent.Header != nil {
 		headersJson, err = DecodeHeader(poisonMessageContent.Header)
 		if err != nil {
-			serv.Errorf("handleNewPoisonMessage: " + err.Error())
-			return
+			serv.Errorf("handleNewUnackedMsg: " + err.Error())
+			return err
 		}
 	}
 
@@ -90,27 +81,26 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 			connectionIdHeader = headersJson["connectionId"]
 			producedByHeader = headersJson["producedBy"]
 			if connectionIdHeader == "" || producedByHeader == "" {
-				serv.Warnf("handleNewPoisonMessage: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-				return
+				serv.Warnf("handleNewUnackedMsg: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
+				return nil
 			}
 		}
 
 		if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
-			return
+			return nil
 		}
 
 		connId := connectionIdHeader
 		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
 		if err != nil {
-			serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-			return
+			serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+			return err
 		}
 		if !exist {
-			serv.Warnf("handleNewPoisonMessage: producer " + producedByHeader + " couldn't been found")
-			return
+			serv.Warnf("handleNewUnackedMsg: producer " + producedByHeader + " couldn't been found")
+			return nil
 		}
 		producerId = p.ID
-
 		poisonedCgs = append(poisonedCgs, cgName)
 	}
 
@@ -123,17 +113,21 @@ func (s *Server) handleNewPoisonMessage(msg []byte) {
 
 	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails)
 	if err != nil {
-		serv.Errorf("handleNewPoisonMessage: Error while getting notified about a poison message: " + err.Error())
-		return
+		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		return err
+	}
+	if dlsMsgId == 0 { // nothing to do
+		return nil
 	}
 
 	idForUrl := string(rune(dlsMsgId))
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
-		serv.Warnf("handleNewPoisonMessage: Error while sending a poison message notification: " + err.Error())
-		return
+		serv.Warnf("handleNewUnackedMsg: Error while sending a poison message notification: " + err.Error())
+		return nil
 	}
+	return nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
