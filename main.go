@@ -142,10 +142,10 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	// run only on the leader
 	go s.KillZombieResources()
 
-	// err = s.Reload()
-	// if err != nil {
-	// 	s.Errorf("Failed reloading: " + err.Error())
-	// }
+	err = s.Reload()
+	if err != nil {
+		s.Errorf("Failed reloading: " + err.Error())
+	}
 
 	var env string
 	var message string
