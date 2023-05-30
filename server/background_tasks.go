@@ -239,21 +239,14 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
 
-	err = s.ListenForTieredStorageMessages()
-	if err != nil {
-		return errors.New("Failed to subscribing for tiered storage messages" + err.Error())
-	}
-
 	err = s.ListenForSchemaverseDlsEvents()
 	if err != nil {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
-	go s.ConsumeUnackedMessages()
+	go s.ConsumeUnackedMsgs()
+	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
-
-	// send JS API request to get more messages
-	go s.sendPeriodicJsApiFetchTieredStorageMsgs()
 	go s.uploadMsgsToTier2Storage()
 
 	err = s.InitializeThroughputSampling()
@@ -286,7 +279,6 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				return
 			}
 			TIERED_STORAGE_CONSUMER_CREATED = true
-
 		}
 		tieredStorageMapLock.Lock()
 		if len(tieredStorageMsgsMap.m) > 0 {
@@ -310,21 +302,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 	}
 }
 
-// send fetch requests to JS API to consume messages from tiered storage stream
-func (s *Server) sendPeriodicJsApiFetchTieredStorageMsgs() {
-	ticker := time.NewTicker(2 * time.Second)
-	for range ticker.C {
-		if TIERED_STORAGE_CONSUMER_CREATED && TIERED_STORAGE_STREAM_CREATED {
-			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, TIERED_STORAGE_CONSUMER)
-			reply := TIERED_STORAGE_CONSUMER + "_reply"
-			amount := 1000
-			req := []byte(strconv.FormatUint(uint64(amount), 10))
-			serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-		}
-	}
-}
-
-func (s *Server) ConsumeUnackedMessages() {
+func (s *Server) ConsumeUnackedMsgs() {
 	type unAckedMsg struct {
 		Msg          []byte
 		ReplySubject string
@@ -389,63 +367,69 @@ func (s *Server) ConsumeUnackedMessages() {
 	}
 }
 
-func (s *Server) ListenForTieredStorageMessages() error {
-	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
-
-	subject := TIERED_STORAGE_CONSUMER + "_reply"
-	err := serv.queueSubscribe(subject, subject+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(subject, reply string, msg []byte) {
-			// Ignore 409 Exceeded MaxWaiting cases
-			if reply != "" {
-				rawMsg := strings.Split(string(msg), CR_LF+CR_LF)
-				var tieredStorageMsg TieredStorageMsg
-				if len(rawMsg) == 2 {
-					err := json.Unmarshal([]byte(rawMsg[1]), &tieredStorageMsg)
-					if err != nil {
-						serv.Errorf("ListenForTieredStorageMessages: Failed unmarshalling tiered storage message: " + err.Error())
-						return
-					}
-				} else {
-					serv.Errorf("ListenForTieredStorageMessages: Invalid tiered storage message structure: message must contains msg-id header")
-					return
-				}
-				payload := tieredStorageMsg.Buf
-				replySubj := reply
-				rawTs := tokenAt(reply, 8)
-				seq, _, _ := ackReplyInfo(reply)
-				intTs, err := strconv.Atoi(rawTs)
-				if err != nil {
-					serv.Errorf("ListenForTieredStorageMessages: Failed convert rawTs from string to int")
-					return
-				}
-
-				dataFirstIdx := 0
-				dataFirstIdx = getHdrLastIdxFromRaw(payload) + 1
-				if dataFirstIdx > len(payload)-len(CR_LF) {
-					s.Errorf("memphis error parsing")
-					return
-				}
-				dataLen := len(payload) - dataFirstIdx
-				header := payload[:dataFirstIdx]
-				data := payload[dataFirstIdx : dataFirstIdx+dataLen]
-				message := StoredMsg{
-					Subject:      tieredStorageMsg.StationName,
-					Sequence:     uint64(seq),
-					Data:         data,
-					Header:       header,
-					Time:         time.Unix(0, int64(intTs)),
-					ReplySubject: replySubj,
-				}
-
-				s.storeInTieredStorageMap(message)
-			}
-		}(subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return err
+func (s *Server) ConsumeTieredStorageMsgs() {
+	type tsMsg struct {
+		Msg          []byte
+		ReplySubject string
 	}
 
-	return nil
+	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if TIERED_STORAGE_CONSUMER_CREATED && TIERED_STORAGE_STREAM_CREATED {
+			resp := make(chan tsMsg)
+			replySubj := TIERED_STORAGE_CONSUMER + "_reply_" + s.memphis.nuid.Next()
+
+			// subscribe to unacked messages
+			sub, err := s.subscribeOnGlobalAcc(replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != "" {
+						message := tsMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to tiered storage messages: " + err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, TIERED_STORAGE_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]tsMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					break
+				}
+				select {
+				case tieredStorageMsg := <-resp:
+					msgs = append(msgs, tieredStorageMsg)
+					if len(msgs) == amount {
+						stop = true
+					}
+				case <-timeout.C:
+					stop = true
+				}
+			}
+			for _, message := range msgs {
+				msg := message.Msg
+				reply := message.ReplySubject
+				s.handleNewTieredStorageMsg(msg, reply)
+			}
+		} else {
+			time.Sleep(2 * time.Second)
+		}
+	}
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
