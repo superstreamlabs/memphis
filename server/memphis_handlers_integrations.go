@@ -257,6 +257,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		Name:       strings.ToLower(body.Name),
 		Keys:       nil,
 		Properties: nil,
+		TenantName: user.TenantName,
 	}
 
 	msg, err := json.Marshal(integrationUpdate)

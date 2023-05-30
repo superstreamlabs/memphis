@@ -81,6 +81,10 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 }
 
 func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	if body.TenantName == "" {
+		body.TenantName = DEFAULT_GLOBAL_ACCOUNT
+	}
+
 	statusCode, keys, err := it.handleS3Integrtation(body.TenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
@@ -203,6 +207,7 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 		Name:       "s3",
 		Keys:       keys,
 		Properties: properties,
+		TenantName: tenantName,
 	}
 
 	msg, err := json.Marshal(integrationToUpdate)
@@ -283,7 +288,6 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Body:   reader,
 	})
 	if err != nil {
-
 		err = errors.New("could not upload objects - " + err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}

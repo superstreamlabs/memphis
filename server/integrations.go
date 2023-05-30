@@ -104,12 +104,12 @@ func EncryptOldUnencryptedValues() error {
 }
 func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string, tenantName string) error {
 	exist, integration, err := db.GetIntegration(integrationType, tenantName)
-	needToEncrypt := false
 	if err != nil {
 		return err
 	} else if !exist {
 		return nil
 	}
+	needToEncrypt := false
 	if value, ok := integration.Keys["secret_key"]; ok {
 		_, err := DecryptAES(value)
 		if err != nil {

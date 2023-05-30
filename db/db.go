@@ -3511,6 +3511,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]string
 		Name:       name,
 		Keys:       keys,
 		Properties: properties,
+		TenantName: tenantName,
 	}
 	return newIntegration, nil
 }
@@ -3531,7 +3532,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]string, p
 	VALUES($1, $2, $3, $4)
 	ON CONFLICT(name, tenant_name) DO UPDATE
 	SET keys = excluded.keys, properties = excluded.properties
-	RETURNING id, name, keys, properties
+	RETURNING id, name, keys, properties, tenant_name
 `
 	stmt, err := conn.Conn().Prepare(ctx, "update_integration", query)
 	if err != nil {

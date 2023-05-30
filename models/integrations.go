@@ -35,7 +35,7 @@ type CreateIntegrationSchema struct {
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
 	UIUrl      string            `json:"ui_url"`
-	TenantName string            `json:"tenant_id"`
+	TenantName string            `json:"tenant_name"`
 }
 
 type GetIntegrationDetailsSchema struct {
