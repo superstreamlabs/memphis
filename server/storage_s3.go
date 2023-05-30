@@ -81,10 +81,6 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 }
 
 func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	if body.TenantName == "" {
-		body.TenantName = DEFAULT_GLOBAL_ACCOUNT
-	}
-
 	statusCode, keys, err := it.handleS3Integrtation(body.TenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err

@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -39,14 +40,28 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		message = "ListenForIntegrationsUpdateEvents: " + err.Error()
+		message = "CreateIntegration: " + err.Error()
 		serv.Errorf(message)
 		c.AbortWithStatusJSON(500, gin.H{"message": message})
 		return
 	}
-	body.TenantName = user.TenantName
-	var integration models.Integration
+	if body.TenantName == "" {
+		body.TenantName = user.TenantName
+	}
 
+	exist, _, err := db.GetTenantByName(body.TenantName)
+	if err != nil {
+		serv.Errorf("CreateIntegration: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("CreateIntegration : tenant " + body.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	var integration models.Integration
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
@@ -99,6 +114,21 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
+		return
+	}
+	if body.TenantName == "" {
+		body.TenantName = DEFAULT_GLOBAL_ACCOUNT
+	}
+
+	exist, _, err := db.GetTenantByName(body.TenantName)
+	if err != nil {
+		serv.Errorf("UpdateIntegration: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("UpdateIntegration : tenant " + body.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	var integration models.Integration
@@ -174,7 +204,23 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
+
+	if body.TenantName == "" {
+		body.TenantName = user.TenantName
+	}
+
+	exist, _, err := db.GetTenantByName(body.TenantName)
+	if err != nil {
+		serv.Errorf("GetIntegrationDetails: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("GetIntegrationDetails : tenant " + body.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), body.TenantName)
 	if err != nil {
 		serv.Errorf("GetIntegrationDetails: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -196,13 +242,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("GetAllIntegrations: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	_, integrations, err := db.GetAllIntegrationsByTenant(user.TenantName)
+	_, integrations, err := db.GetAllIntegrations()
 	if err != nil {
 		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -245,19 +285,39 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 
+	if body.TenantName == "" {
+		body.TenantName = user.TenantName
+	}
+
+	exist, _, err := db.GetTenantByName(body.TenantName)
+	if err != nil {
+		serv.Errorf("DisconnectIntegration: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Errorf("DisconnectIntegration : tenant " + body.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	integrationType := strings.ToLower(body.Name)
-	err = db.DeleteIntegration(integrationType, user.TenantName)
+	err = db.DeleteIntegration(integrationType, body.TenantName)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
+	if body.TenantName != conf.GlobalAccountName {
+		body.TenantName = strings.ToLower(body.TenantName)
+	}
+
 	integrationUpdate := models.Integration{
 		Name:       strings.ToLower(body.Name),
 		Keys:       nil,
 		Properties: nil,
-		TenantName: user.TenantName,
+		TenantName: body.TenantName,
 	}
 
 	msg, err := json.Marshal(integrationUpdate)

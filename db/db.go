@@ -5337,6 +5337,9 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
+	if name != conf.GlobalAccountName {
+		name = strings.ToLower(name)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return false, models.Tenant{}, err
