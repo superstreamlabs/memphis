@@ -34,7 +34,6 @@ const (
 	connectConfigUpdatesSubjectTemplate = "$memphis_configurations_updates.init.%s"
 )
 
-// TODO: check if works with c.acc.GetName()?
 func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
