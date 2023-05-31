@@ -12,18 +12,11 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import CreditCardImg from '../../../assets/images/setting/credit-card.svg';
+import Button from '../../../components/button';
 
 function Payments() {
-    // const [formFields, setFormFields] = useState({});
-    // const [oldValues, setOldValues] = useState({});
-    // const [isChanged, setIsChanged] = useState(false);
-    // const [isLoading, setIsLoading] = useState(true);
-
-    // useEffect(() => {
-    //     getConfigurationValue();
-    // }, []);
-
     return (
         <div className="payments-container">
             <div className="header-preferences">
@@ -46,7 +39,42 @@ function Payments() {
                     </div>
                     <label className="total-payment-bottom">Remove payment</label>
                 </div>
-                <div className="payments-section-card"></div>
+                <div className="payments-section-card">
+                    <div className="payment-method-top">
+                        <div>
+                            <p className="payment-method">Payment method</p>
+                            <p className="payment-method-description">Change how you want to pay for your plan.</p>
+                        </div>
+                        <label className="view-cards">View Cards</label>
+                    </div>
+                    <div className="payment-method-bottom">
+                        <div className="credit-card-bottom">
+                            <img src={CreditCardImg} alt="credit-card-img" />
+                            <div>
+                                <p>**** **** **** 4956</p>
+                                <p>Debit Card</p>
+                            </div>
+                        </div>
+
+                        <Button
+                            className="modal-btn"
+                            width="83px"
+                            height="32px"
+                            placeholder="Update"
+                            disabled={false}
+                            colorType="navy"
+                            radiusType="semi-round"
+                            border="gray"
+                            backgroundColorType={'white'}
+                            fontSize="12px"
+                            fontWeight="600"
+                            isLoading={false}
+                            onClick={() => {
+                                console.log('hi');
+                            }}
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );
