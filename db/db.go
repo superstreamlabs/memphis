@@ -14,7 +14,6 @@ package db
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -2880,7 +2879,7 @@ func GetSchemaVersionsBySchemaID(id int) ([]models.SchemaVersion, error) {
 			SchemaContent:     v.SchemaContent,
 			SchemaId:          v.SchemaId,
 			MessageStructName: v.MessageStructName,
-			Descriptor:        base64.StdEncoding.EncodeToString(v.Descriptor),
+			Descriptor:        string(v.Descriptor),
 			TenantName:        strings.ToLower(v.TenantName),
 		}
 
@@ -2924,7 +2923,7 @@ func GetActiveVersionBySchemaID(id int) (models.SchemaVersion, error) {
 		SchemaContent:     schemas[0].SchemaContent,
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
-		Descriptor:        base64.StdEncoding.EncodeToString(schemas[0].Descriptor),
+		Descriptor:        string(schemas[0].Descriptor),
 		TenantName:        strings.ToLower(schemas[0].TenantName),
 	}
 
@@ -3024,7 +3023,7 @@ func GetSchemaVersionByNumberAndID(version int, schemaId int) (bool, models.Sche
 		SchemaContent:     schemas[0].SchemaContent,
 		SchemaId:          schemas[0].SchemaId,
 		MessageStructName: schemas[0].MessageStructName,
-		Descriptor:        base64.StdEncoding.EncodeToString(schemas[0].Descriptor),
+		Descriptor:        string(schemas[0].Descriptor),
 		TenantName:        strings.ToLower(schemas[0].TenantName),
 	}
 	return true, schemaVersion, nil
@@ -3308,35 +3307,6 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 }
 
 // Integration Functions
-// TODO: add tenants
-// func GetIntegration(name string) (bool, models.Integration, error) {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	conn, err := MetadataDbClient.Client.Acquire(ctx)
-// 	if err != nil {
-// 		return false, models.Integration{}, err
-// 	}
-// 	defer conn.Release()
-// 	query := `SELECT * FROM integrations WHERE name=$1 LIMIT 1`
-// 	stmt, err := conn.Conn().Prepare(ctx, "get_integration", query)
-// 	if err != nil {
-// 		return false, models.Integration{}, err
-// 	}
-// 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
-// 	if err != nil {
-// 		return false, models.Integration{}, err
-// 	}
-// 	defer rows.Close()
-// 	integrations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Integration])
-// 	if err != nil {
-// 		return false, models.Integration{}, err
-// 	}
-// 	if len(integrations) == 0 {
-// 		return false, models.Integration{}, nil
-// 	}
-// 	return true, integrations[0], nil
-// }
-
 func GetIntegration(name string, tenantName string) (bool, models.Integration, error) {
 	if tenantName != conf.GlobalAccountName {
 		tenantName = strings.ToLower(tenantName)
