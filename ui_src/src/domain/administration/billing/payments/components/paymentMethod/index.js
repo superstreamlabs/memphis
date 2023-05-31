@@ -12,47 +12,62 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useState } from 'react';
 import CreditCardImg from '../../../../../../assets/images/setting/credit-card.svg';
+import AddPaymentImg from '../../../../../../assets/images/setting/addPayment.svg';
 import Button from '../../../../../../components/button';
 
 function PaymentMethod() {
+    const [paymentMethods, setPaymentMethods] = useState(['method1']);
     return (
         <div className="payments-section-card">
-            <div className="payment-method-top">
-                <div>
-                    <p className="payment-method">Payment method</p>
-                    <p className="payment-method-description">Change how you want to pay for your plan.</p>
-                </div>
-                <label className="view-cards">View Cards</label>
-            </div>
-            <div className="payment-method-bottom">
-                <div className="credit-card-bottom">
-                    <img src={CreditCardImg} alt="credit-card-img" />
+            {paymentMethods.length > 0 ? (
+                <>
+                    <div className="payment-method-top">
+                        <div>
+                            <p className="payment-method">Payment method</p>
+                            <p className="payment-method-description">Change how you want to pay for your plan.</p>
+                        </div>
+                        <label className="view-cards">View Cards</label>
+                    </div>
+                    <div className="payment-method-bottom">
+                        <div className="credit-card-bottom">
+                            <img src={CreditCardImg} alt="credit-card-img" />
+                            <div>
+                                <p>**** **** **** 4956</p>
+                                <p>Debit Card</p>
+                            </div>
+                        </div>
+
+                        <Button
+                            className="modal-btn"
+                            width="83px"
+                            height="32px"
+                            placeholder="Update"
+                            disabled={false}
+                            colorType="navy"
+                            radiusType="semi-round"
+                            border="gray"
+                            backgroundColorType={'white'}
+                            fontSize="12px"
+                            fontWeight="600"
+                            isLoading={false}
+                            onClick={() => {
+                                console.log('hi');
+                            }}
+                        />
+                    </div>
+                </>
+            ) : (
+                <div className="no-payment-method">
+                    <img src={AddPaymentImg} className="add-payment-img" alt="add-payment" />
                     <div>
-                        <p>**** **** **** 4956</p>
-                        <p>Debit Card</p>
+                        <p className="payment-method-title">Payment Method</p>
+                        <p className="payment-method-description">Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece o</p>
+                        <p className="add-new-method">Add New Payment Method</p>
                     </div>
                 </div>
-
-                <Button
-                    className="modal-btn"
-                    width="83px"
-                    height="32px"
-                    placeholder="Update"
-                    disabled={false}
-                    colorType="navy"
-                    radiusType="semi-round"
-                    border="gray"
-                    backgroundColorType={'white'}
-                    fontSize="12px"
-                    fontWeight="600"
-                    isLoading={false}
-                    onClick={() => {
-                        console.log('hi');
-                    }}
-                />
-            </div>
+            )}
         </div>
     );
 }

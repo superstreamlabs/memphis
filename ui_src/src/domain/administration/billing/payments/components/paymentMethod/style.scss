@@ -51,3 +51,34 @@
         }
     }
 }
+.no-payment-method {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 20px;
+    .add-payment-img {
+        cursor: pointer;
+    }
+    p {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .payment-method-title {
+        font-weight: 600;
+        font-size: 16px;
+        color: #2e2c34;
+    }
+    .payment-method-description {
+        font-weight: 400;
+        font-size: 10px;
+        color: rgba(74, 73, 92, 0.8);
+        margin: 5px 0 5px 0;
+    }
+    .add-new-method {
+        font-weight: 600;
+        font-size: 12px;
+        color: #6557ff;
+        cursor: pointer;
+    }
+}
