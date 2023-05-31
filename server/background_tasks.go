@@ -35,6 +35,8 @@ const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
 var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
+var LastReadThroughputMap map[string]models.Throughput
+var LastWriteThroughputMap map[string]models.Throughput
 var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
@@ -173,7 +175,18 @@ func (s *Server) InitializeThroughputSampling() error {
 	if err != nil {
 		return err
 	}
-
+	LastReadThroughputMap = map[string]models.Throughput{}
+	LastWriteThroughputMap = map[string]models.Throughput{}
+	for _, acc := range s.Opts().Accounts {
+		LastReadThroughputMap[acc.GetName()] = models.Throughput{
+			Bytes:       acc.outBytes,
+			BytesPerSec: 0,
+		}
+		LastWriteThroughputMap[acc.GetName()] = models.Throughput{
+			Bytes:       acc.inBytes,
+			BytesPerSec: 0,
+		}
+	}
 	LastReadThroughput = models.Throughput{
 		Bytes:       v.OutBytes,
 		BytesPerSec: 0,
@@ -190,27 +203,31 @@ func (s *Server) InitializeThroughputSampling() error {
 
 func (s *Server) CalculateSelfThroughput() error {
 	for range time.Tick(time.Second * 1) {
-		v, err := serv.Varz(nil)
-		if err != nil {
-			return err
-		}
-
-		currentWrite := v.InBytes - LastWriteThroughput.Bytes
-		LastWriteThroughput = models.Throughput{
-			Bytes:       v.InBytes,
-			BytesPerSec: currentWrite,
-		}
-		currentRead := v.OutBytes - LastReadThroughput.Bytes
-		LastReadThroughput = models.Throughput{
-			Bytes:       v.OutBytes,
-			BytesPerSec: currentRead,
-		}
+		readMap := map[string]int64{}
+		writeMap := map[string]int64{}
+		s.accounts.Range(func(_, v interface{}) bool {
+			acc := v.(*Account)
+			accName := acc.GetName()
+			currentRead := acc.outBytes - LastReadThroughputMap[accName].Bytes
+			LastReadThroughputMap[accName] = models.Throughput{
+				Bytes:       acc.outBytes,
+				BytesPerSec: currentRead,
+			}
+			readMap[accName] = currentRead
+			currentWrite := acc.inBytes - LastWriteThroughputMap[accName].Bytes
+			LastWriteThroughputMap[accName] = models.Throughput{
+				Bytes:       acc.inBytes,
+				BytesPerSec: currentWrite,
+			}
+			writeMap[accName] = currentWrite
+			return true
+		})
 		serverName := s.opts.ServerName
 		subj := getThroughputSubject(serverName)
 		tpMsg := models.BrokerThroughput{
-			Name:  serverName,
-			Read:  currentRead,
-			Write: currentWrite,
+			Name:     serverName,
+			ReadMap:  readMap,
+			WriteMap: writeMap,
 		}
 		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
 	}

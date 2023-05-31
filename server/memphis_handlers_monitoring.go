@@ -799,7 +799,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	//TODO: pass tenantName instead of globalAccountName
 	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
@@ -818,7 +817,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-	//TODO: pass tenantName instead of globalAccountName
 	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
@@ -829,11 +827,9 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	//TODO: pass tenantName instead of globalAccountName
 	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			//TODO: pass tenantName instead of globalAccountName
 			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
@@ -855,11 +851,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		return throughputs, err
 	}
 
-	// account, err := serv.lookupAccount(tenantName)
-	// if err != nil {
-	// 	return throughputs, err
-	// }
-	//TODO: pass tenantName instead of globalAccountName
 	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
 	timeout := 300 * time.Millisecond
 	timer := time.NewTimer(timeout)
@@ -875,7 +866,6 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
-	//TODO: pass tenantName instead of globalAccountName
 	time.AfterFunc(500*time.Millisecond, func() {
 		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
 	})
@@ -901,11 +891,11 @@ cleanup:
 		mapEntry := m[brokerThroughput.Name]
 		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
 			Timestamp: msg.Time,
-			Read:      brokerThroughput.Read,
+			Read:      brokerThroughput.ReadMap[tenantName],
 		})
 		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
 			Timestamp: msg.Time,
-			Write:     brokerThroughput.Write,
+			Write:     brokerThroughput.WriteMap[tenantName],
 		})
 		m[brokerThroughput.Name] = mapEntry
 	}
