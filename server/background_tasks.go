@@ -441,14 +441,19 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 func (s *Server) ListenForSchemaverseDlsEvents() error {
 	err := s.queueSubscribe(globalAccountName, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
+			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
+			if err != nil {
+				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				return
+			}
 			var message models.SchemaVerseDlsMessageSdk
-			err := json.Unmarshal(msg, &message)
+			err = json.Unmarshal([]byte(stringMessage), &message)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
 			}
 
-			exist, station, err := db.GetStationByName(message.StationName, message.TenantName)
+			exist, station, err := db.GetStationByName(message.StationName, tenantName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return
@@ -470,7 +475,7 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 			}
 
 			message.Message.TimeSent = time.Now()
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, message.TenantName)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
 				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
 				return

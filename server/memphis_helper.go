@@ -47,7 +47,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
-	dlsUnackedStream   = "$memphis_dls_unacked"
+	dlsUnackedStream       = "$memphis_dls_unacked"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -67,6 +67,8 @@ var memphisServices = []string{
 	"$memphis_schema_detachments",
 	"$memphis_ws_subs.>",
 	"$memphis_integration_updates",
+	"$memphis_notifications",
+	"$memphis_schemaverse_dls",
 }
 
 // JetStream API request kinds
@@ -342,7 +344,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		MaxAckPending: -1,
 		MaxDeliver:    10,
 	}
-	err = serv.memphisAddConsumer(globalAccountName,dlsUnackedStream, &cc)
+	err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
 	if err != nil {
 		successCh <- err
 		return
