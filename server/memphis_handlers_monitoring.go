@@ -1509,8 +1509,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		_, ok = tenantInetgrations["s3"].(models.Integration)
 		if !ok {
 			station.TieredStorageEnabled = false
-		} else {
+		} else if station.TieredStorageEnabled {
 			station.TieredStorageEnabled = true
+		} else {
+			station.TieredStorageEnabled = false
 		}
 	}
 	var response gin.H

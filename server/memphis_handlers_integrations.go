@@ -242,7 +242,15 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	_, integrations, err := db.GetAllIntegrations()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		message := "GetAllIntegrations: " + err.Error()
+		serv.Errorf(message)
+		c.AbortWithStatusJSON(500, gin.H{"message": message})
+		return
+	}
+
+	_, integrations, err := db.GetAllIntegrationsByTenant(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllIntegrations: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

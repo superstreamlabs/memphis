@@ -35,6 +35,7 @@ import (
 type TieredStorageMsg struct {
 	Buf         []byte `json:"buf"`
 	StationName string `json:"station_name"`
+	TenantName  string `json:"tenant_name"`
 }
 
 func cacheDetailsS3(keys map[string]string, properties map[string]bool, tenantName string) {
@@ -315,12 +316,10 @@ type Msg struct {
 }
 
 func (s *Server) uploadToS3Storage() error {
-	//TODO: remove GetAllTenants and iterate the concurrent map
-	tenants, _ := db.GetAllTenants()
-	for _, tenant := range tenants {
+	for t, tenant := range tieredStorageMsgsMap.m {
 		if len(tieredStorageMsgsMap.m) > 0 {
 			var credentialsMap models.Integration
-			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant.Name); !ok {
+			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(t); !ok {
 				continue
 			} else {
 				if credentialsMap, ok = tenantIntegrations["s3"].(models.Integration); !ok {
@@ -350,10 +349,10 @@ func (s *Server) uploadToS3Storage() error {
 			uid := serv.memphis.nuid.Next()
 			var objectName string
 
-			for k, msgs := range tieredStorageMsgsMap.m {
+			for k, msgs := range tenant {
 				var messages []Msg
 				for _, msg := range msgs {
-					objectName = k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
+					objectName = t + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
 
 					var headers string
 					hdrs := map[string]string{}

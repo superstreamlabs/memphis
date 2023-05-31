@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
 	"memphis/models"
 	"reflect"
 	"strconv"
@@ -24,13 +23,11 @@ import (
 )
 
 func flushMapToTire2Storage() error {
-	//TODO: remove GetAllTenants and iterate the concurrent map
-	tenants, _ := db.GetAllTenants()
-	for _, tenant := range tenants {
+	for tenant := range tieredStorageMsgsMap.m {
 		for k, f := range StorageFunctionsMap {
 			switch k {
 			case "s3":
-				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant.Name); !ok {
+				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant); !ok {
 					continue
 				} else {
 					if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
@@ -51,48 +48,48 @@ func flushMapToTire2Storage() error {
 
 func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uint64, tierStorageType string) error {
 	storedType := reflect.TypeOf(storageType).Elem().Name()
-	var streamName string
+	var streamName, tenantName string
 	switch storedType {
 	case "fileStore":
 		fileStore := storageType.(*fileStore)
 		streamName = fileStore.cfg.StreamConfig.Name
+		tenantName = fileStore.account.Name
 	case "memStore":
 		memStore := storageType.(*memStore)
 		streamName = memStore.cfg.Name
+		tenantName = memStore.account.Name
 	}
-	//TODO: remove GetAllTenants and iterate the concurrent map
-	tenants, _ := db.GetAllTenants()
-	for _, tenant := range tenants {
-		for k := range StorageFunctionsMap {
-			switch k {
-			case "s3":
-				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant.Name); !ok {
-					continue
-				} else {
-					if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
-						msgId := map[string]string{}
-						seqNumber := strconv.Itoa(int(seq))
-						msgId["msg-id"] = streamName + seqNumber
-						subject := fmt.Sprintf("%s.%s", tieredStorageStream, streamName)
-						// TODO: if the stream is not exists save the messages in buffer
-						if TIERED_STORAGE_STREAM_CREATED {
-							tierStorageMsg := TieredStorageMsg{
-								Buf:         buf,
-								StationName: streamName,
-							}
 
-							msg, err := json.Marshal(tierStorageMsg)
-							if err != nil {
-								return err
-							}
-							s.sendInternalAccountMsgWithHeaders(s.GlobalAccount(), subject, msg, msgId)
+	for k := range StorageFunctionsMap {
+		switch k {
+		case "s3":
+			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+				continue
+			} else {
+				if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
+					msgId := map[string]string{}
+					seqNumber := strconv.Itoa(int(seq))
+					msgId["msg-id"] = streamName + seqNumber
+					subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)
+					// TODO: if the stream is not exists save the messages in buffer
+					if TIERED_STORAGE_STREAM_CREATED {
+						tierStorageMsg := TieredStorageMsg{
+							Buf:         buf,
+							StationName: streamName,
+							TenantName:  tenantName,
 						}
+
+						msg, err := json.Marshal(tierStorageMsg)
+						if err != nil {
+							return err
+						}
+						s.sendInternalAccountMsgWithHeadersWithEcho(s.GlobalAccount(), subject, msg, msgId)
 					}
 				}
-
-			default:
-				return errors.New("failed send to tiered storage : unsupported integration")
 			}
+
+		default:
+			return errors.New("failed send to tiered storage : unsupported integration")
 		}
 	}
 	return nil
@@ -101,15 +98,16 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 func (s *Server) storeInTieredStorageMap(msg StoredMsg) {
 	tieredStorageMapLock.Lock()
 	stationName := msg.Subject
+	tenantName := msg.TenantName
 	if strings.Contains(msg.Subject, "#") {
 		stationName = strings.Replace(msg.Subject, "#", ".", -1)
 	}
-	_, ok := tieredStorageMsgsMap.Load(stationName)
+	_, ok := tieredStorageMsgsMap.Load(tenantName)
 	if !ok {
-		tieredStorageMsgsMap.Add(stationName, []StoredMsg{})
+		tieredStorageMsgsMap.Add(tenantName, map[string][]StoredMsg{})
 	}
 
-	tieredStorageMsgsMap.m[stationName] = append(tieredStorageMsgsMap.m[stationName], msg)
+	tieredStorageMsgsMap.m[tenantName][stationName] = append(tieredStorageMsgsMap.m[tenantName][stationName], msg)
 	tieredStorageMapLock.Unlock()
 }
 
@@ -151,6 +149,7 @@ func (s *Server) handleNewTieredStorageMsg(msg []byte, reply string) {
 		Header:       header,
 		Time:         time.Unix(0, int64(intTs)),
 		ReplySubject: reply,
+		TenantName:   tieredStorageMsg.TenantName,
 	}
 
 	s.storeInTieredStorageMap(message)

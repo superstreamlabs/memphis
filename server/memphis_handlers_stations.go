@@ -206,7 +206,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
-			respondWithErrOrJsApiRespWithEcho(!isNative, c, c.acc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		if !exist {
@@ -400,8 +400,10 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		_, ok = tenantInetgrations["s3"].(models.Integration)
 		if !ok {
 			station.TieredStorageEnabled = false
-		} else {
+		} else if station.TieredStorageEnabled {
 			station.TieredStorageEnabled = true
+		} else {
+			station.TieredStorageEnabled = false
 		}
 	}
 
@@ -495,8 +497,10 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				_, ok = tenantInetgrations["s3"].(models.Integration)
 				if !ok {
 					station.TieredStorageEnabled = false
-				} else {
+				} else if station.TieredStorageEnabled {
 					station.TieredStorageEnabled = true
+				} else {
+					station.TieredStorageEnabled = false
 				}
 			}
 
@@ -612,8 +616,10 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 				_, ok = tenantInetgrations["s3"].(models.Integration)
 				if !ok {
 					stations[i].TieredStorageEnabled = false
-				} else {
+				} else if stations[i].TieredStorageEnabled {
 					stations[i].TieredStorageEnabled = true
+				} else {
+					stations[i].TieredStorageEnabled = false
 				}
 			}
 
@@ -795,7 +801,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName)
-
 	if err != nil {
 		serv.Errorf("CreateStation: Station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

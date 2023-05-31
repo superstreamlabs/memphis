@@ -37,7 +37,7 @@ var LastReadThroughput models.Throughput
 var LastWriteThroughput models.Throughput
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
-var tieredStorageMsgsMap *concurrentMap[[]StoredMsg]
+var tieredStorageMsgsMap *concurrentMap[map[string][]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
@@ -312,15 +312,18 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				continue
 			}
 		}
-
 		// ack all messages uploaded to tiered 2 storage
-		for i, msgs := range tieredStorageMsgsMap.m {
-			for _, msg := range msgs {
-				reply := msg.ReplySubject
-				s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+		for t, tenant := range tieredStorageMsgsMap.m {
+			for i, msgs := range tenant {
+				for _, msg := range msgs {
+					reply := msg.ReplySubject
+					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+				}
+				delete(tenant, i)
 			}
-			tieredStorageMsgsMap.Delete(i)
+			tieredStorageMsgsMap.Delete(t)
 		}
+
 		tieredStorageMapLock.Unlock()
 	}
 }
@@ -396,7 +399,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 		ReplySubject string
 	}
 
-	tieredStorageMsgsMap = NewConcurrentMap[[]StoredMsg]()
+	tieredStorageMsgsMap = NewConcurrentMap[map[string][]StoredMsg]()
 	amount := 1000
 	req := []byte(strconv.FormatUint(uint64(amount), 10))
 	for {
@@ -405,7 +408,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 			replySubj := TIERED_STORAGE_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
 			// subscribe to unacked messages
-			sub, err := s.subscribeOnGlobalAcc(replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
 					if reply != "" {
