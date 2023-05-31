@@ -92,10 +92,11 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
 	reply := s.getJsApiReplySubject()
 
-	s.memphis.jsApiMu.Lock()
-	defer s.memphis.jsApiMu.Unlock()
+	// return these lines if there are errors
+	// s.memphis.jsApiMu.Lock()
+	// defer s.memphis.jsApiMu.Unlock()
 
-	timeout := time.After(30 * time.Second)
+	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
