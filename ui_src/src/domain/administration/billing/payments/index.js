@@ -13,6 +13,7 @@
 import './style.scss';
 import TotalPayment from './components/totalPayment';
 import PaymentMethod from './components/paymentMethod';
+import InvoiceHistory from './components/invoiceHistory';
 import React from 'react';
 
 function Payments({ selectedMenuItem, setMenuItem }) {
@@ -28,6 +29,7 @@ function Payments({ selectedMenuItem, setMenuItem }) {
                 <TotalPayment />
                 <PaymentMethod />
             </div>
+            <InvoiceHistory />
         </div>
     );
 }
