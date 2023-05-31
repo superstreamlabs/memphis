@@ -12,19 +12,24 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 function TotalPayments() {
-    // const [formFields, setFormFields] = useState({});
-    // const [oldValues, setOldValues] = useState({});
-    // const [isChanged, setIsChanged] = useState(false);
-    // const [isLoading, setIsLoading] = useState(true);
-
-    // useEffect(() => {
-    //     getConfigurationValue();
-    // }, []);
-
-    return <div>Total Payments</div>;
+    return (
+        <div className="payments-section-card">
+            <div className="total-payment-top">
+                <div>
+                    <p className="total-payment">Total Payment</p>
+                    <p className="last-payment">Last payment date is 02 June 2023</p>
+                </div>
+                <div className="payment-amount">
+                    <label>$</label>
+                    <label className="payment-amount-number">299</label>
+                </div>
+            </div>
+            <label className="total-payment-bottom">Remove payment</label>
+        </div>
+    );
 }
 
 export default TotalPayments;
