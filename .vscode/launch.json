@@ -23,12 +23,6 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
-                // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
-                // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
-                // "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
-                // "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
-                // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
-                // "SANDBOX_ENV": "false",
             }
         },
         {
@@ -53,12 +47,6 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
-                // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
-                // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
-                // "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
-                // "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
-                // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
-                // "SANDBOX_ENV": "false",
             }
         },
         {
@@ -83,12 +71,6 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
-                // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
-                // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
-                // "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
-                // "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
-                // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
-                // "SANDBOX_ENV": "false",
             }
         },
         {
@@ -113,12 +95,6 @@
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
                 "CONNECTION_TOKEN": "memphis"
-                // "GOOGLE_CLIENT_ID": "916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com",
-                // "GOOGLE_CLIENT_SECRET": "GOOGLE_CLIENT_SECRET is needed here",
-                // "GITHUB_CLIENT_ID": "51b0330eb3b34bc8f641",
-                // "GITHUB_CLIENT_SECRET": "GITHUB_CLIENT_SECRET is needed here",
-                // "SANDBOX_REDIRECT_URI": "http://localhost:9000/login",
-                // "SANDBOX_ENV": "false",
             }
         }
     ]

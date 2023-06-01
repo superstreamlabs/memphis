@@ -848,9 +848,6 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	//  return
-	// }
 	var body models.RemoveStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1648,10 +1645,6 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	//  return
-	// }
-
 	var body models.RemoveSchemaFromStation
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1830,10 +1823,6 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 }
 
 func (sh StationsHandler) PurgeStation(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	//  return
-	// }
-
 	var body models.PurgeStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1887,10 +1876,6 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 }
 
 func (sh StationsHandler) RemoveMessages(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	//  return
-	// }
-
 	var body models.RemoveMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {

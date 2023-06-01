@@ -86,8 +86,6 @@ func SendEvent(userId, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-		// } else if configuration.SANDBOX_ENV == "true" {
-		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
@@ -107,8 +105,6 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-		// } else if configuration.SANDBOX_ENV == "true" {
-		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
@@ -132,9 +128,6 @@ func SendErrEvent(origin, errMsg string) {
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
 	}
-	// } else if configuration.SANDBOX_ENV == "true" {
-	// 	distinctId = "sandbox"
-	// }
 
 	p := posthog.NewProperties()
 	p.Set("err_log", errMsg)
