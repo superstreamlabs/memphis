@@ -125,7 +125,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	alterConfigurationsTable := `
 		ALTER TABLE IF EXISTS configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE IF EXISTS configurations DROP CONSTRAINT IF EXISTS configurations_key_key;
-		ALTER TABLE IF EXISTS configurations ADD CONSTRAINT configurations_key_tenant_name UNIQUE(key, tenant_name);
+		ALTER TABLE IF EXISTS configurations ADD CONSTRAINT key_tenant_name UNIQUE(key, tenant_name);
 		`
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
@@ -661,7 +661,7 @@ func UpsertConfiguration(key string, value string, tenantName string) error {
 	}
 	defer conn.Release()
 	query := `INSERT INTO configurations (key, value, tenant_name) VALUES($1, $2, $3)
-	ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value`
+	ON CONFLICT(key, tenant_name) DO UPDATE SET value = EXCLUDED.value ,tenant_name = EXCLUDED.tenant_name`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
 	if err != nil {
 		return err
