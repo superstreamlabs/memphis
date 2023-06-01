@@ -69,6 +69,8 @@ var memphisServices = []string{
 	"$memphis_integration_updates",
 	"$memphis_notifications",
 	"$memphis_schemaverse_dls",
+	JSAdvisoryConsumerMaxDeliveryExceedPre + ".>",
+	"$memphis_pm_acks",
 }
 
 // JetStream API request kinds

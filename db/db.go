@@ -4858,7 +4858,7 @@ func PurgeDlsMsgsFromStation(station_id int) error {
 	return nil
 }
 
-func RemoveCgFromDlsMsg(msgId int, cgName string) error {
+func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4867,14 +4867,14 @@ func RemoveCgFromDlsMsg(msgId int, cgName string) error {
 	}
 	defer conn.Release()
 
-	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 RETURNING *) 
+	query := `WITH removed_value AS (UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE id = $2 AND tenant_name = $3 RETURNING *) 
 	DELETE FROM dls_messages WHERE (SELECT array_length(poisoned_cgs, 1)) <= 1 AND id = $2;`
 
 	stmt, err := conn.Conn().Prepare(ctx, "get_msg_by_id_and_remove msg", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, msgId, tenantName)
 	if err != nil {
 		return err
 	}

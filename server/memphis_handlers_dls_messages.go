@@ -29,17 +29,21 @@ const (
 type PoisonMessagesHandler struct{ S *Server }
 
 func (s *Server) handleNewUnackedMsg(msg []byte) error {
-	var message map[string]interface{}
+	var message JSConsumerDeliveryExceededAdvisory
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
 		return err
 	}
 
-	streamName := message["stream"].(string)
+	streamName := message.Stream
+	accountName := message.Account
+	// backward compatibility
+	if accountName == "" {
+		accountName = DEFAULT_GLOBAL_ACCOUNT
+	}
 	stationName := StationNameFromStreamName(streamName)
-	//TODO: need to pass tenant_name instead of globalAccountName
-	_, station, err := db.GetStationByName(stationName.Ext(), globalAccountName)
+	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
 		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
 		return err
@@ -48,11 +52,10 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return nil
 	}
 
-	cgName := message["consumer"].(string)
+	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
-	messageSeq := message["stream_seq"].(float64)
-	//TODO: pass dynamic tenant name instead of globalAccountName
-	poisonMessageContent, err := s.memphisGetMessage(globalAccountName, stationName.Intern(), uint64(messageSeq))
+	messageSeq := message.StreamSeq
+	poisonMessageContent, err := s.memphisGetMessage(accountName, stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil

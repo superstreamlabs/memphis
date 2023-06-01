@@ -147,13 +147,18 @@ func (s *Server) ListenForNotificationEvents() error {
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(globalAccountName, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var msgToAck models.PmAckMsg
-			err := json.Unmarshal(msg, &msgToAck)
+			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
 				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
 				return
 			}
-			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName)
+			var msgToAck models.PmAckMsg
+			err = json.Unmarshal([]byte(message), &msgToAck)
+			if err != nil {
+				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+				return
+			}
+			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName, tenantName)
 			if err != nil {
 				return
 			}
@@ -384,7 +389,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 				err := s.handleNewUnackedMsg(msg.Msg)
 				if err == nil {
 					// send ack
-					s.sendInternalAccountMsg(s.GlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
+					s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
 				}
 			}
 		} else {
