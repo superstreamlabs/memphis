@@ -38,15 +38,6 @@ type Configuration struct {
 	USER_PASS_BASED_AUTH    bool
 	CONNECTION_TOKEN        string
 	ENCRYPTION_SECRET_KEY   string
-	// SANDBOX_SLACK_BOT_TOKEN        string
-	// SANDBOX_SLACK_CHANNEL_ID       string
-	// SANDBOX_UI_URL                 string
-	// GOOGLE_CLIENT_ID               string
-	// GOOGLE_CLIENT_SECRET           string
-	// SANDBOX_ENV                    string
-	// GITHUB_CLIENT_ID               string
-	// GITHUB_CLIENT_SECRET           string
-	// SANDBOX_REDIRECT_URI           string
 }
 
 func GetConfig() Configuration {

@@ -3790,58 +3790,6 @@ func GetTagByName(name string) (bool, models.Tag, error) {
 	return true, tags[0], nil
 }
 
-// Sandbox Functions
-// func InsertNewSanboxUser(username string, email string, firstName string, lastName string, profilePic string) (models.SandboxUser, error) {
-// user := models.SandboxUser{}
-// return user, nil
-// }
-
-// func UpdateSandboxUserAlreadyLoggedIn(userId int) {
-// sandboxUsersCollection.UpdateOne(context.TODO(),
-// 	bson.M{"_id": userId},
-// 	bson.M{"$set": bson.M{"already_logged_in": true}},
-// )
-// }
-
-// func GetSandboxUser(username string) (bool, models.SandboxUser, error) {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	conn, err := MetadataDbClient.Client.Acquire(ctx)
-// 	if err != nil {
-// 		return true, models.SandboxUser{}, err
-// 	}
-// 	defer conn.Release()
-// 	query := `SELECT * FROM sandbox_users WHERE username = $1 LIMIT 1`
-// 	stmt, err := conn.Conn().Prepare(ctx, "get_sandbox_user", query)
-// 	if err != nil {
-// 		return true, models.SandboxUser{}, err
-// 	}
-// 	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
-// 	if err != nil {
-// 		return true, models.SandboxUser{}, err
-// 	}
-// 	defer rows.Close()
-// 	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SandboxUser])
-// 	if err != nil {
-// 		return true, models.SandboxUser{}, err
-// 	}
-// 	if len(users) == 0 {
-// 		return false, models.SandboxUser{}, nil
-// 	}
-// 	return true, users[0], nil
-// }
-
-// func UpdateSkipGetStartedSandbox(username string) error {
-// _, err := sandboxUsersCollection.UpdateOne(context.TODO(),
-// 	bson.M{"username": username},
-// 	bson.M{"$set": bson.M{"skip_get_started": true}},
-// )
-// if err != nil {
-// 	return err
-// }
-// 	return nil
-// }
-
 // Image Functions
 func InsertImage(name string, base64Encoding string) error {
 	err := InsertConfiguration(name, base64Encoding)

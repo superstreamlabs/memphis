@@ -154,10 +154,6 @@ func validateEmail(email string) error {
 	return nil
 }
 
-// type userToTokens interface {
-// 	models.User | models.SandboxUser
-// }
-
 type userToTokens interface {
 	models.User
 }
@@ -175,15 +171,6 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-		// case models.SandboxUser:
-		// 	atClaims["user_id"] = u.ID
-		// 	atClaims["username"] = u.Username
-		// 	atClaims["user_type"] = u.UserType
-		// 	atClaims["creation_date"] = u.CreatedAt
-		// 	atClaims["already_logged_in"] = u.AlreadyLoggedIn
-		// 	atClaims["avatar_id"] = u.AvatarId
-		// 	atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
-		// 	at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
 	if err != nil {
@@ -422,47 +409,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		serv.Warnf("refreshToken: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
-		// exist, sandboxUser, err := IsSandboxUserExist(username)
-		// if exist {
-		// 	if err != nil {
-		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
-
-		// 	token, refreshToken, err := CreateTokens(sandboxUser)
-		// 	if err != nil {
-		// 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
-		// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 		return
-		// 	}
-		// 	domain := ""
-		// 	secure := true
-		// 	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-		// 	c.IndentedJSON(200, gin.H{
-		// 		"jwt":                     token,
-		// 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		// 		"user_id":                 sandboxUser.ID,
-		// 		"username":                sandboxUser.Username,
-		// 		"user_type":               sandboxUser.UserType,
-		// 		"creation_date":           sandboxUser.CreationDate,
-		// 		"already_logged_in":       sandboxUser.AlreadyLoggedIn,
-		// 		"avatar_id":               sandboxUser.AvatarId,
-		// 		"send_analytics":          true,
-		// 		"env":                     "K8S",
-		// 		"namespace":               serv.opts.K8sNamespace,
-		// 		"skip_get_started":        sandboxUser.SkipGetStarted,
-		// 		"broker_host":             BROKER_HOST,
-		// 		"rest_gw_host":            REST_GW_HOST,
-		// 		"ui_host":                 UI_HOST,
-		// 		"tiered_storage_time_sec": TIERED_STORAGE_TIME_FRAME_SEC,
-		// "ws_port":                 serv.opts.Websocket.Port,
-		// 		"http_port":               serv.opts.UiPort,
-		// 		"clients_port":            serv.opts.Port,
-		// 		"rest_gw_port":            serv.opts.RestGwPort,
-		// 	})
-		// 	return
-		// }
 	}
 
 	token, refreshToken, err := CreateTokens(user)
@@ -508,11 +454,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
-	// if configuration.SANDBOX_ENV == "true" {
-	// 	c.IndentedJSON(200, gin.H{"show_signup": false})
-	// 	return
-	// }
-
 	showSignup := true
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
@@ -787,9 +728,6 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -988,9 +926,6 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1040,12 +975,6 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
-		// err2 := db.UpdateSkipGetStartedSandbox(username)
-		// if err2 != nil {
-		// 	serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
-		// 	c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		// 	return
-		// }
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()

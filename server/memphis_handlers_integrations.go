@@ -28,10 +28,6 @@ const sendNotificationType = "send_notification"
 type IntegrationsHandler struct{ S *Server }
 
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
-
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -84,10 +80,6 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
-
 	var body models.CreateIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -209,10 +201,6 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 }
 
 func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
-	// if err := DenyForSandboxEnv(c); err != nil {
-	// 	return
-	// }
-
 	var body models.DisconnectIntegrationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
