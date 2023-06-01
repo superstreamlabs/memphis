@@ -188,7 +188,7 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
 	return nil
 }
 
-func (mci *memphisClientInfo) updateDisconnection() error {
+func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 	if mci.connectionId == "" {
 		return nil
 	}
@@ -234,13 +234,9 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	//TODO: try to remove this db query
-	exist, conn, err := db.GetConnectionByID(mci.connectionId)
-	if err != nil {
-		return err
-	}
-	if exist {
-		err = SendNotification(conn.TenantName, "Disconnection events", msg, DisconEAlert)
+
+	if len(consumerNames) > 0 || len(producerNames) > 0 {
+		err = SendNotification(tenantName, "Disconnection events", msg, DisconEAlert)
 		if err != nil {
 			return err
 		}
