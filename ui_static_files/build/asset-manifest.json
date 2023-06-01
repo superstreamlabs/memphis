@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.58d60287.css",
-    "main.js": "/static/js/main.bbde4884.js",
+    "main.css": "/static/css/main.bb9acc73.css",
+    "main.js": "/static/js/main.997b45f4.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -83,7 +83,7 @@
     "static/js/6476.634b9f6d.chunk.js": "/static/js/6476.634b9f6d.chunk.js",
     "static/js/1391.ba40a944.chunk.js": "/static/js/1391.ba40a944.chunk.js",
     "static/js/6619.03b4c4cd.chunk.js": "/static/js/6619.03b4c4cd.chunk.js",
-    "static/js/1448.2f35c683.chunk.js": "/static/js/1448.2f35c683.chunk.js",
+    "static/js/1448.9e4b081c.chunk.js": "/static/js/1448.9e4b081c.chunk.js",
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -251,7 +251,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.58d60287.css",
-    "static/js/main.bbde4884.js"
+    "static/css/main.bb9acc73.css",
+    "static/js/main.997b45f4.js"
   ]
 }
