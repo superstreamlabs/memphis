@@ -98,10 +98,6 @@ var (
 	DLS_UNACKED_STREAM_CREATED      bool
 )
 
-func (s *Server) MemphisInitialized() bool {
-	return s.GlobalAccount().JetStreamEnabled()
-}
-
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
 		go func(msg []byte) {
