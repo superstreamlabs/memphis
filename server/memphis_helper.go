@@ -117,10 +117,11 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 	}
 	reply := s.getJsApiReplySubject()
 
-	s.memphis.jsApiMu.Lock()
-	defer s.memphis.jsApiMu.Unlock()
+	// return these lines if there are errors
+	// s.memphis.jsApiMu.Lock()
+	// defer s.memphis.jsApiMu.Unlock()
 
-	timeout := time.After(30 * time.Second)
+	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
 	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"memphis/db"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -946,6 +947,9 @@ func (c *client) parse(buf []byte) error {
 					!strings.Contains(c.opts.Name, "NATS CLI") &&
 					!c.isWebsocket() &&
 					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") {
+					if db.MetadataDbClient.Client == nil { // server is not ready yet to get new connections
+						goto authErr
+					}
 					if err := handleConnectMessage(c); err != nil {
 						// user is getting notified from within the function
 						goto authErr
