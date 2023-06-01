@@ -1,5 +1,5 @@
 name: 🐛 Bug report
-description: Create a bug report to help us improve Memphis ⚒️
+description: Create a bug report to help us improve Memphis.dev ⚒️
 title: "Bug: "
 labels: [bug]
 assignees: idanasulinmemphis
@@ -37,6 +37,13 @@ body:
         - "Data"
         - "SDKs"
         - "Other"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Broker version
+      description: Which broker version are you using?
+      placeholder: v1.0.2-stable
     validations:
       required: true
   - type: dropdown
