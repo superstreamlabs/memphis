@@ -334,7 +334,6 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	//TODO: pass tenant name
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		serv.Errorf("DisconnectIntegration: Integration " + body.Name + ": " + err.Error())

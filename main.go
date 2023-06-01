@@ -96,19 +96,12 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) {
-	// TODO: remove
-	// err := s.ConfigureMemphisGlobalAccount()
-	// if err != nil {
-	// 	s.Errorf("Failed to set Memphis global account: " + err.Error())
-	// }
-
 	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers()
-
 
 	err = server.InitializeIntegrations()
 	if err != nil {

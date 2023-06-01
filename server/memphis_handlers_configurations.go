@@ -161,7 +161,6 @@ func changeLogsRetention(logsRetention int) error {
 	}
 
 	retentionDur := time.Duration(logsRetention) * time.Hour * 24
-	//TODO: pass tenant name
 	err = serv.memphisUpdateStream(globalAccountName, &StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},

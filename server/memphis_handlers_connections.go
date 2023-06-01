@@ -57,7 +57,6 @@ func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate, connId 
 		return
 	}
 	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate, connId)
-	// TODO: check c.acc
 	s.sendInternalAccountMsg(c.acc, subject, rawMsg)
 }
 
@@ -87,7 +86,6 @@ func handleConnectMessage(client *client) error {
 		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
-	// TODO: check client.acc.GetName()
 	exist, user, err := db.GetUserByUsername(username, client.acc.GetName())
 	if err != nil {
 		errMsg := "User " + username + ": " + err.Error()
@@ -106,7 +104,6 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-		// TODO: check client.acc.GetName()
 		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()

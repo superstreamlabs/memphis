@@ -249,7 +249,6 @@ func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subje
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	// TODO: check c.Account()
 	tenantName := c.Account().GetName()
 	respondWithErr(tenantName, c.srv, reply, err)
 }
@@ -291,6 +290,5 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 		s.Errorf("SendUpdateToClients: " + err.Error())
 		return
 	}
-	//TODO: pass tenant name
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
 }

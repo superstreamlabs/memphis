@@ -300,7 +300,6 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxAckPending: -1,
 				MaxDeliver:    10,
 			}
-			//TODO: pass tenant name instead of global account
 			err := serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
 			if err != nil {
 				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
