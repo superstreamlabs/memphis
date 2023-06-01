@@ -23,15 +23,15 @@ import (
 )
 
 func flushMapToTire2Storage() error {
-	for tenant := range tieredStorageMsgsMap.m {
+	for t, tenant := range tieredStorageMsgsMap.m {
 		for k, f := range StorageFunctionsMap {
 			switch k {
 			case "s3":
-				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenant); !ok {
+				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(t); !ok {
 					continue
 				} else {
 					if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
-						err := f.(func() error)()
+						err := f.(func(string, map[string][]StoredMsg) error)(t, tenant)
 						if err != nil {
 							return err
 						}

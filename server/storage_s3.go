@@ -315,84 +315,79 @@ type Msg struct {
 	Headers map[string]string `json:"headers"`
 }
 
-func (s *Server) uploadToS3Storage() error {
-	for t, tenant := range tieredStorageMsgsMap.m {
-		if len(tieredStorageMsgsMap.m) > 0 {
-			var credentialsMap models.Integration
-			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(t); !ok {
+func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]StoredMsg) error {
+	for k, msgs := range tenant {
+		var credentialsMap models.Integration
+		if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+			continue
+		} else {
+			if credentialsMap, ok = tenantIntegrations["s3"].(models.Integration); !ok {
 				continue
-			} else {
-				if credentialsMap, ok = tenantIntegrations["s3"].(models.Integration); !ok {
-					continue
-				}
-			}
-			provider := credentials.NewStaticCredentialsProvider(
-				credentialsMap.Keys["access_key"],
-				credentialsMap.Keys["secret_key"],
-				"",
-			)
-			_, err := provider.Retrieve(context.Background())
-			if err != nil {
-				err = errors.New("uploadToS3Storage: Invalid credentials")
-				return err
-			}
-			cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
-				awsconfig.WithCredentialsProvider(provider),
-				awsconfig.WithRegion(credentialsMap.Keys["region"]),
-			)
-			svc := s3.NewFromConfig(cfg)
-			if err != nil {
-				err = errors.New("uploadToS3Storage failure " + err.Error())
-				return err
-			}
-			uploader := manager.NewUploader(svc)
-			uid := serv.memphis.nuid.Next()
-			var objectName string
-
-			for k, msgs := range tenant {
-				var messages []Msg
-				for _, msg := range msgs {
-					objectName = t + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
-
-					var headers string
-					hdrs := map[string]string{}
-					if len(msg.Header) > 0 {
-						headers = strings.ToLower(string(msg.Header))
-						headersSplit := strings.Split(headers, CR_LF)
-						for _, header := range headersSplit {
-							if header != "" && !strings.Contains(header, "nats") {
-								keyVal := strings.Split(header, ":")
-								key := strings.TrimSpace(keyVal[0])
-								value := strings.TrimSpace(keyVal[1])
-								hdrs[key] = value
-							}
-						}
-					} else {
-						headers = ""
-					}
-
-					encodedMsg := hex.EncodeToString(msg.Data)
-					message := Msg{Payload: encodedMsg, Headers: hdrs}
-					messages = append(messages, message)
-				}
-				// Upload the object to S3.
-				var buf bytes.Buffer
-				err := json.NewEncoder(&buf).Encode(messages)
-				if err != nil {
-					return err
-				}
-				_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-					Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
-					Key:    aws.String(objectName),
-					Body:   &buf,
-				})
-				if err != nil {
-					err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
-					return err
-				}
-				serv.Noticef("new file has been uploaded to S3: %s", objectName)
 			}
 		}
+		provider := credentials.NewStaticCredentialsProvider(
+			credentialsMap.Keys["access_key"],
+			credentialsMap.Keys["secret_key"],
+			"",
+		)
+		_, err := provider.Retrieve(context.Background())
+		if err != nil {
+			err = errors.New("uploadToS3Storage: Invalid credentials")
+			return err
+		}
+		cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+			awsconfig.WithCredentialsProvider(provider),
+			awsconfig.WithRegion(credentialsMap.Keys["region"]),
+		)
+		svc := s3.NewFromConfig(cfg)
+		if err != nil {
+			err = errors.New("uploadToS3Storage failure " + err.Error())
+			return err
+		}
+		uploader := manager.NewUploader(svc)
+		uid := serv.memphis.nuid.Next()
+		var objectName string
+
+		var messages []Msg
+		for _, msg := range msgs {
+			objectName = "memphis/" + tenantName + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
+			var headers string
+			hdrs := map[string]string{}
+			if len(msg.Header) > 0 {
+				headers = strings.ToLower(string(msg.Header))
+				headersSplit := strings.Split(headers, CR_LF)
+				for _, header := range headersSplit {
+					if header != "" && !strings.Contains(header, "nats") {
+						keyVal := strings.Split(header, ":")
+						key := strings.TrimSpace(keyVal[0])
+						value := strings.TrimSpace(keyVal[1])
+						hdrs[key] = value
+					}
+				}
+			} else {
+				headers = ""
+			}
+
+			encodedMsg := hex.EncodeToString(msg.Data)
+			message := Msg{Payload: encodedMsg, Headers: hdrs}
+			messages = append(messages, message)
+		}
+		// Upload the object to S3.
+		var buf bytes.Buffer
+		err = json.NewEncoder(&buf).Encode(messages)
+		if err != nil {
+			return err
+		}
+		_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
+			Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
+			Key:    aws.String(objectName),
+			Body:   &buf,
+		})
+		if err != nil {
+			err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
+			return err
+		}
+		serv.Noticef("new file has been uploaded to S3: %s", objectName)
 	}
 
 	return nil

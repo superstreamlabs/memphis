@@ -697,7 +697,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	tenantName := user.TenantName
 	if err != nil {
-		serv.Errorf("CreateStation: At station" + body.Name + ": " + err.Error())
+		serv.Errorf("CreateStation: At station " + body.Name + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
