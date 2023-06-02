@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"strconv"
@@ -350,6 +351,9 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 
 		var messages []Msg
 		for _, msg := range msgs {
+			if tenantName == conf.GlobalAccountName {
+				tenantName = "global"
+			}
 			objectName = "memphis/" + tenantName + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
 			var headers string
 			hdrs := map[string]string{}

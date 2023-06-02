@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/models"
 	"reflect"
 	"strconv"
@@ -34,6 +35,19 @@ func flushMapToTire2Storage() error {
 						err := f.(func(string, map[string][]StoredMsg) error)(t, tenant)
 						if err != nil {
 							return err
+						}
+					}
+					if !ok {
+						// acked if there is no s3 integration
+						for t, tenant := range tieredStorageMsgsMap.m {
+							for i, msgs := range tenant {
+								for _, msg := range msgs {
+									reply := msg.ReplySubject
+									serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+								}
+								delete(tenant, i)
+							}
+							tieredStorageMsgsMap.Delete(t)
 						}
 					}
 				}
@@ -70,6 +84,9 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 					msgId := map[string]string{}
 					seqNumber := strconv.Itoa(int(seq))
 					msgId["msg-id"] = streamName + seqNumber
+					if tenantName == "" {
+						tenantName = conf.GlobalAccountName
+					}
 					subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)
 					// TODO: if the stream is not exists save the messages in buffer
 					if TIERED_STORAGE_STREAM_CREATED {
