@@ -31,7 +31,6 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/addusersignup",
 	"/api/usermgmt/getsignupflag",
 	"/api/status",
-	// "/api/sandbox/login",
 	"/api/monitoring/getclusterinfo",
 }
 
