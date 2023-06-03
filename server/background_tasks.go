@@ -308,13 +308,11 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			TIERED_STORAGE_CONSUMER_CREATED = true
 		}
 		tieredStorageMapLock.Lock()
-		if len(tieredStorageMsgsMap.m) > 0 {
-			err := flushMapToTire2Storage()
-			if err != nil {
-				serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
-				tieredStorageMapLock.Unlock()
-				continue
-			}
+		err := flushMapToTire2Storage()
+		if err != nil {
+			serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
+			tieredStorageMapLock.Unlock()
+			continue
 		}
 		// ack all messages uploaded to tiered 2 storage
 		for t, tenant := range tieredStorageMsgsMap.m {
