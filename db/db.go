@@ -661,7 +661,7 @@ func UpsertConfiguration(key string, value string, tenantName string) error {
 	}
 	defer conn.Release()
 	query := `INSERT INTO configurations (key, value, tenant_name) VALUES($1, $2, $3)
-	ON CONFLICT(key, tenant_name) DO UPDATE SET value = EXCLUDED.value ,tenant_name = EXCLUDED.tenant_name`
+	ON CONFLICT(key, tenant_name) DO UPDATE SET value = EXCLUDED.value`
 	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
 	if err != nil {
 		return err
