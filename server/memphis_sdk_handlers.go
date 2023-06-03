@@ -242,17 +242,6 @@ func respondWithErr(tenantName string, s *Server, replySubject string, err error
 	s.sendInternalAccountMsgWithEcho(account, replySubject, resp)
 }
 
-func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
-	if jsApi {
-		s := c.srv
-		ci := c.getClientInfo(false)
-		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
-		return
-	}
-	tenantName := c.Account().GetName()
-	respondWithErr(tenantName, c.srv, reply, err)
-}
-
 func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
 	if jsApi {
 		s := c.srv
