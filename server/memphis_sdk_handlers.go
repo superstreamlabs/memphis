@@ -73,11 +73,6 @@ type createProducerResponse struct {
 	Err                     string                          `json:"error"`
 }
 
-type getTenantNameResponse struct {
-	TenantName string `json:"tenant_name"`
-	Err        string `json:"error"`
-}
-
 type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
@@ -131,20 +126,12 @@ type destroyConsumerRequest struct {
 	TenantName   string `json:"tenant_name"`
 }
 
-type getTenantNameRequest struct {
-	TenantId int `json:"tenant_id"`
-}
-
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
 }
 
 func (ccr *createConsumerResponse) SetError(err error) {
 	ccr.Err = err.Error()
-}
-
-func (tnr *getTenantNameResponse) SetError(err error) {
-	tnr.Err = err.Error()
 }
 
 func (s *Server) initializeSDKHandlers() {
