@@ -37,8 +37,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		message = "CreateIntegration: " + err.Error()
-		serv.Errorf(message)
+		serv.Errorf("CreateIntegration: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -53,7 +52,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("CreateIntegration : tenant " + body.TenantName + " does not exist")
+		serv.Warnf("CreateIntegration : tenant " + body.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -120,7 +119,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("UpdateIntegration : tenant " + body.TenantName + " does not exist")
+		serv.Warnf("UpdateIntegration : tenant " + body.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -209,7 +208,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("GetIntegrationDetails : tenant " + body.TenantName + " does not exist")
+		serv.Warnf("GetIntegrationDetails : tenant " + body.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -293,7 +292,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("DisconnectIntegration : tenant " + body.TenantName + " does not exist")
+		serv.Warnf("DisconnectIntegration : tenant " + body.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

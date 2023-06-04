@@ -1183,7 +1183,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				return &Account{}, Options{}, err
 			}
 		}
-		// GlobalAccount := &Account{Name: conf.MEMPHIS_GLOBAL_ACCOUNT_NAME, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 		siList := []*streamImport{}
