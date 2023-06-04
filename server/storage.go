@@ -37,19 +37,6 @@ func flushMapToTire2Storage() error {
 							return err
 						}
 					}
-					if !ok {
-						// acked if there is no s3 integration
-						for t, tenant := range tieredStorageMsgsMap.m {
-							for i, msgs := range tenant {
-								for _, msg := range msgs {
-									reply := msg.ReplySubject
-									serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-								}
-								delete(tenant, i)
-							}
-							tieredStorageMsgsMap.Delete(t)
-						}
-					}
 				}
 			default:
 				return errors.New("failed uploading to tiered storage : unsupported integration")

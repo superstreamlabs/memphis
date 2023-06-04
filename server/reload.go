@@ -901,7 +901,6 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 		return err
 	}
 	*newOpts = memphisOpts
-	// gacc.srv = s
 	// added by Memphis **
 	setBaselineOptions(newOpts)
 

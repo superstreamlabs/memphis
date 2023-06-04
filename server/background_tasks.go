@@ -314,7 +314,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			tieredStorageMapLock.Unlock()
 			continue
 		}
-		// ack all messages uploaded to tiered 2 storage
+		// ack all messages uploaded to tiered 2 storage or when there is no s3 integaration to tenant
 		for t, tenant := range tieredStorageMsgsMap.m {
 			for i, msgs := range tenant {
 				for _, msg := range msgs {

@@ -528,41 +528,6 @@ func EditConfigurationValue(key string, value string, tenantName string) error {
 }
 
 // Configuration Functions
-// TODO: check if we nee this function
-func GetConfiguration(key string, tenantName string) (bool, models.ConfigurationsValue, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, models.ConfigurationsValue{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM configurations WHERE key = $1 AND tenant_name = $2 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_configuration", query)
-	if err != nil {
-		return false, models.ConfigurationsValue{}, err
-	}
-	if tenantName != conf.GlobalAccountName {
-		tenantName = strings.ToLower(tenantName)
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, key, tenantName)
-	if err != nil {
-		return false, models.ConfigurationsValue{}, err
-	}
-	defer rows.Close()
-	configurations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConfigurationsValue])
-	if err != nil {
-		return false, models.ConfigurationsValue{}, err
-	}
-	if len(configurations) == 0 {
-		return false, models.ConfigurationsValue{}, nil
-	}
-	if configurations[0].Value == "" {
-		return false, models.ConfigurationsValue{}, nil
-	}
-	return true, configurations[0], nil
-}
-
 func GetAllConfigurations() (bool, []models.ConfigurationsValue, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

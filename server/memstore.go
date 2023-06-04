@@ -50,10 +50,6 @@ func newMemStore(cfg *StreamConfig) (*memStore, error) {
 		maxp: cfg.MaxMsgsPer,
 		cfg:  *cfg,
 	}
-	// res:= ms.SubjectsState()
-	// fmt.Println(res)
-	// res1:= ms.Snapshot()
-
 	return ms, nil
 }
 
@@ -72,10 +68,6 @@ func newMemStoreMemphis(cfg *StreamConfig, account *Account) (*memStore, error) 
 		cfg:     *cfg,
 		account: account, // ** added by memphis **
 	}
-	// res:= ms.SubjectsState()
-	// fmt.Println(res)
-	// res1:= ms.Snapshot()
-
 	return ms, nil
 }
 
