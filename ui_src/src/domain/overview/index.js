@@ -24,8 +24,7 @@ import {
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_WELCOME_MESSAGE,
-    LOCAL_STORAGE_SKIP_GET_STARTED,
-    LOCAL_STORAGE_ACCOUNT_ID
+    LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
 import installationIcon from '../../assets/images/installationIcon.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';

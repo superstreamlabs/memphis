@@ -28,7 +28,6 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import { message } from 'antd';
 import pathDomains from '../../router';
-import { LOCAL_STORAGE_ACCOUNT_ID } from '../../const/localStorageConsts';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);

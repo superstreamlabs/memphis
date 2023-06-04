@@ -25,7 +25,6 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Reducer from './hooks/reducer';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { LOCAL_STORAGE_ACCOUNT_ID } from '../../const/localStorageConsts';
 
 const initializeState = {
     stationMetaData: { is_native: true },

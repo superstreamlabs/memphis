@@ -26,7 +26,6 @@ import { Context } from '../../../../hooks/store';
 import { Sleep } from '../../../../utils/sleep';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
-import { LOCAL_STORAGE_ACCOUNT_ID } from '../../../../const/localStorageConsts';
 
 let sub;
 
