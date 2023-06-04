@@ -34,7 +34,7 @@ type memStore struct {
 	ageChk      *time.Timer
 	consumers   int
 	receivedAny bool
-	account     *Account // *** added by memphis ***
+	account     *Account // ** added by memphis **
 }
 
 func newMemStore(cfg *StreamConfig) (*memStore, error) {

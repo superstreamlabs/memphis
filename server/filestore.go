@@ -128,7 +128,7 @@ type fileStore struct {
 	closed      bool
 	fip         bool
 	receivedAny bool
-	account     *Account // *** added by memphis ***
+	account     *Account // ** added by memphis **
 }
 
 // Represents a message store block and its data.
