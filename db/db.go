@@ -83,7 +83,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	alterAuditLogsTable := `
 	ALTER TABLE IF EXISTS audit_logs ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	DROP INDEX IF EXISTS station_name;
-	CREATE INDEX audit_logs_station_tenant_id ON audit_logs (station_name, tenant_name);`
+	CREATE INDEX audit_logs_station_tenant_name ON audit_logs (station_name, tenant_name);`
 
 	auditLogsTable := `CREATE TABLE IF NOT EXISTS audit_logs(
 		id SERIAL NOT NULL,
@@ -94,7 +94,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		created_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$G',
 		PRIMARY KEY (id));
-	CREATE INDEX IF NOT EXISTS station_name ON audit_logs (station_name);`
+	CREATE INDEX IF NOT EXISTS station_name ON audit_logs (station_name, tenant_name);`
 
 	alterUsersTable := `
 	ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
@@ -157,7 +157,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 		);`
 
-	alterIntegrationTable := `
+	alterIntegrationsTable := `
 	ALTER TABLE IF EXISTS integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	ALTER TABLE IF EXISTS integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
 	ALTER TABLE IF EXISTS integrations ADD CONSTRAINT tenant_name_name UNIQUE(name, tenant_name);
@@ -385,7 +385,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{tenantsTable, usersTable, alterUsersTable, connectionsTable, alterConnectionsTable, auditLogsTable, alterAuditLogsTable, configurationsTable, alterConfigurationsTable, integrationsTable, alterIntegrationTable, schemasTable, alterSchemasTable, tagsTable, alterTagsTable, stationsTable, alterStationsTable, consumersTable, alterConsumersTable, schemaVersionsTable, alterSchemaVerseTable, producersTable, alterProducersTable, dlsMessagesTable, alterDlsMsgsTable}
+	tables := []string{tenantsTable, usersTable, alterUsersTable, connectionsTable, alterConnectionsTable, auditLogsTable, alterAuditLogsTable, configurationsTable, alterConfigurationsTable, integrationsTable, alterIntegrationsTable, schemasTable, alterSchemasTable, tagsTable, alterTagsTable, stationsTable, alterStationsTable, consumersTable, alterConsumersTable, schemaVersionsTable, alterSchemaVerseTable, producersTable, alterProducersTable, dlsMessagesTable, alterDlsMsgsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -962,7 +962,6 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 }
 
 // Station Functions
-
 func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
