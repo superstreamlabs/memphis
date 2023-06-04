@@ -244,17 +244,15 @@ func CreateRootUserOnFirstSystemLoad() error {
 			} else {
 				serv.Errorf("Generate host unique id failed: %s", err.Error())
 			}
+		} else if configuration.DOCKER_ENV == "true" {
+			installationType = "stand-alone-docker"
+			dockerMacAddress, err := getDockerMacAddress()
+			if err == nil {
+				deviceIdValue = dockerMacAddress
+			} else {
+				serv.Errorf("Generate host unique id failed: %s", err.Error())
+			}
 		}
-		// }
-		// else if configuration.DOCKER_ENV == "true" {
-		// 	installationType = "stand-alone-docker"
-		// 	dockerMacAddress, err := getDockerMacAddress()
-		// 	if err == nil {
-		// 		deviceIdValue = dockerMacAddress
-		// 	} else {
-		// 		serv.Errorf("Generate host unique id failed: %s", err.Error())
-		// 	}
-		// }
 
 		param := analytics.EventParam{
 			Name:  "installation-type",
@@ -363,7 +361,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Login: User " + body.Username + ": tenant " + user.TenantName + " does not exist")
+		serv.Warnf("Login: User " + body.Username + ": tenant " + user.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -444,7 +442,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Errorf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
+		serv.Warnf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

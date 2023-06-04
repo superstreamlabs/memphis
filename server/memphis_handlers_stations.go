@@ -642,7 +642,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 func (sh StationsHandler) GetStations(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetStations: Station " + err.Error())
+		serv.Warnf("GetStations: Station " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
