@@ -4136,7 +4136,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	return newTag, nil
 }
 
-func InsertEntityToTag(tagName string, entity string, entity_id int) error {
+func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName string) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -4153,12 +4153,12 @@ func InsertEntityToTag(tagName string, entity string, entity_id int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2`
+	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2 AND tenant_name = $3`
 	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName)
 	if err != nil {
 		return err
 	}
