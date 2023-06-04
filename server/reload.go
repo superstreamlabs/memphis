@@ -1691,7 +1691,6 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		// s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()

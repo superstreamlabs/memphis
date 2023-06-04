@@ -294,8 +294,6 @@ type Server struct {
 	jsAPIRoutedReqs *ipQueue[*jsAPIRoutedReq]
 
 	memphis srvMemphis
-	//TODO: remove
-	// memphisGacc *Account
 }
 
 // For tracking JS nodes.

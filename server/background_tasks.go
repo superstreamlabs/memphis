@@ -33,8 +33,6 @@ const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 
-var LastReadThroughput models.Throughput
-var LastWriteThroughput models.Throughput
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
 var tieredStorageMsgsMap *concurrentMap[map[string][]StoredMsg]
@@ -176,10 +174,6 @@ func getThroughputSubject(serverName string) string {
 }
 
 func (s *Server) InitializeThroughputSampling() error {
-	v, err := serv.Varz(nil)
-	if err != nil {
-		return err
-	}
 	LastReadThroughputMap = map[string]models.Throughput{}
 	LastWriteThroughputMap = map[string]models.Throughput{}
 	for _, acc := range s.Opts().Accounts {
@@ -192,15 +186,6 @@ func (s *Server) InitializeThroughputSampling() error {
 			BytesPerSec: 0,
 		}
 	}
-	LastReadThroughput = models.Throughput{
-		Bytes:       v.OutBytes,
-		BytesPerSec: 0,
-	}
-	LastWriteThroughput = models.Throughput{
-		Bytes:       v.InBytes,
-		BytesPerSec: 0,
-	}
-
 	go s.CalculateSelfThroughput()
 
 	return nil

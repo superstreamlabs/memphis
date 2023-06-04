@@ -83,18 +83,10 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 		return models.Station{}, false, err
 	}
 
-	exist, user, err := db.GetUserByUserId(userId)
-	if err != nil {
-		return models.Station{}, false, err
-	}
-	if !exist {
-		return models.Station{}, false, err
-	}
-
 	schemaName := ""
 	schemaVersionNumber := 0
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, user.TenantName)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}

@@ -39,7 +39,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	if err != nil {
 		message = "CreateIntegration: " + err.Error()
 		serv.Errorf(message)
-		c.AbortWithStatusJSON(500, gin.H{"message": message})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if body.TenantName == "" {
