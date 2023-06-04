@@ -991,11 +991,6 @@ func (s *Server) unsubscribeOnAcc(acc *Account, sub *subscription) error {
 	return c.processUnsub(sub.sid)
 }
 
-func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
-	acc := s.GlobalAccount()
-	s.sendInternalAccountMsg(acc, reply, msg)
-}
-
 func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers []byte) error {
 	hdrs := make(map[string]string)
 	err := json.Unmarshal(headers, &hdrs)
