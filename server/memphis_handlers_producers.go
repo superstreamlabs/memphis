@@ -190,6 +190,7 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
+	serv.Warnf("createProducerDirect")
 	// var cpr createProducerRequestV1
 	var resp createProducerResponse
 
