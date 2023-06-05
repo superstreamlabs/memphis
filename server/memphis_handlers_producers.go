@@ -190,47 +190,47 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
-	var cpr createProducerRequestV1
+	// var cpr createProducerRequestV1
 	var resp createProducerResponse
 
-	if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
-		var cprV0 createProducerRequestV0
-		if err := json.Unmarshal(msg, &cprV0); err != nil {
-			s.Errorf("createProducerDirect: %v", err.Error())
-			respondWithRespErr(s, reply, err, &resp)
-			return
-		}
-		s.createProducerDirectV0(c, reply, cprV0)
-		return
-	}
+	// if err := json.Unmarshal(msg, &cpr); err != nil || cpr.RequestVersion < 1 {
+	// 	var cprV0 createProducerRequestV0
+	// 	if err := json.Unmarshal(msg, &cprV0); err != nil {
+	// 		s.Errorf("createProducerDirect: %v", err.Error())
+	// 		respondWithRespErr(s, reply, err, &resp)
+	// 		return
+	// 	}
+	// 	s.createProducerDirectV0(c, reply, cprV0)
+	// 	return
+	// }
 
-	sn, err := StationNameFromStr(cpr.StationName)
-	if err != nil {
-		s.Warnf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(s, reply, err, &resp)
-		return
-	}
+	// sn, err := StationNameFromStr(cpr.StationName)
+	// if err != nil {
+	// 	s.Warnf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
+	// 	respondWithRespErr(s, reply, err, &resp)
+	// 	return
+	// }
 
-	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
-	if err != nil {
-		respondWithRespErr(s, reply, err, &resp)
-		return
-	}
+	// clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
+	// if err != nil {
+	// 	respondWithRespErr(s, reply, err, &resp)
+	// 	return
+	// }
 
-	resp.SchemaVerseToDls = schemaVerseToDls
-	resp.ClusterSendNotification = clusterSendNotification
-	schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
-	if err == ErrNoSchema {
-		respondWithResp(s, reply, &resp)
-		return
-	}
-	if err != nil {
-		s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
-		respondWithRespErr(s, reply, err, &resp)
-		return
-	}
+	// resp.SchemaVerseToDls = schemaVerseToDls
+	// resp.ClusterSendNotification = clusterSendNotification
+	// schemaUpdate, err := getSchemaUpdateInitFromStation(sn)
+	// if err == ErrNoSchema {
+	// 	respondWithResp(s, reply, &resp)
+	// 	return
+	// }
+	// if err != nil {
+	// 	s.Errorf("createProducerDirect: Producer " + cpr.Name + " at station " + cpr.StationName + ": " + err.Error())
+	// 	respondWithRespErr(s, reply, err, &resp)
+	// 	return
+	// }
 
-	resp.SchemaUpdate = *schemaUpdate
+	// resp.SchemaUpdate = *schemaUpdate
 	respondWithResp(s, reply, &resp)
 }
 
