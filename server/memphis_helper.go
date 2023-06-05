@@ -1221,11 +1221,11 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			accounts = append(accounts, gacc)
 		}
 		if reload {
-			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: serv.gacc})
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
 			addedTenant[conf.GlobalAccountName] = serv.gacc
 		} else {
-			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.CONNECTION_TOKEN, Account: gacc})
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: gacc})
 			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
 			addedTenant[conf.GlobalAccountName] = gacc
 		}
