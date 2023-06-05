@@ -174,7 +174,7 @@ func destroyStationHandler(s *Server) simplifiedMsgHandler {
 
 func createProducerHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
-		go s.createProducerDirect(c, reply, copyBytes(msg))
+		s.createProducerDirect(c, reply, copyBytes(msg))
 	}
 }
 
