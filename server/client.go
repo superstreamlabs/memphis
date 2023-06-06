@@ -2442,8 +2442,7 @@ func (c *client) parseSub(argo []byte, noForward bool) error {
 }
 
 func (c *client) processSub(subject, queue, bsid []byte, cb msgHandler, noForward bool) (*subscription, error) {
-	// return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
-	return &subscription{}, nil
+	return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
 }
 
 func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {
@@ -2512,14 +2511,14 @@ func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForw
 	es := c.subs[sid]
 	if es == nil {
 		c.subs[sid] = sub
-		if acc != nil && acc.sl != nil {
-			err = acc.sl.Insert(sub)
-			if err != nil {
-				delete(c.subs, sid)
-			} else {
-				updateGWs = c.srv.gateway.enabled
-			}
-		}
+		// if acc != nil && acc.sl != nil {
+		// 	err = acc.sl.Insert(sub)
+		// 	if err != nil {
+		// 		delete(c.subs, sid)
+		// 	} else {
+		// 		updateGWs = c.srv.gateway.enabled
+		// 	}
+		// }
 	}
 	// Unlocked from here onward
 	c.mu.Unlock()
