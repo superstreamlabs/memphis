@@ -2442,7 +2442,7 @@ func (c *client) parseSub(argo []byte, noForward bool) error {
 }
 
 func (c *client) processSub(subject, queue, bsid []byte, cb msgHandler, noForward bool) (*subscription, error) {
-	return c.processSubEx(subject, queue, bsid, cb, noForward, true, true)
+	return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
 }
 
 func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {
@@ -2476,25 +2476,25 @@ func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForw
 		// allow = ["foo v1"]         -> can only queue subscribe to 'foo v1', no plain subs allowed.
 		// allow = ["foo", "foo v1"]  -> can subscribe to 'foo' but can only queue subscribe to 'foo v1'
 		//
-		if sub.queue != nil {
-			if !c.canSubscribe(string(sub.subject), string(sub.queue)) || string(sub.queue) == sysGroup {
-				c.mu.Unlock()
-				c.subPermissionViolation(sub)
-				return nil, ErrSubscribePermissionViolation
-			}
-		} else if !c.canSubscribe(string(sub.subject)) {
-			c.mu.Unlock()
-			c.subPermissionViolation(sub)
-			return nil, ErrSubscribePermissionViolation
-		}
+		// if sub.queue != nil {
+		// 	if !c.canSubscribe(string(sub.subject), string(sub.queue)) || string(sub.queue) == sysGroup {
+		// 		c.mu.Unlock()
+		// 		c.subPermissionViolation(sub)
+		// 		return nil, ErrSubscribePermissionViolation
+		// 	}
+		// } else if !c.canSubscribe(string(sub.subject)) {
+		// 	c.mu.Unlock()
+		// 	c.subPermissionViolation(sub)
+		// 	return nil, ErrSubscribePermissionViolation
+		// }
 
-		if opts := srv.getOpts(); opts != nil && opts.MaxSubTokens > 0 {
-			if len(bytes.Split(sub.subject, []byte(tsep))) > int(opts.MaxSubTokens) {
-				c.mu.Unlock()
-				c.maxTokensViolation(sub)
-				return nil, ErrTooManySubTokens
-			}
-		}
+		// if opts := srv.getOpts(); opts != nil && opts.MaxSubTokens > 0 {
+		// 	if len(bytes.Split(sub.subject, []byte(tsep))) > int(opts.MaxSubTokens) {
+		// 		c.mu.Unlock()
+		// 		c.maxTokensViolation(sub)
+		// 		return nil, ErrTooManySubTokens
+		// 	}
+		// }
 	}
 
 	// Check if we have a maximum on the number of subscriptions.
