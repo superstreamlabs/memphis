@@ -138,7 +138,7 @@ func (s *Server) initializeSDKHandlers() {
 	// producers
 	s.queueSubscribe("$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
-		createProducerHandler(s))
+		s.createProducerDirect())
 	s.queueSubscribe("$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
@@ -172,10 +172,13 @@ func destroyStationHandler(s *Server) simplifiedMsgHandler {
 	}
 }
 
-func createProducerHandler(s *Server) simplifiedMsgHandler {
-	return func(c *client, subject, reply string, msg []byte) {
-		s.createProducerDirect(c, reply, copyBytes(msg))
-	}
+func createProducerHandler() {
+	// return func(c *client, subject, reply string, msg []byte) {
+	// go s.createProducerDirect(c, reply, copyBytes(msg))
+	go serv.createProducerDirect()
+	// go s.createProducerDirect()
+
+	// }
 }
 
 func destroyProducerHandler(s *Server) simplifiedMsgHandler {
