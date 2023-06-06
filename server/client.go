@@ -2517,7 +2517,7 @@ func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForw
 				delete(c.subs, sid)
 			} else {
 				updateGWs = c.srv.gateway.enabled
-			}
+			} 
 		}
 	}
 	// Unlocked from here onward
