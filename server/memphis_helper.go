@@ -46,7 +46,7 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
-	dlsUnackedStream   = "$memphis_dls_unacked"
+	dlsUnackedStream       = "$memphis_dls_unacked"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -943,7 +943,7 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHan
 		cb(c, subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
+	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, true)
 
 	return err
 }
