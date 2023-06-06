@@ -139,7 +139,7 @@ func (s *Server) initializeSDKHandlers() {
 	s.queueSubscribe("$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		func(c *client, subject, reply string, msg []byte) {
-			s.createProducerDirect(c, subject, reply, msg)
+			go s.createProducerDirect(c, subject, reply, msg)
 		})
 	s.queueSubscribe("$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
