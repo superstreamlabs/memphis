@@ -1291,7 +1291,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if body.IsDls {
 		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetailsById(body.MessageId, body.DlsType, user.TenantName)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1302,14 +1302,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+		serv.Warnf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1327,7 +1327,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "The message was not found since it had probably already been deleted"})
 			return
 		}
-		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+		serv.Errorf("GetMessageDetails: Message ID: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1336,7 +1336,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if sm.Header != nil {
 		headersJson, err = DecodeHeader(sm.Header)
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1390,7 +1390,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	if station.IsNative {
 		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
 		if err != nil {
-			serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+			serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1398,14 +1398,14 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		for i, cg := range poisonedCgs {
 			cgInfo, err := sh.S.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
-				serv.Errorf("GetMessageDetails: Message ID: " + string(rune(msgId)) + ": " + err.Error())
+				serv.Errorf("GetMessageDetails: Message ID: " + strconv.Itoa(msgId) + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}

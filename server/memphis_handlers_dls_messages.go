@@ -18,6 +18,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -124,7 +125,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return nil
 	}
 
-	idForUrl := string(rune(dlsMsgId))
+	idForUrl := strconv.Itoa(dlsMsgId)
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
