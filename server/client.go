@@ -2442,7 +2442,7 @@ func (c *client) parseSub(argo []byte, noForward bool) error {
 }
 
 func (c *client) processSub(subject, queue, bsid []byte, cb msgHandler, noForward bool) (*subscription, error) {
-	return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
+	return c.processSubEx(subject, queue, bsid, cb, noForward, true, true)
 }
 
 func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {

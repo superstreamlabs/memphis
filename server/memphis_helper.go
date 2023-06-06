@@ -943,7 +943,7 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHan
 		cb(c, subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, true)
+	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
 
 	return err
 }
