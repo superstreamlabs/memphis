@@ -2511,14 +2511,14 @@ func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForw
 	es := c.subs[sid]
 	if es == nil {
 		c.subs[sid] = sub
-		if acc != nil && acc.sl != nil {
-			err = acc.sl.Insert(sub)
-			if err != nil {
-				delete(c.subs, sid)
-			} else {
-				updateGWs = c.srv.gateway.enabled
-			}
-		}
+		// if acc != nil && acc.sl != nil {
+		// 	err = acc.sl.Insert(sub)
+		// 	if err != nil {
+		// 		delete(c.subs, sid)
+		// 	} else {
+		// 		updateGWs = c.srv.gateway.enabled
+		// 	}
+		// }
 	}
 	// Unlocked from here onward
 	c.mu.Unlock()
