@@ -158,7 +158,7 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(body models.CreateInt
 	slackIntegration, err := createSlackIntegration(body.TenantName, keys, properties, body.UIUrl)
 	if err != nil {
 		errMsg := strings.ToLower(err.Error())
-		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel ID") || strings.Contains(errMsg, "already exists") {
+		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") || strings.Contains(errMsg, "already exists") {
 			return map[string]string{}, map[string]bool{}, models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
 			return map[string]string{}, map[string]bool{}, models.Integration{}, 500, err
@@ -174,7 +174,8 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType strin
 	}
 	slackIntegration, err := updateSlackIntegration(body.TenantName, keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
 	if err != nil {
-		if strings.Contains(err.Error(), "Invalid auth token") || strings.Contains(err.Error(), "Invalid channel ID") {
+		errMsg := strings.ToLower(err.Error())
+		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") {
 			return models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
 			return models.Integration{}, 500, err
@@ -239,7 +240,11 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		if !exist {
 			return models.Integration{}, errors.New("no auth token was provided")
 		}
-		authToken = integrationFromDb.Keys["auth_token"]
+		token, err := DecryptAES(integrationFromDb.Keys["auth_token"])
+		if err != nil {
+			return models.Integration{}, err
+		}
+		authToken = token
 	}
 	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
 	if err != nil {
