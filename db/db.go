@@ -385,7 +385,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{tenantsTable, usersTable, alterUsersTable, connectionsTable, alterConnectionsTable, auditLogsTable, alterAuditLogsTable, configurationsTable, alterConfigurationsTable, integrationsTable, alterIntegrationsTable, schemasTable, alterSchemasTable, tagsTable, alterTagsTable, stationsTable, alterStationsTable, consumersTable, alterConsumersTable, schemaVersionsTable, alterSchemaVerseTable, producersTable, alterProducersTable, dlsMessagesTable, alterDlsMsgsTable}
+	tables := []string{tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
