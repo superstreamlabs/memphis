@@ -69,6 +69,7 @@ func handleConnectMessage(client *client) error {
 		isNativeMemphisClient bool
 		username              string
 		connectionId          string
+		err                   error
 	)
 	switch len(splittedMemphisInfo) {
 	case 2:
@@ -88,7 +89,12 @@ func handleConnectMessage(client *client) error {
 				client.Warnf("handleConnectMessage: missing username or token")
 				return errors.New("missing username or token")
 			}
-			username = strings.ToLower(splittedToken[0])
+			username, _, err = getUserAndTenantIdFromString(strings.ToLower(splittedToken[0]))
+			if err != nil {
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
 		}
 	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
