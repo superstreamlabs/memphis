@@ -2446,8 +2446,122 @@ func (c *client) processSub(subject, queue, bsid []byte, cb msgHandler, noForwar
 }
 
 func (c *client) processSubTest(subject, queue, bsid []byte, cb msgHandler, noForward bool) (*subscription, error) {
-	// return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
-	return &subscription{}, nil
+	return c.processSubExTest(subject, queue, bsid, cb, noForward, false, false)
+}
+
+func (c *client) processSubExTest(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {
+	// Create the subscription
+	sub := &subscription{client: c, subject: subject, queue: queue, sid: bsid, icb: cb, si: si, rsi: rsi}
+
+	c.mu.Lock()
+
+	// Indicate activity.
+	c.in.subs++
+
+	// Grab connection type, account and server info.
+	kind := c.kind
+	acc := c.acc
+	srv := c.srv
+
+	sid := string(sub.sid)
+
+	// This check does not apply to SYSTEM or JETSTREAM or ACCOUNT clients (because they don't have a `nc`...)
+	if c.isClosed() && (kind != SYSTEM && kind != JETSTREAM && kind != ACCOUNT) {
+		c.mu.Unlock()
+		return nil, ErrConnectionClosed
+	}
+
+	// Check permissions if applicable.
+	if kind == CLIENT {
+		// First do a pass whether queue subscription is valid. This does not necessarily
+		// mean that it will not be able to plain subscribe.
+		//
+		// allow = ["foo"]            -> can subscribe or queue subscribe to foo using any queue
+		// allow = ["foo v1"]         -> can only queue subscribe to 'foo v1', no plain subs allowed.
+		// allow = ["foo", "foo v1"]  -> can subscribe to 'foo' but can only queue subscribe to 'foo v1'
+		//
+		if sub.queue != nil {
+			if !c.canSubscribe(string(sub.subject), string(sub.queue)) || string(sub.queue) == sysGroup {
+				c.mu.Unlock()
+				c.subPermissionViolation(sub)
+				return nil, ErrSubscribePermissionViolation
+			}
+		} else if !c.canSubscribe(string(sub.subject)) {
+			c.mu.Unlock()
+			c.subPermissionViolation(sub)
+			return nil, ErrSubscribePermissionViolation
+		}
+
+		if opts := srv.getOpts(); opts != nil && opts.MaxSubTokens > 0 {
+			if len(bytes.Split(sub.subject, []byte(tsep))) > int(opts.MaxSubTokens) {
+				c.mu.Unlock()
+				c.maxTokensViolation(sub)
+				return nil, ErrTooManySubTokens
+			}
+		}
+	}
+
+	// Check if we have a maximum on the number of subscriptions.
+	if c.subsAtLimit() {
+		c.mu.Unlock()
+		c.maxSubsExceeded()
+		return nil, ErrTooManySubs
+	}
+
+	var updateGWs bool
+	var err error
+
+	// Subscribe here.
+	es := c.subs[sid]
+	if es == nil {
+		c.subs[sid] = sub
+		// if acc != nil && acc.sl != nil {
+		// 	err = acc.sl.Insert(sub)
+		// 	if err != nil {
+		// 		delete(c.subs, sid)
+		// 	} else {
+		// 		updateGWs = c.srv.gateway.enabled
+		// 	}
+		// }
+	}
+	// Unlocked from here onward
+	c.mu.Unlock()
+
+	if err != nil {
+		c.sendErr("Invalid Subject")
+		return nil, ErrMalformedSubject
+	} else if c.opts.Verbose && kind != SYSTEM {
+		c.sendOK()
+	}
+
+	// If it was already registered, return it.
+	if es != nil {
+		return es, nil
+	}
+
+	// No account just return.
+	if acc == nil {
+		return sub, nil
+	}
+
+	if err := c.addShadowSubscriptions(acc, sub); err != nil {
+		c.Errorf(err.Error())
+	}
+
+	if noForward {
+		return sub, nil
+	}
+
+	// If we are routing and this is a local sub, add to the route map for the associated account.
+	if kind == CLIENT || kind == SYSTEM || kind == JETSTREAM || kind == ACCOUNT {
+		srv.updateRouteSubscriptionMap(acc, sub, 1)
+		if updateGWs {
+			srv.gatewayUpdateSubInterest(acc.Name, sub, 1)
+		}
+	}
+	// Now check on leafnode updates.
+	srv.updateLeafNodes(acc, sub, 1)
+	return sub, nil
 }
 
 func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {
