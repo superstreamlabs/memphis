@@ -436,6 +436,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		END IF;
 	END $$;`
 
+	// we remove fk_producer_id from dls_msgs table because dls msgs with nats compatibility
+	// TODO: add fk_producer_id and solve dls messages nats compatibility
+	// CONSTRAINT fk_producer_id
+	// FOREIGN KEY(producer_id)
+	// REFERENCES producers(id),
+
 	dlsMessagesTable := `
 	CREATE TABLE IF NOT EXISTS dls_messages(
 		id SERIAL NOT NULL,    
@@ -452,9 +458,6 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
-		CONSTRAINT fk_producer_id
-			FOREIGN KEY(producer_id)
-			REFERENCES producers(id),
 		CONSTRAINT fk_tenant_name_dls_msgs
 			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(name)
@@ -5079,8 +5082,11 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	ALTER TABLE IF EXISTS consumers ADD CONSTRAINT fk_tenant_name_consumers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS stations ADD CONSTRAINT fk_tenant_name_stations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS schema_versions ADD CONSTRAINT fk_tenant_name_schemaverse FOREIGN KEY(tenant_name) REFERENCES tenants(name);
-	ALTER TABLE IF EXISTS producers ADD CONSTRAINT fk_tenant_name_producers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
-	ALTER TABLE IF EXISTS dls_messages ADD CONSTRAINT fk_tenant_name_dls_msgs FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
+	ALTER TABLE IF EXISTS producers ADD CONSTRAINT fk_tenant_name_producers FOREIGN KEY(tenant_name) REFERENCES tenants(name);`
+	// we remove alter from dls_msgs table because dls msgs with nats compatability
+	// TODO: add this alter and solve dls messages nats compatability
+	// ALTER TABLE IF EXISTS dls_messages ADD CONSTRAINT fk_tenant_name_dls_msgs FOREIGN KEY(tenant_name) REFERENCES tenants(name);
+
 	_, err = conn.Conn().Exec(ctx, queryAlterUsersTable)
 	if err != nil {
 		var pgErr *pgconn.PgError
