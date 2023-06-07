@@ -1052,7 +1052,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 	// for NATS compatibility
 	username, tenantId, err := getUserAndTenantIdFromString(dsr.Username)
 	if err != nil {
-		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+		serv.Warnf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
@@ -1060,13 +1060,13 @@ func (s *Server) removeStationDirectIntern(c *client,
 	if tenantId != -1 {
 		exist, t, err := db.GetTenantById(tenantId)
 		if err != nil {
-			serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+			serv.Warnf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 			jsApiResp.Error = NewJSStreamDeleteError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
 		if !exist {
-			msg := "removeStationDirect: Station " + dsr.StationName + ": Tenant with id " + strconv.Itoa(tenantId) + " does not exist"
+			msg := "removeStationDirectIntern: Station " + dsr.StationName + ": Tenant with id " + strconv.Itoa(tenantId) + " does not exist"
 			serv.Warnf(msg)
 			err = errors.New(msg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
@@ -1079,7 +1079,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
-		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+		serv.Warnf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
@@ -1087,14 +1087,14 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), dsr.TenantName)
 	if err != nil {
-		serv.Errorf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		jsApiResp.Error = NewJSStreamDeleteError(err)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
 	if !exist {
 		errMsg := "Station " + station.Name + " does not exist"
-		serv.Warnf("removeStationDirect: " + errMsg)
+		serv.Warnf("removeStationDirectIntern: " + errMsg)
 		err := errors.New(errMsg)
 		jsApiResp.Error = NewJSStreamDeleteError(err)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
@@ -1103,20 +1103,20 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	err = removeStationResources(s, station, shouldDeleteStream)
 	if err != nil {
-		serv.Errorf("RemoveStation: Station " + dsr.StationName + ": " + err.Error())
+		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
 		return
 	}
 
 	err = db.DeleteStation(stationName.Ext(), station.TenantName)
 	if err != nil {
-		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
+		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
 		return
 	}
 	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
 	if err != nil {
-		serv.Errorf("RemoveStation error: Station " + dsr.StationName + ": " + err.Error())
+		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
 		return
 	}
@@ -1135,7 +1135,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Warnf("removeStationDirect: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
+			serv.Warnf("removeStationDirectIntern: Station " + stationName.Ext() + " - create audit logs error: " + err.Error())
 		}
 	}
 

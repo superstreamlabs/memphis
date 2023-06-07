@@ -137,7 +137,11 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 	select {
 	case resp := <-respCh:
 		if resp != nil && resp.Success {
-			dsr := destroyStationRequest{StationName: streamName}
+			username := c.opts.Username
+			if username == "" {
+				username = strings.Split(c.getRawAuthUser(), "::")[0]
+			}
+			dsr := destroyStationRequest{StationName: streamName, Username: username}
 			s.removeStationDirectIntern(c, reply, &dsr, false)
 		}
 	case <-timeout.C:
