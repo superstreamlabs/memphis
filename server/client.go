@@ -2544,23 +2544,23 @@ func (c *client) processSubExTest(subject, queue, bsid []byte, cb msgHandler, no
 		return sub, nil
 	}
 
-	// if err := c.addShadowSubscriptions(acc, sub); err != nil {
-	// 	c.Errorf(err.Error())
-	// }
+	if err := c.addShadowSubscriptions(acc, sub); err != nil {
+		c.Errorf(err.Error())
+	}
 
 	if noForward {
 		return sub, nil
 	}
 
 	// If we are routing and this is a local sub, add to the route map for the associated account.
-	if kind == CLIENT || kind == SYSTEM || kind == JETSTREAM || kind == ACCOUNT {
-		srv.updateRouteSubscriptionMap(acc, sub, 1)
-		if updateGWs {
-			srv.gatewayUpdateSubInterest(acc.Name, sub, 1)
-		}
+	// if kind == CLIENT || kind == SYSTEM || kind == JETSTREAM || kind == ACCOUNT {
+	// 	srv.updateRouteSubscriptionMap(acc, sub, 1)
+	if updateGWs {
+		// 		srv.gatewayUpdateSubInterest(acc.Name, sub, 1)
 	}
+	// }
 	// Now check on leafnode updates.
-	srv.updateLeafNodes(acc, sub, 1)
+	// srv.updateLeafNodes(acc, sub, 1)
 	return sub, nil
 }
 
