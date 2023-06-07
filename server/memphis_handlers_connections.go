@@ -17,6 +17,7 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
+	"os"
 
 	"errors"
 	"strings"
@@ -31,6 +32,7 @@ var consumersHandler ConsumersHandler
 
 const (
 	connectItemSep                      = "::"
+	userNameItemSep                     = "$"
 	connectConfigUpdatesSubjectTemplate = "$memphis_configurations_updates.init.%s"
 )
 
@@ -76,12 +78,18 @@ func handleConnectMessage(client *client) error {
 	case 1:
 		// NATS SDK, means we extract username from the token field
 		isNativeMemphisClient = false
-		splittedToken := strings.Split(client.opts.Token, connectItemSep)
-		if len(splittedToken) != 2 {
-			client.Warnf("handleConnectMessage: missing username or token")
-			return errors.New("missing username or token")
+		var splittedToken []string
+		if os.Getenv("USER_PASS_BASED_AUTH") == "true" {
+			splittedToken = strings.Split(client.opts.Username, userNameItemSep)
+			username = strings.ToLower(splittedToken[0])
+		} else {
+			splittedToken := strings.Split(client.opts.Token, connectItemSep)
+			if len(splittedToken) != 2 {
+				client.Warnf("handleConnectMessage: missing username or token")
+				return errors.New("missing username or token")
+			}
+			username = strings.ToLower(splittedToken[0])
 		}
-		username = strings.ToLower(splittedToken[0])
 	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")

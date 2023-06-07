@@ -2133,7 +2133,7 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 	matches := re.FindStringSubmatch(username)
 	if len(matches) == 3 {
 		beforeSuffix := matches[1]
-		numberAfterSuffix := strings.TrimLeft(matches[2], "$")
+		numberAfterSuffix := strings.TrimLeft(matches[2], userNameItemSep)
 		tenantId, err := strconv.Atoi(numberAfterSuffix)
 		if err != nil {
 			return "", 0, err
