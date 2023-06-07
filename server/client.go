@@ -2515,14 +2515,14 @@ func (c *client) processSubExTest(subject, queue, bsid []byte, cb msgHandler, no
 	es := c.subs[sid]
 	if es == nil {
 		c.subs[sid] = sub
-		// if acc != nil && acc.sl != nil {
-		// 	err = acc.sl.Insert(sub)
-		// 	if err != nil {
-		// 		delete(c.subs, sid)
-		// 	} else {
-		// 		updateGWs = c.srv.gateway.enabled
-		// 	}
-		// }
+		if acc != nil && acc.sl != nil {
+			err = acc.sl.Insert(sub)
+			if err != nil {
+				delete(c.subs, sid)
+			} else {
+				updateGWs = c.srv.gateway.enabled
+			}
+		}
 	}
 	// Unlocked from here onward
 	c.mu.Unlock()
@@ -2544,9 +2544,9 @@ func (c *client) processSubExTest(subject, queue, bsid []byte, cb msgHandler, no
 		return sub, nil
 	}
 
-	if err := c.addShadowSubscriptions(acc, sub); err != nil {
-		c.Errorf(err.Error())
-	}
+	// if err := c.addShadowSubscriptions(acc, sub); err != nil {
+	// 	c.Errorf(err.Error())
+	// }
 
 	if noForward {
 		return sub, nil
