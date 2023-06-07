@@ -20,6 +20,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -182,6 +183,33 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
+	// for NATS compatibility
+	username, tenantId, err := getUserAndTenantIdFromString(csr.Username)
+	if err != nil {
+		serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+		jsApiResp.Error = NewJSStreamCreateError(err)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+	if tenantId != -1 {
+		exist, t, err := db.GetTenantById(tenantId)
+		if err != nil {
+			serv.Warnf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+		if !exist {
+			msg := "createStationDirect: Station " + csr.StationName + ": Tenant with id " + strconv.Itoa(tenantId) + " does not exist"
+			serv.Warnf(msg)
+			err = errors.New(msg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+		csr.TenantName = t.Name
+	}
+
 	exist, _, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("createStationDirect: Station " + csr.StationName + ": " + err.Error())
@@ -284,11 +312,11 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-
-	username := c.memphisInfo.username
-	if username == "" {
-		username = csr.Username
-	}
+	// TODO: remove if not needed
+	// username := c.memphisInfo.username
+	// if username == "" {
+	// 	username = csr.Username
+	// }
 
 	if shouldCreateStream {
 		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
@@ -1019,8 +1047,36 @@ func (s *Server) removeStationDirectIntern(c *client,
 	shouldDeleteStream bool) {
 	isNative := shouldDeleteStream
 	jsApiResp := JSApiStreamDeleteResponse{ApiResponse: ApiResponse{Type: JSApiStreamDeleteResponseType}}
-
 	memphisGlobalAcc := s.GlobalAccount()
+
+	// for NATS compatibility
+	username, tenantId, err := getUserAndTenantIdFromString(dsr.Username)
+	if err != nil {
+		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+		jsApiResp.Error = NewJSStreamDeleteError(err)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+		return
+	}
+	if tenantId != -1 {
+		exist, t, err := db.GetTenantById(tenantId)
+		if err != nil {
+			serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
+			jsApiResp.Error = NewJSStreamDeleteError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+		if !exist {
+			msg := "removeStationDirect: Station " + dsr.StationName + ": Tenant with id " + strconv.Itoa(tenantId) + " does not exist"
+			serv.Warnf(msg)
+			err = errors.New(msg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+		dsr.TenantName = t.Name
+		dsr.Username = username
+	}
+
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("removeStationDirect: Station " + dsr.StationName + ": " + err.Error())
@@ -2070,4 +2126,20 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func getUserAndTenantIdFromString(username string) (string, int, error) {
+	re := regexp.MustCompile(`^(.*)(\$\d+)$`)
+	matches := re.FindStringSubmatch(username)
+	if len(matches) == 3 {
+		beforeSuffix := matches[1]
+		numberAfterSuffix := strings.TrimLeft(matches[2], "$")
+		tenantId, err := strconv.Atoi(numberAfterSuffix)
+		if err != nil {
+			return "", 0, err
+		}
+		return beforeSuffix, tenantId, nil
+	}
+	return username, -1, nil
+
 }
