@@ -2445,6 +2445,11 @@ func (c *client) processSub(subject, queue, bsid []byte, cb msgHandler, noForwar
 	return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
 }
 
+func (c *client) processSubTest(subject, queue, bsid []byte, cb msgHandler, noForward bool) (*subscription, error) {
+	// return c.processSubEx(subject, queue, bsid, cb, noForward, false, false)
+	return &subscription{}, nil
+}
+
 func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForward, si, rsi bool) (*subscription, error) {
 	// Create the subscription
 	sub := &subscription{client: c, subject: subject, queue: queue, sid: bsid, icb: cb, si: si, rsi: rsi}
@@ -2517,7 +2522,7 @@ func (c *client) processSubEx(subject, queue, bsid []byte, cb msgHandler, noForw
 				delete(c.subs, sid)
 			} else {
 				updateGWs = c.srv.gateway.enabled
-			} 
+			}
 		}
 	}
 	// Unlocked from here onward

@@ -136,7 +136,7 @@ func (s *Server) initializeSDKHandlers() {
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe("$memphis_producer_creations",
+	s.queueSubscribeTest("$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		func(c *client, subject, reply string, msg []byte) {
 			go s.createProducerDirect(c, subject, reply, msg)

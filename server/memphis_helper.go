@@ -948,6 +948,24 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHan
 	return err
 }
 
+func (s *Server) queueSubscribeTest(subj, queueGroupName string, cb simplifiedMsgHandler) error {
+	acc := s.GlobalAccount()
+	c := acc.ic
+
+	acc.mu.Lock()
+	acc.isid++
+	sid := strconv.FormatUint(acc.isid, 10)
+	acc.mu.Unlock()
+
+	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
+		cb(c, subject, reply, rmsg)
+	}
+
+	_, err := c.processSubTest([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
+
+	return err
+}
+
 func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
 	acc := s.GlobalAccount()
 	c := acc.ic
