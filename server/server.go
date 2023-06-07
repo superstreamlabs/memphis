@@ -426,8 +426,10 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
 	// ** added by Memphis
-	gacc.srv = s
-	s.gacc = gacc
+	if os.Getenv("USER_PASS_BASED_AUTH") == "true" {
+		gacc.srv = s
+		s.gacc = gacc
+	}
 	// added by Memphis **
 
 	// Fill up the maximum in flight syncRequests for this server.
