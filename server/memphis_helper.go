@@ -1079,7 +1079,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 		}
 
 		// Process key fetching original case.
-		i := bytes.IndexByte([]byte(kv), ':')
+		i := strings.IndexByte(kv, ':')
 		if i < 0 {
 			return nil, ErrBadHeader
 		}
