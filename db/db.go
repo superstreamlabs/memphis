@@ -5259,3 +5259,58 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	}
 	return true, tenants[0], nil
 }
+
+func CreateTenant(name string) (models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tenants (name) VALUES($1)`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+
+	var tenantId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&tenantId)
+		if err != nil {
+			return models.Tenant{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tenant{}, errors.New("Tenant " + name + " already exists")
+				} else {
+					return models.Tenant{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tenant{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tenant{}, err
+		}
+
+	}
+
+	newTenant := models.Tenant{
+		Name: name,
+	}
+
+	return newTenant, nil
+}
