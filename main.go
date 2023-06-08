@@ -108,7 +108,7 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
-	go s.CreateInternalJetStreamResources()
+	// go s.CreateInternalJetStreamResources()
 
 	go http_server.InitializeHttpServer(s)
 
