@@ -214,7 +214,7 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	created, err := cloud.CreateRootUser()
+	created, err := cloud.CreateSystemRootUser()
 	if err != nil {
 		return err
 	}

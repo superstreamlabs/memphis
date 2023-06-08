@@ -33,7 +33,7 @@ func GetStationReplicas(replicas int) int {
 	return replicas
 }
 
-func CreateRootUser() (bool, error) {
+func CreateSystemRootUser() (bool, error) {
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
