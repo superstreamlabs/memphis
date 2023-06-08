@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"memphis/analytics"
+	"memphis/cloud"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -213,19 +214,12 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	password := configuration.ROOT_PASSWORD
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return err
-	}
-	hashedPwdString := string(hashedPwd)
-
-	_, err = db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	created, err := cloud.CreateRootUser()
 	if err != nil {
 		return err
 	}
 
-	if configuration.ANALYTICS == "true" {
+	if configuration.ANALYTICS == "true" && created {
 		var deviceIdValue string
 		installationType := "stand-alone-k8s"
 		if serv.JetStreamIsClustered() {
@@ -233,14 +227,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 			k8sClusterTimestamp, err := getK8sClusterTimestamp()
 			if err == nil {
 				deviceIdValue = k8sClusterTimestamp
-			} else {
-				serv.Errorf("Generate host unique id failed: %s", err.Error())
-			}
-		} else if configuration.DOCKER_ENV == "true" {
-			installationType = "stand-alone-docker"
-			dockerMacAddress, err := getDockerMacAddress()
-			if err == nil {
-				deviceIdValue = dockerMacAddress
 			} else {
 				serv.Errorf("Generate host unique id failed: %s", err.Error())
 			}
