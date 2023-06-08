@@ -2959,6 +2959,9 @@ func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64) {
 		StreamSeq:  sseq,
 		Deliveries: dc,
 		Domain:     o.srv.getOpts().JetStreamDomain,
+		// ** added by memphis
+		Account: o.acc.GetName(),
+		// added by memphis **
 	}
 
 	j, err := json.Marshal(e)

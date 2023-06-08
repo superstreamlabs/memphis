@@ -41,7 +41,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser()
+	exist, _, err := db.GetRootUser(globalAccountName)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -51,7 +51,7 @@ func isRootUserExist() (bool, error) {
 }
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser()
+	exist, user, err := db.GetRootUser(globalAccountName)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -90,6 +90,7 @@ func validateUserType(userType string) error {
 }
 
 func updateDeletedUserResources(user models.User) error {
+	tenantName := user.TenantName
 	if user.UserType == "application" {
 		err := RemoveUser(user.Username)
 		if err != nil {
@@ -97,12 +98,12 @@ func updateDeletedUserResources(user models.User) error {
 		}
 	}
 
-	err := db.UpdateStationsOfDeletedUser(user.ID)
+	err := db.UpdateStationsOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateConncetionsOfDeletedUser(user.ID)
+	err = db.UpdateConnectionsOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
 	}
@@ -117,12 +118,12 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
-	err = db.UpdateSchemasOfDeletedUser(user.ID)
+	err = db.UpdateSchemasOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID)
+	err = db.UpdateSchemaVersionsOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
 	}
@@ -170,6 +171,7 @@ func CreateTokens[U userToTokens](user U) (string, string, error) {
 		atClaims["already_logged_in"] = u.AlreadyLoggedIn
 		atClaims["avatar_id"] = u.AvatarId
 		atClaims["exp"] = time.Now().Add(time.Minute * time.Duration(JWT_EXPIRES_IN_MINUTES)).Unix()
+		atClaims["tenant_name"] = u.TenantName
 		at = jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	}
 	token, err := at.SignedString([]byte(configuration.JWT_SECRET))
@@ -211,11 +213,6 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	exist, err := isRootUserExist()
-	if err != nil {
-		return err
-	}
-
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
@@ -223,13 +220,13 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	if !exist {
-		_, err = db.CreateUser(ROOT_USERNAME, "root", hashedPwdString, "", false, 1)
-		if err != nil {
-			return err
-		}
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	if err != nil {
+		return err
+	}
 
-		if configuration.ANALYTICS == "true" {
+	if created && configuration.ANALYTICS == "true" {
+		time.AfterFunc(5*time.Second, func() {
 			var deviceIdValue string
 			installationType := "stand-alone-k8s"
 			if serv.JetStreamIsClustered() {
@@ -261,12 +258,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			if configuration.EXPORTER {
 				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
 			}
-		}
-	} else {
-		err = db.ChangeUserPassword(ROOT_USERNAME, hashedPwdString)
-		if err != nil {
-			return err
-		}
+		})
 	}
 
 	return nil
@@ -303,7 +295,7 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 		return
 	}
 	hashedPwdString := string(hashedPwd)
-	err = db.ChangeUserPassword(username, hashedPwdString)
+	err = db.ChangeUserPassword(username, hashedPwdString, user.TenantName)
 	if err != nil {
 		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -318,6 +310,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if !ok {
 		return
 	}
+
 	username := strings.ToLower(body.Username)
 	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
@@ -355,6 +348,17 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
 	}
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Login: User " + body.Username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	domain := ""
 	secure := false
@@ -382,6 +386,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
 	})
 }
 
@@ -390,23 +395,24 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("refreshToken: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics")
+	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("refreshToken: " + err.Error())
+		serv.Warnf("refreshToken: user " + username + " does not exist")
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
@@ -421,6 +427,18 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
+	}
+
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
 	domain := ""
@@ -450,6 +468,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
 	})
 }
 
@@ -507,7 +526,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
@@ -582,10 +601,17 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	username := strings.ToLower(body.Username)
-	exist, _, err := db.GetUserByUsername(username)
+	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("AddUser: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	username := strings.ToLower(body.Username)
+	exist, _, err := db.GetUserByUsername(username, user.TenantName)
+	if err != nil {
+		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -599,14 +625,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf("CreateUser: " + userTypeError.Error())
+		serv.Warnf("AddUser: " + userTypeError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf("CreateUser: " + usernameError.Error())
+		serv.Warnf("AddUser: " + usernameError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
@@ -615,14 +641,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("CreateUser: Password was not provided for user " + username)
+			serv.Warnf("AddUser: Password was not provided for user " + username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -638,7 +664,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userType == "application" {
 		if configuration.USER_PASS_BASED_AUTH {
 			if body.Password == "" {
-				serv.Warnf("CreateUser: Password was not provided for user " + username)
+				serv.Warnf("AddUser: Password was not provided for user " + username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
@@ -656,16 +682,15 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId)
+	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, user.TenantName)
 	if err != nil {
-		serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-add-user")
 	}
 
@@ -673,7 +698,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
-			serv.Errorf("CreateUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -692,7 +717,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
-	users, err := db.GetAllUsers()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllUsers: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	users, err := db.GetAllUsers(user.TenantName)
 	if err != nil {
 		serv.Errorf("GetAllUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -713,7 +745,13 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
-	users, err := db.GetAllUsersByType("application")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetApplicationUsers: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	users, err := db.GetAllUsersByTypeAndTenantName([]string{"application"}, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -739,6 +777,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 	if user.Username == username {
 		serv.Warnf("RemoveUser: You can not remove your own user")
@@ -746,7 +785,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	exist, userToRemove, err := db.GetUserByUsername(username)
+	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -770,7 +809,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(username)
+	err = db.DeleteUser(username, userToRemove.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -801,6 +840,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("RemoveMyUser: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	if user.UserType == "root" {
@@ -815,7 +855,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(user.Username)
+	err = db.DeleteUser(user.Username, user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -847,9 +887,10 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("EditAvatar: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
-	err = db.EditAvatar(user.Username, avatarId)
+	err = db.EditAvatar(user.Username, avatarId, user.TenantName)
 	if err != nil {
 		serv.Errorf("EditAvatar: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -873,6 +914,13 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("EditCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
 	fileName := "company_logo" + filepath.Ext(file.Filename)
 	if err := c.SaveUploadedFile(&file, fileName); err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
@@ -889,7 +937,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	_ = os.Remove(fileName)
 
-	err = db.InsertImage("company_logo", base64Encoding)
+	err = db.InsertImage("company_logo", base64Encoding, user.TenantName)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -900,7 +948,13 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
-	err := db.DeleteImage("company_logo")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	err = db.DeleteImage("company_logo", user.TenantName)
 	if err != nil {
 		serv.Errorf("RemoveCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -911,7 +965,13 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
-	exist, image, err := db.GetImage("company_logo")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetCompanyLogo: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, image, err := db.GetImage("company_logo", user.TenantName)
 	if err != nil {
 		serv.Errorf("GetCompanyLogo: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -937,7 +997,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag)
+	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -967,10 +1027,11 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("SkipGetStarted: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
 	}
 
 	username := strings.ToLower(user.Username)
-	err = db.UpdateSkipGetStarted(username)
+	err = db.UpdateSkipGetStarted(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -985,8 +1046,8 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
-	userList, err := db.GetAllActiveUsers()
+func (umh UserMgmtHandler) GetActiveUsers(tenantName string) ([]string, error) {
+	userList, err := db.GetAllActiveUsers(tenantName)
 	if err != nil {
 		return []string{}, err
 	}
@@ -1001,8 +1062,8 @@ func (umh UserMgmtHandler) GetActiveUsers() ([]string, error) {
 	return users, nil
 }
 
-func (umh UserMgmtHandler) GetActiveTags() ([]models.CreateTag, error) {
-	tags, err := db.GetAllUsedTags()
+func (umh UserMgmtHandler) GetActiveTags(tenantName string) ([]models.CreateTag, error) {
+	tags, err := db.GetAllUsedTags(tenantName)
 	if err != nil {
 		return []models.CreateTag{}, err
 	}
@@ -1025,16 +1086,23 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	}
 
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetFilterDetails: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	tenantName := user.TenantName
 	switch body.Route {
 	case "stations":
-		users, err := umh.GetActiveUsers()
+		users, err := umh.GetActiveUsers(tenantName)
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags()
+		tags, err := umh.GetActiveTags(tenantName)
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1045,14 +1113,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 		return
 	case "schemaverse":
-		users, err := umh.GetActiveUsers()
+		users, err := umh.GetActiveUsers(tenantName)
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags()
+		tags, err := umh.GetActiveTags(tenantName)
 		if err != nil {
 			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

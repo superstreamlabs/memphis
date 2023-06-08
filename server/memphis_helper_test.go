@@ -80,7 +80,7 @@ func TestMemphisGetMsgs(t *testing.T) {
 			}
 
 			msgsToFetchNum := 1
-			memphisMsgs, err := s.memphisGetMsgs("", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
+			memphisMsgs, err := s.memphisGetMsgs(globalAccountName, "", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
 			if err != nil {
 				t.Fatalf("Unexpected error getting messages: %v", err)
 			}
@@ -89,7 +89,7 @@ func TestMemphisGetMsgs(t *testing.T) {
 			}
 
 			msgsToFetchNum = 2
-			memphisMsgs, err = s.memphisGetMsgs("", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
+			memphisMsgs, err = s.memphisGetMsgs(globalAccountName, "", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
 			if err != nil {
 				t.Fatalf("Unexpected error getting messages: %v", err)
 			}
@@ -98,7 +98,7 @@ func TestMemphisGetMsgs(t *testing.T) {
 			}
 
 			msgsToFetchNum = 3
-			_, err = s.memphisGetMsgs("", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
+			_, err = s.memphisGetMsgs(globalAccountName, "", mset.name(), 1, msgsToFetchNum, 1*time.Second, true)
 			if err != ErrStoreEOF {
 				t.Fatalf("Unexpected error getting messages: %v", err)
 			}

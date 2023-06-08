@@ -18,6 +18,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -29,16 +30,21 @@ const (
 type PoisonMessagesHandler struct{ S *Server }
 
 func (s *Server) handleNewUnackedMsg(msg []byte) error {
-	var message map[string]interface{}
+	var message JSConsumerDeliveryExceededAdvisory
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
 		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
 		return err
 	}
 
-	streamName := message["stream"].(string)
+	streamName := message.Stream
+	accountName := message.Account
+	// backward compatibility
+	if accountName == "" {
+		accountName = DEFAULT_GLOBAL_ACCOUNT
+	}
 	stationName := StationNameFromStreamName(streamName)
-	_, station, err := db.GetStationByName(stationName.Ext())
+	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
 		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
 		return err
@@ -47,11 +53,10 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return nil
 	}
 
-	cgName := message["consumer"].(string)
+	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
-	messageSeq := message["stream_seq"].(float64)
-
-	poisonMessageContent, err := s.memphisGetMessage(stationName.Intern(), uint64(messageSeq))
+	messageSeq := message.StreamSeq
+	poisonMessageContent, err := s.memphisGetMessage(accountName, stationName.Intern(), uint64(messageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil
@@ -111,7 +116,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
 		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
 		return err
@@ -120,9 +125,9 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return nil
 	}
 
-	idForUrl := string(rune(dlsMsgId))
+	idForUrl := strconv.Itoa(dlsMsgId)
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
-	err = SendNotification(PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
+	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
 		serv.Warnf("handleNewUnackedMsg: Error while sending a poison message notification: " + err.Error())
 		return nil
@@ -180,7 +185,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	return poisonMessages, schemaMessages, totalDlsAmount, nil
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType string) (models.DlsMessageResponse, error) {
+func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType string, tenantName string) (models.DlsMessageResponse, error) {
 	exist, dlsMessage, err := db.GetDlsMessageById(messageId)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
@@ -188,8 +193,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	if !exist {
 		return models.DlsMessageResponse{}, errors.New("dls message does not exists")
 	}
-
-	exist, station, err := db.GetStationById(dlsMessage.StationId)
+	exist, station, err := db.GetStationById(dlsMessage.StationId, dlsMessage.TenantName)
 	if err != nil {
 		return models.DlsMessageResponse{}, err
 	}
@@ -253,7 +257,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		for _, v := range pCg {
-			cgInfo, err := serv.GetCgInfo(sn, v)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
 				return models.DlsMessageResponse{}, err
 			}
@@ -292,7 +296,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 
 	schemaType := ""
 	if station.SchemaName != "" {
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}
@@ -340,7 +344,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}
-		cgInfo, err := serv.GetCgInfo(stationName, cg)
+		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}

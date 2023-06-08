@@ -26,6 +26,7 @@ type Producer struct {
 	IsActive          bool      `json:"is_active"`
 	CreatedAt         time.Time `json:"created_at"`
 	IsDeleted         bool      `json:"is_deleted"`
+	TenantName        string    `json:"tenant_name"`
 }
 
 type ExtendedProducer struct {
@@ -40,6 +41,11 @@ type ExtendedProducer struct {
 	IsActive          bool      `json:"is_active"`
 	IsDeleted         bool      `json:"is_deleted"`
 	ClientAddress     string    `json:"client_address"`
+}
+
+type LightProducer struct {
+	Name              string    `json:"name"`
+	StationName       string    `json:"station_name"`
 }
 
 type GetAllProducersByStationSchema struct {

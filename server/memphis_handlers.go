@@ -51,7 +51,7 @@ type srvMemphis struct {
 }
 
 type memphisWS struct {
-	subscriptions *concurrentMap[memphisWSReqFiller]
+	subscriptions *concurrentMap[memphisWSReqTenantsToFiller]
 	quitCh        chan struct{}
 }
 
@@ -61,6 +61,7 @@ func (s *Server) InitializeMemphisHandlers() {
 
 	s.initializeSDKHandlers()
 	s.initWS()
+
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
@@ -69,19 +70,23 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	if len(userModel.Username) == 0 {
 		return userModel, errors.New("username is empty")
 	}
+	if userModel.TenantName == strings.ToLower(DEFAULT_GLOBAL_ACCOUNT) {
+		userModel.TenantName = DEFAULT_GLOBAL_ACCOUNT
+	}
 	return userModel, nil
 }
 
-func CreateDefaultStation(s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
+func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
-	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false)
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, 1, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}
 
 	schemaName := ""
 	schemaVersionNumber := 0
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -93,7 +98,7 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics")
+	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
 	if err != nil {
 		return false, err
 	}

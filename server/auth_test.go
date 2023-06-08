@@ -117,13 +117,13 @@ func TestUserUnknownAllowedConnectionType(t *testing.T) {
 		Password:               "pwd",
 		AllowedConnectionTypes: testCreateAllowedConnectionTypes([]string{jwt.ConnectionTypeStandard, "someNewType"}),
 	}}
-	_, err := NewServer(o)
+	_, _, err := NewServer(o)
 	if err == nil || !strings.Contains(err.Error(), "connection type") {
 		t.Fatalf("Expected error about unknown connection type, got %v", err)
 	}
 
 	o.Users[0].AllowedConnectionTypes = testCreateAllowedConnectionTypes([]string{"websocket"})
-	s, err := NewServer(o)
+	s, _, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -141,12 +141,12 @@ func TestUserUnknownAllowedConnectionType(t *testing.T) {
 		Nkey:                   "somekey",
 		AllowedConnectionTypes: testCreateAllowedConnectionTypes([]string{jwt.ConnectionTypeStandard, "someNewType"}),
 	}}
-	_, err = NewServer(o)
+	_, _, err = NewServer(o)
 	if err == nil || !strings.Contains(err.Error(), "connection type") {
 		t.Fatalf("Expected error about unknown connection type, got %v", err)
 	}
 	o.Nkeys[0].AllowedConnectionTypes = testCreateAllowedConnectionTypes([]string{"websocket"})
-	s, err = NewServer(o)
+	s, _, err = NewServer(o)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

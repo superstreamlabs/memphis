@@ -105,6 +105,9 @@ type JSConsumerDeliveryExceededAdvisory struct {
 	StreamSeq  uint64 `json:"stream_seq"`
 	Deliveries uint64 `json:"deliveries"`
 	Domain     string `json:"domain,omitempty"`
+	// ** added by memphis
+	Account string `json:"account,omitempty"`
+	// added by memphis **
 }
 
 // JSConsumerDeliveryExceededAdvisoryType is the schema type for JSConsumerDeliveryExceededAdvisory

@@ -16,6 +16,8 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
+const GlobalAccountName = "$G"
+
 type Configuration struct {
 	DEV_ENV                 string
 	LOCAL_CLUSTER_ENV       bool

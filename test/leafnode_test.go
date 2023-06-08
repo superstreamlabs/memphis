@@ -803,7 +803,7 @@ func createClusterEx(t *testing.T, doAccounts bool, gwSolicit time.Duration, wai
 func TestLeafNodeGatewayRequiresSystemAccount(t *testing.T) {
 	o := testDefaultClusterOptionsForLeafNodes()
 	o.Gateway.Name = "CLUSTER-A"
-	_, err := server.NewServer(o)
+	_, _, err := server.NewServer(o)
 	if err == nil {
 		t.Fatalf("Expected an error with no system account defined")
 	}
@@ -2189,12 +2189,12 @@ func TestLeafNodeInfoURLs(t *testing.T) {
 
 			opts.Cluster.Port = 5223
 			opts.Routes = server.RoutesFromStr(fmt.Sprintf("nats://%s:5224", opts2.Host))
-			s1, _ = server.NewServer(opts)
+			s1, _, _ = server.NewServer(opts)
 			defer s1.Shutdown()
 
 			opts2.Cluster.Port = 5224
 			opts2.Routes = server.RoutesFromStr(fmt.Sprintf("nats://%s:5223", opts.Host))
-			s2, _ = server.NewServer(opts2)
+			s2, _, _ = server.NewServer(opts2)
 			defer s2.Shutdown()
 
 			// Start this way to increase chance of having the two connect

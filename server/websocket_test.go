@@ -1726,7 +1726,7 @@ func TestWSFailureToStartServer(t *testing.T) {
 	o.Gateway.Port = 0
 	o.LeafNode.Port = 0
 	o.Websocket.Port = l.Addr().(*net.TCPAddr).Port
-	s, err := NewServer(o)
+	s, _, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -2489,7 +2489,7 @@ func TestWSAdvertise(t *testing.T) {
 	o.Cluster.Port = 0
 	o.HTTPPort = 0
 	o.Websocket.Advertise = "xxx:host:yyy"
-	s, err := NewServer(o)
+	s, _, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
@@ -3508,14 +3508,14 @@ func TestWSNoAuthUserValidation(t *testing.T) {
 	o.Users = []*User{{Username: "user", Password: "pwd"}}
 	// Should fail because it is not part of o.Users.
 	o.Websocket.NoAuthUser = "notfound"
-	if _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
+	if _, _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
 		t.Fatalf("Expected error saying not present as user, got %v", err)
 	}
 	// Set a valid no auth user for global options, but still should fail because
 	// of o.Websocket.NoAuthUser
 	o.NoAuthUser = "user"
 	o.Websocket.NoAuthUser = "notfound"
-	if _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
+	if _, _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
 		t.Fatalf("Expected error saying not present as user, got %v", err)
 	}
 }

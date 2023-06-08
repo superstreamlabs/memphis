@@ -794,12 +794,12 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": mh.S.MemphisVersion()})
 }
 
-func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputResponse, error) {
+func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.BrokerThroughputResponse, error) {
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(throughputStreamNameV1)
+	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -817,8 +817,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 		Durable:       durableName,
 		Replicas:      1,
 	}
-
-	err = serv.memphisAddConsumer(throughputStreamNameV1, &cc)
+	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -828,7 +827,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
 			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
@@ -866,8 +865,10 @@ func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputRe
 
 cleanup:
 	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(throughputStreamNameV1, durableName) })
+	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() {
+		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
+	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
 		return msgs[i].Time.Before(msgs[j].Time)
@@ -890,11 +891,11 @@ cleanup:
 		mapEntry := m[brokerThroughput.Name]
 		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
 			Timestamp: msg.Time,
-			Read:      brokerThroughput.Read,
+			Read:      brokerThroughput.ReadMap[tenantName],
 		})
 		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
 			Timestamp: msg.Time,
-			Write:     brokerThroughput.Write,
+			Write:     brokerThroughput.WriteMap[tenantName],
 		})
 		m[brokerThroughput.Name] = mapEntry
 	}
@@ -922,7 +923,7 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewData, error) {
+func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (models.MainOverviewData, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	mainOverviewData := &models.MainOverviewData{}
@@ -931,7 +932,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 	wg.Add(3)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -961,7 +962,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 	}()
 
 	go func() {
-		brokersThroughputs, err := mh.GetBrokersThroughputs()
+		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -987,7 +988,13 @@ func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewDat
 }
 
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	response, err := mh.getMainOverviewDataDetails()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetMainOverviewData: Tag " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
 			serv.Warnf("GetMainOverviewData: " + err.Error())
@@ -999,7 +1006,6 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-main-overview")
 	}
 
@@ -1385,7 +1391,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetStationOverviewData: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1408,13 +1420,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station.Name, user.TenantName)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
@@ -1491,10 +1503,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 		return
 	}
-
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); !ok {
 		station.TieredStorageEnabled = false
+	} else {
+		_, ok = tenantInetgrations["s3"].(models.Integration)
+		if !ok {
+			station.TieredStorageEnabled = false
+		} else if station.TieredStorageEnabled {
+			station.TieredStorageEnabled = true
+		} else {
+			station.TieredStorageEnabled = false
+		}
 	}
 	var response gin.H
 
@@ -1502,7 +1521,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
 			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1607,7 +1626,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analytics.SendEvent(user.Username, "user-enter-station-overview")
 	}
 
@@ -1708,7 +1726,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(globalAccountName, syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1745,7 +1763,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(globalAccountName, syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1755,7 +1773,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
 			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
@@ -1794,8 +1812,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnGlobalAcc(sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(syslogsStreamName, durableName) })
+	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(globalAccountName, syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
@@ -2178,7 +2196,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if (iface.HardwareAddr == nil) {
+		if iface.HardwareAddr == nil {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()
