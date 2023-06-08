@@ -26,6 +26,7 @@ import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
+import { is_cloud } from '../../services/valueConvertor';
 
 function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
@@ -38,13 +39,6 @@ function Administration({ step }) {
 
     const getComponent = () => {
         switch (selectedMenuItem) {
-            case 'cluster_configuration':
-                if (window.location.href.split('/cluster_configuration').length > 1) {
-                    return <ClusterConfiguration />;
-                } else {
-                    history.replace(`${pathDomains.administration}/cluster_configuration`);
-                    break;
-                }
             case 'integrations':
                 if (window.location.href.split('/integrations').length > 1) {
                     return <Integrations />;
@@ -52,12 +46,23 @@ function Administration({ step }) {
                     history.replace(`${pathDomains.administration}/integrations`);
                     break;
                 }
+            case 'cluster_configuration':
+                if (!is_cloud()) {
+                    if (window.location.href.split('/cluster_configuration').length > 1) {
+                        return <ClusterConfiguration />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/cluster_configuration`);
+                        break;
+                    }
+                }
             case 'version_upgrade':
-                if (window.location.href.split('/version_upgrade').length > 1) {
-                    return <VersionUpgrade />;
-                } else {
-                    history.replace(`${pathDomains.administration}/version_upgrade`);
-                    break;
+                if (!is_cloud()) {
+                    if (window.location.href.split('/version_upgrade').length > 1) {
+                        return <VersionUpgrade />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/version_upgrade`);
+                        break;
+                    }
                 }
             default:
                 return;
@@ -73,18 +78,25 @@ function Administration({ step }) {
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                         Integrations
                     </div>
-                    <div
-                        className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
-                        onClick={() => selectMenuItem('cluster_configuration')}
-                    >
-                        <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
-                        Environment configuration
-                    </div>
-                    <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('version_upgrade')}>
-                        <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
-                        System information
-                        {!state.isLatest && <div className="update-available">Update available</div>}
-                    </div>
+                    {!is_cloud() && (
+                        <>
+                            <div
+                                className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
+                                onClick={() => selectMenuItem('cluster_configuration')}
+                            >
+                                <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
+                                Environment configuration
+                            </div>
+                            <div
+                                className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'}
+                                onClick={() => selectMenuItem('version_upgrade')}
+                            >
+                                <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
+                                System information
+                                {!state.isLatest && <div className="update-available">Update available</div>}
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="setting-items">{getComponent()}</div>

@@ -26,6 +26,30 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import UserItem from './userItem';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import Table from '../../components/table';
+
+const UsersData = [
+    {
+        key: '1',
+        username: 'a@a.gmail.com',
+        avatar_id: 1,
+        status: 0,
+        full_name: 'A A',
+        team: 'Team A',
+        position: 'Manager',
+        created_at: '2021-08-01 12:00:00'
+    },
+    {
+        key: '2',
+        username: 't@t.gmail.com',
+        avatar_id: 2,
+        status: 1,
+        full_name: 'T T',
+        team: 'Team B',
+        position: 'R&D',
+        created_at: '2021-08-01 12:00:00'
+    }
+];
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -87,6 +111,62 @@ function Users() {
         }
     };
 
+    const getAvatarSrc = (avatarId) => {
+        return require(`../../assets/images/bots/avatar${avatarId}.svg`);
+    };
+
+    const clientColumns = [
+        {
+            title: 'Username',
+            dataIndex: 'username',
+            key: 'username',
+            // sorter: (a, b) => a.username.localeCompare(b.username),
+            render: (text, record) => (
+                <div className="user-name">
+                    <div className="user-avatar">
+                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
+                    </div>
+                    <p>{text}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <div className="user-name">
+                    <p>{status}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Full Name',
+            key: 'full_name',
+            dataIndex: 'full_name'
+        },
+        {
+            title: 'Team',
+            key: 'team',
+            dataIndex: 'team'
+        },
+        {
+            title: 'Position',
+            key: 'position',
+            dataIndex: 'position'
+        },
+        {
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at'
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action'
+        }
+    ];
+
     return (
         <div className="users-container">
             <div className="header-wraper">
@@ -125,26 +205,19 @@ function Users() {
                 </div>
             </div>
             <div className="users-list-container">
-                <div className="users-list-header">
-                    <p className="user-name-title">Username</p>
-                    <p className="type-title">Type</p>
-                    <p className="creation-date-title">Creation date</p>
-                </div>
-                <div className="users-list">
-                    {isLoading && (
-                        <div className="loader-uploading">
-                            <Loader />
-                        </div>
-                    )}
-                    {!isLoading && userList.length > 0 && (
-                        <Virtuoso
-                            data={userList}
-                            overscan={100}
-                            className="testt"
-                            itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
-                        />
-                    )}
-                </div>
+                {isLoading && (
+                    <div className="loader-uploading">
+                        <Loader />
+                    </div>
+                )}
+                {!isLoading && userList.length > 0 && (
+                    // <Virtuoso
+                    //     data={userList}
+                    //     overscan={100}
+                    //     itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
+                    // />
+                    <Table tableRowClassname="user-row" title={() => 'Header'} columns={clientColumns} data={UsersData} />
+                )}
             </div>
             <Modal
                 header="Create new user"

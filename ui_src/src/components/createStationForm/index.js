@@ -16,7 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { convertDateToSeconds, generateName, idempotencyValidator } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator, is_cloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -428,7 +428,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                             <InputNumberComponent
                                                 min={0}
-                                                max={1000}
+                                                max={is_cloud ? 31 : 1000}
                                                 onChange={(e) => getStarted && updateFormState('days', e)}
                                                 value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                 placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}

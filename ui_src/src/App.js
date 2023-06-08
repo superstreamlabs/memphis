@@ -23,26 +23,32 @@ import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTI
 import { handleRefreshTokenRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
 import MessageJourney from './domain/messageJourney';
+import { is_cloud } from './services/valueConvertor';
+import Administration from './domain/administration';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
-import Administration from './domain/administration';
-import Profile from './domain/profile';
 import SchemaManagment from './domain/schema';
 import { useHistory } from 'react-router-dom';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
 import { Context } from './hooks/store';
-import SysLogs from './domain/sysLogs';
+import Profile from './domain/profile';
 import Signup from './domain/signup';
 import pathDomains from './router';
 import Users from './domain/users';
 import Login from './domain/login';
 
+const SysLogs = undefined;
+if (!is_cloud()) {
+    SysLogs = require('./domain/sysLogs').default;
+}
+
 const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
+
     useEffect(() => {
         if (isMobile) {
             message.warn({
@@ -149,16 +155,7 @@ const App = withRouter(() => {
                             path={`${pathDomains.administration}/integrations`}
                             component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
                         />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.administration}/cluster_configuration`}
-                            component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.administration}/version_upgrade`}
-                            component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
-                        />
+
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}
@@ -237,19 +234,34 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.sysLogs}`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <SysLogs />
-                                        </div>
+
+                        {!is_cloud() && (
+                            <>
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.sysLogs}`}
+                                    component={
+                                        <AppWrapper
+                                            content={
+                                                <div>
+                                                    <SysLogs />
+                                                </div>
+                                            }
+                                        ></AppWrapper>
                                     }
-                                ></AppWrapper>
-                            }
-                        />
+                                />
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/cluster_configuration`}
+                                    component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                                />
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/version_upgrade`}
+                                    component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
+                                />
+                            </>
+                        )}
                         <PrivateRoute
                             path="/"
                             component={

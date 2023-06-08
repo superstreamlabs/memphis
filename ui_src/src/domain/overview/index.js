@@ -24,7 +24,7 @@ import {
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
-import { capitalizeFirst } from '../../services/valueConvertor';
+import { capitalizeFirst, is_cloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
@@ -148,7 +148,6 @@ function OverView() {
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
-
     return (
         <div className="overview-container">
             {isLoading && (
@@ -199,9 +198,11 @@ function OverView() {
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
-                        <div className="right-side">
-                            <SystemComponents />
-                        </div>
+                        {!is_cloud && (
+                            <div className="right-side">
+                                <SystemComponents />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

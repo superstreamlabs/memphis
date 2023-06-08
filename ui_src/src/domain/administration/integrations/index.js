@@ -29,6 +29,7 @@ import Input from '../../../components/Input';
 import { message } from 'antd';
 import Tag from '../../../components/tag';
 import Loader from '../../../components/loader';
+import { is_cloud } from '../../../services/valueConvertor';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -124,9 +125,17 @@ const Integrations = () => {
                 />
             </div>
             <div className="categories-list">
-                {Object.keys(CATEGORY_LIST).map((key) => (
-                    <Tag tag={CATEGORY_LIST[key]} onClick={(e) => setCategoryFilter(e)} border={categoryFilter === CATEGORY_LIST[key].name} />
-                ))}
+                {Object.keys(CATEGORY_LIST).map((key) => {
+                    const category = CATEGORY_LIST[key];
+                    const isCloudAndOsOnly = is_cloud() && category.osOnly;
+                    const isCategoryFilter = categoryFilter === category.name;
+
+                    if (isCloudAndOsOnly) {
+                        return null;
+                    }
+
+                    return <Tag key={key} tag={category} onClick={(e) => setCategoryFilter(e)} border={isCategoryFilter} />;
+                })}
             </div>
             {!imagesLoaded && (
                 <div className="loading">
@@ -135,28 +144,44 @@ const Integrations = () => {
             )}
             {imagesLoaded && (
                 <div className="integration-list">
-                    {Object.keys(filterList)?.map((integration) =>
-                        filterList[integration].comingSoon ? (
-                            <div key={filterList[integration].name} className="cloud-wrapper">
-                                <div className="dark-background">
-                                    <img src={cloudeBadge} />
-                                    <div className="cloud-icon">
-                                        <CloudQueueRounded />
+                    {Object.keys(filterList)?.map((integration) => {
+                        const integrationItem = filterList[integration];
+                        const isCloudAndOsOnly = is_cloud() && integrationItem.osOnly;
+
+                        if (isCloudAndOsOnly) {
+                            return null;
+                        }
+
+                        const key = integrationItem.name;
+                        const integrationElement = <IntegrationItem key={key} value={integrationItem} />;
+
+                        if (integrationItem.comingSoon) {
+                            return (
+                                <div key={key} className="cloud-wrapper">
+                                    <div className="dark-background">
+                                        <img src={cloudeBadge} />
+                                        <div className="cloud-icon">
+                                            <CloudQueueRounded />
+                                        </div>
                                     </div>
+                                    {integrationElement}
                                 </div>
-                                <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
-                            </div>
-                        ) : filterList[integration].experimental ? (
-                            <div key={filterList[integration].name}>
-                                <div className="experimental-badge">
-                                    <img src={experimentalIcon} />
+                            );
+                        }
+
+                        if (integrationItem.experimental) {
+                            return (
+                                <div key={key}>
+                                    <div className="experimental-badge">
+                                        <img src={experimentalIcon} />
+                                    </div>
+                                    {integrationElement}
                                 </div>
-                                <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
-                            </div>
-                        ) : (
-                            <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
-                        )
-                    )}
+                            );
+                        }
+
+                        return integrationElement;
+                    })}
                 </div>
             )}
             <Modal

@@ -23,7 +23,6 @@ export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;
 export const SHOWABLE_ERROR_STATUS_CODE = 666;
-export const SANDBOX_SHOWABLE_ERROR_STATUS_CODE = 665;
 export const AUTHENTICATION_ERROR_STATUS_CODE = 401;
 export const DOC_URL = 'https://docs.memphis.dev/memphis/memphis/overview';
 export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
