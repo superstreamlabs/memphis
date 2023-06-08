@@ -33,7 +33,6 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"memphis/logger"
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
