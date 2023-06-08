@@ -33,3 +33,4 @@ export const LOCAL_STORAGE_HTTP_PORT = 'http_port';
 export const LOCAL_STORAGE_REST_GW_PORT = 'rest_gw_port';
 export const LOCAL_STORAGE_USER_PASS_BASED_AUTH = 'user_pass_based_auth';
 export const LOCAL_STORAGE_CONNECTION_TOKEN = 'connection_token';
+export const LOCAL_STORAGE_ACCOUNT_ID = 'account_id';

@@ -18,7 +18,6 @@ import { Virtuoso } from 'react-virtuoso';
 
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
 import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
-import { numberWithCommas } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import unsupported from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
@@ -130,19 +129,19 @@ const ProduceConsumList = ({ producer }) => {
                 details: [
                     {
                         name: 'Unacked messages',
-                        value: numberWithCommas(cgsList[rowIndex]?.poison_messages)
+                        value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
                     },
                     {
                         name: 'Unprocessed messages',
-                        value: numberWithCommas(cgsList[rowIndex]?.unprocessed_messages)
+                        value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
                     },
                     {
                         name: 'In process message',
-                        value: numberWithCommas(cgsList[rowIndex]?.in_process_messages)
+                        value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
                     },
                     {
                         name: 'Max ack time',
-                        value: `${numberWithCommas(cgsList[rowIndex]?.max_ack_time_ms)}ms`
+                        value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
                     },
                     {
                         name: 'Max message deliveries',
@@ -229,15 +228,15 @@ const ProduceConsumList = ({ producer }) => {
                                                 {row.name}
                                             </OverflowTip>
                                             <OverflowTip
-                                                text={row.poison_messages}
+                                                text={row.poison_messages.toLocaleString()}
                                                 width={'80px'}
                                                 textAlign={'center'}
                                                 textColor={row.poison_messages > 0 ? '#F7685B' : null}
                                             >
-                                                {row.poison_messages}
+                                                {row.poison_messages.toLocaleString()}
                                             </OverflowTip>
-                                            <OverflowTip text={row.unprocessed_messages} width={'80px'} textAlign={'center'}>
-                                                {row.unprocessed_messages}
+                                            <OverflowTip text={row.unprocessed_messages.toLocaleString()} width={'80px'} textAlign={'center'}>
+                                                {row.unprocessed_messages.toLocaleString()}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '35px' }}>
                                                 <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />

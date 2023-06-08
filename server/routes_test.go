@@ -1337,7 +1337,7 @@ func TestRouteIPResolutionAndRouteToSelf(t *testing.T) {
 	o.Routes = RoutesFromStr("nats://routehost:1234")
 	o.Debug = true
 	o.NoLog = false
-	s, err := NewServer(o)
+	s, _, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}

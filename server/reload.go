@@ -856,9 +856,7 @@ func (s *Server) Reload() error {
 		// TODO: Dump previous good config to a .bak file?
 		return err
 	}
-
-	memphisOpts, _ := s.GetMemphisOpts(*newOpts)
-	return s.ReloadOptions(&memphisOpts)
+	return s.ReloadOptions(newOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option
@@ -897,7 +895,13 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	if FlagSnapshot != nil {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
-
+	// ** added by Memphis
+	_, memphisOpts, err := GetMemphisOpts(*newOpts, true)
+	if err != nil {
+		return err
+	}
+	*newOpts = memphisOpts
+	// added by Memphis **
 	setBaselineOptions(newOpts)
 
 	// setBaselineOptions sets Port to 0 if set to -1 (RANDOM port)
@@ -933,6 +937,13 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	s.configTime = time.Now().UTC()
 	s.updateVarzConfigReloadableFields(s.varz)
 	s.mu.Unlock()
+	// ** added by Memphis
+	if !s.gacc.JetStreamEnabled() {
+		if err := s.gacc.EnableJetStream(map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}); err != nil {
+			return err
+		}
+	}
+	// added by Memphis **
 	return nil
 }
 func applyBoolFlags(newOpts, flagOpts *Options) {
@@ -1668,6 +1679,9 @@ func (s *Server) reloadAuthorization() {
 		oldAccounts := make(map[string]*Account)
 		s.accounts.Range(func(k, v interface{}) bool {
 			acc := v.(*Account)
+			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT {
+				return true
+			}
 			acc.mu.Lock()
 			oldAccounts[acc.Name] = acc
 			// Need to clear out eventing timers since they close over this account and not the new one.
@@ -1677,7 +1691,9 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		s.gacc = nil
+		// ** removed by memphis
+		// s.gacc = nil
+		// removed by memphis **
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()

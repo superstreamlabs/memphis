@@ -14,28 +14,28 @@
     .data-labels {
         color: #84818a;
         font-size: 12px;
-        font-family: 'InterSemiBold';
+        font-family: "InterSemiBold";
         cursor: pointer;
     }
-    .poison{
-        text-align:-webkit-center;
+    .poison {
+        text-align: -webkit-center;
         text-align: -moz-center;
-        .health-icon{
+        .health-icon {
             width: 90px;
             margin-top: 10px;
         }
     }
-    .attached{
+    .attached {
         min-width: 110px;
     }
-    .station-meta{
+    .station-meta {
         display: flex;
         flex-direction: column;
-        .header{
+        .header {
             display: flex;
         }
-        .data-info{
-            margin-left:17px;
+        .data-info {
+            margin-left: 17px;
         }
     }
     .data-info {
@@ -45,7 +45,7 @@
         text-transform: capitalize;
         margin-left: 1px;
         margin-top: 10px;
-        font-family: 'InterSemiBold';
+        font-family: "InterSemiBold";
         cursor: pointer !important;
         .anticon svg {
             color: #2e2c34;
@@ -67,20 +67,20 @@
             margin-bottom: 10px;
             .station-name {
                 font-size: 17px;
-                font-family: 'InterSemiBold';
+                font-family: "InterSemiBold";
                 margin: 0;
                 margin-left: 25px;
                 color: #2e2c34;
                 cursor: pointer !important;
                 align-items: center;
-                .non-native-label{
+                .non-native-label {
                     color: #84818a;
                     font-size: 12px;
-                    font-family: 'InterSemiBold';
+                    font-family: "InterSemiBold";
                 }
             }
         }
-        .date{
+        .date {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

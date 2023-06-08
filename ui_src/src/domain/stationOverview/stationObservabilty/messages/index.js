@@ -16,7 +16,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { messageParser, msToUnits, numberWithCommas } from '../../../../services/valueConvertor';
+import { messageParser, msToUnits } from '../../../../services/valueConvertor';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -230,10 +230,10 @@ const Messages = () => {
                 <div className="messages-amount">
                     <InfoOutlined />
                     <p>
-                        Showing last {numberWithCommas(amount)} out of{' '}
+                        Showing last {amount?.toLocaleString()} out of{' '}
                         {tabValue === tabs[0]
-                            ? numberWithCommas(stationState?.stationSocketData?.total_messages)
-                            : numberWithCommas(stationState?.stationSocketData?.total_dls_messages)}{' '}
+                            ? stationState?.stationSocketData?.total_messages?.toLocaleString()
+                            : stationState?.stationSocketData?.total_dls_messages?.toLocaleString()}{' '}
                         messages
                     </p>
                 </div>

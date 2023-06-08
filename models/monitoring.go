@@ -92,9 +92,9 @@ type RestGwMonitoringResponse struct {
 }
 
 type BrokerThroughput struct {
-	Name  string `json:"name"`
-	Read  int64  `json:"read"`
-	Write int64  `json:"write"`
+	Name     string           `json:"name"`
+	ReadMap  map[string]int64 `json:"read_map"`
+	WriteMap map[string]int64 `json:"write_map"`
 }
 
 type BrokerThroughputResponse struct {

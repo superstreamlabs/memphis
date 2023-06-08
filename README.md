@@ -58,7 +58,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Features [v1.0.2](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.2)
+## ✨ Key Features [v1.0.3](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.3-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -97,7 +97,6 @@ docker compose -f docker-compose.yml -p memphis up
 </p>
 
 [Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials)<br>
-[Sandbox](https://sandbox.memphis.dev)<br>
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 
 ## High-Level Architecture

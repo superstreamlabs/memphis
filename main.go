@@ -95,28 +95,13 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) db.MetadataStorage {
-	if !s.MemphisInitialized() {
-		s.Fatalf("Jetstream not enabled on global account")
-	}
-
-	metadataDb, err := db.InitalizeMetadataDbConnection(s)
-	if err != nil {
-		s.Errorf("Failed initializing connection with the metadata db: " + err.Error())
-		os.Exit(1)
-	}
-
-	err = analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
+func runMemphis(s *server.Server) {
+	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
 	s.InitializeMemphisHandlers()
-
-	err = server.EncryptOldUnencryptedValues()
-	if err != nil {
-		s.Errorf("Failed encrypt old unencrypted values: " + err.Error())
-	}
 
 	err = server.InitializeIntegrations()
 	if err != nil {
@@ -124,12 +109,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	}
 
 	go s.CreateInternalJetStreamResources()
-
-	err = server.CreateRootUserOnFirstSystemLoad()
-	if err != nil {
-		s.Errorf("Failed to create root user: " + err.Error())
-		os.Exit(1)
-	}
 
 	go http_server.InitializeHttpServer(s)
 
@@ -141,11 +120,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 
 	// run only on the leader
 	go s.KillZombieResources()
-
-	err = s.Reload()
-	if err != nil {
-		s.Errorf("Failed reloading: " + err.Error())
-	}
 
 	var env string
 	var message string
@@ -171,7 +145,6 @@ func runMemphis(s *server.Server) db.MetadataStorage {
 	}
 
 	s.Noticef("Memphis broker is ready, ENV: " + env)
-	return metadataDb
 }
 
 func main() {
@@ -194,7 +167,7 @@ func main() {
 	}
 
 	// Create the server with appropriate options.
-	s, err := server.NewServer(opts)
+	s, metadataDb, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
@@ -216,8 +189,9 @@ func main() {
 		// Reset these from the snapshots from init for monitor.go
 		server.SnapshotMonitorInfo()
 	}
+	s.Noticef("Established connection with the meta-data storage")
 
-	metadataDb := runMemphis(s)
+	runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()

@@ -12,7 +12,8 @@
 package models
 
 type SystemKey struct {
-	ID    int    `json:"id"`
-	Key   string `json:"key"`
-	Value string `json:"value"`
+	ID         int    `json:"id"`
+	Key        string `json:"key"`
+	Value      string `json:"value"`
+	TenantName string `json:"tenant_name"`
 }

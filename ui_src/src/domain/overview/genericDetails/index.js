@@ -14,7 +14,6 @@ import './style.scss';
 
 import React, { useContext } from 'react';
 import { Context } from '../../../hooks/store';
-import { numberWithCommas } from '../../../services/valueConvertor';
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
@@ -31,7 +30,7 @@ const GenericDetails = () => {
                     <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Stations</span>
-                        <p>{numberWithCommas(state?.monitor_data?.total_stations)}</p>
+                        <p>{state?.monitor_data?.total_stations?.toLocaleString()}</p>
                     </div>
                 </div>
                 <Divider type="vertical" />
@@ -39,7 +38,7 @@ const GenericDetails = () => {
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Messages</span>
-                        <p>{numberWithCommas(state?.monitor_data?.total_messages)}</p>
+                        <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
                     </div>
                 </div>
                 <Divider type="vertical" />
@@ -47,7 +46,7 @@ const GenericDetails = () => {
                     <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Dead-letter messages</span>
-                        <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
+                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
                     </div>
                 </div>
                 <Divider type="vertical" />

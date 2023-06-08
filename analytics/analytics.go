@@ -32,7 +32,7 @@ var AnalyticsClient posthog.Client
 
 func InitializeAnalytics(analyticsToken, memphisV string) error {
 	memphisVersion = memphisV
-	exist, deployment, err := db.GetSystemKey("deployment_id")
+	exist, deployment, err := db.GetSystemKey("deployment_id", conf.GlobalAccountName)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -41,7 +41,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			return err
 		}
 		deploymentId = uid.String()
-		err = db.InsertSystemKey("deployment_id", deploymentId)
+		err = db.InsertSystemKey("deployment_id", deploymentId, conf.GlobalAccountName)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 		deploymentId = deployment.Value
 	}
 
-	exist, _, err = db.GetSystemKey("analytics")
+	exist, _, err = db.GetSystemKey("analytics", conf.GlobalAccountName)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -60,7 +60,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 			value = "false"
 		}
 
-		err = db.InsertSystemKey("analytics", value)
+		err = db.InsertSystemKey("analytics", value, conf.GlobalAccountName)
 		if err != nil {
 			return err
 		}
@@ -76,7 +76,7 @@ func InitializeAnalytics(analyticsToken, memphisV string) error {
 }
 
 func Close() {
-	_, analytics, _ := db.GetSystemKey("analytics")
+	_, analytics, _ := db.GetSystemKey("analytics", conf.GlobalAccountName)
 	if analytics.Value == "true" {
 		AnalyticsClient.Close()
 	}
@@ -86,8 +86,6 @@ func SendEvent(userId, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-		// } else if configuration.SANDBOX_ENV == "true" {
-		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
@@ -107,8 +105,6 @@ func SendEventWithParams(userId string, params []EventParam, eventName string) {
 	var distinctId string
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-		// } else if configuration.SANDBOX_ENV == "true" {
-		// 	distinctId = "sandbox" + "-" + userId
 	} else {
 		distinctId = deploymentId + "-" + userId
 	}
@@ -132,9 +128,6 @@ func SendErrEvent(origin, errMsg string) {
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
 	}
-	// } else if configuration.SANDBOX_ENV == "true" {
-	// 	distinctId = "sandbox"
-	// }
 
 	p := posthog.NewProperties()
 	p.Set("err_log", errMsg)

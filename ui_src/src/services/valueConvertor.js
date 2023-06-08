@@ -137,12 +137,6 @@ export const convertBytes = (bytes, round) => {
     }
 };
 
-export const numberWithCommas = (x) => {
-    if (x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    } else return 0;
-};
-
 export const capitalizeFirst = (str) => {
     return str?.charAt(0).toUpperCase() + str?.slice(1).toLowerCase();
 };
@@ -195,11 +189,8 @@ export const diffDate = (date) => {
 };
 
 export const hex_to_ascii = (str1) => {
-    var hex = str1.toString();
-    var str = '';
-    for (var n = 0; n < hex.length; n += 2) {
-        str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
-    }
+    const hex = str1.toString();
+    const str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
     return str;
 };
 
@@ -225,34 +216,34 @@ export const msToUnits = (value) => {
     let parsing = 0;
     switch (true) {
         case value < second && value >= 100:
-            return `${numberWithCommas(value)} ms`;
+            return `${value?.toLocaleString()} ms`;
         case value >= second && value < minute:
             parsing = isFloat(value / second) ? Math.round((value / second + Number.EPSILON) * 100) / 100 : value / second;
             if (parsing === 1) {
                 return `${parsing} second`;
             } else {
-                return `${numberWithCommas(parsing)} seconds`;
+                return `${parsing?.toLocaleString()} seconds`;
             }
         case value >= minute && value < hour:
             parsing = isFloat(value / minute) ? Math.round((value / minute + Number.EPSILON) * 100) / 100 : value / minute;
             if (parsing === 1) {
                 return `${parsing} minute`;
             } else {
-                return `${numberWithCommas(parsing)} minutes`;
+                return `${parsing?.toLocaleString()} minutes`;
             }
         case value >= hour && value < day:
             parsing = isFloat(value / hour) ? Math.round((value / hour + Number.EPSILON) * 100) / 100 : value / hour;
             if (parsing === 1) {
                 return `${parsing} hour`;
             } else {
-                return `${numberWithCommas(parsing)} hours`;
+                return `${parsing?.toLocaleString()} hours`;
             }
         case value >= day:
             parsing = isFloat(value / day) ? Math.round((value / day + Number.EPSILON) * 100) / 100 : value / day;
             if (parsing === 1) {
                 return `${parsing} day`;
             } else {
-                return `${numberWithCommas(parsing)} days`;
+                return `${parsing?.toLocaleString()} days`;
             }
         default:
             break;

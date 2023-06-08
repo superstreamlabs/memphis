@@ -69,6 +69,7 @@ type DlsMessage struct {
 	UpdatedAt       time.Time      `json:"updated_at"`
 	MessageType     string         `json:"message_type"`
 	ValidationError string         `json:"validation_error"`
+	TenantName      string         `json:"tenant_name"`
 }
 
 type DlsMessageResponse struct {

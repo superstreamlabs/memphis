@@ -16,16 +16,17 @@ import (
 	"memphis/models"
 )
 
-func SendNotification(title string, message string, msgType string) error {
+func SendNotification(tenantName string, title string, message string, msgType string) error {
 	for k, f := range NotificationFunctionsMap {
 		switch k {
 		case "slack":
-			slackIntegration, ok := IntegrationsCache["slack"].(models.SlackIntegration)
-			if ok {
-				if slackIntegration.Properties[msgType] {
-					err := f.(func(models.SlackIntegration, string, string) error)(slackIntegration, title, message)
-					if err != nil {
-						return err
+			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+				if slackIntegration, ok := tenantInetgrations["slack"].(models.SlackIntegration); ok {
+					if slackIntegration.Properties[msgType] {
+						err := f.(func(models.SlackIntegration, string, string) error)(slackIntegration, title, message)
+						if err != nil {
+							return err
+						}
 					}
 				}
 			}

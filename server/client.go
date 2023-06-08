@@ -1602,7 +1602,7 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 			// of creating a new go routine for each save.
 			go c.srv.saveClosedClient(c, nc, reason)
 			if c.kind == CLIENT {
-				if err := c.memphisInfo.updateDisconnection(); err != nil {
+				if err := c.memphisInfo.updateDisconnection(c.acc.GetName()); err != nil {
 					c.srv.Errorf("memphis db disconnection update error: " + err.Error())
 				}
 			}
