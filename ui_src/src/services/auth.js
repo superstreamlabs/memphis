@@ -32,7 +32,8 @@ import {
     LOCAL_STORAGE_WS_PORT,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
-    LOCAL_STORAGE_ACCOUNT_ID
+    LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_WELCOME_MESSAGE
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 

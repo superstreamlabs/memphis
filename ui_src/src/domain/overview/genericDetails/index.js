@@ -54,7 +54,7 @@ const GenericDetails = () => {
                     <img src={AttachedSchema} width={50} height={50} alt="AttachedSchema" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Attached schema</span>
-                        <p>{numberWithCommas(state?.monitor_data?.total_dls_messages)}</p>
+                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
                     </div>
                 </div>
             </div>
