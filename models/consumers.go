@@ -49,6 +49,11 @@ type ExtendedConsumer struct {
 	StationName       string    `json:"station_name,omitempty"`
 }
 
+type LightConsumer struct {
+	Name              string    `json:"name"`
+	StationName       string    `json:"station_name"`
+}
+
 type Cg struct {
 	Name                  string             `json:"name"`
 	UnprocessedMessages   int                `json:"unprocessed_messages"`

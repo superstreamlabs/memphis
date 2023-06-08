@@ -43,6 +43,11 @@ type ExtendedProducer struct {
 	ClientAddress     string    `json:"client_address"`
 }
 
+type LightProducer struct {
+	Name              string    `json:"name"`
+	StationName       string    `json:"station_name"`
+}
+
 type GetAllProducersByStationSchema struct {
 	StationName string `form:"station_name" binding:"required"`
 }
