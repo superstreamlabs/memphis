@@ -79,6 +79,7 @@ And the list continues...<br>
 ## Public case studies
 - [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
 - [KELA - Real-time cyber threats identification](https://memphis.dev/blog/how-kela-is-using-memphis-dev-for-real-time-cyber-threats-identification/)
+- [Handling millions of discord messages](https://memphis.dev/blog/how-cactusfire-handles-millions-of-daily-discord-messages-using-memphis-dev/)
 
 ## 🚀 Getting Started
 Helm for Kubernetes☸
