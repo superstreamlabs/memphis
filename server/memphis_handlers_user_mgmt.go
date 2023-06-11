@@ -213,14 +213,7 @@ func imageToBase64(imagePath string) (string, error) {
 }
 
 func CreateRootUserOnFirstSystemLoad() error {
-	password := configuration.ROOT_PASSWORD
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return err
-	}
-	hashedPwdString := string(hashedPwd)
-
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	created, err := CreateSystemRootUser()
 	if err != nil {
 		return err
 	}

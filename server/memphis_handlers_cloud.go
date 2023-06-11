@@ -9,4 +9,45 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
-package cloud
+
+package server
+
+import (
+	"memphis/db"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	defaultStationReplicaNum = 1
+)
+
+func GetStationReplicas(replicas int) int {
+	if replicas <= 0 {
+		return defaultStationReplicaNum
+	}
+	return replicas
+}
+
+func GetStationMaxAge(retentionType string, retentionValue int) time.Duration {
+	if retentionType == "message_age_sec" && retentionValue > 0 {
+		return time.Duration(retentionValue) * time.Second
+	}
+	return time.Duration(0)
+}
+
+func CreateSystemRootUser() (bool, error) {
+	password := configuration.ROOT_PASSWORD
+	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
+	if err != nil {
+		return false, err
+	}
+	hashedPwdString := string(hashedPwd)
+
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	if err != nil {
+		return false, err
+	}
+	return created, nil
+}
