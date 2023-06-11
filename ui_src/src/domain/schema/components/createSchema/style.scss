@@ -134,7 +134,7 @@
                     align-items: center;
                     .button-json{
                         display: flex;  
-                        place-content: end;
+                        place-content: flex-end;
                         width: 300px;
                         .ant-form-item-control-input-content{
                             display: flex;
@@ -202,9 +202,9 @@
             }
             .button-container{
                 display: flex;
-                place-content: end;
+                place-content: flex-end;
                 margin-bottom: 0;
-                place-items: end;
+                place-items: flex-end;
                 .ant-form-item-control-input-content{
                     display: flex;
                     width: 250px;
