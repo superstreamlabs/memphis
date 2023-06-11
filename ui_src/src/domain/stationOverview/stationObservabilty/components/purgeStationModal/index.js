@@ -32,7 +32,7 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
     useEffect(() => {
         const keyDownHandler = (event) => {
             if (event.key === 'Enter' && confirm === 'purge') {
-                handlePurge();
+                handlePurge(purgeData);
             }
         };
         document.addEventListener('keydown', keyDownHandler);
