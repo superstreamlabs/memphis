@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/analytics"
-	"memphis/cloud"
 	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
@@ -287,13 +286,17 @@ func (s *Server) createStationDirectIntern(c *client,
 		storageType = "file"
 	}
 
-	replicas := cloud.GetStationReplicas(csr.Replicas)
-	err = validateReplicas(replicas)
-	if err != nil {
-		serv.Warnf("createStationDirect: " + err.Error())
-		jsApiResp.Error = NewJSStreamCreateError(err)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
-		return
+	replicas := csr.Replicas
+	if replicas > 0 {
+		err = validateReplicas(replicas)
+		if err != nil {
+			serv.Warnf("createStationDirect: " + err.Error())
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+	} else {
+		replicas = 1
 	}
 
 	if csr.IdempotencyWindow <= 0 {
@@ -801,12 +804,15 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageTypeForResponse = body.StorageType
 	}
 
-	body.Replicas = cloud.GetStationReplicas(body.Replicas)
-	err = validateReplicas(body.Replicas)
-	if err != nil {
-		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-		return
+	if body.Replicas > 0 {
+		err = validateReplicas(body.Replicas)
+		if err != nil {
+			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+	} else {
+		body.Replicas = 1
 	}
 
 	err = validateIdempotencyWindow(body.RetentionType, body.RetentionValue, body.IdempotencyWindow)

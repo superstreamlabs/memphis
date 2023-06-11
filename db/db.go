@@ -1879,16 +1879,16 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 }
 
 // Producer Functions
-func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedProducer, error) {
+func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.LightProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.LightProducer{}, err
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name, p.is_active, p.is_deleted, c.client_address
+	SELECT p.name, s.name
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
@@ -1898,22 +1898,21 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	GROUP BY p.id, s.id, c.client_address`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.LightProducer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.LightProducer{}, err
 	}
 	defer rows.Close()
-	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightProducer])
 	if err != nil {
-		return []models.ExtendedProducer{}, err
+		return []models.LightProducer{}, err
 	}
 	if len(producers) == 0 {
-		return []models.ExtendedProducer{}, nil
+		return []models.LightProducer{}, nil
 	}
 	return producers, nil
-
 }
 
 func UpdateProducersConnection(connectionId string, isActive bool) error {
@@ -2736,16 +2735,16 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	return consumers, nil
 }
 
-func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.ExtendedConsumer, error) {
+func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.LightConsumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedConsumer{}, err
+		return []models.LightConsumer{}, err
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name  
+		SELECT c.name, s.name  
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		LEFT JOIN connections AS con ON con.id = c.connection_id
@@ -2753,19 +2752,19 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
-		return []models.ExtendedConsumer{}, err
+		return []models.LightConsumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
 	if err != nil {
-		return []models.ExtendedConsumer{}, err
+		return []models.LightConsumer{}, err
 	}
 	defer rows.Close()
-	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightConsumer])
 	if err != nil {
-		return []models.ExtendedConsumer{}, err
+		return []models.LightConsumer{}, err
 	}
 	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
+		return []models.LightConsumer{}, nil
 	}
 	return consumers, nil
 }
@@ -3654,13 +3653,13 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	return newUser, nil
 }
 
-func UpsertUserUpdatePassword(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (models.User, error) {
+func UpsertUserUpdatePassword(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return models.User{}, err
+		return false, err
 	}
 	defer conn.Release()
 
@@ -3678,30 +3677,36 @@ func UpsertUserUpdatePassword(username string, userType string, hashedPassword s
 	) 
 	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
 	ON CONFLICT (username, tenant_name) DO UPDATE SET password = excluded.password
-	RETURNING id`
+	RETURNING id, CASE WHEN xmax = 0 THEN 'insert' ELSE 'update' END AS action`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_new_user_update_password", query)
 	if err != nil {
-		return models.User{}, err
+		return false, err
 	}
 	createdAt := time.Now()
 	skipGetStarted := false
 	alreadyLoggedIn := false
 
 	var userId int
+	var op string
 	if tenantName != conf.GlobalAccountName {
 		tenantName = strings.ToLower(tenantName)
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
 	if err != nil {
-		return models.User{}, err
+		return false, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err := rows.Scan(&userId)
+		err := rows.Scan(&userId, &op)
 		if err != nil {
-			return models.User{}, err
+			return false, err
 		}
+	}
+
+	didCreate := false
+	if op == "insert" {
+		didCreate = true
 	}
 
 	if err := rows.Err(); err != nil {
@@ -3709,33 +3714,19 @@ func UpsertUserUpdatePassword(username string, userType string, hashedPassword s
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.User{}, errors.New("User " + username + " already exists")
+					return false, errors.New("User " + username + " already exists")
 				} else {
-					return models.User{}, errors.New(pgErr.Detail)
+					return false, errors.New(pgErr.Detail)
 				}
 			} else {
-				return models.User{}, errors.New(pgErr.Message)
+				return false, errors.New(pgErr.Message)
 			}
 		} else {
-			return models.User{}, err
+			return false, err
 		}
 	}
-	if tenantName != conf.GlobalAccountName {
-		tenantName = strings.ToLower(tenantName)
-	}
-	newUser := models.User{
-		ID:              userId,
-		Username:        username,
-		Password:        hashedPassword,
-		FullName:        fullName,
-		Subscribtion:    subscription,
-		UserType:        userType,
-		CreatedAt:       createdAt,
-		AlreadyLoggedIn: alreadyLoggedIn,
-		AvatarId:        avatarId,
-		TenantName:      tenantName,
-	}
-	return newUser, nil
+
+	return didCreate, nil
 }
 
 func ChangeUserPassword(username string, hashedPassword string, tenantName string) error {
