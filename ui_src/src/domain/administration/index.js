@@ -19,6 +19,7 @@ import Integrations from './integrations';
 import AccountMenu from './accountMenu';
 import BillingMenu from './billing/billingMenu';
 import Payments from './billing/payments';
+import Requests from './billing/requests';
 import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
@@ -58,7 +59,7 @@ function Administration({ step }) {
                 }
             case 'requests':
                 if (window.location.href.split('/requests').length > 1) {
-                    return <Integrations />;
+                    return <Requests />;
                 } else {
                     history.replace(`${pathDomains.administration}/requests`);
                     break;
