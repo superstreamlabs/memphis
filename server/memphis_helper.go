@@ -329,7 +329,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
-		Durable:       TIERED_STORAGE_CONSUMER,
+		Name:          TIERED_STORAGE_CONSUMER,
 		FilterSubject: tieredStorageStream + ".>",
 		AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
 		MaxAckPending: -1,
@@ -363,7 +363,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	cc = ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
-		Durable:       DLS_UNACKED_CONSUMER,
+		Name:          DLS_UNACKED_CONSUMER,
 		AckWait:       time.Duration(80) * time.Second,
 		MaxAckPending: -1,
 		MaxDeliver:    10,
@@ -522,7 +522,7 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 	}
 
 	consumerConfig := &ConsumerConfig{
-		Durable:       consumerName,
+		Name:          consumerName,
 		DeliverPolicy: deliveryPolicy,
 		AckPolicy:     AckExplicit,
 		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
@@ -856,7 +856,7 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 		FilterSubject: filterSubj,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
-		Durable:       durableName,
+		Name:          durableName,
 		AckPolicy:     AckExplicit,
 		Replicas:      1,
 	}
