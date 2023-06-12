@@ -96,6 +96,9 @@ var (
 	TIERED_STORAGE_STREAM_CREATED   bool
 	DLS_UNACKED_CONSUMER_CREATED    bool
 	DLS_UNACKED_STREAM_CREATED      bool
+	SYSLOGS_STREAM_CREATED          bool
+	THROUGHPUT_STREAM_CREATED       bool
+	THROUGHPUT_LEGACY_STREAM_EXIST  bool
 )
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
@@ -246,26 +249,28 @@ func (s *Server) CreateInternalJetStreamResources() {
 		}
 	} else {
 		s.WaitForLeaderElection()
-		for !ready { // wait for cluster to be ready if we are in cluster mode
-			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
-			select {
-			case <-timeout.C:
-				s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
-				err := <-successCh
-				if err != nil {
-					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
-					continue
+		if s.JetStreamIsLeader() {
+			for !ready { // wait for cluster to be ready if we are in cluster mode
+				timeout := time.NewTimer(1 * time.Minute)
+				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
+				select {
+				case <-timeout.C:
+					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+					err := <-successCh
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						continue
+					}
+					ready = true
+				case err := <-successCh:
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						<-timeout.C
+						continue
+					}
+					timeout.Stop()
+					ready = true
 				}
-				ready = true
-			case err := <-successCh:
-				if err != nil {
-					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
-					<-timeout.C
-					continue
-				}
-				timeout.Stop()
-				ready = true
 			}
 		}
 	}
@@ -284,22 +289,24 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// system logs stream
-	err = s.memphisAddStream(globalAccountName, &StreamConfig{
-		Name:         syslogsStreamName,
-		Subjects:     []string{syslogsStreamName + ".>"},
-		Retention:    LimitsPolicy,
-		MaxAge:       retentionDur,
-		MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !SYSLOGS_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         syslogsStreamName,
+			Subjects:     []string{syslogsStreamName + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       retentionDur,
+			MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		SYSLOGS_STREAM_CREATED = true
 	}
-
 	if s.memphis.activateSysLogsPubFunc == nil {
 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
 	}
@@ -308,96 +315,109 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
-	err = s.memphisAddStream(globalAccountName, &StreamConfig{
-		Name:         tieredStorageStream,
-		Subjects:     []string{tieredStorageStream + ".>"},
-		Retention:    WorkQueuePolicy,
-		MaxAge:       time.Hour * 24,
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-		Duplicates:   idempotencyWindow,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !TIERED_STORAGE_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         tieredStorageStream,
+			Subjects:     []string{tieredStorageStream + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			Duplicates:   idempotencyWindow,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_STREAM_CREATED = true
 	}
-	TIERED_STORAGE_STREAM_CREATED = true
 
 	// create tiered storage consumer
-	cc := ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       TIERED_STORAGE_CONSUMER,
-		FilterSubject: tieredStorageStream + ".>",
-		AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
-		MaxAckPending: -1,
-		MaxDeliver:    10,
-	}
-	err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
-	if err != nil {
-		successCh <- err
-		return
-	}
+	// if !TIERED_STORAGE_CONSUMER_CREATED {
+	// cc := ConsumerConfig{
+	// 	DeliverPolicy: DeliverAll,
+	// 	AckPolicy:     AckExplicit,
+	// 	Durable:       TIERED_STORAGE_CONSUMER,
+	// 	FilterSubject: tieredStorageStream + ".>",
+	// 	AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
+	// 	MaxAckPending: -1,
+	// 	MaxDeliver:    10,
+	// }
+	// err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+	// if err != nil {
+	// 	successCh <- err
+	// 	return
+	// }
 	TIERED_STORAGE_CONSUMER_CREATED = true
+	// }
 
 	// dls unacked messages stream
-	err = s.memphisAddStream(globalAccountName, &StreamConfig{
-		Name:         dlsUnackedStream,
-		Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
-		Retention:    WorkQueuePolicy,
-		MaxAge:       time.Hour * 24,
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !DLS_UNACKED_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         dlsUnackedStream,
+			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_UNACKED_STREAM_CREATED = true
 	}
-	DLS_UNACKED_STREAM_CREATED = true
 
 	// create dls unacked consumer
-	cc = ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       DLS_UNACKED_CONSUMER,
-		AckWait:       time.Duration(80) * time.Second,
-		MaxAckPending: -1,
-		MaxDeliver:    10,
-	}
-	err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
-	if err != nil {
-		successCh <- err
-		return
-	}
+	// if !DLS_UNACKED_CONSUMER_CREATED {
+	// cc = ConsumerConfig{
+	// 	DeliverPolicy: DeliverAll,
+	// 	AckPolicy:     AckExplicit,
+	// 	Durable:       DLS_UNACKED_CONSUMER,
+	// 	AckWait:       time.Duration(80) * time.Second,
+	// 	MaxAckPending: -1,
+	// 	MaxDeliver:    10,
+	// }
+	// err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
+	// if err != nil {
+	// 	successCh <- err
+	// 	return
+	// }
 	DLS_UNACKED_CONSUMER_CREATED = true
+	// }
 
 	// delete the old version throughput stream
-	err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
-	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
+	if THROUGHPUT_LEGACY_STREAM_EXIST {
+		err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
+		}
 	}
 
 	// throughput kv
-	err = s.memphisAddStream(globalAccountName, &StreamConfig{
-		Name:         (throughputStreamNameV1),
-		Subjects:     []string{throughputStreamNameV1 + ".>"},
-		Retention:    LimitsPolicy,
-		MaxConsumers: -1,
-		MaxMsgs:      int64(-1),
-		MaxBytes:     int64(-1),
-		Discard:      DiscardOld,
-		MaxMsgsPer:   ws_updates_interval_sec,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-		NoAck:        false,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !THROUGHPUT_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         (throughputStreamNameV1),
+			Subjects:     []string{throughputStreamNameV1 + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
+			Discard:      DiscardOld,
+			MaxMsgsPer:   ws_updates_interval_sec,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			NoAck:        false,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_STREAM_CREATED = true
 	}
 	successCh <- nil
 }

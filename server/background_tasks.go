@@ -261,10 +261,10 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.RemoveOldDlsMsgs()
 	// go s.uploadMsgsToTier2Storage()
 
-	// err = s.InitializeThroughputSampling()
-	// if err != nil {
-	// 	return err
-	// }
+	err = s.InitializeThroughputSampling()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
