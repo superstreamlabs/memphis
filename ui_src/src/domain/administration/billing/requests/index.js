@@ -62,8 +62,8 @@ function Requests() {
                     </div>
                         
                         <div>
-                            <label>Consumed</label>
-                            <label>Contrary to popular belief, Lorem Ipsum</label>
+                            <label className='request-type'>Consumed</label>
+                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                         </div>
                 </div>
                 <labe className="requests-value value">{val.toLocaleString("en-US")}</labe>
@@ -75,8 +75,8 @@ function Requests() {
                     </div>
                         
                         <div>
-                            <label>Redeliver</label>
-                            <label>Contrary to popular belief, Lorem Ipsum</label>
+                            <label className='request-type'>Redeliver</label>
+                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                         </div>
                         
                 </div>
@@ -89,8 +89,8 @@ function Requests() {
                     </div>
                         
                         <div>
-                            <label>Dead Letters</label>
-                            <label>Contrary to popular belief, Lorem Ipsum</label>
+                            <label className='request-type'>Dead Letters</label>
+                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                         </div>
                 </div>
                 <labe className="requests-value value">{val.toLocaleString("en-US")}</labe>
