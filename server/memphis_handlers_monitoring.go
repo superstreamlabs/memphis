@@ -814,7 +814,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
-		Name:          durableName,
+		Durable:       durableName,
 		Replicas:      1,
 	}
 	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
@@ -1755,7 +1755,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		OptStartSeq:   startSeq,
 		DeliverPolicy: DeliverByStartSequence,
 		AckPolicy:     AckExplicit,
-		Name:          durableName,
+		Durable:       durableName,
 		Replicas:      1,
 	}
 
