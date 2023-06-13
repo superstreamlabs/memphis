@@ -49,7 +49,8 @@
     "start": "PORT=5555 react-scripts start",
     "build": "GENERATE_SOURCEMAP=false BUILD_PATH='./../ui_static_files/build' react-scripts build",
     "test": "jest",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "prepare": "cd ../ && husky install ./ui_src/.husky"
   },
   "eslintConfig": {
     "extends": [
@@ -79,9 +80,11 @@
     "enzyme": "^3.11.0",
     "eslint": "^8.15.0",
     "eslint-plugin-react": "^7.29.4",
+    "husky": "^8.0.3",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^28.1.0",
     "jest-canvas-mock": "^2.4.0",
+    "lint-staged": "^13.2.2",
     "react-scripts": "^5.0.0"
   },
   "jest": {
