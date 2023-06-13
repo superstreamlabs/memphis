@@ -1230,9 +1230,10 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			addedTenant[conf.GlobalAccountName] = gacc
 		}
 		tenantsId[globalAccountName] = 1
+		key := getAESKey()
 		for _, user := range users {
 			name := user.TenantName
-			decryptedUserPassword, err := DecryptAES(user.Password)
+			decryptedUserPassword, err := DecryptAES(key, user.Password)
 			if err != nil {
 				return &Account{}, Options{}, err
 			}

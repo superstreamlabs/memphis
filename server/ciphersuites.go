@@ -125,8 +125,7 @@ func EncryptAES(plaintext []byte) (string, error) {
 	return base64.URLEncoding.EncodeToString(ciphertext), nil
 }
 
-func DecryptAES(encryptedValue string) (string, error) {
-	key := getAESKey()
+func DecryptAES(key []byte, encryptedValue string) (string, error) {
 	ciphertextBytes, err := base64.URLEncoding.DecodeString(encryptedValue)
 	if err != nil {
 		return "", err

@@ -4129,7 +4129,7 @@ func UpsertBatchOfUsers(users []models.User) error {
 		valueArgs = append(valueArgs, user.FullName)
 	}
 	query := fmt.Sprintf("INSERT INTO users (username, password, type, created_at, avatar_id, full_name) VALUES %s ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password", strings.Join(valueStrings, ","))
-	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update_batch_of_users", query)
 	if err != nil {
 		return err
 	}

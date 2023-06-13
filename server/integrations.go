@@ -40,6 +40,7 @@ func InitializeIntegrations() error {
 }
 
 func InitializeConnections() error {
+	key := getAESKey()
 	exist, integrations, err := db.GetAllIntegrations()
 	if err != nil {
 		return err
@@ -48,13 +49,13 @@ func InitializeConnections() error {
 	}
 	for _, integration := range integrations {
 		if value, ok := integration.Keys["secret_key"]; ok {
-			decryptedValue, err := DecryptAES(value)
+			decryptedValue, err := DecryptAES(key, value)
 			if err != nil {
 				return err
 			}
 			integration.Keys["secret_key"] = decryptedValue
 		} else if value, ok := integration.Keys["auth_token"]; ok {
-			decryptedValue, err := DecryptAES(value)
+			decryptedValue, err := DecryptAES(key, value)
 			if err != nil {
 				return err
 			}
@@ -106,13 +107,14 @@ func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string, t
 		return nil
 	}
 	needToEncrypt := false
+	key := getAESKey()
 	if value, ok := integration.Keys["secret_key"]; ok {
-		_, err := DecryptAES(value)
+		_, err := DecryptAES(key, value)
 		if err != nil {
 			needToEncrypt = true
 		}
 	} else if value, ok := integration.Keys["auth_token"]; ok {
-		_, err := DecryptAES(value)
+		_, err := DecryptAES(key, value)
 		if err != nil {
 			needToEncrypt = true
 		}
@@ -136,8 +138,9 @@ func encryptUnencryptedAppUsersPasswords() error {
 	if err != nil {
 		return err
 	}
+	key := getAESKey()
 	for _, user := range users {
-		_, err := DecryptAES(user.Password)
+		_, err := DecryptAES(key, user.Password)
 		if err != nil {
 			password, err := EncryptAES([]byte(user.Password))
 			if err != nil {

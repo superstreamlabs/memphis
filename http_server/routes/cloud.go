@@ -23,4 +23,5 @@ func InitializeCloudRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	configurationsRoutes := router.Group("/cloud")
 	config := server.SetCors()
 	configurationsRoutes.POST("/createTenant", cors.New(config), cloudHandler.CreateTenant)
+	configurationsRoutes.POST("/loginCloud", cors.New(config), cloudHandler.LoginCloud)
 }
