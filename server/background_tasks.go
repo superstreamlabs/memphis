@@ -265,6 +265,11 @@ func (s *Server) StartBackgroundTasks() error {
 	if err != nil {
 		return err
 	}
+	err = InitializeEventCounter()
+	if err != nil {
+		return err
+	}
+	go s.UploadTenantUsageToDB()
 	return nil
 }
 

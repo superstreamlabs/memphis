@@ -428,31 +428,4 @@ func memphisWSGetStationsOverviewData(h *Handlers, tenantName string) ([]models.
 	return stations, nil
 }
 
-func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.SystemLogsResponse, error) {
-	const amount = 100
-	const timeout = 3 * time.Second
-	filterSubjectSuffix := ""
-	switch logLevel {
-	case "err":
-		filterSubjectSuffix = syslogsErrSubject
-	case "warn":
-		filterSubjectSuffix = syslogsWarnSubject
-	case "info":
-		filterSubjectSuffix = syslogsInfoSubject
-	default:
-		filterSubjectSuffix = syslogsExternalSubject
-	}
 
-	filterSubject := "$memphis_syslogs.*." + filterSubjectSuffix
-
-	if filterSubjectSuffix != _EMPTY_ {
-		if logSource != "empty" && logLevel != "external" {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
-		} else if logSource != "empty" && logLevel == "external" {
-			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
-		} else {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
-		}
-	}
-	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
-}

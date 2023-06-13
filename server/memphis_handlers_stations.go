@@ -106,6 +106,15 @@ func validateReplicas(replicas int) error {
 	return nil
 }
 
+func getStationReplicas(replicas int) int {
+	if replicas <= 0 {
+		return 1
+	} else if replicas == 2 || replicas == 4 {
+		return 3
+	}
+	return replicas
+}
+
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
 	if idempotencyWindow > 86400000 { // 24 hours
 		return errors.New("idempotency window can not exceed 24 hours")
@@ -274,7 +283,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	var storageType string
 	if csr.StorageType != "" {
-		storageType = strings.ToLower(csr.StorageType)
+		storageType = GetStationStorageType(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
@@ -286,7 +295,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		storageType = "file"
 	}
 
-	replicas := GetStationReplicas(csr.Replicas)
+	replicas := getStationReplicas(csr.Replicas)
 	err = validateReplicas(replicas)
 	if err != nil {
 		serv.Warnf("createStationDirect: " + err.Error())
@@ -784,7 +793,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if body.StorageType != "" {
-		body.StorageType = strings.ToLower(body.StorageType)
+		body.StorageType = GetStationStorageType(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
@@ -800,7 +809,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageTypeForResponse = body.StorageType
 	}
 
-	body.Replicas = GetStationReplicas(body.Replicas)
+	body.Replicas = getStationReplicas(body.Replicas)
 	err = validateReplicas(body.Replicas)
 	if err != nil {
 		serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())
@@ -1310,7 +1319,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				return
 			}
 		}
-
+		IncrementEventCounter(station.TenantName, "dls", int64(len(dlsMsg.PoisonedCgs)))
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
