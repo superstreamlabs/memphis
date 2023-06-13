@@ -35,7 +35,7 @@ const TransitionsModal = ({
     hr = false,
     className,
     zIndex = null,
-    onPressEnter = null
+    onPressEnter = () => {}
 }) => {
     const contentStyle = {
         height: height,
