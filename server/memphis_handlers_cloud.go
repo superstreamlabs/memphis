@@ -13,6 +13,8 @@
 package server
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -817,6 +819,26 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, response)
+}
+
+func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
+	const timeout = 20 * time.Second
+	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
+	if err != nil {
+		serv.Errorf("DownloadSystemLogs: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	b := new(bytes.Buffer)
+	datawriter := bufio.NewWriter(b)
+
+	for _, log := range response.Logs {
+		_, _ = datawriter.WriteString(log.Source + ": " + log.Data + "\n")
+	}
+
+	datawriter.Flush()
+	c.Writer.Write(b.Bytes())
 }
 
 func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.SystemLogsResponse, error) {
