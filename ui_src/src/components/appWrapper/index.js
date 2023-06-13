@@ -16,6 +16,7 @@ function AppWrapper({ content }) {
     return (
         <div className="sidebar-and-containers">
             <SideBar />
+
             {content}
         </div>
     );
