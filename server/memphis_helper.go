@@ -335,23 +335,23 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// create tiered storage consumer
-	// if !TIERED_STORAGE_CONSUMER_CREATED {
-	// cc := ConsumerConfig{
-	// 	DeliverPolicy: DeliverAll,
-	// 	AckPolicy:     AckExplicit,
-	// 	Durable:       TIERED_STORAGE_CONSUMER,
-	// 	FilterSubject: tieredStorageStream + ".>",
-	// 	AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
-	// 	MaxAckPending: -1,
-	// 	MaxDeliver:    10,
-	// }
-	// err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
-	// if err != nil {
-	// 	successCh <- err
-	// 	return
-	// }
-	TIERED_STORAGE_CONSUMER_CREATED = true
-	// }
+	if !TIERED_STORAGE_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       TIERED_STORAGE_CONSUMER,
+			FilterSubject: tieredStorageStream + ".>",
+			AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_CONSUMER_CREATED = true
+	}
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
@@ -373,22 +373,22 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// create dls unacked consumer
-	// if !DLS_UNACKED_CONSUMER_CREATED {
-	// cc = ConsumerConfig{
-	// 	DeliverPolicy: DeliverAll,
-	// 	AckPolicy:     AckExplicit,
-	// 	Durable:       DLS_UNACKED_CONSUMER,
-	// 	AckWait:       time.Duration(80) * time.Second,
-	// 	MaxAckPending: -1,
-	// 	MaxDeliver:    10,
-	// }
-	// err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
-	// if err != nil {
-	// 	successCh <- err
-	// 	return
-	// }
-	DLS_UNACKED_CONSUMER_CREATED = true
-	// }
+	if !DLS_UNACKED_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       DLS_UNACKED_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_UNACKED_CONSUMER_CREATED = true
+	}
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {

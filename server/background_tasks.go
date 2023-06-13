@@ -256,10 +256,10 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
-	// go s.ConsumeUnackedMsgs()
-	// go s.ConsumeTieredStorageMsgs()
+	go s.ConsumeUnackedMsgs()
+	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
-	// go s.uploadMsgsToTier2Storage()
+	go s.uploadMsgsToTier2Storage()
 
 	err = s.InitializeThroughputSampling()
 	if err != nil {
