@@ -283,7 +283,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	var storageType string
 	if csr.StorageType != "" {
-		storageType = GetStationStorageType(csr.StorageType)
+		storageType = getStationStorageType(csr.StorageType)
 		err = validateStorageType(storageType)
 		if err != nil {
 			serv.Warnf("createStationDirect: " + err.Error())
@@ -793,7 +793,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if body.StorageType != "" {
-		body.StorageType = GetStationStorageType(body.StorageType)
+		body.StorageType = getStationStorageType(body.StorageType)
 		err = validateStorageType(body.StorageType)
 		if err != nil {
 			serv.Warnf("CreateStation: Station " + body.Name + ": " + err.Error())

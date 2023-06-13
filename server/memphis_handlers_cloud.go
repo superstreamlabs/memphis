@@ -38,7 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func GetStationStorageType(storageType string) string {
+func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
 
@@ -49,19 +49,56 @@ func GetStationMaxAge(retentionType string, retentionValue int) time.Duration {
 	return time.Duration(0)
 }
 
-func CreateSystemRootUser() (bool, error) {
+func CreateRootUserOnFirstSystemLoad() error {
 	password := configuration.ROOT_PASSWORD
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
 	if err != nil {
-		return false, err
+		return err
 	}
 	hashedPwdString := string(hashedPwd)
 
 	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
 	if err != nil {
-		return false, err
+		return err
 	}
-	return created, nil
+
+	if created && configuration.ANALYTICS == "true" {
+		time.AfterFunc(5*time.Second, func() {
+			var deviceIdValue string
+			installationType := "stand-alone-k8s"
+			if serv.JetStreamIsClustered() {
+				installationType = "cluster"
+				k8sClusterTimestamp, err := getK8sClusterTimestamp()
+				if err == nil {
+					deviceIdValue = k8sClusterTimestamp
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
+				}
+			} else if configuration.DOCKER_ENV == "true" {
+				installationType = "stand-alone-docker"
+				dockerMacAddress, err := getDockerMacAddress()
+				if err == nil {
+					deviceIdValue = dockerMacAddress
+				} else {
+					serv.Errorf("Generate host unique id failed: %s", err.Error())
+				}
+			}
+
+			param := analytics.EventParam{
+				Name:  "installation-type",
+				Value: installationType,
+			}
+			analyticsParams := []analytics.EventParam{param}
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
+			analytics.SendEventWithParams("", analyticsParams, "installation")
+
+			if configuration.EXPORTER {
+				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+			}
+		})
+	}
+
+	return nil
 }
 
 func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
@@ -870,7 +907,7 @@ func memphisWSGetSystemLogs(h *Handlers, logLevel, logSource string) (models.Sys
 	return h.Monitoring.S.GetSystemLogs(amount, timeout, true, 0, filterSubject, false)
 }
 
-func InitializeEventCounter() error {
+func (s *Server) InitializeEventCounter() error {
 	return nil
 }
 
@@ -878,10 +915,121 @@ func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
 
-func (mh MonitoringHandler) GetMonthlyUsage(c *gin.Context) {
-	c.IndentedJSON(404, gin.H{"message": "Page not found"})
+func IncrementEventCounter(tenantName string, counterType string, amount int64) {}
+
+func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
+	var body models.EditClusterConfigSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
+		err := changeDlsRetention(body.DlsRetention)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
+		err := changeLogsRetention(body.LogsRetention)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+	if ch.S.opts.TieredStorageUploadIntervalSec != body.TSTimeSec {
+		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
+			serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
+		} else {
+			err := changeTSTime(body.TSTimeSec)
+			if err != nil {
+				serv.Errorf("EditConfigurations: " + err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
+	}
+
+	brokerHost := strings.ToLower(body.BrokerHost)
+	if ch.S.opts.BrokerHost != brokerHost {
+		err := EditClusterCompHost("broker_host", brokerHost)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	uiHost := strings.ToLower(body.UiHost)
+	if ch.S.opts.UiHost != uiHost {
+		err := EditClusterCompHost("ui_host", uiHost)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	restGWHost := strings.ToLower(body.RestGWHost)
+	if ch.S.opts.RestGwHost != restGWHost {
+		err := EditClusterCompHost("rest_gw_host", restGWHost)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	if ch.S.opts.MaxPayload != int32(body.MaxMsgSizeMb) {
+		err := changeMaxMsgSize(body.MaxMsgSizeMb)
+		if err != nil {
+			serv.Errorf("EditConfigurations: " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	// send signal to reload config
+	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	if err != nil {
+		serv.Errorf("EditConfigurations: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-update-cluster-config")
+	}
+
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+	})
 }
 
-func IncrementEventCounter(tenantName string, counterType string, amount int64) {
-
+func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+	}
+	c.IndentedJSON(200, gin.H{
+		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"logs_retention":          ch.S.opts.LogsRetentionDays,
+		"broker_host":             ch.S.opts.BrokerHost,
+		"ui_host":                 ch.S.opts.UiHost,
+		"rest_gw_host":            ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+	})
 }

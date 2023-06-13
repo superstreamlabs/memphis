@@ -26,5 +26,4 @@ func InitializeMonitoringRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	monitoringRoutes.GET("/getSystemLogs", monitoringHandler.GetSystemLogs)
 	monitoringRoutes.GET("/downloadSystemLogs", monitoringHandler.DownloadSystemLogs)
 	monitoringRoutes.GET("/getAvailableReplicas", monitoringHandler.GetAvailableReplicas)
-	monitoringRoutes.GET("/getMonthlyUsage", monitoringHandler.GetMonthlyUsage)
 }
