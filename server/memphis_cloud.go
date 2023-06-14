@@ -1035,3 +1035,6 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
 	})
 }
+
+func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
+}
