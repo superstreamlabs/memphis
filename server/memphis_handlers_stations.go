@@ -111,6 +111,8 @@ func getStationReplicas(replicas int) int {
 		return 1
 	} else if replicas == 2 || replicas == 4 {
 		return 3
+	} else if replicas > 5 {
+		return 5
 	}
 	return replicas
 }
