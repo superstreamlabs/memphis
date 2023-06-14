@@ -101,6 +101,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
+	err = s.InitializeEventCounter()
+	if err != nil {
+		s.Errorf("Failed initializing event counter: " + err.Error())
+	}
+
 	s.InitializeMemphisHandlers()
 
 	err = server.InitializeIntegrations()

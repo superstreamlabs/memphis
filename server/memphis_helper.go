@@ -169,12 +169,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		maxBytes = -1
 	}
 
-	var maxAge time.Duration
-	if retentionType == "message_age_sec" && retentionValue > 0 {
-		maxAge = time.Duration(retentionValue) * time.Second
-	} else {
-		maxAge = time.Duration(0)
-	}
+	maxAge := GetStationMaxAge(retentionType, retentionValue)
 
 	var storage StorageType
 	if storageType == "memory" {
