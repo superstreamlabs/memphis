@@ -868,7 +868,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 
 	if exist {
 		if existedSchema.Type == csr.Type {
-			err = s.updateSchemaVersionDirect(existedSchema.ID, tenantName, csr)
+			err = s.updateSchemaVersion(existedSchema.ID, tenantName, csr)
 			if err != nil {
 				s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
 				respondWithRespErr(tenantName, s, reply, err, &resp)
@@ -884,7 +884,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		}
 	}
 
-	err = s.createNewSchemaDirect(csr, tenantName)
+	err = s.createNewSchema(csr, tenantName)
 	if err != nil {
 		s.Errorf("createSchemaDirect - failed creating Schema:" + csr.Name + err.Error())
 		respondWithRespErr(tenantName, s, reply, err, &resp)
@@ -895,7 +895,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 
 }
 
-func (s *Server) updateSchemaVersionDirect(schemaID int, tenantName string, newSchemaReq CreateSchemaReq) error {
+func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaReq CreateSchemaReq) error {
 	_, user, err := db.GetUserByUsername(newSchemaReq.CreatedByUsername, tenantName)
 	if err != nil {
 		s.Errorf("updateSchemaVersion: Schema " + newSchemaReq.Name + ": " + err.Error())
@@ -947,7 +947,7 @@ func (s *Server) updateSchemaVersionDirect(schemaID int, tenantName string, newS
 
 }
 
-func (s *Server) createNewSchemaDirect(newSchemaReq CreateSchemaReq, tenantName string) error {
+func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string) error {
 	schemaVersionNumber := 1
 
 	_, user, err := db.GetUserByUsername(newSchemaReq.CreatedByUsername, tenantName)
@@ -976,12 +976,4 @@ func (s *Server) createNewSchemaDirect(newSchemaReq CreateSchemaReq, tenantName 
 	}
 
 	return nil
-}
-
-func (csresp *SchemaResponse) SetError(err error) {
-	if err != nil {
-		csresp.Err = err.Error()
-	} else {
-		csresp.Err = ""
-	}
 }

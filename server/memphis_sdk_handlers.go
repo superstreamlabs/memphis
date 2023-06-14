@@ -146,6 +146,14 @@ func (ccr *createConsumerResponse) SetError(err error) {
 	ccr.Err = err.Error()
 }
 
+func (csresp *SchemaResponse) SetError(err error) {
+	if err != nil {
+		csresp.Err = err.Error()
+	} else {
+		csresp.Err = ""
+	}
+}
+
 func (s *Server) initializeSDKHandlers() {
 	//stations
 	s.queueSubscribe(globalAccountName, "$memphis_station_creations",
