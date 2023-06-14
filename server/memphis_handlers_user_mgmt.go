@@ -477,10 +477,21 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-enter-users-page")
 	}
 
+	var applicationUsers []models.FilteredGenericUser
+	var managementUsers []models.FilteredGenericUser
+
+	for _, user := range users {
+		if user.UserType == "application" {
+			applicationUsers = append(applicationUsers, user)
+		} else if user.UserType == "management" {
+			managementUsers = append(managementUsers, user)
+		}
+	}
+
 	if len(users) == 0 {
 		c.IndentedJSON(200, []models.User{})
 	} else {
-		c.IndentedJSON(200, users)
+		c.IndentedJSON(200, gin.H{"application_users": applicationUsers, "management_users": managementUsers})
 	}
 }
 
