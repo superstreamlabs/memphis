@@ -27,10 +27,10 @@ func validateTenantName(tenantName string) error {
 	return nil
 }
 
-func (cl CloudHandler) LoginCloud(c *gin.Context) {
+func (cl CloudHandler) CreateTenant(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }
 
-func (cl CloudHandler) CreateTenant(c *gin.Context) {
+func (cl CloudHandler) ApprovedInvitation(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }

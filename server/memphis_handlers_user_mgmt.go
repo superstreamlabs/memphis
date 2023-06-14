@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -526,7 +527,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName)
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName, false, "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
@@ -601,6 +602,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	var subscription, pending bool
+	team := strings.ToLower(body.Team)
+	position := strings.ToLower(body.Position)
+	fullName := strings.ToLower(body.FullName)
+
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("AddUser: " + err.Error())
@@ -608,7 +614,17 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	if user.TenantName != conf.GlobalAccountName {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
+
 	username := strings.ToLower(body.Username)
+	usernameError := validateUsername(username)
+	if usernameError != nil {
+		serv.Warnf("AddUser: " + usernameError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
+		return
+	}
 	exist, _, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
@@ -627,13 +643,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	if userTypeError != nil {
 		serv.Warnf("AddUser: " + userTypeError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
-		return
-	}
-
-	usernameError := validateUsername(username)
-	if usernameError != nil {
-		serv.Warnf("AddUser: " + usernameError.Error())
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 
@@ -662,6 +671,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var brokerConnectionCreds string
 	if userType == "application" {
+		fullName = ""
+		subscription = false
+		pending = false
 		if configuration.USER_PASS_BASED_AUTH {
 			if body.Password == "" {
 				serv.Warnf("AddUser: Password was not provided for user " + username)
@@ -682,8 +694,13 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, "", false, avatarId, user.TenantName)
+	newUser, err := db.CreateUser(username, userType, password, fullName, subscription, avatarId, user.TenantName, pending, team, position)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exist") {
+			serv.Warnf("CreateUserManagement: " + err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
 		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
@@ -713,6 +730,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"already_logged_in":       false,
 		"avatar_id":               body.AvatarId,
 		"broker_connection_creds": brokerConnectionCreds,
+		"position":                newUser.Position,
+		"team":                    newUser.Team,
+		"pending":                 newUser.Pending,
 	})
 }
 
