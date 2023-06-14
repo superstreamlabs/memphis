@@ -80,6 +80,14 @@
                 display: flex;
                 justify-content: space-between;
                 font-size: 14px;
+                .discount-badge{
+                    background-color: #D6F5E3;
+                    color: #27AE60;
+                    border-radius: 10px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    padding: 2px 6px 2px 6px;
+                }
                 .item{
                     margin: 0;
                     color: #84818A;

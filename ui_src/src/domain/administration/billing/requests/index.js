@@ -108,7 +108,7 @@ function Requests() {
                         <p className='ammount'>$0.00</p>
                     </span>
                     <span className='billing-item'>
-                        <p className='item'>Discount</p>
+                        <p className='item'>Discount <label className='discount-badge'>private-beta</label></p> 
                         <p className='ammount'>-</p>
                     </span>
                     <span className='billing-item'>
