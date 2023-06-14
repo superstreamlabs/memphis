@@ -26,6 +26,15 @@ import (
 
 type CloudHandler struct{ S *Server }
 
+// routes
+func InitializeCloudRoutes(router *gin.RouterGroup, h *Handlers) {
+	cloudHandler := h.Cloud
+	configurationsRoutes := router.Group("/cloud")
+	config := SetCors()
+	configurationsRoutes.POST("/createTenant", cors.New(config), cloudHandler.CreateTenant)
+	configurationsRoutes.POST("/approvedInvitation", cors.New(config), cloudHandler.ApprovedInvitation)
+}
+
 func SetCors() cors.Config {
 	config := cors.Config{}
 	return config
