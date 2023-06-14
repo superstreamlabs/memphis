@@ -5222,7 +5222,7 @@ func GetTenantById(id int) (bool, models.Tenant, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tenants AS c WHERE id = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_id", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_tenant_by_id", query)
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
@@ -5250,7 +5250,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tenants AS c WHERE name = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_name", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_tenant_by_name", query)
 	if err != nil {
 		return false, models.Tenant{}, err
 	}

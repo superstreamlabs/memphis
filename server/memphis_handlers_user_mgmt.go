@@ -137,11 +137,11 @@ func updateDeletedUserResources(user models.User) error {
 }
 
 func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.]*$")
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
 
 	validName := re.MatchString(username)
 	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_ ")
+		return errors.New("username has to include only letters/numbers/./_/- ")
 	}
 	return nil
 }
@@ -210,58 +210,6 @@ func imageToBase64(imagePath string) (string, error) {
 
 	base64Encoding += base64.StdEncoding.EncodeToString(bytes)
 	return base64Encoding, nil
-}
-
-func CreateRootUserOnFirstSystemLoad() error {
-	password := configuration.ROOT_PASSWORD
-	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.MinCost)
-	if err != nil {
-		return err
-	}
-	hashedPwdString := string(hashedPwd)
-
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
-	if err != nil {
-		return err
-	}
-
-	if created && configuration.ANALYTICS == "true" {
-		time.AfterFunc(5*time.Second, func() {
-			var deviceIdValue string
-			installationType := "stand-alone-k8s"
-			if serv.JetStreamIsClustered() {
-				installationType = "cluster"
-				k8sClusterTimestamp, err := getK8sClusterTimestamp()
-				if err == nil {
-					deviceIdValue = k8sClusterTimestamp
-				} else {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
-				}
-			} else if configuration.DOCKER_ENV == "true" {
-				installationType = "stand-alone-docker"
-				dockerMacAddress, err := getDockerMacAddress()
-				if err == nil {
-					deviceIdValue = dockerMacAddress
-				} else {
-					serv.Errorf("Generate host unique id failed: %s", err.Error())
-				}
-			}
-
-			param := analytics.EventParam{
-				Name:  "installation-type",
-				Value: installationType,
-			}
-			analyticsParams := []analytics.EventParam{param}
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analytics.SendEventWithParams("", analyticsParams, "installation")
-
-			if configuration.EXPORTER {
-				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
-			}
-		})
-	}
-
-	return nil
 }
 
 func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {

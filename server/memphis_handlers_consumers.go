@@ -177,11 +177,15 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				param := analytics.EventParam{
+				param1 := analytics.EventParam{
 					Name:  "station-name",
 					Value: stationName.Ext(),
 				}
-				analyticsParams := []analytics.EventParam{param}
+				param2 := analytics.EventParam{
+					Name:  "storage-type",
+					Value: "disk",
+				}
+				analyticsParams := []analytics.EventParam{param1, param2}
 				analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-station-sdk")
 			}
 		}

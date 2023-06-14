@@ -37,6 +37,7 @@ type Handlers struct {
 	Integrations   IntegrationsHandler
 	Configurations ConfigurationsHandler
 	Tenants        CloudHandler
+	Billing        BillingHandler
 }
 
 var serv *Server
