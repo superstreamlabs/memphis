@@ -34,18 +34,6 @@ import (
 
 type SchemasHandler struct{ S *Server }
 
-type CreateSchemaReq struct {
-	Name              string `json:"name"`
-	Type              string `json:"type"`
-	CreatedByUsername string `json:"created_by_username"`
-	SchemaContent     string `json:"schema_content"`
-	MessageStructName string `json:"message_struct_name"`
-}
-
-type SchemaResponse struct {
-	Err string `json:"error"`
-}
-
 const (
 	schemaObjectName                    = "Schema"
 	SCHEMA_VALIDATION_ERROR_STATUS_CODE = 555

@@ -126,6 +126,18 @@ type destroyConsumerRequest struct {
 	TenantName   string `json:"tenant_name"`
 }
 
+type CreateSchemaReq struct {
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	CreatedByUsername string `json:"created_by_username"`
+	SchemaContent     string `json:"schema_content"`
+	MessageStructName string `json:"message_struct_name"`
+}
+
+type SchemaResponse struct {
+	Err string `json:"error"`
+}
+
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
 }
@@ -159,7 +171,7 @@ func (s *Server) initializeSDKHandlers() {
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
-	// schema attachements
+	// schemas
 	s.queueSubscribe(globalAccountName, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
