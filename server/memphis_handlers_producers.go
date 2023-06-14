@@ -116,11 +116,15 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				param := analytics.EventParam{
+				param1 := analytics.EventParam{
 					Name:  "station-name",
 					Value: pStationName.Ext(),
 				}
-				analyticsParams := []analytics.EventParam{param}
+				param2 := analytics.EventParam{
+					Name:  "storage-type",
+					Value: "disk",
+				}
+				analyticsParams := []analytics.EventParam{param1, param2}
 				analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}

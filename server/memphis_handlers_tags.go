@@ -375,6 +375,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 			}
 
 			analyticsEventName := ""
+			analyticsParams := []analytics.EventParam{}
 			if entity == "station" {
 				message = "Tag " + name + " has been added to station " + stationName.Ext() + " by user " + user.Username
 
@@ -395,12 +396,27 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 				}
 
 				analyticsEventName = "user-tag-station"
+				param := analytics.EventParam{
+					Name:  "station-name",
+					Value: stationName.Ext(),
+				}
+				analyticsParams = append(analyticsParams, param)
 			} else if entity == "schema" {
 				message = "Tag " + name + " has been added to schema " + schemaName + " by user " + user.Username
 				analyticsEventName = "user-tag-schema"
+				param := analytics.EventParam{
+					Name:  "schema-name",
+					Value: schemaName,
+				}
+				analyticsParams = append(analyticsParams, param)
 			} else {
 				message = "Tag " + name + " has been added to user " + "by user " + user.Username
 				analyticsEventName = "user-tag-user"
+				param := analytics.EventParam{
+					Name:  "username",
+					Value: user.Username,
+				}
+				analyticsParams = append(analyticsParams, param)
 			}
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -409,7 +425,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					Name:  "tag-name",
 					Value: name,
 				}
-				analyticsParams := []analytics.EventParam{param}
+				analyticsParams = append(analyticsParams, param)
 				analytics.SendEventWithParams(user.Username, analyticsParams, analyticsEventName)
 			}
 

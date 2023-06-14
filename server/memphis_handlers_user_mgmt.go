@@ -137,11 +137,11 @@ func updateDeletedUserResources(user models.User) error {
 }
 
 func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.]*$")
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
 
 	validName := re.MatchString(username)
 	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_ ")
+		return errors.New("username has to include only letters/numbers/./_/- ")
 	}
 	return nil
 }
