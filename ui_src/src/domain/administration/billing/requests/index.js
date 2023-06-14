@@ -11,17 +11,37 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { httpRequest } from '../../../../services/http';
 import { Divider } from 'antd';
 import TotalRequests from '../../../../assets/images/setting/totalRequests.svg'
-import TotalPayment from '../../../../assets/images/setting/totalPayment.svg'
 import AvgMsgSize from '../../../../assets/images/setting/avgMsgSize.svg'
 import Consumed from '../../../../assets/images/setting/consumed.svg'
 import Redeliver from '../../../../assets/images/setting/redeliver.svg'
 import DeadLetter from '../../../../assets/images/setting/deadLetter.svg'
 import Storage from '../../../../assets/images/setting/storage.svg'
 
+
 function Requests() {
+    const [usageData, setUsageData] = useState(null)
+
+    const getBillingDetails = async () => {
+        try {
+            const today = new Date();
+            const month = today.getMonth()
+            const year = today.getFullYear()
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month+1}&year=${year}`);
+            setUsageData(data)
+        } catch (err) {
+            return;
+        }
+    };
+
+    const getTotalMsg = () => {
+        return usageData?.dls_unacked_resend_events_counter + usageData?.consumed_events_counter + usageData?.redelivered_events_counter + usageData?.tiered_storage_events_counter
+    }
+
     const getNextPaymentDate = () => {
         const today = new Date();
         const nextMonth = (today.getMonth()+1)%12+1
@@ -29,7 +49,11 @@ function Requests() {
         today.setMonth(nextMonth - 1);
         return `01 ${today.toLocaleString('en-US', {month: 'long'})} ${year}` 
     }
-   
+    
+    useEffect(() => {
+        getBillingDetails()
+    }, []);
+
     const val = 43279
     return (
         <div className="requests-container">
@@ -45,7 +69,7 @@ function Requests() {
                         <img src={TotalRequests} alt="TotalRequests"/> 
                         <span className='requests-data'>
                             <label className="requests-title">Total requests</label>
-                            <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                            <label className="requests-value">{getTotalMsg().toLocaleString("en-US")}</label>
                         </span>
                         
                     </div>
@@ -54,7 +78,7 @@ function Requests() {
                         <img src={AvgMsgSize} alt="AvgMsgSize"/> 
                         <span className='requests-data'>
                             <label className="requests-title">Average message size</label>
-                            <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                            <label className="requests-value">{usageData && usageData?.avg_msg_size?.toLocaleString("en-US")}Mb</label>
                         </span>
                         
                     </div>
@@ -84,17 +108,16 @@ function Requests() {
                         <p className='item'></p>
                         <p className='ammount'>$55.00</p>
                     </span>
-                    <Divider/>
-                    <div className='total-payment-footer'>
+                    {/* <Divider/> */}
+                    {/* <div className='total-payment-footer'>
                         <span className='promo-code-section'>
                         <p className='next-billing'>Promo Code</p>
-                        {/* <Input/> */}
                         </span>
                         <p className='download-invoice'>Download  Invoice</p>
-                    </div>
+                    </div> */}
                 </div>
             </div>
-            <div className='usage-details'>
+            {usageData && <div className='usage-details'>
                 <div className='requests-panel'>
                     <div className='requests-item'>
                         <div className='circle-img'>
@@ -106,7 +129,7 @@ function Requests() {
                                 <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                             </div>
                     </div>
-                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                    <label className="requests-value">{usageData?.consumed_events_counter?.toLocaleString("en-US")}</label>
                 </div>
                 <div className='requests-panel'>
                     <div className='requests-item'>
@@ -120,7 +143,7 @@ function Requests() {
                             </div>
                             
                     </div>
-                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                    <label className="requests-value">{usageData?.redelivered_events_counter?.toLocaleString("en-US")}</label>
                 </div>
                 <div className='requests-panel'>
                     <div className='requests-item'>
@@ -133,7 +156,7 @@ function Requests() {
                                 <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                             </div>
                     </div>
-                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                    <label className="requests-value">{usageData?.tiered_storage_events_counter?.toLocaleString("en-US")}</label>
                 </div>
                 <div className='requests-panel'>
                     <div className='requests-item'>
@@ -146,9 +169,9 @@ function Requests() {
                                 <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
                             </div>
                     </div>
-                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                    <label className="requests-value">{usageData?.dls_unacked_resend_events_counter?.toLocaleString("en-US")}</label>
                 </div> 
-            </div>
+            </div>}
         </div>
     );
 }
