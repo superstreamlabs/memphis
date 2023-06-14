@@ -15,85 +15,139 @@ import React from 'react';
 import { Divider } from 'antd';
 import TotalRequests from '../../../../assets/images/setting/totalRequests.svg'
 import TotalPayment from '../../../../assets/images/setting/totalPayment.svg'
+import AvgMsgSize from '../../../../assets/images/setting/avgMsgSize.svg'
 import Consumed from '../../../../assets/images/setting/consumed.svg'
 import Redeliver from '../../../../assets/images/setting/redeliver.svg'
 import DeadLetter from '../../../../assets/images/setting/deadLetter.svg'
+import Storage from '../../../../assets/images/setting/storage.svg'
 
 function Requests() {
+    const getNextPaymentDate = () => {
+        const today = new Date();
+        const nextMonth = (today.getMonth()+1)%12+1
+        const year = today.getFullYear() + (nextMonth===1 ? 1: 0);
+        today.setMonth(nextMonth - 1);
+        return `01 ${today.toLocaleString('en-US', {month: 'long'})} ${year}` 
+    }
+   
     const val = 43279
     return (
         <div className="requests-container">
-            <div className="header-preferences">
+           <div className="header-preferences">
                 <div className="header">
                     <p className="main-header">Requests</p>
                     <p className="memphis-label">We will keep an eye on your data streams and alert.</p>
                 </div>
             </div>
-            <div className='requests-panel summary'>
-                <div className='requests-panel-item'>
-                    <div>
+           <div className='usage-header-section'>
+                <div className='requests-summary'>
+                    <div className='requests-total'>
                         <img src={TotalRequests} alt="TotalRequests"/> 
-                        <label className="requests-title">Total requests</label>
+                        <span className='requests-data'>
+                            <label className="requests-title">Total requests</label>
+                            <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                        </span>
+                        
                     </div>
-                    <labe className="requests-value">{val.toLocaleString("en-US")}</labe>
+                    <Divider/>
+                    <div className='requests-total'>
+                        <img src={AvgMsgSize} alt="AvgMsgSize"/> 
+                        <span className='requests-data'>
+                            <label className="requests-title">Average message size</label>
+                            <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                        </span>
+                        
+                    </div>
                 </div>
-                
-                <Divider type='vertical'/>
-                <div className='requests-panel-item'>
-                    <div>
-                        <img src={TotalPayment} alt="TotalPayment"/> 
-                        <label className="requests-title">Total payment</label>
+                <div className='total-payment'>
+                    <div className='total-payment-header'>
+                        <span>
+                            <p className='total-ammount'>Total Payment</p>
+                            <p className='next-billing'>Next billing date is {getNextPaymentDate()}</p>
+                        </span>
+                        <label className="requests-value">${val.toLocaleString("en-US")}</label>
                     </div>
-                    <labe className="requests-value">${val.toLocaleString("en-US")}</labe>
-                </div>
-                <Divider type='vertical'/>
-                <div className='requests-panel-item'>
-                    <div>
-                        <img src={TotalPayment} alt="PricePerRequest"/> 
-                        <label className="requests-title">Price per request</label>
+                    <Divider/>
+                    <span className='billing-item'>
+                        <p className='item'>Subtotal</p>
+                        <p className='ammount'>$2,425.00</p>
+                    </span>
+                    <span className='billing-item'>
+                        <p className='item'>Other Fees</p>
+                        <p className='ammount'>$0.00</p>
+                    </span>
+                    <span className='billing-item'>
+                        <p className='item'>Discount</p>
+                        <p className='ammount'>-</p>
+                    </span>
+                    <span className='billing-item'>
+                        <p className='item'></p>
+                        <p className='ammount'>$55.00</p>
+                    </span>
+                    <Divider/>
+                    <div className='total-payment-footer'>
+                        <span className='promo-code-section'>
+                        <p className='next-billing'>Promo Code</p>
+                        {/* <Input/> */}
+                        </span>
+                        <p className='download-invoice'>Download  Invoice</p>
                     </div>
-                    <labe className="requests-value">${val.toLocaleString("en-US")}</labe>
                 </div>
             </div>
-            <div className='requests-panel'>
-                <div className='requests-item'>
-                    <div className='circle-img'>
-                    <img src={Consumed} alt='Consumed'/>
-                    </div>
-                        
-                        <div>
-                            <label className='request-type'>Consumed</label>
-                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
+            <div className='usage-details'>
+                <div className='requests-panel'>
+                    <div className='requests-item'>
+                        <div className='circle-img'>
+                        <img src={Consumed} alt='Consumed'/>
                         </div>
-                </div>
-                <labe className="requests-value value">{val.toLocaleString("en-US")}</labe>
-            </div>
-            <div className='requests-panel'>
-                <div className='requests-item'>
-                    <div className='circle-img'>
-                    <img src={Redeliver} alt='Consumed'/>
+                            
+                            <div>
+                                <label className='request-type'>Consumed</label>
+                                <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
+                            </div>
                     </div>
-                        
-                        <div>
-                            <label className='request-type'>Redeliver</label>
-                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
-                        </div>
-                        
+                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
                 </div>
-                <labe className="requests-value value">{val.toLocaleString("en-US")}</labe>
-            </div>
-            <div className='requests-panel'>
-                <div className='requests-item'>
-                    <div className='circle-img'>
-                    <img src={DeadLetter} alt='Consumed'/>
+                <div className='requests-panel'>
+                    <div className='requests-item'>
+                        <div className='circle-img'>
+                        <img src={Redeliver} alt='Consumed'/>
+                        </div>
+                            
+                            <div>
+                                <label className='request-type'>Redeliver</label>
+                                <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
+                            </div>
+                            
                     </div>
-                        
-                        <div>
-                            <label className='request-type'>Dead Letters</label>
-                            <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
-                        </div>
+                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
                 </div>
-                <labe className="requests-value value">{val.toLocaleString("en-US")}</labe>
+                <div className='requests-panel'>
+                    <div className='requests-item'>
+                        <div className='circle-img'>
+                        <img src={Storage} alt='Storage'/>
+                        </div>
+                            
+                            <div>
+                                <label className='request-type'>Storage</label>
+                                <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
+                            </div>
+                    </div>
+                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                </div>
+                <div className='requests-panel'>
+                    <div className='requests-item'>
+                        <div className='circle-img'>
+                        <img src={DeadLetter} alt='Consumed'/>
+                        </div>
+                            
+                            <div>
+                                <label className='request-type'>Dead Letters</label>
+                                <label className='request-description'>Contrary to popular belief, Lorem Ipsum</label>
+                            </div>
+                    </div>
+                    <label className="requests-value">{val.toLocaleString("en-US")}</label>
+                </div> 
             </div>
         </div>
     );
