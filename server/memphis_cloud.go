@@ -1043,14 +1043,6 @@ func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 
 type CloudHandler struct{ S *Server }
 
-// routes
-func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
-	tenantsHandler := h.Tenants
-	tenantsRoutes := router.Group("/tenants")
-	config := SetCors()
-	tenantsRoutes.POST("/createTenant", cors.New(config), tenantsHandler.CreateTenant)
-}
-
 func SetCors() cors.Config {
 	config := cors.Config{}
 	config.AllowAllOrigins = true
@@ -1296,5 +1288,75 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 	})
 }
 
-func InitializeApprovedInvitation(router *gin.RouterGroup) {
+func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
+}
+
+func (cl CloudHandler) RemoveUser(c *gin.Context) {
+	var body models.RemoveUserSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	username := strings.ToLower(body.Username)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	if user.Username == username {
+		serv.Warnf("RemoveUser: You can not remove your own user")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
+		return
+	}
+
+	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
+	if err != nil {
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("RemoveUser: User does not exist")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
+		return
+	}
+	if userToRemove.UserType == "root" {
+		serv.Warnf("RemoveUser: You can not remove the root user")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
+		return
+	}
+
+	err = updateDeletedUserResources(userToRemove)
+	if err != nil {
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = db.DeleteUser(username, userToRemove.TenantName)
+	if err != nil {
+		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-remove-user")
+	}
+
+	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
+	c.IndentedJSON(200, gin.H{})
 }

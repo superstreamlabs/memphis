@@ -29,7 +29,7 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.GET("/getSignUpFlag", userMgmtHandler.GetSignUpFlag)
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
 	userMgmtRoutes.GET("/getApplicationUsers", userMgmtHandler.GetApplicationUsers)
-	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
+	userMgmtRoutes.DELETE("/removeUser", cloudHandler.RemoveUser)
 	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)
 	userMgmtRoutes.PUT("/editAvatar", userMgmtHandler.EditAvatar)
 	userMgmtRoutes.PUT("/editCompanyLogo", userMgmtHandler.EditCompanyLogo)
@@ -41,6 +41,6 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.PUT("/changePassword", userMgmtHandler.ChangePassword)
 }
 
-func AddCloudRoutes(router *gin.RouterGroup) {
-	server.InitializeApprovedInvitation(router)
+func AddCloudRoutes(router *gin.RouterGroup, h *server.Handlers) {
+	server.InitializeTenantsRoutes(router, h)
 }
