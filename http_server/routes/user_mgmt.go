@@ -19,11 +19,12 @@ import (
 
 func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtHandler := server.UserMgmtHandler{}
+	cloudHandler := server.CloudHandler{}
 	userMgmtRoutes := router.Group("/usermgmt")
-	userMgmtRoutes.POST("/login", userMgmtHandler.Login)
+	userMgmtRoutes.POST("/login", cloudHandler.Login)
 	userMgmtRoutes.POST("/doneNextSteps", userMgmtHandler.DoneNextSteps)
 	userMgmtRoutes.POST("/refreshToken", userMgmtHandler.RefreshToken)
-	userMgmtRoutes.POST("/addUser", userMgmtHandler.AddUser)
+	userMgmtRoutes.POST("/addUser", cloudHandler.AddUser)
 	userMgmtRoutes.POST("/addUserSignUp", userMgmtHandler.AddUserSignUp)
 	userMgmtRoutes.GET("/getSignUpFlag", userMgmtHandler.GetSignUpFlag)
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
