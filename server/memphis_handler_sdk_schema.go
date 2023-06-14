@@ -16,52 +16,8 @@ type CreateSchemaReq struct {
 	MessageStructName string `json:"message_struct_name"`
 }
 
-type DeleteSchemaReq struct {
-	Name string `json:"name"`
-}
-
 type SchemaResponse struct {
 	Err string `json:"error"`
-}
-
-func (s *Server) deleteSchemaDirect(c *client, reply string, msg []byte) {
-	var tenantName string
-	var dsr DeleteSchemaReq
-	var resp SchemaResponse
-	tenantName, message, err := s.getTenantNameAndMessage(msg)
-	if err != nil {
-		s.Errorf("deleteSchemaDirect - failed deleting Schema: " + err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	}
-
-	if err := json.Unmarshal([]byte(message), &dsr); err != nil {
-		s.Errorf("deleteSchemaDirect - failed deleting Schema: %v", err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	}
-
-	exist, schema, err := db.GetSchemaByName(dsr.Name, tenantName)
-	if err != nil {
-		s.Errorf("deleteSchemaDirect - failed deleting Schema:" + err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	} else if !exist {
-		schemaDoesntExist := fmt.Sprintf(" %v  Doesn't Exist", dsr.Name)
-		s.Errorf(schemaDoesntExist)
-		respondWithRespErr(tenantName, s, reply, errors.New(schemaDoesntExist), &resp)
-		return
-	}
-
-	err = db.FindAndDeleteSchema([]int{schema.ID})
-	if err != nil {
-		s.Errorf("deleteSchemaDirect - failed deleting Schema:" + err.Error())
-		respondWithRespErr(tenantName, s, reply, err, &resp)
-		return
-	}
-
-	respondWithRespErr(tenantName, s, reply, err, &resp)
-
 }
 
 func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {

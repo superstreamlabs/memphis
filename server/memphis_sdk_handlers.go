@@ -167,23 +167,15 @@ func (s *Server) initializeSDKHandlers() {
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
 
-	//schema creation and deletion
+	//schema creation
 	s.queueSubscribe(globalAccountName, "$memphis_schema_creations",
 		"memphis_schema_creations_listeners_group", createSchemaHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_schema_destructions",
-		"memphis_schema_destructions_listeners_group", deleteSchemaHandler(s))
 
 }
 
 func createSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.createSchemaDirect(c, reply, copyBytes(msg))
-	}
-}
-
-func deleteSchemaHandler(s *Server) simplifiedMsgHandler {
-	return func(c *client, subject, reply string, msg []byte) {
-		go s.deleteSchemaDirect(c, reply, copyBytes(msg))
 	}
 }
 
