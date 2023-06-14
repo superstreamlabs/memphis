@@ -28,7 +28,7 @@ func InitializeHttpServer(s *server.Server) {
 		Schemas:        server.SchemasHandler{S: s},
 		Configurations: server.ConfigurationsHandler{S: s},
 		Integrations:   server.IntegrationsHandler{S: s},
-		Cloud:          server.CloudHandler{S: s},
+		Tenants:        server.CloudHandler{S: s},
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)

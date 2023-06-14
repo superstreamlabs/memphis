@@ -40,3 +40,7 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.GET("/getFilterDetails", userMgmtHandler.GetFilterDetails)
 	userMgmtRoutes.PUT("/changePassword", userMgmtHandler.ChangePassword)
 }
+
+func AddCloudRoutes(router *gin.RouterGroup) {
+	server.InitializeApprovedInvitation(router)
+}

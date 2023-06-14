@@ -27,12 +27,11 @@ import (
 type CloudHandler struct{ S *Server }
 
 // routes
-func InitializeCloudRoutes(router *gin.RouterGroup, h *Handlers) {
-	cloudHandler := h.Cloud
-	configurationsRoutes := router.Group("/cloud")
+func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
+	tenantsHandler := h.Tenants
+	tenantsRoutes := router.Group("/tenants")
 	config := SetCors()
-	configurationsRoutes.POST("/createTenant", cors.New(config), cloudHandler.CreateTenant)
-	configurationsRoutes.POST("/approvedInvitation", cors.New(config), cloudHandler.ApprovedInvitation)
+	tenantsRoutes.POST("/createTenant", cors.New(config), tenantsHandler.CreateTenant)
 }
 
 func SetCors() cors.Config {
@@ -45,10 +44,6 @@ func validateTenantName(tenantName string) error {
 }
 
 func (cl CloudHandler) CreateTenant(c *gin.Context) {
-	c.IndentedJSON(404, gin.H{})
-}
-
-func (cl CloudHandler) ApprovedInvitation(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }
 
@@ -277,4 +272,7 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 		"team":                    newUser.Team,
 		"pending":                 newUser.Pending,
 	})
+}
+
+func InitializeApprovedInvitation(router *gin.RouterGroup) {
 }
