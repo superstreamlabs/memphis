@@ -38,6 +38,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type CloudHandler struct{ S *Server }
+
 func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
