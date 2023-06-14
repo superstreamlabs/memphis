@@ -36,7 +36,7 @@ type Handlers struct {
 	Schemas        SchemasHandler
 	Integrations   IntegrationsHandler
 	Configurations ConfigurationsHandler
-	Cloud          CloudHandler
+	Billing        BillingHandler
 }
 
 var serv *Server
