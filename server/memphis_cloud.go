@@ -1291,6 +1291,8 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 		"position":                newUser.Position,
 		"team":                    newUser.Team,
 		"pending":                 newUser.Pending,
+		"owner":                   newUser.Owner,
+		"description":             newUser.Description,
 	})
 }
 
