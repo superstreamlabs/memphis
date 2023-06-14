@@ -10,6 +10,12 @@
         justify-content: space-between;
         align-items: center;
         padding: 40px 40px 0px 40px;
+        .header{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
         .main-header {
             font-family: 'InterSemiBold';
             font-size: 24px;

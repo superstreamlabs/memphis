@@ -21,16 +21,15 @@ import Consumed from '../../../../assets/images/setting/consumed.svg'
 import Redeliver from '../../../../assets/images/setting/redeliver.svg'
 import DeadLetter from '../../../../assets/images/setting/deadLetter.svg'
 import Storage from '../../../../assets/images/setting/storage.svg'
-
+import DatePickerComponent from '../../../../components/datePicker';
 
 function Requests() {
     const [usageData, setUsageData] = useState(null)
 
-    const getBillingDetails = async () => {
+    const getBillingDetails = async (date) => {
         try {
-            const today = new Date();
-            const month = today.getMonth()
-            const year = today.getFullYear()
+            const month = date.getMonth()
+            const year = date.getFullYear()
             const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month+1}&year=${year}`);
             setUsageData(data)
         } catch (err) {
@@ -49,9 +48,14 @@ function Requests() {
         today.setMonth(nextMonth - 1);
         return `01 ${today.toLocaleString('en-US', {month: 'long'})} ${year}` 
     }
+
+    const onChangeDate = (date) => {
+        getBillingDetails(date)
+      };
     
     useEffect(() => {
-        getBillingDetails()
+        const today = new Date();
+        getBillingDetails(today)
     }, []);
 
     const val = 43279
@@ -59,8 +63,11 @@ function Requests() {
         <div className="requests-container">
            <div className="header-preferences">
                 <div className="header">
-                    <p className="main-header">Requests</p>
-                    <p className="memphis-label">We will keep an eye on your data streams and alert.</p>
+                    <div>
+                        <p className="main-header">Requests</p>
+                        <p className="memphis-label">We will keep an eye on your data streams and alert.</p>
+                    </div>
+                    <DatePickerComponent onChange={onChangeDate} picker="month" allowClear={false} />
                 </div>
             </div>
            <div className='usage-header-section'>
