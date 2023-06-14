@@ -30,6 +30,8 @@ type User struct {
 	Pending         bool      `json:"pending"`
 	Position        string    `json:"position"`
 	Team            string    `json:"team"`
+	Owner           string    `json:"owner"`
+	Description     string    `json:"description"`
 }
 
 type Image struct {
@@ -47,6 +49,8 @@ type AddUserSchema struct {
 	Subscribtion bool   `json:"subscription"`
 	Team         string `json:"team"`
 	Position     string `json:"position"`
+	Owner        string `json:"owner"`
+	Description  string `json:"description"`
 }
 
 type AuthenticateNatsSchema struct {

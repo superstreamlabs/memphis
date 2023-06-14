@@ -113,6 +113,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS pending BOOL NOT NULL DEFAULT false;
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS team VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS owner VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
 		ALTER TABLE users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
 		END IF;
@@ -139,7 +141,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		UNIQUE(username, tenant_name),
 		pending BOOL NOT NULL DEFAULT false,
 		team VARCHAR NOT NULL DEFAULT '',
-		position VARCHAR NOT NULL DEFAULT ''
+		position VARCHAR NOT NULL DEFAULT '',
+		owner VARCHAR NOT NULL DEFAULT '',
+		description VARCHAR NOT NULL DEFAULT ''
 		);`
 
 	alterConfigurationsTable := `
@@ -3578,7 +3582,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]string, p
 }
 
 // User Functions
-func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position string) (models.User, error) {
+func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position, owner, description string) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3601,8 +3605,10 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		tenant_name,
 		pending,
 		team, 
-		position) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`
+		position,
+		owner,
+		description) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
 	if err != nil {
@@ -3616,7 +3622,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	if tenantName != conf.GlobalAccountName {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position, owner, description)
 	if err != nil {
 		return models.User{}, err
 	}

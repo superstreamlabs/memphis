@@ -1162,6 +1162,8 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 	team := strings.ToLower(body.Team)
 	position := strings.ToLower(body.Position)
 	fullName := strings.ToLower(body.FullName)
+	owner := strings.ToLower(body.Owner)
+	description := strings.ToLower(body.Description)
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -1250,7 +1252,7 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
 		}
 	}
-	newUser, err := db.CreateUser(username, userType, password, fullName, subscription, avatarId, user.TenantName, pending, team, position)
+	newUser, err := db.CreateUser(username, userType, password, fullName, subscription, avatarId, user.TenantName, pending, team, position, owner, description)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			serv.Warnf("CreateUserManagement: " + err.Error())
