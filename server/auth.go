@@ -29,9 +29,9 @@ import (
 	"time"
 
 	"github.com/nats-io/jwt/v2"
-	"memphis/internal/ldap"
 	"github.com/nats-io/nkeys"
 	"golang.org/x/crypto/bcrypt"
+	"memphis/internal/ldap"
 )
 
 // Authentication is an interface for implementing authentication
@@ -724,6 +724,13 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 			}
 			if c.opts.Username != _EMPTY_ {
 				user, ok = s.users[c.opts.Username]
+
+				// *** Added by Memphis
+				if !ok {
+					user, ok = s.users[c.opts.Username+"$1"] // add global tenant id suffix
+				}
+				// Added by Memphis ***
+
 				if !ok || !c.connectionTypeAllowed(user.AllowedConnectionTypes) {
 					s.mu.Unlock()
 					return false
