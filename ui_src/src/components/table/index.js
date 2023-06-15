@@ -10,8 +10,20 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-export const sandboxConst = {
-    GOOGLE_CLIENT_ID: '916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com',
-    GITHUB_CLIENT_ID: '4dc1b3238c4d7563e426',
-    REDIRECT_URI: 'https://sandbox.memphis.dev/login'
+import './style.scss';
+
+import { Table as CustomTable } from 'antd';
+import React from 'react';
+
+const Table = ({ columns, data, title, tableRowClassname }) => {
+    const fieldProps = {
+        columns,
+        dataSource: data,
+        title,
+        rowClassName: tableRowClassname
+    };
+
+    return <CustomTable {...fieldProps} />;
 };
+
+export default Table;

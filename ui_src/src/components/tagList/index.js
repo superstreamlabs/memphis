@@ -38,9 +38,9 @@ const TagsList = ({ tagsToShow, tags, editable, handleDelete, entityType, entity
 
     useEffect(() => {
         if (tags?.length > tagsToShow) {
-            const tagsShow = tags.slice(0, tagsToShow);
+            const tagsShow = tags?.slice(0, tagsToShow);
             setTagsToDisplay(tagsShow);
-            const remainingTagsList = tags.slice(tagsToShow);
+            const remainingTagsList = tags?.slice(tagsToShow);
             setRemainingTags(remainingTagsList);
         } else {
             setTagsToDisplay(tags);

@@ -25,11 +25,13 @@ export const ApiEndpoints = {
     EDIT_COMPANY_LOGO: '/usermgmt/editCompanyLogo',
     REMOVE_COMPANY_LOGO: '/usermgmt/removeCompanyLogo',
     EDIT_ANALYTICS: '/usermgmt/editAnalytics',
-    SANDBOX_LOGIN: '/sandbox/login',
     DONE_NEXT_STEPS: '/usermgmt/doneNextSteps',
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
+
+    //Cloud Management
+    CLOUD_LOGIN: '/cloud/loginCloud',
 
     //Station
     CREATE_STATION: '/stations/createStation',

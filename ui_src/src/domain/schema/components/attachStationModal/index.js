@@ -167,7 +167,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                         <Button
                             width="150px"
                             height="34px"
-                            placeholder="Attach Selected"
+                            placeholder="Enforce Selected"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

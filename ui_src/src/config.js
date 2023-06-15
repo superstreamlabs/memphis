@@ -10,6 +10,8 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
+import { isCloud } from './services/valueConvertor';
+
 export const ENVIRONMENT = process.env.NODE_ENV ? process.env.NODE_ENV : 'development';
 const SERVER_URL_PRODUCTION = `${window.location.href.split('//')[1].split('/')[0]}/api`;
 var ws_server_url_prod = `${window.location.href.split('//')[1].split('/')[0]}`;
@@ -23,12 +25,8 @@ export const URL = window.location.href;
 
 export const HANDLE_REFRESH_INTERVAL = 600000;
 export const SHOWABLE_ERROR_STATUS_CODE = 666;
-export const SANDBOX_SHOWABLE_ERROR_STATUS_CODE = 665;
 export const AUTHENTICATION_ERROR_STATUS_CODE = 401;
 export const DOC_URL = 'https://docs.memphis.dev/memphis/memphis/overview';
-export const GOOGLE_CLIENT_ID = '916272522459-u0f4n2lh9llsielb3l5rob3dnt1fco76.apps.googleusercontent.com';
-export const REDIRECT_URI = ENVIRONMENT === 'production' ? 'https://sandbox.memphis.dev/login' : `http://localhost:9000/login`;
-export const GITHUB_CLIENT_ID = ENVIRONMENT === 'production' ? '4dc1b3238c4d7563e426' : '51b0330eb3b34bc8f641';
 export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
 export const CONNECT_CLI_VIDEO = 'https://www.youtube.com/watch?v=awXwaU4rBBQ';
 
@@ -37,3 +35,9 @@ export const LATEST_RELEASE_URL = 'https://api.github.com/repos/Memphisdev/memph
 export const RELEASE_DOCS_URL = 'https://docs.memphis.dev/memphis/release-notes/releases/';
 export const DOCKER_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/docker-compose#how-to-upgrade';
 export const K8S_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/kubernetes/how-to-upgrade';
+
+export const CLOUD_URL = isCloud()
+    ? window.location.href?.includes('cloud-staging') || window.location.href?.includes('localhost')
+        ? 'https://memphis.otabekgh.uz/sign-in/'
+        : 'https://cloud.memphis.dev'
+    : null;

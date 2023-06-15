@@ -41,7 +41,7 @@ import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
-import { compareVersions } from '../../services/valueConvertor';
+import { compareVersions, isCloud } from '../../services/valueConvertor';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -206,16 +206,18 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                <div className="item-wrapper" onClick={() => history.push(pathDomains.sysLogs)}>
-                    <div className="icon">
-                        {state.route === 'logs' ? (
-                            <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
-                        ) : (
-                            <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
-                        )}
+                {!isCloud() && (
+                    <div className="item-wrapper" onClick={() => history.push(pathDomains.sysLogs)}>
+                        <div className="icon">
+                            {state.route === 'logs' ? (
+                                <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                            ) : (
+                                <img src={logsIcon} alt="usersIcon" width="20" height="20"></img>
+                            )}
+                        </div>
+                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                     </div>
-                    <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                </div>
+                )}
             </div>
             <div className="bottom-icons">
                 <TooltipComponent text="Integrations" placement="right">

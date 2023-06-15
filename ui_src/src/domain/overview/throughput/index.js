@@ -222,7 +222,7 @@ function Throughput() {
             displayColors: false,
             callbacks: {
                 title: () => {
-                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
+                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent?.slice(1)} - ${throughputType}`;
                 },
                 label: (tooltipItem) => {
                     return `${tooltipItem.label}`;

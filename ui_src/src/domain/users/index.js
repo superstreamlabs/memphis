@@ -12,10 +12,12 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useRef } from 'react';
-import { Virtuoso } from 'react-virtuoso';
+import React, { useEffect, useContext, useState, useRef, useCallback } from 'react';
+import { AccountCircleRounded } from '@material-ui/icons';
 
 import searchIcon from '../../assets/images/searchIcon.svg';
+import addUserIcon from '../../assets/images/addUserIcon.svg';
+
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
 import CreateUserDetails from './createUserDetails';
@@ -26,6 +28,48 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import UserItem from './userItem';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import Table from '../../components/table';
+import ActiveBadge from '../../components/activeBadge';
+import SegmentButton from '../../components/segmentButton';
+
+const UsersData = [
+    {
+        key: '1',
+        username: 'a@a.gmail.com',
+        avatar_id: 1,
+        status: 0,
+        full_name: 'A A',
+        team: 'Team A',
+        position: 'Manager',
+        created_at: '2021-08-01 12:00:00'
+    },
+    {
+        key: '2',
+        username: 't@t.gmail.com',
+        avatar_id: 2,
+        status: 1,
+        full_name: 'T T',
+        team: 'Team B',
+        position: 'R&D',
+        created_at: '2021-08-01 12:00:00'
+    }
+];
+const ClientsData = [
+    {
+        key: '1',
+        username: 'a@a.gmail.com',
+        owner: 'A A',
+        description: 'There are many variations of passages of Lorem Ipsum available..',
+        created_at: '2021-08-01 12:00:00'
+    },
+    {
+        key: '2',
+        username: 't@t.gmail.com',
+        owner: 'T T',
+        description: 'There are many variations of passages of Lorem Ipsum available..',
+        created_at: '2021-08-01 12:00:00'
+    }
+];
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -33,9 +77,13 @@ function Users() {
     const [copyOfUserList, setCopyOfUserList] = useState([]);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [userDetailsModal, setUserDetailsModal] = useState(false);
+    const [removeUserModalOpen, setRemoveUserModalOpen] = useState(false);
+    const [userToRemove, setuserToRemove] = useState('');
+
     const createUserRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [tableType, setTableType] = useState('Management');
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -70,12 +118,6 @@ function Users() {
         setSearchInput(e.target.value);
     };
 
-    const removeUser = async (username) => {
-        const updatedUserList = userList.filter((item) => item.username !== username);
-        setUsersList(updatedUserList);
-        setCopyOfUserList(updatedUserList);
-    };
-
     const closeModal = (userData) => {
         let newUserList = userList;
         newUserList.push(userData);
@@ -87,10 +129,198 @@ function Users() {
         }
     };
 
+    const getAvatarSrc = (avatarId) => {
+        return require(`../../assets/images/bots/avatar${avatarId}.svg`);
+    };
+
+    const handleRemoveUser = async (username) => {
+        const updatedUserList = userList.filter((item) => item.username !== username);
+        setUsersList(updatedUserList);
+        setCopyOfUserList(updatedUserList);
+    };
+
+    const removeUser = async (username) => {
+        try {
+            await httpRequest('DELETE', ApiEndpoints.REMOVE_USER, {
+                username: username
+            });
+            handleRemoveUser(username);
+        } catch (error) {}
+    };
+
+    const deleteUser = (username) => {
+        setuserToRemove(username);
+        setRemoveUserModalOpen(true);
+    };
+
+    const revokeUser = (username) => {
+        setuserToRemove(username);
+        setRemoveUserModalOpen(true);
+    };
+
+    const resendEmail = (username) => {
+        setuserToRemove(username);
+        setRemoveUserModalOpen(true);
+    };
+
+    const clientColumns = [
+        {
+            title: 'Username',
+            dataIndex: 'username',
+            key: 'username',
+            render: (text, record) => (
+                <div className="user-name">
+                    <div className="user-avatar">
+                        <AccountCircleRounded />
+                    </div>
+                    <p>{text}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Owner',
+            key: 'owner',
+            dataIndex: 'owner',
+            render: (owner) => (
+                <div className="full-name">
+                    <p>{owner}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Description',
+            key: 'description',
+            dataIndex: 'description',
+            render: (description) => (
+                <div className="created-column">
+                    <p>{description}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at',
+            render: (created_at) => (
+                <div className="created-column">
+                    <p>{created_at}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action',
+            render: (_, record) => (
+                <div className="user-action">
+                    <p onClick={() => deleteUser(record.username)}>Delete user</p>
+                </div>
+            )
+        }
+    ];
+    const managmentColumns = [
+        {
+            title: 'Username',
+            dataIndex: 'username',
+            key: 'username',
+            // sorter: (a, b) => a.username.localeCompare(b.username),
+            render: (text, record) => (
+                <div className="user-name">
+                    <div className="user-avatar">
+                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
+                    </div>
+                    <p>{text}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status) => (
+                <div className="status">
+                    <ActiveBadge active={status} content={status === 0 ? 'Panding' : 'Active'} />
+                </div>
+            )
+        },
+        {
+            title: 'Full Name',
+            key: 'full_name',
+            dataIndex: 'full_name',
+            render: (full_name) => (
+                <div className="full-name">
+                    <p>{full_name}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Team',
+            key: 'team',
+            dataIndex: 'team',
+            render: (team) => (
+                <div className="team">
+                    <p>{team}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Position',
+            key: 'position',
+            dataIndex: 'position',
+            render: (position) => (
+                <div className="position">
+                    <p>{position}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at',
+            render: (created_at) => (
+                <div className="created-column">
+                    <p>{created_at}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action',
+            render: (_, record) => (
+                <div className="user-action">
+                    {record.status === 0 ? (
+                        <>
+                            <p onClick={() => resendEmail(record.username)}>Resend Email</p>
+                            <p onClick={() => revokeUser(record.username)}>Revoke</p>
+                        </>
+                    ) : (
+                        <p onClick={() => deleteUser(record.username)}>Delete user</p>
+                    )}
+                </div>
+            )
+        }
+    ];
+
+    const changeTableView = (e) => {
+        setTableType(e);
+    };
+
+    const tableHeader = () => {
+        return (
+            <div className="table-header">
+                <p>User type:</p>
+                <SegmentButton value={tableType} options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
+            </div>
+        );
+    };
     return (
         <div className="users-container">
             <div className="header-wraper">
-                <label className="main-header-h1">Users</label>
+                <div className="main-header-wrapper">
+                    <label className="main-header-h1">Users</label>
+                    <span className="memphis-label">For client authentication, choose "Client". For management only, choose "Management".</span>
+                </div>
                 <div className="add-search-user">
                     <SearchInput
                         placeholder="Search here"
@@ -121,32 +351,38 @@ function Users() {
                     />
                 </div>
             </div>
-            <span className="memphis-label">For client authentication, choose "Application". For management only, choose "Management".</span>
             <div className="users-list-container">
-                <div className="users-list-header">
-                    <p className="user-name-title">Username</p>
-                    <p className="type-title">Type</p>
-                    <p className="creation-date-title">Creation date</p>
-                </div>
-                <div className="users-list">
-                    {isLoading && (
-                        <div className="loader-uploading">
-                            <Loader />
-                        </div>
-                    )}
-                    {!isLoading && userList.length > 0 && (
-                        <Virtuoso
-                            data={userList}
-                            overscan={100}
-                            className="testt"
-                            itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
-                        />
-                    )}
-                </div>
+                {isLoading && (
+                    <div className="loader-uploading">
+                        <Loader />
+                    </div>
+                )}
+                {!isLoading && userList.length > 0 && (
+                    // <Virtuoso
+                    //     data={userList}
+                    //     overscan={100}
+                    //     itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
+                    // />
+                    <Table
+                        tableRowClassname="user-row"
+                        title={tableHeader}
+                        columns={tableType === 'Management' ? managmentColumns : clientColumns}
+                        data={tableType === 'Management' ? UsersData : ClientsData}
+                    />
+                )}
             </div>
             <Modal
-                header="Create new user"
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={addUserIcon} alt="stationImg" />
+                        </div>
+                        <p>Add a new user</p>
+                        <label>Enter user details to get started</label>
+                    </div>
+                }
                 height="550px"
+                width="450px"
                 rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -158,7 +394,7 @@ function Users() {
                 }}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => closeModal(userData)} />
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => closeModal(userData)} users={UsersData} />
             </Modal>
             <Modal
                 header="User connection details"
@@ -179,6 +415,23 @@ function Users() {
                     </p>
                     <p className="note">Please note when you close this modal, you will not be able to restore your user details!!</p>
                 </div>
+            </Modal>
+            <Modal
+                header="Delete user"
+                height="120px"
+                rBtnText="Cancel"
+                lBtnText="Delete"
+                lBtnClick={() => {
+                    removeUser(userToRemove);
+                }}
+                clickOutside={() => setRemoveUserModalOpen(false)}
+                rBtnClick={() => setRemoveUserModalOpen(false)}
+                open={removeUserModalOpen}
+            >
+                <label>
+                    Are you sure you want to delete "<b>{userToRemove}</b>"?
+                </label>
+                <br />
             </Modal>
         </div>
     );

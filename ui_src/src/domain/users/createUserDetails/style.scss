@@ -1,15 +1,29 @@
 .create-user-form {
-    .field {
-        p {
-            font-size: 12px;
-            font-family: 'Inter';
-        }
+    p{
+        margin-bottom: 5px;
+    }
+    .ant-form-item {
+        margin-bottom: 0px;
+    }
+    .fields-title{
+        font-family: 'InterMedium';
+        font-size: 16px;
+    }
+    .field-title{
+        font-size:12px;
+        font-family: 'Inter';
+        font-weight: 400;
+    }
+    .user-details{
+        margin-bottom: 12px;
+    }
+    .field{
+        margin-bottom: 10px;
+    }
+    .user-type{
+        margin-bottom: 0 !important;
     }
     .password {
-        margin-top: 20px;
-        p {
-            margin-top: 20px;
-        }
         .generate-password-button{
             color: var(--purple);
             cursor: pointer;
@@ -17,7 +31,41 @@
             font-size: 12px;
         }
     }
+    .flex-row{
+        display: flex;
+        justify-content: space-between;
+    }
     .password-section {
-        margin-top: 50px;
+        .radio-button {
+            margin-bottom: 10px;
+            .ant-radio-group {
+                .ant-radio-button-wrapper {
+                    border-radius: 32px;
+                    text-align: center;
+                    margin-right: 5px;
+                    color: #808191;
+                    border-color: rgba(243,243,243,1);
+                    content: normal;
+                    border-left-width: 1px;
+                }
+
+                .ant-radio-button-wrapper:first-child {
+                    text-align: center;
+                }
+
+                .ant-radio-button-wrapper > .ant-radio-button {
+                    border-radius: 32px;
+                }
+
+                .ant-radio-button-wrapper-checked {
+                    color: white;
+                    background-color: #6557ff;
+                    border-color: #6557ff;
+                }
+                .ant-radio-button-wrapper:not(:first-child)::before {
+                    content: none;
+                }
+            }
+        }
     }
 }
