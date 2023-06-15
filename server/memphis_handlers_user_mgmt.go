@@ -477,11 +477,14 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-enter-users-page")
 	}
 
-	var applicationUsers []models.FilteredGenericUser
-	var managementUsers []models.FilteredGenericUser
+	applicationUsers := []models.FilteredGenericUser{}
+	managementUsers := []models.FilteredGenericUser{}
+	var rootUser models.FilteredGenericUser
 
 	for _, user := range users {
-		if user.UserType == "application" {
+		if user.UserType == "root" {
+			rootUser = user
+		} else if user.UserType == "application" {
 			applicationUsers = append(applicationUsers, user)
 		} else if user.UserType == "management" {
 			managementUsers = append(managementUsers, user)
@@ -491,7 +494,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	if len(users) == 0 {
 		c.IndentedJSON(200, []models.User{})
 	} else {
-		c.IndentedJSON(200, gin.H{"application_users": applicationUsers, "management_users": managementUsers})
+		c.IndentedJSON(200, gin.H{"root_user": rootUser, "application_users": applicationUsers, "management_users": managementUsers})
 	}
 }
 
