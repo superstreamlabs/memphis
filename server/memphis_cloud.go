@@ -1408,7 +1408,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	}
 	err = removeDeletedUsersResources(tenantName)
 	if err != nil {
-		serv.Errorf("RemoveTenant: User " + username + ": " + err.Error())
+		serv.Errorf("RemoveMyUser: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
@@ -1425,6 +1425,6 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-remove-himself")
 	}
 
-	serv.Noticef("User " + user.Username + " has been deleted")
+	serv.Noticef("Tenant " + user.TenantName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }

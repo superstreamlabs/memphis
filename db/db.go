@@ -849,7 +849,7 @@ func RemoveConnectionsOfDeletedUsers(tenantNames string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM connections WHERE tenant_name=ANY($1)`
+	query := `DELETE FROM connections WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_connection_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -1084,7 +1084,7 @@ func RemoveAuditLogsOfDeletedUsers(tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM audit_logs WHERE tenant_name = ANY($1)`
+	query := `DELETE FROM audit_logs WHERE tenant_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -1845,7 +1845,7 @@ func RemoveStationsOfDeletedUsers(tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM stations WHERE tenant_name=ANY($1)`
+	query := `DELETE FROM stations WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_stations_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -2415,7 +2415,7 @@ func RemoveProducersOfDeletedUsers(tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM producers WHERE tenant_name = ANY($1)`
+	query := `DELETE FROM producers WHERE tenant_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_of_deleted_users", query)
 	if err != nil {
 		return err
@@ -2935,7 +2935,7 @@ func RemoveConsumersOfDeletedUsers(tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM consumers WHERE tenant_name = ANY($1)`
+	query := `DELETE FROM consumers WHERE tenant_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_consumers_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -3125,7 +3125,7 @@ func RemoveSchemasOfDeletedUsers(tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM schemas WHERE tenant_name = ANY($1)`
+	query := `DELETE FROM schemas WHERE tenant_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schemas_of_deleted_user", query)
 	if err != nil {
 		return err
@@ -3175,7 +3175,7 @@ func RemoveSchemaVersionsOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 
-	query := `DELETE FROM schema_versions WHERE tenant_name = ANY($1)`
+	query := `DELETE FROM schema_versions WHERE tenant_name = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions_of_deleted_user", query)
 	if err != nil {
 		return err
