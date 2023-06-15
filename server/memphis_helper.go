@@ -1183,13 +1183,33 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
+
+	var sysAcc *Account
+	for _, account := range opts.Accounts {
+		if account.GetName() == DEFAULT_SYSTEM_ACCOUNT {
+			sysAcc = account
+			break
+		}
+	}
+
+	var sysUser *User
+	for _, user := range opts.Users {
+		if user.Account.GetName() == DEFAULT_SYSTEM_ACCOUNT {
+			sysUser = user
+			break
+		}
+	}
+
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
 			tenantsToUpsert := []string{globalAccountName}
 			for _, account := range opts.Accounts {
-				name := strings.ToLower(account.GetName())
-				tenantsToUpsert = append(tenantsToUpsert, name)
+				name := account.GetName()
+				if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+					name = strings.ToLower(name)
+					tenantsToUpsert = append(tenantsToUpsert, name)
+				}
 			}
 			err = db.UpsertBatchOfTenants(tenantsToUpsert)
 			if err != nil {
@@ -1199,22 +1219,26 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		if len(opts.Users) > 0 {
 			usersToUpsert := []models.User{}
 			for _, user := range opts.Users {
-				username := strings.ToLower(user.Username)
-				tenantName := strings.ToLower(user.Account.GetName())
-				newUser := models.User{
-					Username:   username,
-					Password:   user.Password,
-					UserType:   "application",
-					CreatedAt:  time.Now(),
-					AvatarId:   1,
-					FullName:   "",
-					TenantName: tenantName,
+				if user.Account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+					username := strings.ToLower(user.Username)
+					tenantName := strings.ToLower(user.Account.GetName())
+					newUser := models.User{
+						Username:   username,
+						Password:   user.Password,
+						UserType:   "application",
+						CreatedAt:  time.Now(),
+						AvatarId:   1,
+						FullName:   "",
+						TenantName: tenantName,
+					}
+					usersToUpsert = append(usersToUpsert, newUser)
 				}
-				usersToUpsert = append(usersToUpsert, newUser)
 			}
-			err = db.UpsertBatchOfUsers(usersToUpsert)
-			if err != nil {
-				return &Account{}, Options{}, err
+			if len(usersToUpsert) > 0 {
+				err = db.UpsertBatchOfUsers(usersToUpsert)
+				if err != nil {
+					return &Account{}, Options{}, err
+				}
 			}
 		}
 		globalServicesExport := map[string]*serviceExport{}
@@ -1295,18 +1319,13 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: decryptedUserPassword, Account: addedTenant[name]})
 
 		}
+
+		accounts = append(accounts, sysAcc)
+		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
 	return gacc, opts, nil
-}
-
-func getStreamsImportForAccout(acc *Account) []*streamImport {
-	streamsImport := []*streamImport{}
-	for _, subj := range memphisServices {
-		streamsImport = append(streamsImport, &streamImport{acc: acc, from: subj, to: subj, usePub: true})
-	}
-	return streamsImport
 }
 
 func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
