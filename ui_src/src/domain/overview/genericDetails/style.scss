@@ -17,6 +17,10 @@
             margin-right: 20px;
         }
         .data-wrapper {
+            .operational-health {
+                display: flex;
+                align-items: center;
+            }
             span {
                 font-size: 14px;
                 color: #979797;
@@ -27,6 +31,7 @@
                 color: #1d1d1d;
                 font-family: 'InterBold';
                 margin: 0;
+                margin-right: 10px;
                 display: flex;
                 span {
                     font-size: 12px;
