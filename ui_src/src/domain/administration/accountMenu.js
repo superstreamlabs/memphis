@@ -20,6 +20,7 @@ import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
 import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
 import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
 import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
+import { isCloud } from '../../services/valueConvertor';
 
 function AccountMenu({ selectedMenuItem, setMenuItem }) {
     const [state, dispatch] = useContext(Context);
@@ -29,7 +30,7 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
             <p className="header">Administration</p>
             <p className="sub-header">Modify environment configuration</p>
             <div className="side-menu">
-                <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
+                <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
                     <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                     Integrations
                 </div>
@@ -37,12 +38,12 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                     <>
                         <div
                             className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
-                            onClick={() => selectMenuItem('cluster_configuration')}
+                            onClick={() => setMenuItem('cluster_configuration')}
                         >
                             <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
                             Environment configuration
                         </div>
-                        <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('version_upgrade')}>
+                        <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
                             <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
                             System information
                             {!state.isLatest && <div className="update-available">Update available</div>}
