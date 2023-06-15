@@ -925,6 +925,10 @@ func (s *Server) InitializeEventCounter() error {
 	return nil
 }
 
+func (s *Server) InitializeFirestore() error {
+	return nil
+}
+
 func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
