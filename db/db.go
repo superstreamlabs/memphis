@@ -110,7 +110,13 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'users' AND table_schema = 'public'
 		) THEN
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS pending BOOL NOT NULL DEFAULT false;
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS team VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS owner VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE users ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
+		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_tenant_name_key;
 		ALTER TABLE users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
 		END IF;
 	END $$;`
@@ -129,6 +135,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
 		tenant_name VARCHAR NOT NULL DEFAULT '$G',
+		pending BOOL NOT NULL DEFAULT false,
+		team VARCHAR NOT NULL DEFAULT '',
+		position VARCHAR NOT NULL DEFAULT '',
+		owner VARCHAR NOT NULL DEFAULT '',
+		description VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -144,6 +155,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE configurations DROP CONSTRAINT IF EXISTS configurations_key_key;
+		ALTER TABLE configurations DROP CONSTRAINT IF EXISTS key_tenant_name;
 		ALTER TABLE configurations ADD CONSTRAINT key_tenant_name UNIQUE(key, tenant_name);
 		END IF;
 	END $$;`
@@ -192,6 +204,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
+	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS tenant_name_name;
 	ALTER TABLE integrations ADD CONSTRAINT tenant_name_name UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -217,6 +230,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS schemas_name_tenant_name_key;
 		ALTER TABLE schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -245,6 +259,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE tags DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE tags DROP CONSTRAINT IF EXISTS tags_name_tenant_name_key;
 		ALTER TABLE tags ADD CONSTRAINT tags_name_tenant_name_key UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -3572,7 +3587,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]string, p
 }
 
 // User Functions
-func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string) (models.User, error) {
+func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position, owner, description string) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3592,8 +3607,13 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		full_name, 
 		subscription,
 		skip_get_started,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id`
+		tenant_name,
+		pending,
+		team, 
+		position,
+		owner,
+		description) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
 	if err != nil {
@@ -3607,7 +3627,7 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	if tenantName != conf.GlobalAccountName {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position, owner, description)
 	if err != nil {
 		return models.User{}, err
 	}
@@ -3649,6 +3669,11 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		AlreadyLoggedIn: alreadyLoggedIn,
 		AvatarId:        avatarId,
 		TenantName:      tenantName,
+		Pending:         pending,
+		Team:            team,
+		Position:        position,
+		Owner:           owner,
+		Description:     description,
 	}
 	return newUser, nil
 }
@@ -4129,7 +4154,7 @@ func UpsertBatchOfUsers(users []models.User) error {
 		valueArgs = append(valueArgs, user.FullName)
 	}
 	query := fmt.Sprintf("INSERT INTO users (username, password, type, created_at, avatar_id, full_name) VALUES %s ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password", strings.Join(valueStrings, ","))
-	stmt, err := conn.Conn().Prepare(ctx, "update_configuration", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update_batch_of_users", query)
 	if err != nil {
 		return err
 	}
@@ -5065,7 +5090,8 @@ func UpsertTenant(name string) (models.Tenant, error) {
 
 	//After creation a tenant we update the users table and create fk
 	//(we can't do alter and create fk in tables before global tenant exists in tenants table)
-	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
+	queryAlterUsersTable := `
+	ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
 	ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS connections ADD CONSTRAINT fk_tenant_name_connections FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS schemas ADD CONSTRAINT fk_tenant_name_schemas FOREIGN KEY(tenant_name) REFERENCES tenants(name);
@@ -5210,7 +5236,7 @@ func GetTenantById(id int) (bool, models.Tenant, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tenants AS c WHERE id = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_id", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_tenant_by_id", query)
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
@@ -5238,7 +5264,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	}
 	defer conn.Release()
 	query := `SELECT * FROM tenants AS c WHERE name = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_tennant_by_name", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_tenant_by_name", query)
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
@@ -5258,4 +5284,59 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 		return false, models.Tenant{}, nil
 	}
 	return true, tenants[0], nil
+}
+
+func CreateTenant(name string) (models.Tenant, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO tenants (name) VALUES($1)`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+
+	var tenantId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	if err != nil {
+		return models.Tenant{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&tenantId)
+		if err != nil {
+			return models.Tenant{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.Tenant{}, errors.New("Tenant " + name + " already exists")
+				} else {
+					return models.Tenant{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.Tenant{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.Tenant{}, err
+		}
+
+	}
+
+	newTenant := models.Tenant{
+		Name: name,
+	}
+
+	return newTenant, nil
 }
