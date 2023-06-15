@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -26,6 +27,7 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -1361,4 +1363,14 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
 	c.IndentedJSON(200, gin.H{})
+}
+
+func validateUsername(username string) error {
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
 }
