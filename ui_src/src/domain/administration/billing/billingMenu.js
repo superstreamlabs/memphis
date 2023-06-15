@@ -28,10 +28,10 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
                     <img src={selectedMenuItem === 'requests' ? RequestsColor : RequestsGray} alt="requests" />
                     Requests
                 </div>
-                <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
+                {/* <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
                     <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="payments" />
                     Payments
-                </div>
+                </div> */}
             </div>
         </>
     );

@@ -64,13 +64,13 @@ function Administration({ step }) {
                     history.replace(`${pathDomains.administration}/requests`);
                     break;
                 }
-            case 'payments':
-                if (window.location.href.split('/payments').length > 1) {
-                    return <Payments />;
-                } else {
-                    history.replace(`${pathDomains.administration}/payments`);
-                    break;
-                }
+            // case 'payments':
+            //     if (window.location.href.split('/payments').length > 1) {
+            //         return <Payments />;
+            //     } else {
+            //         history.replace(`${pathDomains.administration}/payments`);
+            //         break;
+            //     }
             default:
                 return;
         }

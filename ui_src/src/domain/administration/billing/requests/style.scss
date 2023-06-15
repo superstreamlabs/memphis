@@ -1,16 +1,16 @@
 .requests-container {
     height: 100%;
-    .requests-value{
+    .requests-value {
         font-weight: 700;
-        font-size: 26px;        
-        color: #2E2C34;
+        font-size: 26px;
+        color: #2e2c34;
     }
     .header-preferences {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 40px 40px 0px 40px;
-        .header{
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -22,143 +22,140 @@
             margin-bottom: 0;
         }
     }
-    .usage-header-section{
+    .usage-header-section {
         padding-left: 40px;
         padding-right: 40px;
         display: flex;
         justify-content: space-between;
-        .ant-divider{
+        .ant-divider {
             margin: 0;
         }
-        .requests-summary{   
+        .requests-summary {
             width: 49%;
-            border: 1.4px solid #E4E4E4;
+            border: 1.4px solid #e4e4e4;
             border-radius: 12px;
-            .requests-total{
+            .requests-total {
                 padding: 20px;
                 display: flex;
                 align-items: flex-start;
-                .requests-data{
+                .requests-data {
                     display: flex;
                     flex-direction: column;
                     padding-left: 10px;
-                    .requests-title{
+                    .requests-title {
                         font-weight: 600;
                         font-size: 16px;
-                        color: #6557FF;
+                        color: #6557ff;
                     }
                 }
             }
         }
-        .total-payment{
+        .total-payment {
             width: 49%;
             padding: 20px;
-            border: 1.4px solid #E1E0E5;
+            border: 1.4px solid #e1e0e5;
             border-radius: 8px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            .ant-divider{
+            .ant-divider {
                 margin: 5px 0 5px 0;
             }
-            .next-billing{
+            .next-billing {
                 font-size: 12px;
-                color: #84818A;
+                color: #84818a;
                 margin: 0;
             }
-            .total-payment-header{
+            .total-payment-header {
                 display: flex;
                 justify-content: space-between;
-                .total-ammount{
+                .total-ammount {
                     margin: 0;
                     font-weight: 700;
-                    font-size: 20px;        
-                    color: #2E2C34;
+                    font-size: 20px;
+                    color: #2e2c34;
                 }
             }
-            .billing-item{
+            .billing-item {
                 display: flex;
                 justify-content: space-between;
                 font-size: 14px;
-                .discount-badge{
-                    background-color: #D6F5E3;
-                    color: #27AE60;
+                .discount-badge {
+                    background-color: #d6f5e3;
+                    color: #27ae60;
                     border-radius: 10px;
                     font-size: 10px;
                     font-weight: 600;
                     padding: 2px 6px 2px 6px;
                 }
-                .item{
+                .item {
                     margin: 0;
-                    color: #84818A;
+                    color: #84818a;
                 }
-                .ammount{
+                .ammount {
                     margin: 0;
-                    color: #2E2C34;
+                    color: #2e2c34;
                 }
             }
-            .total-payment-footer{
+            .total-payment-footer {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
-                .promo-code-section{
-
+                .promo-code-section {
                 }
-                .download-invoice{
+                .download-invoice {
                     margin: 0;
-                    color: #6557FF;
+                    color: #6557ff;
                     size: 14px;
                     font-weight: 700;
                     cursor: pointer;
                 }
             }
         }
-        
     }
-    .usage-details{
+    .usage-details {
         overflow-y: auto;
         height: calc(100% - 370px);
         padding: 0px 40px 0 40px;
         margin-top: 20px;
-        .requests-panel{
+        .requests-panel {
             margin-bottom: 20px;
             padding: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1.4px solid #E1E0E5;
+            border: 1.4px solid #e1e0e5;
             border-radius: 8px;
             height: 100px;
         }
-        .requests-item{
-        display: flex;
-        width: 80%;
-        .circle-img{
-            border: 1px solid #EAEAEA;
-            border-radius: 50%;
-            padding: 10px;
-            height: 50px;
-            width: 50px;
+        .requests-item {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 20px;
+            width: 80%;
+            .circle-img {
+                border: 1px solid #eaeaea;
+                border-radius: 50%;
+                padding: 10px;
+                height: 50px;
+                width: 50px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-right: 20px;
+            }
+            div {
+                display: flex;
+                flex-direction: column;
+            }
+            .request-type {
+                font-weight: 600;
+                font-size: 20px;
+                color: #2e2c34;
+            }
+            .request-description {
+                font-weight: 500;
+                font-size: 14px;
+                color: #84818a;
+            }
         }
-        div{
-            display: flex;
-            flex-direction: column;
-        }
-        .request-type{
-            font-weight: 600;
-            font-size: 20px;
-            color: #2E2C34;
-
-        }
-        .request-description{
-            font-weight: 500;
-            font-size: 14px;
-            color: #84818A;
-        }
-    }
     }
 }

@@ -166,11 +166,11 @@ const App = withRouter(() => {
                             path={`${pathDomains.administration}/requests`}
                             component={<AppWrapper content={<Administration step={'requests'} />}></AppWrapper>}
                         />
-                        <PrivateRoute
+                        {/* <PrivateRoute
                             exact
                             path={`${pathDomains.administration}/payments`}
                             component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
-                        />
+                        /> */}
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}
