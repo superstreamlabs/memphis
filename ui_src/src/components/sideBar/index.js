@@ -41,7 +41,7 @@ import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
-import { compareVersions, is_cloud } from '../../services/valueConvertor';
+import { compareVersions, isCloud } from '../../services/valueConvertor';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -206,7 +206,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
-                {!is_cloud() && (
+                {!isCloud() && (
                     <div className="item-wrapper" onClick={() => history.push(pathDomains.sysLogs)}>
                         <div className="icon">
                             {state.route === 'logs' ? (

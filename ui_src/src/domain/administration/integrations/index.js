@@ -29,7 +29,7 @@ import Input from '../../../components/Input';
 import { message } from 'antd';
 import Tag from '../../../components/tag';
 import Loader from '../../../components/loader';
-import { is_cloud } from '../../../services/valueConvertor';
+import { isCloud } from '../../../services/valueConvertor';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -127,7 +127,7 @@ const Integrations = () => {
             <div className="categories-list">
                 {Object.keys(CATEGORY_LIST).map((key) => {
                     const category = CATEGORY_LIST[key];
-                    const isCloudAndOsOnly = is_cloud() && category.osOnly;
+                    const isCloudAndOsOnly = isCloud() && category.osOnly;
                     const isCategoryFilter = categoryFilter === category.name;
 
                     if (isCloudAndOsOnly) {
@@ -146,7 +146,7 @@ const Integrations = () => {
                 <div className="integration-list">
                     {Object.keys(filterList)?.map((integration) => {
                         const integrationItem = filterList[integration];
-                        const isCloudAndOsOnly = is_cloud() && integrationItem.osOnly;
+                        const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
 
                         if (isCloudAndOsOnly) {
                             return null;

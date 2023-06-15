@@ -16,7 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { convertDateToSeconds, generateName, idempotencyValidator, is_cloud } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, replicasConvertor } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -32,6 +32,7 @@ import Input from '../Input';
 import OverflowTip from '../tooltip/overflowtip';
 import Modal from '../modal';
 import S3Integration from '../../domain/administration/integrations/components/s3Integration';
+import SelectCheckBox from '../selectCheckBox';
 
 const retanionOptions = [
     {
@@ -50,20 +51,24 @@ const retanionOptions = [
         label: 'Messages'
     }
 ];
+
 const storageTierOneOptions = [
     {
         id: 1,
         value: 'file',
         label: 'Disk',
-        desc: 'Disk is perfect for higher availability and lower cost'
+        desc: 'Disk is perfect for higher availability and lower cost',
+        disabled: false
     },
     {
         id: 2,
         value: 'memory',
         label: 'Memory',
-        desc: 'Memory can boost your performance. Lower availability'
+        desc: 'Memory can boost your performance. Lower availability',
+        disabled: isCloud() ? true : false
     }
 ];
+
 const storageTierTwoOptions = [
     {
         id: 1,
@@ -79,7 +84,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
-    const [actualPods, setActualPods] = useState(['1']);
+    const [actualPods, setActualPods] = useState(['No HA (1)']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
     const [schemas, setSchemas] = useState([]);
@@ -137,7 +142,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_type: formFields.retention_type || retentionType,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: Number(formFields.replicas),
+            replicas: replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -153,7 +158,23 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const getAvailableReplicas = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
-            setActualPods(Array.from({ length: data?.available_replicas }, (_, i) => i + 1));
+            let replicas = [];
+            switch (data?.available_replicas) {
+                case 1:
+                    replicas = ['No HA (1)'];
+                    break;
+                case 3:
+                    replicas = ['No HA (1)', 'HA (3)'];
+                    break;
+                case 5:
+                    replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
+                    break;
+                default:
+                    replicas = ['No HA (1)'];
+
+                    break;
+            }
+            setActualPods(replicas);
         } catch (error) {}
     };
 
@@ -198,10 +219,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     };
 
     const SelectedLocalStorageOption = (value) => {
-        if (allowEdit) {
-            setSelectedOption(value);
-            creationForm.setFieldValue('storage_type', value);
-            if (getStarted) updateFormState('storage_type', value);
+        if (!value.disabled && allowEdit) {
+            setSelectedOption(value.value);
+            creationForm.setFieldValue('storage_type', value.value);
+            if (getStarted) updateFormState('storage_type', value.value);
         }
     };
     const SelectedRemoteStorageOption = (value, enabled) => {
@@ -428,7 +449,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                             <InputNumberComponent
                                                 min={0}
-                                                max={is_cloud ? 31 : 1000}
+                                                max={isCloud ? 14 : 1000}
                                                 onChange={(e) => getStarted && updateFormState('days', e)}
                                                 value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                 placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
@@ -559,31 +580,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}
                                 style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}
                             >
-                                {tabValue === tabs[0].name &&
-                                    storageTierOneOptions.map((value) => {
-                                        return (
-                                            <div
-                                                key={value.id}
-                                                className={
-                                                    selectedOption === value.value
-                                                        ? 'option-wrapper selected'
-                                                        : allowEdit
-                                                        ? 'option-wrapper allowed'
-                                                        : 'option-wrapper not-allowed'
-                                                }
-                                                onClick={() => SelectedLocalStorageOption(value.value)}
-                                            >
-                                                <div className="check-and-content">
-                                                    {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
-                                                    {selectedOption !== value.value && <div className="uncheck-icon" />}
-                                                    <div className="option-content">
-                                                        <p>{value.label}</p>
-                                                        <span>{value.desc}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                {tabValue === tabs[0].name && (
+                                    <SelectCheckBox
+                                        selectOptions={storageTierOneOptions}
+                                        allowEdit={allowEdit}
+                                        handleOnClick={(e) => SelectedLocalStorageOption(e)}
+                                        selectedOption={selectedOption}
+                                    />
+                                )}
                             </Form.Item>
                             <Form.Item
                                 name="tiered_storage_enabled"
@@ -593,41 +597,34 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 {tabValue === tabs[1].name &&
                                     storageTierTwoOptions.map((value) => {
                                         return (
-                                            <div
-                                                key={value.id}
-                                                className={
-                                                    selectedTier2Option ? 'option-wrapper selected' : allowEdit ? 'option-wrapper allowed' : 'option-wrapper not-allowed'
-                                                }
-                                                onClick={() =>
+                                            <SelectCheckBox
+                                                selectOptions={storageTierTwoOptions}
+                                                allowEdit={allowEdit}
+                                                handleOnClick={(e) =>
                                                     integrateValue && allowEdit
                                                         ? selectedTier2Option
                                                             ? SelectedRemoteStorageOption(false, false)
                                                             : SelectedRemoteStorageOption(true, true)
                                                         : modalFlip(true)
                                                 }
-                                            >
-                                                <div className="check-and-content">
-                                                    {selectedTier2Option ? <CheckCircleIcon className="check-icon" /> : <div className="uncheck-icon" />}
-                                                    <div className="option-content">
-                                                        <p>{value.label}</p>
-                                                        <span>{value.desc}</span>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    width="90px"
-                                                    height="30px"
-                                                    placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
-                                                    colorType="white"
-                                                    border="none"
-                                                    radiusType="circle"
-                                                    backgroundColorType="purple"
-                                                    fontSize="12px"
-                                                    fontWeight="bold"
-                                                    boxShadowStyle="none"
-                                                    disabled={!allowEdit}
-                                                    onClick={() => null}
-                                                />
-                                            </div>
+                                                selectedOption={selectedTier2Option}
+                                                button={
+                                                    <Button
+                                                        width="90px"
+                                                        height="30px"
+                                                        placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
+                                                        colorType="white"
+                                                        border="none"
+                                                        radiusType="circle"
+                                                        backgroundColorType="purple"
+                                                        fontSize="12px"
+                                                        fontWeight="bold"
+                                                        boxShadowStyle="none"
+                                                        disabled={!allowEdit}
+                                                        onClick={() => null}
+                                                    />
+                                                }
+                                            />
                                         );
                                     })}
                             </Form.Item>

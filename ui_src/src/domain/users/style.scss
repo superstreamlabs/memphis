@@ -12,15 +12,21 @@
     }
     .users-list-container {
         margin-top: 30px;
+        .table-header{
+            display: flex;
+            p{
+                margin: 0;
+            }
+        }
         .user-row{
+            p{
+                margin: 0;
+                font-family: 'InterMedium';
+                font-size: 14px;
+            }
             .user-name {
                 display: flex;
                 align-items: center;
-                font-family: 'Inter';
-                font-size: 14px;
-                p{
-                    margin: 0;
-                }
                 .user-avatar {
                     width: 35px;
                     height: 35px;
@@ -31,7 +37,22 @@
                     align-items: center;
                     justify-content: center;
                     margin-right: 20px;
+                    svg{
+                        color: var(--purple)
+                    }
                 }
+            }
+            .status{
+                .version-badge{
+                    justify-content: center;
+                    height: 24px;
+                    min-width: unset;
+                    max-width: 70px;
+                }
+            }
+            .created-column{
+                font-family: 'Inter' !important;
+                color: rgba(74, 73, 92, 0.8);
             }
         }
     }

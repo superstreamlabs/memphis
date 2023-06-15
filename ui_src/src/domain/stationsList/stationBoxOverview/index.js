@@ -17,7 +17,7 @@ import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 
-import { convertSecondsToDate } from '../../../services/valueConvertor';
+import { convertSecondsToDate, replicasConvertor } from '../../../services/valueConvertor';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
@@ -129,7 +129,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 <label className="data-labels replicas">Replicas</label>
                             </div>
 
-                            <p className="data-info">{station?.station?.replicas}</p>
+                            <p className="data-info">{replicasConvertor(station?.station?.replicas, false)}</p>
                         </div>
                         <div className="station-meta">
                             <div className="header">

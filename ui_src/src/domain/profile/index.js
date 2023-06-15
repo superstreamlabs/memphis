@@ -22,6 +22,8 @@ import Modal from '../../components/modal';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import ImgUploader from './imgUploader';
+import { isCloud } from '../../services/valueConvertor';
+import { CLOUD_URL } from '../../config';
 
 function Profile() {
     const [userName, setUserName] = useState('');
@@ -41,7 +43,7 @@ function Profile() {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
             modalFlip(false);
             localStorage.clear();
-            window.location.assign(pathDomains.login);
+            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         } catch (err) {
             return;
         }

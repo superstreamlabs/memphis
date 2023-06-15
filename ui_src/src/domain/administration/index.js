@@ -26,7 +26,7 @@ import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
-import { is_cloud } from '../../services/valueConvertor';
+import { isCloud } from '../../services/valueConvertor';
 
 function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
@@ -47,7 +47,7 @@ function Administration({ step }) {
                     break;
                 }
             case 'cluster_configuration':
-                if (!is_cloud()) {
+                if (!isCloud()) {
                     if (window.location.href.split('/cluster_configuration').length > 1) {
                         return <ClusterConfiguration />;
                     } else {
@@ -56,7 +56,7 @@ function Administration({ step }) {
                     }
                 }
             case 'version_upgrade':
-                if (!is_cloud()) {
+                if (!isCloud()) {
                     if (window.location.href.split('/version_upgrade').length > 1) {
                         return <VersionUpgrade />;
                     } else {
@@ -78,7 +78,7 @@ function Administration({ step }) {
                         <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                         Integrations
                     </div>
-                    {!is_cloud() && (
+                    {!isCloud() && (
                         <>
                             <div
                                 className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}

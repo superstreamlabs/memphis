@@ -13,11 +13,12 @@
 import { message } from 'antd';
 import axios from 'axios';
 
-import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE } from '../config';
+import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, CLOUD_URL } from '../config';
 import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED } from '../const/localStorageConsts.js';
 import { ApiEndpoints } from '../const/apiEndpoints';
 import pathDomains from '../router';
 import AuthService from './auth';
+import { isCloud } from './valueConvertor';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
     let isSkipGetStarted;
@@ -59,7 +60,8 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             if (isSkipGetStarted === 'true') {
                 localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             }
-            window.location.assign('/login');
+            debugger;
+            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
             message.warning({

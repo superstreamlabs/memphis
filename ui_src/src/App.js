@@ -13,17 +13,23 @@
 import './App.scss';
 
 import { Switch, Route, withRouter } from 'react-router-dom';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
-import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
-import { handleRefreshTokenRequest } from './services/http';
+import {
+    LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_CONNECTION_TOKEN,
+    LOCAL_STORAGE_TOKEN,
+    LOCAL_STORAGE_USER_PASS_BASED_AUTH,
+    LOCAL_STORAGE_WS_PORT
+} from './const/localStorageConsts';
+import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
+import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
 import MessageJourney from './domain/messageJourney';
-import { is_cloud } from './services/valueConvertor';
+import { isCloud } from './services/valueConvertor';
 import Administration from './domain/administration';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
@@ -34,20 +40,86 @@ import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
 import { Context } from './hooks/store';
 import Profile from './domain/profile';
-import Signup from './domain/signup';
 import pathDomains from './router';
 import Users from './domain/users';
-import Login from './domain/login';
+import { ApiEndpoints } from './const/apiEndpoints';
+import AuthService from './services/auth';
 
-const SysLogs = undefined;
-if (!is_cloud()) {
+let SysLogs = undefined;
+let Login = undefined;
+let Signup = undefined;
+
+if (!isCloud()) {
     SysLogs = require('./domain/sysLogs').default;
+    Login = require('./domain/login').default;
+    Signup = require('./domain/signup').default;
 }
 
-const App = withRouter(() => {
+const App = withRouter((props) => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
+    const history = useHistory();
+    const urlParams = new URLSearchParams(window.location.search);
+    const id_token_firebase = urlParams.get('id_token_firebase');
+    const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+
+    const handleLoginWithToken = async () => {
+        if (id_token_firebase) {
+            try {
+                const data = await httpRequest(
+                    'POST',
+                    ApiEndpoints.CLOUD_LOGIN,
+                    { id_token_firebase, encrypted_key: 'Z3plPWwu66f59MswYljsdsQqC5OPuYus3Q4ko2h7LZpThDB-PATSV9q4GPDYDxyz' },
+                    {},
+                    {},
+                    false
+                );
+                if (data) {
+                    AuthService.saveToLocalStorage(data);
+                    try {
+                        const ws_port = data.ws_port;
+                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                        let conn;
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                user: '$memphis_user$' + account_id,
+                                pass: connection_token,
+                                timeout: '5000'
+                            });
+                        } else {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::' + connection_token,
+                                timeout: '5000'
+                            });
+                        }
+                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                    } catch (error) {
+                        return;
+                    }
+                    dispatch({ type: 'SET_USER_DATA', payload: data });
+                }
+                history.push('/overview');
+                setCloudLogedIn(true);
+            } catch (error) {
+                console.log('Login failed:', error);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (isCloud() && !localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+            const fetchData = async () => {
+                await Promise.all(handleLoginWithToken());
+            };
+
+            fetchData();
+        } else setCloudLogedIn(true);
+    }, []);
 
     useEffect(() => {
         if (isMobile) {
@@ -63,24 +135,8 @@ const App = withRouter(() => {
         };
     }, [isMobile]);
 
-    const history = useHistory();
-
-    useEffect(async () => {
-        await handleRefresh(true);
-        setAuthCheck(false);
-
-        const interval = setInterval(() => {
-            handleRefresh(false);
-        }, HANDLE_REFRESH_INTERVAL);
-
-        return () => {
-            clearInterval(interval);
-            state.socket?.close();
-        };
-    }, []);
-
-    const handleRefresh = async (firstTime) => {
-        if (window.location.pathname === pathDomains.login) {
+    const handleRefresh = useCallback(async (firstTime) => {
+        if (window.location.pathname === pathDomains.login || id_token_firebase) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
@@ -92,7 +148,7 @@ const App = withRouter(() => {
                         let conn;
                         const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
                             conn = await connect({
                                 servers: [SOCKET_URL],
                                 user: '$memphis_user$' + account_id,
@@ -114,18 +170,33 @@ const App = withRouter(() => {
                 return true;
             }
         } else {
-            history.push(pathDomains.signup);
+            isCloud() ? window.location.replace(CLOUD_URL) : history.push(pathDomains.signup);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            await Promise.all([handleRefresh(true), setAuthCheck(false)]);
+        };
+
+        fetchData();
+
+        const interval = setInterval(() => {
+            handleRefresh(false);
+        }, HANDLE_REFRESH_INTERVAL);
+
+        return () => {
+            clearInterval(interval);
+            state.socket?.close();
+        };
+    }, [handleRefresh, setAuthCheck]);
 
     return (
         <div className="app-container">
             <div>
                 {' '}
-                {!authCheck && (
+                {!authCheck && cloudLogedIn && (
                     <Switch>
-                        <Route exact path={pathDomains.signup} component={Signup} />
-                        <Route exact path={pathDomains.login} component={Login} />
                         <PrivateRoute
                             exact
                             path={pathDomains.overview}
@@ -238,8 +309,10 @@ const App = withRouter(() => {
                             }
                         />
 
-                        {!is_cloud() && (
+                        {!isCloud() && (
                             <>
+                                <Route exact path={pathDomains.signup} component={Signup} />
+                                <Route exact path={pathDomains.login} component={Login} />
                                 <PrivateRoute
                                     exact
                                     path={`${pathDomains.sysLogs}`}

@@ -24,7 +24,7 @@ import {
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
-import { capitalizeFirst, is_cloud } from '../../services/valueConvertor';
+import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
@@ -123,8 +123,10 @@ function OverView() {
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
-                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                }
             })();
         } catch (err) {
             return;
@@ -198,7 +200,7 @@ function OverView() {
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
-                        {!is_cloud && (
+                        {!isCloud() && (
                             <div className="right-side">
                                 <SystemComponents />
                             </div>

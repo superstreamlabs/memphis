@@ -17,7 +17,7 @@ import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { MinusOutlined } from '@ant-design/icons';
 
-import { convertBytes, convertSecondsToDate } from '../../../services/valueConvertor';
+import { convertBytes, convertSecondsToDate, replicasConvertor } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import purgeWrapperIcon from '../../../assets/images/purgeWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
@@ -30,7 +30,7 @@ import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import deleteIcon from '../../../assets/images/deleteIcon.svg';
-import VersionBadge from '../../../components/versionBadge';
+import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
@@ -183,7 +183,7 @@ const StationOverviewHeader = () => {
                             <b>Retention:</b> {retentionValue}
                         </p>
                         <p>
-                            <b>Replicas:</b> {stationState?.stationMetaData?.replicas}
+                            <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
                         </p>
                         <div className="storage-section">
                             <p>
@@ -206,8 +206,8 @@ const StationOverviewHeader = () => {
                                     <p className="schema-title">Schema</p>
                                     {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                         <div className="schema-details sd-flex">
-                                            {stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updates available" active={false} />}
-                                            {!stationState?.stationSocketData?.schema?.updates_available && <VersionBadge content="Updated" active={true} />}
+                                            {stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updates available" active={false} />}
+                                            {!stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updated" active={true} />}
                                         </div>
                                     )}
                                 </div>

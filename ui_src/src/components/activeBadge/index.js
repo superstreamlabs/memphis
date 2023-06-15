@@ -14,7 +14,7 @@ import './style.scss';
 
 import React from 'react';
 
-const VersionBadge = ({ active, content }) => {
+const ActiveBadge = ({ active, content }) => {
     return (
         <div className={active ? 'version-badge badgeGreen' : 'version-badge badgeOrange'}>
             <p>{content}</p>
@@ -22,4 +22,4 @@ const VersionBadge = ({ active, content }) => {
     );
 };
 
-export default VersionBadge;
+export default ActiveBadge;
