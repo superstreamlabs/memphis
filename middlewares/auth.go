@@ -33,7 +33,7 @@ var noNeedAuthRoutes = []string{
 	"/api/status",
 	"/api/monitoring/getclusterinfo",
 	"/api/tenants/createtenant",
-	"/api/usermgmt/approvedinvitation",
+	"/api/usermgmt/approveinvitation",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
