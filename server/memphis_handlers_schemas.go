@@ -859,6 +859,23 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	if csr.Type == "protobuf" {
+		csr.MessageStructName, err = getProtoMessageStructName(csr.SchemaContent)
+		if err != nil {
+			s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+		}
+	}
+
+	if csr.Type == "protobuf" {
+		err := validateMessageStructName(csr.MessageStructName)
+		if err != nil {
+			s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+			return
+		}
+	}
+
 	exist, existedSchema, err := db.GetSchemaByName(csr.Name, tenantName)
 	if err != nil {
 		s.Errorf("createSchemaDirect - failed creating Schema: " + err.Error())
@@ -976,4 +993,17 @@ func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string
 	}
 
 	return nil
+}
+
+func getProtoMessageStructName(schema_content string) (string, error) {
+	parser := protoparse.Parser{
+		Accessor: func(filename string) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(string(schema_content))), nil
+		},
+	}
+	something, err := parser.ParseFiles("")
+	if err != nil {
+		return "", errors.New("your Proto file is invalid: " + err.Error())
+	}
+	return something[0].GetMessageTypes()[0].GetName(), nil
 }
