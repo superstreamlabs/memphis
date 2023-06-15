@@ -144,6 +144,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 	DeleteTagsFromStation(station.ID)
 
+	err = db.DeleteDLSMessagesByStationID(station.ID)
+	if err != nil {
+		return err
+	}
+
 	err = db.DeleteProducersByStationID(station.ID)
 	if err != nil {
 		return err
