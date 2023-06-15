@@ -106,6 +106,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
 
+	err = s.InitializeFirestore()
+	if err != nil {
+		s.Errorf("Failed initializing firestore: " + err.Error())
+	}
+
 	s.InitializeMemphisHandlers()
 
 	err = server.InitializeIntegrations()

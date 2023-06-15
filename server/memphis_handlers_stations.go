@@ -1293,6 +1293,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+		size := int64(0)
 		for _, cgName := range dlsMsg.PoisonedCgs {
 			headersJson := map[string]string{}
 			for key, value := range dlsMsg.MessageDetails.Headers {
@@ -1320,8 +1321,10 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
+			size += int64(dlsMsg.MessageDetails.Size)
 		}
 		IncrementEventCounter(station.TenantName, "dls", int64(len(dlsMsg.PoisonedCgs)))
+		IncrementEventCounter(station.TenantName, "size", size)
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
