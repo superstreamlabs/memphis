@@ -38,6 +38,8 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	}))
 	mainRouter := router.Group("/api")
 	mainRouter.Use(middlewares.Authenticate)
+	config := server.SetCors()
+	mainRouter.Use(middlewares.Authenticate, cors.New(config))
 
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(mainRouter)
