@@ -1184,22 +1184,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		}
 	}
 
-	var sysAcc *Account
-	for _, account := range opts.Accounts {
-		if account.GetName() == DEFAULT_SYSTEM_ACCOUNT {
-			sysAcc = account
-			break
-		}
-	}
-
-	var sysUser *User
-	for _, user := range opts.Users {
-		if user.Account.GetName() == DEFAULT_SYSTEM_ACCOUNT {
-			sysUser = user
-			break
-		}
-	}
-
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 	if configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
@@ -1320,6 +1304,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 
 		}
 
+		sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},}
+		sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN+"_"+configuration.ROOT_PASSWORD , Account: sysAcc}
 		accounts = append(accounts, sysAcc)
 		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
