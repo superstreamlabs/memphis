@@ -180,16 +180,6 @@ func removeDeletedUsersResources(tenantName string) error {
 	return nil
 }
 
-func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
-
-	validName := re.MatchString(username)
-	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_/- ")
-	}
-	return nil
-}
-
 func validateEmail(email string) error {
 	re := regexp.MustCompile("^[a-z0-9._%+-]+@[a-z0-9_.-]+.[a-z]{2,4}$")
 	validateEmail := re.MatchString(email)

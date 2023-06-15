@@ -58,6 +58,12 @@ type AuthenticateNatsSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type LoginSchema struct {
+	Username        string `json:"username" binding:"required"`
+	Password        string `json:"password" binding:"required"`
+	IdTokenFirebase string `json:"id_token_firebase"`
+}
+
 type RemoveUserSchema struct {
 	Username string `json:"username" binding:"required"`
 }

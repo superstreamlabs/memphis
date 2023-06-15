@@ -3723,6 +3723,30 @@ func UpdateIntegration(tenantName string, name string, keys map[string]string, p
 }
 
 // User Functions
+func UpdtaePendingUser(tenantName, username string, pending bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE users SET pending = $2 WHERE username = $1 AND tenant_name=$3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_pending_user", query)
+	if err != nil {
+		return err
+	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, username, pending, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
 func CreateUser(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position, owner, description string) (models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
