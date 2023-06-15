@@ -506,42 +506,6 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	}
 }
 
-func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	if user.UserType == "root" {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
-		return
-	}
-
-	err = updateDeletedUserResources(user)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	err = db.DeleteUser(user.Username, user.TenantName)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-himself")
-	}
-
-	serv.Noticef("User " + user.Username + " has been deleted")
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	var body models.EditAvatarSchema
 	ok := utils.Validate(c, &body, false, nil)

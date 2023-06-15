@@ -40,7 +40,7 @@ type Configuration struct {
 	USER_PASS_BASED_AUTH    bool
 	CONNECTION_TOKEN        string
 	ENCRYPTION_SECRET_KEY   string
-	PRODUCTION_ENV          string
+	PRODUCTION_ENV          bool
 }
 
 func GetConfig() Configuration {
