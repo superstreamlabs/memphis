@@ -136,6 +136,50 @@ func updateDeletedUserResources(user models.User) error {
 	return nil
 }
 
+func removeDeletedUsersResources(tenantName string) error {
+	err := db.RemoveStationsOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveProducersOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveConsumersOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemaVersionsOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemasOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveTenantResources(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveAuditLogsOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveConnectionsOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func validateUsername(username string) error {
 	re := regexp.MustCompile("^[a-z0-9_.-]*$")
 
@@ -514,42 +558,6 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	} else {
 		c.IndentedJSON(200, users)
 	}
-}
-
-func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	if user.UserType == "root" {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
-		return
-	}
-
-	err = updateDeletedUserResources(user)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	err = db.DeleteUser(user.Username, user.TenantName)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-himself")
-	}
-
-	serv.Noticef("User " + user.Username + " has been deleted")
-	c.IndentedJSON(200, gin.H{})
 }
 
 func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {

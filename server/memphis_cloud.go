@@ -42,6 +42,10 @@ import (
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
+type LoginSchema struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -1063,7 +1067,7 @@ func (th TenantHandler) CreateTenant(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
-	var body models.LoginSchema
+	var body LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1360,5 +1364,47 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	}
 
 	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
+	c.IndentedJSON(200, gin.H{})
+}
+
+// TODO: Change the name to remove tenant
+func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveMyUser: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	if user.UserType == "root" {
+		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
+		return
+	}
+
+	username := strings.ToLower(user.Username)
+	tenantName := user.TenantName
+	if user.TenantName != conf.GlobalAccountName {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
+	err = removeDeletedUsersResources(tenantName)
+	if err != nil {
+		serv.Errorf("RemoveTenant: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = db.DeleteUser(user.Username, user.TenantName)
+	if err != nil {
+		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-remove-himself")
+	}
+
+	serv.Noticef("User " + user.Username + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
