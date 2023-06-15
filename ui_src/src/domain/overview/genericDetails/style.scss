@@ -27,11 +27,16 @@
                 color: #1d1d1d;
                 font-family: 'InterBold';
                 margin: 0;
+                margin-right: 10px;
                 display: flex;
                 span {
                     font-size: 12px;
                     margin: 14px 0px 0px 5px;
                 }
+            }
+            .operational-health {
+                display: flex;
+                align-items: center;
             }
         }
     }

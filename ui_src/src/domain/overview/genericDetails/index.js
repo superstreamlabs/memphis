@@ -17,7 +17,9 @@ import { Context } from '../../../hooks/store';
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
+import Logo from '../../../assets/images/logo.svg';
 import { Divider } from 'antd';
+import { Progress } from 'antd';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
@@ -46,6 +48,18 @@ const GenericDetails = () => {
                     <div className="data-wrapper">
                         <span>Dead-letter messages</span>
                         <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={Logo} width={50} height={50} alt="Logo" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Operational health</span>
+                        {/* <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p> */}
+                        <span className="operational-health">
+                            <p>76%</p>
+                            <Progress percent={76} showInfo={false} strokeColor={{ '0%': '#6557FF', '50%': '#61DFC6', '100%': '#FFC633' }} />
+                        </span>
                     </div>
                 </div>
             </div>

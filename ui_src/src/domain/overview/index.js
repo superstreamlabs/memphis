@@ -237,14 +237,15 @@ function OverView() {
                         </div>
                     </div>
                     <div className="overview-components">
-                        <div className="left-side">
+                        <GenericDetails />
+                        {/* <div className="left-side">
                             <GenericDetails />
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
                         <div className="right-side">
                             <SystemComponents />
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}
