@@ -1428,3 +1428,6 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	serv.Noticef("Tenant " + user.TenantName + " has been deleted")
 	c.IndentedJSON(200, gin.H{})
 }
+
+func (s *Server) ConnectToFirebaseFunction() {
+}
