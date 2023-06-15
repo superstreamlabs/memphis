@@ -191,7 +191,7 @@ func (s *Server) checkAuthforWarnings() {
 	}
 	if warn {
 		// Warning about using plaintext passwords.
-		s.Warnf("Plaintext passwords detected, use nkeys or bcrypt")
+		// s.Warnf("Plaintext passwords detected, use nkeys or bcrypt") // *** comment out by Memphis ***
 	}
 }
 
@@ -724,6 +724,13 @@ func (s *Server) processClientOrLeafAuthentication(c *client, opts *Options) boo
 			}
 			if c.opts.Username != _EMPTY_ {
 				user, ok = s.users[c.opts.Username]
+
+				// *** Added by Memphis
+				if !ok {
+					user, ok = s.users[c.opts.Username+"$1"] // add global tenant id suffix
+				}
+				// Added by Memphis ***
+
 				if !ok || !c.connectionTypeAllowed(user.AllowedConnectionTypes) {
 					s.mu.Unlock()
 					return false

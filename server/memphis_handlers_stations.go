@@ -385,7 +385,15 @@ func (s *Server) createStationDirectIntern(c *client,
 				Name:  "nats-comp",
 				Value: strconv.FormatBool(!isNative),
 			}
-			analyticsParams := []analytics.EventParam{param1, param2, param3}
+			storageType = "memory"
+			if storageType == "file" {
+				storageType = "disk"
+			}
+			param4 := analytics.EventParam{
+				Name:  "storage-type",
+				Value: storageType,
+			}
+			analyticsParams := []analytics.EventParam{param1, param2, param3, param4}
 			analytics.SendEventWithParams(username, analyticsParams, "user-create-station-sdk")
 		}
 	}
@@ -895,7 +903,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			Name:  "tiered-storage",
 			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
 		}
-		analyticsParams := []analytics.EventParam{param1, param2}
+		param3 := analytics.EventParam{
+			Name:  "storage-type",
+			Value: storageTypeForResponse,
+		}
+		analyticsParams := []analytics.EventParam{param1, param2, param3}
 		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station")
 	}
 

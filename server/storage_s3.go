@@ -111,7 +111,8 @@ func (it IntegrationsHandler) handleS3Integrtation(tenantName string, keys map[s
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
 		if value, ok := integrationFromDb.Keys["secret_key"]; ok {
-			decryptedValue, err := DecryptAES(value)
+			key := getAESKey()
+			decryptedValue, err := DecryptAES(key, value)
 			if err != nil {
 				return 500, map[string]string{}, err
 			}

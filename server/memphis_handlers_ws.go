@@ -107,7 +107,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 					}
 					update, err := filler(tenant)
 					if err != nil {
-						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") {
+						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") && !strings.Contains(err.Error(), "alphanumeric") {
 							s.Errorf("memphisWSLoop: tenant " + tenant + ": " + err.Error())
 						}
 						continue
