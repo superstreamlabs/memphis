@@ -28,7 +28,7 @@ func InitializeHttpServer(s *server.Server) {
 		Schemas:        server.SchemasHandler{S: s},
 		Configurations: server.ConfigurationsHandler{S: s},
 		Integrations:   server.IntegrationsHandler{S: s},
-		Tenants:        server.CloudHandler{S: s},
+		Tenants:        server.TenantHandler{S: s},
 		Billing:        server.BillingHandler{S: s},
 	}
 
