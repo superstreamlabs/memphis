@@ -240,7 +240,8 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		if !exist {
 			return models.Integration{}, errors.New("no auth token was provided")
 		}
-		token, err := DecryptAES(integrationFromDb.Keys["auth_token"])
+		key := getAESKey()
+		token, err := DecryptAES(key, integrationFromDb.Keys["auth_token"])
 		if err != nil {
 			return models.Integration{}, err
 		}
