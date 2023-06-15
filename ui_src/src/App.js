@@ -232,6 +232,16 @@ const App = withRouter((props) => {
 
                         <PrivateRoute
                             exact
+                            path={`${pathDomains.administration}/requests`}
+                            component={<AppWrapper content={<Administration step={'requests'} />}></AppWrapper>}
+                        />
+                        {/* <PrivateRoute
+                            exact
+                            path={`${pathDomains.administration}/payments`}
+                            component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
+                        /> */}
+                        <PrivateRoute
+                            exact
                             path={pathDomains.stations}
                             component={
                                 <AppWrapper
