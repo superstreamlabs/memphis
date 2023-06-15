@@ -162,7 +162,7 @@ func removeDeletedUsersResources(tenantName string) error {
 		return err
 	}
 
-	err = db.RemoveTenantResources(tenantName)
+	err = db.RemoveTagsResources(tenantName)
 	if err != nil {
 		return err
 	}

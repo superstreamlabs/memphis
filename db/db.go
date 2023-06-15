@@ -5584,7 +5584,7 @@ func RemoveTenant(tenantName string) error {
 	return nil
 }
 
-func RemoveTenantResources(tenantName string) error {
+func RemoveTagsResources(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)

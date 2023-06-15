@@ -1054,10 +1054,19 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	})
 }
 
-func SetCors() cors.Config {
-	config := cors.Config{}
-	config.AllowAllOrigins = true
-	return config
+func SetCors(router *gin.Engine) {
+	router.Use(cors.New(cors.Config{
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowWildcard:    true,
+		AllowWebSockets:  true,
+		AllowFiles:       true,
+	}))
 }
 
 func validateTenantName(tenantName string) error {
