@@ -85,7 +85,7 @@ const App = withRouter(() => {
                 if (firstTime) {
                     try {
                         let conn;
-                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
                             conn = await connect({
@@ -97,7 +97,7 @@ const App = withRouter(() => {
                         } else {
                             conn = await connect({
                                 servers: [SOCKET_URL],
-                                token: '::'+connection_token,
+                                token: '::' + connection_token,
                                 timeout: '5000'
                             });
                         }
@@ -164,6 +164,16 @@ const App = withRouter(() => {
                             path={`${pathDomains.administration}/version_upgrade`}
                             component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
                         />
+                        <PrivateRoute
+                            exact
+                            path={`${pathDomains.administration}/requests`}
+                            component={<AppWrapper content={<Administration step={'requests'} />}></AppWrapper>}
+                        />
+                        {/* <PrivateRoute
+                            exact
+                            path={`${pathDomains.administration}/payments`}
+                            component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
+                        /> */}
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}

@@ -12,26 +12,55 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DatePicker } from 'antd';
 import CalendarIcon from '../../assets/images/Calendar.svg';
-const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder }) => {
+const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, picker }) => {
+    const [disabledMonths, setDisabledMonths] = useState([]);
+
+    const disabledDate = (current) => {
+      // Disable months before January 2023
+      const disabledBefore = current && current < new Date('2023-06-01');
+      // Disable months after the current month
+      const disabledAfter = current && current > new Date();
+  
+      return disabledBefore || disabledAfter;
+    };
+  
+    const onOpenChange = (open) => {
+      if (open) {
+        // Generate the list of disabled months
+        const disabledMonths = [];
+        let currentDate = new Date();
+        while (currentDate > new Date('2023-06-01')) {
+          disabledMonths.push(currentDate);
+          currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+        }
+        setDisabledMonths(disabledMonths);
+      }
+    };
     return (
         <div className="date-picker-container">
             <DatePicker
-                onChange={(date, dateString) => (dateString ? onChange(date._d) : onChange(''))}
+                onChange={(date, dateString) => onChange(date._d)}
                 placeholder={placeholder}
                 suffixIcon={<img src={CalendarIcon} />}
                 popupClassName="date-picker-popup"
+                picker={picker}
+                allowClear={false}
                 style={{
                     height: height,
                     width: width,
                     minWidth: minWidth || '100px',
                     fontSize: '10px',
                     border: '1px solid #D8D8D8',
-                    borderRadius: '4px',
+                    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12)',
+                    borderRadius: '32px',
                     zIndex: 9999
                 }}
+                disabledDate={disabledDate}
+                onOpenChange={onOpenChange}
+                disabledMonths={disabledMonths}
             />
         </div>
     );

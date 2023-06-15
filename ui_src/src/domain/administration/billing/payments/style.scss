@@ -1,0 +1,28 @@
+.payments-container {
+    height: 100%;
+    .header-preferences {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 40px 40px 0px 40px;
+        .main-header {
+            font-family: 'InterSemiBold';
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+    }
+
+    .payments-section {
+        width: 100%;
+        height: 180px;
+        padding: 0px 40px 0px 40px;
+        display: flex;
+        justify-content: space-between;
+        .payments-section-card {
+            width: calc(50% - 30px);
+            height: 100%;
+            border: 1.4px solid #ebeaed;
+            border-radius: 12px;
+        }
+    }
+}

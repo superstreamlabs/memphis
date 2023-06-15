@@ -92,5 +92,8 @@ export const ApiEndpoints = {
     EDIT_CLUSTER_CONFIGURATION: '/configurations/editClusterConfig',
 
     //Auth
-    GENERATE_TOKEN: '/auth/authenticate'
+    GENERATE_TOKEN: '/auth/authenticate',
+
+    //Cloud
+    GET_BILLING_DETAILS: '/billing/getBill'
 };
