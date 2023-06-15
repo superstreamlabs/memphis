@@ -4141,7 +4141,7 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	return users, nil
 }
 
-func GetAllUsersByTenantName(tenantName []string) ([]models.User, error) {
+func GetAllUsersByTenantName(tenantName string) ([]models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4150,7 +4150,7 @@ func GetAllUsersByTenantName(tenantName []string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE tenant_name=ANY($1)`
+	query := `SELECT * FROM users WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4276,7 +4276,7 @@ func DeleteUsersPerTenant(tenantName string) error {
 	}
 	defer conn.Release()
 
-	removeUserQuery := `DELETE FROM users WHERE tenant_name = ANY($1)`
+	removeUserQuery := `DELETE FROM users WHERE tenant_name = $1`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
 	if err != nil {

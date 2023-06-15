@@ -137,17 +137,17 @@ func updateDeletedUserResources(user models.User) error {
 }
 
 func removeDeletedUsersResources(tenantName string) error {
-	err := db.RemoveStationsOfDeletedUsers(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.RemoveProducersOfDeletedUsers(tenantName)
+	err := db.RemoveProducersOfDeletedUsers(tenantName)
 	if err != nil {
 		return err
 	}
 
 	err = db.RemoveConsumersOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveConnectionsOfDeletedUsers(tenantName)
 	if err != nil {
 		return err
 	}
@@ -162,17 +162,17 @@ func removeDeletedUsersResources(tenantName string) error {
 		return err
 	}
 
+	err = db.RemoveStationsOfDeletedUsers(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = db.RemoveTagsResources(tenantName)
 	if err != nil {
 		return err
 	}
 
 	err = db.RemoveAuditLogsOfDeletedUsers(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.RemoveConnectionsOfDeletedUsers(tenantName)
 	if err != nil {
 		return err
 	}
