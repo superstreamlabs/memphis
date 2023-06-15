@@ -36,7 +36,7 @@ type Handlers struct {
 	Schemas        SchemasHandler
 	Integrations   IntegrationsHandler
 	Configurations ConfigurationsHandler
-	Tenants        CloudHandler
+	Tenants        TenantHandler
 	Billing        BillingHandler
 }
 

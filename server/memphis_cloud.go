@@ -41,6 +41,16 @@ import (
 )
 
 type BillingHandler struct{ S *Server }
+type TenantHandler struct{ S *Server }
+
+func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
+}
+
+func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
+}
+
+func AddUsrMgmtCloudRoutes(userMgmtRoutes *gin.RouterGroup, userMgmtHandler UserMgmtHandler) {
+}
 
 func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
@@ -1038,11 +1048,6 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	})
 }
 
-func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
-}
-
-type CloudHandler struct{ S *Server }
-
 func SetCors() cors.Config {
 	config := cors.Config{}
 	config.AllowAllOrigins = true
@@ -1053,11 +1058,11 @@ func validateTenantName(tenantName string) error {
 	return nil
 }
 
-func (cl CloudHandler) CreateTenant(c *gin.Context) {
+func (th TenantHandler) CreateTenant(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }
 
-func (cl CloudHandler) Login(c *gin.Context) {
+func (umh UserMgmtHandler) Login(c *gin.Context) {
 	var body models.LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1143,7 +1148,7 @@ func (cl CloudHandler) Login(c *gin.Context) {
 	})
 }
 
-func (cl CloudHandler) AddUser(c *gin.Context) {
+func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var body models.AddUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -1288,10 +1293,7 @@ func (cl CloudHandler) AddUser(c *gin.Context) {
 	})
 }
 
-func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
-}
-
-func (cl CloudHandler) RemoveUser(c *gin.Context) {
+func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	var body models.RemoveUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
