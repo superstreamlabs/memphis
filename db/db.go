@@ -3667,6 +3667,8 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 		Pending:         pending,
 		Team:            team,
 		Position:        position,
+		Owner:           owner,
+		Description:     description,
 	}
 	return newUser, nil
 }
