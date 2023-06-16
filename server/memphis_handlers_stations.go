@@ -159,6 +159,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	err = db.DeleteStation(station.Name, station.TenantName)
+	if err != nil {
+		return err
+	}
+
 	err = RemoveAllAuditLogsByStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
