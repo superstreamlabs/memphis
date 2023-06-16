@@ -39,7 +39,6 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     const [filterFields, setFilterFields] = useState([]);
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
-    let sub;
 
     useEffect(() => {
         if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['', 'empty'] });
@@ -126,6 +125,8 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                 return () => {
                     sub?.unsubscribe();
                 };
+            default:
+                return;
         }
     }, [state.socket]);
 

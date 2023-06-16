@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Form } from 'antd';
 
 import Input from '../../../components/Input';
@@ -46,28 +46,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
     ];
     const [generatedPassword, setGeneratedPassword] = useState('');
 
-    useEffect(() => {
-        createUserRef.current = onFinish;
-        generateNewPassword();
-    }, []);
-
-    const passwordTypeChange = (e) => {
-        setPasswordType(e.target.value);
-    };
-
-    const handleUserNameChange = (e) => {
-        setFormFields({ ...formFields, username: e.target.value });
-    };
-
-    const handlePasswordChange = (password) => {
-        setFormFields({ ...formFields, password: password });
-    };
-
-    const handleSelectUserType = (e) => {
-        setFormFields({ ...formFields, user_type: e });
-    };
-
-    const onFinish = async () => {
+    const onFinish = useCallback(async () => {
         const fieldsValue = await creationForm.validateFields();
         if (fieldsValue?.errorFields) {
             return;
@@ -83,12 +62,33 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                 }
             } catch (error) {}
         }
-    };
+    }, [creationForm, passwordType, closeModal]);
 
-    const generateNewPassword = () => {
+    const generateNewPassword = useCallback(() => {
         const newPassword = generator();
         setGeneratedPassword(newPassword);
-        creationForm.setFieldsValue({ ['generatedPassword']: newPassword });
+        creationForm.setFieldsValue({ generatedPassword: newPassword });
+    }, [creationForm]);
+
+    useEffect(() => {
+        createUserRef.current = onFinish;
+        generateNewPassword();
+    }, [createUserRef, generateNewPassword, onFinish]);
+
+    const passwordTypeChange = (e) => {
+        setPasswordType(e.target.value);
+    };
+
+    const handleUserNameChange = (e) => {
+        setFormFields({ ...formFields, username: e.target.value });
+    };
+
+    const handlePasswordChange = (password) => {
+        setFormFields({ ...formFields, password: password });
+    };
+
+    const handleSelectUserType = (e) => {
+        setFormFields({ ...formFields, user_type: e });
     };
 
     return (

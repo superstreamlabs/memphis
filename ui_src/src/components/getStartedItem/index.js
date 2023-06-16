@@ -24,7 +24,7 @@ import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 
 const GetStartedItem = ({ headerImage, headerTitle, headerDescription, children, onNext, onBack }) => {
-    const [getStartedState, getStartedDispatch] = useContext(GetStartedStoreContext);
+    const [getStartedState] = useContext(GetStartedStoreContext);
 
     return (
         <div className="get-started-wrapper">

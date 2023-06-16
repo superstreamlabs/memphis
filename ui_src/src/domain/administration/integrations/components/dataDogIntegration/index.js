@@ -155,7 +155,7 @@ EOF`}
                     <div className="steps-content">
                         <h3>
                             A Datadog{' '}
-                            <a href="https://docs.datadoghq.com/dashboards/#copy-import-or-export-dashboard-json" target="_blank">
+                            <a href="https://docs.datadoghq.com/dashboards/#copy-import-or-export-dashboard-json" target="_blank" rel="noreferrer">
                                 tutorial
                             </a>{' '}
                             on how to import a dashboard
@@ -165,6 +165,7 @@ EOF`}
                             <a
                                 href="https://raw.githubusercontent.com/memphisdev/gitbook-backup/master/dashboard-gui/integrations/monitoring/MemphisDashboard.json"
                                 target="_blank"
+                                rel="noreferrer"
                             >
                                 download
                             </a>

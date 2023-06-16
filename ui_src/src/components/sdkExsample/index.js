@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
 // Copyright 2022-2023 The Memphis.dev Authors
 // Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -212,11 +213,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
                         {SDK_CODE_EXAMPLE[langSelected].link ? (
                             <div className="guidline">
-                                <img src={noCodeExample} />
+                                <img src={noCodeExample} alt="no-code" />
                                 <div className="content">
                                     <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
                                     <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
-                                    <a className="learn-more" href={SDK_CODE_EXAMPLE[langSelected].link} target="_blank">
+                                    <a className="learn-more" href={SDK_CODE_EXAMPLE[langSelected].link} target="_blank" rel="noreferrer">
                                         View Documentation
                                     </a>
                                 </div>
@@ -237,7 +238,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <div className="generate-wrapper">
                             <p className="field-title">Step 1: Generate a token</p>
                             <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                <img src={refresh} width="14" />
+                                <img src={refresh} width="14" alt="refresh" />
                                 <span>Generate JWT token</span>
                             </div>
                         </div>
@@ -249,7 +250,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
                         {consumer ? (
                             <div className="guidline">
-                                <img src={noCodeExample} />
+                                <img src={noCodeExample} alt="no-code-example" />
                                 <div className="content">
                                     <p>Coming soon</p>
                                     <span>

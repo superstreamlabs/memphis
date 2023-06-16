@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 // Copyright 2022-2023 The Memphis.dev Authors
 // Licensed under the Memphis Business Source License 1.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -308,7 +309,7 @@ if __name__ == "__main__":
     },
 
     '.NET (C#)': {
-        langCode: "C#",
+        langCode: 'C#',
         installation: `dotnet add package Memphis.Client`,
         producer: `using System.Collections.Specialized;
 using System.Text;

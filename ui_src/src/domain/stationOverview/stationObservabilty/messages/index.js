@@ -45,7 +45,7 @@ const Messages = () => {
     const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
-    const [indeterminate, setIndeterminate] = useState(false);
+    const [, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
@@ -98,7 +98,7 @@ const Messages = () => {
                 element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
-    }, []);
+    }, [selectedRowIndex, userScrolled]);
 
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -114,7 +114,7 @@ const Messages = () => {
             if (tabValue === tabs[0]) {
                 await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
                 messages = stationState?.stationSocketData?.messages;
-                isCheck.map((messageId, index) => {
+                isCheck.forEach((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.message_seq !== messageId;
                     });
@@ -126,7 +126,7 @@ const Messages = () => {
                     station_name: stationName
                 });
                 messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
-                isCheck.map((messageId, index) => {
+                isCheck.forEach((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.id !== messageId;
                     });
@@ -370,7 +370,7 @@ const Messages = () => {
                         desc={
                             <span>
                                 The current leader of this station.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank" rel="noreferrer">
                                     Learn more
                                 </a>
                             </span>
@@ -384,7 +384,7 @@ const Messages = () => {
                             desc={
                                 <span>
                                     The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
-                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank" rel="noreferrer">
                                         Learn more
                                     </a>
                                 </span>
@@ -399,7 +399,7 @@ const Messages = () => {
                         desc={
                             <span>
                                 Ensures messages with the same "msg-id" value will be produced only once for the configured time.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank" rel="noreferrer">
                                     Learn more
                                 </a>
                             </span>

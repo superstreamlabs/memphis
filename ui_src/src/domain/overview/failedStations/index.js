@@ -25,13 +25,12 @@ import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import NoStations from '../../../assets/images/noStations.svg';
 import Button from '../../../components/button';
-import Filter from '../../../components/filter';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
 
 const FailedStations = ({ createStationTrigger }) => {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const history = useHistory();
 
     const goToStation = (stationName) => {

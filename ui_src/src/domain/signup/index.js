@@ -76,7 +76,7 @@ const Signup = (props) => {
             history.push(pathDomains.login);
         }
         setisLoading(false);
-    }, []);
+    }, [history, state.skipSignup]);
 
     const getSystemVersion = useCallback(async () => {
         const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
@@ -94,7 +94,7 @@ const Signup = (props) => {
             getSignupFlag().catch(setisLoading(false));
             getSystemVersion().catch(setisLoading(false));
         }
-    }, [getSignupFlag, getSystemVersion]);
+    }, [getSignupFlag, getSystemVersion, history, referer]);
 
     const handleSubmit = async (e) => {
         const values = await signupForm.validateFields();
@@ -110,22 +110,22 @@ const Signup = (props) => {
                         const ws_port = data.ws_port;
                         const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
                         let conn;
-                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
-                    if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
-                        conn = await connect({
-                            servers: [SOCKET_URL],
-                            user: '$memphis_user$' + account_id,
-                            pass: connection_token,
-                            timeout: '5000'
-                        });
-                    } else {
-                        conn = await connect({
-                            servers: [SOCKET_URL],
-                            token: '::'+connection_token,
-                            timeout: '5000'
-                        });
-                    }
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                user: '$memphis_user$' + account_id,
+                                pass: connection_token,
+                                timeout: '5000'
+                            });
+                        } else {
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::' + connection_token,
+                                timeout: '5000'
+                            });
+                        }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {}
                     dispatch({ type: 'SET_USER_DATA', payload: data });

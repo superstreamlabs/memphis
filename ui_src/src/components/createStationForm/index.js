@@ -12,7 +12,7 @@
 
 import './style.scss';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
@@ -95,40 +95,41 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
-    useEffect(() => {
-        getAvailableReplicas();
-        getAllSchemas();
-        getIntegration();
-        if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
-        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
-        createStationFormRef.current = onFinish;
-    }, []);
 
-    const getRetentionValue = (formFields) => {
-        switch (formFields.retention_type || retentionType) {
-            case 'message_age_sec':
-                return convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds);
-            case 'messages':
-                return Number(formFields.retentionMessagesValue);
-            case 'bytes':
-                return Number(formFields.retentionValue);
-        }
-    };
+    const getRetentionValue = useCallback(
+        (formFields) => {
+            switch (formFields.retention_type || retentionType) {
+                case 'message_age_sec':
+                    return convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds);
+                case 'messages':
+                    return Number(formFields.retentionMessagesValue);
+                case 'bytes':
+                    return Number(formFields.retentionValue);
+                default:
+                    return 0;
+            }
+        },
+        [retentionType]
+    );
 
-    const getIdempotencyValue = (formFields) => {
-        switch (formFields.idempotency_type) {
-            case 'Milliseconds':
-                return Number(formFields.idempotency_number);
-            case 'Seconds':
-                return formFields.idempotency_number * 1000;
-            case 'Minutes':
-                return formFields.idempotency_number * 60000;
-            case 'Hours':
-                return formFields.idempotency_number * 3600000;
-        }
-    };
+    const createStation = useCallback(
+        async (bodyRequest) => {
+            try {
+                getStarted && setLoading(true);
+                const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
+                if (data) {
+                    if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
+                    else finishUpdate(data);
+                }
+            } catch (error) {
+            } finally {
+                getStarted && setLoading(false);
+            }
+        },
+        [finishUpdate, getStarted, history, setLoading]
+    );
 
-    const onFinish = async () => {
+    const onFinish = useCallback(async () => {
         const formFields = await creationForm.validateFields();
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
@@ -148,6 +149,30 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
+    }, [createStation, creationForm, dlsConfiguration, finishUpdate, getRetentionValue, getStarted, getStartedStateRef?.completedSteps, retentionType]);
+
+    useEffect(() => {
+        getAvailableReplicas();
+        getAllSchemas();
+        getIntegration();
+        if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
+        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
+        createStationFormRef.current = onFinish;
+    }, [createStationFormRef, getStarted, getStartedStateRef?.completedSteps, getStartedStateRef.formFieldsCreateStation.retention_type, onFinish]);
+
+    const getIdempotencyValue = (formFields) => {
+        switch (formFields.idempotency_type) {
+            case 'Milliseconds':
+                return Number(formFields.idempotency_number);
+            case 'Seconds':
+                return formFields.idempotency_number * 1000;
+            case 'Minutes':
+                return formFields.idempotency_number * 60000;
+            case 'Hours':
+                return formFields.idempotency_number * 3600000;
+            default:
+                return 0;
+        }
     };
 
     const getAvailableReplicas = async () => {
@@ -169,20 +194,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=s3`);
             setIntegrateValue(data);
         } catch (error) {}
-    };
-
-    const createStation = async (bodyRequest) => {
-        try {
-            getStarted && setLoading(true);
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
-            if (data) {
-                if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
-                else finishUpdate(data);
-            }
-        } catch (error) {
-        } finally {
-            getStarted && setLoading(false);
-        }
     };
 
     const stationNameChange = (e) => {
@@ -299,7 +310,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 headerDescription={
                                     <span>
                                         Ensures producers will not produce the same message.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank" rel="noreferrer">
                                             Learn more
                                         </a>
                                     </span>
@@ -391,7 +402,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         {tabValue === tabs[0].name && (
                             <p className="description">
                                 The criteria for which messages will be expelled from the station.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank" rel="noreferrer">
                                     Learn more
                                 </a>
                             </p>
@@ -532,6 +543,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 className="learn-more"
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
                                                 target="_blank"
+                                                rel="noreferrer"
                                             >
                                                 Learn more
                                             </a>
@@ -543,6 +555,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                 className="learn-more"
                                                 href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
                                                 target="_blank"
+                                                rel="noreferrer"
                                             >
                                                 Learn more
                                             </a>

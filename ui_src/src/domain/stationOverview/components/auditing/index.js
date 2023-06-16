@@ -35,12 +35,7 @@ const auditColumns = [
 ];
 
 const Auditing = () => {
-    const [tabValue, setTabValue] = useState(0);
-    const tabs = ['Audit'];
-
-    const handleChangeMenuItem = (_, newValue) => {
-        setTabValue(newValue);
-    };
+    const [tabValue] = useState(0);
 
     return <GenericList tab={tabValue} columns={auditColumns} />;
 };

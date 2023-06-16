@@ -34,7 +34,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
         if (header === 'Payload') {
             setPayload(messageParser(parser, data));
         }
-    }, [parser, data]);
+    }, [parser, data, header]);
 
     const onChange = (key) => {
         setActiveKey(key);
@@ -71,7 +71,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 <p className="title">
                                     {header}
                                     {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} />}
+                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} alt="warning-circle" />}
                                 </p>
                                 <status is="x3d">
                                     <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />

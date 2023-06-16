@@ -12,9 +12,8 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useRef } from 'react';
+import React, { useEffect, useContext, useState, useRef, useCallback } from 'react';
 import { CloudDownloadRounded } from '@material-ui/icons';
-import { useMediaQuery } from 'react-responsive';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Link } from 'react-router-dom';
 
@@ -47,15 +46,6 @@ import Modal from '../../components/modal';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 
-const Desktop = ({ children }) => {
-    const isDesktop = useMediaQuery({ minWidth: 850 });
-    return isDesktop ? children : null;
-};
-const Mobile = ({ children }) => {
-    const isMobile = useMediaQuery({ maxWidth: 849 });
-    return isMobile ? children : null;
-};
-
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
     `“With data collection, ‘the sooner the better’ is always the best answer” — Marissa Mayer`,
@@ -73,7 +63,7 @@ function OverView() {
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [showInstallaion, setShowInstallaion] = useState(false);
-    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [, setIsDataLoaded] = useState(false);
     const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
@@ -82,38 +72,41 @@ function OverView() {
         return Math.floor(Math.random() * max);
     };
 
-    const generateSentence = () => {
+    const generateSentence = useCallback(() => {
         setDataSentence(dataSentences[getRandomInt(5)]);
-    };
+    }, []);
 
-    const arrangeData = (data) => {
-        data.stations?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        data.system_components?.sort(function (a, b) {
-            let nameA = a.name.toUpperCase();
-            let nameB = b.name.toUpperCase();
-            if (nameA < nameB) {
-                return -1;
-            }
-            if (nameA > nameB) {
-                return 1;
-            }
-            return 0;
-        });
-        data.system_components?.map((a) => {
-            a.ports?.sort(function (a, b) {
-                if (a < b) {
+    const arrangeData = useCallback(
+        (data) => {
+            data.stations?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            data.system_components?.sort(function (a, b) {
+                let nameA = a.name.toUpperCase();
+                let nameB = b.name.toUpperCase();
+                if (nameA < nameB) {
                     return -1;
                 }
-                if (a > b) {
+                if (nameA > nameB) {
                     return 1;
                 }
                 return 0;
             });
-        });
-        dispatch({ type: 'SET_MONITOR_DATA', payload: data });
-    };
+            data.system_components?.forEach((a) => {
+                a.ports?.sort(function (a, b) {
+                    if (a < b) {
+                        return -1;
+                    }
+                    if (a > b) {
+                        return 1;
+                    }
+                    return 0;
+                });
+            });
+            dispatch({ type: 'SET_MONITOR_DATA', payload: data });
+        },
+        [dispatch]
+    );
 
-    const getOverviewData = async () => {
+    const getOverviewData = useCallback(async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
@@ -123,7 +116,7 @@ function OverView() {
         } catch (error) {
             setisLoading(false);
         }
-    };
+    }, [arrangeData]);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
@@ -136,7 +129,7 @@ function OverView() {
                 : capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME))
         );
         generateSentence();
-    }, []);
+    }, [dispatch, generateSentence, getOverviewData, state?.userData?.avatar_id]);
 
     useEffect(() => {
         const sc = StringCodec();
@@ -165,7 +158,7 @@ function OverView() {
         return () => {
             sub?.unsubscribe();
         };
-    }, [state.socket]);
+    }, [arrangeData, state.socket]);
 
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));

@@ -131,7 +131,7 @@ exporter.enabled="true"`}
                 return (
                     <div className="steps-content">
                         <h3>
-                            <a href="https://grafana.com/grafana/dashboards/18050-memphis-dev/" target="_blank">
+                            <a href="https://grafana.com/grafana/dashboards/18050-memphis-dev/" target="_blank" rel="noreferrer">
                                 Import
                             </a>{' '}
                             Memphis dashboard using Memphis dashboard ID: 18050

@@ -30,8 +30,7 @@ const SearchInput = (props) => {
         borderBottom,
         borderColorType,
         boxShadowsType,
-        value,
-        className
+        value
     } = props;
 
     const handleChange = (e) => onChange(e);

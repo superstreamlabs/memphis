@@ -13,12 +13,18 @@
 import './App.scss';
 
 import { Switch, Route, withRouter } from 'react-router-dom';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useCallback } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_CONNECTION_TOKEN, LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_USER_PASS_BASED_AUTH, LOCAL_STORAGE_WS_PORT } from './const/localStorageConsts';
+import {
+    LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_CONNECTION_TOKEN,
+    LOCAL_STORAGE_TOKEN,
+    LOCAL_STORAGE_USER_PASS_BASED_AUTH,
+    LOCAL_STORAGE_WS_PORT
+} from './const/localStorageConsts';
 import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
@@ -59,59 +65,64 @@ const App = withRouter(() => {
     }, [isMobile]);
 
     const history = useHistory();
-
-    useEffect(async () => {
-        await handleRefresh(true);
-        setAuthCheck(false);
-
-        const interval = setInterval(() => {
-            handleRefresh(false);
-        }, HANDLE_REFRESH_INTERVAL);
-
-        return () => {
-            clearInterval(interval);
-            state.socket?.close();
-        };
-    }, []);
-
-    const handleRefresh = async (firstTime) => {
-        if (window.location.pathname === pathDomains.login) {
-            return;
-        } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
-            const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
-            const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-            const handleRefreshStatus = await handleRefreshTokenRequest();
-            if (handleRefreshStatus) {
-                if (firstTime) {
-                    try {
-                        let conn;
-                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN)
-                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                user: '$memphis_user$' + account_id,
-                                pass: connection_token,
-                                timeout: '5000'
-                            });
-                        } else {
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                token: '::'+connection_token,
-                                timeout: '5000'
-                            });
+    const handleRefresh = useCallback(
+        async (firstTime) => {
+            if (window.location.pathname === pathDomains.login) {
+                return;
+            } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+                const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
+                const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                const handleRefreshStatus = await handleRefreshTokenRequest();
+                if (handleRefreshStatus) {
+                    if (firstTime) {
+                        try {
+                            let conn;
+                            const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                            if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                                const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                                conn = await connect({
+                                    servers: [SOCKET_URL],
+                                    user: '$memphis_user$' + account_id,
+                                    pass: connection_token,
+                                    timeout: '5000'
+                                });
+                            } else {
+                                conn = await connect({
+                                    servers: [SOCKET_URL],
+                                    token: '::' + connection_token,
+                                    timeout: '5000'
+                                });
+                            }
+                            dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                        } catch (error) {
+                            return;
                         }
-                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {
-                        return;
                     }
+                    return true;
                 }
-                return true;
+            } else {
+                history.push(pathDomains.signup);
             }
-        } else {
-            history.push(pathDomains.signup);
-        }
-    };
+        },
+        [dispatch, history]
+    );
+
+    useEffect(() => {
+        const callHandleRfresh = async () => {
+            await handleRefresh(true);
+            setAuthCheck(false);
+
+            const interval = setInterval(() => {
+                handleRefresh(false);
+            }, HANDLE_REFRESH_INTERVAL);
+
+            return () => {
+                clearInterval(interval);
+                state.socket?.close();
+            };
+        };
+        callHandleRfresh();
+    }, [handleRefresh, state.socket]);
 
     return (
         <div className="app-container">

@@ -28,7 +28,7 @@ import UserItem from './userItem';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 
 function Users() {
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const [userList, setUsersList] = useState([]);
     const [copyOfUserList, setCopyOfUserList] = useState([]);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
@@ -64,6 +64,7 @@ function Users() {
         } else {
             setUsersList(copyOfUserList);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchInput]);
 
     const handleSearch = (e) => {

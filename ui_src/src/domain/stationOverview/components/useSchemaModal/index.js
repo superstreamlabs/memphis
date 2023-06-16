@@ -30,7 +30,7 @@ import { StationStoreContext } from '../..';
 import SchemaItem from './schemaItem';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
-    const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [, stationDispatch] = useContext(StationStoreContext);
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
     const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);

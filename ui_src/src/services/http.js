@@ -30,6 +30,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         withCredentials: serverUrl ? false : true
     });
     if (method !== 'GET' && method !== 'POST' && method !== 'PUT' && method !== 'DELETE')
+        // eslint-disable-next-line no-throw-literal
         throw {
             status: 400,
             message: `Invalid HTTP method`,
@@ -71,6 +72,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
                             className="a-link"
                             href="https://docs.memphis.dev/memphis/getting-started/readme?utm_source=sandbox&utm_medium=banner&utm_campaign=sandbox+installation+banner#getting-started"
                             target="_blank"
+                            rel="noreferrer"
                         >
                             install
                         </a>
@@ -96,7 +98,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
                 content: (
                     <>
                         We have some issues. Please open a
-                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
+                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank" rel="noreferrer">
                             GitHub issue
                         </a>
                     </>

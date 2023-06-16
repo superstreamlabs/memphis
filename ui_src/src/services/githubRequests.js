@@ -25,7 +25,7 @@ export async function GithubRequest(serverUrl) {
                 content: (
                     <>
                         We have some issues. Please open a
-                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
+                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank" rel="noreferrer">
                             GitHub issue
                         </a>
                     </>

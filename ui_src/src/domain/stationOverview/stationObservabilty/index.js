@@ -25,7 +25,7 @@ import { StationStoreContext } from '..';
 import Messages from './messages';
 
 const StationObservabilty = () => {
-    const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [stationState] = useContext(StationStoreContext);
 
     return (
         <div className="station-observabilty-container">

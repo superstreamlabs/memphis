@@ -23,7 +23,7 @@ export const INSTALLATION_GUIDE = {
         description: (
             <span>
                 Please choose your preferred environment to deploy memphis on{' '}
-                <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank">
+                <a href="https://docs.memphis.dev/memphis-new/getting-started/1-installation" target="_blank" rel="noreferrer">
                     Learn more
                 </a>
             </span>
@@ -47,13 +47,13 @@ export const INSTALLATION_GUIDE = {
                 title: (
                     <span>
                         Step 3 - Open memphis{' '}
-                        <a href={`http://localhost:${http_port}`} target="_blank">
+                        <a href={`http://localhost:${http_port}`} target="_blank" rel="noreferrer">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href={`http://localhost:${http_port}`} target="_blank">
+                    <a href={`http://localhost:${http_port}`} target="_blank" rel="noreferrer">
                         http://localhost:{http_port}
                     </a>
                 ),
@@ -77,13 +77,13 @@ export const INSTALLATION_GUIDE = {
                 title: (
                     <span>
                         Step 2 - Open memphis{' '}
-                        <a href={`http://localhost:${http_port}`} target="_blank">
+                        <a href={`http://localhost:${http_port}`} target="_blank" rel="noreferrer">
                             UI
                         </a>
                     </span>
                 ),
                 command: (
-                    <a href={`http://localhost:${http_port}`} target="_blank">
+                    <a href={`http://localhost:${http_port}`} target="_blank" rel="noreferrer">
                         http://localhost:{http_port}
                     </a>
                 ),

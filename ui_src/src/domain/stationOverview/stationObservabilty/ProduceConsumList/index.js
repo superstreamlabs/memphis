@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Space } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 
@@ -29,7 +29,7 @@ import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 
 const ProduceConsumList = ({ producer }) => {
-    const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [stationState] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
     const [producersList, setProducersList] = useState([]);
     const [cgsList, setCgsList] = useState([]);
@@ -37,6 +37,76 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
+
+    const arrangeData = useCallback(
+        (type, rowIndex) => {
+            if (type === 'producer') {
+                let details = [
+                    {
+                        name: 'Name',
+                        value: producersList[rowIndex]?.name
+                    },
+                    {
+                        name: 'User',
+                        value: producersList[rowIndex]?.created_by_username
+                    },
+                    {
+                        name: 'IP',
+                        value: producersList[rowIndex]?.client_address
+                    }
+                ];
+                setProducerDetails(details);
+            } else {
+                let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
+                let consumersDetails = [];
+                concatAllConsumers.forEach((row, index) => {
+                    let consumer = {
+                        name: row.name,
+                        is_active: row.is_active,
+                        is_deleted: row.is_deleted,
+                        details: [
+                            {
+                                name: 'User',
+                                value: row.created_by_username
+                            },
+                            {
+                                name: 'IP',
+                                value: row.client_address
+                            }
+                        ]
+                    };
+                    consumersDetails.push(consumer);
+                });
+                let cgDetails = {
+                    details: [
+                        {
+                            name: 'Unacked messages',
+                            value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
+                        },
+                        {
+                            name: 'Unprocessed messages',
+                            value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
+                        },
+                        {
+                            name: 'In process message',
+                            value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
+                        },
+                        {
+                            name: 'Max ack time',
+                            value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
+                        },
+                        {
+                            name: 'Max message deliveries',
+                            value: cgsList[rowIndex]?.max_msg_deliveries
+                        }
+                    ],
+                    consumers: consumersDetails
+                };
+                setCgDetails(cgDetails);
+            }
+        },
+        [cgsList, producersList]
+    );
 
     useEffect(() => {
         if (producer) {
@@ -46,12 +116,12 @@ const ProduceConsumList = ({ producer }) => {
             let result = concatFunction('cgs', stationState?.stationSocketData);
             setCgsList(result);
         }
-    }, [stationState?.stationSocketData]);
+    }, [producer, stationState?.stationSocketData]);
 
     useEffect(() => {
         arrangeData('producer', selectedRowIndex);
         arrangeData('cgs', selectedRowIndex);
-    }, [producersList, cgsList]);
+    }, [producersList, cgsList, arrangeData, selectedRowIndex]);
 
     const concatFunction = (type, data) => {
         let connected = [];
@@ -85,73 +155,6 @@ const ProduceConsumList = ({ producer }) => {
     const onSelectedRow = (rowIndex, type) => {
         setSelectedRowIndex(rowIndex);
         arrangeData(type, rowIndex);
-    };
-
-    const arrangeData = (type, rowIndex) => {
-        if (type === 'producer') {
-            let details = [
-                {
-                    name: 'Name',
-                    value: producersList[rowIndex]?.name
-                },
-                {
-                    name: 'User',
-                    value: producersList[rowIndex]?.created_by_username
-                },
-                {
-                    name: 'IP',
-                    value: producersList[rowIndex]?.client_address
-                }
-            ];
-            setProducerDetails(details);
-        } else {
-            let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
-            let consumersDetails = [];
-            concatAllConsumers.map((row, index) => {
-                let consumer = {
-                    name: row.name,
-                    is_active: row.is_active,
-                    is_deleted: row.is_deleted,
-                    details: [
-                        {
-                            name: 'User',
-                            value: row.created_by_username
-                        },
-                        {
-                            name: 'IP',
-                            value: row.client_address
-                        }
-                    ]
-                };
-                consumersDetails.push(consumer);
-            });
-            let cgDetails = {
-                details: [
-                    {
-                        name: 'Unacked messages',
-                        value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'Unprocessed messages',
-                        value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'In process message',
-                        value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'Max ack time',
-                        value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
-                    },
-                    {
-                        name: 'Max message deliveries',
-                        value: cgsList[rowIndex]?.max_msg_deliveries
-                    }
-                ],
-                consumers: consumersDetails
-            };
-            setCgDetails(cgDetails);
-        }
     };
 
     const returnClassName = (index, is_deleted) => {

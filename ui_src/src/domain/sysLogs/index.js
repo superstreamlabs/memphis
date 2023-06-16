@@ -21,11 +21,11 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 
 const SysLogs = () => {
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'logs' });
-    }, []);
+    }, [dispatch]);
 
     const downloadLogs = async () => {
         try {

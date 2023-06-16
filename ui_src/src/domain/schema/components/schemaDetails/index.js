@@ -54,13 +54,12 @@ loader.config({ monaco });
 
 function SchemaDetails({ schemaName, closeDrawer }) {
     const ajv = new Ajv2019();
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
 
     const [versionSelected, setVersionSelected] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [updated, setUpdated] = useState(false);
     const [loading, setIsLoading] = useState(false);
-    const [attachLoader, setAttachLoader] = useState(false);
     const [rollLoading, setIsRollLoading] = useState(false);
     const [newVersion, setNewVersion] = useState('');
     const [schemaDetails, setSchemaDetails] = useState({

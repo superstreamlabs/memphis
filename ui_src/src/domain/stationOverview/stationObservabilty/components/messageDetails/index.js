@@ -29,7 +29,7 @@ import MultiCollapse from '../multiCollapse';
 const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
-    const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [stationState] = useContext(StationStoreContext);
     const [messageDetails, setMessageDetails] = useState({});
     const [loadMessageData, setLoadMessageData] = useState(false);
 
@@ -67,7 +67,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const arrangeData = async (data) => {
         let poisonedCGs = [];
         if (data) {
-            data?.poisoned_cgs?.map((row) => {
+            data?.poisoned_cgs?.forEach((row) => {
                 let cg = {
                     name: row.cg_name,
                     is_active: row.is_active,
@@ -210,7 +210,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     </>
                 ) : (
                     <div className="placeholder">
-                        <img src={attachedPlaceholder} />
+                        <img src={attachedPlaceholder} alt="attached-placeholder" />
                         <p>No message selected</p>
                     </div>
                 )}

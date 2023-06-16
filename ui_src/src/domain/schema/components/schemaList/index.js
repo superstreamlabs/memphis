@@ -12,12 +12,10 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useCallback } from 'react';
 import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
@@ -27,7 +25,7 @@ import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
 
 function SchemaList({ createNew }) {
@@ -39,15 +37,7 @@ function SchemaList({ createNew }) {
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
 
-    useEffect(() => {
-        getAllSchemas();
-        return () => {
-            dispatch({ type: 'SET_SCHEMA_LIST', payload: [] });
-            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
-        };
-    }, []);
-
-    const getAllSchemas = async () => {
+    const getAllSchemas = useCallback(async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
@@ -59,7 +49,15 @@ function SchemaList({ createNew }) {
         } catch (error) {
             setisLoading(false);
         }
-    };
+    }, [dispatch]);
+
+    useEffect(() => {
+        getAllSchemas();
+        return () => {
+            dispatch({ type: 'SET_SCHEMA_LIST', payload: [] });
+            dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
+        };
+    }, [dispatch, getAllSchemas]);
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
@@ -155,7 +153,7 @@ function SchemaList({ createNew }) {
             </div>
             <span className="memphis-label">
                 The new way to enforce schemas! Get started&nbsp;
-                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
+                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank" rel="noreferrer">
                     here.
                 </a>
             </span>

@@ -21,7 +21,7 @@ const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder })
             <DatePicker
                 onChange={(date, dateString) => (dateString ? onChange(date._d) : onChange(''))}
                 placeholder={placeholder}
-                suffixIcon={<img src={CalendarIcon} />}
+                suffixIcon={<img src={CalendarIcon} alt="calendar-icon" />}
                 popupClassName="date-picker-popup"
                 style={{
                     height: height,

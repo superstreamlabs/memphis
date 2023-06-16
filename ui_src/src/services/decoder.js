@@ -1,6 +1,5 @@
-import { bufferToPrettyHex, parseInput } from './decoderFiles/hexUtils';
+import { parseInput } from './decoderFiles/hexUtils';
 import { TYPES, typeToString } from './decoderFiles/protobufDecoder';
-import { decodeVarintParts, decodeFixed64, decodeFixed32 } from './decoderFiles/protobufPartDecoder';
 import { BufferReader } from './decoderFiles/protobufDecoder';
 import { v4 } from 'uuid';
 
@@ -126,7 +125,7 @@ function ProtobufStringPart(part) {
 }
 
 function ProtobufDisplay(value) {
-    value.parts.map((part) => {
+    value.parts.forEach((part) => {
         if (part.type === TYPES.STRING) {
             ProtobufStringPart(part);
         } else {

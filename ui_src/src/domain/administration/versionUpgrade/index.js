@@ -26,7 +26,7 @@ import NoteItem from './components/noteItem';
 import Loader from '../../../components/loader';
 
 function VersionUpgrade() {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [isLoading, setIsLoading] = useState(true);
     const [features, setFeatures] = useState({});
     const [selectedfeatures, setSelectedfeatures] = useState('Added Features');
@@ -69,6 +69,8 @@ function VersionUpgrade() {
                         break;
                     case 'Known Issues':
                         regex = /###\s*!\[:sparkles:\].*?Known\s*issues\s*(.*?)\s*(?=###|$)/is;
+                        break;
+                    default:
                         break;
                 }
 

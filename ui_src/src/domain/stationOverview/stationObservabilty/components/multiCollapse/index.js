@@ -80,7 +80,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                             key={index}
                                         >
                                             {row.details?.length > 0 &&
-                                                row.details?.map((row, index) => {
+                                                row.details?.forEach((row, index) => {
                                                     if (row.value !== '-1') {
                                                         return (
                                                             <div className="panel-child" key={index}>

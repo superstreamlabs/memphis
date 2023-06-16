@@ -30,7 +30,7 @@ import LogContent from '../logContent';
 let sub;
 
 const LogsWrapper = () => {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [displayedLog, setDisplayedLog] = useState({});
     const [selectedRow, setSelectedRow] = useState(null);
     const [visibleRange, setVisibleRange] = useState(0);

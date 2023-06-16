@@ -30,7 +30,7 @@ const TitleComponent = (props) => {
                 <p className="header-description" style={style?.description}>
                     {headerDescription}&nbsp;
                     {learnMore && (
-                        <a className="learn-more" href={link} target="_blank">
+                        <a className="learn-more" href={link} target="_blank" rel="noreferrer">
                             Learn more
                         </a>
                     )}

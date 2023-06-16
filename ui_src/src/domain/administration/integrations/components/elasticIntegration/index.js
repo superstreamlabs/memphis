@@ -71,15 +71,15 @@ const ElasticIntegration = ({ close }) => {
                         <h3>
                             The Elastic Agent needs to be assigned to a policy to enable the proper inputs. To achieve Kubernetes observability, the policy needs to
                             include the Kubernetes integration. Refer to{' '}
-                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#create-a-policy" target="_blank">
+                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#create-a-policy" target="_blank" rel="noreferrer">
                                 Create a policy
                             </a>{' '}
                             and{' '}
-                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#add-integration" target="_blank">
+                            <a href="https://www.elastic.co/guide/en/fleet/master/agent-policy.html#add-integration" target="_blank" rel="noreferrer">
                                 Add an integration to a policy
                             </a>{' '}
                             to learn how to configure the{' '}
-                            <a href="https://docs.elastic.co/en/integrations/kubernetes" target="_blank">
+                            <a href="https://docs.elastic.co/en/integrations/kubernetes" target="_blank" rel="noreferrer">
                                 Kubernetes integration
                             </a>
                             .
