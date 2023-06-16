@@ -164,7 +164,6 @@ const S3Integration = ({ close, value }) => {
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingDisconnect}
-                                    disabled={process.env.REACT_APP_SANDBOX_ENV}
                                     onClick={() => disconnect()}
                                 />
                             )}
@@ -314,7 +313,7 @@ const S3Integration = ({ close, value }) => {
                                     fontSize="14px"
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
-                                    disabled={process.env.REACT_APP_SANDBOX_ENV || (isValue && !creationForm.isFieldsTouched())}
+                                    disabled={isValue && !creationForm.isFieldsTouched()}
                                     onClick={handleSubmit}
                                 />
                             </div>

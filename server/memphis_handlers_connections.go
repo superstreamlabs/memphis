@@ -17,6 +17,7 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
+	"os"
 
 	"errors"
 	"strings"
@@ -31,13 +32,14 @@ var consumersHandler ConsumersHandler
 
 const (
 	connectItemSep                      = "::"
+	userNameItemSep                     = "$"
 	connectConfigUpdatesSubjectTemplate = "$memphis_configurations_updates.init.%s"
 )
 
 func updateNewClientWithConfig(c *client, connId string) {
 	// TODO more configurations logic here
 
-	slackEnabled, err := IsSlackEnabled()
+	slackEnabled, err := IsSlackEnabled(c.acc.GetName())
 	if err != nil {
 		c.Errorf("updateNewClientWithConfig: " + err.Error())
 	}
@@ -67,6 +69,7 @@ func handleConnectMessage(client *client) error {
 		isNativeMemphisClient bool
 		username              string
 		connectionId          string
+		err                   error
 	)
 	switch len(splittedMemphisInfo) {
 	case 2:
@@ -76,18 +79,28 @@ func handleConnectMessage(client *client) error {
 	case 1:
 		// NATS SDK, means we extract username from the token field
 		isNativeMemphisClient = false
-		splittedToken := strings.Split(client.opts.Token, connectItemSep)
-		if len(splittedToken) != 2 {
-			client.Warnf("handleConnectMessage: missing username or token")
-			return errors.New("missing username or token")
+		var splittedToken []string
+		if os.Getenv("USER_PASS_BASED_AUTH") == "true" {
+			splittedToken = strings.Split(client.opts.Username, userNameItemSep)
+			username = strings.ToLower(splittedToken[0])
+		} else {
+			splittedToken := strings.Split(client.opts.Token, connectItemSep)
+			if len(splittedToken) != 2 {
+				client.Warnf("handleConnectMessage: missing username or token")
+				return errors.New("missing username or token")
+			}
+			username, _, err = getUserAndTenantIdFromString(strings.ToLower(splittedToken[0]))
+			if err != nil {
+				errMsg := "User " + username + ": " + err.Error()
+				client.Errorf("handleConnectMessage: " + errMsg)
+				return err
+			}
 		}
-		username = strings.ToLower(splittedToken[0])
 	default:
 		client.Warnf("handleConnectMessage: missing username or connectionId")
 		return errors.New("missing username or connectionId")
 	}
-
-	exist, user, err := db.GetUserByUsername(username)
+	exist, user, err := db.GetUserByUsername(username, client.acc.GetName())
 	if err != nil {
 		errMsg := "User " + username + ": " + err.Error()
 		client.Errorf("handleConnectMessage: " + errMsg)
@@ -105,7 +118,7 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username)
+		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
 		if err != nil {
 			errMsg := "User " + username + ": " + err.Error()
 			client.Errorf("handleConnectMessage: " + errMsg)
@@ -155,7 +168,7 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string) (bool, error) {
+func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string, tenantName string) (bool, error) {
 	createdByUsername = strings.ToLower(createdByUsername)
 	newConnection := models.Connection{
 		ID:                connectionId,
@@ -164,9 +177,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
+		TenantName:        strings.ToLower(tenantName),
 	}
 
-	err := db.InsertConnection(newConnection)
+	err := db.InsertConnection(newConnection, tenantName)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return true, nil
@@ -185,7 +199,7 @@ func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
 	return nil
 }
 
-func (mci *memphisClientInfo) updateDisconnection() error {
+func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 	if mci.connectionId == "" {
 		return nil
 	}
@@ -231,9 +245,12 @@ func (mci *memphisClientInfo) updateDisconnection() error {
 	if len(consumerNames) > 0 {
 		msg = msg + consumerNames
 	}
-	err = SendNotification("Disconnection events", msg, DisconEAlert)
-	if err != nil {
-		return err
+
+	if len(consumerNames) > 0 || len(producerNames) > 0 {
+		err = SendNotification(tenantName, "Disconnection events", msg, DisconEAlert)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

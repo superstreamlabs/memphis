@@ -154,9 +154,17 @@ const StationsList = () => {
         <div className="stations-details-container">
             <div className="stations-details-header">
                 <div className="header-wraper">
-                    <label className="main-header-h1">
-                        Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
-                    </label>
+                    <div className="main-header-wrapper">
+                        <label className="main-header-h1">
+                            Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
+                        </label>
+                        <span className="memphis-label">
+                            Stations stores events. More&nbsp;
+                            <a className="learn-more" href=" https://docs.memphis.dev/memphis/memphis/key-concepts/station" target="_blank">
+                                here.
+                            </a>
+                        </span>
+                    </div>
                     <div className="right-side">
                         <Button
                             height="34px"
@@ -201,12 +209,6 @@ const StationsList = () => {
                         />
                     </div>
                 </div>
-                <span className="memphis-label">
-                    Stations stores events. More&nbsp;
-                    <a className="learn-more" href=" https://docs.memphis.dev/memphis/memphis/key-concepts/station" target="_blank">
-                        here.
-                    </a>
-                </span>
             </div>
             {isLoading && (
                 <div className="loader-uploading">

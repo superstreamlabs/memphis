@@ -24,6 +24,7 @@ import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
+import { isCloud } from '../../services/valueConvertor';
 
 function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
@@ -36,13 +37,6 @@ function Administration({ step }) {
 
     const getComponent = () => {
         switch (selectedMenuItem) {
-            case 'cluster_configuration':
-                if (window.location.href.split('/cluster_configuration').length > 1) {
-                    return <ClusterConfiguration />;
-                } else {
-                    history.replace(`${pathDomains.administration}/cluster_configuration`);
-                    break;
-                }
             case 'integrations':
                 if (window.location.href.split('/integrations').length > 1) {
                     return <Integrations />;
@@ -50,12 +44,23 @@ function Administration({ step }) {
                     history.replace(`${pathDomains.administration}/integrations`);
                     break;
                 }
+            case 'cluster_configuration':
+                if (!isCloud()) {
+                    if (window.location.href.split('/cluster_configuration').length > 1) {
+                        return <ClusterConfiguration />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/cluster_configuration`);
+                        break;
+                    }
+                }
             case 'version_upgrade':
-                if (window.location.href.split('/version_upgrade').length > 1) {
-                    return <VersionUpgrade />;
-                } else {
-                    history.replace(`${pathDomains.administration}/version_upgrade`);
-                    break;
+                if (!isCloud()) {
+                    if (window.location.href.split('/version_upgrade').length > 1) {
+                        return <VersionUpgrade />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/version_upgrade`);
+                        break;
+                    }
                 }
             case 'requests':
                 if (window.location.href.split('/requests').length > 1) {
@@ -79,7 +84,7 @@ function Administration({ step }) {
         <div className="setting-container">
             <div className="menu-container">
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
-                <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
+                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />}
             </div>
 
             <div className="setting-items">{getComponent()}</div>

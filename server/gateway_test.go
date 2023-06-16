@@ -6736,7 +6736,7 @@ func TestGatewayNoPanicOnStartupWithMonitoring(t *testing.T) {
 	o := testDefaultOptionsForGateway("B")
 	o.HTTPHost = "127.0.0.1"
 	o.HTTPPort = 8888
-	s, err := NewServer(o)
+	s, _, err := NewServer(o)
 	require_NoError(t, err)
 
 	wg := sync.WaitGroup{}

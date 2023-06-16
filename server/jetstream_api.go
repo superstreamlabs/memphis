@@ -890,6 +890,14 @@ func (s *Server) sendAPIErrResponse(ci *ClientInfo, acc *Account, subject, reply
 	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)
 }
 
+func (s *Server) sendAPIErrResponseWithEcho(ci *ClientInfo, acc *Account, subject, reply, request, response string) {
+	acc.trackAPIErr()
+	if reply != _EMPTY_ {
+		s.sendInternalAccountMsgWithEcho(nil, reply, response)
+	}
+	s.sendJetStreamAPIAuditAdvisory(ci, acc, subject, request, response)
+}
+
 const errRespDelay = 500 * time.Millisecond
 
 func (s *Server) sendDelayedAPIErrResponse(ci *ClientInfo, acc *Account, subject, reply, request, response string, rg *raftGroup) {

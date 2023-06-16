@@ -26,6 +26,12 @@ type User struct {
 	FullName        string    `json:"full_name"`
 	Subscribtion    bool      `json:"subscription"`
 	SkipGetStarted  bool      `json:"skip_get_started"`
+	TenantName      string    `json:"tenant_name"`
+	Pending         bool      `json:"pending"`
+	Position        string    `json:"position"`
+	Team            string    `json:"team"`
+	Owner           string    `json:"owner"`
+	Description     string    `json:"description"`
 }
 
 type Image struct {
@@ -41,6 +47,10 @@ type AddUserSchema struct {
 	AvatarId     int    `json:"avatar_id"`
 	FullName     string `json:"full_name"`
 	Subscribtion bool   `json:"subscription"`
+	Team         string `json:"team"`
+	Position     string `json:"position"`
+	Owner        string `json:"owner"`
+	Description  string `json:"description"`
 }
 
 type AuthenticateNatsSchema struct {

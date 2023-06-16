@@ -58,6 +58,7 @@ type Station struct {
 	DlsConfigurationPoison      bool      `json:"dls_configuration_poison,omitempty"`
 	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse,omitempty"`
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
+	TenantName                  string    `json:"tenant_name"`
 }
 
 type GetStationResponseSchema struct {
@@ -101,6 +102,7 @@ type ExtendedStation struct {
 	Producers                   []Producer  `json:"producers,omitempty"`
 	Consumers                   []Consumer  `json:"consumers,omitempty"`
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
+	TenantName                  string      `json:"tenant_name"`
 }
 
 type ExtendedStationDetails struct {
@@ -170,7 +172,6 @@ type GetPoisonMessageJourneySchema struct {
 	MessageId int `form:"message_id" json:"message_id" binding:"required"`
 }
 
-// TODO: remove
 type GetMessageDetailsSchema struct {
 	IsDls       bool   `form:"is_dls" json:"is_dls"`
 	DlsType     string `form:"dls_type" json:"dls_type"`

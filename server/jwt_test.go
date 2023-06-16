@@ -1697,7 +1697,7 @@ func TestJWTAccountURLResolverNoFetchOnReload(t *testing.T) {
 	ts.Close()
 
 	opts := LoadConfig(conf)
-	if s, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "could not fetch") {
+	if s, _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), "could not fetch") {
 		if s != nil {
 			s.Shutdown()
 		}
@@ -6319,7 +6319,7 @@ func TestJWTNoSystemAccountButNatsResolver(t *testing.T) {
 				dir: '%s'
 			}`, ojwt, resType, dirSrv)))
 			opts := LoadConfig(conf)
-			s, err := NewServer(opts)
+			s,_, err := NewServer(opts)
 			// Since the server cannot be stopped, since it did not start,
 			// let's manually close the account resolver to avoid leaking go routines.
 			opts.AccountResolver.Close()

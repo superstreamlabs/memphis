@@ -34,6 +34,7 @@ type memStore struct {
 	ageChk      *time.Timer
 	consumers   int
 	receivedAny bool
+	account     *Account // ** added by memphis **
 }
 
 func newMemStore(cfg *StreamConfig) (*memStore, error) {
@@ -49,9 +50,28 @@ func newMemStore(cfg *StreamConfig) (*memStore, error) {
 		maxp: cfg.MaxMsgsPer,
 		cfg:  *cfg,
 	}
-
 	return ms, nil
 }
+
+// ** added by memphis
+func newMemStoreMemphis(cfg *StreamConfig, account *Account) (*memStore, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config required")
+	}
+	if cfg.Storage != MemoryStorage {
+		return nil, fmt.Errorf("memStore requires memory storage type in config")
+	}
+	ms := &memStore{
+		msgs:    make(map[uint64]*StoreMsg),
+		fss:     make(map[string]*SimpleState),
+		maxp:    cfg.MaxMsgsPer,
+		cfg:     *cfg,
+		account: account, // ** added by memphis **
+	}
+	return ms, nil
+}
+
+// added by memphis **
 
 func (ms *memStore) UpdateConfig(cfg *StreamConfig) error {
 	if cfg == nil {

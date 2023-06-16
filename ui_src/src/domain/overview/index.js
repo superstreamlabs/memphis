@@ -13,29 +13,19 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
-import { CloudDownloadRounded } from '@material-ui/icons';
-import { useMediaQuery } from 'react-responsive';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { Link } from 'react-router-dom';
 
 import {
     LOCAL_STORAGE_ALREADY_LOGGED_IN,
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_SKIP_GET_STARTED
 } from '../../const/localStorageConsts';
-import installationIcon from '../../assets/images/installationIcon.svg';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
-import { capitalizeFirst } from '../../services/valueConvertor';
-import discordLogo from '../../assets/images/discordLogo.svg';
-import githubLogo from '../../assets/images/githubLogo.svg';
-import Installation from '../../components/installation';
-import docsLogo from '../../assets/images/docsLogo.svg';
+import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import welcome from '../../assets/images/welcome.svg';
 import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
@@ -46,15 +36,6 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
-
-const Desktop = ({ children }) => {
-    const isDesktop = useMediaQuery({ minWidth: 850 });
-    return isDesktop ? children : null;
-};
-const Mobile = ({ children }) => {
-    const isMobile = useMediaQuery({ maxWidth: 849 });
-    return isMobile ? children : null;
-};
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -72,9 +53,7 @@ function OverView() {
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
-    const [showInstallaion, setShowInstallaion] = useState(false);
     const [isDataLoaded, setIsDataLoaded] = useState(false);
-    const [showWelcome, setShowWelcome] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
 
@@ -127,7 +106,6 @@ function OverView() {
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'overview' });
-        setShowWelcome(process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem(LOCAL_STORAGE_WELCOME_MESSAGE) === 'true');
         getOverviewData();
         setBotImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
         SetUsername(
@@ -145,8 +123,10 @@ function OverView() {
         try {
             (async () => {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
-                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                }
             })();
         } catch (err) {
             return;
@@ -170,7 +150,6 @@ function OverView() {
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
-
     return (
         <div className="overview-container">
             {isLoading && (
@@ -194,32 +173,9 @@ function OverView() {
                             </div>
                             <div className="dynamic-sentences">
                                 {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
-                                {/* <p className="ok-status">You’re a memphis superhero! All looks good!</p> */}
                             </div>
                         </div>
-                        <div className={process.env.REACT_APP_SANDBOX_ENV ? 'overview-actions' : ''}>
-                            {process.env.REACT_APP_SANDBOX_ENV && (
-                                <Button
-                                    className="modal-btn"
-                                    width="130px"
-                                    height="34px"
-                                    placeholder={
-                                        <div className="title">
-                                            <CloudDownloadRounded className="download-icon" />
-                                            <p>Install now</p>
-                                        </div>
-                                    }
-                                    colorType="purple"
-                                    radiusType="circle"
-                                    backgroundColorType="none"
-                                    border="purple"
-                                    fontSize="12px"
-                                    fontWeight="600"
-                                    boxShadowStyle="float"
-                                    aria-haspopup="true"
-                                    onClick={() => setShowInstallaion(true)}
-                                />
-                            )}
+                        <div>
                             <Button
                                 className="modal-btn"
                                 width="160px"
@@ -236,15 +192,19 @@ function OverView() {
                             />
                         </div>
                     </div>
+                    <div className="top-component">
+                        <GenericDetails />
+                    </div>
                     <div className="overview-components">
                         <div className="left-side">
-                            <GenericDetails />
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
-                        <div className="right-side">
-                            <SystemComponents />
-                        </div>
+                        {!isCloud() && (
+                            <div className="right-side">
+                                <SystemComponents />
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -276,76 +236,6 @@ function OverView() {
                 isLoading={creatingProsessd}
             >
                 <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
-            </Modal>
-            <Modal
-                header={''}
-                height="470px"
-                closeAction={() => {
-                    setShowWelcome(false);
-                    localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, false);
-                }}
-                clickOutside={() => {
-                    setShowWelcome(false);
-                    localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, false);
-                }}
-                open={showWelcome}
-                displayButtons={false}
-            >
-                <div className="sandbox-welcome">
-                    <img src={welcome} alt="docs" className="welcome-img"></img>
-                    <label className="welcome-header">Welcome aboard</label>
-                    <label className="welcome-message">We are super happy to have you with us!</label>
-                    <label className="welcome-message">Please remember that this is a sandbox environment</label>
-                    <label className="welcome-message">and is under constant modifications.</label>
-                    <label className="welcome-message">Downtimes might occur.</label>
-                    <div>
-                        <Link
-                            to={{
-                                pathname:
-                                    'https://docs.memphis.dev/memphis/getting-started/readme?utm_source=sandbox&utm_medium=banner&utm_campaign=sandbox+installation+banner#getting-started'
-                            }}
-                            target="_blank"
-                        >
-                            <img src={docsLogo} alt="slack" className="sandbox-icon"></img>
-                        </Link>
-                        <Link to={{ pathname: 'https://github.com/memphisdev/memphis' }} target="_blank">
-                            <img src={githubLogo} alt="github" className="sandbox-icon"></img>
-                        </Link>
-                        <Link to={{ pathname: 'https://discord.com/invite/3QcAwtrZZR' }} target="_blank">
-                            <img src={discordLogo} alt="discord" className="sandbox-icon"></img>
-                        </Link>
-                    </div>
-                    <Button
-                        width="140px"
-                        height="36px"
-                        placeholder="Get Started"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="14px"
-                        fontWeight="600"
-                        aria-haspopup="true"
-                        onClick={() => {
-                            setShowWelcome(false);
-                            localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, false);
-                        }}
-                    />
-                </div>
-            </Modal>
-            <Modal
-                header={
-                    <label className="installation-icon-wrapper">
-                        <img src={installationIcon} alt="installationIcon" />
-                    </label>
-                }
-                height="700px"
-                clickOutside={() => {
-                    setShowInstallaion(false);
-                }}
-                open={showInstallaion}
-                displayButtons={false}
-            >
-                <Installation closeModal={() => setShowInstallaion(false)} />
             </Modal>
         </div>
     );

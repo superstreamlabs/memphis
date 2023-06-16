@@ -21,8 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var noNeedAuthRoutes = []string{
@@ -31,8 +31,9 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/addusersignup",
 	"/api/usermgmt/getsignupflag",
 	"/api/status",
-	// "/api/sandbox/login",
 	"/api/monitoring/getclusterinfo",
+	"/api/tenants/createtenant",
+	"/api/usermgmt/approveinvitation",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
@@ -88,6 +89,7 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		CreatedAt:       creationDate,
 		AlreadyLoggedIn: claims["already_logged_in"].(bool),
 		AvatarId:        int(claims["avatar_id"].(float64)),
+		TenantName:      claims["tenant_name"].(string),
 	}
 
 	return user, nil

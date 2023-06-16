@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
@@ -46,10 +47,31 @@ const (
 	syslogsErrSubject      = "extern.err"
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
+	dlsUnackedStream       = "$memphis_dls_unacked"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
 )
+
+var memphisSubjects = []string{
+	"$memphis_ws_pubs.>",
+}
+var memphisServices = []string{
+	"$memphis_station_creations",
+	"$memphis_station_destructions",
+	"$memphis_producer_creations",
+	"$memphis_producer_destructions",
+	"$memphis_consumer_creations",
+	"$memphis_consumer_destructions",
+	"$memphis_schema_attachments",
+	"$memphis_schema_detachments",
+	"$memphis_ws_subs.>",
+	"$memphis_integration_updates",
+	"$memphis_notifications",
+	"$memphis_schemaverse_dls",
+	JSAdvisoryConsumerMaxDeliveryExceedPre + ".>",
+	"$memphis_pm_acks",
+}
 
 // JetStream API request kinds
 const (
@@ -72,11 +94,12 @@ var (
 	ErrBadHeader                    = errors.New("could not decode header")
 	TIERED_STORAGE_CONSUMER_CREATED bool
 	TIERED_STORAGE_STREAM_CREATED   bool
+	DLS_UNACKED_CONSUMER_CREATED    bool
+	DLS_UNACKED_STREAM_CREATED      bool
+	SYSLOGS_STREAM_CREATED          bool
+	THROUGHPUT_STREAM_CREATED       bool
+	THROUGHPUT_LEGACY_STREAM_EXIST  bool
 )
-
-func (s *Server) MemphisInitialized() bool {
-	return s.GlobalAccount().JetStreamEnabled()
-}
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
@@ -86,29 +109,34 @@ func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	}
 }
 
-func jsApiRequest[R any](s *Server, subject, kind string, msg []byte, resp *R) error {
+func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg []byte, resp *R) error {
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
 	reply := s.getJsApiReplySubject()
 
-	s.memphis.jsApiMu.Lock()
-	defer s.memphis.jsApiMu.Unlock()
+	// return these lines if there are errors
+	// s.memphis.jsApiMu.Lock()
+	// defer s.memphis.jsApiMu.Unlock()
 
-	timeout := time.After(30 * time.Second)
+	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", createReplyHandler(s, respCh))
+	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", createReplyHandler(s, respCh))
 	if err != nil {
 		return err
 	}
 	// send on global account
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, msg, true)
+	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, msg, true)
 
 	// wait for response to arrive
 	var rawResp []byte
 	select {
 	case rawResp = <-respCh:
-		s.unsubscribeOnGlobalAcc(sub)
+		s.unsubscribeOnAcc(account, sub)
 		break
 	case <-timeout:
-		s.unsubscribeOnGlobalAcc(sub)
+		s.unsubscribeOnAcc(account, sub)
 		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
 	}
 
@@ -126,7 +154,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
+func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
 	var maxMsgs int
 	if retentionType == "messages" && retentionValue > 0 {
 		maxMsgs = retentionValue
@@ -141,12 +169,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 		maxBytes = -1
 	}
 
-	var maxAge time.Duration
-	if retentionType == "message_age_sec" && retentionValue > 0 {
-		maxAge = time.Duration(retentionValue) * time.Second
-	} else {
-		maxAge = time.Duration(0)
-	}
+	maxAge := GetStationMaxAge(retentionType, retentionValue)
 
 	var storage StorageType
 	if storageType == "memory" {
@@ -165,7 +188,7 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 	}
 
 	return s.
-		memphisAddStream(&StreamConfig{
+		memphisAddStream(tenantName, &StreamConfig{
 			Name:                 sn.Intern(),
 			Subjects:             []string{sn.Intern() + ".>"},
 			Retention:            LimitsPolicy,
@@ -183,6 +206,30 @@ func (s *Server) CreateStream(sn StationName, retentionType string, retentionVal
 		})
 }
 
+func (s *Server) WaitForLeaderElection() {
+	if !s.JetStreamIsClustered() {
+		return
+	}
+
+	for {
+		js := s.getJetStream()
+		mg := js.getMetaGroup()
+		if mg == nil {
+			break
+		}
+		ci := s.raftNodeToClusterInfo(mg)
+		if ci == nil {
+			break
+		}
+
+		if ci.Leader != "" {
+			break
+		} else {
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
@@ -196,29 +243,38 @@ func (s *Server) CreateInternalJetStreamResources() {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: " + err.Error())
 		}
 	} else {
-		for !ready { // wait for cluster to be ready if we are in cluster mode
-			timeout := time.NewTimer(1 * time.Minute)
-			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
-			select {
-			case <-timeout.C:
-				s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
-				err := <-successCh
-				if err != nil {
-					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
-					continue
+		s.WaitForLeaderElection()
+		if s.JetStreamIsLeader() {
+			for !ready { // wait for cluster to be ready if we are in cluster mode
+				timeout := time.NewTimer(1 * time.Minute)
+				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
+				select {
+				case <-timeout.C:
+					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+					err := <-successCh
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						continue
+					}
+					ready = true
+				case err := <-successCh:
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						<-timeout.C
+						continue
+					}
+					timeout.Stop()
+					ready = true
 				}
-				ready = true
-			case err := <-successCh:
-				if err != nil {
-					s.Warnf("CreateInternalJetStreamResources: " + err.Error())
-					<-timeout.C
-					continue
-				}
-				timeout.Stop()
-				ready = true
 			}
 		}
 	}
+
+	if s.memphis.activateSysLogsPubFunc == nil {
+		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+	}
+	s.memphis.activateSysLogsPubFunc()
+	s.popFallbackLogs()
 }
 
 func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
@@ -234,91 +290,144 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// system logs stream
-	err = s.memphisAddStream(&StreamConfig{
-		Name:         syslogsStreamName,
-		Subjects:     []string{syslogsStreamName + ".>"},
-		Retention:    LimitsPolicy,
-		MaxAge:       retentionDur,
-		MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !SYSLOGS_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         syslogsStreamName,
+			Subjects:     []string{syslogsStreamName + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       retentionDur,
+			MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			replicas--
+			err = s.memphisAddStream(globalAccountName, &StreamConfig{
+				Name:         syslogsStreamName,
+				Subjects:     []string{syslogsStreamName + ".>"},
+				Retention:    LimitsPolicy,
+				MaxAge:       retentionDur,
+				MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
+				MaxConsumers: -1,
+				Discard:      DiscardOld,
+				Storage:      FileStorage,
+				Replicas:     replicas,
+			})
+		}
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		SYSLOGS_STREAM_CREATED = true
 	}
-
-	if s.memphis.activateSysLogsPubFunc == nil {
-		s.Fatalf("internal error: sys logs publish activation func is not initialized")
-	}
-	s.memphis.activateSysLogsPubFunc()
-	s.popFallbackLogs()
 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
-	err = s.memphisAddStream(&StreamConfig{
-		Name:         tieredStorageStream,
-		Subjects:     []string{tieredStorageStream + ".>"},
-		Retention:    WorkQueuePolicy,
-		MaxAge:       time.Hour * 24,
-		MaxConsumers: -1,
-		Discard:      DiscardOld,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-		Duplicates:   idempotencyWindow,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !TIERED_STORAGE_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         tieredStorageStream,
+			Subjects:     []string{tieredStorageStream + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			Duplicates:   idempotencyWindow,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_STREAM_CREATED = true
 	}
-	TIERED_STORAGE_STREAM_CREATED = true
 
 	// create tiered storage consumer
-	durableName := TIERED_STORAGE_CONSUMER
-	tieredStorageTimeFrame := time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second
-	filterSubject := tieredStorageStream + ".>"
-	cc := ConsumerConfig{
-		DeliverPolicy: DeliverAll,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		FilterSubject: filterSubject,
-		AckWait:       time.Duration(2) * tieredStorageTimeFrame,
-		MaxAckPending: -1,
-		MaxDeliver:    1,
+	if !TIERED_STORAGE_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       TIERED_STORAGE_CONSUMER,
+			FilterSubject: tieredStorageStream + ".>",
+			AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_CONSUMER_CREATED = true
 	}
-	err = serv.memphisAddConsumer(tieredStorageStream, &cc)
-	if err != nil {
-		successCh <- err
-		return
+
+	// dls unacked messages stream
+	if !DLS_UNACKED_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         dlsUnackedStream,
+			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_UNACKED_STREAM_CREATED = true
 	}
-	TIERED_STORAGE_CONSUMER_CREATED = true
+
+	// create dls unacked consumer
+	if !DLS_UNACKED_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       DLS_UNACKED_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_UNACKED_CONSUMER_CREATED = true
+	}
 
 	// delete the old version throughput stream
-	err = s.memphisDeleteStream(throughputStreamName)
-	if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-		s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
-
+	if THROUGHPUT_LEGACY_STREAM_EXIST {
+		err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
+		}
 	}
 
 	// throughput kv
-	err = s.memphisAddStream(&StreamConfig{
-		Name:         (throughputStreamNameV1),
-		Subjects:     []string{throughputStreamNameV1 + ".>"},
-		Retention:    LimitsPolicy,
-		MaxConsumers: -1,
-		MaxMsgs:      int64(-1),
-		MaxBytes:     int64(-1),
-		Discard:      DiscardOld,
-		MaxMsgsPer:   ws_updates_interval_sec,
-		Storage:      FileStorage,
-		Replicas:     replicas,
-		NoAck:        false,
-	})
-	if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-		successCh <- err
-		return
+	if !THROUGHPUT_STREAM_CREATED {
+		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+			Name:         (throughputStreamNameV1),
+			Subjects:     []string{throughputStreamNameV1 + ".>"},
+			Retention:    LimitsPolicy,
+			MaxConsumers: -1,
+			MaxMsgs:      int64(-1),
+			MaxBytes:     int64(-1),
+			Discard:      DiscardOld,
+			MaxMsgsPer:   ws_updates_interval_sec,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+			NoAck:        false,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		TIERED_STORAGE_STREAM_CREATED = true
 	}
 	successCh <- nil
 }
@@ -339,7 +448,7 @@ func (s *Server) popFallbackLogs() {
 	}
 }
 
-func (s *Server) memphisAddStream(sc *StreamConfig) error {
+func (s *Server) memphisAddStream(tenantName string, sc *StreamConfig) error {
 	requestSubject := fmt.Sprintf(JSApiStreamCreateT, sc.Name)
 
 	request, err := json.Marshal(sc)
@@ -348,7 +457,7 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 	}
 
 	var resp JSApiStreamCreateResponse
-	err = jsApiRequest(s, requestSubject, kindCreateStream, request, &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindCreateStream, request, &resp)
 	if err != nil {
 		return err
 	}
@@ -356,11 +465,11 @@ func (s *Server) memphisAddStream(sc *StreamConfig) error {
 	return resp.ToError()
 }
 
-func (s *Server) memphisDeleteStream(streamName string) error {
+func (s *Server) memphisDeleteStream(tenantName, streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
 
 	var resp JSApiStreamCreateResponse
-	err := jsApiRequest(s, requestSubject, kindDeleteStream, nil, &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindCreateStream, nil, &resp)
 	if err != nil {
 		return err
 	}
@@ -368,7 +477,7 @@ func (s *Server) memphisDeleteStream(streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) memphisUpdateStream(sc *StreamConfig) error {
+func (s *Server) memphisUpdateStream(tenantName string, sc *StreamConfig) error {
 	requestSubject := fmt.Sprintf(JSApiStreamUpdateT, sc.Name)
 
 	request, err := json.Marshal(sc)
@@ -377,7 +486,7 @@ func (s *Server) memphisUpdateStream(sc *StreamConfig) error {
 	}
 
 	var resp JSApiStreamUpdateResponse
-	err = jsApiRequest(s, requestSubject, kindUpdateStream, request, &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindUpdateStream, request, &resp)
 	if err != nil {
 		return err
 	}
@@ -389,7 +498,7 @@ func getInternalConsumerName(cn string) string {
 	return replaceDelimiters(cn)
 }
 
-func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station) error {
+func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
 		consumerName = consumer.ConsumersGroup
@@ -424,7 +533,7 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	if consumer.LastMessages == 0 && consumer.StartConsumeFromSeq == 0 {
 		deliveryPolicy = DeliverNew
 	} else if consumer.LastMessages > 0 {
-		streamInfo, err := serv.memphisStreamInfo(stationName.Intern())
+		streamInfo, err := serv.memphisStreamInfo(tenantName, stationName.Intern())
 		if err != nil {
 			return err
 		}
@@ -459,11 +568,11 @@ func (s *Server) CreateConsumer(consumer models.Consumer, station models.Station
 	if deliveryPolicy == DeliverByStartSequence {
 		consumerConfig.OptStartSeq = optStartSeq
 	}
-	err = s.memphisAddConsumer(stationName.Intern(), consumerConfig)
+	err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
 	return err
 }
 
-func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error {
+func (s *Server) memphisAddConsumer(tenantName, streamName string, cc *ConsumerConfig) error {
 	requestSubject := fmt.Sprintf(JSApiConsumerCreateT, streamName)
 	if cc.Durable != _EMPTY_ {
 		requestSubject = fmt.Sprintf(JSApiDurableCreateT, streamName, cc.Durable)
@@ -475,7 +584,7 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 		return err
 	}
 	var resp JSApiConsumerCreateResponse
-	err = jsApiRequest(s, requestSubject, kindCreateConsumer, []byte(rawRequest), &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindCreateConsumer, []byte(rawRequest), &resp)
 	if err != nil {
 		return err
 	}
@@ -483,15 +592,15 @@ func (s *Server) memphisAddConsumer(streamName string, cc *ConsumerConfig) error
 	return resp.ToError()
 }
 
-func (s *Server) RemoveConsumer(stationName StationName, cn string) error {
+func (s *Server) RemoveConsumer(tenantName string, stationName StationName, cn string) error {
 	cn = getInternalConsumerName(cn)
-	return s.memphisRemoveConsumer(stationName.Intern(), cn)
+	return s.memphisRemoveConsumer(tenantName, stationName.Intern(), cn)
 }
 
-func (s *Server) memphisRemoveConsumer(streamName, cn string) error {
+func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error {
 	requestSubject := fmt.Sprintf(JSApiConsumerDeleteT, streamName, cn)
 	var resp JSApiConsumerDeleteResponse
-	err := jsApiRequest(s, requestSubject, kindDeleteConsumer, []byte(_EMPTY_), &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindDeleteConsumer, []byte(_EMPTY_), &resp)
 	if err != nil {
 		return err
 	}
@@ -499,12 +608,12 @@ func (s *Server) memphisRemoveConsumer(streamName, cn string) error {
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInfo, error) {
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string) (*ConsumerInfo, error) {
 	cgName = replaceDelimiters(cgName)
 	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
 
 	var resp JSApiConsumerInfoResponse
-	err := jsApiRequest(s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -517,11 +626,11 @@ func (s *Server) GetCgInfo(stationName StationName, cgName string) (*ConsumerInf
 	return resp.ConsumerInfo, nil
 }
 
-func (s *Server) RemoveStream(streamName string) error {
+func (s *Server) RemoveStream(tenantName, streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamDeleteT, streamName)
 
 	var resp JSApiStreamDeleteResponse
-	err := jsApiRequest(s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindDeleteStream, []byte(_EMPTY_), &resp)
 	if err != nil {
 		return err
 	}
@@ -529,11 +638,11 @@ func (s *Server) RemoveStream(streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) PurgeStream(streamName string) error {
+func (s *Server) PurgeStream(tenantName, streamName string) error {
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
 
 	var resp JSApiStreamPurgeResponse
-	err := jsApiRequest(s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
 	if err != nil {
 		return err
 	}
@@ -553,13 +662,13 @@ func (s *Server) MemphisVersion() string {
 	return VERSION
 }
 
-func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
+func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64) error {
 	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
 
 	var resp JSApiMsgDeleteResponse
 	req := JSApiMsgDeleteRequest{Seq: msgSeq}
 	reqj, _ := json.Marshal(req)
-	err := jsApiRequest(s, requestSubject, kindDeleteMessage, reqj, &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindDeleteMessage, reqj, &resp)
 	if err != nil {
 		return err
 	}
@@ -567,8 +676,8 @@ func (s *Server) RemoveMsg(stationName StationName, msgSeq uint64) error {
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+func (s *Server) GetTotalMessagesInStation(tenantName string, stationName StationName) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(tenantName, stationName.Intern())
 	if err != nil {
 		return 0, err
 	}
@@ -577,11 +686,11 @@ func (s *Server) GetTotalMessagesInStation(stationName StationName) (int, error)
 }
 
 // low level call, call only with internal station name (i.e stream name)!
-func (s *Server) memphisStreamInfo(streamName string) (*StreamInfo, error) {
+func (s *Server) memphisStreamInfo(tenantName string, streamName string) (*StreamInfo, error) {
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
 	var resp JSApiStreamInfoResponse
-	err := jsApiRequest(s, requestSubject, kindStreamInfo, []byte(_EMPTY_), &resp)
+	err := jsApiRequest(tenantName, s, requestSubject, kindStreamInfo, []byte(_EMPTY_), &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -600,7 +709,7 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, err
 	}
 
-	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
 	if err != nil || streamInfo.State.Bytes == 0 {
 		return 0, err
 	}
@@ -608,7 +717,7 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
 }
 
-func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
+func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error) {
 	requestSubject := JSApiStreamList
 	streams := make([]*StreamInfo, 0)
 
@@ -620,7 +729,7 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 		return nil, err
 	}
 	var resp JSApiStreamListResponse
-	err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -639,7 +748,7 @@ func (s *Server) memphisAllStreamsInfo() ([]*StreamInfo, error) {
 			return nil, err
 		}
 
-		err = jsApiRequest(s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
+		err = jsApiRequest(tenantName, s, requestSubject, kindStreamList, []byte(rawRequest), &resp)
 		if err != nil {
 			return nil, err
 		}
@@ -659,7 +768,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
-	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -678,7 +787,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		filterSubj = ""
 	}
 
-	msgs, err := s.memphisGetMsgs(filterSubj,
+	msgs, err := s.memphisGetMsgs(station.TenantName, filterSubj,
 		stationName.Intern(),
 		startSequence,
 		messagesToFetch,
@@ -769,7 +878,7 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 
@@ -782,7 +891,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 		Replicas:      1,
 	}
 
-	err := s.memphisAddConsumer(streamName, &cc)
+	err := s.memphisAddConsumer(tenantName, streamName, &cc)
 	if err != nil {
 		return nil, err
 	}
@@ -792,10 +901,15 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 	reply := durableName + "_reply"
 	req := []byte(strconv.Itoa(amount))
 
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return nil, err
+	}
+
+	sub, err := s.subscribeOnAcc(account, reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, reply string, msg []byte, findHeader bool) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(account, reply, []byte(_EMPTY_))
 
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
@@ -831,7 +945,7 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 		return nil, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(account, subject, reply, nil, req, true)
 
 	var msgs []StoredMsg
 	timer := time.NewTimer(timeout)
@@ -846,14 +960,14 @@ func (s *Server) memphisGetMsgs(filterSubj, streamName string, startSeq uint64, 
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnGlobalAcc(sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(streamName, durableName) })
+	s.unsubscribeOnAcc(account, sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(tenantName, streamName, durableName) })
 
 	return msgs, nil
 }
 
-func (s *Server) GetMessage(stationName StationName, msgSeq uint64) (*StoredMsg, error) {
-	return s.memphisGetMessage(stationName.Intern(), msgSeq)
+func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64) (*StoredMsg, error) {
+	return s.memphisGetMessage(tenantName, stationName.Intern(), msgSeq)
 }
 
 func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
@@ -863,7 +977,7 @@ func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string
 		return "", followers, err
 	}
 
-	streamInfo, err := s.memphisStreamInfo(stationName.Intern())
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
 	if err != nil {
 		return "", followers, err
 	}
@@ -875,18 +989,16 @@ func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string
 	return streamInfo.Cluster.Leader, followers, nil
 }
 
-func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg, error) {
+func (s *Server) memphisGetMessage(tenantName, streamName string, msgSeq uint64) (*StoredMsg, error) {
 	requestSubject := fmt.Sprintf(JSApiMsgGetT, streamName)
-
 	request := JSApiMsgGetRequest{Seq: msgSeq}
-
 	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
 	var resp JSApiMsgGetResponse
-	err = jsApiRequest(s, requestSubject, kindGetMsg, rawRequest, &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindGetMsg, rawRequest, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -899,8 +1011,11 @@ func (s *Server) memphisGetMessage(streamName string, msgSeq uint64) (*StoredMsg
 	return resp.Message, nil
 }
 
-func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHandler) error {
-	acc := s.GlobalAccount()
+func (s *Server) queueSubscribe(tenantName string, subj, queueGroupName string, cb simplifiedMsgHandler) error {
+	acc, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
 	c := acc.ic
 
 	acc.mu.Lock()
@@ -912,19 +1027,9 @@ func (s *Server) queueSubscribe(subj, queueGroupName string, cb simplifiedMsgHan
 		cb(c, subject, reply, rmsg)
 	}
 
-	_, err := c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
+	_, err = c.processSub([]byte(subj), []byte(queueGroupName), []byte(sid), wcb, false)
 
 	return err
-}
-
-func (s *Server) subscribeOnGlobalAcc(subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
-	acc := s.GlobalAccount()
-	c := acc.ic
-	wcb := func(_ *subscription, c *client, _ *Account, subject, reply string, rmsg []byte) {
-		cb(c, subject, reply, rmsg)
-	}
-
-	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
 func (s *Server) subscribeOnAcc(acc *Account, subj, sid string, cb simplifiedMsgHandler) (*subscription, error) {
@@ -936,23 +1041,12 @@ func (s *Server) subscribeOnAcc(acc *Account, subj, sid string, cb simplifiedMsg
 	return c.processSub([]byte(subj), nil, []byte(sid), wcb, false)
 }
 
-func (s *Server) unsubscribeOnGlobalAcc(sub *subscription) error {
-	acc := s.GlobalAccount()
-	c := acc.ic
-	return c.processUnsub(sub.sid)
-}
-
 func (s *Server) unsubscribeOnAcc(acc *Account, sub *subscription) error {
 	c := acc.ic
 	return c.processUnsub(sub.sid)
 }
 
-func (s *Server) respondOnGlobalAcc(reply string, msg []byte) {
-	acc := s.GlobalAccount()
-	s.sendInternalAccountMsg(acc, reply, msg)
-}
-
-func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error {
+func (s *Server) ResendPoisonMessage(tenantName, subject string, data, headers []byte) error {
 	hdrs := make(map[string]string)
 	err := json.Unmarshal(headers, &hdrs)
 	if err != nil {
@@ -965,7 +1059,12 @@ func (s *Server) ResendPoisonMessage(subject string, data, headers []byte) error
 		delete(hdrs, "producedBy")
 	}
 
-	s.sendInternalMsgWithHeaderLocked(s.GlobalAccount(), subject, hdrs, data)
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		return err
+	}
+
+	s.sendInternalMsgWithHeaderLocked(account, subject, hdrs, data)
 	return nil
 }
 
@@ -990,7 +1089,7 @@ func DecodeHeader(buf []byte) (map[string]string, error) {
 	if l == _EMPTY_ {
 		return hdr, nil
 	}
-	
+
 	if err != nil || len(l) < hdrPreEnd || l[:hdrPreEnd] != hdrLine[:hdrPreEnd] {
 		return nil, ErrBadHeader
 	}
@@ -1035,7 +1134,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 		}
 
 		// Process key fetching original case.
-		i := bytes.IndexByte([]byte(kv), ':')
+		i := strings.IndexByte(kv, ':')
 		if i < 0 {
 			return nil, ErrBadHeader
 		}
@@ -1056,10 +1155,10 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
+func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
-		return Options{}, err
+		return &Account{}, Options{}, err
 	}
 
 	for _, conf := range configs {
@@ -1084,41 +1183,152 @@ func (s *Server) GetMemphisOpts(opts Options) (Options, error) {
 			opts.MaxPayload = int32(v * 1024 * 1024)
 		}
 	}
+
+	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
 	if configuration.USER_PASS_BASED_AUTH {
+		if len(opts.Accounts) > 0 {
+			tenantsToUpsert := []string{globalAccountName}
+			for _, account := range opts.Accounts {
+				name := account.GetName()
+				if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+					name = strings.ToLower(name)
+					tenantsToUpsert = append(tenantsToUpsert, name)
+				}
+			}
+			err = db.UpsertBatchOfTenants(tenantsToUpsert)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+		}
 		if len(opts.Users) > 0 {
 			usersToUpsert := []models.User{}
 			for _, user := range opts.Users {
-				newUser := models.User{
-					Username:  user.Username,
-					Password:  user.Password,
-					UserType:  "application",
-					CreatedAt: time.Now(),
-					AvatarId:  1,
-					FullName:  "",
+				if user.Account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+					username := strings.ToLower(user.Username)
+					tenantName := strings.ToLower(user.Account.GetName())
+					newUser := models.User{
+						Username:   username,
+						Password:   user.Password,
+						UserType:   "application",
+						CreatedAt:  time.Now(),
+						AvatarId:   1,
+						FullName:   "",
+						TenantName: tenantName,
+					}
+					usersToUpsert = append(usersToUpsert, newUser)
 				}
-				usersToUpsert = append(usersToUpsert, newUser)
 			}
-			err = db.UpsertBatchOfUsers(usersToUpsert)
-			if err != nil {
-				return Options{}, err
+			if len(usersToUpsert) > 0 {
+				err = db.UpsertBatchOfUsers(usersToUpsert)
+				if err != nil {
+					return &Account{}, Options{}, err
+				}
+			}
+		}
+		globalServicesExport := map[string]*serviceExport{}
+		globalServiceImportForAllAccounts := map[string]*serviceImport{}
+		siList := []*streamImport{}
+		if reload {
+			for _, subj := range memphisServices {
+				se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+				globalServicesExport[subj] = se
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
+			}
+			for _, subj := range memphisSubjects {
+				siList = append(siList, &streamImport{acc: serv.gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
+			}
+		} else {
+			for _, subj := range memphisServices {
+				se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+				globalServicesExport[subj] = se
+				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
+			}
+			for _, subj := range memphisSubjects {
+				siList = append(siList, &streamImport{acc: gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
 			}
 		}
 
-		users, err := db.GetAllUsersByType("application")
+		users, err := db.GetAllUsersByType([]string{"application"})
 		if err != nil {
-			return Options{}, err
+			return &Account{}, Options{}, err
 		}
-		appUsers := []*User{{Username: "root", Password: configuration.ROOT_PASSWORD}}
-		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME, Password: configuration.CONNECTION_TOKEN})
-		for _, user := range users {
-			decryptedUserPassword, err := DecryptAES(user.Password)
-			if err != nil {
-				return Options{}, err
+
+		tenants, err := db.GetAllTenantsWithoutGlobal()
+		if err != nil {
+			return &Account{}, Options{}, err
+		}
+		tenantsId := map[string]int{}
+		appUsers := []*User{}
+		accounts := []*Account{}
+		addedTenant := map[string]*Account{}
+		for _, tenant := range tenants {
+			name := strings.ToLower(tenant.Name)
+			tenantsId[name] = tenant.ID
+			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}, imports: importMap{services: globalServiceImportForAllAccounts, streams: siList}}
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
+			accounts = append(accounts, account)
+			addedTenant[name] = account
+		}
+		globalStreamsExport := map[string]*streamExport{}
+		for _, subj := range memphisSubjects {
+			ea := streamExport{}
+			if err := setExportAuth(&ea.exportAuth, subj, []*Account{}, 0); err != nil {
+				return &Account{}, Options{}, err
 			}
-			appUsers = append(appUsers, &User{Username: user.Username, Password: decryptedUserPassword})
+			globalStreamsExport[subj] = &ea
 		}
+		if reload {
+			serv.gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
+		} else {
+			gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
+			accounts = append(accounts, gacc)
+		}
+		if reload {
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: serv.gacc})
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
+			addedTenant[conf.GlobalAccountName] = serv.gacc
+		} else {
+			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: gacc})
+			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
+			addedTenant[conf.GlobalAccountName] = gacc
+		}
+		tenantsId[globalAccountName] = 1
+		key := getAESKey()
+		for _, user := range users {
+			name := user.TenantName
+			decryptedUserPassword, err := DecryptAES(key, user.Password)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: decryptedUserPassword, Account: addedTenant[name]})
+
+		}
+
+		sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},}
+		sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN+"_"+configuration.ROOT_PASSWORD , Account: sysAcc}
+		accounts = append(accounts, sysAcc)
+		appUsers = append(appUsers, sysUser)
+		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
+	return gacc, opts, nil
+}
 
-	return opts, nil
+func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
+	var ci ClientInfo
+	var tenantName string
+	message := string(msg)
+
+	hdr := getHeader(ClientInfoHdr, msg)
+	if len(hdr) > 0 {
+		if err := json.Unmarshal(hdr, &ci); err != nil {
+			return tenantName, message, err
+		}
+		tenantName = ci.Account
+		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
+	} else {
+		tenantName = globalAccountName
+	}
+
+	return tenantName, message, nil
 }

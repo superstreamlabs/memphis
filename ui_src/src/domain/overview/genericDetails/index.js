@@ -17,6 +17,7 @@ import { Context } from '../../../hooks/store';
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
+import AttachedSchema from '../../../assets/images/AttachedSchema.svg';
 import { Divider } from 'antd';
 
 const GenericDetails = () => {
@@ -45,6 +46,14 @@ const GenericDetails = () => {
                     <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Dead-letter messages</span>
+                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={AttachedSchema} width={50} height={50} alt="AttachedSchema" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Attached schema</span>
                         <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
                     </div>
                 </div>

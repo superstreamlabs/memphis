@@ -29,10 +29,10 @@ func (srv *Server) removeStaleStations() {
 	for _, s := range stations {
 		go func(srv *Server, s models.Station) {
 			stationName, _ := StationNameFromStr(s.Name)
-			_, err = srv.memphisStreamInfo(stationName.Intern())
+			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
-				err := db.DeleteStation(s.Name)
+				err := db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
 					srv.Errorf("removeStaleStations: " + err.Error())
 				}
@@ -43,7 +43,7 @@ func (srv *Server) removeStaleStations() {
 
 func updateSystemLiveness() {
 	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
 	if err != nil {
 		serv.Warnf("updateSystemLiveness: " + err.Error())
 		return
@@ -82,14 +82,14 @@ func updateSystemLiveness() {
 		Value: strconv.Itoa(int(consumersCount)),
 	}
 	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
+ 	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {
 	connectionIds := make(map[string]string)
 	var lock sync.Mutex
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
-	sub, err := s.subscribeOnGlobalAcc(replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
@@ -113,7 +113,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
 	timeout := time.After(50 * time.Second)
 	<-timeout
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
 	return connectionIds, nil
 }
 

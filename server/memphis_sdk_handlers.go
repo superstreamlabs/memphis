@@ -35,11 +35,13 @@ type createStationRequest struct {
 	DlsConfiguration     models.DlsConfiguration `json:"dls_configuration"`
 	Username             string                  `json:"username"`
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
+	TenantName           string                  `json:"tenant_name"`
 }
 
 type destroyStationRequest struct {
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type createProducerRequestV0 struct {
@@ -57,6 +59,7 @@ type createProducerRequestV1 struct {
 	ProducerType   string `json:"producer_type"`
 	RequestVersion int    `json:"req_version"`
 	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
 }
 
 type createConsumerResponse struct {
@@ -74,6 +77,7 @@ type destroyProducerRequest struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
 	Username     string `json:"username"`
+	TenantName   string `json:"tenant_name"`
 }
 
 type createConsumerRequestV0 struct {
@@ -99,23 +103,39 @@ type createConsumerRequestV1 struct {
 	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
 	LastMessages             int64  `json:"last_messages"`
 	RequestVersion           int    `json:"req_version"`
+	TenantName               string `json:"tenant_name"`
 }
 
 type attachSchemaRequest struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type detachSchemaRequest struct {
 	StationName string `json:"station_name"`
 	Username    string `json:"username"`
+	TenantName  string `json:"tenant_name"`
 }
 
 type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
 	Username     string `json:"username"`
+	TenantName   string `json:"tenant_name"`
+}
+
+type CreateSchemaReq struct {
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	CreatedByUsername string `json:"created_by_username"`
+	SchemaContent     string `json:"schema_content"`
+	MessageStructName string `json:"message_struct_name"`
+}
+
+type SchemaResponse struct {
+	Err string `json:"error"`
 }
 
 func (cpr *createProducerResponse) SetError(err error) {
@@ -126,38 +146,56 @@ func (ccr *createConsumerResponse) SetError(err error) {
 	ccr.Err = err.Error()
 }
 
+func (csresp *SchemaResponse) SetError(err error) {
+	if err != nil {
+		csresp.Err = err.Error()
+	} else {
+		csresp.Err = ""
+	}
+}
+
 func (s *Server) initializeSDKHandlers() {
 	//stations
-	s.queueSubscribe("$memphis_station_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe("$memphis_station_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe("$memphis_producer_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe("$memphis_producer_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe("$memphis_consumer_creations",
+	s.queueSubscribe(globalAccountName, "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe("$memphis_consumer_destructions",
+	s.queueSubscribe(globalAccountName, "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
-	// schema attachements
-	s.queueSubscribe("$memphis_schema_attachments",
+	// schemas
+	s.queueSubscribe(globalAccountName, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe("$memphis_schema_detachments",
+	s.queueSubscribe(globalAccountName, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
+	s.queueSubscribe(globalAccountName, "$memphis_schema_creations",
+		"memphis_schema_creations_listeners_group",
+		createSchemaHandler(s))
+
+}
+
+func createSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.createSchemaDirect(c, reply, copyBytes(msg))
+	}
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
@@ -208,36 +246,46 @@ func detachSchemaHandler(s *Server) simplifiedMsgHandler {
 	}
 }
 
-func respondWithErr(s *Server, replySubject string, err error) {
+func respondWithErr(tenantName string, s *Server, replySubject string, err error) {
 	resp := []byte("")
 	if err != nil {
 		resp = []byte(err.Error())
 	}
-	s.respondOnGlobalAcc(replySubject, resp)
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		resp = []byte(err.Error())
+	}
+	s.sendInternalAccountMsgWithEcho(account, replySubject, resp)
 }
 
-func respondWithErrOrJsApiResp[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
+func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Account, subject, reply, msg string, resp T, err error) {
 	if jsApi {
 		s := c.srv
 		ci := c.getClientInfo(false)
-		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
+		s.sendAPIErrResponseWithEcho(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	respondWithErr(c.srv, reply, err)
+	tenantName := globalAccountName
+	respondWithErr(tenantName, c.srv, reply, err)
 }
 
-func respondWithResp(s *Server, replySubject string, resp memphisResponse) {
+func respondWithResp(tenantName string, s *Server, replySubject string, resp memphisResponse) {
+	account, err := s.lookupAccount(tenantName)
+	if err != nil {
+		serv.Errorf("respondWithResp: " + err.Error())
+		return
+	}
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
 		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
 		return
 	}
-	s.respondOnGlobalAcc(replySubject, rawResp)
+	s.sendInternalAccountMsgWithEcho(account, replySubject, rawResp)
 }
 
-func respondWithRespErr(s *Server, replySubject string, err error, resp memphisResponse) {
+func respondWithRespErr(tenantName string, s *Server, replySubject string, err error, resp memphisResponse) {
 	resp.SetError(err)
-	respondWithResp(s, replySubject, resp)
+	respondWithResp(tenantName, s, replySubject, resp)
 }
 
 func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) {

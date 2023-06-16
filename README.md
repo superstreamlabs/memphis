@@ -58,7 +58,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Features [v1.0.2](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.2)
+## ✨ Key Features [v1.0.3](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.3-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -79,6 +79,7 @@ And the list continues...<br>
 ## Public case studies
 - [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
 - [KELA - Real-time cyber threats identification](https://memphis.dev/blog/how-kela-is-using-memphis-dev-for-real-time-cyber-threats-identification/)
+- [Handling millions of discord messages](https://memphis.dev/blog/how-cactusfire-handles-millions-of-daily-discord-messages-using-memphis-dev/)
 
 ## 🚀 Getting Started
 Helm for Kubernetes☸
@@ -97,7 +98,6 @@ docker compose -f docker-compose.yml -p memphis up
 </p>
 
 [Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials)<br>
-[Sandbox](https://sandbox.memphis.dev)<br>
 [Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
 
 ## High-Level Architecture

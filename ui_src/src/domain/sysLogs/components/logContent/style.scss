@@ -51,7 +51,7 @@
     log-content{
         margin: 15px;
         padding: 15px;
-        height: calc(100% - 165px);
+        height: calc(100% - 150px);
         display: flex;
         border-top: 1px solid #EFEFEF;
         border-right: 1px solid #EFEFEF;
@@ -62,6 +62,7 @@
         overflow:auto;
         color:#84818A;
         place-content: space-between;
+        margin-bottom: 0px;
         .copy-button{
             cursor: pointer;
             img{

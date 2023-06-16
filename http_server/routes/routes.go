@@ -47,9 +47,10 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeTagsRoutes(mainRouter, handlers)
 	InitializeSchemasRoutes(mainRouter, handlers)
-	// InitializeSandboxRoutes(mainRouter)
 	InitializeIntegrationsRoutes(mainRouter, handlers)
 	InitializeConfigurationsRoutes(mainRouter, handlers)
+	server.InitializeTenantsRoutes(mainRouter, handlers)
+	server.InitializeBillingRoutes(mainRouter, handlers)
 	ui.InitializeUIRoutes(router)
 
 	mainRouter.GET("/status", func(c *gin.Context) {

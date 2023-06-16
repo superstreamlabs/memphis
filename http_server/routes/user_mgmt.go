@@ -38,4 +38,5 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.POST("/skipGetStarted", userMgmtHandler.SkipGetStarted)
 	userMgmtRoutes.GET("/getFilterDetails", userMgmtHandler.GetFilterDetails)
 	userMgmtRoutes.PUT("/changePassword", userMgmtHandler.ChangePassword)
+	server.AddUsrMgmtCloudRoutes(userMgmtRoutes, userMgmtHandler)
 }

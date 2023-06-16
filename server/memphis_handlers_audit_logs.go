@@ -22,10 +22,10 @@ func CreateAuditLogs(auditLogs []interface{}) error {
 	return db.InsertAuditLogs(auditLogs)
 }
 
-func (ah AuditLogsHandler) GetAuditLogsByStation(station models.Station) ([]models.AuditLog, error) {
-	return db.GetAuditLogsByStation(station.Name)
+func (ah AuditLogsHandler) GetAuditLogsByStation(stationName string, tenantName string) ([]models.AuditLog, error) {
+	return db.GetAuditLogsByStation(stationName, tenantName)
 }
 
-func RemoveAllAuditLogsByStation(stationName string) error {
-	return db.RemoveAllAuditLogsByStation(stationName)
+func RemoveAllAuditLogsByStation(stationName string, tenantName string) error {
+	return db.RemoveAllAuditLogsByStation(stationName, tenantName)
 }

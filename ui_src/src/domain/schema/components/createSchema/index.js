@@ -29,6 +29,7 @@ import { Form } from 'antd';
 
 import { generateName, getUnique } from '../../../../services/valueConvertor';
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
+import stationsIcon from '../../../../assets/images/stationsIcon.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
 import tagsIcon from '../../../../assets/images/tagsIcon.svg';
@@ -41,6 +42,7 @@ import Button from '../../../../components/button';
 import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
+import AttachStationModal from '../attachStationModal';
 
 loader.init();
 loader.config({ monaco });
@@ -172,6 +174,14 @@ function CreateSchema({ createNew }) {
     const [messageStructName, setMessageStructName] = useState('');
     const [messagesStructNameList, setMessagesStructNameList] = useState([]);
     const [modalOpen, setModalOpen] = useState(false);
+    const [attachStaionModal, setAttachStaionModal] = useState(false);
+    const [createdSchemaDetails, setCreatedSchemaDetails] = useState({
+        schema_name: '',
+        type: '',
+        version: [],
+        tags: [],
+        used_stations: []
+    });
     const [state, dispatch] = useContext(Context);
     const ajv = new Ajv2019();
 
@@ -226,7 +236,16 @@ function CreateSchema({ createNew }) {
             checkContent(formFields.schema_content);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_NEW_SCHEMA, { ...formFields, message_struct_name: messageName || messageStructName });
             if (data) {
-                goBack();
+                const schemaDetails = await httpRequest('GET', `${ApiEndpoints.GET_SCHEMA_DETAILS}?schema_name=${formFields.name}`);
+                setCreatedSchemaDetails({
+                    schema_name: schemaDetails.schema_name,
+                    type: schemaDetails.type,
+                    version: schemaDetails.versions,
+                    tags: schemaDetails.tags,
+                    used_stations: []
+                });
+                setLoadingSubmit(false);
+                setAttachStaionModal(true);
             }
         } catch (err) {
             if (err.status === 555) {
@@ -236,6 +255,13 @@ function CreateSchema({ createNew }) {
             }
         }
         setLoadingSubmit(false);
+    };
+
+    const updateStations = (stationsList) => {
+        let updatedValue = { ...createdSchemaDetails };
+        updatedValue['used_stations'] = [...updatedValue['used_stations'], ...stationsList];
+        setCreatedSchemaDetails((schemaDetails) => ({ ...schemaDetails, ...updatedValue }));
+        goBack();
     };
 
     const handleConvetJsonToJsonSchema = async (json) => {
@@ -386,7 +412,7 @@ function CreateSchema({ createNew }) {
                         </div>
                         <span>
                             Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
-                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank">
+                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank" rel="noreferrer">
                                 Learn more
                             </a>
                         </span>
@@ -451,7 +477,7 @@ function CreateSchema({ createNew }) {
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
                                         Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank">
+                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank" rel="noreferrer">
                                             Learn more
                                         </a>
                                     </p>
@@ -599,6 +625,30 @@ function CreateSchema({ createNew }) {
                         />
                     </div>
                 </div>
+            </Modal>
+
+            {/** attach schema to station modal */}
+            <Modal
+                className="attach-station-modal"
+                header={
+                    <div className="img-wrapper">
+                        <img src={stationsIcon} alt="stationsIcon" />
+                    </div>
+                }
+                width="400px"
+                height="560px"
+                hr={false}
+                displayButtons={false}
+                clickOutside={() => goBack()}
+                open={attachStaionModal}
+            >
+                <AttachStationModal
+                    close={() => goBack()}
+                    schemaName={createdSchemaDetails.schema_name}
+                    handleAttachedStations={updateStations}
+                    attachedStations={createdSchemaDetails.used_stations}
+                    update={false}
+                />
             </Modal>
         </div>
     );

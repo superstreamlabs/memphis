@@ -20,6 +20,7 @@ type Integration struct {
 	Name       string            `json:"name"`
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
+	TenantName string            `json:"tenant_name"`
 }
 
 type SlackIntegration struct {
@@ -34,14 +35,17 @@ type CreateIntegrationSchema struct {
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
 	UIUrl      string            `json:"ui_url"`
+	TenantName string            `json:"tenant_name"`
 }
 
 type GetIntegrationDetailsSchema struct {
-	Name string `form:"name" json:"name" binding:"required"`
+	Name       string `form:"name" json:"name" binding:"required"`
+	TenantName string `form:"tenant_name" json:"tenant_name"`
 }
 
 type DisconnectIntegrationSchema struct {
-	Name string `form:"name" json:"name" binding:"required"`
+	Name       string `form:"name" json:"name" binding:"required"`
+	TenantName string `form:"tenant_name" json:"tenant_name"`
 }
 
 type Notification struct {

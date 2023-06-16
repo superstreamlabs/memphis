@@ -106,9 +106,17 @@ function SchemaList({ createNew }) {
     return (
         <div className="schema-container">
             <div className="header-wraper">
-                <label className="main-header-h1">
-                    Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
-                </label>
+                <div className="main-header-wrapper">
+                    <label className="main-header-h1">
+                        Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
+                    </label>
+                    <span className="memphis-label">
+                        The new way to enforce schemas! Get started&nbsp;
+                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
+                            here.
+                        </a>
+                    </span>
+                </div>
                 <div className="action-section">
                     <Button
                         height="34px"
@@ -153,12 +161,7 @@ function SchemaList({ createNew }) {
                     />
                 </div>
             </div>
-            <span className="memphis-label">
-                The new way to enforce schemas! Get started&nbsp;
-                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
-                    here.
-                </a>
-            </span>
+
             <div className="schema-list">
                 {isLoading && (
                     <div className="loader-uploading">
