@@ -136,45 +136,76 @@ func updateDeletedUserResources(user models.User) error {
 	return nil
 }
 
-func removeDeletedUsersResources(tenantName string) error {
-	err := db.RemoveProducersOfDeletedUsers(tenantName)
+func removeTenantResources(tenantName string) error {
+	err := db.RemoveProducersByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveConsumersOfDeletedUsers(tenantName)
+	consumers, err := db.GetAllConsumersByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveConnectionsOfDeletedUsers(tenantName)
+	err = db.RemoveConsumersByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveSchemaVersionsOfDeletedUsers(tenantName)
+	err = db.RemoveConnectionsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveSchemasOfDeletedUsers(tenantName)
+	err = db.RemoveSchemaVersionsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveStationsOfDeletedUsers(tenantName)
+	err = db.RemoveSchemasByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveTagsResources(tenantName)
+	err = db.RemoveTagsResourcesByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveAuditLogsOfDeletedUsers(tenantName)
+	err = db.RemoveAuditLogsByTenant(tenantName)
 	if err != nil {
 		return err
+	}
+
+	stations, err := db.GetAllStationsDetailsPerTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveStationsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		stationName := strings.ToLower(station.Name)
+		sName, err := StationNameFromStr(stationName)
+		if err != nil {
+			return err
+		}
+
+		for _, consumer := range consumers {
+			err = serv.RemoveConsumer(tenantName, sName, consumer.ConsumersGroup)
+			if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+				return err
+			}
+		}
+
+		err = serv.RemoveStream(tenantName, sName.Intern())
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+
 	}
 
 	return nil

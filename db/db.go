@@ -851,7 +851,7 @@ func UpdateConnectionsOfDeletedUser(userId int, tenantName string) error {
 	return nil
 }
 
-func RemoveConnectionsOfDeletedUsers(tenantNames string) error {
+func RemoveConnectionsByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -860,11 +860,11 @@ func RemoveConnectionsOfDeletedUsers(tenantNames string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM connections WHERE tenant_name=$1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_connection_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_connections_by_tenant", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantNames)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return err
 	}
@@ -1086,7 +1086,7 @@ func UpdateAuditLogsOfDeletedUser(userId int) error {
 	return nil
 }
 
-func RemoveAuditLogsOfDeletedUsers(tenantName string) error {
+func RemoveAuditLogsByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1095,7 +1095,7 @@ func RemoveAuditLogsOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM audit_logs WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_audit_logs_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -1847,7 +1847,7 @@ func UpdateStationsOfDeletedUser(userId int, tenantName string) error {
 	return nil
 }
 
-func RemoveStationsOfDeletedUsers(tenantName string) error {
+func RemoveStationsByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1856,7 +1856,7 @@ func RemoveStationsOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM stations WHERE tenant_name=$1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_stations_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_stations_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -2417,7 +2417,7 @@ func UpdateProducersOfDeletedUser(userId int) error {
 	return nil
 }
 
-func RemoveProducersOfDeletedUsers(tenantName string) error {
+func RemoveProducersByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2426,7 +2426,7 @@ func RemoveProducersOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM producers WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_of_deleted_users", query)
+	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -2651,6 +2651,34 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.ExtendedConsumer{}, nil
+	}
+	return consumers, nil
+}
+
+func GetAllConsumersByTenant(tenantName string) ([]models.ExtendedConsumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM CONSUMERS WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_tenant", query)
+	if err != nil {
+		return []models.ExtendedConsumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
 	}
@@ -2937,7 +2965,7 @@ func UpdateConsumersOfDeletedUser(userId int) error {
 	return nil
 }
 
-func RemoveConsumersOfDeletedUsers(tenantName string) error {
+func RemoveConsumersByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2946,7 +2974,7 @@ func RemoveConsumersOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM consumers WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_consumers_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_consumers_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -3127,7 +3155,7 @@ func UpdateSchemasOfDeletedUser(userId int, tenantName string) error {
 	return nil
 }
 
-func RemoveSchemasOfDeletedUsers(tenantName string) error {
+func RemoveSchemasByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3136,7 +3164,7 @@ func RemoveSchemasOfDeletedUsers(tenantName string) error {
 	}
 	defer conn.Release()
 	query := `DELETE FROM schemas WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_schemas_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schemas_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -3176,7 +3204,7 @@ func UpdateSchemaVersionsOfDeletedUser(userId int, tenantName string) error {
 	return nil
 }
 
-func RemoveSchemaVersionsOfDeletedUsers(tenantName string) error {
+func RemoveSchemaVersionsByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3186,7 +3214,7 @@ func RemoveSchemaVersionsOfDeletedUsers(tenantName string) error {
 	defer conn.Release()
 
 	query := `DELETE FROM schema_versions WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions_of_deleted_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_schema_versions_by_tenant", query)
 	if err != nil {
 		return err
 	}
@@ -4276,7 +4304,7 @@ func DeleteUser(username string, tenantName string) error {
 	return nil
 }
 
-func DeleteUsersPerTenant(tenantName string) error {
+func DeleteUsersByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -4288,7 +4316,7 @@ func DeleteUsersPerTenant(tenantName string) error {
 
 	removeUserQuery := `DELETE FROM users WHERE tenant_name = $1`
 
-	stmt, err := conn.Conn().Prepare(ctx, "remove_user", removeUserQuery)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_users_by_tenant", removeUserQuery)
 	if err != nil {
 		return err
 	}
@@ -5595,7 +5623,7 @@ func RemoveTenant(tenantName string) error {
 	return nil
 }
 
-func RemoveTagsResources(tenantName string) error {
+func RemoveTagsResourcesByTenant(tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5605,7 +5633,7 @@ func RemoveTagsResources(tenantName string) error {
 	defer conn.Release()
 
 	query := `DELETE FROM tags WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_tenant_resources", query)
+	stmt, err := conn.Conn().Prepare(ctx, "remove_tenant_resources_by_tenant", query)
 	if err != nil {
 		return err
 	}

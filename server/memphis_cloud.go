@@ -1400,8 +1400,9 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	if user.UserType == "root" {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
+	if user.UserType != "root" {
+		serv.Warnf("RemoveMyUser: Only root user can remove his tenant")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Only root user can remove his tenant"})
 		return
 	}
 
@@ -1410,7 +1411,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	if user.TenantName != conf.GlobalAccountName {
 		user.TenantName = strings.ToLower(user.TenantName)
 	}
-	err = removeDeletedUsersResources(tenantName)
+	err = removeTenantResources(tenantName)
 	if err != nil {
 		serv.Errorf("RemoveMyUser: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
