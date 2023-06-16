@@ -116,6 +116,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS owner VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
 		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_key;
+		ALTER TABLE users DROP CONSTRAINT IF EXISTS users_username_tenant_name_key;
 		ALTER TABLE users ADD CONSTRAINT users_username_tenant_name_key UNIQUE(username, tenant_name);
 		END IF;
 	END $$;`
@@ -134,6 +135,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		subscription BOOL NOT NULL DEFAULT false,
 		skip_get_started BOOL NOT NULL DEFAULT false,
 		tenant_name VARCHAR NOT NULL DEFAULT '$G',
+		pending BOOL NOT NULL DEFAULT false,
+		team VARCHAR NOT NULL DEFAULT '',
+		position VARCHAR NOT NULL DEFAULT '',
+		owner VARCHAR NOT NULL DEFAULT '',
+		description VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -154,6 +160,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE configurations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE configurations DROP CONSTRAINT IF EXISTS configurations_key_key;
+		ALTER TABLE configurations DROP CONSTRAINT IF EXISTS key_tenant_name;
 		ALTER TABLE configurations ADD CONSTRAINT key_tenant_name UNIQUE(key, tenant_name);
 		END IF;
 	END $$;`
@@ -202,6 +209,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
+	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS tenant_name_name;
 	ALTER TABLE integrations ADD CONSTRAINT tenant_name_name UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -227,6 +235,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE schemas ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS schemas_name_tenant_name_key;
 		ALTER TABLE schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -255,6 +264,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE tags ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$G';
 		ALTER TABLE tags DROP CONSTRAINT IF EXISTS name;
+		ALTER TABLE tags DROP CONSTRAINT IF EXISTS tags_name_tenant_name_key;
 		ALTER TABLE tags ADD CONSTRAINT tags_name_tenant_name_key UNIQUE(name, tenant_name);
 		END IF;
 	END $$;`
@@ -4063,7 +4073,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.already_logged_in, s.avatar_id FROM users AS s WHERE tenant_name=$1`
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -5305,7 +5315,8 @@ func UpsertTenant(name string) (models.Tenant, error) {
 
 	//After creation a tenant we update the users table and create fk
 	//(we can't do alter and create fk in tables before global tenant exists in tenants table)
-	queryAlterUsersTable := `ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
+	queryAlterUsersTable := `
+	ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
 	ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS connections ADD CONSTRAINT fk_tenant_name_connections FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS schemas ADD CONSTRAINT fk_tenant_name_schemas FOREIGN KEY(tenant_name) REFERENCES tenants(name);

@@ -511,13 +511,13 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 		analytics.SendEvent(user.Username, "user-enter-users-page")
 	}
 
-	var applicationUsers []models.FilteredGenericUser
-	var managementUsers []models.FilteredGenericUser
+	applicationUsers := []models.FilteredGenericUser{}
+	managementUsers := []models.FilteredGenericUser{}
 
 	for _, user := range users {
 		if user.UserType == "application" {
 			applicationUsers = append(applicationUsers, user)
-		} else if user.UserType == "management" {
+		} else if user.UserType == "management" || user.UserType == "root" {
 			managementUsers = append(managementUsers, user)
 		}
 	}

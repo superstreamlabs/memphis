@@ -931,6 +931,10 @@ func (s *Server) InitializeEventCounter() error {
 	return nil
 }
 
+func (s *Server) InitializeFirestore() error {
+	return nil
+}
+
 func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
@@ -1170,19 +1174,19 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	var subscription, pending bool
-	team := strings.ToLower(body.Team)
-	position := strings.ToLower(body.Position)
-	fullName := strings.ToLower(body.FullName)
-	owner := strings.ToLower(body.Owner)
-	description := strings.ToLower(body.Description)
-
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("AddUser: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
+
+	var subscription, pending bool
+	team := strings.ToLower(body.Team)
+	position := strings.ToLower(body.Position)
+	fullName := strings.ToLower(body.FullName)
+	owner := user.Username
+	description := strings.ToLower(body.Description)
 
 	if user.TenantName != conf.GlobalAccountName {
 		user.TenantName = strings.ToLower(user.TenantName)
