@@ -32,6 +32,8 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/getsignupflag",
 	"/api/status",
 	"/api/monitoring/getclusterinfo",
+	"/api/tenants/createtenant",
+	"/api/usermgmt/approveinvitation",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"

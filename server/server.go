@@ -426,7 +426,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
 	// ** added by Memphis
-	if os.Getenv("USER_PASS_BASED_AUTH") == "true" {
+	if configuration.USER_PASS_BASED_AUTH {
 		gacc.srv = s
 		s.gacc = gacc
 	}

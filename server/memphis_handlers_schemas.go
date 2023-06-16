@@ -835,3 +835,175 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 		"is_valid": true,
 	})
 }
+
+func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
+	var csr CreateSchemaReq
+	var resp SchemaResponse
+	var tenantName string
+	tenantName, message, err := s.getTenantNameAndMessage(msg)
+	if err != nil {
+		s.Errorf("createSchemaDirect - failed creating Schema:" + err.Error())
+		respondWithRespErr(tenantName, s, reply, err, &resp)
+		return
+	}
+	if err := json.Unmarshal([]byte(message), &csr); err != nil {
+		s.Errorf("createSchemaDirect - failed creating Schema: %v", err.Error())
+		respondWithRespErr(tenantName, s, reply, err, &resp)
+		return
+	}
+
+	err = validateSchemaContent(csr.SchemaContent, csr.Type)
+	if err != nil {
+		s.Errorf("createSchemaDirect - Schema is not in the right %v format, error: %v", csr.Type, err.Error())
+		respondWithRespErr(tenantName, s, reply, err, &resp)
+		return
+	}
+
+	if csr.Type == "protobuf" {
+		csr.MessageStructName, err = getProtoMessageStructName(csr.SchemaContent)
+		if err != nil {
+			s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+		}
+	}
+
+	if csr.Type == "protobuf" {
+		err := validateMessageStructName(csr.MessageStructName)
+		if err != nil {
+			s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+			return
+		}
+	}
+
+	exist, existedSchema, err := db.GetSchemaByName(csr.Name, tenantName)
+	if err != nil {
+		s.Errorf("createSchemaDirect - failed creating Schema: " + err.Error())
+		respondWithRespErr(tenantName, s, reply, err, &resp)
+		return
+	}
+
+	if exist {
+		if existedSchema.Type == csr.Type {
+			err = s.updateSchemaVersion(existedSchema.ID, tenantName, csr)
+			if err != nil {
+				s.Errorf("createSchemaDirect - failed creating Schema: " + csr.Name + err.Error())
+				respondWithRespErr(tenantName, s, reply, err, &resp)
+				return
+			}
+			respondWithRespErr(tenantName, s, reply, err, &resp)
+			return
+		} else {
+			s.Errorf("createSchemaDirect: Schema " + csr.Name + ": Bad Schema Type")
+			badTypeError := fmt.Sprintf("%v already exist with type - %v", csr.Name, existedSchema.Type)
+			respondWithRespErr(tenantName, s, reply, errors.New(badTypeError), &resp)
+			return
+		}
+	}
+
+	err = s.createNewSchema(csr, tenantName)
+	if err != nil {
+		s.Errorf("createSchemaDirect - failed creating Schema:" + csr.Name + err.Error())
+		respondWithRespErr(tenantName, s, reply, err, &resp)
+		return
+	}
+
+	respondWithRespErr(tenantName, s, reply, err, &resp)
+
+}
+
+func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaReq CreateSchemaReq) error {
+	_, user, err := db.GetUserByUsername(newSchemaReq.CreatedByUsername, tenantName)
+	if err != nil {
+		s.Errorf("updateSchemaVersion: Schema " + newSchemaReq.Name + ": " + err.Error())
+		return err
+	}
+
+	countVersions, err := db.GetShcemaVersionsCount(schemaID, user.TenantName)
+	if err != nil {
+		s.Errorf("updateSchemaVersion: Schema " + newSchemaReq.Name + ": " + err.Error())
+		return err
+	}
+
+	_, currentSchema, err := db.GetSchemaVersionByNumberAndID(countVersions, schemaID)
+	if err != nil {
+		s.Errorf("updateSchemaVersion: Schema " + newSchemaReq.Name + ": " + err.Error())
+		return err
+	}
+
+	if currentSchema.SchemaContent == newSchemaReq.SchemaContent {
+		alreadyExistInDB := fmt.Sprintf("%v already exist in the db", newSchemaReq.Name)
+		s.Errorf(alreadyExistInDB)
+		return errors.New(alreadyExistInDB)
+	}
+
+	versionNumber := countVersions + 1
+
+	descriptor := ""
+	if newSchemaReq.Type == "protobuf" {
+		descriptor, err = generateSchemaDescriptor(newSchemaReq.Name, 1, newSchemaReq.SchemaContent, newSchemaReq.Type)
+		if err != nil {
+			s.Errorf("CreateNewSchemaDirectn: could not create proto descriptor for " + newSchemaReq.Name + ": " + err.Error())
+			return err
+		}
+	}
+
+	newSchemaVersion, rowsUpdated, err := db.InsertNewSchemaVersion(versionNumber, user.ID, user.Username, newSchemaReq.SchemaContent, schemaID, newSchemaReq.MessageStructName, descriptor, false, tenantName)
+	if err != nil {
+		s.Errorf("updateSchemaVersion: " + err.Error())
+		return err
+	}
+	if rowsUpdated == 1 {
+		message := "Schema Version " + strconv.Itoa(newSchemaVersion.VersionNumber) + " has been created by " + user.Username
+		s.Noticef(message)
+		return nil
+	} else {
+		s.Errorf("updateSchemaVersion: schema update failed")
+		return errors.New("updateSchemaVersion: schema update failed")
+	}
+
+}
+
+func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string) error {
+	schemaVersionNumber := 1
+
+	_, user, err := db.GetUserByUsername(newSchemaReq.CreatedByUsername, tenantName)
+
+	descriptor := ""
+	if newSchemaReq.Type == "protobuf" {
+		descriptor, err = generateSchemaDescriptor(newSchemaReq.Name, 1, newSchemaReq.SchemaContent, newSchemaReq.Type)
+		if err != nil {
+			s.Errorf("CreateNewSchemaDirectn: Schema " + newSchemaReq.Name + ": " + err.Error())
+			return err
+		}
+	}
+
+	newSchema, rowUpdated, err := db.InsertNewSchema(newSchemaReq.Name, newSchemaReq.Type, newSchemaReq.CreatedByUsername, tenantName)
+	if err != nil {
+		s.Errorf("createNewSchemaDirect: " + err.Error())
+		return err
+	}
+
+	if rowUpdated == 1 {
+		_, _, err := db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, newSchemaReq.SchemaContent, newSchema.ID, newSchemaReq.MessageStructName, descriptor, true, tenantName)
+		if err != nil {
+			s.Errorf("createNewSchemaDirect: " + err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getProtoMessageStructName(schema_content string) (string, error) {
+	parser := protoparse.Parser{
+		Accessor: func(filename string) (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(string(schema_content))), nil
+		},
+	}
+	something, err := parser.ParseFiles("")
+	if err != nil {
+		return "", errors.New("your Proto file is invalid: " + err.Error())
+	}
+	return something[0].GetMessageTypes()[0].GetName(), nil
+}

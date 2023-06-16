@@ -29,6 +29,7 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.GET("/getAllUsers", userMgmtHandler.GetAllUsers)
 	userMgmtRoutes.GET("/getApplicationUsers", userMgmtHandler.GetApplicationUsers)
 	userMgmtRoutes.DELETE("/removeUser", userMgmtHandler.RemoveUser)
+	// TODO: change the name to removeAccount
 	userMgmtRoutes.DELETE("/removeMyUser", userMgmtHandler.RemoveMyUser)
 	userMgmtRoutes.PUT("/editAvatar", userMgmtHandler.EditAvatar)
 	userMgmtRoutes.PUT("/editCompanyLogo", userMgmtHandler.EditCompanyLogo)
@@ -38,4 +39,5 @@ func InitializeUserMgmtRoutes(router *gin.RouterGroup) {
 	userMgmtRoutes.POST("/skipGetStarted", userMgmtHandler.SkipGetStarted)
 	userMgmtRoutes.GET("/getFilterDetails", userMgmtHandler.GetFilterDetails)
 	userMgmtRoutes.PUT("/changePassword", userMgmtHandler.ChangePassword)
+	server.AddUsrMgmtCloudRoutes(userMgmtRoutes, userMgmtHandler)
 }

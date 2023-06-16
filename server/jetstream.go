@@ -1288,6 +1288,22 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 		}
 
 		state := mset.state()
+
+		// *** added by Memphis
+		switch mset.name() {
+		case tieredStorageStream:
+			TIERED_STORAGE_STREAM_CREATED = true
+		case dlsUnackedStream:
+			DLS_UNACKED_STREAM_CREATED = true
+		case syslogsStreamName:
+			SYSLOGS_STREAM_CREATED = true
+		case throughputStreamNameV1:
+			THROUGHPUT_STREAM_CREATED = true
+		case throughputStreamName:
+			THROUGHPUT_LEGACY_STREAM_EXIST = true
+		}
+		// added by Memphis ***
+
 		s.Noticef("  Restored %s messages for stream '%s > %s'", comma(int64(state.Msgs)), mset.accName(), mset.name())
 
 		// Collect to check for dangling messages.
@@ -1306,6 +1322,16 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 		if len(ofis) > 0 {
 			s.Noticef("  Recovering %d consumers for stream - '%s > %s'", len(ofis), e.mset.accName(), e.mset.name())
 		}
+
+		// *** added by Memphis
+		switch e.mset.name() {
+		case tieredStorageStream:
+			TIERED_STORAGE_CONSUMER_CREATED = true
+		case dlsUnackedStream:
+			DLS_UNACKED_CONSUMER_CREATED = true
+		}
+		// added by Memphis ***
+
 		for _, ofi := range ofis {
 			metafile := filepath.Join(e.odir, ofi.Name(), JetStreamMetaFile)
 			metasum := filepath.Join(e.odir, ofi.Name(), JetStreamMetaFileSum)

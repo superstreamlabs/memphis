@@ -111,7 +111,8 @@ func (it IntegrationsHandler) handleS3Integrtation(tenantName string, keys map[s
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
 		}
 		if value, ok := integrationFromDb.Keys["secret_key"]; ok {
-			decryptedValue, err := DecryptAES(value)
+			key := getAESKey()
+			decryptedValue, err := DecryptAES(key, value)
 			if err != nil {
 				return 500, map[string]string{}, err
 			}
@@ -350,6 +351,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		var objectName string
 
 		var messages []Msg
+		size := int64(0)
 		for _, msg := range msgs {
 			if tenantName == conf.GlobalAccountName {
 				tenantName = "global"
@@ -375,6 +377,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			encodedMsg := hex.EncodeToString(msg.Data)
 			message := Msg{Payload: encodedMsg, Headers: hdrs}
 			messages = append(messages, message)
+			size += int64(len(msg.Data)) + int64(len(msg.Header))
 		}
 		// Upload the object to S3.
 		var buf bytes.Buffer
@@ -391,6 +394,8 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
 			return err
 		}
+		IncrementEventCounter(tenantName, "tiered", int64(len(messages)))
+		IncrementEventCounter(tenantName, "size", size)
 		serv.Noticef("new file has been uploaded to S3: %s", objectName)
 	}
 
