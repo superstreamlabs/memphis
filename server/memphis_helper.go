@@ -1185,43 +1185,45 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 	}
 
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-	if configuration.USER_PASS_BASED_AUTH {
-		if len(opts.Accounts) > 0 {
-			tenantsToUpsert := []string{globalAccountName}
-			for _, account := range opts.Accounts {
-				name := account.GetName()
-				if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
-					name = strings.ToLower(name)
-					tenantsToUpsert = append(tenantsToUpsert, name)
-				}
-			}
-			err = db.UpsertBatchOfTenants(tenantsToUpsert)
-			if err != nil {
-				return &Account{}, Options{}, err
-			}
-		}
-		if len(opts.Users) > 0 {
-			usersToUpsert := []models.User{}
-			for _, user := range opts.Users {
-				if user.Account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
-					username := strings.ToLower(user.Username)
-					tenantName := strings.ToLower(user.Account.GetName())
-					newUser := models.User{
-						Username:   username,
-						Password:   user.Password,
-						UserType:   "application",
-						CreatedAt:  time.Now(),
-						AvatarId:   1,
-						FullName:   "",
-						TenantName: tenantName,
+	if !reload {
+		if configuration.USER_PASS_BASED_AUTH {
+			if len(opts.Accounts) > 0 {
+				tenantsToUpsert := []string{globalAccountName}
+				for _, account := range opts.Accounts {
+					name := account.GetName()
+					if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+						name = strings.ToLower(name)
+						tenantsToUpsert = append(tenantsToUpsert, name)
 					}
-					usersToUpsert = append(usersToUpsert, newUser)
 				}
-			}
-			if len(usersToUpsert) > 0 {
-				err = db.UpsertBatchOfUsers(usersToUpsert)
+				err = db.UpsertBatchOfTenants(tenantsToUpsert)
 				if err != nil {
 					return &Account{}, Options{}, err
+				}
+			}
+			if len(opts.Users) > 0 {
+				usersToUpsert := []models.User{}
+				for _, user := range opts.Users {
+					if user.Account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+						username := strings.ToLower(user.Username)
+						tenantName := strings.ToLower(user.Account.GetName())
+						newUser := models.User{
+							Username:   username,
+							Password:   user.Password,
+							UserType:   "application",
+							CreatedAt:  time.Now(),
+							AvatarId:   1,
+							FullName:   "",
+							TenantName: tenantName,
+						}
+						usersToUpsert = append(usersToUpsert, newUser)
+					}
+				}
+				if len(usersToUpsert) > 0 {
+					err = db.UpsertBatchOfUsers(usersToUpsert)
+					if err != nil {
+						return &Account{}, Options{}, err
+					}
 				}
 			}
 		}
@@ -1304,8 +1306,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 
 		}
 
-		sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},}
-		sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN+"_"+configuration.ROOT_PASSWORD , Account: sysAcc}
+		sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}}
+		sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD, Account: sysAcc}
 		accounts = append(accounts, sysAcc)
 		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
