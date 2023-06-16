@@ -1185,7 +1185,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 	}
 
 	gacc := &Account{Name: globalAccountName, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, eventIds: nuid.New(), jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}}
-	if configuration.USER_PASS_BASED_AUTH {
+	if !reload && configuration.USER_PASS_BASED_AUTH {
 		if len(opts.Accounts) > 0 {
 			tenantsToUpsert := []string{globalAccountName}
 			for _, account := range opts.Accounts {
@@ -1225,92 +1225,92 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				}
 			}
 		}
-		globalServicesExport := map[string]*serviceExport{}
-		globalServiceImportForAllAccounts := map[string]*serviceImport{}
-		siList := []*streamImport{}
-		if reload {
-			for _, subj := range memphisServices {
-				se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
-				globalServicesExport[subj] = se
-				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
-			}
-			for _, subj := range memphisSubjects {
-				siList = append(siList, &streamImport{acc: serv.gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
-			}
-		} else {
-			for _, subj := range memphisServices {
-				se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
-				globalServicesExport[subj] = se
-				globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
-			}
-			for _, subj := range memphisSubjects {
-				siList = append(siList, &streamImport{acc: gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
-			}
-		}
-
-		users, err := db.GetAllUsersByType([]string{"application"})
-		if err != nil {
-			return &Account{}, Options{}, err
-		}
-
-		tenants, err := db.GetAllTenantsWithoutGlobal()
-		if err != nil {
-			return &Account{}, Options{}, err
-		}
-		tenantsId := map[string]int{}
-		appUsers := []*User{}
-		accounts := []*Account{}
-		addedTenant := map[string]*Account{}
-		for _, tenant := range tenants {
-			name := strings.ToLower(tenant.Name)
-			tenantsId[name] = tenant.ID
-			account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}, imports: importMap{services: globalServiceImportForAllAccounts, streams: siList}}
-			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
-			accounts = append(accounts, account)
-			addedTenant[name] = account
-		}
-		globalStreamsExport := map[string]*streamExport{}
-		for _, subj := range memphisSubjects {
-			ea := streamExport{}
-			if err := setExportAuth(&ea.exportAuth, subj, []*Account{}, 0); err != nil {
-				return &Account{}, Options{}, err
-			}
-			globalStreamsExport[subj] = &ea
-		}
-		if reload {
-			serv.gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
-		} else {
-			gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
-			accounts = append(accounts, gacc)
-		}
-		if reload {
-			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: serv.gacc})
-			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
-			addedTenant[conf.GlobalAccountName] = serv.gacc
-		} else {
-			appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: gacc})
-			appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
-			addedTenant[conf.GlobalAccountName] = gacc
-		}
-		tenantsId[globalAccountName] = 1
-		key := getAESKey()
-		for _, user := range users {
-			name := user.TenantName
-			decryptedUserPassword, err := DecryptAES(key, user.Password)
-			if err != nil {
-				return &Account{}, Options{}, err
-			}
-			appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: decryptedUserPassword, Account: addedTenant[name]})
-
-		}
-
-		sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},}
-		sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN+"_"+configuration.ROOT_PASSWORD , Account: sysAcc}
-		accounts = append(accounts, sysAcc)
-		appUsers = append(appUsers, sysUser)
-		opts.Accounts = accounts
-		opts.Users = appUsers
 	}
+	globalServicesExport := map[string]*serviceExport{}
+	globalServiceImportForAllAccounts := map[string]*serviceImport{}
+	siList := []*streamImport{}
+	if reload {
+		for _, subj := range memphisServices {
+			se := &serviceExport{acc: serv.gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+			globalServicesExport[subj] = se
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: serv.gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
+		}
+		for _, subj := range memphisSubjects {
+			siList = append(siList, &streamImport{acc: serv.gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
+		}
+	} else {
+		for _, subj := range memphisServices {
+			se := &serviceExport{acc: gacc, latency: &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj}, respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD}
+			globalServicesExport[subj] = se
+			globalServiceImportForAllAccounts[subj] = &serviceImport{acc: gacc, claim: nil, tr: nil, ts: 0, from: subj, to: subj, usePub: true, se: se}
+		}
+		for _, subj := range memphisSubjects {
+			siList = append(siList, &streamImport{acc: gacc, claim: nil, tr: nil, rtr: nil, from: subj, to: subj, usePub: true})
+		}
+	}
+
+	users, err := db.GetAllUsersByType([]string{"application"})
+	if err != nil {
+		return &Account{}, Options{}, err
+	}
+
+	tenants, err := db.GetAllTenantsWithoutGlobal()
+	if err != nil {
+		return &Account{}, Options{}, err
+	}
+	tenantsId := map[string]int{}
+	appUsers := []*User{}
+	accounts := []*Account{}
+	addedTenant := map[string]*Account{}
+	for _, tenant := range tenants {
+		name := strings.ToLower(tenant.Name)
+		tenantsId[name] = tenant.ID
+		account := &Account{Name: name, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}, jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}, imports: importMap{services: globalServiceImportForAllAccounts, streams: siList}}
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID), Password: configuration.CONNECTION_TOKEN, Account: account})
+		accounts = append(accounts, account)
+		addedTenant[name] = account
+	}
+	globalStreamsExport := map[string]*streamExport{}
+	for _, subj := range memphisSubjects {
+		ea := streamExport{}
+		if err := setExportAuth(&ea.exportAuth, subj, []*Account{}, 0); err != nil {
+			return &Account{}, Options{}, err
+		}
+		globalStreamsExport[subj] = &ea
+	}
+	if reload {
+		serv.gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
+	} else {
+		gacc.exports = exportMap{services: globalServicesExport, streams: globalStreamsExport}
+		accounts = append(accounts, gacc)
+	}
+	if reload {
+		appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: serv.gacc})
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: serv.gacc})
+		addedTenant[conf.GlobalAccountName] = serv.gacc
+	} else {
+		appUsers = append(appUsers, &User{Username: "root$1", Password: configuration.ROOT_PASSWORD, Account: gacc})
+		appUsers = append(appUsers, &User{Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1), Password: configuration.CONNECTION_TOKEN, Account: gacc})
+		addedTenant[conf.GlobalAccountName] = gacc
+	}
+	tenantsId[globalAccountName] = 1
+	key := getAESKey()
+	for _, user := range users {
+		name := user.TenantName
+		decryptedUserPassword, err := DecryptAES(key, user.Password)
+		if err != nil {
+			return &Account{}, Options{}, err
+		}
+		appUsers = append(appUsers, &User{Username: user.Username + "$" + strconv.Itoa(tenantsId[name]), Password: decryptedUserPassword, Account: addedTenant[name]})
+
+	}
+
+	sysAcc := &Account{Name: DEFAULT_SYSTEM_ACCOUNT, limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1}}
+	sysUser := &User{Username: "sys", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD, Account: sysAcc}
+	accounts = append(accounts, sysAcc)
+	appUsers = append(appUsers, sysUser)
+	opts.Accounts = accounts
+	opts.Users = appUsers
 	return gacc, opts, nil
 }
 

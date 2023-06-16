@@ -136,13 +136,66 @@ func updateDeletedUserResources(user models.User) error {
 	return nil
 }
 
-func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
-
-	validName := re.MatchString(username)
-	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_/- ")
+func removeTenantResources(tenantName string) error {
+	err := db.RemoveProducersByTenant(tenantName)
+	if err != nil {
+		return err
 	}
+
+	err = db.RemoveConsumersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveConnectionsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemaVersionsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemasByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveTagsResourcesByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveAuditLogsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	stations, err := db.GetAllStationsDetailsPerTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveStationsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		stationName := strings.ToLower(station.Name)
+		sName, err := StationNameFromStr(stationName)
+		if err != nil {
+			return err
+		}
+
+		err = serv.RemoveStream(tenantName, sName.Intern())
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+
+	}
+
 	return nil
 }
 
@@ -514,42 +567,6 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	} else {
 		c.IndentedJSON(200, users)
 	}
-}
-
-func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	if user.UserType == "root" {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Root user can not be deleted"})
-		return
-	}
-
-	err = updateDeletedUserResources(user)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	err = db.DeleteUser(user.Username, user.TenantName)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-himself")
-	}
-
-	serv.Noticef("User " + user.Username + " has been deleted")
-	c.IndentedJSON(200, gin.H{})
 }
 
 func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
