@@ -142,11 +142,6 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	consumers, err := db.GetAllConsumersByTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
 	err = db.RemoveConsumersByTenant(tenantName)
 	if err != nil {
 		return err
@@ -192,13 +187,6 @@ func removeTenantResources(tenantName string) error {
 		sName, err := StationNameFromStr(stationName)
 		if err != nil {
 			return err
-		}
-
-		for _, consumer := range consumers {
-			err = serv.RemoveConsumer(tenantName, sName, consumer.ConsumersGroup)
-			if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-				return err
-			}
 		}
 
 		err = serv.RemoveStream(tenantName, sName.Intern())

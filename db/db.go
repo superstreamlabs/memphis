@@ -2665,34 +2665,6 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func GetAllConsumersByTenant(tenantName string) ([]models.ExtendedConsumer, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM CONSUMERS WHERE tenant_name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_tenant", query)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	defer rows.Close()
-	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
-	}
-	return consumers, nil
-}
-
 func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
