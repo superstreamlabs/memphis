@@ -1401,8 +1401,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	}
 
 	if user.UserType != "root" {
-		serv.Warnf("RemoveMyUser: Only root user can remove his tenant")
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Only root user can remove his tenant"})
+		serv.Warnf("RemoveMyUser: Only root user can remove the entire account")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Only root user can remove the entire account"})
 		return
 	}
 
