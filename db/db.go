@@ -1706,8 +1706,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = ANY($1)
 	AND (is_deleted = false)
 	AND tenant_name=$2`
@@ -1733,10 +1732,8 @@ func DeleteStation(name string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = $1
-	AND (is_deleted = false)
 	AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_station", query)
 	if err != nil {
@@ -2341,7 +2338,7 @@ func DeleteProducersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM producers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
 	if err != nil {
 		return err
@@ -2710,8 +2707,28 @@ func DeleteConsumersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM consumers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteDLSMessagesByStationID(stationId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM dls_messages WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_messages_from_chosen_dls", query)
 	if err != nil {
 		return err
 	}
