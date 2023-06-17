@@ -295,19 +295,21 @@ func (s *Server) createMemphisLoggerFallbackFunc() srvlog.HybridLogPublishFunc {
 }
 
 func (s *Server) sendLogToSubject(label string, log []byte) {
-	logLabelToSubjectMap := map[string]string{
-		"INF": syslogsInfoSubject,
-		"WRN": syslogsWarnSubject,
-		"ERR": syslogsErrSubject,
-		"SYS": syslogsSysSubject,
-	}
-	subjectSuffix, ok := logLabelToSubjectMap[label]
-	if !ok {
-		return
-	}
+	if shouldPersistSysLogs() {
+		logLabelToSubjectMap := map[string]string{
+			"INF": syslogsInfoSubject,
+			"WRN": syslogsWarnSubject,
+			"ERR": syslogsErrSubject,
+			"SYS": syslogsSysSubject,
+		}
+		subjectSuffix, ok := logLabelToSubjectMap[label]
+		if !ok {
+			return
+		}
 
-	subject := fmt.Sprintf("%s.%s.%s", syslogsStreamName, s.getLogSource(), subjectSuffix)
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
+		subject := fmt.Sprintf("%s.%s.%s", syslogsStreamName, s.getLogSource(), subjectSuffix)
+		s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
+	}
 }
 
 func (s *Server) sendLogToAnalytics(label string, log []byte) {

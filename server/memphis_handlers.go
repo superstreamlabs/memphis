@@ -19,7 +19,6 @@ import (
 	"memphis/models"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
@@ -48,7 +47,7 @@ type srvMemphis struct {
 	nuid                   *nuid.NUID
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
-	jsApiMu                sync.Mutex
+	// jsApiMu                sync.Mutex
 	ws                     memphisWS
 }
 

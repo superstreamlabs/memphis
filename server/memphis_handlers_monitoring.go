@@ -357,7 +357,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 	})
 
 	disconnectedProducers := make([]map[string]interface{}, 0)
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3d0",
 		"name":            "prod.16",
 		"type":            "application",
@@ -369,7 +369,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ce",
 		"name":            "prod.15",
 		"type":            "application",
@@ -381,7 +381,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3cc",
 		"name":            "prod.14",
 		"type":            "application",
@@ -393,7 +393,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ca",
 		"name":            "prod.13",
 		"type":            "application",
@@ -405,7 +405,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c8",
 		"name":            "prod.12",
 		"type":            "application",
@@ -417,7 +417,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c6",
 		"name":            "prod.11",
 		"type":            "application",
@@ -429,7 +429,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c4",
 		"name":            "prod.10",
 		"type":            "application",
@@ -441,7 +441,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c2",
 		"name":            "prod.9",
 		"type":            "application",
@@ -453,7 +453,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c0",
 		"name":            "prod.8",
 		"type":            "application",
@@ -465,7 +465,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3be",
 		"name":            "prod.7",
 		"type":            "application",
@@ -477,7 +477,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3bc",
 		"name":            "prod.6",
 		"type":            "application",

@@ -939,7 +939,8 @@ func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
 
-func IncrementEventCounter(tenantName string, counterType string, amount int64) {}
+func IncrementEventCounter(tenantName string, eventType string, size int64, amount int64, subj string, msg []byte, hdr []byte) {
+}
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	var body models.EditClusterConfigSchema
@@ -1071,10 +1072,6 @@ func SetCors(router *gin.Engine) {
 		AllowWebSockets:  true,
 		AllowFiles:       true,
 	}))
-}
-
-func validateTenantName(tenantName string) error {
-	return nil
 }
 
 func (th TenantHandler) CreateTenant(c *gin.Context) {
@@ -1423,4 +1420,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (s *Server) RefreshFirebaseFunctionsKey() {
+}
+
+func shouldPersistSysLogs() bool {
+	return true
 }

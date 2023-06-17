@@ -290,7 +290,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// system logs stream
-	if !SYSLOGS_STREAM_CREATED {
+	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
 		err = s.memphisAddStream(globalAccountName, &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},

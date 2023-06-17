@@ -281,10 +281,6 @@ func newFileStore(fcfg FileStoreConfig, cfg StreamConfig) (*fileStore, error) {
 }
 
 // ** added by memphis
-func newFileStoreMemphis(fcfg FileStoreConfig, cfg StreamConfig, account *Account) (*fileStore, error) {
-	return newFileStoreWithCreatedMemphis(fcfg, cfg, time.Now().UTC(), nil, account)
-}
-
 func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen, account *Account) (*fileStore, error) {
 	if cfg.Name == _EMPTY_ {
 		return nil, fmt.Errorf("name required")
@@ -380,7 +376,6 @@ func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, crea
 
 	return fs, nil
 }
-
 // added by memphis **
 
 func newFileStoreWithCreated(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen) (*fileStore, error) {
@@ -2305,7 +2300,9 @@ func (fs *fileStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts in
 	if fs.closed {
 		return ErrStoreClosed
 	}
-
+	// *** added by memphis
+	IncrementEventCounter(fs.account.GetName(), "produced_event", 0, 1, subj, msg, hdr)
+	// added by memphis ***
 	// Per subject max check needed.
 	mmp := uint64(fs.cfg.MaxMsgsPer)
 	var psmc uint64

@@ -968,26 +968,30 @@ func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string
 	schemaVersionNumber := 1
 
 	_, user, err := db.GetUserByUsername(newSchemaReq.CreatedByUsername, tenantName)
+	if err != nil {
+		s.Errorf("createNewSchema: " + err.Error())
+		return err
+	}
 
 	descriptor := ""
 	if newSchemaReq.Type == "protobuf" {
 		descriptor, err = generateSchemaDescriptor(newSchemaReq.Name, 1, newSchemaReq.SchemaContent, newSchemaReq.Type)
 		if err != nil {
-			s.Errorf("CreateNewSchemaDirectn: Schema " + newSchemaReq.Name + ": " + err.Error())
+			s.Errorf("CreateNewSchema: Schema " + newSchemaReq.Name + ": " + err.Error())
 			return err
 		}
 	}
 
 	newSchema, rowUpdated, err := db.InsertNewSchema(newSchemaReq.Name, newSchemaReq.Type, newSchemaReq.CreatedByUsername, tenantName)
 	if err != nil {
-		s.Errorf("createNewSchemaDirect: " + err.Error())
+		s.Errorf("createNewSchema: " + err.Error())
 		return err
 	}
 
 	if rowUpdated == 1 {
 		_, _, err := db.InsertNewSchemaVersion(schemaVersionNumber, user.ID, user.Username, newSchemaReq.SchemaContent, newSchema.ID, newSchemaReq.MessageStructName, descriptor, true, tenantName)
 		if err != nil {
-			s.Errorf("createNewSchemaDirect: " + err.Error())
+			s.Errorf("createNewSchema: " + err.Error())
 			return err
 		}
 	}

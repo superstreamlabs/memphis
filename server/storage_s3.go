@@ -394,8 +394,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			err = errors.New("uploadToS3Storage: failed to upload object to S3: " + err.Error())
 			return err
 		}
-		IncrementEventCounter(tenantName, "tiered", int64(len(messages)))
-		IncrementEventCounter(tenantName, "size", size)
+		IncrementEventCounter(tenantName, "tiered", size, int64(len(messages)), "", []byte{}, []byte{})
 		serv.Noticef("new file has been uploaded to S3: %s", objectName)
 	}
 
