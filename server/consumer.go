@@ -2996,9 +2996,10 @@ var (
 // Get next available message from underlying store.
 // Is partition aware and redeliver aware.
 // Lock should be held.
-func (o *consumer) getNextMsg() (*jsPubMsg, uint64, error) {
+func (o *consumer) getNextMsg() (*jsPubMsg, uint64, bool, error) {
+	redelivery := false
 	if o.mset == nil || o.mset.store == nil {
-		return nil, 0, errBadConsumer
+		return nil, 0, redelivery, errBadConsumer
 	}
 	seq, dc := o.sseq, uint64(1)
 	// Process redelivered messages before looking at possibly "skip list" (deliver last per subject)
@@ -3021,7 +3022,8 @@ func (o *consumer) getNextMsg() (*jsPubMsg, uint64, error) {
 					pmsg.returnToPool()
 					pmsg, dc = nil, 0
 				}
-				return pmsg, dc, err
+				redelivery = true
+				return pmsg, dc, redelivery, err
 			}
 		}
 		// Fallback if all redeliveries are gone.
@@ -3044,7 +3046,7 @@ func (o *consumer) getNextMsg() (*jsPubMsg, uint64, error) {
 	if o.maxp > 0 && len(o.pending) >= o.maxp {
 		// maxp only set when ack policy != AckNone and user set MaxAckPending
 		// Stall if we have hit max pending.
-		return nil, 0, errMaxAckPending
+		return nil, 0, redelivery, errMaxAckPending
 	}
 
 	store := o.mset.store
@@ -3068,7 +3070,7 @@ func (o *consumer) getNextMsg() (*jsPubMsg, uint64, error) {
 		}
 	}
 
-	return pmsg, dc, err
+	return pmsg, dc, redelivery, err
 }
 
 // Will check for expiration and lack of interest on waiting requests.
@@ -3260,12 +3262,13 @@ func (o *consumer) loopAndGatherMsgs(qch chan struct{}) {
 	// Deliver all the msgs we have now, once done or on a condition, we wait for new ones.
 	for {
 		var (
-			pmsg     *jsPubMsg
-			dc       uint64
-			dsubj    string
-			ackReply string
-			delay    time.Duration
-			sz       int
+			pmsg       *jsPubMsg
+			dc         uint64
+			dsubj      string
+			ackReply   string
+			delay      time.Duration
+			sz         int
+			redelivery bool
 		)
 		o.mu.Lock()
 		// consumer is closed when mset is set to nil.
@@ -3288,7 +3291,7 @@ func (o *consumer) loopAndGatherMsgs(qch chan struct{}) {
 		}
 
 		// Grab our next msg.
-		pmsg, dc, err = o.getNextMsg()
+		pmsg, dc, redelivery, err = o.getNextMsg()
 
 		// On error either wait or return.
 		if err != nil || pmsg == nil {
@@ -3375,6 +3378,18 @@ func (o *consumer) loopAndGatherMsgs(qch chan struct{}) {
 
 		// Do actual delivery.
 		o.deliverMsg(dsubj, ackReply, pmsg, dc, rp)
+		if !strings.Contains(string(dsubj), "$memphis") {
+			tenantName := o.acc.GetName()
+			if tenantName != "$SYS" && tenantName != "n/a" && tenantName != "" {
+				size := int64(len(pmsg.StoreMsg.msg)) + int64(len(pmsg.StoreMsg.hdr))
+				if redelivery {
+					IncrementEventCounter(tenantName, "redelivered", 1)
+				} else {
+					IncrementEventCounter(tenantName, "consumed", 1)
+				}
+				IncrementEventCounter(tenantName, "size", size)
+			}
+		}
 
 		// Reset our idle heartbeat timer if set.
 		if hb != nil {

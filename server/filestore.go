@@ -2305,7 +2305,13 @@ func (fs *fileStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts in
 	if fs.closed {
 		return ErrStoreClosed
 	}
-
+	if !strings.Contains(string(subj), "$memphis") {
+		tenantName := fs.account.GetName()
+		if tenantName != "$SYS" && tenantName != "n/a" && tenantName != "" {
+			size := int64(len(msg)) + int64(len(hdr))
+			IncrementEventCounter(tenantName, "out", size)
+		}
+	}
 	// Per subject max check needed.
 	mmp := uint64(fs.cfg.MaxMsgsPer)
 	var psmc uint64
