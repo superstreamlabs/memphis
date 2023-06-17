@@ -40,4 +40,78 @@
             }
         }
     }
+    .progress {
+        cursor: pointer;
+    }
+}
+.health-status-caontainer {
+    width: 400px;
+    border-radius: 16px;
+    position: relative;
+    .ant-popover-title {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-weight: 600;
+        font-size: 16px;
+        display: flex;
+        color: #222124;
+    }
+    .ant-popover-inner {
+        margin-right: 10px;
+    }
+    .ant-popover-inner-content {
+        width: 100%;
+        position: relative;
+        padding-bottom: 10px;
+        .health-item {
+            border: 1px solid #e6e6e6;
+            border-radius: 8px;
+            margin: 15px;
+            .ant-divider-horizontal {
+                margin: 0;
+            }
+            .health-item-body {
+                padding-bottom: 15px;
+                .health-item-body-wrapper {
+                    display: flex;
+                    align-items: center;
+                    padding: 15px;
+                    .img-circle {
+                        margin-right: 10px;
+                        height: 30px;
+                        width: 30px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        background: #e2dfff;
+                        border-radius: 50%;
+                        img {
+                            height: 15px;
+                            width: 15px;
+                        }
+                    }
+                    label {
+                        font-weight: 600;
+                        font-size: 16px;
+                        color: #0b0a0f;
+                    }
+                }
+                .health-item-body-info {
+                    padding-left: 55px;
+                }
+            }
+            .health-item-footer {
+                color: #6e44ff;
+                justify-content: center;
+                display: flex;
+                padding: 10px 0px;
+                label {
+                    cursor: pointer;
+                }
+                img {
+                    margin-left: 5px;
+                }
+            }
+        }
+    }
 }
