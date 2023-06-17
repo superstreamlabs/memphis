@@ -1418,13 +1418,6 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		return
 	}
 
-	err = db.DeleteUser(user.Username, user.TenantName)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.Username, "user-remove-himself")
@@ -1434,5 +1427,5 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) ConnectToFirebaseFunction() {
+func (s *Server) RefreshFirebaseFUnctionKey() {
 }

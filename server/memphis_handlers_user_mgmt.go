@@ -182,6 +182,21 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
+	err = db.DeleteUsersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteDlsMsgsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
 	for _, station := range stations {
 		stationName := strings.ToLower(station.Name)
 		sName, err := StationNameFromStr(stationName)

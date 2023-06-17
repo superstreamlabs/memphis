@@ -5260,6 +5260,31 @@ func GetStationIdsFromDlsMsgs(tenantName string) ([]int, error) {
 	return stationIds, nil
 }
 
+func DeleteDlsMsgsByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeUserQuery := `DELETE FROM dls_messages WHERE tenant_name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_dls_msgs_by_tenant", removeUserQuery)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // Tenants functions
 func UpsertTenant(name string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
