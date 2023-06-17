@@ -4037,6 +4037,34 @@ func GetUserForLogin(username string) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
+func GetUserForLoginByUsernameAndTenant(username, tenantname string) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 AND tenant_name = $2  AND NOT type = 'application' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login_by_username_and_tenant", query)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantname)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
 func GetUserByUserId(userId int) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
