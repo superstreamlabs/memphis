@@ -1220,8 +1220,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	avatarId := 1
+	if body.AvatarId > 0 {
+		avatarId = body.AvatarId
+	}
+
 	var password string
-	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
 			serv.Warnf("AddUser: Password was not provided for user " + username)
@@ -1236,11 +1240,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			return
 		}
 		password = string(hashedPwd)
-
-		avatarId = 1
-		if body.AvatarId > 0 {
-			avatarId = body.AvatarId
-		}
 	}
 
 	var brokerConnectionCreds string
@@ -1259,10 +1258,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
-			}
-			avatarId = 1
-			if body.AvatarId > 0 {
-				avatarId = body.AvatarId
 			}
 		} else {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
@@ -1302,7 +1297,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"user_type":               userType,
 		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
-		"avatar_id":               body.AvatarId,
+		"avatar_id":               avatarId,
 		"broker_connection_creds": brokerConnectionCreds,
 		"position":                newUser.Position,
 		"team":                    newUser.Team,
