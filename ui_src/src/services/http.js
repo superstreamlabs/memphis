@@ -60,7 +60,6 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             if (isSkipGetStarted === 'true') {
                 localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             }
-            debugger;
             isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
@@ -110,7 +109,6 @@ export async function handleRefreshTokenRequest() {
         const url = `${SERVER_URL}${ApiEndpoints.REFRESH_TOKEN}`;
         const res = await HTTP({ method: 'POST', url });
         await AuthService.saveToLocalStorage(res.data);
-
         return true;
     } catch (err) {
         isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
@@ -118,7 +116,7 @@ export async function handleRefreshTokenRequest() {
         if (isSkipGetStarted === 'true') {
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
         }
-        window.location.assign('/login');
+        isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         return false;
     }
 }

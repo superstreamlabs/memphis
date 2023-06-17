@@ -131,7 +131,6 @@ function OverView() {
         } catch (err) {
             return;
         }
-        setisLoading(true);
         setTimeout(async () => {
             if (sub) {
                 (async () => {

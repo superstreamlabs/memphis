@@ -15,61 +15,25 @@ import './style.scss';
 import React, { useEffect, useContext, useState, useRef, useCallback } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
-import searchIcon from '../../assets/images/searchIcon.svg';
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import { isCloud, parsingDate } from '../../services/valueConvertor';
 import addUserIcon from '../../assets/images/addUserIcon.svg';
-
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import mailIcon from '../../assets/images/mailIcon.svg';
+import deleteIcon from '../../assets/images/deleteIcon.svg';
+import searchIcon from '../../assets/images/searchIcon.svg';
+import SegmentButton from '../../components/segmentButton';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
+import ActiveBadge from '../../components/activeBadge';
 import CreateUserDetails from './createUserDetails';
 import { httpRequest } from '../../services/http';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
-import UserItem from './userItem';
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 import Table from '../../components/table';
-import ActiveBadge from '../../components/activeBadge';
-import SegmentButton from '../../components/segmentButton';
-
-const UsersData = [
-    {
-        key: '1',
-        username: 'a@a.gmail.com',
-        avatar_id: 1,
-        status: 0,
-        full_name: 'A A',
-        team: 'Team A',
-        position: 'Manager',
-        created_at: '2021-08-01 12:00:00'
-    },
-    {
-        key: '2',
-        username: 't@t.gmail.com',
-        avatar_id: 2,
-        status: 1,
-        full_name: 'T T',
-        team: 'Team B',
-        position: 'R&D',
-        created_at: '2021-08-01 12:00:00'
-    }
-];
-const ClientsData = [
-    {
-        key: '1',
-        username: 'a@a.gmail.com',
-        owner: 'A A',
-        description: 'There are many variations of passages of Lorem Ipsum available..',
-        created_at: '2021-08-01 12:00:00'
-    },
-    {
-        key: '2',
-        username: 't@t.gmail.com',
-        owner: 'T T',
-        description: 'There are many variations of passages of Lorem Ipsum available..',
-        created_at: '2021-08-01 12:00:00'
-    }
-];
+import DeleteItemsModal from '../../components/deleteItemsModal';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -79,12 +43,12 @@ function Users() {
     const [userDetailsModal, setUserDetailsModal] = useState(false);
     const [removeUserModalOpen, setRemoveUserModalOpen] = useState(false);
     const [userToRemove, setuserToRemove] = useState('');
-
+    const [userDeletedLoader, setUserDeletedLoader] = useState(false);
     const createUserRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [tableType, setTableType] = useState('Management');
-
+    const [resendEmailLoader, setResendEmailLoader] = useState(false);
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
         getAllUsers();
@@ -95,7 +59,8 @@ function Users() {
             setIsLoading(true);
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_USERS);
             if (data) {
-                data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                data.management_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                data.application_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 setUsersList(data);
                 setCopyOfUserList(data);
             }
@@ -118,11 +83,35 @@ function Users() {
         setSearchInput(e.target.value);
     };
 
-    const closeModal = (userData) => {
-        let newUserList = userList;
-        newUserList.push(userData);
-        setUsersList(newUserList);
-        setCopyOfUserList(newUserList);
+    const handleAddUser = (userData) => {
+        setUsersList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+
+            if (userData.user_type === 'management') {
+                updatedUserData.management_users = [...updatedUserData.management_users, userData];
+            }
+
+            if (userData.user_type === 'application') {
+                updatedUserData.application_users = [...updatedUserData.application_users, userData];
+            }
+
+            return updatedUserData;
+        });
+
+        setCopyOfUserList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+
+            if (userData.user_type === 'management') {
+                updatedUserData.management_users = [...updatedUserData.management_users, userData];
+            }
+
+            if (userData.user_type === 'application') {
+                updatedUserData.application_users = [...updatedUserData.application_users, userData];
+            }
+
+            return updatedUserData;
+        });
+
         addUserModalFlip(false);
         if (userData.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
             setUserDetailsModal(true);
@@ -133,34 +122,57 @@ function Users() {
         return require(`../../assets/images/bots/avatar${avatarId}.svg`);
     };
 
-    const handleRemoveUser = async (username) => {
-        const updatedUserList = userList.filter((item) => item.username !== username);
-        setUsersList(updatedUserList);
-        setCopyOfUserList(updatedUserList);
+    const handleRemoveUser = async (name, type) => {
+        setUsersList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+            updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            return updatedUserData;
+        });
+
+        setCopyOfUserList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+            updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            return updatedUserData;
+        });
+        setUserDeletedLoader(false);
+        setRemoveUserModalOpen(false);
     };
 
-    const removeUser = async (username) => {
+    const removeUser = async (user) => {
+        setUserDeletedLoader(true);
         try {
-            await httpRequest('DELETE', ApiEndpoints.REMOVE_USER, {
+            await httpRequest(user.revoke ? 'POST' : 'DELETE', user.revoke ? ApiEndpoints.REVOKED_INVITATION : ApiEndpoints.REMOVE_USER, {
+                username: user.username
+            });
+            handleRemoveUser(user.username, user.type === 'management' ? 'management_users' : 'application_users');
+        } catch (error) {
+            setUserDeletedLoader(false);
+            setRemoveUserModalOpen(false);
+        }
+    };
+
+    const deleteUser = (username, user_type) => {
+        setuserToRemove({ username: username, type: user_type });
+        setUserDeletedLoader(true);
+    };
+
+    const revokeUser = (username, user_type) => {
+        setuserToRemove({ username: username, type: user_type, revoke: true });
+        setRemoveUserModalOpen(true);
+    };
+
+    const resendEmail = async (username) => {
+        setResendEmailLoader(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.RESEND_INVITATION, {
                 username: username
             });
-            handleRemoveUser(username);
-        } catch (error) {}
-    };
-
-    const deleteUser = (username) => {
-        setuserToRemove(username);
-        setRemoveUserModalOpen(true);
-    };
-
-    const revokeUser = (username) => {
-        setuserToRemove(username);
-        setRemoveUserModalOpen(true);
-    };
-
-    const resendEmail = (username) => {
-        setuserToRemove(username);
-        setRemoveUserModalOpen(true);
+            setTimeout(() => {
+                setResendEmailLoader(false);
+            }, 1000);
+        } catch (error) {
+            setResendEmailLoader(false);
+        }
     };
 
     const clientColumns = [
@@ -168,7 +180,7 @@ function Users() {
             title: 'Username',
             dataIndex: 'username',
             key: 'username',
-            render: (text, record) => (
+            render: (text) => (
                 <div className="user-name">
                     <div className="user-avatar">
                         <AccountCircleRounded />
@@ -183,7 +195,7 @@ function Users() {
             dataIndex: 'owner',
             render: (owner) => (
                 <div className="full-name">
-                    <p>{owner}</p>
+                    <p>{owner || '-'}</p>
                 </div>
             )
         },
@@ -193,7 +205,7 @@ function Users() {
             dataIndex: 'description',
             render: (description) => (
                 <div className="created-column">
-                    <p>{description}</p>
+                    <p>{description || '-'}</p>
                 </div>
             )
         },
@@ -203,7 +215,7 @@ function Users() {
             dataIndex: 'created_at',
             render: (created_at) => (
                 <div className="created-column">
-                    <p>{created_at}</p>
+                    <p>{parsingDate(created_at)}</p>
                 </div>
             )
         },
@@ -213,33 +225,52 @@ function Users() {
             key: 'action',
             render: (_, record) => (
                 <div className="user-action">
-                    <p onClick={() => deleteUser(record.username)}>Delete user</p>
+                    <Button
+                        width="95px"
+                        height="30px"
+                        placeholder={
+                            <div className="action-button">
+                                <img className="delete-icon" src={deleteIcon} alt="deleteIcon" />
+                                Delete user
+                            </div>
+                        }
+                        colorType="red"
+                        radiusType="circle"
+                        border="gray-light"
+                        backgroundColorType={'white'}
+                        fontSize="12px"
+                        fontFamily="InterMedium"
+                        onClick={() => {
+                            deleteUser(record.username, record.user_type);
+                        }}
+                    />
                 </div>
             )
         }
     ];
+
     const managmentColumns = [
         {
             title: 'Username',
             dataIndex: 'username',
             key: 'username',
-            // sorter: (a, b) => a.username.localeCompare(b.username),
             render: (text, record) => (
                 <div className="user-name">
                     <div className="user-avatar">
                         <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
                     </div>
                     <p>{text}</p>
+                    {record.user_type === 'root' && <ActiveBadge active={false} content={isCloud() ? 'Owner' : 'Root'} />}
                 </div>
             )
         },
         {
             title: 'Status',
-            dataIndex: 'status',
-            key: 'status',
-            render: (status) => (
+            dataIndex: 'pending',
+            key: 'pending',
+            render: (pending) => (
                 <div className="status">
-                    <ActiveBadge active={status} content={status === 0 ? 'Panding' : 'Active'} />
+                    <ActiveBadge active={!pending} content={pending ? 'Panding' : 'Active'} />
                 </div>
             )
         },
@@ -249,7 +280,17 @@ function Users() {
             dataIndex: 'full_name',
             render: (full_name) => (
                 <div className="full-name">
-                    <p>{full_name}</p>
+                    <p>{full_name || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Created by',
+            key: 'created_by',
+            dataIndex: 'owner',
+            render: (owner) => (
+                <div className="created_by">
+                    <p>{owner || '-'}</p>
                 </div>
             )
         },
@@ -259,7 +300,7 @@ function Users() {
             dataIndex: 'team',
             render: (team) => (
                 <div className="team">
-                    <p>{team}</p>
+                    <p>{team || '-'}</p>
                 </div>
             )
         },
@@ -269,7 +310,7 @@ function Users() {
             dataIndex: 'position',
             render: (position) => (
                 <div className="position">
-                    <p>{position}</p>
+                    <p>{position || '-'}</p>
                 </div>
             )
         },
@@ -279,7 +320,7 @@ function Users() {
             dataIndex: 'created_at',
             render: (created_at) => (
                 <div className="created-column">
-                    <p>{created_at}</p>
+                    <p>{parsingDate(created_at)}</p>
                 </div>
             )
         },
@@ -287,18 +328,74 @@ function Users() {
             title: 'Action',
             dataIndex: 'action',
             key: 'action',
-            render: (_, record) => (
-                <div className="user-action">
-                    {record.status === 0 ? (
-                        <>
-                            <p onClick={() => resendEmail(record.username)}>Resend Email</p>
-                            <p onClick={() => revokeUser(record.username)}>Revoke</p>
-                        </>
-                    ) : (
-                        <p onClick={() => deleteUser(record.username)}>Delete user</p>
-                    )}
-                </div>
-            )
+            render: (_, record) =>
+                record.user_type !== 'root' && (
+                    <div className="user-action">
+                        {isCloud() && record.pending ? (
+                            <>
+                                <Button
+                                    width="125px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <img className="action-img-btn" src={mailIcon} alt="mailIcon" />
+                                            Resend email
+                                        </div>
+                                    }
+                                    colorType="black"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    isLoading={resendEmailLoader}
+                                    onClick={() => {
+                                        resendEmail(record.username);
+                                    }}
+                                />
+                                <Button
+                                    width="80px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                            Revoke
+                                        </div>
+                                    }
+                                    colorType="red"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    onClick={() => {
+                                        revokeUser(record.username, record.user_type);
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <Button
+                                width="95px"
+                                height="30px"
+                                placeholder={
+                                    <div className="action-button">
+                                        <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                        Delete user
+                                    </div>
+                                }
+                                colorType="red"
+                                radiusType="circle"
+                                border="gray-light"
+                                backgroundColorType={'white'}
+                                fontSize="12px"
+                                fontFamily="InterMedium"
+                                onClick={() => {
+                                    deleteUser(record.username, record.user_type);
+                                }}
+                            />
+                        )}
+                    </div>
+                )
         }
     ];
 
@@ -310,7 +407,7 @@ function Users() {
         return (
             <div className="table-header">
                 <p>User type:</p>
-                <SegmentButton value={tableType} options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
+                <SegmentButton value={tableType} size="middle" options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
             </div>
         );
     };
@@ -357,17 +454,18 @@ function Users() {
                         <Loader />
                     </div>
                 )}
-                {!isLoading && userList.length > 0 && (
+                {!isLoading && (
                     // <Virtuoso
                     //     data={userList}
                     //     overscan={100}
                     //     itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
                     // />
                     <Table
+                        className="users-table"
                         tableRowClassname="user-row"
                         title={tableHeader}
                         columns={tableType === 'Management' ? managmentColumns : clientColumns}
-                        data={tableType === 'Management' ? UsersData : ClientsData}
+                        data={tableType === 'Management' ? copyOfUserList?.management_users : copyOfUserList?.application_users}
                     />
                 )}
             </div>
@@ -394,7 +492,7 @@ function Users() {
                 }}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => closeModal(userData)} users={UsersData} />
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} />
             </Modal>
             <Modal
                 header="User connection details"
@@ -417,20 +515,25 @@ function Users() {
                 </div>
             </Modal>
             <Modal
-                header="Delete user"
-                height="120px"
-                rBtnText="Cancel"
-                lBtnText="Delete"
-                lBtnClick={() => {
-                    removeUser(userToRemove);
-                }}
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                width="520px"
+                height="240px"
+                displayButtons={false}
                 clickOutside={() => setRemoveUserModalOpen(false)}
-                rBtnClick={() => setRemoveUserModalOpen(false)}
                 open={removeUserModalOpen}
             >
-                <label>
-                    Are you sure you want to delete "<b>{userToRemove}</b>"?
-                </label>
+                <DeleteItemsModal
+                    title={userToRemove.revoke ? 'Revoke user' : 'Delete user'}
+                    desc={
+                        <>
+                            Are you sure you want to {userToRemove.revoke ? 'revoke' : 'delete'} <b>{userToRemove.username}</b>?
+                        </>
+                    }
+                    buttontxt={<>I understand, {userToRemove.revoke ? 'revoke' : 'delete'} the user</>}
+                    handleDeleteSelected={() => removeUser(userToRemove)}
+                    textToConfirm={userToRemove.revoke && 'revoke'}
+                    loader={userDeletedLoader}
+                />
                 <br />
             </Modal>
         </div>

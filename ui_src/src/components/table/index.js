@@ -13,17 +13,49 @@
 import './style.scss';
 
 import { Table as CustomTable } from 'antd';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-const Table = ({ columns, data, title, tableRowClassname }) => {
+const Table = ({ columns, data, title, tableRowClassname, className }) => {
+    const [windowHeight, setWindowHeight] = useState(window.innerHeight);
+    const [numRows, setNumRows] = useState(10);
+    useEffect(() => {
+        const handleResize = () => {
+            setWindowHeight(window.innerHeight);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+        const calculateNumRows = () => {
+            const rowHeight = 88; // Adjust this value based on your table's row height
+            const maxNumRows = Math.floor(windowHeight / rowHeight) - 1; // Subtract 1 to account for the table header
+            setNumRows(maxNumRows);
+        };
+
+        calculateNumRows();
+    }, [windowHeight]);
+
+    const itemRender = (_, type, originalElement) => {
+        if (type === 'prev') {
+            return <a className="a-link ">Previous</a>;
+        }
+        if (type === 'next') {
+            return <a className="a-link ">Next</a>;
+        }
+        return originalElement;
+    };
+
     const fieldProps = {
         columns,
         dataSource: data,
         title,
-        rowClassName: tableRowClassname
+        rowClassName: tableRowClassname,
+        className
     };
 
-    return <CustomTable {...fieldProps} />;
+    return <CustomTable {...fieldProps} pagination={{ pageSize: numRows, itemRender: itemRender, hideOnSinglePage: true, responsive: false }} />;
 };
 
 export default Table;

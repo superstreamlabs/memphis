@@ -93,6 +93,15 @@ function SideBar() {
         SetAvatarUrl(require(`../../assets/images/bots/avatar${avatarId}.svg`));
     };
 
+    const handleLogout = async () => {
+        if (isCloud()) {
+            try {
+                await httpRequest('POST', ApiEndpoints.SIGN_OUT);
+            } catch (error) {}
+        }
+        AuthService.logout();
+    };
+
     const content = (
         <div className="menu-content">
             <div className="item-wrap-header">
@@ -152,7 +161,7 @@ function SideBar() {
                     </div>
                 </div>
             </Link>
-            <div className="item-wrap" onClick={() => AuthService.logout()}>
+            <div className="item-wrap" onClick={() => handleLogout()}>
                 <div className="item">
                     <span className="icons">
                         <ExitToAppOutlined className="icons-sidebar" />

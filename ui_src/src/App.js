@@ -61,20 +61,13 @@ const App = withRouter((props) => {
     const [authCheck, setAuthCheck] = useState(true);
     const history = useHistory();
     const urlParams = new URLSearchParams(window.location.search);
-    const id_token_firebase = urlParams.get('id_token_firebase');
+    const firebase_id_token = urlParams.get('firebase_id_token');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
 
     const handleLoginWithToken = async () => {
-        if (id_token_firebase) {
+        if (firebase_id_token) {
             try {
-                const data = await httpRequest(
-                    'POST',
-                    ApiEndpoints.CLOUD_LOGIN,
-                    { id_token_firebase, encrypted_key: 'Z3plPWwu66f59MswYljsdsQqC5OPuYus3Q4ko2h7LZpThDB-PATSV9q4GPDYDxyz' },
-                    {},
-                    {},
-                    false
-                );
+                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
@@ -136,7 +129,7 @@ const App = withRouter((props) => {
     }, [isMobile]);
 
     const handleRefresh = useCallback(async (firstTime) => {
-        if (window.location.pathname === pathDomains.login || id_token_firebase) {
+        if (window.location.pathname === pathDomains.login || firebase_id_token) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);

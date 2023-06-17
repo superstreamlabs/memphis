@@ -30,9 +30,6 @@ export const ApiEndpoints = {
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
 
-    //Cloud Management
-    CLOUD_LOGIN: '/cloud/loginCloud',
-
     //Station
     CREATE_STATION: '/stations/createStation',
     REMOVE_STATION: '/stations/removeStation',
@@ -97,5 +94,8 @@ export const ApiEndpoints = {
     GENERATE_TOKEN: '/auth/authenticate',
 
     //Cloud
-    GET_BILLING_DETAILS: '/billing/getBill'
+    GET_BILLING_DETAILS: '/billing/getBill',
+    RESEND_INVITATION: '/usermgmt/resendInvitation',
+    REVOKED_INVITATION: '/usermgmt/revokeInvitation',
+    SIGN_OUT: '/usermgmt/signOut'
 };

@@ -25,8 +25,7 @@ import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageC
 import { isCloud } from '../../../services/valueConvertor';
 import SelectComponent from '../../../components/select';
 
-const CreateUserDetails = ({ createUserRef, closeModal, users }) => {
-    const usernames = users?.map((user) => user.username);
+const CreateUserDetails = ({ createUserRef, closeModal }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
@@ -224,22 +223,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, users }) => {
                     )}
                     {formFields.user_type === 'application' && (
                         <>
-                            <Form.Item name="owner">
-                                <div className="field owner">
-                                    <p className="field-title">Owner</p>
-                                    <SelectComponent
-                                        value={formFields.owner}
-                                        options={usernames}
-                                        onChange={(e) => updateFormState('owner', e)}
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        radiusType="semi-round"
-                                        height="40px"
-                                        popupClassName="select-options"
-                                    />
-                                </div>
-                            </Form.Item>
                             <Form.Item name="description">
                                 <div className="field description">
                                     <p className="field-title">Description</p>

@@ -38,6 +38,6 @@ export const K8S_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/kube
 
 export const CLOUD_URL = isCloud()
     ? window.location.href?.includes('cloud-staging') || window.location.href?.includes('localhost')
-        ? 'https://memphis.otabekgh.uz/sign-in/'
+        ? 'http://localhost:10005/sign-up/'
         : 'https://cloud.memphis.dev'
     : null;
