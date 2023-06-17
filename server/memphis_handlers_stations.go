@@ -1134,12 +1134,6 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	err = db.DeleteStation(stationName.Ext(), station.TenantName)
-	if err != nil {
-		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
-		return
-	}
 	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
