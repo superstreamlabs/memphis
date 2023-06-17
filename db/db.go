@@ -144,12 +144,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(name),
-		UNIQUE(username, tenant_name),
-		pending BOOL NOT NULL DEFAULT false,
-		team VARCHAR NOT NULL DEFAULT '',
-		position VARCHAR NOT NULL DEFAULT '',
-		owner VARCHAR NOT NULL DEFAULT '',
-		description VARCHAR NOT NULL DEFAULT ''
+		UNIQUE(username, tenant_name)
 		);`
 
 	alterConfigurationsTable := `
