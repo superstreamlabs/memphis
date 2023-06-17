@@ -1074,10 +1074,6 @@ func SetCors(router *gin.Engine) {
 	}))
 }
 
-func validateTenantName(tenantName string) error {
-	return nil
-}
-
 func (th TenantHandler) CreateTenant(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }

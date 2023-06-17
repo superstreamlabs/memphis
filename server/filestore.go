@@ -281,10 +281,6 @@ func newFileStore(fcfg FileStoreConfig, cfg StreamConfig) (*fileStore, error) {
 }
 
 // ** added by memphis
-func newFileStoreMemphis(fcfg FileStoreConfig, cfg StreamConfig, account *Account) (*fileStore, error) {
-	return newFileStoreWithCreatedMemphis(fcfg, cfg, time.Now().UTC(), nil, account)
-}
-
 func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen, account *Account) (*fileStore, error) {
 	if cfg.Name == _EMPTY_ {
 		return nil, fmt.Errorf("name required")
@@ -380,7 +376,6 @@ func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, crea
 
 	return fs, nil
 }
-
 // added by memphis **
 
 func newFileStoreWithCreated(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen) (*fileStore, error) {
