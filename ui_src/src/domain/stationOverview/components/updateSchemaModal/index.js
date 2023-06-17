@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import typeIcon from '../../../../assets/images/typeIcon.svg';
@@ -32,13 +32,13 @@ loader.config({ monaco });
 
 const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => {
     const [schemaDetails, setSchemaDetails] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [, setIsLoading] = useState(false);
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [activeVersion, setActiveVersion] = useState();
     const [currentVersion, setCurrentversion] = useState();
     const [isDiff, setIsDiff] = useState('Yes');
 
-    const getUpdateSchema = async () => {
+    const getUpdateSchema = useCallback(async () => {
         try {
             setIsLoading(true);
             const data = await httpRequest('GET', `${ApiEndpoints.GET_UPDATE_SCHEMA}?station_name=${stationName}`);
@@ -51,11 +51,11 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
             }
         } catch (error) {}
         setIsLoading(false);
-    };
+    },[stationName]);
 
     useEffect(() => {
         getUpdateSchema();
-    }, []);
+    }, [getUpdateSchema]);
 
     const useSchema = async () => {
         try {
@@ -73,7 +73,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
         <div className="update-schema-modal-container">
             <div className="scrollable-wrapper">
                 <div className="schema-name">
-                    <img src={schemaItemIcon} />
+                    <img src={schemaItemIcon}  alt="schema item icon"/>
                     <div className="name-wrapper">
                         <p className="title">Schema name</p>
                         <p className="name">{schemaSelected}</p>

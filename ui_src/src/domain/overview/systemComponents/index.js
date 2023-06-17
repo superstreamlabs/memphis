@@ -13,7 +13,7 @@
 
 import './style.scss';
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import SysContainers from './sysContainers';
 import Component from './components/component';
 import { Context } from '../../../hooks/store';
@@ -21,7 +21,7 @@ import { Tree } from 'antd';
 import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [expandedNodes, setExpandedNodes] = useState(['0-0']);
 
     const getBrokers = (comp) => {

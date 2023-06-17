@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import StatusIndication from '../../../../components/indication';
 
 const Producer = ({ data }) => {

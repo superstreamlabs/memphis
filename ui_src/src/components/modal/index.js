@@ -58,7 +58,7 @@ const TransitionsModal = ({
         return () => {
             document.removeEventListener('keydown', keyDownHandler);
         };
-    }, [open]);
+    }, [displayButtons, onPressEnter, open, rBtnClick]);
 
     return (
         <Modal

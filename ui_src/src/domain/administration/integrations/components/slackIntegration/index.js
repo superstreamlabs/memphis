@@ -34,7 +34,7 @@ const SlackIntegration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const slackConfiguration = INTEGRATION_LIST['Slack'];
     const [creationForm] = Form.useForm();
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 'slack',
         ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
@@ -265,7 +265,7 @@ const SlackIntegration = ({ close, value }) => {
                                 <>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={poisionAlertIcon} />
+                                            <img src={poisionAlertIcon} alt="poision alert" />
                                             <div className="name-des">
                                                 <p>New unacked message</p>
                                                 <span>
@@ -283,7 +283,7 @@ const SlackIntegration = ({ close, value }) => {
                                     </div>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={schemaAlertIcon} />
+                                            <img src={schemaAlertIcon} alt="schema alert icon" />
                                             <div className="name-des">
                                                 <p>Schema validation failure</p>
                                                 <span>Triggered once a client fails in schema validation</span>
@@ -300,7 +300,7 @@ const SlackIntegration = ({ close, value }) => {
                                     </div>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={disconAlertIcon} />
+                                            <img src={disconAlertIcon} alt="disconnect icon"/>
                                             <div className="name-des">
                                                 <p>Disconnected clients</p>
                                                 <span>Triggered once a producer/consumer get disconnected</span>

@@ -34,7 +34,7 @@ function Administration({ step }) {
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'administration' });
-    }, []);
+    }, [dispatch]);
 
     const getComponent = () => {
         switch (selectedMenuItem) {

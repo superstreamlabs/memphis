@@ -49,7 +49,7 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
         return () => {
             document.removeEventListener('keydown', keyDownHandler);
         };
-    }, []);
+    }, [apply]);
 
     const onChange = (key) => {
         setActiveKey(key);
@@ -74,6 +74,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                 if (filter[filterGroup].fields[filterField].value === '' && value !== '') updatedCounter++;
                 else if (filter[filterGroup].fields[filterField].value !== '' && value === '') updatedCounter--;
                 filter[filterGroup].fields[filterField].value = value;
+                break;
+            default:
                 break;
         }
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });
@@ -122,6 +124,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                         onChange={(e) => updateChoice(filterGroupIndex, e.target.value)}
                     />
                 );
+            default:
+                return null;
         }
     };
 

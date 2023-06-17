@@ -15,7 +15,6 @@ import './style.scss';
 import React, { useContext, useEffect, useState } from 'react';
 
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
-import Reducer from '../../../hooks/reducer';
 import { StationStoreContext } from '../../..';
 import { parsingDate } from '../../../../../services/valueConvertor';
 
@@ -29,7 +28,7 @@ const GenericList = (props) => {
         if (tab === 0) {
             setRowsData(stationState?.stationSocketData?.audit_logs);
         }
-    }, [stationState]);
+    }, [stationState, tab]);
 
     return (
         <div className="generic-list-wrapper">

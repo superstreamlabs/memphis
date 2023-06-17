@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 
 import integrated from '../../../../../assets/images/integrated.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
@@ -26,23 +26,24 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 
 const IntegrationItem = ({ value }) => {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrateValue, setIntegrateValue] = useState({});
 
     const ref = useRef();
     ref.current = integrateValue;
+    const checkIfUsed = useCallback(() => {
+        let index = state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === value?.name);
+        setIntegrateValue(state.integrationsList[index]);
+    },[state.integrationsList, value?.name]);
 
     useEffect(() => {
         if (state.integrationsList?.length > 0) {
             checkIfUsed();
         }
-    }, [state?.integrationsList]);
+    }, [checkIfUsed, state.integrationsList]);
 
-    const checkIfUsed = () => {
-        let index = state.integrationsList?.findIndex((integration) => capitalizeFirst(integration.name) === value?.name);
-        setIntegrateValue(state.integrationsList[index]);
-    };
+
 
     const modalContent = () => {
         switch (value?.name) {
@@ -102,7 +103,7 @@ const IntegrationItem = ({ value }) => {
                 {value?.banner}
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
                     <div className="integrate-icon">
-                        <img src={integrated} />
+                        <img src={integrated} alt="integrated" />
                         <p>Integrated</p>
                     </div>
                 )}

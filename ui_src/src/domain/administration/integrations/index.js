@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState } from 'react';
+import React, { useEffect, useContext, useState, useCallback } from 'react';
 
 import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
 import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
@@ -31,16 +31,25 @@ import Tag from '../../../components/tag';
 import Loader from '../../../components/loader';
 
 const Integrations = () => {
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrationRequest, setIntegrationRequest] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [filterList, setFilterList] = useState(INTEGRATION_LIST);
     const [imagesLoaded, setImagesLoaded] = useState(false);
 
+    const getallIntegration = useCallback(async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_INTEGRATION);
+            dispatch({ type: 'SET_INTEGRATIONS', payload: data || [] });
+        } catch (err) {
+            return;
+        }
+    },[dispatch]);
+
     useEffect(() => {
         getallIntegration();
-    }, []);
+    }, [getallIntegration]);
 
     useEffect(() => {
         const images = [];
@@ -78,14 +87,6 @@ const Integrations = () => {
         }
     }, [categoryFilter]);
 
-    const getallIntegration = async () => {
-        try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_INTEGRATION);
-            dispatch({ type: 'SET_INTEGRATIONS', payload: data || [] });
-        } catch (err) {
-            return;
-        }
-    };
     const handleSendRequest = async () => {
         try {
             await httpRequest('POST', ApiEndpoints.REQUEST_INTEGRATION, { request_content: integrationRequest });
@@ -139,7 +140,7 @@ const Integrations = () => {
                         filterList[integration].comingSoon ? (
                             <div key={filterList[integration].name} className="cloud-wrapper">
                                 <div className="dark-background">
-                                    <img src={cloudeBadge} />
+                                    <img src={cloudeBadge} alt="cloud badge"/>
                                     <div className="cloud-icon">
                                         <CloudQueueRounded />
                                     </div>
@@ -149,7 +150,7 @@ const Integrations = () => {
                         ) : filterList[integration].experimental ? (
                             <div key={filterList[integration].name}>
                                 <div className="experimental-badge">
-                                    <img src={experimentalIcon} />
+                                    <img src={experimentalIcon} alt="experimental icon" />
                                 </div>
                                 <IntegrationItem key={filterList[integration].name} value={filterList[integration]} />
                             </div>

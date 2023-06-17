@@ -24,17 +24,15 @@
 
 import './style.scss';
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
-import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
 import { convertBytes } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
-import DataNotFound from '../../../assets/images/dataNotFound.svg';
 import pathDomains from '../../../router';
 
 import { Context } from '../../../hooks/store';
@@ -83,7 +81,7 @@ const getDataset = (dsName, readWrite, hidden) => {
 };
 
 function Throughput() {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [throughputType, setThroughputType] = useState('write');
     const [selectedComponent, setSelectedComponent] = useState('total');
     const [selectOptions, setSelectOptions] = useState([]);
@@ -102,18 +100,18 @@ function Throughput() {
     //     }
     // });
 
-    const initiateDataState = () => {
+    const initiateDataState = useCallback(() => {
         let dataSets = [];
         selectOptions.forEach((selectOption, i) => {
             dataSets.push(getDataset(selectOption.name, 'write', i !== 0));
             dataSets.push(getDataset(selectOption.name, 'read', true));
         });
         setData({ datasets: dataSets });
-    };
+    }, [selectOptions]);
 
     useEffect(() => {
         if (data?.datasets?.length === 0 && selectOptions?.length > 0) initiateDataState();
-    }, [selectOptions]);
+    }, [data?.datasets?.length, initiateDataState, selectOptions]);
 
     useEffect(() => {
         const foundItemIndex = selectOptions?.findIndex((item) => item.name === selectedComponent);
@@ -128,7 +126,7 @@ function Throughput() {
                 data.datasets[2 * i + 1].hidden = true;
             }
         }
-    }, [throughputType, selectedComponent]);
+    }, [throughputType, selectedComponent, selectOptions, data.datasets]);
 
     const getSelectComponentList = () => {
         const components = state?.monitor_data?.brokers_throughput

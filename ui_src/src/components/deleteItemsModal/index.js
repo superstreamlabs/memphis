@@ -29,7 +29,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
         return () => {
             document.removeEventListener('keydown', keyDownHandler);
         };
-    }, [confirm]);
+    }, [confirm, handleDeleteSelected, textToConfirm]);
 
     return (
         <div className="delete-modal-wrapper">

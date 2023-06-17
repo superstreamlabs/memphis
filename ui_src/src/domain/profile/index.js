@@ -34,7 +34,7 @@ function Profile() {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
         setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
-    }, []);
+    }, [dispatch, state?.userData?.avatar_id]);
 
     const removeMyUser = async () => {
         try {

@@ -28,7 +28,7 @@ const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 's3',
         keys: {

@@ -19,7 +19,7 @@ import SchemaList from './components/schemaList';
 import CreateSchema from './components/createSchema';
 
 function SchemaManagment() {
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const [schemaAction, setSchemaAction] = useState('');
 
     useEffect(() => {
@@ -27,7 +27,7 @@ function SchemaManagment() {
         const url = window.location.href;
         const schema = url.split('schemaverse/')[1];
         setSchemaAction(schema);
-    }, []);
+    }, [dispatch]);
 
     const createNew = (e) => {
         if (e) setSchemaAction('create');

@@ -61,7 +61,6 @@ function ImgUploader() {
 
     const deleteLogo = async ({ onSuccess, onError }) => {
         try {
-            const data = await httpRequest('DELETE', ApiEndpoints.REMOVE_COMPANY_LOGO);
             localStorage.setItem(LOCAL_STORAGE_COMPANY_LOGO, null);
             dispatch({ type: 'SET_COMPANY_LOGO', payload: null });
             setFileList([]);

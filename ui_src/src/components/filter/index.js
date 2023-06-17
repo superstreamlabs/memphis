@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
+import React, { createContext, useContext, useEffect, useReducer, useState, useCallback } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Popover } from 'antd';
 
@@ -40,158 +40,31 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
     const [filterTerms, setFilterTerms] = useState([]);
     const [searchInput, setSearchInput] = useState('');
 
-    useEffect(() => {
-        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['', 'empty'] });
-    }, [filterComponent]);
-
-    useEffect(() => {
-        if (filterState.isOpen && filterState.counter === 0) {
-            getFilterDetails();
-        }
-    }, [filterState.isOpen]);
-
-    useEffect(() => {
-        filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
-    }, [filterFields]);
-
-    useEffect(() => {
-        handleFilter();
-    }, [searchInput, filterTerms, state?.stationList, state?.schemaList]);
-
-    const getFilterDetails = async () => {
-        try {
-            const res = await httpRequest('GET', `${ApiEndpoints.GET_FILTER_DETAILS}?route=${filterComponent}`);
-            if (res) buildFilter(res);
-        } catch (err) {
-            return;
-        }
-    };
-
-    useEffect(() => {
-        let sub;
-        let jc;
-        let sc;
-        switch (filterComponent) {
-            case 'stations':
-                jc = JSONCodec();
-                sc = StringCodec();
-                try {
-                    (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
-                    })();
-                } catch (err) {
-                    return;
-                }
-                setTimeout(async () => {
-                    if (sub) {
-                        (async () => {
-                            for await (const msg of sub) {
-                                let data = jc.decode(msg.data);
-                                data?.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
-                                dispatch({ type: 'SET_STATION_LIST', payload: data });
-                            }
-                        })();
-                    }
-                }, 1000);
-
-                return () => {
-                    sub?.unsubscribe();
-                };
-            case 'schemaverse':
-                jc = JSONCodec();
-                sc = StringCodec();
-                try {
-                    (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
-                    })();
-                } catch (err) {
-                    return;
-                }
-                setTimeout(async () => {
-                    if (sub) {
-                        (async () => {
-                            for await (const msg of sub) {
-                                let data = jc.decode(msg.data);
-                                dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
-                            }
-                        })();
-                    }
-                }, 1000);
-
-                return () => {
-                    sub?.unsubscribe();
-                };
-            default:
-                return;
-        }
-    }, [state.socket]);
-
-    const handleSearch = (e) => {
-        setSearchInput(e.target.value);
-    };
-
-    const buildFilter = (rawFilterDetails) => {
-        switch (filterComponent) {
-            case 'stations':
-                drawStationsFilter(rawFilterDetails);
-                return;
-            case 'syslogs':
-                drawLogsFilter(rawFilterDetails);
-                return;
-            case 'schemaverse':
-                drawSchemaFilter(rawFilterDetails);
-                return;
-            default:
-                return;
-        }
-    };
-
-    const drawStationsFilter = (rawFilterDetails) => {
+    const drawLogsFilter = useCallback((rawFilterDetails) => {
         let filteredFields = [];
-        if (rawFilterDetails?.tags?.length > 0) {
-            const tagFilter = {
-                name: 'tags',
-                value: 'Tags',
-                labelType: labelType.BADGE,
-                filterType: filterType.CHECKBOX,
-                fields: rawFilterDetails.tags
-            };
-            filteredFields.push(tagFilter);
-        }
-
-        const createdFilter = {
-            name: 'created',
-            value: 'Created By',
-            labelType: labelType.CIRCLEDLETTER,
-            filterType: filterType.CHECKBOX,
-            fields: rawFilterDetails?.users?.map((user) => {
-                return {
-                    name: user,
-                    color: CircleLetterColor[user[0]?.toUpperCase()],
-                    checked: false
-                };
+        const typeFilter = {
+            name: 'type',
+            value: 'Type',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.type?.map((type) => {
+                return { name: type };
             })
         };
-        filteredFields.push(createdFilter);
-
-        const storageTypeFilter = {
-            name: 'storage',
-            value: 'Storage Type',
-            filterType: filterType.CHECKBOX,
-            labelType: '',
-            fields: rawFilterDetails?.storage?.map((s) => {
-                return { name: s, value: s };
+        const sourceFilter = {
+            name: 'source',
+            value: 'Source',
+            filterType: filterType.RADIOBUTTON,
+            radioValue: -1,
+            fields: rawFilterDetails?.source?.map((type) => {
+                return { name: type };
             })
         };
-        filteredFields.push(storageTypeFilter);
+        filteredFields.push(typeFilter, sourceFilter);
         setFilterFields(filteredFields);
-    };
+    },[]);
 
-    const drawSchemaFilter = (rawFilterDetails) => {
+    const drawSchemaFilter = useCallback((rawFilterDetails) => {
         let filteredFields = [];
         if (rawFilterDetails?.tags?.length > 0) {
             const tagFilter = {
@@ -241,37 +114,77 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         };
         filteredFields.push(usageFilter);
         setFilterFields(filteredFields);
-    };
+    },[]);
 
-    const drawLogsFilter = (rawFilterDetails) => {
+
+    const drawStationsFilter = useCallback((rawFilterDetails) => {
         let filteredFields = [];
-        const typeFilter = {
-            name: 'type',
-            value: 'Type',
-            filterType: filterType.RADIOBUTTON,
-            radioValue: -1,
-            fields: rawFilterDetails?.type?.map((type) => {
-                return { name: type };
+        if (rawFilterDetails?.tags?.length > 0) {
+            const tagFilter = {
+                name: 'tags',
+                value: 'Tags',
+                labelType: labelType.BADGE,
+                filterType: filterType.CHECKBOX,
+                fields: rawFilterDetails.tags
+            };
+            filteredFields.push(tagFilter);
+        }
+
+        const createdFilter = {
+            name: 'created',
+            value: 'Created By',
+            labelType: labelType.CIRCLEDLETTER,
+            filterType: filterType.CHECKBOX,
+            fields: rawFilterDetails?.users?.map((user) => {
+                return {
+                    name: user,
+                    color: CircleLetterColor[user[0]?.toUpperCase()],
+                    checked: false
+                };
             })
         };
-        const sourceFilter = {
-            name: 'source',
-            value: 'Source',
-            filterType: filterType.RADIOBUTTON,
-            radioValue: -1,
-            fields: rawFilterDetails?.source?.map((type) => {
-                return { name: type };
+        filteredFields.push(createdFilter);
+
+        const storageTypeFilter = {
+            name: 'storage',
+            value: 'Storage Type',
+            filterType: filterType.CHECKBOX,
+            labelType: '',
+            fields: rawFilterDetails?.storage?.map((s) => {
+                return { name: s, value: s };
             })
         };
-        filteredFields.push(typeFilter, sourceFilter);
+        filteredFields.push(storageTypeFilter);
         setFilterFields(filteredFields);
-    };
+    },[]);
 
-    const flipOpen = () => {
-        filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
-    };
+    const buildFilter = useCallback((rawFilterDetails) => {
+        switch (filterComponent) {
+            case 'stations':
+                drawStationsFilter(rawFilterDetails);
+                return;
+            case 'syslogs':
+                drawLogsFilter(rawFilterDetails);
+                return;
+            case 'schemaverse':
+                drawSchemaFilter(rawFilterDetails);
+                return;
+            default:
+                return;
+        }
+    },[drawLogsFilter, drawSchemaFilter, drawStationsFilter, filterComponent]);
 
-    const handleFilter = () => {
+    const getFilterDetails = useCallback(async () => {
+        try {
+            const res = await httpRequest('GET', `${ApiEndpoints.GET_FILTER_DETAILS}?route=${filterComponent}`);
+            if (res) buildFilter(res);
+        } catch (err) {
+            return;
+        }
+    },[buildFilter, filterComponent]);
+
+
+    const handleFilter = useCallback(() => {
         let objTags = [];
         let objCreated = [];
         let objStorage = [];
@@ -334,6 +247,95 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             default:
                 return;
         }
+    },[dispatch, filterComponent, filterTerms, searchInput, state?.schemaList, state?.stationList]);
+
+    useEffect(() => {
+        if (filterComponent === 'syslogs' && state?.logsFilter !== '') dispatch({ type: 'SET_LOG_FILTER', payload: ['', 'empty'] });
+    }, [dispatch, filterComponent, state?.logsFilter]);
+
+    useEffect(() => {
+        if (filterState.isOpen && filterState.counter === 0) {
+            getFilterDetails();
+        }
+    }, [filterState.counter, filterState.isOpen, getFilterDetails]);
+
+    useEffect(() => {
+        filterFields.length > 0 && filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filterFields });
+    }, [filterFields]);
+
+    useEffect(() => {
+        handleFilter();
+    }, [searchInput, filterTerms, state.stationList, state.schemaList, handleFilter]);
+
+    useEffect(() => {
+        let sub;
+        let jc;
+        let sc;
+        switch (filterComponent) {
+            case 'stations':
+                jc = JSONCodec();
+                sc = StringCodec();
+                try {
+                    (async () => {
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
+                    })();
+                } catch (err) {
+                    return;
+                }
+                setTimeout(async () => {
+                    if (sub) {
+                        (async () => {
+                            for await (const msg of sub) {
+                                let data = jc.decode(msg.data);
+                                data?.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
+                                dispatch({ type: 'SET_STATION_LIST', payload: data });
+                            }
+                        })();
+                    }
+                }, 1000);
+
+                return () => {
+                    sub?.unsubscribe();
+                };
+            case 'schemaverse':
+                jc = JSONCodec();
+                sc = StringCodec();
+                try {
+                    (async () => {
+                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
+                    })();
+                } catch (err) {
+                    return;
+                }
+                setTimeout(async () => {
+                    if (sub) {
+                        (async () => {
+                            for await (const msg of sub) {
+                                let data = jc.decode(msg.data);
+                                dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
+                            }
+                        })();
+                    }
+                }, 1000);
+
+                return () => {
+                    sub?.unsubscribe();
+                };
+            default:
+                return;
+        }
+    }, [dispatch, filterComponent, state.socket]);
+
+    const handleSearch = (e) => {
+        setSearchInput(e.target.value);
+    };
+
+    const flipOpen = () => {
+        filterDispatch({ type: 'SET_IS_OPEN', payload: !filterState.isOpen });
     };
 
     const handleApply = () => {
@@ -404,10 +406,16 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
             switch (filterGroup.filterType) {
                 case filterType.CHECKBOX:
                     filterGroup.fields.map((field) => (field.checked = false));
+                // eslint-disable-next-line no-fallthrough
                 case filterType.DATE:
                     filterGroup.fields.map((field) => (field.value = ''));
+                // eslint-disable-next-line no-fallthrough
                 case filterType.RADIOBUTTON:
                     filterGroup.radioValue = -1;
+                // eslint-disable-next-line no-fallthrough
+                default:
+                    // eslint-disable-next-line array-callback-return
+                    return;
             }
         });
         filterDispatch({ type: 'SET_FILTER_FIELDS', payload: filter });

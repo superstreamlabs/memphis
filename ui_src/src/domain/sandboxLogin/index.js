@@ -32,7 +32,7 @@ import { GOOGLE_CLIENT_ID, GITHUB_CLIENT_ID, REDIRECT_URI, ENVIRONMENT, WS_PREFI
 import { connect } from 'nats.ws';
 
 const SandboxLogin = (props) => {
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
     const history = useHistory();
     const [loginForm] = Form.useForm(); // form controller
     const [isLoading, setisLoading] = useState(false);

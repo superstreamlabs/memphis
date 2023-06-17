@@ -16,7 +16,7 @@ import pathDomains from '../../../../router';
 import { CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import draft7MetaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 import draft6MetaSchema from 'ajv/dist/refs/json-schema-draft-06.json';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { validate, parse, buildASTSchema } from 'graphql';
 import Schema from 'protocol-buffers-schema';
 import GenerateSchema from 'generate-schema';
@@ -39,7 +39,6 @@ import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
 import Button from '../../../../components/button';
-import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import AttachStationModal from '../attachStationModal';
@@ -182,27 +181,23 @@ function CreateSchema({ createNew }) {
         tags: [],
         used_stations: []
     });
-    const [state, dispatch] = useContext(Context);
     const ajv = new Ajv2019();
 
-    const updateFormState = (field, value) => {
-        let updatedValue = { ...formFields };
-        updatedValue[field] = value;
-        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+    const updateFormState = useCallback((field, value) => {
+        setFormFields((formFields) => {
+            formFields[field] = value;
+            return ({ ...formFields })
+        });
         if (field === 'schema_content') {
             setValidateSuccess('');
             setValidateError('');
         }
-    };
+    },[]);
 
     useEffect(() => {
         updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
         return () => {};
-    }, []);
-
-    useEffect(() => {
-        updateFormState('schema_content', SchemaEditorExample[formFields?.type]?.value);
-    }, [formFields?.type]);
+    }, [formFields?.type, updateFormState]);
 
     const goBack = () => {
         history.push(`${pathDomains.schemaverse}/list`);
@@ -448,7 +443,7 @@ function CreateSchema({ createNew }) {
                     <Form.Item name="tags">
                         <div className="schema-field tags">
                             <div className="title-icon-img">
-                                <img className="icon" src={tagsIcon} />
+                                <img className="icon" src={tagsIcon} alt="tag icon" />
                                 <div className="title-desc">
                                     <p className="field-title">Tags</p>
                                     <p className="desc">Tags will help you control, group, search, and filter your different entities</p>

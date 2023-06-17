@@ -64,7 +64,7 @@ function SideBar() {
                 dispatch({ type: 'SET_COMPANY_LOGO', payload: data.image });
             }
         } catch (error) {}
-    }, []);
+    }, [dispatch]);
 
     const getSystemVersion = useCallback(async () => {
         try {
@@ -77,13 +77,13 @@ function SideBar() {
                 dispatch({ type: 'CURRENT_VERSION', payload: system_version });
             }
         } catch (error) {}
-    }, []);
+    }, [dispatch]);
 
     useEffect(() => {
         getCompanyLogo().catch(console.error);
         getSystemVersion().catch(console.error);
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
-    }, []);
+    }, [getCompanyLogo, getSystemVersion, state?.userData?.avatar_id]);
 
     useEffect(() => {
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
@@ -220,7 +220,7 @@ function SideBar() {
             <div className="bottom-icons">
                 <TooltipComponent text="Integrations" placement="right">
                     <div className="integration-icon-wrapper" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
-                        <img src={integrationNavIcon} />
+                        <img src={integrationNavIcon} alt="integration nav icon" />
                     </div>
                 </TooltipComponent>
                 <Popover

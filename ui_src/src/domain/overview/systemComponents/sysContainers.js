@@ -57,7 +57,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
             {(!component.healthy || !metricsEnabled) && (
                 <div className="warn-msg">
                     <div className="msg-wrapper">
-                        <img src={errorindication} />
+                        <img src={errorindication} alt="error indication icon"/>
                         {!component.healthy ? (
                             k8sEnv ? (
                                 <p>Pod {index + 1} is down</p>
@@ -67,7 +67,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
                         ) : (
                             <p>
                                 No metrics server found.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/dashboard-gui/overview#fix-no-metrics-server-found" target="_blank">
+                                <a className="learn-more" href="https://docs.memphis.dev/memphis/dashboard-gui/overview#fix-no-metrics-server-found" target="_blank" rel="noreferrer">
                                     Learn more
                                 </a>
                             </p>

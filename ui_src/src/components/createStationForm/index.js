@@ -156,9 +156,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         getAllSchemas();
         getIntegration();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
-        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
+        if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef?.formFieldsCreateStation?.retention_type);
         createStationFormRef.current = onFinish;
-    }, [createStationFormRef, getStarted, getStartedStateRef?.completedSteps, getStartedStateRef.formFieldsCreateStation.retention_type, onFinish]);
+    }, [createStationFormRef, getStarted, getStartedStateRef?.completedSteps, getStartedStateRef?.formFieldsCreateStation?.retention_type, onFinish]);
 
     const getIdempotencyValue = (formFields) => {
         switch (formFields.idempotency_type) {
