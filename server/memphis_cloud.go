@@ -1425,3 +1425,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 func (s *Server) RefreshFirebaseFunctionsKey() {
 }
+
+func shouldPersistSysLogs() bool {
+	return true
+}
