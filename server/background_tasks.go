@@ -266,6 +266,7 @@ func (s *Server) StartBackgroundTasks() error {
 		return err
 	}
 	go s.UploadTenantUsageToDB()
+	go s.InitRefreshFirebaseFunctionsKey()
 	go s.RefreshFirebaseFunctionsKey()
 	return nil
 }
