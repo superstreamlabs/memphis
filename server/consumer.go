@@ -3262,13 +3262,15 @@ func (o *consumer) loopAndGatherMsgs(qch chan struct{}) {
 	// Deliver all the msgs we have now, once done or on a condition, we wait for new ones.
 	for {
 		var (
-			pmsg       *jsPubMsg
-			dc         uint64
-			dsubj      string
-			ackReply   string
-			delay      time.Duration
-			sz         int
+			pmsg     *jsPubMsg
+			dc       uint64
+			dsubj    string
+			ackReply string
+			delay    time.Duration
+			sz       int
+			// *** Added by Memphis
 			redelivery bool
+			// Added by Memphis ***
 		)
 		o.mu.Lock()
 		// consumer is closed when mset is set to nil.
@@ -3378,18 +3380,13 @@ func (o *consumer) loopAndGatherMsgs(qch chan struct{}) {
 
 		// Do actual delivery.
 		o.deliverMsg(dsubj, ackReply, pmsg, dc, rp)
-		if !strings.Contains(string(dsubj), "$memphis") {
-			tenantName := o.acc.GetName()
-			if tenantName != "$SYS" && tenantName != "n/a" && tenantName != "" {
-				size := int64(len(pmsg.StoreMsg.msg)) + int64(len(pmsg.StoreMsg.hdr))
-				if redelivery {
-					IncrementEventCounter(tenantName, "redelivered", 1)
-				} else {
-					IncrementEventCounter(tenantName, "consumed", 1)
-				}
-				IncrementEventCounter(tenantName, "size", size)
-			}
+		// *** added by memphis
+		if redelivery {
+			IncrementEventCounter(o.acc.GetName(), "redelivered", 0, 1, dsubj, pmsg.StoreMsg.msg, pmsg.StoreMsg.hdr)
+		} else {
+			IncrementEventCounter(o.acc.GetName(), "consumed", 0, 1, dsubj, pmsg.StoreMsg.msg, pmsg.StoreMsg.hdr)
 		}
+		// added by memphis ***
 
 		// Reset our idle heartbeat timer if set.
 		if hb != nil {
