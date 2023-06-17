@@ -939,7 +939,8 @@ func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
 
-func IncrementEventCounter(tenantName string, counterType string, amount int64) {}
+func IncrementEventCounter(tenantName string, eventType string, size int64, amount int64, subj string, msg []byte, hdr []byte) {
+}
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	var body models.EditClusterConfigSchema

@@ -1341,8 +1341,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			}
 			size += int64(dlsMsg.MessageDetails.Size)
 		}
-		IncrementEventCounter(station.TenantName, "dls", int64(len(dlsMsg.PoisonedCgs)))
-		IncrementEventCounter(station.TenantName, "size", size)
+		IncrementEventCounter(station.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
