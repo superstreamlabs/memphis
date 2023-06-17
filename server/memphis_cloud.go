@@ -1427,5 +1427,5 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) RefreshFirebaseFUnctionKey() {
+func (s *Server) RefreshFirebaseFunctionsKey() {
 }
