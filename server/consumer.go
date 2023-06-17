@@ -2996,7 +2996,7 @@ var (
 // Get next available message from underlying store.
 // Is partition aware and redeliver aware.
 // Lock should be held.
-func (o *consumer) getNextMsg() (*jsPubMsg, uint64, bool, error) {
+func (o *consumer) getNextMsg() (*jsPubMsg, uint64, bool, error) { // *** bool (redelivery) returned value added by memphis
 	redelivery := false
 	if o.mset == nil || o.mset.store == nil {
 		return nil, 0, redelivery, errBadConsumer
