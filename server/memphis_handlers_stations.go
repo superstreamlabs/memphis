@@ -144,6 +144,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 
 	DeleteTagsFromStation(station.ID)
 
+	err = db.DeleteDLSMessagesByStationID(station.ID)
+	if err != nil {
+		return err
+	}
+
 	err = db.DeleteProducersByStationID(station.ID)
 	if err != nil {
 		return err
@@ -1124,12 +1129,13 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	err = db.DeleteStation(stationName.Ext(), station.TenantName)
+	err = db.DeleteStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
 		return
 	}
+
 	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())

@@ -144,12 +144,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(name),
-		UNIQUE(username, tenant_name),
-		pending BOOL NOT NULL DEFAULT false,
-		team VARCHAR NOT NULL DEFAULT '',
-		position VARCHAR NOT NULL DEFAULT '',
-		owner VARCHAR NOT NULL DEFAULT '',
-		description VARCHAR NOT NULL DEFAULT ''
+		UNIQUE(username, tenant_name)
 		);`
 
 	alterConfigurationsTable := `
@@ -1706,8 +1701,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = ANY($1)
 	AND (is_deleted = false)
 	AND tenant_name=$2`
@@ -1733,10 +1727,8 @@ func DeleteStation(name string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = $1
-	AND (is_deleted = false)
 	AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_station", query)
 	if err != nil {
@@ -2341,7 +2333,7 @@ func DeleteProducersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM producers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
 	if err != nil {
 		return err
@@ -2710,8 +2702,28 @@ func DeleteConsumersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM consumers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteDLSMessagesByStationID(stationId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM dls_messages WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_messages_from_chosen_dls", query)
 	if err != nil {
 		return err
 	}
@@ -4023,6 +4035,34 @@ func GetUserForLogin(username string) (bool, models.User, error) {
 		return false, models.User{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
+func GetUserForLoginByUsernameAndTenant(username, tenantname string) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 AND tenant_name = $2  AND NOT type = 'application' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login_by_username_and_tenant", query)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantname)
 	if err != nil {
 		return false, models.User{}, err
 	}
