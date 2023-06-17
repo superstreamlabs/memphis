@@ -1663,6 +1663,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	defer conn.Release()
 	query := `DELETE FROM stations
 	WHERE name = ANY($1)
+	AND (is_deleted = false)
 	AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_stations_by_names", query)
 	if err != nil {

@@ -159,11 +159,6 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = db.DeleteStation(station.Name, station.TenantName)
-	if err != nil {
-		return err
-	}
-
 	err = RemoveAllAuditLogsByStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationResources: Station " + station.Name + ": " + err.Error())
@@ -1128,6 +1123,13 @@ func (s *Server) removeStationDirectIntern(c *client,
 	}
 
 	err = removeStationResources(s, station, shouldDeleteStream)
+	if err != nil {
+		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
+		respondWithErr(globalAccountName, s, reply, err)
+		return
+	}
+
+	err = db.DeleteStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("removeStationDirectIntern: Station " + dsr.StationName + ": " + err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
