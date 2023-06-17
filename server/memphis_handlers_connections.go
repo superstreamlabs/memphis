@@ -17,7 +17,6 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
-	"os"
 
 	"errors"
 	"strings"
@@ -80,7 +79,7 @@ func handleConnectMessage(client *client) error {
 		// NATS SDK, means we extract username from the token field
 		isNativeMemphisClient = false
 		var splittedToken []string
-		if os.Getenv("USER_PASS_BASED_AUTH") == "true" {
+		if configuration.USER_PASS_BASED_AUTH {
 			splittedToken = strings.Split(client.opts.Username, userNameItemSep)
 			username = strings.ToLower(splittedToken[0])
 		} else {

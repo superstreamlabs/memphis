@@ -17,6 +17,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -26,6 +27,7 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -42,6 +44,10 @@ import (
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
+type LoginSchema struct {
+	Username string `json:"username" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -1052,10 +1058,19 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	})
 }
 
-func SetCors() cors.Config {
-	config := cors.Config{}
-	config.AllowAllOrigins = true
-	return config
+func SetCors(router *gin.Engine) {
+	router.Use(cors.New(cors.Config{
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowWildcard:    true,
+		AllowWebSockets:  true,
+		AllowFiles:       true,
+	}))
 }
 
 func validateTenantName(tenantName string) error {
@@ -1067,7 +1082,7 @@ func (th TenantHandler) CreateTenant(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) Login(c *gin.Context) {
-	var body models.LoginSchema
+	var body LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1205,8 +1220,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	avatarId := 1
+	if body.AvatarId > 0 {
+		avatarId = body.AvatarId
+	}
+
 	var password string
-	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
 			serv.Warnf("AddUser: Password was not provided for user " + username)
@@ -1221,11 +1240,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			return
 		}
 		password = string(hashedPwd)
-
-		avatarId = 1
-		if body.AvatarId > 0 {
-			avatarId = body.AvatarId
-		}
 	}
 
 	var brokerConnectionCreds string
@@ -1244,10 +1258,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
-			}
-			avatarId = 1
-			if body.AvatarId > 0 {
-				avatarId = body.AvatarId
 			}
 		} else {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
@@ -1287,7 +1297,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		"user_type":               userType,
 		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
-		"avatar_id":               body.AvatarId,
+		"avatar_id":               avatarId,
 		"broker_connection_creds": brokerConnectionCreds,
 		"position":                newUser.Position,
 		"team":                    newUser.Team,
@@ -1365,4 +1375,52 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
 	c.IndentedJSON(200, gin.H{})
+}
+
+func validateUsername(username string) error {
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
+}
+
+func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveMyUser: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	if user.UserType != "root" {
+		serv.Warnf("RemoveMyUser: Only root user can remove the entire account")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Only root user can remove the entire account"})
+		return
+	}
+
+	username := strings.ToLower(user.Username)
+	tenantName := user.TenantName
+	if user.TenantName != conf.GlobalAccountName {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
+	err = removeTenantResources(tenantName)
+	if err != nil {
+		serv.Errorf("RemoveMyUser: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.Username, "user-remove-himself")
+	}
+
+	serv.Noticef("Tenant " + user.TenantName + " has been deleted")
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (s *Server) RefreshFirebaseFunctionsKey() {
 }
