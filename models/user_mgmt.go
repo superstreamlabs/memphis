@@ -58,11 +58,6 @@ type AuthenticateNatsSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type LoginSchema struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 type RemoveUserSchema struct {
 	Username string `json:"username" binding:"required"`
 }
@@ -93,8 +88,13 @@ type FilteredGenericUser struct {
 	Username        string    `json:"username"`
 	UserType        string    `json:"user_type"`
 	CreatedAt       time.Time `json:"created_at"`
-	AlreadyLoggedIn bool      `json:"already_logged_in"`
 	AvatarId        int       `json:"avatar_id"`
+	FullName        string    `json:"full_name"`
+	Pending         bool      `json:"pending"`
+	Position        string    `json:"position"`
+	Team            string    `json:"team"`
+	Owner           string    `json:"owner"`
+	Description     string    `json:"description"`
 }
 
 type FilteredApplicationUser struct {

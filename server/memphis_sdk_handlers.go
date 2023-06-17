@@ -126,12 +126,32 @@ type destroyConsumerRequest struct {
 	TenantName   string `json:"tenant_name"`
 }
 
+type CreateSchemaReq struct {
+	Name              string `json:"name"`
+	Type              string `json:"type"`
+	CreatedByUsername string `json:"created_by_username"`
+	SchemaContent     string `json:"schema_content"`
+	MessageStructName string `json:"message_struct_name"`
+}
+
+type SchemaResponse struct {
+	Err string `json:"error"`
+}
+
 func (cpr *createProducerResponse) SetError(err error) {
 	cpr.Err = err.Error()
 }
 
 func (ccr *createConsumerResponse) SetError(err error) {
 	ccr.Err = err.Error()
+}
+
+func (csresp *SchemaResponse) SetError(err error) {
+	if err != nil {
+		csresp.Err = err.Error()
+	} else {
+		csresp.Err = ""
+	}
 }
 
 func (s *Server) initializeSDKHandlers() {
@@ -159,14 +179,23 @@ func (s *Server) initializeSDKHandlers() {
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
-	// schema attachements
+	// schemas
 	s.queueSubscribe(globalAccountName, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
 	s.queueSubscribe(globalAccountName, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
+	s.queueSubscribe(globalAccountName, "$memphis_schema_creations",
+		"memphis_schema_creations_listeners_group",
+		createSchemaHandler(s))
 
+}
+
+func createSchemaHandler(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.createSchemaDirect(c, reply, copyBytes(msg))
+	}
 }
 
 func createStationHandler(s *Server) simplifiedMsgHandler {
