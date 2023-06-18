@@ -203,7 +203,7 @@ function OverView() {
                             <Throughput />
                         </div>
                         {isCloud() ? (
-                            <div className="right-side">
+                            <div className="right-side cloud">
                                 <Schemaverse />
                                 <Tags />
                                 <Integrations />

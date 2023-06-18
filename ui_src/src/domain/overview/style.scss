@@ -126,11 +126,13 @@
                 width: 33%;
                 height: 100%;
                 position: relative;
-                min-height: 590px;
+                min-height: 580px;
                 min-width: 420px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
+                display: grid;
+                align-content: space-between;
+            }
+            .cloud{
+                grid-template-rows: 49% 32% 15%;
             }
 
             .system-components-wrapper {
