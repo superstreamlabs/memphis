@@ -62,12 +62,13 @@ const App = withRouter((props) => {
     const history = useHistory();
     const urlParams = new URLSearchParams(window.location.search);
     const firebase_id_token = urlParams.get('firebase_id_token');
+    const organization_id = urlParams.get('organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
 
     const handleLoginWithToken = async () => {
         if (firebase_id_token) {
             try {
-                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token }, {}, {}, false);
+                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, organization_id }, {}, {}, false);
                 if (data) {
                     AuthService.saveToLocalStorage(data);
                     try {
