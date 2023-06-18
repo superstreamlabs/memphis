@@ -24,9 +24,9 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
             <p className="header">Billing</p>
             <p className="memphis-label">Modify environment configuration</p>
             <div className="side-menu">
-                <div className={selectedMenuItem === 'requests' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('requests')}>
-                    <img src={selectedMenuItem === 'requests' ? RequestsColor : RequestsGray} alt="requests" />
-                    Requests
+                <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
+                    <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
+                    Usage Report
                 </div>
                 {/* <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
                     <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="payments" />
