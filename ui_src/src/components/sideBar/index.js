@@ -16,7 +16,8 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
-import { SettingOutlined } from '@ant-design/icons';
+import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
+
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import LiveHelpOutlinedIcon from '@material-ui/icons/LiveHelpOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
@@ -141,7 +142,21 @@ function SideBar() {
                     <p className="item-title">Administration</p>
                 </div>
             </div>
-
+            {isCloud() && (
+                <div
+                    className="item-wrap"
+                    onClick={() => {
+                        history.push(`${pathDomains.administration}/usage`);
+                    }}
+                >
+                    <div className="item">
+                        <span className="icons">
+                            <ExceptionOutlined className="icons-sidebar" />
+                        </span>
+                        <p className="item-title">Billing</p>
+                    </div>
+                </div>
+            )}
             <Link to={{ pathname: DOC_URL }} target="_blank">
                 <div className="item-wrap" onClick={() => setPopoverOpen(false)}>
                     <div className="item">
