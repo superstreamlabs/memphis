@@ -96,7 +96,7 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) {
-	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion())
+	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion(), s.GetCustomDeploymentId())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
