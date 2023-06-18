@@ -62,11 +62,11 @@ function Administration({ step }) {
                         break;
                     }
                 }
-            case 'requests':
-                if (window.location.href.split('/requests').length > 1) {
+            case 'usage':
+                if (window.location.href.split('/usage').length > 1) {
                     return <Requests />;
                 } else {
-                    history.replace(`${pathDomains.administration}/requests`);
+                    history.replace(`${pathDomains.administration}/usage`);
                     break;
                 }
             // case 'payments':
