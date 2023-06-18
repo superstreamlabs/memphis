@@ -102,6 +102,7 @@ func Authenticate(c *gin.Context) {
 	var tokenString string
 	var err error
 	var user models.User
+	shouldCheckUser := false
 	if needToAuthenticate {
 		tokenString, err = extractToken(c.GetHeader("authorization"))
 		if err != nil || tokenString == "" {
@@ -114,6 +115,8 @@ func Authenticate(c *gin.Context) {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
+
+		shouldCheckUser = true
 	} else if path == refreshTokenRoute {
 		tokenString, err = c.Cookie("jwt-refresh-token")
 		if err != nil {
@@ -126,19 +129,23 @@ func Authenticate(c *gin.Context) {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
+
+		shouldCheckUser = true
 	}
 
-	username := strings.ToLower(user.Username)
-	tenantname := strings.ToLower(user.TenantName)
+	if shouldCheckUser {
+		username := strings.ToLower(user.Username)
+		tenantname := strings.ToLower(user.TenantName)
 
-	exists, _, err := db.GetUserByUsername(username, tenantname)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exists {
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
+		exists, _, err := db.GetUserByUsername(username, tenantname)
+		if err != nil {
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !exists {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 	}
 
 	c.Set("user", user)
