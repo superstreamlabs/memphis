@@ -43,6 +43,7 @@ type Configuration struct {
 	PRODUCTION_ENV          bool
 	PROVIDER                string
 	REGION                  string
+	INSTALLATION_SOURCE     string
 }
 
 func GetConfig() Configuration {

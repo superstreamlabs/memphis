@@ -110,6 +110,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 			analyticsParams := []analytics.EventParam{param}
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
 			analytics.SendEventWithParams("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
