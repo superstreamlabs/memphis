@@ -688,33 +688,6 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"image": image.Image})
 }
 
-func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	var body models.EditAnalyticsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	flag := "false"
-	if body.SendAnalytics {
-		flag = "true"
-	}
-
-	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
-	if err != nil {
-		serv.Errorf("EditAnalytics: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if !body.SendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-disable-analytics")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
