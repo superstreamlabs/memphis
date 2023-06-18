@@ -16,6 +16,7 @@ import (
 	"fmt"
 
 	"memphis/conf"
+	"memphis/db"
 	"memphis/models"
 
 	"strings"
@@ -98,9 +99,9 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 func Authenticate(c *gin.Context) {
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
+	var tokenString, secret string
+	var err error
 	if needToAuthenticate {
-		var tokenString string
-		var err error
 		tokenString, err = extractToken(c.GetHeader("authorization"))
 
 		if err != nil || tokenString == "" {
@@ -108,28 +109,36 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-			return
-		}
-
-		c.Set("user", user)
+		secret = configuration.JWT_SECRET
 	} else if path == refreshTokenRoute {
-		tokenString, err := c.Cookie("jwt-refresh-token")
+		tokenString, err = c.Cookie("jwt-refresh-token")
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		user, err := verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
-		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-			return
-		}
-
-		c.Set("user", user)
+		secret = configuration.REFRESH_JWT_SECRET
 	}
+
+	user, err := verifyToken(tokenString, secret)
+	if err != nil {
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	username := strings.ToLower(user.Username)
+	tenantname := strings.ToLower(user.TenantName)
+
+	exists, _, err := db.GetUserByUsername(username, tenantname)
+	if err != nil {
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exists {
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	c.Set("user", user)
 
 	c.Next()
 }
