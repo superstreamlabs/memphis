@@ -1,0 +1,31 @@
+.overview-tags-container {
+    position: relative;
+    height: 100%;
+    padding: 15px;
+    .tag-item {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        // padding: 15px;
+        .item {
+            display: flex;
+            align-items: center;
+            .item-num {
+                font-weight: 600;
+                font-size: 12px;
+                color: rgba(74, 73, 92, 0.8);
+                margin-right: 10px;
+            }
+        }
+        .attached-component {
+            font-weight: 600;
+            font-size: 12px;
+            line-height: 18px;
+            text-align: right;
+            color: rgba(74, 73, 92, 0.8);
+        }
+    }
+    .ant-divider {
+        margin: 5px 0 5px 0;
+    }
+}

@@ -1,0 +1,27 @@
+.version-badge {
+    border-radius: 4px;
+    height: 20px;
+    padding: 0px 10px;
+    display: flex;
+    align-items: center;
+    p {
+        margin: 0;
+        margin-right: 0px;
+        font-family: 'InterMedium';
+        font-size: 11px;
+        line-height: 12px;
+    }
+}
+.badgeGreen {
+    background: #D6F5E3;
+    p {
+        color: #27AE60;
+    }
+}
+.badgeOrange {
+    background: #FFE5CC;
+    min-width: 106px;
+    p {
+        color: #FF7D00;
+    }
+}

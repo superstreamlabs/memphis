@@ -322,11 +322,6 @@ const Messages = () => {
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>
                     <span className="des">Create your 1st producer and start producing data</span>
-                    {process.env.REACT_APP_SANDBOX_ENV && stationName !== 'demo-app' && (
-                        <a className="explore-button" href={`${pathDomains.stations}/demo-app`} target="_parent">
-                            Explore demo
-                        </a>
-                    )}
                 </div>
             )}
             {tabValue === tabs[1] &&

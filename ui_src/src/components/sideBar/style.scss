@@ -16,15 +16,33 @@
             margin-bottom: 5vh;
         }
         .item-wrapper {
+            margin-bottom: 15px;
             cursor: pointer;
             p {
                 font-size: 80%;
                 color: var(--gray);
                 font-family: 'InterSemiBold';
+                margin: 0;
             }
             .checked {
                 color: var(--purple);
             }
+        }
+        .item-wrapper:hover {
+            .name {
+                color: var(--purple);
+            }
+        }
+        .not-available {
+            cursor: not-allowed;
+        }
+        .coming-soon {
+            background-color: var(--purple);
+            color: var(--white);
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 8px;
+            cursor: not-allowed;
         }
     }
     .sandboxUserImg {
@@ -54,14 +72,25 @@
             cursor: pointer;
             height: 30px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            .icon-name {
+                font-size: 11px;
+                color: rgba(74, 73, 92, 0.8);
+                font-family: 'InterSemiBold';
+                margin: 0;
+                cursor: pointer;
+            }
             img {
                 width: 18px;
             }
         }
         .integration-icon-wrapper:hover {
-            background-color: rgba(132, 129, 138, 0.1);
-            border-radius: 10px;
+            .icon-name {
+                color: var(--purple);
+            }
         }
         version {
             margin-bottom: 10px;
@@ -78,15 +107,14 @@
                 font-size: 12px;
                 font-family: 'InterSemiBold';
             }
-            .update-note{
+            .update-note {
                 width: 7px;
                 height: 7px;
-                background: #FC3400;
+                background: #fc3400;
                 border-radius: 9px;
                 position: absolute;
                 top: -2px;
                 right: -2px;
-            
             }
         }
     }

@@ -15,17 +15,16 @@ import './style.scss';
 import React, { useContext, useState, useEffect } from 'react';
 
 import { Context } from '../../hooks/store';
-import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
-import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
-import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
-import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
-import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
-import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
 import Integrations from './integrations';
+import AccountMenu from './accountMenu';
+import BillingMenu from './billing/billingMenu';
+import Payments from './billing/payments';
+import Requests from './billing/requests';
 import ClusterConfiguration from './clusterConfiguration';
 import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
+import { isCloud } from '../../services/valueConvertor';
 
 function Administration({ step }) {
     const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
@@ -38,13 +37,6 @@ function Administration({ step }) {
 
     const getComponent = () => {
         switch (selectedMenuItem) {
-            case 'cluster_configuration':
-                if (window.location.href.split('/cluster_configuration').length > 1) {
-                    return <ClusterConfiguration />;
-                } else {
-                    history.replace(`${pathDomains.administration}/cluster_configuration`);
-                    break;
-                }
             case 'integrations':
                 if (window.location.href.split('/integrations').length > 1) {
                     return <Integrations />;
@@ -52,13 +44,38 @@ function Administration({ step }) {
                     history.replace(`${pathDomains.administration}/integrations`);
                     break;
                 }
+            case 'cluster_configuration':
+                if (!isCloud()) {
+                    if (window.location.href.split('/cluster_configuration').length > 1) {
+                        return <ClusterConfiguration />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/cluster_configuration`);
+                        break;
+                    }
+                }
             case 'version_upgrade':
-                if (window.location.href.split('/version_upgrade').length > 1) {
-                    return <VersionUpgrade />;
+                if (!isCloud()) {
+                    if (window.location.href.split('/version_upgrade').length > 1) {
+                        return <VersionUpgrade />;
+                    } else {
+                        history.replace(`${pathDomains.administration}/version_upgrade`);
+                        break;
+                    }
+                }
+            case 'usage':
+                if (window.location.href.split('/usage').length > 1) {
+                    return <Requests />;
                 } else {
-                    history.replace(`${pathDomains.administration}/version_upgrade`);
+                    history.replace(`${pathDomains.administration}/usage`);
                     break;
                 }
+            // case 'payments':
+            //     if (window.location.href.split('/payments').length > 1) {
+            //         return <Payments />;
+            //     } else {
+            //         history.replace(`${pathDomains.administration}/payments`);
+            //         break;
+            //     }
             default:
                 return;
         }
@@ -66,27 +83,10 @@ function Administration({ step }) {
     return (
         <div className="setting-container">
             <div className="menu-container">
-                <p className="header">My account</p>
-                <p className="sub-header">Modify environment configuration</p>
-                <div className="side-menu">
-                    <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('integrations')}>
-                        <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
-                        Integrations
-                    </div>
-                    <div
-                        className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
-                        onClick={() => selectMenuItem('cluster_configuration')}
-                    >
-                        <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
-                        Cluster configuration
-                    </div>
-                    <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => selectMenuItem('version_upgrade')}>
-                        <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
-                        Software Update
-                        {!state.isLatest && <div className="update-available">Update available</div>}
-                    </div>
-                </div>
+                <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
+                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />}
             </div>
+
             <div className="setting-items">{getComponent()}</div>
         </div>
     );

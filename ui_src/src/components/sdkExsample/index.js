@@ -31,12 +31,13 @@ import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
 import Copy from '../copy';
+import { isCloud } from '../../services/valueConvertor';
 
 loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
+const selectProtocolOption = isCloud() ? ['SDK (TCP)'] : ['SDK (TCP)', 'REST (HTTP)'];
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -48,24 +49,22 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
     const [generateModal, setGenerateModal] = useState(false);
 
-    const restGWHost = process.env.REACT_APP_SANDBOX_ENV
-        ? 'https://restgw.sandbox.memphis.dev'
-        : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-        ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
-        : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
+    const restGWHost =
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
+            : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
         if (!SDK_CODE_EXAMPLE[lang].link) {
             codeEx.producer = SDK_CODE_EXAMPLE[lang]?.producer;
             codeEx.consumer = SDK_CODE_EXAMPLE[lang]?.consumer;
-            let host = process.env.REACT_APP_SANDBOX_ENV
-                ? 'broker.sandbox.memphis.dev'
-                : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                ? 'localhost'
-                : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                : 'memphis.memphis.svc.cluster.local';
+            let host =
+                localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+                    ? 'localhost'
+                    : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                    ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                    : 'memphis.memphis.svc.cluster.local';
             codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);

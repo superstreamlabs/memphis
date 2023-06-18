@@ -139,7 +139,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                         <Button
                             width="100%"
                             height="35px"
-                            placeholder="Attach"
+                            placeholder="Enforce"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

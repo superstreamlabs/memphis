@@ -15,16 +15,18 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
 import { Checkbox, Divider } from 'antd';
 import Button from '../../components/button';
 import Modal from '../../components/modal';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import ImgUploader from './imgUploader';
+import { isCloud } from '../../services/valueConvertor';
+import { CLOUD_URL } from '../../config';
 
 function Profile() {
-    const [userName, setUserName] = useState('');
+    const [userType, setUserType] = useState('');
     const [state, dispatch] = useContext(Context);
     const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
@@ -32,7 +34,7 @@ function Profile() {
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
-        setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
+        setUserType(localStorage.getItem(LOCAL_STORAGE_USER_TYPE));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
     }, []);
 
@@ -41,7 +43,7 @@ function Profile() {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
             modalFlip(false);
             localStorage.clear();
-            window.location.assign(pathDomains.login);
+            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         } catch (err) {
             return;
         }
@@ -68,24 +70,14 @@ function Profile() {
                 <div className="avatar-section">
                     <p className="title">Avatar</p>
                     <div className="avatar-images">
-                        {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic') && (
+                        {localStorage.getItem('profile_pic') && (
                             <div className={'avatar-img selected'}>
                                 <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
                             </div>
                         )}
                         {Array.from(Array(8).keys()).map((item, index) => {
                             return (
-                                <div
-                                    key={index}
-                                    className={
-                                        process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
-                                            ? 'avatar-img avatar-disable'
-                                            : avatar === item + 1
-                                            ? 'avatar-img selected'
-                                            : 'avatar-img'
-                                    }
-                                    onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
-                                >
+                                <div key={index} className={avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'} onClick={() => editAvatar(item + 1)}>
                                     <img src={require(`../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                                 </div>
                             );
@@ -95,21 +87,35 @@ function Profile() {
                 <ImgUploader />
                 <Divider />
                 <div className="delete-account-section">
-                    <p className="title">Delete your account</p>
-                    <label className="delete-account-description">
-                        When you delete your account, you will lose access to Memphis,
-                        <br />
-                        and your profile will be permanently deleted. You can cancel the deletion for 14 days.
-                    </label>
+                    <p className="title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
+                    {isCloud() ? (
+                        <label className="delete-account-description">
+                            When you delete your organization, you will lose access to Memphis,
+                            <br />
+                            and your entire organization data will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    ) : (
+                        <label className="delete-account-description">
+                            When you delete your account, you will lose access to Memphis,
+                            <br />
+                            and your profile will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    )}
+
                     <div className="delete-account-checkbox">
                         <Checkbox
                             checked={checkboxdeleteAccount}
-                            disabled={userName === 'root'}
+                            disabled={isCloud() ? userType !== 'root' : userType === 'root'}
                             onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                             name="delete-account"
                         />
-                        <p className={userName === 'root' ? 'disabled' : ''} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
-                            Confirm that I want to delete my account.
+                        <p
+                            className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}
+                            onClick={() =>
+                                ((isCloud() && userType === 'root') || (!isCloud() && userType !== 'root')) && setCheckboxdeleteAccount(!checkboxdeleteAccount)
+                            }
+                        >
+                            Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
                         </p>
                     </div>
                     <Button
