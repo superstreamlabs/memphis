@@ -12,20 +12,15 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useHistory } from 'react-router-dom';
-import PapagerdutyImg from '../../../../src/assets/images/pagerduty.png';
-import SlackImg from '../../../../src/assets/images/slackicon.png';
-import s3Img from '../../../../src/assets/images/s3.png';
+import pagerDutyIcon from '../../../../src/assets/images/pagerDutyIcon.svg';
+import slackLogo from '../../../../src/assets/images/slackLogo.svg';
+import s3Logo from '../../../../src/assets/images/s3Logo.svg';
 import pathDomains from '../../../router';
 
 const Integrations = () => {
     const history = useHistory();
-    // const [tags, setTags] = useState([
-    //     { name: 'Github', usage: '10 stations, 2 schemas', color: '0, 165, 255' },
-    //     { name: 'Launch 2.0', usage: '7 stations, 2 schemas', color: '252, 52, 0' },
-    //     { name: 'MACQUARIE', usage: '2 schemas', color: '85, 66, 246' }
-    // ]);
 
     return (
         <div className="overview-components-wrapper">
@@ -38,15 +33,15 @@ const Integrations = () => {
                 </div>
                 <div className="integrations-list">
                     <div className="integration-item">
-                        <img className="img-icon" src={SlackImg} alt="slack" />
+                        <img className="img-icon" src={slackLogo} alt="slack" />
                         <label className="integration-name">Slack</label>
                     </div>
                     <div className="integration-item">
-                        <img className="img-icon" src={s3Img} alt="s3" />
+                        <img className="img-icon" src={s3Logo} alt="s3" />
                         <label className="integration-name">S3 Bucket</label>
                     </div>
                     <div className="integration-item">
-                        <img className="img-icon" src={PapagerdutyImg} alt="pagerduty" />
+                        <img className="img-icon" src={pagerDutyIcon} alt="pagerduty" />
                         <label className="integration-name">PagerDuty</label>
                     </div>
                 </div>
