@@ -40,16 +40,6 @@ const (
 
 type UserMgmtHandler struct{}
 
-func isRootUserExist() (bool, error) {
-	exist, _, err := db.GetRootUser(globalAccountName)
-	if err != nil {
-		return false, err
-	} else if !exist {
-		return false, nil
-	}
-	return true, nil
-}
-
 func isRootUserLoggedIn() (bool, error) {
 	exist, user, err := db.GetRootUser(globalAccountName)
 	if err != nil {

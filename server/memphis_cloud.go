@@ -1074,10 +1074,6 @@ func SetCors(router *gin.Engine) {
 	}))
 }
 
-func validateTenantName(tenantName string) error {
-	return nil
-}
-
 func (th TenantHandler) CreateTenant(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }
@@ -1424,4 +1420,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 }
 
 func (s *Server) RefreshFirebaseFunctionsKey() {
+}
+
+func shouldPersistSysLogs() bool {
+	return true
 }

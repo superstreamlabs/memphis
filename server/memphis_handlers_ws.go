@@ -242,14 +242,6 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	}
 }
 
-func memphisWSGetMainOverviewData(h *Handlers, tenantName string) (models.MainOverviewData, error) {
-	response, err := h.Monitoring.getMainOverviewDataDetails(tenantName)
-	if err != nil {
-		return models.MainOverviewData{}, err
-	}
-	return response, nil
-}
-
 func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string, tenantName string) (map[string]any, error) {
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
@@ -411,21 +403,3 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 
 	return response, nil
 }
-
-func memphisWSGetSchemasOverviewData(h *Handlers, tenantName string) ([]models.ExtendedSchema, error) {
-	schemas, err := h.Schemas.GetAllSchemasDetails(tenantName)
-	if err != nil {
-		return schemas, err
-	}
-	return schemas, nil
-}
-
-func memphisWSGetStationsOverviewData(h *Handlers, tenantName string) ([]models.ExtendedStationDetails, error) {
-	stations, err := h.Stations.GetStationsDetails(tenantName)
-	if err != nil {
-		return stations, err
-	}
-	return stations, nil
-}
-
-

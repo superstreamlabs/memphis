@@ -173,7 +173,7 @@ func getThroughputSubject(serverName string) string {
 	return throughputStreamNameV1 + tsep + serverName
 }
 
-func (s *Server) InitializeThroughputSampling() error {
+func (s *Server) InitializeThroughputSampling() {
 	LastReadThroughputMap = map[string]models.Throughput{}
 	LastWriteThroughputMap = map[string]models.Throughput{}
 	for _, acc := range s.Opts().Accounts {
@@ -187,11 +187,9 @@ func (s *Server) InitializeThroughputSampling() error {
 		}
 	}
 	go s.CalculateSelfThroughput()
-
-	return nil
 }
 
-func (s *Server) CalculateSelfThroughput() error {
+func (s *Server) CalculateSelfThroughput() {
 	for range time.Tick(time.Second * 1) {
 		readMap := map[string]int64{}
 		writeMap := map[string]int64{}
@@ -221,8 +219,6 @@ func (s *Server) CalculateSelfThroughput() error {
 		}
 		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
 	}
-
-	return nil
 }
 
 func (s *Server) StartBackgroundTasks() error {
@@ -260,13 +256,10 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
 	go s.uploadMsgsToTier2Storage()
-
-	err = s.InitializeThroughputSampling()
-	if err != nil {
-		return err
-	}
+	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
+	
 	return nil
 }
 
