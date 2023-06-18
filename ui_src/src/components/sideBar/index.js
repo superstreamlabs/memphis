@@ -125,6 +125,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(pathDomains.profile);
+                    setPopoverOpen(false);
                 }}
             >
                 <div className="item">
@@ -138,6 +139,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(`${pathDomains.administration}/integrations`);
+                    setPopoverOpen(false);
                 }}
             >
                 <div className="item">
@@ -152,6 +154,7 @@ function SideBar() {
                     className="item-wrap"
                     onClick={() => {
                         history.push(`${pathDomains.administration}/usage`);
+                        setPopoverOpen(false);
                     }}
                 >
                     <div className="item">
