@@ -285,7 +285,7 @@ function SideBar() {
                         onClick={() => history.push(`${pathDomains.administration}/integrations`)}
                     >
                         <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
-                        <label className="icon-name">Documentation</label>
+                        <label className="icon-name">Docs</label>
                     </div>
                 </Link>
                 <Popover
