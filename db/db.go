@@ -75,9 +75,20 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	cancelfunc := MetadataDbClient.Cancel
 	defer cancelfunc()
 
+	alterTenantsTable := `
+	DO $$
+	BEGIN
+		IF EXISTS (
+			SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants' AND table_schema = 'public'
+		) THEN
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '' ;
+		END IF;
+	END $$;`
+
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$G',
+		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -485,7 +496,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -5576,7 +5587,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5586,7 +5597,7 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) VALUES($1)`
+	query := `INSERT INTO tenants (name, firebase_organization_id) VALUES($1, $2)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -5594,7 +5605,7 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId)
 	if err != nil {
 		return models.Tenant{}, err
 	}
