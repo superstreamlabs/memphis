@@ -40,6 +40,7 @@ const SchemaChart = ({ schemas }) => {
                                 style={{
                                     backgroundColor: '#6557FF'
                                 }}
+                                overflowCount={999}
                             />
                         </div>
                     );

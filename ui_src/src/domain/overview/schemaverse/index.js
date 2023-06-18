@@ -43,7 +43,7 @@ const Schemaverse = () => {
                 <div className="total-data">
                     <SchemaChart
                         schemas={[
-                            { name: 'Protobuf', usage: 15 },
+                            { name: 'Protobuf', usage: 150 },
                             { name: 'Json', usage: 7 },
                             { name: 'Avro', usage: 3 }
                         ]}
