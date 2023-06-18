@@ -416,7 +416,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "user-open-ui")
+		analytics.SendEvent("", "", "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
@@ -481,7 +481,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			Value: strconv.FormatBool(subscription),
 		}
 		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(username, analyticsParams, "user-signup")
+		analytics.SendEventWithParams(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
@@ -532,7 +532,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-users-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredGenericUser{}
@@ -688,38 +688,11 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"image": image.Image})
 }
 
-func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	var body models.EditAnalyticsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	flag := "false"
-	if body.SendAnalytics {
-		flag = "true"
-	}
-
-	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
-	if err != nil {
-		serv.Errorf("EditAnalytics: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if !body.SendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-disable-analytics")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-done-next-steps")
+		analytics.SendEvent(user.TenantName, user.Username, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -743,7 +716,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-skip-get-started")
+		analytics.SendEvent(user.TenantName, user.Username, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})

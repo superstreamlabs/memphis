@@ -156,7 +156,7 @@ func handleConnectMessage(client *client) error {
 				if !isNativeMemphisClient {
 					event = "user-connect-nats-sdk"
 				}
-				analytics.SendEventWithParams(username, analyticsParams, event)
+				analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
 			}
 		}
 		updateNewClientWithConfig(client, connectionId)

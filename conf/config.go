@@ -41,6 +41,9 @@ type Configuration struct {
 	CONNECTION_TOKEN        string
 	ENCRYPTION_SECRET_KEY   string
 	PRODUCTION_ENV          bool
+	PROVIDER                string
+	REGION                  string
+	INSTALLATION_SOURCE     string
 }
 
 func GetConfig() Configuration {
