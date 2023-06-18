@@ -1,0 +1,72 @@
+.overview-schema-container {
+    position: relative;
+    height: 100%;
+    padding: 15px;
+
+    .schemaverse-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .link-to-page {
+            font-weight: 500;
+            font-size: 12 !important;
+            color: #6557ff !important;
+            cursor: pointer;
+        }
+    }
+    .total-data {
+        margin-top: 10px;
+        border: 1px solid #e6e6e6;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-evenly;
+        align-items: center;
+        padding: 5px;
+        p {
+            margin: 0;
+        }
+        .total-measure {
+            font-weight: 500;
+            font-size: 14px;
+            color: #d5d5d7;
+        }
+        .total-value {
+            font-weight: 600;
+            font-size: 20px;
+            color: #2e2c34;
+        }
+    }
+    .ant-divider-vertical {
+        height: 40px;
+        margin: 0;
+    }
+
+    .schema-chart-container {
+        padding: 10px;
+        width: 100%;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        .schema-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+            .schema-bar {
+                background: rgba(101, 87, 255, 0.4);
+                border-radius: 4px;
+                height: 35px;
+            }
+            .schema-bar:hover {
+                opacity: 0.9;
+            }
+            .schema-name {
+                font-weight: 600;
+                font-size: 14px;
+                color: #2e2c34;
+                margin-left: 5px;
+                margin-right: 5px;
+            }
+        }
+    }
+}

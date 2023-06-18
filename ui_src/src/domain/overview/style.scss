@@ -78,8 +78,8 @@
                 }
             }
         }
-        .top-component{
-            min-width:1250px;
+        .top-component {
+            min-width: 1250px;
         }
 
         .overview-components-wrapper {
@@ -128,8 +128,11 @@
                 position: relative;
                 min-height: 590px;
                 min-width: 420px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
             }
-           
+
             .system-components-wrapper {
                 height: 100%;
                 position: relative;
