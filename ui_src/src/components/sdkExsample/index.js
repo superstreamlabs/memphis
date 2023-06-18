@@ -31,12 +31,13 @@ import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
 import Copy from '../copy';
+import { isCloud } from '../../services/valueConvertor';
 
 loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
+const selectProtocolOption = isCloud() ? ['SDK (TCP)'] : ['SDK (TCP)', 'REST (HTTP)'];
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');

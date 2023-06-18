@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
 import { Checkbox, Divider } from 'antd';
 import Button from '../../components/button';
 import Modal from '../../components/modal';
@@ -26,7 +26,7 @@ import { isCloud } from '../../services/valueConvertor';
 import { CLOUD_URL } from '../../config';
 
 function Profile() {
-    const [userName, setUserName] = useState('');
+    const [userType, setUserType] = useState('');
     const [state, dispatch] = useContext(Context);
     const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
@@ -34,7 +34,7 @@ function Profile() {
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
-        setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
+        setUserType(localStorage.getItem(LOCAL_STORAGE_USER_TYPE));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
     }, []);
 
@@ -87,21 +87,35 @@ function Profile() {
                 <ImgUploader />
                 <Divider />
                 <div className="delete-account-section">
-                    <p className="title">Delete your account</p>
-                    <label className="delete-account-description">
-                        When you delete your account, you will lose access to Memphis,
-                        <br />
-                        and your profile will be permanently deleted. You can cancel the deletion for 14 days.
-                    </label>
+                    <p className="title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
+                    {isCloud() ? (
+                        <label className="delete-account-description">
+                            When you delete your organization, you will lose access to Memphis,
+                            <br />
+                            and your entire organization data will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    ) : (
+                        <label className="delete-account-description">
+                            When you delete your account, you will lose access to Memphis,
+                            <br />
+                            and your profile will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    )}
+
                     <div className="delete-account-checkbox">
                         <Checkbox
                             checked={checkboxdeleteAccount}
-                            disabled={userName === 'root'}
+                            disabled={isCloud() ? userType !== 'root' : userType === 'root'}
                             onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                             name="delete-account"
                         />
-                        <p className={userName === 'root' ? 'disabled' : ''} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
-                            Confirm that I want to delete my account.
+                        <p
+                            className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}
+                            onClick={() =>
+                                ((isCloud() && userType === 'root') || (!isCloud() && userType !== 'root')) && setCheckboxdeleteAccount(!checkboxdeleteAccount)
+                            }
+                        >
+                            Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
                         </p>
                     </div>
                     <Button
