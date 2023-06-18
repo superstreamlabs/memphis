@@ -99,17 +99,21 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 func Authenticate(c *gin.Context) {
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
-	var tokenString, secret string
+	var tokenString string
 	var err error
+	var user models.User
 	if needToAuthenticate {
 		tokenString, err = extractToken(c.GetHeader("authorization"))
-
 		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		secret = configuration.JWT_SECRET
+		user, err = verifyToken(tokenString, configuration.JWT_SECRET)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 	} else if path == refreshTokenRoute {
 		tokenString, err = c.Cookie("jwt-refresh-token")
 		if err != nil {
@@ -117,13 +121,11 @@ func Authenticate(c *gin.Context) {
 			return
 		}
 
-		secret = configuration.REFRESH_JWT_SECRET
-	}
-
-	user, err := verifyToken(tokenString, secret)
-	if err != nil {
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
+		user, err = verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
+		if err != nil {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
 	}
 
 	username := strings.ToLower(user.Username)
@@ -138,7 +140,7 @@ func Authenticate(c *gin.Context) {
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
-	c.Set("user", user)
 
+	c.Set("user", user)
 	c.Next()
 }
