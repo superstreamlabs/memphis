@@ -20,7 +20,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"memphis/analytics"
 	srvlog "memphis/logger"
 )
 
@@ -309,19 +308,6 @@ func (s *Server) sendLogToSubject(label string, log []byte) {
 
 		subject := fmt.Sprintf("%s.%s.%s", syslogsStreamName, s.getLogSource(), subjectSuffix)
 		s.sendInternalAccountMsg(s.GlobalAccount(), subject, log)
-	}
-}
-
-func (s *Server) sendLogToAnalytics(label string, log []byte) {
-	switch label {
-	case "ERR":
-		shouldSend, err := shouldSendAnalytics()
-		if err != nil || !shouldSend {
-			return
-		}
-		analytics.SendErrEvent(s.getLogSource(), string(log))
-	default:
-		return
 	}
 }
 

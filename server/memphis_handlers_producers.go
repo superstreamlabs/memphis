@@ -125,7 +125,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 					Value: "disk",
 				}
 				analyticsParams := []analytics.EventParam{param1, param2}
-				analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-station-sdk")
+				analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -170,9 +170,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				Value: newProducer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
+			analytics.SendEventWithParams(user.TenantName, connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
 			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
-				analytics.SendEvent(connection.CreatedByUsername, "user-send-messages-via-rest-gw")
+				analytics.SendEvent(user.TenantName, connection.CreatedByUsername, "user-send-messages-via-rest-gw")
 			}
 		}
 	}
@@ -431,7 +431,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(username, "user-remove-producer-sdk")
+		analytics.SendEvent(user.TenantName, username, "user-remove-producer-sdk")
 	}
 
 	respondWithErr(globalAccountName, s, reply, nil)

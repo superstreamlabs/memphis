@@ -486,7 +486,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 			Value: newSchema.Name,
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-create-schema")
+		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-schema")
 	}
 
 	c.IndentedJSON(200, newSchema)
@@ -508,7 +508,7 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-enter-schemas-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-schemas-page")
 	}
 
 	c.IndentedJSON(200, schemas)
@@ -555,7 +555,7 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 			Value: schemaName,
 		}
 		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.Username, analyticsParams, "user-enter-schema-details")
+		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-enter-schema-details")
 	}
 
 	c.IndentedJSON(200, schemaDetails)
@@ -633,7 +633,7 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-schema")
+		analytics.SendEvent(user.TenantName, user.Username, "user-remove-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -723,7 +723,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-create-new-schema-version")
+		analytics.SendEvent(user.TenantName, user.Username, "user-create-new-schema-version")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -796,7 +796,7 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-rollback-schema-version")
+		analytics.SendEvent(user.TenantName, user.Username, "user-rollback-schema-version")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -828,7 +828,7 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-validate-schema")
+		analytics.SendEvent(user.TenantName, user.Username, "user-validate-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{
