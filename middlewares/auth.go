@@ -135,9 +135,11 @@ func Authenticate(c *gin.Context) {
 
 	if shouldCheckUser {
 		username := strings.ToLower(user.Username)
-		tenantname := strings.ToLower(user.TenantName)
+		if user.TenantName != conf.GlobalAccountName {
+			user.TenantName = strings.ToLower(user.TenantName)
+		}
 
-		exists, _, err := db.GetUserByUsername(username, tenantname)
+		exists, _, err := db.GetUserByUsername(username, user.TenantName)
 		if err != nil {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
