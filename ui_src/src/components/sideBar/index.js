@@ -259,11 +259,24 @@ function SideBar() {
                             <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
                         </div>
                         <p className="not-available">Functions</p>
-                        <label className="coming-soon">Coming soon</label>
+                        <p className="coming-soon">Soon</p>
                     </div>
                 )}
             </div>
             <div className="bottom-icons">
+                <div
+                    className="integration-icon-wrapper"
+                    onMouseEnter={() => setHoveredItem('integrations')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    onClick={() => history.push(`${pathDomains.administration}/integrations`)}
+                >
+                    <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
+                    <label className="icon-name">Integrations</label>
+                </div>
+                <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
+                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
+                    <label className="icon-name">Support</label>
+                </div>
                 <Link to={{ pathname: DOC_URL }} target="_blank">
                     <div
                         className="integration-icon-wrapper"
@@ -275,19 +288,6 @@ function SideBar() {
                         <label className="icon-name">Documentation</label>
                     </div>
                 </Link>
-                <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
-                    <label className="icon-name">Support</label>
-                </div>
-                <div
-                    className="integration-icon-wrapper"
-                    onMouseEnter={() => setHoveredItem('integrations')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(`${pathDomains.administration}/integrations`)}
-                >
-                    <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
-                    <label className="icon-name">Integrations</label>
-                </div>
                 <Popover
                     overlayInnerStyle={overlayStyles}
                     placement="rightBottom"
