@@ -17,11 +17,49 @@ import { Context } from '../../../hooks/store';
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
-import AttachedSchema from '../../../assets/images/AttachedSchema.svg';
-import { Divider } from 'antd';
+import Logo from '../../../assets/images/logo.svg';
+import Add from '../../../assets/images/add.svg';
+import stationsIconActive from '../../../assets/images/stationsIconActive.svg';
+import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
+import { Progress, Divider, Popover } from 'antd';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
+
+    const healthStatus = (
+        <>
+            <div className="health-item">
+                <div className="health-item-body">
+                    <div className="health-item-body-wrapper">
+                        <span className="img-circle">
+                            <img src={stationsIconActive} alt="add station" />
+                        </span>
+                        <label>Created a new station</label>
+                    </div>
+                    <span className="health-item-body-info">some info</span>
+                </div>
+                <Divider />
+                <div className="health-item-footer">
+                    <label> Add More Stations</label> <img src={Add} alt="add station" />
+                </div>
+            </div>
+            <div className="health-item">
+                <div className="health-item-body">
+                    <div className="health-item-body-wrapper">
+                        <span className="img-circle">
+                            <img src={schemaIconActive} alt="add schema" />
+                        </span>
+                        <label>Created a new schema</label>
+                    </div>
+                    <span className="health-item-body-info">some info</span>
+                </div>
+                <Divider />
+                <div className="health-item-footer">
+                    <label> Add More Schemas</label> <img src={Add} alt="add station" />
+                </div>
+            </div>
+        </>
+    );
 
     return (
         <div className="overview-components-wrapper">
@@ -51,10 +89,15 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
-                    <img src={AttachedSchema} width={50} height={50} alt="AttachedSchema" className="icon-wrapper" />
+                    <img src={Logo} width={50} height={50} alt="Logo" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Attached schema</span>
-                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
+                        <span>Operational health</span>
+                        <span className="operational-health">
+                            <p>76%</p>
+                            <Popover overlayClassName="health-status-caontainer" placement="bottom" title="Operational health" content={healthStatus} trigger="click">
+                                <Progress percent={76} showInfo={false} strokeColor={{ '0%': '#6557FF', '50%': '#61DFC6', '100%': '#FFC633' }} className="progress" />
+                            </Popover>
+                        </span>
                     </div>
                 </div>
             </div>

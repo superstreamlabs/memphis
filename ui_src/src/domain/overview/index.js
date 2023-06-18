@@ -30,6 +30,9 @@ import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
 import FailedStations from './failedStations';
+import Schemaverse from './schemaverse';
+import Tags from './tags';
+import Integrations from './integrations';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
@@ -199,7 +202,13 @@ function OverView() {
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
                         </div>
-                        {!isCloud() && (
+                        {isCloud() ? (
+                            <div className="right-side">
+                                <Schemaverse />
+                                <Tags />
+                                <Integrations />
+                            </div>
+                        ) : (
                             <div className="right-side">
                                 <SystemComponents />
                             </div>
