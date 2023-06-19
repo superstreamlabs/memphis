@@ -24,6 +24,10 @@
     min-width: 1050px;
     height: 60px;
 }
+.main-header-wrapper{
+    display: flex;
+    flex-direction: column;
+}
 .main-header-h1 {
     font-family: 'InterSemiBold';
     font-size: 24px;

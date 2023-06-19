@@ -312,88 +312,6 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("refreshToken: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
-	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RefreshToken: User %v: %v", user.TenantName, user.Username, username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := db.GetUserByUsername(username, user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RefreshToken: User %v: %v", user.TenantName, user.Username, username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant name: %v][user name: %v]RefreshToken: user %v does not exist", user.TenantName, user.Username, username)
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	token, refreshToken, err := CreateTokens(user)
-	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RefreshToken: User %v: %v", user.TenantName, user.Username, username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	env := "K8S"
-	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
-		env = "docker"
-	}
-
-	exist, tenant, err := db.GetTenantByName(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RefreshToken: User %v: %v", user.TenantName, user.Username, username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant name: %v][user name: %v]Login: User %v: tenant %v does not exist", user.TenantName, user.Username, username, user.TenantName)
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	domain := ""
-	secure := true
-	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
-	c.IndentedJSON(200, gin.H{
-		"jwt":                     token,
-		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
-		"user_id":                 user.ID,
-		"username":                user.Username,
-		"user_type":               user.UserType,
-		"created_at":              user.CreatedAt,
-		"already_logged_in":       user.AlreadyLoggedIn,
-		"avatar_id":               user.AvatarId,
-		"send_analytics":          sendAnalytics,
-		"env":                     env,
-		"namespace":               serv.opts.K8sNamespace,
-		"full_name":               user.FullName,
-		"skip_get_started":        user.SkipGetStarted,
-		"broker_host":             serv.opts.BrokerHost,
-		"rest_gw_host":            serv.opts.RestGwHost,
-		"ui_host":                 serv.opts.UiHost,
-		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
-		"ws_port":                 serv.opts.Websocket.Port,
-		"http_port":               serv.opts.UiPort,
-		"clients_port":            serv.opts.Port,
-		"rest_gw_port":            serv.opts.RestGwPort,
-		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
-		"connection_token":        configuration.CONNECTION_TOKEN,
-		"account_id":              tenant.ID,
-	})
-}
-
 func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	showSignup := true
 	loggedIn, err := isRootUserLoggedIn()
@@ -418,7 +336,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "user-open-ui")
+		analytics.SendEvent("", "", "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
@@ -492,7 +410,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			Value: strconv.FormatBool(subscription),
 		}
 		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(username, analyticsParams, "user-signup")
+		analytics.SendEventWithParams(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
@@ -543,7 +461,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-users-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredGenericUser{}
@@ -701,46 +619,11 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"image": image.Image})
 }
 
-func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("EditAnalytics: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
-		return
-	}
-
-	var body models.EditAnalyticsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		serv.Errorf("[tenant name: %v][user name: %v]EditAnalytics utils.Validate problem", user.TenantName, user.Username)
-		return
-	}
-
-	flag := "false"
-	if body.SendAnalytics {
-		flag = "true"
-	}
-
-	err = db.EditConfigurationValue("analytics", flag, globalAccountName)
-	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]EditAnalytics: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if !body.SendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-disable-analytics")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-done-next-steps")
+		analytics.SendEvent(user.TenantName, user.Username, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -764,7 +647,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-skip-get-started")
+		analytics.SendEvent(user.TenantName, user.Username, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})

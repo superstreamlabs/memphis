@@ -29,7 +29,9 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	dockerClient "github.com/docker/docker/client"
@@ -47,6 +49,17 @@ type TenantHandler struct{ S *Server }
 type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type MainOverviewData struct {
+	TotalStations     int                               `json:"total_stations"`
+	TotalMessages     uint64                            `json:"total_messages"`
+	TotalDlsMessages  uint64                            `json:"total_dls_messages"`
+	SystemComponents  []models.SystemComponents         `json:"system_components"`
+	Stations          []models.ExtendedStation          `json:"stations"`
+	K8sEnv            bool                              `json:"k8s_env"`
+	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
+	MetricsEnabled    bool                              `json:"metrics_enabled"`
 }
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
@@ -110,10 +123,11 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 			analyticsParams := []analytics.EventParam{param}
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analytics.SendEventWithParams("", analyticsParams, "installation")
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
+			analytics.SendEventWithParams("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
-				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+				analytics.SendEventWithParams("", "", analyticsParams, "enable-exporter")
 			}
 		})
 	}
@@ -872,7 +886,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-syslogs-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)
@@ -1036,7 +1050,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-update-cluster-config")
+		analytics.SendEvent(user.TenantName, user.Username, "user-update-cluster-config")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -1054,7 +1068,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
 		"dls_retention":           ch.S.opts.DlsRetentionHours,
@@ -1124,7 +1138,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-login")
+		analytics.SendEvent(user.TenantName, user.Username, "user-login")
 	}
 
 	env := "K8S"
@@ -1286,7 +1300,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-add-user")
+		analytics.SendEvent(user.TenantName, user.Username, "user-add-user")
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
@@ -1303,6 +1317,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
+		"full_name":               fullName,
 		"user_type":               userType,
 		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
@@ -1379,7 +1394,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-user")
+		analytics.SendEvent(user.TenantName, user.Username, "user-remove-user")
 	}
 
 	serv.Noticef("[tenant name: %v][user name: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
@@ -1424,7 +1439,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-himself")
+		analytics.SendEvent(user.TenantName, user.Username, "user-remove-himself")
 	}
 
 	serv.Noticef("[tenant name: %v][user name: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
@@ -1436,4 +1451,192 @@ func (s *Server) RefreshFirebaseFunctionsKey() {
 
 func shouldPersistSysLogs() bool {
 	return true
+}
+func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	var body models.EditAnalyticsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	flag := "false"
+	if body.SendAnalytics {
+		flag = "true"
+	}
+
+	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
+	if err != nil {
+		serv.Errorf("EditAnalytics: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if !body.SendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.TenantName, user.Username, "user-disable-analytics")
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+func (s *Server) GetCustomDeploymentId() string {
+	return ""
+}
+
+func (s *Server) sendLogToAnalytics(label string, log []byte) {
+	switch label {
+	case "ERR":
+		shouldSend, err := shouldSendAnalytics()
+		if err != nil || !shouldSend {
+			return
+		}
+		analytics.SendErrEvent(s.getLogSource(), string(log))
+	default:
+		return
+	}
+}
+
+func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainOverviewData, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	mainOverviewData := &MainOverviewData{}
+	generalErr := new(error)
+
+	wg.Add(3)
+	go func() {
+		stationsHandler := StationsHandler{S: mh.S}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.TotalStations = len(stations)
+		mainOverviewData.Stations = stations
+		mainOverviewData.TotalMessages = totalMessages
+		mainOverviewData.TotalDlsMessages = totalDlsMsgs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.SystemComponents = systemComponents
+		mainOverviewData.MetricsEnabled = metricsEnabled
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.BrokersThroughput = brokersThroughputs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if *generalErr != nil {
+		return MainOverviewData{}, *generalErr
+	}
+
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
+	}
+	mainOverviewData.K8sEnv = k8sEnv
+	return *mainOverviewData, nil
+}
+
+func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("refreshToken: " + err.Error())
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+	username := user.Username
+	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+	exist, user, err := db.GetUserByUsername(username, user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("refreshToken: user " + username + " does not exist")
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	token, refreshToken, err := CreateTokens(user)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	env := "K8S"
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+		env = "docker"
+	}
+
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	domain := ""
+	secure := true
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.IndentedJSON(200, gin.H{
+		"jwt":                     token,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":                 user.ID,
+		"username":                user.Username,
+		"user_type":               user.UserType,
+		"created_at":              user.CreatedAt,
+		"already_logged_in":       user.AlreadyLoggedIn,
+		"avatar_id":               user.AvatarId,
+		"send_analytics":          sendAnalytics,
+		"env":                     env,
+		"namespace":               serv.opts.K8sNamespace,
+		"full_name":               user.FullName,
+		"skip_get_started":        user.SkipGetStarted,
+		"broker_host":             serv.opts.BrokerHost,
+		"rest_gw_host":            serv.opts.RestGwHost,
+		"ui_host":                 serv.opts.UiHost,
+		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
+		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
+		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
+	})
 }

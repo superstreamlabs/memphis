@@ -32,7 +32,11 @@ func (srv *Server) removeStaleStations() {
 			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("[tenant name: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
-				err := db.DeleteStation(s.Name, s.TenantName)
+				err := removeStationResources(srv, s, false)
+				if err != nil {
+					srv.Errorf("[tenant name: %v]removeStaleStations: %v", s.TenantName, err.Error())
+				}
+				err = db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
 					srv.Errorf("[tenant name: %v]removeStaleStations: %v", s.TenantName, err.Error())
 				}
@@ -82,7 +86,7 @@ func updateSystemLiveness() {
 		Value: strconv.Itoa(int(consumersCount)),
 	}
 	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
+	analytics.SendEventWithParams("", "", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {

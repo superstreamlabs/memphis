@@ -13,19 +13,27 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
-import { Virtuoso } from 'react-virtuoso';
+import { AccountCircleRounded } from '@material-ui/icons';
 
+import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import { isCloud, parsingDate } from '../../services/valueConvertor';
+import addUserIcon from '../../assets/images/addUserIcon.svg';
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import mailIcon from '../../assets/images/mailIcon.svg';
+import deleteIcon from '../../assets/images/deleteIcon.svg';
 import searchIcon from '../../assets/images/searchIcon.svg';
+import SegmentButton from '../../components/segmentButton';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
+import ActiveBadge from '../../components/activeBadge';
 import CreateUserDetails from './createUserDetails';
 import { httpRequest } from '../../services/http';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
-import UserItem from './userItem';
-import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
+import Table from '../../components/table';
+import DeleteItemsModal from '../../components/deleteItemsModal';
 
 function Users() {
     const [state, dispatch] = useContext(Context);
@@ -33,9 +41,16 @@ function Users() {
     const [copyOfUserList, setCopyOfUserList] = useState([]);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [userDetailsModal, setUserDetailsModal] = useState(false);
+    const [removeUserModalOpen, setRemoveUserModalOpen] = useState(false);
+    const [userToRemove, setuserToRemove] = useState('');
+    const [userDeletedLoader, setUserDeletedLoader] = useState(false);
     const createUserRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [tableType, setTableType] = useState('Management');
+    const [resendEmailLoader, setResendEmailLoader] = useState(false);
+    const [createUserLoader, setCreateUserLoader] = useState(false);
+    const [userToResend, setuserToResend] = useState('');
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
@@ -47,7 +62,8 @@ function Users() {
             setIsLoading(true);
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_USERS);
             if (data) {
-                data.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                data.management_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                data.application_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 setUsersList(data);
                 setCopyOfUserList(data);
             }
@@ -70,27 +86,345 @@ function Users() {
         setSearchInput(e.target.value);
     };
 
-    const removeUser = async (username) => {
-        const updatedUserList = userList.filter((item) => item.username !== username);
-        setUsersList(updatedUserList);
-        setCopyOfUserList(updatedUserList);
-    };
+    const handleAddUser = (userData) => {
+        setUsersList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
 
-    const closeModal = (userData) => {
-        let newUserList = userList;
-        newUserList.push(userData);
-        setUsersList(newUserList);
-        setCopyOfUserList(newUserList);
+            if (userData.user_type === 'management') {
+                updatedUserData.management_users = [...updatedUserData.management_users, userData];
+            }
+
+            if (userData.user_type === 'application') {
+                updatedUserData.application_users = [...updatedUserData.application_users, userData];
+            }
+            return updatedUserData;
+        });
+
+        setCopyOfUserList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+
+            if (userData.user_type === 'management') {
+                updatedUserData.management_users = [...updatedUserData.management_users, userData];
+            }
+
+            if (userData.user_type === 'application') {
+                updatedUserData.application_users = [...updatedUserData.application_users, userData];
+            }
+
+            return updatedUserData;
+        });
+
         addUserModalFlip(false);
+        setCreateUserLoader(false);
         if (userData.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
             setUserDetailsModal(true);
         }
     };
 
+    const getAvatarSrc = (avatarId) => {
+        return require(`../../assets/images/bots/avatar${avatarId}.svg`);
+    };
+
+    const handleRemoveUser = async (name, type) => {
+        setUsersList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+            updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            return updatedUserData;
+        });
+
+        setCopyOfUserList((prevUserData) => {
+            const updatedUserData = { ...prevUserData };
+            updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            return updatedUserData;
+        });
+        setUserDeletedLoader(false);
+        setRemoveUserModalOpen(false);
+    };
+
+    const removeUser = async (user) => {
+        setUserDeletedLoader(true);
+        try {
+            await httpRequest(user.revoke ? 'POST' : 'DELETE', user.revoke ? ApiEndpoints.REVOKED_INVITATION : ApiEndpoints.REMOVE_USER, {
+                username: user.username
+            });
+            handleRemoveUser(user.username, user.type === 'management' ? 'management_users' : 'application_users');
+        } catch (error) {
+            setUserDeletedLoader(false);
+            setRemoveUserModalOpen(false);
+        }
+    };
+
+    const deleteUser = (username, user_type) => {
+        setuserToRemove({ username: username, type: user_type });
+        setRemoveUserModalOpen(true);
+    };
+
+    const revokeUser = (username, user_type) => {
+        setuserToRemove({ username: username, type: user_type, revoke: true });
+        setRemoveUserModalOpen(true);
+    };
+
+    const resendEmail = async (username) => {
+        setuserToResend(username);
+        setResendEmailLoader(true);
+        try {
+            await httpRequest('POST', ApiEndpoints.RESEND_INVITATION, {
+                username: username
+            });
+            setTimeout(() => {
+                setResendEmailLoader(false);
+            }, 1000);
+        } catch (error) {
+            setResendEmailLoader(false);
+        }
+        setuserToResend('');
+    };
+
+    const clientColumns = [
+        {
+            title: 'Username',
+            dataIndex: 'username',
+            key: 'username',
+            render: (text) => (
+                <div className="user-name">
+                    <div className="user-avatar">
+                        <AccountCircleRounded />
+                    </div>
+                    <p>{text}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Owner',
+            key: 'owner',
+            dataIndex: 'owner',
+            render: (owner) => (
+                <div className="full-name">
+                    <p>{owner || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Description',
+            key: 'description',
+            dataIndex: 'description',
+            render: (description) => (
+                <div className="created-column">
+                    <p>{description || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at',
+            render: (created_at) => (
+                <div className="created-column">
+                    <p>{parsingDate(created_at)}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action',
+            render: (_, record) => (
+                <div className="user-action">
+                    <Button
+                        width="95px"
+                        height="30px"
+                        placeholder={
+                            <div className="action-button">
+                                <img className="delete-icon" src={deleteIcon} alt="deleteIcon" />
+                                Delete user
+                            </div>
+                        }
+                        colorType="red"
+                        radiusType="circle"
+                        border="gray-light"
+                        backgroundColorType={'white'}
+                        fontSize="12px"
+                        fontFamily="InterMedium"
+                        onClick={() => {
+                            deleteUser(record.username, record.user_type);
+                        }}
+                    />
+                </div>
+            )
+        }
+    ];
+
+    const managmentColumns = [
+        {
+            title: 'Username',
+            dataIndex: 'username',
+            key: 'username',
+            render: (text, record) => (
+                <div className="user-name">
+                    <div className="user-avatar">
+                        <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
+                    </div>
+                    <p>{text}</p>
+                    {record.user_type === 'root' && <ActiveBadge active={false} content={isCloud() ? 'Owner' : 'Root'} />}
+                </div>
+            )
+        },
+        {
+            title: 'Status',
+            dataIndex: 'pending',
+            key: 'pending',
+            render: (pending) => (
+                <div className="status">
+                    <ActiveBadge active={!pending} content={pending ? 'Pending' : 'Active'} />
+                </div>
+            )
+        },
+        {
+            title: 'Full Name',
+            key: 'full_name',
+            dataIndex: 'full_name',
+            render: (full_name) => (
+                <div className="full-name">
+                    <p>{full_name || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Created by',
+            key: 'created_by',
+            dataIndex: 'owner',
+            render: (owner) => (
+                <div className="created_by">
+                    <p>{owner || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Team',
+            key: 'team',
+            dataIndex: 'team',
+            render: (team) => (
+                <div className="team">
+                    <p>{team || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Position',
+            key: 'position',
+            dataIndex: 'position',
+            render: (position) => (
+                <div className="position">
+                    <p>{position || '-'}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Creation date',
+            key: 'created_at',
+            dataIndex: 'created_at',
+            render: (created_at) => (
+                <div className="created-column">
+                    <p>{parsingDate(created_at)}</p>
+                </div>
+            )
+        },
+        {
+            title: 'Action',
+            dataIndex: 'action',
+            key: 'action',
+            render: (_, record) =>
+                record.user_type !== 'root' && (
+                    <div className="user-action">
+                        {isCloud() && record.pending ? (
+                            <>
+                                <Button
+                                    width="125px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <img className="action-img-btn" src={mailIcon} alt="mailIcon" />
+                                            Resend email
+                                        </div>
+                                    }
+                                    colorType="black"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    isLoading={record.username === userToResend && resendEmailLoader}
+                                    onClick={() => {
+                                        resendEmail(record.username);
+                                    }}
+                                />
+                                <Button
+                                    width="85px"
+                                    height="30px"
+                                    placeholder={
+                                        <div className="action-button">
+                                            <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                            Revoke
+                                        </div>
+                                    }
+                                    colorType="red"
+                                    radiusType="circle"
+                                    border="gray-light"
+                                    backgroundColorType={'white'}
+                                    fontSize="12px"
+                                    fontFamily="InterMedium"
+                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
+                                    onClick={() => {
+                                        revokeUser(record.username, record.user_type);
+                                    }}
+                                />
+                            </>
+                        ) : (
+                            <Button
+                                width="95px"
+                                height="30px"
+                                placeholder={
+                                    <div className="action-button">
+                                        <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                        Delete user
+                                    </div>
+                                }
+                                colorType="red"
+                                radiusType="circle"
+                                border="gray-light"
+                                backgroundColorType={'white'}
+                                fontSize="12px"
+                                fontFamily="InterMedium"
+                                isLoading={record.username === userToRemove.username && userDeletedLoader}
+                                onClick={() => {
+                                    deleteUser(record.username, record.user_type);
+                                }}
+                            />
+                        )}
+                    </div>
+                )
+        }
+    ];
+
+    const changeTableView = (e) => {
+        setTableType(e);
+    };
+
+    const tableHeader = () => {
+        return (
+            <div className="table-header">
+                <p>User type:</p>
+                <SegmentButton value={tableType} size="middle" options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
+            </div>
+        );
+    };
     return (
         <div className="users-container">
             <div className="header-wraper">
-                <label className="main-header-h1">Users</label>
+                <div className="main-header-wrapper">
+                    <label className="main-header-h1">Users</label>
+                    <span className="memphis-label">For client authentication, choose "Client". For management only, choose "Management".</span>
+                </div>
                 <div className="add-search-user">
                     <SearchInput
                         placeholder="Search here"
@@ -121,32 +455,34 @@ function Users() {
                     />
                 </div>
             </div>
-            <span className="memphis-label">For client authentication, choose "Application". For management only, choose "Management".</span>
             <div className="users-list-container">
-                <div className="users-list-header">
-                    <p className="user-name-title">Username</p>
-                    <p className="type-title">Type</p>
-                    <p className="creation-date-title">Creation date</p>
-                </div>
-                <div className="users-list">
-                    {isLoading && (
-                        <div className="loader-uploading">
-                            <Loader />
-                        </div>
-                    )}
-                    {!isLoading && userList.length > 0 && (
-                        <Virtuoso
-                            data={userList}
-                            overscan={100}
-                            className="testt"
-                            itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
-                        />
-                    )}
-                </div>
+                {isLoading && (
+                    <div className="loader-uploading">
+                        <Loader />
+                    </div>
+                )}
+                {!isLoading && (
+                    <Table
+                        className="users-table"
+                        tableRowClassname="user-row"
+                        title={tableHeader}
+                        columns={tableType === 'Management' ? managmentColumns : clientColumns}
+                        data={tableType === 'Management' ? copyOfUserList?.management_users : copyOfUserList?.application_users}
+                    />
+                )}
             </div>
             <Modal
-                header="Create new user"
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={addUserIcon} alt="stationImg" />
+                        </div>
+                        <p>Add a new user</p>
+                        <label>Enter user details to get started</label>
+                    </div>
+                }
                 height="550px"
+                width="450px"
                 rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
@@ -154,11 +490,13 @@ function Users() {
                 }}
                 clickOutside={() => addUserModalFlip(false)}
                 rBtnClick={() => {
+                    setCreateUserLoader(true);
                     createUserRef.current();
                 }}
+                isLoading={createUserLoader}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => closeModal(userData)} />
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} />
             </Modal>
             <Modal
                 header="User connection details"
@@ -179,6 +517,28 @@ function Users() {
                     </p>
                     <p className="note">Please note when you close this modal, you will not be able to restore your user details!!</p>
                 </div>
+            </Modal>
+            <Modal
+                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                width="520px"
+                height="240px"
+                displayButtons={false}
+                clickOutside={() => setRemoveUserModalOpen(false)}
+                open={removeUserModalOpen}
+            >
+                <DeleteItemsModal
+                    title={userToRemove.revoke ? 'Revoke user' : 'Delete user'}
+                    desc={
+                        <>
+                            Are you sure you want to {userToRemove.revoke ? 'revoke' : 'delete'} <b>{userToRemove.username}</b>?
+                        </>
+                    }
+                    buttontxt={<>I understand, {userToRemove.revoke ? 'revoke' : 'delete'} the user</>}
+                    handleDeleteSelected={() => removeUser(userToRemove)}
+                    textToConfirm={userToRemove.revoke && 'revoke'}
+                    loader={userDeletedLoader}
+                />
+                <br />
             </Modal>
         </div>
     );

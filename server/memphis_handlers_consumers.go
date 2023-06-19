@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"sort"
-	"strconv"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -181,7 +180,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 					Value: "disk",
 				}
 				analyticsParams := []analytics.EventParam{param1, param2}
-				analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-station-sdk")
+				analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -259,7 +258,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				Value: newConsumer.Name,
 			}
 			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(strconv.Itoa(connection.CreatedBy), analyticsParams, "user-create-consumer-sdk")
+			analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-consumer-sdk")
 		}
 	}
 	return nil
@@ -599,7 +598,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.SendEvent(username, "user-remove-consumer-sdk")
+			analytics.SendEvent(user.TenantName, username, "user-remove-consumer-sdk")
 		}
 	}
 

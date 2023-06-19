@@ -41,7 +41,8 @@ export const CATEGORY_LIST = {
     },
     Monitoring: {
         name: 'Monitoring',
-        color: ColorPalette[8]
+        color: ColorPalette[8],
+        osOnly: true
     },
     Notifications: {
         name: 'Notifications',
@@ -169,6 +170,7 @@ export const INTEGRATION_LIST = {
         icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={datadogIcon} alt="datadogIcon" />
@@ -265,6 +267,7 @@ export const INTEGRATION_LIST = {
         description: 'Monitor and observe Memphis infrastructure using Elasticsearch Observability and Kibana',
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={elasticIcon} alt="elasticIcon" />
@@ -307,6 +310,7 @@ export const INTEGRATION_LIST = {
         icon: <img src={grafanaIcon} alt="grafanaIcon" />,
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={grafanaIcon} alt="grafanaIcon" />
@@ -373,6 +377,7 @@ export const INTEGRATION_LIST = {
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         comingSoon: true,
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={newrelicIcon} alt="newrelicIcon" />
@@ -400,6 +405,7 @@ export const INTEGRATION_LIST = {
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={influxDBIcon} alt="influxDBIcon" />

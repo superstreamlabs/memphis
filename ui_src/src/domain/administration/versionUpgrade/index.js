@@ -30,20 +30,20 @@ function VersionUpgrade() {
     const [isLoading, setIsLoading] = useState(true);
     const [features, setFeatures] = useState({});
     const [selectedfeatures, setSelectedfeatures] = useState('Added Features');
-    const [version, setVersion] = useState([]);
+    const [latestVersion, setLatestVersion] = useState([]);
     const [versionUrl, setversionUrl] = useState('');
 
     useEffect(() => {
-        getConfigurationValue();
+        !state.isLatest && getConfigurationValue();
     }, []);
 
     const getConfigurationValue = async () => {
         try {
             const latest = await GithubRequest(LATEST_RELEASE_URL);
-            const version = latest[0].name?.split('-')[0];
-            setVersion(version);
+            const latestVersion = latest[0].name?.split('-')[0];
+            setLatestVersion(latestVersion);
             const data = await GithubRequest(RELEASE_NOTES_URL);
-            const mdFiles = data.filter((file) => file?.name.endsWith('.md') && file?.name !== 'README.md' && file?.name?.includes(version));
+            const mdFiles = data.filter((file) => file?.name.endsWith('.md') && file?.name !== 'README.md' && file?.name?.includes(latestVersion));
             if (mdFiles.length === 0) {
                 console.log('No matching files found');
                 setIsLoading(false);
@@ -97,8 +97,8 @@ function VersionUpgrade() {
                     <div className="uptodate-section">
                         <img src={uptodateIcon} alt="uptodateIcon" />
                         <div className="content">
-                            <p>You are up to date</p>
-                            <span>Memphis version {version} is currently the newest version available.</span>
+                            <p>You are up to date.</p>
+                            <span>Memphis.dev version v{state.currentVersion} is the latest version available.</span>
                         </div>
                     </div>
                 </>
@@ -115,10 +115,10 @@ function VersionUpgrade() {
                             <div className="logo">
                                 <img src={fullLogo} alt="fullLogo" />
                                 <div className="version-wrapper">
-                                    <p>{version}</p>
+                                    <p>{latestVersion}</p>
                                 </div>
                             </div>
-                            <p className="desc-vers">A New Version is available to download</p>
+                            <p className="desc-vers">A new version is available to download</p>
                             <div className="buttons">
                                 <Button
                                     width="180px"
@@ -153,8 +153,8 @@ function VersionUpgrade() {
                                 placeholder={key}
                                 colorType={selectedfeatures === key ? 'purple' : 'black'}
                                 radiusType="circle"
-                                border={selectedfeatures !== key && 'black'}
-                                backgroundColorType={selectedfeatures !== key && 'white'}
+                                border={selectedfeatures !== key && 'gray-light'}
+                                backgroundColorType={selectedfeatures !== key ? 'white' : 'purple-light'}
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => setSelectedfeatures(key)}

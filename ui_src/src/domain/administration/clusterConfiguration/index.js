@@ -159,7 +159,6 @@ function ClusterConfiguration() {
                                     value={formFields?.broker_host}
                                     onChanges={(e) => handleChange('broker_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST) : ''}
-                                    disabled={process.env.REACT_APP_SANDBOX_ENV}
                                 />
                                 <InputRow
                                     title="UI HOSTNAME"
@@ -168,7 +167,6 @@ function ClusterConfiguration() {
                                     value={formFields?.ui_host}
                                     onChanges={(e) => handleChange('ui_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_UI_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_UI_HOST) : ''}
-                                    disabled={process.env.REACT_APP_SANDBOX_ENV}
                                 />
                                 <InputRow
                                     title="REST GATEWAY HOSTNAME"
@@ -177,7 +175,6 @@ function ClusterConfiguration() {
                                     value={formFields?.rest_gw_host}
                                     onChanges={(e) => handleChange('rest_gw_host', e.target.value)}
                                     placeholder={localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) === undefined ? localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST) : ''}
-                                    disabled={process.env.REACT_APP_SANDBOX_ENV}
                                 />
                             </>
                         )}

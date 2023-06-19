@@ -29,7 +29,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -216,70 +215,6 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (models.MainOverviewData, error) {
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	mainOverviewData := &models.MainOverviewData{}
-	generalErr := new(error)
-
-	wg.Add(3)
-	go func() {
-		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.TotalStations = len(stations)
-		mainOverviewData.Stations = stations
-		mainOverviewData.TotalMessages = totalMessages
-		mainOverviewData.TotalDlsMessages = totalDlsMsgs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.SystemComponents = systemComponents
-		mainOverviewData.MetricsEnabled = metricsEnabled
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.BrokersThroughput = brokersThroughputs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	wg.Wait()
-	if *generalErr != nil {
-		return models.MainOverviewData{}, *generalErr
-	}
-
-	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
-		k8sEnv = false
-	}
-	mainOverviewData.K8sEnv = k8sEnv
-	return *mainOverviewData, nil
-}
-
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -299,7 +234,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-enter-main-overview")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -919,7 +854,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-enter-station-overview")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)

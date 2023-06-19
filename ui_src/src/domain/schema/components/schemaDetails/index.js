@@ -506,7 +506,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             placeholder={
                                 <div className="attach-button">
                                     <AddRounded className="add" />
-                                    <span>Attach to Station</span>
+                                    <span>Enforce to Station</span>
                                 </div>
                             }
                             radiusType="semi-round"

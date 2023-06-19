@@ -22,7 +22,8 @@
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
-                "CONNECTION_TOKEN": "memphis"
+                "CONNECTION_TOKEN": "memphis",
+                "ENV": "dev"
             }
         },
         {
@@ -46,7 +47,8 @@
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
-                "CONNECTION_TOKEN": "memphis"
+                "CONNECTION_TOKEN": "memphis",
+                "ENV": "dev"
             }
         },
         {
@@ -70,7 +72,8 @@
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
-                "CONNECTION_TOKEN": "memphis"
+                "CONNECTION_TOKEN": "memphis",
+                "ENV": "dev"
             }
         },
         {
@@ -94,7 +97,8 @@
                 "METADATA_DB_HOST": "localhost",
                 "METADATA_DB_PORT": "5005",
                 "USER_PASS_BASED_AUTH": "true",
-                "CONNECTION_TOKEN": "memphis"
+                "CONNECTION_TOKEN": "memphis",
+                "ENV": "dev"
             }
         }
     ]

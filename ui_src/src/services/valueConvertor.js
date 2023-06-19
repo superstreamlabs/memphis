@@ -138,7 +138,7 @@ export const convertBytes = (bytes, round) => {
 };
 
 export const capitalizeFirst = (str) => {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    return str?.charAt(0).toUpperCase() + str?.slice(1).toLowerCase();
 };
 
 export const filterArray = (arr1, arr2) => {
@@ -309,6 +309,32 @@ export const tieredStorageTimeValidator = (value) => {
     }
 };
 
+export const replicasConvertor = (value, stringToNumber) => {
+    if (stringToNumber) {
+        switch (value) {
+            case 'No HA (1)':
+                return 1;
+            case 'HA (3)':
+                return 3;
+            case 'Super HA (5)':
+                return 5;
+            default:
+                return 1;
+        }
+    } else {
+        switch (value) {
+            case 1:
+                return 'No HA (1)';
+            case 3:
+                return 'HA (3)';
+            case 5:
+                return 'Super HA (5)';
+            default:
+                return 'No HA (1)';
+        }
+    }
+};
+
 const isJsonString = (str) => {
     try {
         JSON.parse(str);
@@ -354,4 +380,9 @@ export const compareVersions = (a, b) => {
     }
 
     return true;
+};
+
+export const isCloud = () => {
+    const cloud_env = process.env.REACT_APP_CLOUD === 'true';
+    return cloud_env;
 };
