@@ -34,6 +34,7 @@ import {
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_WELCOME_MESSAGE
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
@@ -66,6 +67,7 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_CONNECTION_TOKEN, userData.connection_token);
         localStorage.setItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH, userData.user_pass_based_auth);
         localStorage.setItem(LOCAL_STORAGE_ACCOUNT_ID, userData.account_id);
+        localStorage.setItem(LOCAL_STORAGE_INTERNAL_WS_PASS, userData.internal_ws_pass);
 
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);

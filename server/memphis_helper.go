@@ -14,10 +14,12 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
@@ -32,11 +34,12 @@ import (
 )
 
 const (
-	crlf      = "\r\n"
-	hdrPreEnd = len(hdrLine) - len(crlf)
-	statusLen = 3 // e.g. 20x, 40x, 50x
-	statusHdr = "Status"
-	descrHdr  = "Description"
+	crlf                 = "\r\n"
+	hdrPreEnd            = len(hdrLine) - len(crlf)
+	statusLen            = 3 // e.g. 20x, 40x, 50x
+	statusHdr            = "Status"
+	descrHdr             = "Description"
+	allowedPasswordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
 )
 
 const (
@@ -1161,6 +1164,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		return &Account{}, Options{}, err
 	}
 
+	decriptionKey := getAESKey()
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1193,12 +1198,16 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 	if configuration.USER_PASS_BASED_AUTH {
 		if !reload {
 			if len(opts.Accounts) > 0 {
-				tenantsToUpsert := []string{globalAccountName}
+				tenantsToUpsert := []models.TenantForUpsert{}
 				for _, account := range opts.Accounts {
 					name := account.GetName()
 					if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
 						name = strings.ToLower(name)
-						tenantsToUpsert = append(tenantsToUpsert, name)
+						encryptedPass, err := EncryptAES([]byte(generateRandomPassword(12)))
+						if err != nil {
+							return &Account{}, Options{}, err
+						}
+						tenantsToUpsert = append(tenantsToUpsert, models.TenantForUpsert{Name: name, InternalWSPass: encryptedPass})
 					}
 				}
 				err = db.UpsertBatchOfTenants(tenantsToUpsert)
@@ -1306,7 +1315,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
-		
+
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
 		accounts := []*Account{}
@@ -1323,10 +1332,13 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 					streams:  siList,
 				},
 			}
-			// generate random password for each tenant
+			decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
 			appUsers = append(appUsers, &User{
 				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID),
-				Password: configuration.CONNECTION_TOKEN,
+				Password: decryptedUserPassword,
 				Account:  account,
 			})
 			accounts = append(accounts, account)
@@ -1352,38 +1364,45 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 			accounts = append(accounts, gacc)
 		}
-		// ** not relevant for cloud
-		if reload {
-			appUsers = append(appUsers, &User{
-				Username: "root$1",
-				Password: configuration.ROOT_PASSWORD,
-				Account:  serv.gacc,
-			})
-			appUsers = append(appUsers, &User{
-				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
-				Password: configuration.CONNECTION_TOKEN,
-				Account:  serv.gacc,
-			})
-			addedTenant[conf.GlobalAccountName] = serv.gacc
-		} else {
-			appUsers = append(appUsers, &User{
-				Username: "root$1",
-				Password: configuration.ROOT_PASSWORD,
-				Account:  gacc,
-			})
-			appUsers = append(appUsers, &User{
-				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
-				Password: configuration.CONNECTION_TOKEN,
-				Account:  gacc,
-			})
-			addedTenant[conf.GlobalAccountName] = gacc
+		if !CLOUD_ENV {
+			_, globalT, err := db.GetGlobalTenant()
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			if reload {
+				appUsers = append(appUsers, &User{
+					Username: "root$1",
+					Password: configuration.ROOT_PASSWORD,
+					Account:  serv.gacc,
+				})
+				appUsers = append(appUsers, &User{
+					Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
+					Password: decryptedPass,
+					Account:  serv.gacc,
+				})
+				addedTenant[conf.GlobalAccountName] = serv.gacc
+			} else {
+				appUsers = append(appUsers, &User{
+					Username: "root$1",
+					Password: configuration.ROOT_PASSWORD,
+					Account:  gacc,
+				})
+				appUsers = append(appUsers, &User{
+					Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
+					Password: decryptedPass,
+					Account:  gacc,
+				})
+				addedTenant[conf.GlobalAccountName] = gacc
+			}
 		}
-		// not relevant for cloud **
 		tenantsId[globalAccountName] = 1
-		key := getAESKey()
 		for _, user := range users {
 			name := user.TenantName
-			decryptedUserPassword, err := DecryptAES(key, user.Password)
+			decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 			if err != nil {
 				return &Account{}, Options{}, err
 			}
@@ -1429,4 +1448,16 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 	}
 
 	return tenantName, message, nil
+}
+
+func generateRandomPassword(length int) string {
+	charsetLength := big.NewInt(int64(len(allowedPasswordChars)))
+	password := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		randomIndex, _ := rand.Int(rand.Reader, charsetLength)
+		password[i] = allowedPasswordChars[randomIndex.Int64()]
+	}
+
+	return string(password)
 }

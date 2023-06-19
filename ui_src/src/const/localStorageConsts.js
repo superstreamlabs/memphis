@@ -25,6 +25,7 @@ export const LOCAL_STORAGE_EXPIRED_TOKEN = 'expires_in';
 export const LOCAL_STORAGE_CLIENTS_PORT = 'client_port';
 export const LOCAL_STORAGE_BROKER_HOST = 'broker_host';
 export const LOCAL_STORAGE_ACCOUNT_ID = 'account_id';
+export const LOCAL_STORAGE_INTERNAL_WS_PASS = 'internal_ws_pass';
 export const LOCAL_STORAGE_AVATAR_ID = 'avatar_id';
 export const LOCAL_STORAGE_USER_NAME = 'user_name';
 export const LOCAL_STORAGE_FULL_NAME = 'full_name';
