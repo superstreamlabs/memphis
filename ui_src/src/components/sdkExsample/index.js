@@ -94,7 +94,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 const regexPatternGo = `, memphis\.AccountId\("${accountId}"\)`; 
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternGo, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternGo, "");
-                const regexPatternJs = `\naccountId: '${accountId}'`; 
+                const regexPatternJs = `accountId: '${accountId}'`; 
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, "");
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
