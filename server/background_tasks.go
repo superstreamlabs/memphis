@@ -259,13 +259,14 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
-	
+
 	return nil
 }
 
 func (s *Server) uploadMsgsToTier2Storage() {
 	currentTimeFrame := s.opts.TieredStorageUploadIntervalSec
 	ticker := time.NewTicker(time.Duration(currentTimeFrame) * time.Second)
+	defer ticker.Stop()
 	for range ticker.C {
 		if s.opts.TieredStorageUploadIntervalSec != currentTimeFrame {
 			currentTimeFrame = s.opts.TieredStorageUploadIntervalSec
@@ -288,7 +289,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			TIERED_STORAGE_CONSUMER_CREATED = true
 		}
 		tieredStorageMapLock.Lock()
-		err := flushMapToTire2Storage()
+		err := flushMapToTier2Storage()
 		if err != nil {
 			serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
 			tieredStorageMapLock.Unlock()
