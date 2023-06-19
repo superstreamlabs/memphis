@@ -30,6 +30,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	dockerClient "github.com/docker/docker/client"
@@ -47,6 +48,17 @@ type TenantHandler struct{ S *Server }
 type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type MainOverviewData struct {
+	TotalStations     int                               `json:"total_stations"`
+	TotalMessages     uint64                            `json:"total_messages"`
+	TotalDlsMessages  uint64                            `json:"total_dls_messages"`
+	SystemComponents  []models.SystemComponents         `json:"system_components"`
+	Stations          []models.ExtendedStation          `json:"stations"`
+	K8sEnv            bool                              `json:"k8s_env"`
+	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
+	MetricsEnabled    bool                              `json:"metrics_enabled"`
 }
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
@@ -1467,4 +1479,68 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 	default:
 		return
 	}
+}
+
+func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainOverviewData, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	mainOverviewData := &MainOverviewData{}
+	generalErr := new(error)
+
+	wg.Add(3)
+	go func() {
+		stationsHandler := StationsHandler{S: mh.S}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.TotalStations = len(stations)
+		mainOverviewData.Stations = stations
+		mainOverviewData.TotalMessages = totalMessages
+		mainOverviewData.TotalDlsMessages = totalDlsMsgs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.SystemComponents = systemComponents
+		mainOverviewData.MetricsEnabled = metricsEnabled
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.BrokersThroughput = brokersThroughputs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if *generalErr != nil {
+		return MainOverviewData{}, *generalErr
+	}
+
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
+	}
+	mainOverviewData.K8sEnv = k8sEnv
+	return *mainOverviewData, nil
 }
