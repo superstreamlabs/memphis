@@ -23,16 +23,16 @@ import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
-import SelectComponent from '../../../components/select';
 
 const CreateUserDetails = ({ createUserRef, closeModal }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
-        password: '',
-        user_type: 'management'
+        password: ''
     });
+    const [userType, setUserType] = useState('management');
     const [passwordType, setPasswordType] = useState(0);
+
     const userTypeOptions = [
         {
             id: 1,
@@ -102,16 +102,17 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
         creationForm.setFieldsValue({ ['generatedPassword']: newPassword });
     };
 
+    const handleUserTypeChanged = (value) => {
+        setUserType(value);
+        creationForm.setFieldValue('user_type', value);
+    };
+
     return (
         <div className="create-user-form">
             <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish}>
                 <div className="field user-type">
-                    <Form.Item name="user_type" initialValue={formFields.user_type}>
-                        <SelectCheckBox
-                            selectOptions={userTypeOptions}
-                            handleOnClick={(e) => updateFormState('user_type', e.value)}
-                            selectedOption={formFields.user_type}
-                        />
+                    <Form.Item name="user_type" initialValue={userType}>
+                        <SelectCheckBox selectOptions={userTypeOptions} handleOnClick={(e) => handleUserTypeChanged(e.value)} selectedOption={userType} />
                     </Form.Item>
                 </div>
                 <div className="user-details">
@@ -121,21 +122,19 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                         rules={[
                             {
                                 required: true,
-                                message: formFields.user_type === 'management' && isCloud() ? 'Please input email!' : 'Please input username!'
+                                message: userType === 'management' && isCloud() ? 'Please input email!' : 'Please input username!'
                             },
                             {
                                 message:
-                                    formFields.user_type === 'management' && isCloud()
-                                        ? 'Please enter a valid email address!'
-                                        : 'Username has to include only letters/numbers and .',
-                                pattern: formFields.user_type === 'management' && isCloud() ? /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/ : /^[a-zA-Z0-9_.]*$/
+                                    userType === 'management' && isCloud() ? 'Please enter a valid email address!' : 'Username has to include only letters/numbers and .',
+                                pattern: userType === 'management' && isCloud() ? /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/ : /^[a-zA-Z0-9_.]*$/
                             }
                         ]}
                     >
                         <div className="field username">
-                            <p className="field-title">{formFields.user_type === 'management' && isCloud() ? 'Email*' : 'Username*'}</p>
+                            <p className="field-title">{userType === 'management' && isCloud() ? 'Email*' : 'Username*'}</p>
                             <Input
-                                placeholder={formFields.user_type === 'management' && isCloud() ? 'Type email' : 'Type username'}
+                                placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
                                 type="text"
                                 radiusType="semi-round"
                                 colorType="black"
@@ -149,10 +148,10 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                             />
                         </div>
                     </Form.Item>
-                    {formFields.user_type === 'management' && (
+                    {userType === 'management' && (
                         <>
                             <Form.Item
-                                name="fullname"
+                                name="full_name"
                                 rules={[
                                     {
                                         required: isCloud() ? true : false,
@@ -175,9 +174,9 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                         borderColorType="gray"
                                         height="40px"
                                         fontSize="12px"
-                                        onBlur={(e) => updateFormState('fullname', e.target.value)}
-                                        onChange={(e) => updateFormState('fullname', e.target.value)}
-                                        value={formFields.fullname}
+                                        onBlur={(e) => updateFormState('full_name', e.target.value)}
+                                        onChange={(e) => updateFormState('full_name', e.target.value)}
+                                        value={formFields.full_name}
                                     />
                                 </div>
                             </Form.Item>
@@ -221,7 +220,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                             </div>
                         </>
                     )}
-                    {formFields.user_type === 'application' && (
+                    {userType === 'application' && (
                         <>
                             <Form.Item name="description">
                                 <div className="field description">
@@ -245,8 +244,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                     )}
                 </div>
 
-                {((formFields.user_type === 'management' && !isCloud()) ||
-                    (formFields.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
+                {((userType === 'management' && !isCloud()) || (userType === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
                     <div className="password-section">
                         <p className="fields-title">Set password</p>
                         <Form.Item name="passwordType" initialValue={passwordType}>

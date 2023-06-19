@@ -37,7 +37,11 @@ export const DOCKER_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/d
 export const K8S_UPGRADE_URL = 'https://docs.memphis.dev/memphis/deployment/kubernetes/how-to-upgrade';
 
 export const CLOUD_URL = isCloud()
-    ? window.location.href?.includes('cloud-staging') || window.location.href?.includes('localhost')
-        ? 'http://localhost:10005/sign-up/'
+    ? window.location.href?.includes('localhost')
+        ? 'http://localhost:10005/sign-in/'
+        : window.location.href?.includes('cloud-qa')
+        ? 'https://cloud-qa.memphis.dev/sign-in/'
+        : window.location.href?.includes('cloud-staging')
+        ? 'https://cloud-staging.memphis.dev/sign-in/'
         : 'https://cloud.memphis.dev'
     : null;

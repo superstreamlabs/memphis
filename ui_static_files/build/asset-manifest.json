@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.e042612d.css",
-    "main.js": "/static/js/main.381f3154.js",
+    "main.css": "/static/css/main.d8f03c4b.css",
+    "main.js": "/static/js/main.a5da1a5e.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -83,7 +83,7 @@
     "static/js/6476.634b9f6d.chunk.js": "/static/js/6476.634b9f6d.chunk.js",
     "static/js/1391.ba40a944.chunk.js": "/static/js/1391.ba40a944.chunk.js",
     "static/js/6619.03b4c4cd.chunk.js": "/static/js/6619.03b4c4cd.chunk.js",
-    "static/js/1448.9e4b081c.chunk.js": "/static/js/1448.9e4b081c.chunk.js",
+    "static/js/1448.2f35c683.chunk.js": "/static/js/1448.2f35c683.chunk.js",
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -113,6 +113,7 @@
     "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
     "static/media/experimentalIcon.svg": "/static/media/experimentalIcon.c8d428c18177f56f052c5c655702d6f5.svg",
+    "static/media/noSchemasFound.svg": "/static/media/noSchemasFound.2997919164772bdba31339efbe98cedc.svg",
     "static/media/pagerDutyIcon.svg": "/static/media/pagerDutyIcon.3125f9535963570c1b3fcffb2fc31cf4.svg",
     "static/media/uptodateIcon.svg": "/static/media/uptodateIcon.9e422510ad1f8c01f74e90ce91c9817b.svg",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
@@ -124,6 +125,7 @@
     "static/media/cloudeBadge.svg": "/static/media/cloudeBadge.d15ea26e3e86a210f132963b3542feba.svg",
     "static/media/noCodeExample.svg": "/static/media/noCodeExample.77cb25f7ecdbcdeffd5638876503d4d1.svg",
     "static/media/slackBannerPopup.webp": "/static/media/slackBannerPopup.e3b008a82b234eaa8062.webp",
+    "static/media/noTagsFound.svg": "/static/media/noTagsFound.337cbf0635c097bfc8f55174a6716d91.svg",
     "static/media/readyToRoll.svg": "/static/media/readyToRoll.9f39c1ec2593dd774eb30b5a3e3d7439.svg",
     "static/media/emptyTags.svg": "/static/media/emptyTags.cc3c010bc99b5579619b02885f447c9a.svg",
     "static/media/attachedPlaceholder.svg": "/static/media/attachedPlaceholder.b1f38ca10ba6cbd7af24f8b4dae01db8.svg",
@@ -147,7 +149,6 @@
     "static/media/grafanaBanner.webp": "/static/media/grafanaBanner.3de6be0653754ff1052e.webp",
     "static/media/usersIcon.svg": "/static/media/usersIcon.1baef6daf37cdcbab538da49077dc1bb.svg",
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
-    "index.html": "/index.html",
     "static/media/s3Banner.webp": "/static/media/s3Banner.58721b84536982abd2ed.webp",
     "static/media/TotalMessages.svg": "/static/media/TotalMessages.6d75ac5bd3a106f6ac4e37800d4c25aa.svg",
     "static/media/pagerdutyBanner.webp": "/static/media/pagerdutyBanner.3a702b9db3201eba99a4.webp",
@@ -160,6 +161,7 @@
     "static/media/waitingConsumer.svg": "/static/media/waitingConsumer.9c8fe46e57642589a37ea1e507345af8.svg",
     "static/media/datadogBanner.webp": "/static/media/datadogBanner.3f2f0920e1bf04b7b92e.webp",
     "static/media/unsupported.svg": "/static/media/unsupported.4ad964333a77d4614aed147479badbc8.svg",
+    "index.html": "/index.html",
     "static/media/TieredStorageInterval.svg": "/static/media/TieredStorageInterval.456b755bab0bde86d6f78f37ac9b2807.svg",
     "static/media/bgGetStarted.svg": "/static/media/bgGetStarted.1db75bcd048189e22af661908cfdd4e0.svg",
     "static/media/verifiedIcon.svg": "/static/media/verifiedIcon.0d8d050883148eadba2c89769a9a3d46.svg",
@@ -267,7 +269,7 @@
     "static/media/add.svg": "/static/media/add.6c60edfe13d80605dbbdbd34af338453.svg"
   },
   "entrypoints": [
-    "static/css/main.e042612d.css",
-    "static/js/main.381f3154.js"
+    "static/css/main.d8f03c4b.css",
+    "static/js/main.a5da1a5e.js"
   ]
 }

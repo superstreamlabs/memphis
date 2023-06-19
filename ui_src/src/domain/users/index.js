@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useEffect, useContext, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useContext, useState, useRef } from 'react';
 import { AccountCircleRounded } from '@material-ui/icons';
 
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
@@ -49,6 +49,9 @@ function Users() {
     const [isLoading, setIsLoading] = useState(false);
     const [tableType, setTableType] = useState('Management');
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
+    const [createUserLoader, setCreateUserLoader] = useState(false);
+    const [userToResend, setuserToResend] = useState('');
+
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'users' });
         getAllUsers();
@@ -94,7 +97,6 @@ function Users() {
             if (userData.user_type === 'application') {
                 updatedUserData.application_users = [...updatedUserData.application_users, userData];
             }
-
             return updatedUserData;
         });
 
@@ -113,6 +115,7 @@ function Users() {
         });
 
         addUserModalFlip(false);
+        setCreateUserLoader(false);
         if (userData.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'false') {
             setUserDetailsModal(true);
         }
@@ -153,7 +156,7 @@ function Users() {
 
     const deleteUser = (username, user_type) => {
         setuserToRemove({ username: username, type: user_type });
-        setUserDeletedLoader(true);
+        setRemoveUserModalOpen(true);
     };
 
     const revokeUser = (username, user_type) => {
@@ -162,6 +165,7 @@ function Users() {
     };
 
     const resendEmail = async (username) => {
+        setuserToResend(username);
         setResendEmailLoader(true);
         try {
             await httpRequest('POST', ApiEndpoints.RESEND_INVITATION, {
@@ -173,6 +177,7 @@ function Users() {
         } catch (error) {
             setResendEmailLoader(false);
         }
+        setuserToResend('');
     };
 
     const clientColumns = [
@@ -270,7 +275,7 @@ function Users() {
             key: 'pending',
             render: (pending) => (
                 <div className="status">
-                    <ActiveBadge active={!pending} content={pending ? 'Panding' : 'Active'} />
+                    <ActiveBadge active={!pending} content={pending ? 'Pending' : 'Active'} />
                 </div>
             )
         },
@@ -348,13 +353,13 @@ function Users() {
                                     backgroundColorType={'white'}
                                     fontSize="12px"
                                     fontFamily="InterMedium"
-                                    isLoading={resendEmailLoader}
+                                    isLoading={record.username === userToResend && resendEmailLoader}
                                     onClick={() => {
                                         resendEmail(record.username);
                                     }}
                                 />
                                 <Button
-                                    width="80px"
+                                    width="85px"
                                     height="30px"
                                     placeholder={
                                         <div className="action-button">
@@ -368,6 +373,7 @@ function Users() {
                                     backgroundColorType={'white'}
                                     fontSize="12px"
                                     fontFamily="InterMedium"
+                                    isLoading={record.username === userToRemove.username && userDeletedLoader}
                                     onClick={() => {
                                         revokeUser(record.username, record.user_type);
                                     }}
@@ -389,6 +395,7 @@ function Users() {
                                 backgroundColorType={'white'}
                                 fontSize="12px"
                                 fontFamily="InterMedium"
+                                isLoading={record.username === userToRemove.username && userDeletedLoader}
                                 onClick={() => {
                                     deleteUser(record.username, record.user_type);
                                 }}
@@ -455,11 +462,6 @@ function Users() {
                     </div>
                 )}
                 {!isLoading && (
-                    // <Virtuoso
-                    //     data={userList}
-                    //     overscan={100}
-                    //     itemContent={(index, user) => <UserItem key={user.id} content={user} handleRemoveUser={() => removeUser(user.username)} />}
-                    // />
                     <Table
                         className="users-table"
                         tableRowClassname="user-row"
@@ -488,8 +490,10 @@ function Users() {
                 }}
                 clickOutside={() => addUserModalFlip(false)}
                 rBtnClick={() => {
+                    setCreateUserLoader(true);
                     createUserRef.current();
                 }}
+                isLoading={createUserLoader}
                 open={addUserModalIsOpen}
             >
                 <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} />

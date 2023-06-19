@@ -1,7 +1,6 @@
 .sidebar-container {
     width: 90px;
     height: 100vh;
-    position: relative;
     text-align: center;
     background: #fcfcfc;
     min-height: 450px;
@@ -18,6 +17,9 @@
         .item-wrapper {
             margin-bottom: 15px;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             p {
                 font-size: 80%;
                 color: var(--gray);
@@ -40,9 +42,10 @@
             background-color: var(--purple);
             color: var(--white);
             font-size: 10px;
-            padding: 2px 5px;
-            border-radius: 8px;
+            position: relative;
+            border-radius: 32px;
             cursor: not-allowed;
+            width: 70%;
         }
     }
     .sandboxUserImg {
