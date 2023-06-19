@@ -32,7 +32,11 @@ func (srv *Server) removeStaleStations() {
 			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
 				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
-				err := db.DeleteStation(s.Name, s.TenantName)
+				err := removeStationResources(srv, s, false)
+				if err != nil {
+					srv.Errorf("removeStaleStations: " + err.Error())
+				}
+				err = db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
 					srv.Errorf("removeStaleStations: " + err.Error())
 				}
