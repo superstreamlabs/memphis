@@ -287,10 +287,10 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
-                <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
+                {/* <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
                     <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
                     <label className="icon-name">Support</label>
-                </div>
+                </div> */}
                 <Link to={{ pathname: DOC_URL }} target="_blank">
                     <div
                         className="integration-icon-wrapper"
