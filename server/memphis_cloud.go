@@ -1315,6 +1315,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
+		"full_name":               fullName,
 		"user_type":               userType,
 		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
