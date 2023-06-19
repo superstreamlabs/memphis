@@ -70,8 +70,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);
             codeEx.consumer = codeEx.consumer?.replaceAll('<station-name>', stationName);
-            codeEx.producer = codeEx.producer?.replaceAll('<account-id>', localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID));
-            codeEx.consumer = codeEx.consumer?.replaceAll('<account-id>', localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID));
+            codeEx.producer = codeEx.producer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             if (username) {
                 codeEx.producer = codeEx.producer?.replaceAll('<application type username>', username);
                 codeEx.consumer = codeEx.consumer?.replaceAll('<application type username>', username);
@@ -90,17 +92,17 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = codeEx.producer?.replaceAll('<broker-token>', '<password>');
                 codeEx.consumer = codeEx.consumer?.replaceAll('<broker-token>', '<password>');
             } else {
-                const accountId = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)
-                const regexPatternGo = `, memphis\.AccountId\("${accountId}"\)`; 
+                const accountId = parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID))
+                const regexPatternGo = `, memphis\.AccountId\(${accountId}\)`; 
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternGo, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternGo, "");
-                const regexPatternJs = `accountId: '${accountId}'`; 
+                const regexPatternJs = `accountId: ${accountId}`; 
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, "");
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, "");
 
-                const regexPatternPython = `, account_id="${accountId}"`;
+                const regexPatternPython = `, account_id=${accountId}`;
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternPython, "");
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, "");
             }
