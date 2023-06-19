@@ -1326,6 +1326,13 @@ func (s *Server) setSystemAccount(acc *Account) error {
 	// Send out statsz updates periodically.
 	s.wrapChk(s.startStatszTimer)()
 
+	sysUser := &User{
+		Username: "sys",
+		Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+		Account:  acc,
+	}
+	s.users[sysUser.Username] = sysUser
+
 	// If we have existing accounts make sure we enable account tracking.
 	s.mu.Lock()
 	s.accounts.Range(func(k, v interface{}) bool {

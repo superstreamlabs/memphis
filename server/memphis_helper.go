@@ -1385,6 +1385,12 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 					Account:  serv.gacc,
 				})
 				addedTenant[conf.GlobalAccountName] = serv.gacc
+				sysUser := &User{
+					Username: "sys",
+					Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+					Account:  serv.sys.account,
+				}
+				appUsers = append(appUsers, sysUser)
 			} else {
 				appUsers = append(appUsers, &User{
 					Username: "root$1",
@@ -1413,18 +1419,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			})
 		}
 
-		// ** insert user where sys created
-		sysAcc := &Account{
-			Name:   DEFAULT_SYSTEM_ACCOUNT,
-			limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},
-		}
-		sysUser := &User{
-			Username: "sys",
-			Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
-			Account:  sysAcc,
-		}
-		accounts = append(accounts, sysAcc)
-		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
