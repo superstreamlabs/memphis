@@ -347,7 +347,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	err = EncryptOldUnencryptedValues()
 	if err != nil {
-		err = errors.New("Failed encrypt old unencrypted values: " + err.Error())
+		err = fmt.Errorf("Failed encrypt old unencrypted values: %v", err.Error())
 		return nil, db.MetadataStorage{}, err
 	}
 

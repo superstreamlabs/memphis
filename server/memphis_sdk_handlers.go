@@ -272,12 +272,12 @@ func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Accoun
 func respondWithResp(tenantName string, s *Server, replySubject string, resp memphisResponse) {
 	account, err := s.lookupAccount(tenantName)
 	if err != nil {
-		serv.Errorf("respondWithResp: " + err.Error())
+		serv.Errorf("[tenant name: %v]respondWithResp: %v", tenantName, err.Error())
 		return
 	}
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
-		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
+		serv.Errorf("[tenant name: %v]respondWithResp: response marshal error: %v", tenantName, err.Error())
 		return
 	}
 	s.sendInternalAccountMsgWithEcho(account, replySubject, rawResp)
@@ -292,7 +292,7 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 	subject := sdkClientsUpdatesSubject
 	msg, err := json.Marshal(sdkClientsUpdate)
 	if err != nil {
-		s.Errorf("SendUpdateToClients: " + err.Error())
+		s.Errorf("SendUpdateToClients: %v", err.Error())
 		return
 	}
 	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)

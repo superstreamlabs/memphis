@@ -24,17 +24,17 @@ import (
 func (srv *Server) removeStaleStations() {
 	stations, err := db.GetActiveStations()
 	if err != nil {
-		srv.Errorf("removeStaleStations: " + err.Error())
+		srv.Errorf("removeStaleStations: %v", err.Error())
 	}
 	for _, s := range stations {
 		go func(srv *Server, s models.Station) {
 			stationName, _ := StationNameFromStr(s.Name)
 			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
+				srv.Warnf("[tenant name: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
 				err := db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
-					srv.Errorf("removeStaleStations: " + err.Error())
+					srv.Errorf("[tenant name: %v]removeStaleStations: %v", s.TenantName, err.Error())
 				}
 			}
 		}(srv, s)
@@ -45,19 +45,19 @@ func updateSystemLiveness() {
 	stationsHandler := StationsHandler{S: serv}
 	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
 	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
 		return
 	}
 
 	producersCount, err := db.CountAllActiveProudcers()
 	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
 		return
 	}
 
 	consumersCount, err := db.CountAllActiveConsumers()
 	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
 		return
 	}
 
@@ -82,7 +82,7 @@ func updateSystemLiveness() {
 		Value: strconv.Itoa(int(consumersCount)),
 	}
 	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
- 	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
+	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {
@@ -94,7 +94,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
 			if err != nil {
-				s.Errorf("aggregateClientConnections: " + err.Error())
+				s.Errorf("aggregateClientConnections: %v", err.Error())
 				return
 			}
 
@@ -120,7 +120,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 func killFunc(s *Server) {
 	connections, err := db.GetActiveConnections()
 	if err != nil {
-		serv.Errorf("killFunc: GetActiveConnections: " + err.Error())
+		serv.Errorf("killFunc: GetActiveConnections: %v", err.Error())
 		return
 	}
 
@@ -128,7 +128,7 @@ func killFunc(s *Server) {
 		var zombieConnections []string
 		clientConnectionIds, err := aggregateClientConnections(s)
 		if err != nil {
-			serv.Errorf("killFunc: aggregateClientConnections: " + err.Error())
+			serv.Errorf("killFunc: aggregateClientConnections: %v", err.Error())
 			return
 		}
 		for _, conn := range connections {
@@ -143,15 +143,15 @@ func killFunc(s *Server) {
 			serv.Warnf("Zombie connections found, killing")
 			err := db.KillRelevantConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
+				serv.Errorf("killFunc: killRelevantConnections: %v", err.Error())
 			}
 			err = db.KillProducersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
+				serv.Errorf("killFunc: killProducersByConnections: %v", err.Error())
 			}
 			err = db.KillConsumersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
+				serv.Errorf("killFunc: killConsumersByConnections: %v", err.Error())
 			}
 		}
 	}
