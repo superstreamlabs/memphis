@@ -23,7 +23,7 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import ImgUploader from './imgUploader';
 import { isCloud } from '../../services/valueConvertor';
-import { CLOUD_URL } from '../../config';
+import AuthService from '../../services/auth';
 
 function Profile() {
     const [userType, setUserType] = useState('');
@@ -42,8 +42,7 @@ function Profile() {
         try {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
             modalFlip(false);
-            localStorage.clear();
-            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
+            AuthService.logout();
         } catch (err) {
             return;
         }

@@ -103,9 +103,11 @@ function SideBar() {
         if (isCloud()) {
             try {
                 await httpRequest('POST', ApiEndpoints.SIGN_OUT);
+                AuthService.logout();
             } catch (error) {}
+        } else {
+            AuthService.logout();
         }
-        AuthService.logout();
     };
 
     const content = (
@@ -210,7 +212,7 @@ function SideBar() {
                         {state.route === 'stations' ? (
                             <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
                         ) : (
-                            <img src={hoveredItem === 'stations' ? schemaIconActive : stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                            <img src={hoveredItem === 'stations' ? stationsIconActive : stationsIcon} alt="stationsIcon" width="20" height="20"></img>
                         )}
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
