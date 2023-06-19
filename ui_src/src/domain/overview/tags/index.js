@@ -12,37 +12,49 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
 import Tag from '../../../components/tag';
 import { Divider } from 'antd';
+import { Context } from '../../../hooks/store';
+import noTagsFound from '../../../assets/images/noTagsFound.svg';
 
 const Tags = () => {
-    const [tags, setTags] = useState([
-        { name: 'Github', usage: '10 stations, 2 schemas', color: '0, 165, 255' },
-        { name: 'Launch 2.0', usage: '7 stations, 2 schemas', color: '252, 52, 0' },
-        { name: 'MACQUARIE', usage: '2 schemas', color: '85, 66, 246' }
-    ]);
-
+    const [state, dispatch] = useContext(Context);
     return (
         <div className="overview-components-wrapper">
-            <div className="overview-tags-container">
-                <div className="overview-components-header">
-                    <p>Most used tags</p>
-                </div>
-
-                {tags.map((tag, index) => (
-                    <div key={index}>
-                        <span className="tag-item">
-                            <span className="item">
-                                <label className="item-num">{`${index + 1}`}</label>
-                                <Tag tag={{ color: tag.color, name: tag.name }} onClick={() => ''}></Tag>
-                            </span>
-                            <label className="attached-component">{tag.usage}</label>
-                        </span>
-                        <Divider />
+            {state?.monitor_data?.tags_details.length > 0 ? (
+                <div className="overview-tags-container">
+                    <div className="overview-components-header">
+                        <p>Most used tags</p>
                     </div>
-                ))}
-            </div>
+                    {state?.monitor_data?.tags_details?.map((tag, index) => {
+                        return (
+                            <div key={index}>
+                                <span className="tag-item">
+                                    <span className="item">
+                                        <label className="item-num">{`${index + 1}`}</label>
+                                        <Tag tag={{ color: tag.color, name: tag.name }} onClick={() => ''}></Tag>
+                                    </span>
+                                    <label className="attached-component">
+                                        {' '}
+                                        {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
+                                            tag.schemas_count === 1 ? '' : 's'
+                                        }.`}{' '}
+                                    </label>
+                                </span>
+                                <Divider />
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="no-data">
+                    <img src={noTagsFound} alt="no data found" />
+                    <p>No tags yet</p>
+                    <label>Tags are a great way to organize your data.</label>
+                    <label>Create a tag to get started.</label>
+                </div>
+            )}
         </div>
     );
 };

@@ -52,7 +52,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                 notFoundContent={
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="50" height="50" alt="placeholderSchema" />
-                        <p className="title">No schemas found</p>
+                        <p className="title">No schemas yet</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
                             className="modal-btn"

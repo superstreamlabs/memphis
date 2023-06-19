@@ -32,7 +32,10 @@ const SchemaChart = ({ schemas }) => {
                 schemas?.map((schema) => {
                     return (
                         <div className="schema-item">
-                            <div className="schema-bar" style={{ width: `calc((100% - 100px)*${getLength(schema.usage)})` }}></div>
+                            <div
+                                className="schema-bar"
+                                style={{ width: getLength(schema.usage) === 0 ? `1px` : `calc((100% - 100px)*${getLength(schema.usage)})` }}
+                            ></div>
                             <label className="schema-name">{schema.name}</label>{' '}
                             <Badge
                                 className="site-badge-count-109"
@@ -41,6 +44,7 @@ const SchemaChart = ({ schemas }) => {
                                     backgroundColor: '#6557FF'
                                 }}
                                 overflowCount={999}
+                                showZero
                             />
                         </div>
                     );
