@@ -97,8 +97,8 @@ function VersionUpgrade() {
                     <div className="uptodate-section">
                         <img src={uptodateIcon} alt="uptodateIcon" />
                         <div className="content">
-                            <p>You are up to date</p>
-                            <span>Memphis version v{state.currentVersion} is currently the newest version available.</span>
+                            <p>You are up to date.</p>
+                            <span>Memphis.dev version v{state.currentVersion} is the latest version available.</span>
                         </div>
                     </div>
                 </>
@@ -118,7 +118,7 @@ function VersionUpgrade() {
                                     <p>{latestVersion}</p>
                                 </div>
                             </div>
-                            <p className="desc-vers">A New Version is available to download</p>
+                            <p className="desc-vers">A new version is available to download</p>
                             <div className="buttons">
                                 <Button
                                     width="180px"
