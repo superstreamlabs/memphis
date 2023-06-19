@@ -108,7 +108,7 @@ const App = withRouter((props) => {
     useEffect(() => {
         if (isCloud() && !localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const fetchData = async () => {
-                await Promise.all(handleLoginWithToken());
+                await handleLoginWithToken();
             };
 
             fetchData();

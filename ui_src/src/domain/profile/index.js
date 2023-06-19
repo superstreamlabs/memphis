@@ -13,17 +13,20 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
+
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
-import { Checkbox, Divider } from 'antd';
-import Button from '../../components/button';
-import Modal from '../../components/modal';
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
-import ImgUploader from './imgUploader';
 import { isCloud } from '../../services/valueConvertor';
+import { httpRequest } from '../../services/http';
 import AuthService from '../../services/auth';
+import Button from '../../components/button';
+import { Context } from '../../hooks/store';
+import Modal from '../../components/modal';
+import { Checkbox, Divider } from 'antd';
+import pathDomains from '../../router';
+import ImgUploader from './imgUploader';
+import DeleteItemsModal from '../../components/deleteItemsModal';
 
 function Profile() {
     const [userType, setUserType] = useState('');
@@ -31,6 +34,7 @@ function Profile() {
     const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
+    const [delateLoader, setDelateLoader] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
@@ -39,11 +43,13 @@ function Profile() {
     }, []);
 
     const removeMyUser = async () => {
+        setDelateLoader(true);
         try {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
             modalFlip(false);
             AuthService.logout();
         } catch (err) {
+            setDelateLoader(false);
             return;
         }
     };
@@ -135,20 +141,27 @@ function Profile() {
                     />
                 </div>
                 <Modal
-                    header="Remove accont"
-                    height="120px"
-                    rBtnText="Cancel"
-                    lBtnText="Remove"
-                    lBtnClick={() => {
-                        removeMyUser();
-                    }}
+                    header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                    width="520px"
+                    height="240px"
+                    displayButtons={false}
                     clickOutside={() => modalFlip(false)}
-                    rBtnClick={() => modalFlip(false)}
                     open={open}
                 >
-                    <label>Are you sure you want to remove user account?</label>
+                    <DeleteItemsModal
+                        title={isCloud() ? 'Delete your organization' : 'Delete your account'}
+                        desc={
+                            <>
+                                Are you sure you want to delete {isCloud() ? 'your organization' : 'your account'}?
+                                <br />
+                                Please note that this action is irreversible.
+                            </>
+                        }
+                        buttontxt={<>I understand, delete my {isCloud() ? 'organization' : 'account'}</>}
+                        handleDeleteSelected={() => removeMyUser()}
+                        loader={delateLoader}
+                    />
                     <br />
-                    <label>Please note that this action is irreversible.</label>
                 </Modal>
             </div>
         </div>
