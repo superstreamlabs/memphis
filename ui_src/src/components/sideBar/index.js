@@ -136,6 +136,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(pathDomains.profile);
+                    setPopoverOpen(false);
                 }}
             >
                 <div className="item">
@@ -149,6 +150,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(`${pathDomains.administration}/integrations`);
+                    setPopoverOpen(false);
                 }}
             >
                 <div className="item">
@@ -163,6 +165,7 @@ function SideBar() {
                     className="item-wrap"
                     onClick={() => {
                         history.push(`${pathDomains.administration}/usage`);
+                        setPopoverOpen(false);
                     }}
                 >
                     <div className="item">
@@ -270,26 +273,11 @@ function SideBar() {
                             <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
                         </div>
                         <p className="not-available">Functions</p>
-                        <label className="coming-soon">Coming soon</label>
+                        <p className="coming-soon">Soon</p>
                     </div>
                 )}
             </div>
             <div className="bottom-icons">
-                <Link to={{ pathname: DOC_URL }} target="_blank">
-                    <div
-                        className="integration-icon-wrapper"
-                        onMouseEnter={() => setHoveredItem('documentation')}
-                        onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.push(`${pathDomains.administration}/integrations`)}
-                    >
-                        <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
-                        <label className="icon-name">Documentation</label>
-                    </div>
-                </Link>
-                <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
-                    <label className="icon-name">Support</label>
-                </div>
                 <div
                     className="integration-icon-wrapper"
                     onMouseEnter={() => setHoveredItem('integrations')}
@@ -299,6 +287,21 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
+                <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
+                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
+                    <label className="icon-name">Support</label>
+                </div>
+                <Link to={{ pathname: DOC_URL }} target="_blank">
+                    <div
+                        className="integration-icon-wrapper"
+                        onMouseEnter={() => setHoveredItem('documentation')}
+                        onMouseLeave={() => setHoveredItem('')}
+                        onClick={() => history.push(`${pathDomains.administration}/integrations`)}
+                    >
+                        <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
+                        <label className="icon-name">Docs</label>
+                    </div>
+                </Link>
                 <Popover
                     overlayInnerStyle={overlayStyles}
                     placement="rightBottom"

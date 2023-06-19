@@ -69,7 +69,7 @@ function Requests() {
             <div className="header-preferences">
                 <div className="header">
                     <div>
-                        <p className="main-header">Requests</p>
+                        <p className="main-header">Usage report</p>
                         <p className="memphis-label">We will keep an eye on your data streams and alert.</p>
                     </div>
                     <DatePickerComponent onChange={onChangeDate} picker="month" allowClear={false} />
