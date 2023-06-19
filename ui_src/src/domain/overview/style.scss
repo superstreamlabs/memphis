@@ -139,4 +139,32 @@
             }
         }
     }
+    .no-data {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        img {
+            width: 90px;
+            height: 90px;
+        }
+        p {
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #1d1d1d;
+        }
+        label {
+            font-weight: 500;
+            font-size: 12px;
+            color: #979797;
+        }
+        .link {
+            cursor: pointer;
+            color: #6557ff;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    }
 }

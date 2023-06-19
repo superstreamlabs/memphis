@@ -60,7 +60,6 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             if (isSkipGetStarted === 'true') {
                 localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             }
-            debugger;
             isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {

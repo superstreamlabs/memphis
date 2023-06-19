@@ -12,44 +12,58 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useContext } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider } from 'antd';
 import pathDomains from '../../../router';
 import SchemaChart from './schemaChart';
+import { Context } from '../../../hooks/store';
+import noSchemasFound from '../../../assets/images/noSchemasFound.svg';
 
 const Schemaverse = () => {
+    const [state, dispatch] = useContext(Context);
     const history = useHistory();
     return (
         <div className="overview-components-wrapper">
-            <div className="overview-schema-container">
-                <div className="overview-components-header schemaverse-header">
-                    <p> Schemaverse </p>
-                    <label className="link-to-page" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
-                        Go to schemaverse
+            {state?.monitor_data?.schemas_details?.total_schemas > 0 ? (
+                <div className="overview-schema-container">
+                    <div className="overview-components-header schemaverse-header">
+                        <p> Schemaverse </p>
+                        <label className="link-to-page" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
+                            Go to schemaverse
+                        </label>
+                    </div>
+                    <div className="total-data">
+                        <span>
+                            <p className="total-measure">Total Schemas</p>
+                            <p className="total-value">{state?.monitor_data?.schemas_details?.total_schemas}</p>
+                        </span>
+                        <Divider type="vertical" />
+                        <span>
+                            <p className="total-measure">Enforced Schemas</p>
+                            <p className="total-value">{state?.monitor_data?.schemas_details?.enforced_schemas}</p>
+                        </span>
+                    </div>
+                    <div className="total-data">
+                        <SchemaChart
+                            schemas={[
+                                { name: 'Protobuf', usage: state?.monitor_data?.schemas_details?.protobuf || 0 },
+                                { name: 'Json', usage: state?.monitor_data?.schemas_details?.Graphql || 0 },
+                                { name: 'Avro', usage: 0 }
+                            ]}
+                        />
+                    </div>
+                </div>
+            ) : (
+                <div className="no-data">
+                    <img src={noSchemasFound} alt="no data found" />
+                    <p>No schemas yet</p>
+                    <label>This is where the data contracts concept comes into play. </label>
+                    <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
+                        + Create Schema
                     </label>
                 </div>
-                <div className="total-data">
-                    <span>
-                        <p className="total-measure">Total Schemas</p>
-                        <p className="total-value">50</p>
-                    </span>
-                    <Divider type="vertical" />
-                    <span>
-                        <p className="total-measure">Enforced Schemas</p>
-                        <p className="total-value">50</p>
-                    </span>
-                </div>
-                <div className="total-data">
-                    <SchemaChart
-                        schemas={[
-                            { name: 'Protobuf', usage: 150 },
-                            { name: 'Json', usage: 7 },
-                            { name: 'Avro', usage: 3 }
-                        ]}
-                    />
-                </div>
-            </div>
+            )}
         </div>
     );
 };
