@@ -34,12 +34,11 @@ import (
 )
 
 const (
-	crlf                 = "\r\n"
-	hdrPreEnd            = len(hdrLine) - len(crlf)
-	statusLen            = 3 // e.g. 20x, 40x, 50x
-	statusHdr            = "Status"
-	descrHdr             = "Description"
-	allowedPasswordChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
+	crlf      = "\r\n"
+	hdrPreEnd = len(hdrLine) - len(crlf)
+	statusLen = 3 // e.g. 20x, 40x, 50x
+	statusHdr = "Status"
+	descrHdr  = "Description"
 )
 
 const (
@@ -1451,6 +1450,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 }
 
 func generateRandomPassword(length int) string {
+	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
 	charsetLength := big.NewInt(int64(len(allowedPasswordChars)))
 	password := make([]byte, length)
 
