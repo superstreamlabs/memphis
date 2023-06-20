@@ -305,18 +305,9 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 		})
 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			replicas--
-			err = s.memphisAddStream(globalAccountName, &StreamConfig{
-				Name:         syslogsStreamName,
-				Subjects:     []string{syslogsStreamName + ".>"},
-				Retention:    LimitsPolicy,
-				MaxAge:       retentionDur,
-				MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
-				MaxConsumers: -1,
-				Discard:      DiscardOld,
-				Storage:      FileStorage,
-				Replicas:     replicas,
-			})
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
 		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
@@ -339,6 +330,11 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 			Duplicates:   idempotencyWindow,
 		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
 			return
