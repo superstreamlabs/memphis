@@ -31,14 +31,14 @@ func (srv *Server) removeStaleStations() {
 			stationName, _ := StationNameFromStr(s.Name)
 			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("[tenant name: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
+				srv.Warnf("[tenant: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
 				err := removeStationResources(srv, s, false)
 				if err != nil {
-					srv.Errorf("[tenant name: %v]removeStaleStations: %v", s.TenantName, err.Error())
+					srv.Errorf("[tenant: %v]removeStaleStations at removeStationResources: %v", s.TenantName, err.Error())
 				}
 				err = db.DeleteStation(s.Name, s.TenantName)
 				if err != nil {
-					srv.Errorf("[tenant name: %v]removeStaleStations: %v", s.TenantName, err.Error())
+					srv.Errorf("[tenant: %v]removeStaleStations at DeleteStation: %v", s.TenantName, err.Error())
 				}
 			}
 		}(srv, s)

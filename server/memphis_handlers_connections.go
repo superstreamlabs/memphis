@@ -109,7 +109,7 @@ func handleConnectMessage(client *client) error {
 		return errors.New(errMsg)
 	}
 	if user.UserType != "root" && user.UserType != "application" {
-		client.Warnf("[tenant name: %v][user: %v] handleConnectMessage: Please use a user of type Root/Application and not Management", user.TenantName, user.Username)
+		client.Warnf("[tenant: %v][user: %v] handleConnectMessage: Please use a user of type Root/Application and not Management", user.TenantName, user.Username)
 		return errors.New("please use a user of type Root/Application and not Management")
 	}
 
@@ -117,23 +117,23 @@ func handleConnectMessage(client *client) error {
 		connectionId = splittedMemphisInfo[0]
 		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
 		if err != nil {
-			client.Errorf("[tenant name: %v][user: %v]handleConnectMessage: %v", user.TenantName, username, err.Error())
+			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at CreateConnection: %v", user.TenantName, username, err.Error())
 			return err
 		}
 		if exist {
 			err = connectionsHandler.ReliveConnection(connectionId)
 			if err != nil {
-				client.Errorf("[tenant name: %v][user: %v]handleConnectMessage: %v", user.TenantName, username, err.Error())
+				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConnection: %v", user.TenantName, username, err.Error())
 				return err
 			}
 			err = producersHandler.ReliveProducers(connectionId)
 			if err != nil {
-				client.Errorf("[tenant name: %v][user: %v]handleConnectMessage: %v", user.TenantName, username, err.Error())
+				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveProducers: %v", user.TenantName, username, err.Error())
 				return err
 			}
 			err = consumersHandler.ReliveConsumers(connectionId)
 			if err != nil {
-				client.Errorf("[tenant name: %v][user: %v]handleConnectMessage: %v", user.TenantName, username, err.Error())
+				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConsumers: %v", user.TenantName, username, err.Error())
 				return err
 			}
 		} else {

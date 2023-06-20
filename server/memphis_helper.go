@@ -1306,7 +1306,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
-		
+
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
 		accounts := []*Account{}

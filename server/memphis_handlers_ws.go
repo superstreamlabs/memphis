@@ -97,7 +97,7 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 				for tenant, filler := range updateFiller.tenants {
 					acc, err := s.lookupAccount(tenant)
 					if err != nil {
-						s.Errorf("[tenant name: %v]memphisWSLoop: %v ", tenant, err.Error())
+						s.Errorf("[tenant: %v]memphisWSLoop at lookupAccount: %v ", tenant, err.Error())
 						continue
 					}
 					if !acc.SubscriptionInterest(replySubj) {
@@ -108,13 +108,13 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 					update, err := filler(tenant)
 					if err != nil {
 						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") && !strings.Contains(err.Error(), "alphanumeric") {
-							s.Errorf("[tenant name: %v]memphisWSLoop: %v", tenant, err.Error())
+							s.Errorf("[tenant: %v]memphisWSLoop at filler: %v", tenant, err.Error())
 						}
 						continue
 					}
 					updateRaw, err := json.Marshal(update)
 					if err != nil {
-						s.Errorf("[tenant name: %v]memphisWSLoop: %v", tenant, err.Error())
+						s.Errorf("[tenant: %v]memphisWSLoop at json.Marshal: %v", tenant, err.Error())
 						continue
 					}
 
@@ -149,10 +149,10 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 	return func(c *client, subj, reply string, msg []byte) {
 		tenantName, message, err := s.getTenantNameAndMessage(msg)
 		if err != nil {
-			s.Errorf("memphis websocket: %v", err.Error())
+			s.Errorf("memphis websocket at getTenantNameAndMessage: %v", err.Error())
 			return
 		}
-		s.Debugf("[tenant name: %v]memphisWS registration - %s,%s", tenantName, subj, message)
+		s.Debugf("[tenant: %v]memphisWS registration - %s,%s", tenantName, subj, message)
 		subscriptions := s.memphis.ws.subscriptions
 		filteredSubj := tokensFromToEnd(subj, 2)
 		trimmedMsg := strings.TrimSuffix(message, "\r\n")
@@ -160,7 +160,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		case memphisWS_SubscribeMsg:
 			reqFiller, err := memphisWSGetReqFillerFromSubj(s, h, filteredSubj, tenantName)
 			if err != nil {
-				s.Errorf("[tenant name: %v]memphis websocket: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]memphis websocket at memphisWSGetReqFillerFromSubj: %v", tenantName, err.Error())
 				return
 			}
 			if _, ok := subscriptions.Load(filteredSubj); !ok {
@@ -168,12 +168,12 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			} else {
 				err := addTenantToSub(tenantName, subscriptions, filteredSubj, reqFiller)
 				if err != nil {
-					s.Errorf("[tenant name: %v]memphis websocket: %v", tenantName, err.Error())
+					s.Errorf("[tenant: %v]memphis websocket: %v", tenantName, err.Error())
 				}
 			}
 
 		default:
-			s.Errorf("[tenant name: %v]memphis websocket: invalid sub/unsub operation", tenantName)
+			s.Errorf("[tenant: %v]memphis websocket: invalid sub/unsub operation", tenantName)
 		}
 
 		type brokerName struct {
@@ -184,7 +184,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 		serverName, err := json.Marshal(broName)
 
 		if err != nil {
-			s.Errorf("[tenant name: %v]memphis websocket: %v", tenantName, err.Error())
+			s.Errorf("[tenant: %v]memphis websocket at json.Marshal: %v", tenantName, err.Error())
 			return
 		}
 		s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), reply, serverName)

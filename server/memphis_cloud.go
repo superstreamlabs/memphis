@@ -959,7 +959,7 @@ func IncrementEventCounter(tenantName string, eventType string, size int64, amou
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditClusterConfig: %v", err.Error())
+		serv.Errorf("EditClusterConfig at getUserDetailsFromMiddleware: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -967,13 +967,12 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	var body models.EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
-		serv.Errorf("EditClusterConfig utils.Validate problem")
 		return
 	}
 	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
 		err := changeDlsRetention(body.DlsRetention)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -981,19 +980,19 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeLogsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 	if ch.S.opts.TieredStorageUploadIntervalSec != body.TSTimeSec {
 		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes", user.TenantName, user.Username)
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes", user.TenantName, user.Username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
 		} else {
 			err := changeTSTime(body.TSTimeSec)
 			if err != nil {
-				serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeTSTime: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1004,7 +1003,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.BrokerHost != brokerHost {
 		err := EditClusterCompHost("broker_host", brokerHost)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost broker_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1014,7 +1013,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.UiHost != uiHost {
 		err := EditClusterCompHost("ui_host", uiHost)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost ui_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1024,7 +1023,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.RestGwHost != restGWHost {
 		err := EditClusterCompHost("rest_gw_host", restGWHost)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost rest_gw_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1033,7 +1032,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.MaxPayload != int32(body.MaxMsgSizeMb) {
 		err := changeMaxMsgSize(body.MaxMsgSizeMb)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeMaxMsgSize: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1042,7 +1041,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	// send signal to reload config
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]EditConfigurations: %v", user.TenantName, user.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditConfigurations at sendInternalAccountMsgWithReply: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1104,14 +1103,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	var body LoginSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
-		serv.Errorf("Login utils.Validate problem")
 		return
 	}
 
 	username := strings.ToLower(body.Username)
 	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]Login: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at authenticateUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1122,7 +1120,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]Login: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at CreateTokens: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1130,7 +1128,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if !user.AlreadyLoggedIn {
 		err = db.UpdateUserAlreadyLoggedIn(user.ID)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]Login: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]Login at UpdateUserAlreadyLoggedIn: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1147,17 +1145,17 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 	exist, tenant, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]Login: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at GetTenantByName: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant name: %v][user name: %v]Login: User %v: tenant %v does not exist", user.TenantName, user.Username, body.Username, user.TenantName)
+		serv.Warnf("[tenant: %v][user: %v]Login: User %v: tenant %v does not exist", user.TenantName, user.Username, body.Username, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	serv.Noticef("[tenant name: %v][user name: %v] has loged in", user.TenantName, user.Username)
+	serv.Noticef("[tenant: %v][user: %v] has loged in", user.TenantName, user.Username)
 
 	domain := ""
 	secure := false
@@ -1193,7 +1191,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var body models.AddUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
-		serv.Errorf("AddUser utils.Validate problem")
 		return
 	}
 
@@ -1218,19 +1215,19 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf("[tenant name: %v][user name: %v]AddUser: %v", user.TenantName, user.Username, usernameError.Error())
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUsername: %v", user.TenantName, user.Username, usernameError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 	exist, _, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]AddUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
 		errMsg := fmt.Sprintf("A user with the name %v already exists", body.Username)
-		serv.Warnf("[tenant name: %v][user name: %v]CreateUser: %v", user.TenantName, user.Username, errMsg)
+		serv.Warnf("[tenant: %v][user: %v]CreateUser: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -1238,7 +1235,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf("[tenant name: %v][user name: %v]AddUser: %v", user.TenantName, user.Username, userTypeError.Error())
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserType: %v", user.TenantName, user.Username, userTypeError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
@@ -1251,14 +1248,14 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	var password string
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("[tenant name: %v][user name: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
+			serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]AddUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]AddUser at GenerateFromPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1272,13 +1269,13 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		pending = false
 		if configuration.USER_PASS_BASED_AUTH {
 			if body.Password == "" {
-				serv.Warnf("[tenant name: %v][user name: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
+				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
 			password, err = EncryptAES([]byte(body.Password))
 			if err != nil {
-				serv.Errorf("[tenant name: %v][user name: %v]AddUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]AddUser at EncryptAES: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1289,11 +1286,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	newUser, err := db.CreateUser(username, userType, password, fullName, subscription, avatarId, user.TenantName, pending, team, position, owner, description)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
-			serv.Warnf("[tenant name: %v][user name: %v]CreateUserManagement: %v", user.TenantName, user.Username, err.Error())
+			serv.Warnf("[tenant: %v][user: %v]CreateUserManagement user already exists: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-		serv.Errorf("[tenant name: %v][user name: %v]AddUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at CreateUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1307,13 +1304,13 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]AddUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]AddUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 
-	serv.Noticef("[tenant name: %v][user name: %v]User %v has been created", user.TenantName, user.Username, username)
+	serv.Noticef("[tenant: %v][user: %v]User %v has been created", user.TenantName, user.Username, username)
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
@@ -1346,38 +1343,38 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 	if user.Username == username {
-		serv.Warnf("[tenant name: %v][user name: %v]RemoveUser: You can not remove your own user", user.TenantName, user.Username)
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: You can not remove your own user", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RemoveUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant name: %v][user name: %v]RemoveUser: User does not exist", user.TenantName, user.Username)
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: User does not exist", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		serv.Warnf("[tenant name: %v][user name: %v]RemoveUser: You can not remove the root user", user.TenantName, user.Username)
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: You can not remove the root user", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 
 	err = updateDeletedUserResources(userToRemove)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RemoveUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at updateDeletedUserResources: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
 	err = db.DeleteUser(username, userToRemove.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RemoveUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at DeleteUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1386,7 +1383,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
-			serv.Errorf("[tenant name: %v][user name: %v]RemoveUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1397,7 +1394,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, "user-remove-user")
 	}
 
-	serv.Noticef("[tenant name: %v][user name: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
+	serv.Noticef("[tenant: %v][user: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -1414,7 +1411,7 @@ func validateUsername(username string) error {
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveMyUser: %v", err.Error())
+		serv.Errorf("RemoveMyUser at getUserDetailsFromMiddleware: %v", err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
@@ -1432,7 +1429,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	}
 	err = removeTenantResources(tenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v][user name: %v]RemoveMyUser: User %v: %v", tenantName, username, username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
@@ -1442,7 +1439,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, "user-remove-himself")
 	}
 
-	serv.Noticef("[tenant name: %v][user name: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
+	serv.Noticef("[tenant: %v][user: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
 	c.IndentedJSON(200, gin.H{})
 }
 

@@ -119,7 +119,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 
 	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant name: %v]handleNewUnackedMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg atStorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
 	}
 	if dlsMsgId == 0 { // nothing to do
@@ -130,7 +130,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
-		serv.Warnf("[tenant name: %v]handleNewUnackedMsg: Error while sending a poison message notification: %v", station.TenantName, err.Error())
+		serv.Warnf("[tenant: %v]handleNewUnackedMsg at SendNotification: Error while sending a poison message notification: %v", station.TenantName, err.Error())
 		return nil
 	}
 	return nil
