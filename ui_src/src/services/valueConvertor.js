@@ -107,7 +107,9 @@ export const parsingDateWithotTime = (date) => {
 function isFloat(n) {
     return Number(n) === n && n % 1 !== 0;
 }
-
+export const convertBytesToGb = (bytes) => {
+    return bytes / 1024 / 1024 / 1024;
+};
 export const convertBytes = (bytes, round) => {
     const KB = 1024;
     const MB = KB * 1024;
@@ -383,6 +385,7 @@ export const compareVersions = (a, b) => {
 };
 
 export const isCloud = () => {
-    const cloud_env = process.env.REACT_APP_CLOUD === 'true';
-    return cloud_env;
+    return true;
+    // const cloud_env = process.env.REACT_APP_CLOUD === 'true';
+    // return cloud_env;
 };
