@@ -44,6 +44,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const shouldCreateRootUserforGlobalAcc = true
+
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
 type LoginSchema struct {
@@ -1147,6 +1149,13 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
 
 	domain := ""
 	secure := false
@@ -1175,6 +1184,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
 	})
 }
 
@@ -1550,7 +1560,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("refreshToken: " + err.Error())
+		serv.Errorf("RefreshToken: " + err.Error())
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
@@ -1569,7 +1579,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("refreshToken: user " + username + " does not exist")
+		serv.Warnf("RefreshToken: user " + username + " does not exist")
 		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 		return
 	}
@@ -1593,7 +1603,14 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	if !exist {
-		serv.Warnf("Login: User " + username + ": tenant " + user.TenantName + " does not exist")
+		serv.Warnf("RefreshToken: User " + username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1626,5 +1643,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
 	})
 }

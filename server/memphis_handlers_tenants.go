@@ -16,7 +16,11 @@ import (
 )
 
 func CreateGlobalTenantOnFirstSystemLoad() error {
-	_, err := db.UpsertTenant(globalAccountName)
+	encryptedPass, err := EncryptAES([]byte(generateRandomPassword(12)))
+	if err != nil {
+		return err
+	}
+	_, err = db.UpsertTenant(globalAccountName, encryptedPass)
 	if err != nil {
 		return err
 	}
