@@ -1356,6 +1356,12 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
+			sysUser := &User{
+				Username: "sys",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  serv.sys.account,
+			}
+			appUsers = append(appUsers, sysUser)
 		} else {
 			gacc.exports = exportMap{
 				services: globalServicesExport,
@@ -1384,12 +1390,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 					Account:  serv.gacc,
 				})
 				addedTenant[conf.GlobalAccountName] = serv.gacc
-				sysUser := &User{
-					Username: "sys",
-					Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
-					Account:  serv.sys.account,
-				}
-				appUsers = append(appUsers, sysUser)
 			} else {
 				appUsers = append(appUsers, &User{
 					Username: "root$1",
