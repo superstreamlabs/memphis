@@ -1356,6 +1356,12 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
+			sysUser := &User{
+				Username: "sys",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  serv.sys.account,
+			}
+			appUsers = append(appUsers, sysUser)
 		} else {
 			gacc.exports = exportMap{
 				services: globalServicesExport,
@@ -1412,18 +1418,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			})
 		}
 
-		// ** insert user where sys created
-		sysAcc := &Account{
-			Name:   DEFAULT_SYSTEM_ACCOUNT,
-			limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},
-		}
-		sysUser := &User{
-			Username: "sys",
-			Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
-			Account:  sysAcc,
-		}
-		accounts = append(accounts, sysAcc)
-		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
