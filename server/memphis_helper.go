@@ -1364,7 +1364,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 			accounts = append(accounts, gacc)
 		}
-		if !CLOUD_ENV {
+		if shouldCreateRootUserforGlobalAcc {
 			_, globalT, err := db.GetGlobalTenant()
 			if err != nil {
 				return &Account{}, Options{}, err
