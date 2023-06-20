@@ -1327,7 +1327,7 @@ func (s *Server) setSystemAccount(acc *Account) error {
 	s.wrapChk(s.startStatszTimer)()
 	// ** added by Memphis
 	sysUser := &User{
-		Username: "sys",
+		Username: "$SYS",
 		Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
 		Account:  acc,
 	}

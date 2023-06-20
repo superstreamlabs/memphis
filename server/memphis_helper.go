@@ -1191,6 +1191,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits},
 	}
 	if configuration.USER_PASS_BASED_AUTH {
+		// Upserting the DB with accounts/users from the config file -- happens only once on startup
 		if !reload {
 			if len(opts.Accounts) > 0 {
 				tenantsToUpsert := []models.TenantForUpsert{}
@@ -1236,6 +1237,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				}
 			}
 		}
+
+		// handling imports/exports
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 		siList := []*streamImport{}
@@ -1301,16 +1304,15 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 		}
 
+		// loading all tenants and users from the DB
 		users, err := db.GetAllUsersByType([]string{"application"})
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
-
 		tenants, err := db.GetAllTenantsWithoutGlobal()
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
-
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
 		accounts := []*Account{}
@@ -1331,6 +1333,13 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			if err != nil {
 				return &Account{}, Options{}, err
 			}
+			// creating internal user for the tenant for management purposes
+			appUsers = append(appUsers, &User{
+				Username: tenant.Name,
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  account,
+			})
+			// creating internal user for the tenant for ws purposes
 			appUsers = append(appUsers, &User{
 				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID),
 				Password: decryptedUserPassword,
@@ -1339,6 +1348,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
+
 		globalStreamsExport := map[string]*streamExport{}
 		for _, subj := range memphisSubjects {
 			ea := streamExport{}
@@ -1347,24 +1357,39 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 			globalStreamsExport[subj] = &ea
 		}
+
 		if reload {
 			serv.gacc.exports = exportMap{
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
-			sysUser := &User{
-				Username: "sys",
+			// creating internal user on $SYS account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$SYS",
 				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
 				Account:  serv.sys.account,
-			}
-			appUsers = append(appUsers, sysUser)
+			})
+			// creating internal user on $G account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$G",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  serv.gacc,
+			})
 		} else {
 			gacc.exports = exportMap{
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
+			// sys user is getting created where the $SYS account is created on startup
+			// creating internal user on $G account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$G",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  gacc,
+			})
 			accounts = append(accounts, gacc)
 		}
+
 		if shouldCreateRootUserforGlobalAcc {
 			_, globalT, err := db.GetGlobalTenant()
 			if err != nil {
@@ -1400,6 +1425,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				addedTenant[conf.GlobalAccountName] = gacc
 			}
 		}
+		
+		// create users of all tenants
 		tenantsId[globalAccountName] = 1
 		for _, user := range users {
 			name := user.TenantName
