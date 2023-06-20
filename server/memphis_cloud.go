@@ -44,7 +44,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const shouldCreateRootUserforGlobalAcc = false
+const shouldCreateRootUserforGlobalAcc = true
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
