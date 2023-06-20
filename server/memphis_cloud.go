@@ -44,7 +44,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const CLOUD_ENV = false
+const shouldCreateRootUserforGlobalAcc = false
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
