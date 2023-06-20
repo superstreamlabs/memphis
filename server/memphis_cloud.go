@@ -1450,6 +1450,7 @@ func (s *Server) RefreshFirebaseFunctionsKey() {
 func shouldPersistSysLogs() bool {
 	return true
 }
+
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1476,6 +1477,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 
 	c.IndentedJSON(200, gin.H{})
 }
+
 func (s *Server) GetCustomDeploymentId() string {
 	return ""
 }
