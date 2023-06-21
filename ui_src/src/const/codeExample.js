@@ -95,7 +95,7 @@ export const SDK_CODE_EXAMPLE = {
         producer: `import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection: Memphis;
+    let memphisConnection: Memphis | null = null;
 
     try {
         memphisConnection = await memphis.connect({
@@ -127,7 +127,7 @@ export const SDK_CODE_EXAMPLE = {
         consumer: `import { memphis, Memphis, Message } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection: Memphis;
+    let memphisConnection: Memphis | null = null;
 
     try {
         memphisConnection = await memphis.connect({
