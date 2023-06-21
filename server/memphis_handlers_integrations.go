@@ -109,8 +109,15 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	if !ok {
 		return
 	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UpdateIntegration: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	if body.TenantName == "" {
-		body.TenantName = DEFAULT_GLOBAL_ACCOUNT
+		body.TenantName = user.TenantName
 	}
 
 	exist, _, err := db.GetTenantByName(body.TenantName)
