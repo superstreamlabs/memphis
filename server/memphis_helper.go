@@ -67,6 +67,7 @@ var memphisServices = []string{
 	"$memphis_consumer_destructions",
 	"$memphis_schema_attachments",
 	"$memphis_schema_detachments",
+	"$memphis_schema_creations",
 	"$memphis_ws_subs.>",
 	"$memphis_integration_updates",
 	"$memphis_notifications",
@@ -1426,7 +1427,7 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				addedTenant[conf.GlobalAccountName] = gacc
 			}
 		}
-		
+
 		// create users of all tenants
 		tenantsId[globalAccountName] = 1
 		for _, user := range users {
