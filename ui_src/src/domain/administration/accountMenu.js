@@ -32,7 +32,7 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
         <>
             <p className="header">Administration</p>
             <p className="sub-header">Modify environment configuration</p>
-            <div className="side-menu">
+            <div className="side-menu administration">
                 <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
                     <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                     Integrations

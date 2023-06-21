@@ -22,7 +22,6 @@ import RequestsOut from '../../../../assets/images/setting/requestsOut.svg';
 import CloudProviderAWS from '../../../../assets/images/setting/cloudProviderAWS.svg';
 import USAIcon from '../../../../assets/images/setting/usaIcon.svg';
 import GermanyIcon from '../../../../assets/images/setting/germanyIcon.svg';
-import AvgMsgSize from '../../../../assets/images/setting/avgMsgSize.svg';
 import Consumed from '../../../../assets/images/setting/consumed.svg';
 import Redeliver from '../../../../assets/images/setting/redeliver.svg';
 import DeadLetter from '../../../../assets/images/setting/deadLetter.svg';
@@ -30,7 +29,7 @@ import Storage from '../../../../assets/images/setting/storage.svg';
 import DatePickerComponent from '../../../../components/datePicker';
 import SegmentButton from '../../../../components/segmentButton';
 import Loader from '../../../../components/loader';
-
+import { LOCAL_STORAGE_CREATION_DATE } from '../../../../const/localStorageConsts';
 function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');
@@ -91,7 +90,7 @@ function Requests() {
             return USAIcon;
         } else if (region === 'eu-central-1') {
             return GermanyIcon;
-        }
+        } else return GermanyIcon;
     };
     return (
         <div className="requests-container">
@@ -102,7 +101,7 @@ function Requests() {
                         <p className="main-header">Usage report</p>
                         <p className="memphis-label">We will keep an eye on your data streams and alert.</p>
                     </div>
-                    <DatePickerComponent onChange={onChangeDate} picker="month" allowClear={false} />
+                    <DatePickerComponent onChange={onChangeDate} picker="month" allowClear={false} dateFrom={localStorage.getItem(LOCAL_STORAGE_CREATION_DATE)} />
                 </div>
             </div>
             <div className="usage-header-section">
@@ -112,12 +111,10 @@ function Requests() {
                             <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
                         </span>
                         <Divider type="vertical" />
-                        {usageData?.region !== '' && (
-                            <span>
-                                <label className="cloud-provider-label">Region: </label> <img src={getRegionImage()} alt="region" />
-                                <label className="region">{usageData?.region}</label>
-                            </span>
-                        )}
+                        <span>
+                            <label className="cloud-provider-label">Region: </label> <img src={getRegionImage()} alt="region" />
+                            <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
+                        </span>
                     </div>
                     <Divider />
                     <div className="requests-total">
@@ -150,7 +147,6 @@ function Requests() {
                     <div className="total-payment-header">
                         <span>
                             <p className="total-ammount">Total Payment</p>
-                            {/* <p className="next-billing">Next billing date is {getNextPaymentDate()}</p> */}
                             <p className="next-billing">{displayMonth && genetrateSentence()}</p>
                         </span>
                         <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
