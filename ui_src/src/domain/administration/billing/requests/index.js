@@ -33,7 +33,7 @@ import Loader from '../../../../components/loader';
 
 function Requests() {
     const [usageData, setUsageData] = useState(null);
-    const [usageType, setUsageType] = useState('Data in');
+    const [usageType, setUsageType] = useState('Data out');
     const [isLoading, setIsLoading] = useState(true);
     const [displayMonth, setDisplayMonth] = useState();
 
@@ -66,7 +66,7 @@ function Requests() {
         const month = (today.getMonth() + 1) % 12;
         const year = today.getFullYear();
         if (displayMonth.month === month && displayMonth.year === year)
-            return `Next billing date is ${getNextPaymentDate()}. Price will be calculated based on the usage of this month.`;
+            return `Next billing date is ${getNextPaymentDate()}. \nPrice will be calculated based on the usage of this month.`;
         else {
             const prevDate = new Date(displayMonth.year, displayMonth.month - 1, 1);
             return `Billing details for ${prevDate.toLocaleString('en-US', { month: 'long' })} ${displayMonth.year}`;
@@ -172,17 +172,17 @@ function Requests() {
                     </span>
                     <Divider />
                     <span className="billing-item">
-                        <p className="item"></p>
+                        <p className="item">Total price</p>
                         <p className="ammount">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</p>
                     </span>
                 </div>
             </div>
             <div className="usage-details">
                 <div className="segment-data">
-                    <SegmentButton size="medium" options={['Data in', 'Data out']} onChange={(e) => setUsageType(e)} />
+                    <SegmentButton size="medium" value={usageType} options={['Data in', 'Data out']} onChange={(e) => setUsageType(e)} />
                 </div>
                 {usageType === 'Data out' && (
-                    <div>
+                    <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
                                 <div className="yellow-edge"></div>

@@ -13,14 +13,17 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-import { Context } from '../../hooks/store';
-import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
-import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
-import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
-import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
+
 import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
 import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
+import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
+import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
+import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
+import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
+import RequestsColor from '../../assets/images/setting/requestsColor.svg';
+import RequestsGray from '../../assets/images/setting/requestsGray.svg';
 import { isCloud } from '../../services/valueConvertor';
+import { Context } from '../../hooks/store';
 
 function AccountMenu({ selectedMenuItem, setMenuItem }) {
     const [state, dispatch] = useContext(Context);
@@ -49,6 +52,12 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                             {!state.isLatest && <div className="update-available">Update available</div>}
                         </div>
                     </>
+                )}
+                {isCloud() && (
+                    <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
+                        <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
+                        Usage Report
+                    </div>
                 )}
             </div>
         </>

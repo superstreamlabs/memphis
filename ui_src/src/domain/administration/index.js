@@ -84,7 +84,7 @@ function Administration({ step }) {
         <div className="setting-container">
             <div className="menu-container">
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
-                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />}
+                {/* {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />} */}
             </div>
 
             <div className="setting-items">{getComponent()}</div>
