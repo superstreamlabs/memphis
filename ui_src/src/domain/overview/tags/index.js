@@ -27,25 +27,26 @@ const Tags = () => {
                     <div className="overview-components-header">
                         <p>Most used tags</p>
                     </div>
-                    {state?.monitor_data?.tags_details?.map((tag, index) => {
-                        return (
-                            <div key={index}>
-                                <span className="tag-item">
-                                    <span className="item">
-                                        <label className="item-num">{`${index + 1}`}</label>
-                                        <Tag tag={{ color: tag.color, name: tag.name }} onClick={() => ''}></Tag>
+                    <div className="tags-items-container">
+                        {state?.monitor_data?.tags_details?.map((tag, index) => {
+                            return (
+                                <div key={index}>
+                                    <span className="tag-item">
+                                        <span className="item">
+                                            <label className="item-num">{`${index + 1}`}</label>
+                                            <Tag tag={{ color: tag.color, name: tag.name }} />
+                                        </span>
+                                        <label className="attached-component">
+                                            {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
+                                                tag.schemas_count === 1 ? '' : 's'
+                                            }.`}
+                                        </label>
                                     </span>
-                                    <label className="attached-component">
-                                        {' '}
-                                        {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
-                                            tag.schemas_count === 1 ? '' : 's'
-                                        }.`}{' '}
-                                    </label>
-                                </span>
-                                <Divider />
-                            </div>
-                        );
-                    })}
+                                    <Divider />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             ) : (
                 <div className="no-data">

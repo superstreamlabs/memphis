@@ -1,9 +1,10 @@
 .requests-container {
     height: 100%;
     .requests-value {
-        font-weight: 700;
-        font-size: 26px;
+        font-family: 'InterBold';
+        line-height: 28px;
         color: #2e2c34;
+        font-size: 28px;
     }
     .header-preferences {
         display: flex;
@@ -34,19 +35,67 @@
             width: 49%;
             border: 1.4px solid #e4e4e4;
             border-radius: 12px;
-            .requests-total {
-                padding: 20px;
+            .total-in-out {
                 display: flex;
-                align-items: flex-start;
+                align-items: center;
+                justify-content:space-evenly;
+                .ant-divider-vertical {
+                    margin: 0;
+                    height: 70px;
+                }
+            }
+            .requests-total {
+                padding: 15px 0px;
+                display: flex;
+                align-items: center;
+                height: 10vh;
+                min-height: 80px;
+                width: 200px;
+                .divider{
+                    width: 2px;
+                }
                 .requests-data {
                     display: flex;
                     flex-direction: column;
                     padding-left: 10px;
+                    font-family: 'InterMedium';
+                    font-size: 16px;
+                    align-self:center;
+                    img{
+                        width: 30px;
+                    }
                     .requests-title {
-                        font-weight: 600;
-                        font-size: 16px;
                         color: #6557ff;
                     }
+                    .requests-title-in {
+                        color: #27ae60;
+                    }
+                    .requests-title-out {
+                        color: #fdb927;
+                    }
+                }
+            }
+            .cloud-provider {
+                padding: 10px 0px;
+                justify-content: space-evenly;
+                display: flex;
+                span{
+                    width: 200px;
+                }
+                .ant-divider-vertical {
+                    height: 25px;
+                }
+                .cloud-provider-label {
+                    font-family: 'InterMedium';
+                    font-size: 16px;
+                    color: #737373;
+                    margin-right: 10px;
+                }
+                .region {
+                    font-family: 'InterSemibold';
+                    font-size: 14px;
+                    color: #2e2c34;
+                    margin-left: 10px;
                 }
             }
         }
@@ -65,14 +114,15 @@
                 font-size: 12px;
                 color: #84818a;
                 margin: 0;
+                white-space:pre-line;
             }
             .total-payment-header {
                 display: flex;
                 justify-content: space-between;
                 .total-ammount {
                     margin: 0;
-                    font-weight: 700;
-                    font-size: 20px;
+                    font-family: 'InterSemiBold';
+                    font-size: 24px;
                     color: #2e2c34;
                 }
             }
@@ -80,13 +130,14 @@
                 display: flex;
                 justify-content: space-between;
                 font-size: 14px;
+                line-height: 14px;
                 .discount-badge {
                     background-color: #d6f5e3;
                     color: #27ae60;
                     border-radius: 10px;
-                    font-size: 10px;
-                    font-weight: 600;
-                    padding: 2px 6px 2px 6px;
+                    font-size: 12px;
+                    font-family: 'InterSemiBold';
+                    padding: 2px 8px;
                 }
                 .item {
                     margin: 0;
@@ -101,8 +152,6 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
-                .promo-code-section {
-                }
                 .download-invoice {
                     margin: 0;
                     color: #6557ff;
@@ -115,47 +164,66 @@
     }
     .usage-details {
         overflow-y: auto;
-        height: calc(100% - 370px);
-        padding: 0px 40px 0 40px;
+        height: calc(100% - 380px);
         margin-top: 20px;
-        .requests-panel {
-            margin-bottom: 20px;
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1.4px solid #e1e0e5;
-            border-radius: 8px;
-            height: 100px;
+        .segment-data {
+            margin-bottom: 10px;
+            margin-left: 40px;
         }
-        .requests-item {
-            display: flex;
-            width: 80%;
-            .circle-img {
-                border: 1px solid #eaeaea;
-                border-radius: 50%;
-                padding: 10px;
-                height: 50px;
-                width: 50px;
+        .panel-container {
+            overflow-y: auto;
+            height: calc(100% - 45px);
+            .requests-panel {
+                margin: 0px 40px 20px 40px;
+                padding-right: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border: 1px solid #e1e0e5;
+                border-radius: 10px;
+                height: 10vh;
+                min-height: 80px;
+                position: relative;
+            }
+            .requests-item {
                 display: flex;
                 align-items: center;
-                justify-content: center;
-                margin-right: 20px;
-            }
-            div {
-                display: flex;
-                flex-direction: column;
-            }
-            .request-type {
-                font-weight: 600;
-                font-size: 20px;
-                color: #2e2c34;
-            }
-            .request-description {
-                font-weight: 500;
-                font-size: 14px;
-                color: #84818a;
+                width: 80%;
+                height: 100%;
+                .yellow-edge {
+                    background-color: #ffc633;
+                    width: 10px;
+                    height: 100%;
+                    margin-right: 20px;
+                    border-radius: 8px 0 0 8px;
+                }
+                .circle-img {
+                    border: 1px solid #eaeaea;
+                    border-radius: 50%;
+                    padding: 10px;
+                    height: 50px;
+                    width: 50px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-right: 20px;
+                }
+                
+                div {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .request-type {
+                    font-family: 'InterSemiBold';
+                    font-size: 20px;
+                    color: #2e2c34;
+                }
+                .request-description {
+                    font-size: 14px;
+                    color: #84818a;
+                }
             }
         }
     }
 }
+    

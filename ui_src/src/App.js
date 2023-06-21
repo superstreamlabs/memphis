@@ -345,6 +345,15 @@ const App = withRouter((props) => {
                                 />
                             </>
                         )}
+                        {isCloud() && (
+                            <>
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/usage`}
+                                    component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
+                                />
+                            </>
+                        )}
                         <PrivateRoute
                             path="/"
                             component={

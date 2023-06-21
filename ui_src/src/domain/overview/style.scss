@@ -131,8 +131,8 @@
                 display: grid;
                 align-content: space-between;
             }
-            .cloud{
-                grid-template-rows: 49% 32% 15%;
+            .cloud {
+                grid-template-rows: 49% 30% 17%;
             }
 
             .system-components-wrapper {
@@ -147,6 +147,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        height: 100%;
         img {
             width: 90px;
             height: 90px;
