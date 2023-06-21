@@ -117,13 +117,18 @@ function Requests() {
                         </span>
                     </div>
                     <Divider />
-                    <div className="requests-total">
-                        <img src={TotalRequests} alt="TotalRequests" />
-                        <span className="requests-data">
-                            <label className="requests-title">Total requests</label>
-                            {usageData && <label className="requests-value">{getTotalEvents().toLocaleString('en-US')}</label>}
-                        </span>
+                    <div className="total-in-out">
+                        <div className="requests-total">
+                            <img src={TotalRequests} alt="TotalRequests" />
+                            <span className="requests-data">
+                                <label className="requests-title">Total requests</label>
+                                {usageData && <label className="requests-value">{getTotalEvents().toLocaleString('en-US')}</label>}
+                            </span>
+                        </div>
+                        <div className="divider"></div>
+                        <div className="requests-total"></div>
                     </div>
+
                     <Divider />
                     <div className="total-in-out">
                         <div className="requests-total">

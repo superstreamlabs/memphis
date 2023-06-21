@@ -38,20 +38,22 @@
             .total-in-out {
                 display: flex;
                 align-items: center;
-                .requests-total {
-                    width: 50%;
-                }
+                justify-content:space-evenly;
                 .ant-divider-vertical {
                     margin: 0;
                     height: 70px;
                 }
             }
             .requests-total {
-                padding: 15px 20px;
+                padding: 15px 0px;
                 display: flex;
                 align-items: center;
                 height: 10vh;
                 min-height: 80px;
+                width: 200px;
+                .divider{
+                    width: 2px;
+                }
                 .requests-data {
                     display: flex;
                     flex-direction: column;
@@ -74,10 +76,14 @@
                 }
             }
             .cloud-provider {
-                padding: 10px 20px;
+                padding: 10px 0px;
+                justify-content: space-evenly;
+                display: flex;
+                span{
+                    width: 200px;
+                }
                 .ant-divider-vertical {
-                    margin: 0 30px;
-                    height: 15px;
+                    height: 25px;
                 }
                 .cloud-provider-label {
                     font-family: 'InterMedium';
@@ -162,13 +168,13 @@
         margin-top: 20px;
         .segment-data {
             margin-bottom: 10px;
-            margin-left: 20px;
+            margin-left: 40px;
         }
         .panel-container {
             overflow-y: auto;
             height: calc(100% - 45px);
             .requests-panel {
-                margin: 0px 20px 20px 20px;
+                margin: 0px 40px 20px 40px;
                 padding-right: 20px;
                 display: flex;
                 justify-content: space-between;
