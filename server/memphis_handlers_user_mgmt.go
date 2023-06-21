@@ -345,7 +345,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("AddUserSignUp: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -445,7 +445,7 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetAllUsers: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -484,7 +484,7 @@ func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetApplicationUsers: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	users, err := db.GetAllUsersByTypeAndTenantName([]string{"application"}, user.TenantName)
@@ -516,7 +516,7 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("EditAvatar: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -547,7 +547,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("EditCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -581,7 +581,7 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = db.DeleteImage("company_logo", user.TenantName)
@@ -598,7 +598,7 @@ func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, image, err := db.GetImage("company_logo", user.TenantName)
@@ -629,7 +629,7 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("SkipGetStarted at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -692,7 +692,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetFilterDetails at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	tenantName := user.TenantName

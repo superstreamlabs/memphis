@@ -418,7 +418,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetStation at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName, user.TenantName)
@@ -692,7 +692,7 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Warnf("GetStations at getUserDetailsFromMiddleware: Station %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	stations, err := sh.GetStationsDetails(user.TenantName)
@@ -716,7 +716,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetAllStations at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
@@ -741,7 +741,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	tenantName := user.TenantName
 	if err != nil {
 		serv.Errorf("CreateStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -979,7 +979,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		user, err := getUserDetailsFromMiddleware(c)
 		if err != nil {
 			serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: %v", err.Error())
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
@@ -1007,7 +1007,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = db.DeleteStationsByNames(stationNames, user.TenantName)
@@ -1032,7 +1032,7 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		user, err := getUserDetailsFromMiddleware(c)
 		if err != nil {
 			serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: Station %v: %v", name, err.Error())
-			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 
 		serv.Noticef("[tenant: %v][user: %v]Station %v has been deleted by user %v", user.TenantName, user.Username, stationName.Ext(), user.Username)
@@ -1287,7 +1287,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1365,7 +1365,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetMessageDetails at getUserDetailsFromMiddlewares: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1559,7 +1559,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("UseSchema at getUserDetailsFromMiddleware: Schema %v: %v", body.SchemaName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1860,7 +1860,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveSchemaFromStation at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
@@ -1922,7 +1922,7 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetUpdatesForSchemaByStation at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1997,7 +1997,7 @@ func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("UpdateDlsConfig at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -2058,7 +2058,7 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("PurgeStation at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -2110,7 +2110,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveMessages at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 

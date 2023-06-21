@@ -333,7 +333,7 @@ func (ph ProducersHandler) GetAllProducersByStation(c *gin.Context) { // for the
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetAllProducersByStation: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
