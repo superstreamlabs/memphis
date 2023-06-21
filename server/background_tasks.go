@@ -73,7 +73,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
-				s.Errorf("[%v]ListenForIntegrationsUpdateEvents: %v", integrationUpdate.TenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForIntegrationsUpdateEvents: %v", integrationUpdate.TenantName, err.Error())
 				return
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
@@ -85,7 +85,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			default:
-				s.Warnf("[%v] ListenForIntegrationsUpdateEvents: %s %s", integrationUpdate.TenantName, strings.ToLower(integrationUpdate.Name), "unknown integration")
+				s.Warnf("[tenant: %v] ListenForIntegrationsUpdateEvents: %s %s", integrationUpdate.TenantName, strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))
@@ -117,13 +117,13 @@ func (s *Server) ListenForNotificationEvents() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[%v]ListenForNotificationEvents: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var notification models.Notification
 			err = json.Unmarshal([]byte(message), &notification)
 			if err != nil {
-				s.Errorf("[%v]ListenForNotificationEvents: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			notificationMsg := notification.Msg
@@ -147,13 +147,13 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[%v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			var msgToAck models.PmAckMsg
 			err = json.Unmarshal([]byte(message), &msgToAck)
 			if err != nil {
-				s.Errorf("[%v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName, tenantName)
@@ -445,41 +445,41 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 		go func(msg []byte) {
 			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[%v]ListenForNotificationEvents: %v", tenantName, err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var message models.SchemaVerseDlsMessageSdk
 			err = json.Unmarshal([]byte(stringMessage), &message)
 			if err != nil {
-				serv.Errorf("[%v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			exist, station, err := db.GetStationByName(message.StationName, tenantName)
 			if err != nil {
-				serv.Errorf("[%v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 			if !exist {
-				serv.Warnf("[%v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
 				return
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("[%v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			if !exist {
-				serv.Warnf("[%v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
 				return
 			}
 
 			message.Message.TimeSent = time.Now()
 			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
-				serv.Errorf("[%v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 		}(copyBytes(msg))
