@@ -55,7 +55,13 @@ const Table = ({ columns, data, title, tableRowClassname, className }) => {
         className
     };
 
-    return <CustomTable {...fieldProps} pagination={{ pageSize: numRows, itemRender: itemRender, hideOnSinglePage: true, responsive: false }} />;
+    return (
+        <CustomTable
+            {...fieldProps}
+            pagination={{ pageSize: numRows, itemRender: itemRender, hideOnSinglePage: true, responsive: false }}
+            rowKey={(record) => record.id}
+        />
+    );
 };
 
 export default Table;

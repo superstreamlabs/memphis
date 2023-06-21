@@ -386,5 +386,5 @@ export const compareVersions = (a, b) => {
 
 export const isCloud = () => {
     const cloud_env = process.env.REACT_APP_CLOUD === 'true';
-    return true;
+    return cloud_env;
 };

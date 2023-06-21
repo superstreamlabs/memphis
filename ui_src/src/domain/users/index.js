@@ -47,7 +47,7 @@ function Users() {
     const createUserRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [tableType, setTableType] = useState('Management');
+    const [tableType, setTableType] = useState('Management (0)');
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
@@ -64,6 +64,7 @@ function Users() {
             if (data) {
                 data.management_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 data.application_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                setTableType(`Management (${data?.management_users?.length || 0})`);
                 setUsersList(data);
                 setCopyOfUserList(data);
             }
@@ -414,7 +415,12 @@ function Users() {
         return (
             <div className="table-header">
                 <p>User type:</p>
-                <SegmentButton value={tableType} size="middle" options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
+                <SegmentButton
+                    value={tableType}
+                    size="middle"
+                    options={[`Management (${copyOfUserList?.management_users?.length || 0})`, `Client (${copyOfUserList?.application_users?.length || 0})`]}
+                    onChange={(e) => changeTableView(e)}
+                />
             </div>
         );
     };
@@ -466,8 +472,8 @@ function Users() {
                         className="users-table"
                         tableRowClassname="user-row"
                         title={tableHeader}
-                        columns={tableType === 'Management' ? managmentColumns : clientColumns}
-                        data={tableType === 'Management' ? copyOfUserList?.management_users : copyOfUserList?.application_users}
+                        columns={tableType.includes('Management') ? managmentColumns : clientColumns}
+                        data={tableType.includes('Management') ? copyOfUserList?.management_users : copyOfUserList?.application_users}
                     />
                 )}
             </div>

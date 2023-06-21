@@ -36,10 +36,12 @@ const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handl
                                 <p>{value.label}</p>
                                 <span>{value.desc}</span>
                             </div>
-                            {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
-                            {selectedOption !== value.value && <div className="uncheck-icon" />}
+                            <div className="ceheck-button">
+                                {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
+                                {selectedOption !== value.value && <div className="uncheck-icon" />}
+                                {button}
+                            </div>
                         </div>
-                        {button}
                     </div>
                 );
             })}

@@ -112,7 +112,6 @@ const App = withRouter((props) => {
             const fetchData = async () => {
                 await handleLoginWithToken();
             };
-
             fetchData();
         } else setCloudLogedIn(true);
     }, []);
@@ -315,6 +314,21 @@ const App = withRouter((props) => {
                                 ></AppWrapper>
                             }
                         />
+                        <PrivateRoute
+                            path="/"
+                            component={
+                                <AppWrapper
+                                    content={
+                                        <div>
+                                            <Overview />
+                                        </div>
+                                    }
+                                ></AppWrapper>
+                            }
+                        />
+                        <Route>
+                            <Redirect to={pathDomains.overview} />
+                        </Route>
 
                         {!isCloud() && (
                             <>
@@ -354,21 +368,6 @@ const App = withRouter((props) => {
                                 />
                             </>
                         )}
-                        <PrivateRoute
-                            path="/"
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Overview />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <Route>
-                            <Redirect to={pathDomains.overview} />
-                        </Route>
                     </Switch>
                 )}
             </div>

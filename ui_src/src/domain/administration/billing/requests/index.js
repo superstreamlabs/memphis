@@ -243,19 +243,21 @@ function Requests() {
                     </div>
                 )}
                 {usageType === 'Data in' && (
-                    <div className="requests-panel">
-                        <div className="requests-item">
-                            <div className="yellow-edge"></div>
-                            <div className="circle-img">
-                                <img src={Consumed} alt="Consumed" />
-                            </div>
+                    <div className="panel-container">
+                        <div className="requests-panel">
+                            <div className="requests-item">
+                                <div className="yellow-edge"></div>
+                                <div className="circle-img">
+                                    <img src={Consumed} alt="Consumed" />
+                                </div>
 
-                            <div>
-                                <label className="request-type">Data in events</label>
-                                <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                <div>
+                                    <label className="request-type">Data in events</label>
+                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                </div>
                             </div>
+                            <label className="requests-value">{usageData?.data_in_events?.toLocaleString('en-US')}</label>
                         </div>
-                        <label className="requests-value">{usageData?.data_in_events?.toLocaleString('en-US')}</label>
                     </div>
                 )}
             </div>
