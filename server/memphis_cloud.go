@@ -1207,7 +1207,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("AddUser: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1349,7 +1349,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveUser: User %v: %v", body.Username, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if user.Username == username {
@@ -1422,7 +1422,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveMyUser at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1572,7 +1572,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RefreshToken: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	username := user.Username

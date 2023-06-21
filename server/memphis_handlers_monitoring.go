@@ -219,7 +219,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetMainOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	response, err := mh.getMainOverviewDataDetails(user.TenantName)
@@ -622,7 +622,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetStationOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)

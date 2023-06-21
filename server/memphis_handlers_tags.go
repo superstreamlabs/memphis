@@ -123,7 +123,7 @@ func (th TagsHandler) CreateNewTag(c *gin.Context) {
 	tenantName := user.TenantName
 	if err != nil {
 		serv.Errorf("CreateNewTag at getUserDetailsFromMiddleware: Tag %v: %v", body.Name, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -172,7 +172,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("RemoveTag at getUserDetailsFromMiddleware: Tag %v: %v", body.Name, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -282,7 +282,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("UpdateTagsForEntity at getUserDetailsFromMiddleware: %v %v: %v", body.EntityType, body.EntityName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -517,7 +517,7 @@ func (th TagsHandler) GetTags(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetTags: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -561,7 +561,7 @@ func (th TagsHandler) GetUsedTags(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("GetUsedTags: %v", err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	tags, err := db.GetAllUsedTags(user.TenantName)

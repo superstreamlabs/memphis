@@ -396,7 +396,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("CreateNewSchema at getUserDetailsFromMiddleware: Schema %v: %v", schemaName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	tenantName := user.TenantName
@@ -649,7 +649,7 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
 		serv.Errorf("CreateNewVersion at getUserDetailsFromMiddleware: Schema %v: %v", body.SchemaName, err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	schemaName := strings.ToLower(body.SchemaName)
