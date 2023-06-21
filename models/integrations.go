@@ -46,13 +46,11 @@ type CreateIntegration struct {
 }
 
 type GetIntegrationDetailsSchema struct {
-	Name       string `form:"name" json:"name" binding:"required"`
-	TenantName string `form:"tenant_name" json:"tenant_name"`
+	Name string `form:"name" json:"name" binding:"required"`
 }
 
 type DisconnectIntegrationSchema struct {
-	Name       string `form:"name" json:"name" binding:"required"`
-	TenantName string `form:"tenant_name" json:"tenant_name"`
+	Name string `form:"name" json:"name" binding:"required"`
 }
 
 type Notification struct {
