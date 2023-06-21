@@ -20,20 +20,12 @@ import RequestsGray from '../../../assets/images/setting/requestsGray.svg';
 
 function BillingMenu({ selectedMenuItem, setMenuItem }) {
     return (
-        <>
-            <p className="header">Billing</p>
-            <p className="memphis-label">Modify environment configuration</p>
-            <div className="side-menu">
-                <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
-                    <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
-                    Usage Report
-                </div>
-                {/* <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
-                    <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="payments" />
-                    Payments
-                </div> */}
+        <div className="side-menu">
+            <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
+                <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
+                Usage Report
             </div>
-        </>
+        </div>
     );
 }
 export default BillingMenu;

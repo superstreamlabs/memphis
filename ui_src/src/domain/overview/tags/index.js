@@ -34,13 +34,12 @@ const Tags = () => {
                                     <span className="tag-item">
                                         <span className="item">
                                             <label className="item-num">{`${index + 1}`}</label>
-                                            <Tag tag={{ color: tag.color, name: tag.name }} onClick={() => ''}></Tag>
+                                            <Tag tag={{ color: tag.color, name: tag.name }} />
                                         </span>
                                         <label className="attached-component">
-                                            {' '}
                                             {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
                                                 tag.schemas_count === 1 ? '' : 's'
-                                            }.`}{' '}
+                                            }.`}
                                         </label>
                                     </span>
                                     <Divider />
