@@ -29,9 +29,9 @@ const SchemaChart = ({ schemas }) => {
     return (
         <div className="schema-chart-container">
             {max &&
-                schemas?.map((schema) => {
+                schemas?.map((schema, index) => {
                     return (
-                        <div className="schema-item">
+                        <div key={index} className="schema-item">
                             <div
                                 className="schema-bar"
                                 style={{ width: getLength(schema.usage) === 0 ? `1px` : `calc((100% - 100px)*${getLength(schema.usage)})` }}

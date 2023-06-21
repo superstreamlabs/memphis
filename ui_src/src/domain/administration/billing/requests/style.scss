@@ -164,10 +164,10 @@
     }
     .usage-details {
         overflow-y: auto;
-        height: calc(100% - 380px);
-        margin-top: 20px;
+        height: calc(100% - 350px);
+        margin-top: 15px;
         .segment-data {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             margin-left: 40px;
         }
         .panel-container {
@@ -181,8 +181,8 @@
                 align-items: center;
                 border: 1px solid #e1e0e5;
                 border-radius: 10px;
-                height: 10vh;
-                min-height: 80px;
+                height: 9.5vh;
+                min-height: 75px;
                 position: relative;
             }
             .requests-item {

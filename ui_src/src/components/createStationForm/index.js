@@ -63,7 +63,7 @@ const storageTierOneOptions = [
     {
         id: 2,
         value: 'memory',
-        label: 'Memory',
+        label: isCloud() ? 'Memory (Coming soon)' : 'Memory',
         desc: 'Memory can boost your performance. Lower availability',
         disabled: isCloud() ? true : false
     }

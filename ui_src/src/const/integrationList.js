@@ -350,6 +350,7 @@ export const INTEGRATION_LIST = {
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={pagerDutyIcon} alt="pagerDutyIcon" />

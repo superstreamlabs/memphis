@@ -98,10 +98,9 @@
                     margin-bottom: 0;
                 }
                 label {
-                    font-weight: 400;
-                    font-size: 12px;
+                    font-size: 14px;
                     color: #b4b4b4;
-                    font-family: 'Inter';
+                    font-family: 'InterMedium';
                 }
             }
         }
@@ -127,11 +126,11 @@
                 height: 100%;
                 position: relative;
                 min-height: 580px;
-                min-width: 420px;
-                display: grid;
+                min-width: 430px;
                 align-content: space-between;
             }
             .cloud {
+                display: grid;
                 grid-template-rows: 49% 30% 17%;
             }
 
@@ -159,8 +158,8 @@
             color: #1d1d1d;
         }
         label {
-            font-weight: 500;
-            font-size: 12px;
+            font-family: 'Inter';
+            font-size: 14px;
             color: #979797;
         }
         .link {

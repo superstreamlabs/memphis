@@ -17,7 +17,7 @@
             height: 18px;
         }
         .uncheck-icon {
-            min-width: 16px;
+            width: 16px;
             height: 16px;
             border: 1px solid #d0d5dd;
             border-radius: 8px;
@@ -44,7 +44,14 @@
     }
     .check-and-content{
         display: flex;
-        gap: 5px;
+        width: 100%;
+        justify-content: space-between;
+        .check-button{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
     }
     .allowed:hover {
         cursor: pointer;
