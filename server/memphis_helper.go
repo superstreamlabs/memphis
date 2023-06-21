@@ -14,10 +14,12 @@ package server
 import (
 	"bufio"
 	"bytes"
+	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
@@ -303,18 +305,9 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 		})
 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			replicas--
-			err = s.memphisAddStream(globalAccountName, &StreamConfig{
-				Name:         syslogsStreamName,
-				Subjects:     []string{syslogsStreamName + ".>"},
-				Retention:    LimitsPolicy,
-				MaxAge:       retentionDur,
-				MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
-				MaxConsumers: -1,
-				Discard:      DiscardOld,
-				Storage:      FileStorage,
-				Replicas:     replicas,
-			})
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
 		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
@@ -337,6 +330,11 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 			Duplicates:   idempotencyWindow,
 		})
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
 			return
@@ -1161,6 +1159,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		return &Account{}, Options{}, err
 	}
 
+	decriptionKey := getAESKey()
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1191,14 +1191,19 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		jsLimits: map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits},
 	}
 	if configuration.USER_PASS_BASED_AUTH {
+		// Upserting the DB with accounts/users from the config file -- happens only once on startup
 		if !reload {
 			if len(opts.Accounts) > 0 {
-				tenantsToUpsert := []string{globalAccountName}
+				tenantsToUpsert := []models.TenantForUpsert{}
 				for _, account := range opts.Accounts {
 					name := account.GetName()
 					if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
 						name = strings.ToLower(name)
-						tenantsToUpsert = append(tenantsToUpsert, name)
+						encryptedPass, err := EncryptAES([]byte(generateRandomPassword(12)))
+						if err != nil {
+							return &Account{}, Options{}, err
+						}
+						tenantsToUpsert = append(tenantsToUpsert, models.TenantForUpsert{Name: name, InternalWSPass: encryptedPass})
 					}
 				}
 				err = db.UpsertBatchOfTenants(tenantsToUpsert)
@@ -1232,6 +1237,8 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 				}
 			}
 		}
+
+		// handling imports/exports
 		globalServicesExport := map[string]*serviceExport{}
 		globalServiceImportForAllAccounts := map[string]*serviceImport{}
 		siList := []*streamImport{}
@@ -1297,16 +1304,19 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 		}
 
+		// loading all tenants and users from the DB
 		users, err := db.GetAllUsersByType([]string{"application"})
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
-
 		tenants, err := db.GetAllTenantsWithoutGlobal()
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
+<<<<<<< HEAD
 
+=======
+>>>>>>> d6b17c619eec270e5aced1f2e47d546aba7cd7e7
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
 		accounts := []*Account{}
@@ -1323,15 +1333,26 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 					streams:  siList,
 				},
 			}
-			// generate random password for each tenant
+			decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			// creating internal user for the tenant for management purposes
+			appUsers = append(appUsers, &User{
+				Username: tenant.Name,
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  account,
+			})
+			// creating internal user for the tenant for ws purposes
 			appUsers = append(appUsers, &User{
 				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(tenant.ID),
-				Password: configuration.CONNECTION_TOKEN,
+				Password: decryptedUserPassword,
 				Account:  account,
 			})
 			accounts = append(accounts, account)
 			addedTenant[name] = account
 		}
+
 		globalStreamsExport := map[string]*streamExport{}
 		for _, subj := range memphisSubjects {
 			ea := streamExport{}
@@ -1340,50 +1361,80 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			}
 			globalStreamsExport[subj] = &ea
 		}
+
 		if reload {
 			serv.gacc.exports = exportMap{
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
+			// creating internal user on $SYS account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$SYS",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  serv.sys.account,
+			})
+			// creating internal user on $G account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$G",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  serv.gacc,
+			})
 		} else {
 			gacc.exports = exportMap{
 				services: globalServicesExport,
 				streams:  globalStreamsExport,
 			}
+			// sys user is getting created where the $SYS account is created on startup
+			// creating internal user on $G account for management purposes
+			appUsers = append(appUsers, &User{
+				Username: "$G",
+				Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+				Account:  gacc,
+			})
 			accounts = append(accounts, gacc)
 		}
-		// ** not relevant for cloud
-		if reload {
-			appUsers = append(appUsers, &User{
-				Username: "root$1",
-				Password: configuration.ROOT_PASSWORD,
-				Account:  serv.gacc,
-			})
-			appUsers = append(appUsers, &User{
-				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
-				Password: configuration.CONNECTION_TOKEN,
-				Account:  serv.gacc,
-			})
-			addedTenant[conf.GlobalAccountName] = serv.gacc
-		} else {
-			appUsers = append(appUsers, &User{
-				Username: "root$1",
-				Password: configuration.ROOT_PASSWORD,
-				Account:  gacc,
-			})
-			appUsers = append(appUsers, &User{
-				Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
-				Password: configuration.CONNECTION_TOKEN,
-				Account:  gacc,
-			})
-			addedTenant[conf.GlobalAccountName] = gacc
+
+		if shouldCreateRootUserforGlobalAcc {
+			_, globalT, err := db.GetGlobalTenant()
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
+			if err != nil {
+				return &Account{}, Options{}, err
+			}
+			if reload {
+				appUsers = append(appUsers, &User{
+					Username: "root$1",
+					Password: configuration.ROOT_PASSWORD,
+					Account:  serv.gacc,
+				})
+				appUsers = append(appUsers, &User{
+					Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
+					Password: decryptedPass,
+					Account:  serv.gacc,
+				})
+				addedTenant[conf.GlobalAccountName] = serv.gacc
+			} else {
+				appUsers = append(appUsers, &User{
+					Username: "root$1",
+					Password: configuration.ROOT_PASSWORD,
+					Account:  gacc,
+				})
+				appUsers = append(appUsers, &User{
+					Username: MEMPHIS_USERNAME + "$" + strconv.Itoa(1),
+					Password: decryptedPass,
+					Account:  gacc,
+				})
+				addedTenant[conf.GlobalAccountName] = gacc
+			}
 		}
-		// not relevant for cloud **
+		
+		// create users of all tenants
 		tenantsId[globalAccountName] = 1
-		key := getAESKey()
 		for _, user := range users {
 			name := user.TenantName
-			decryptedUserPassword, err := DecryptAES(key, user.Password)
+			decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 			if err != nil {
 				return &Account{}, Options{}, err
 			}
@@ -1394,18 +1445,6 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 			})
 		}
 
-		// ** insert user where sys created
-		sysAcc := &Account{
-			Name:   DEFAULT_SYSTEM_ACCOUNT,
-			limits: limits{mpay: -1, msubs: -1, mconns: -1, mleafs: -1},
-		}
-		sysUser := &User{
-			Username: "sys",
-			Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
-			Account:  sysAcc,
-		}
-		accounts = append(accounts, sysAcc)
-		appUsers = append(appUsers, sysUser)
 		opts.Accounts = accounts
 		opts.Users = appUsers
 	}
@@ -1429,4 +1468,17 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 	}
 
 	return tenantName, message, nil
+}
+
+func generateRandomPassword(length int) string {
+	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
+	charsetLength := big.NewInt(int64(len(allowedPasswordChars)))
+	password := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		randomIndex, _ := rand.Int(rand.Reader, charsetLength)
+		password[i] = allowedPasswordChars[randomIndex.Int64()]
+	}
+
+	return string(password)
 }

@@ -89,6 +89,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$G',
 		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
+		internal_ws_pass VARCHAR NOT NULL,
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -5337,7 +5338,7 @@ func DeleteDlsMsgsByTenant(tenantName string) error {
 }
 
 // Tenants functions
-func UpsertTenant(name string) (models.Tenant, error) {
+func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5347,7 +5348,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) VALUES($1) ON CONFLICT (name) DO NOTHING`
+	query := `INSERT INTO tenants (name, internal_ws_pass) VALUES($1, $2) ON CONFLICT (name) DO NOTHING`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_tenant", query)
 	if err != nil {
@@ -5355,7 +5356,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, encryptrdInternalWSPass)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -5416,7 +5417,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	return newTenant, nil
 }
 
-func UpsertBatchOfTenants(tenants []string) error {
+func UpsertBatchOfTenants(tenants []models.TenantForUpsert) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5428,10 +5429,11 @@ func UpsertBatchOfTenants(tenants []string) error {
 	valueStrings := make([]string, 0, len(tenants))
 	valueArgs := make([]interface{}, 0, len(tenants))
 	for i, tenant := range tenants {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d)", i+1))
-		valueArgs = append(valueArgs, tenant)
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
+		valueArgs = append(valueArgs, tenant.Name)
+		valueArgs = append(valueArgs, tenant.InternalWSPass)
 	}
-	query := fmt.Sprintf("INSERT INTO tenants (name) VALUES %s ON CONFLICT (name) DO NOTHING", strings.Join(valueStrings, ","))
+	query := fmt.Sprintf("INSERT INTO tenants (name, internal_ws_pass) VALUES %s ON CONFLICT (name) DO NOTHING", strings.Join(valueStrings, ","))
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_tenants", query)
 	if err != nil {
 		return err
@@ -5587,7 +5589,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name, firebaseOrganizationId string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5597,7 +5599,7 @@ func CreateTenant(name, firebaseOrganizationId string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name, firebase_organization_id) VALUES($1, $2)`
+	query := `INSERT INTO tenants (name, firebase_organization_id, internal_ws_pass) VALUES($1, $2, $3)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -5605,7 +5607,7 @@ func CreateTenant(name, firebaseOrganizationId string) (models.Tenant, error) {
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass)
 	if err != nil {
 		return models.Tenant{}, err
 	}
