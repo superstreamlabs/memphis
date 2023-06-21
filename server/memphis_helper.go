@@ -139,7 +139,7 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 		break
 	case <-timeout:
 		s.unsubscribeOnAcc(account, sub)
-		return fmt.Errorf("jsapi request timeout for request type %q on %q", kind, subject)
+		return fmt.Errorf("[tenant name: %v]jsapi request timeout for request type %q on %q", tenantName, kind, subject)
 	}
 
 	return json.Unmarshal(rawResp, resp)
@@ -242,7 +242,7 @@ func (s *Server) CreateInternalJetStreamResources() {
 		go tryCreateInternalJetStreamResources(s, retentionDur, successCh, false)
 		err := <-successCh
 		if err != nil {
-			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: " + err.Error())
+			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: %v", err.Error())
 		}
 	} else {
 		s.WaitForLeaderElection()
@@ -255,13 +255,13 @@ func (s *Server) CreateInternalJetStreamResources() {
 					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
 					err := <-successCh
 					if err != nil {
-						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
 						continue
 					}
 					ready = true
 				case err := <-successCh:
 					if err != nil {
-						s.Warnf("CreateInternalJetStreamResources: " + err.Error())
+						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
 						<-timeout.C
 						continue
 					}
@@ -914,7 +914,7 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf("memphisGetMsgs: " + err.Error())
+				s.Errorf("memphisGetMsgs: %v", err.Error())
 				return
 			}
 
@@ -1313,6 +1313,10 @@ func GetMemphisOpts(opts Options, reload bool) (*Account, Options, error) {
 		if err != nil {
 			return &Account{}, Options{}, err
 		}
+<<<<<<< HEAD
+
+=======
+>>>>>>> d6b17c619eec270e5aced1f2e47d546aba7cd7e7
 		tenantsId := map[string]int{}
 		appUsers := []*User{}
 		accounts := []*Account{}
