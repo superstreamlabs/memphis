@@ -34,8 +34,8 @@ const GenerateTokenModal = ({ host, close }) => {
         refresh_token_expiry_in_minutes: 10000092
     });
     const [userToken, setUserToken] = useState({});
-    const [tokenTitle, setTokenTitle] = useState("Connection token")
-    const [tokenPlaceHolder, setTokenPlaceHolder] = useState("Generated during user creation")
+    const [tokenTitle, setTokenTitle] = useState('Connection token');
+    const [tokenPlaceHolder, setTokenPlaceHolder] = useState('Generated during user creation');
 
     const updateState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -60,15 +60,15 @@ const GenerateTokenModal = ({ host, close }) => {
 
     useEffect(() => {
         getAppUsers();
-        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){
-        setFormFields({
-            username: appUsers[0]?.name || '',
-            password: '',
-            token_expiry_in_minutes: 123,
-            refresh_token_expiry_in_minutes: 10000092
-        })
-        setTokenTitle("Password")
-        setTokenPlaceHolder("User password")
+        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+            setFormFields({
+                username: appUsers[0]?.name || '',
+                password: '',
+                token_expiry_in_minutes: 123,
+                refresh_token_expiry_in_minutes: 10000092
+            });
+            setTokenTitle('Password');
+            setTokenPlaceHolder('User password');
         }
         return () => {};
     }, []);
@@ -107,7 +107,7 @@ const GenerateTokenModal = ({ host, close }) => {
                     {Object.keys(userToken).length === 0 ? (
                         <>
                             <div className="app-username">
-                                <p className="field-title">Application-type user</p>
+                                <p className="field-title">Client-type user</p>
                                 <SelectComponent
                                     placeholder="choose your app user"
                                     colorType="black"
@@ -132,9 +132,21 @@ const GenerateTokenModal = ({ host, close }) => {
                                     backgroundColorType="none"
                                     borderColorType="gray"
                                     height="40px"
-                                    onBlur={(e) => { if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){updateState('password', e.target.value)} else {updateState('connection_token', e.target.value)}}}
-                                    onChange={(e) => { if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true'){updateState('password', e.target.value)} else {updateState('connection_token', e.target.value)}}}
-                                    value={ ((localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')? formFields.password : formFields.connection_token)}
+                                    onBlur={(e) => {
+                                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                                            updateState('password', e.target.value);
+                                        } else {
+                                            updateState('connection_token', e.target.value);
+                                        }
+                                    }}
+                                    onChange={(e) => {
+                                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                                            updateState('password', e.target.value);
+                                        } else {
+                                            updateState('connection_token', e.target.value);
+                                        }
+                                    }}
+                                    value={localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? formFields.password : formFields.connection_token}
                                 />
                             </div>
                             <Button

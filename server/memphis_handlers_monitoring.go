@@ -29,7 +29,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -129,7 +128,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				serv.Errorf("GetBrokersThroughputs: " + err.Error())
+				serv.Errorf("[tenant: %v]GetBrokersThroughputs: %v", tenantName, err.Error())
 			}
 
 			respCh <- StoredMsg{
@@ -216,90 +215,26 @@ cleanup:
 	return throughputs, nil
 }
 
-func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (models.MainOverviewData, error) {
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	mainOverviewData := &models.MainOverviewData{}
-	generalErr := new(error)
-
-	wg.Add(3)
-	go func() {
-		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.TotalStations = len(stations)
-		mainOverviewData.Stations = stations
-		mainOverviewData.TotalMessages = totalMessages
-		mainOverviewData.TotalDlsMessages = totalDlsMsgs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.SystemComponents = systemComponents
-		mainOverviewData.MetricsEnabled = metricsEnabled
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.BrokersThroughput = brokersThroughputs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	wg.Wait()
-	if *generalErr != nil {
-		return models.MainOverviewData{}, *generalErr
-	}
-
-	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
-		k8sEnv = false
-	}
-	mainOverviewData.K8sEnv = k8sEnv
-	return *mainOverviewData, nil
-}
-
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetMainOverviewData: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetMainOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
-			serv.Warnf("GetMainOverviewData: " + err.Error())
+			serv.Warnf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
-			serv.Errorf("GetMainOverviewData: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-enter-main-overview")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -357,7 +292,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 	})
 
 	disconnectedProducers := make([]map[string]interface{}, 0)
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3d0",
 		"name":            "prod.16",
 		"type":            "application",
@@ -369,7 +304,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ce",
 		"name":            "prod.15",
 		"type":            "application",
@@ -381,7 +316,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3cc",
 		"name":            "prod.14",
 		"type":            "application",
@@ -393,7 +328,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ca",
 		"name":            "prod.13",
 		"type":            "application",
@@ -405,7 +340,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c8",
 		"name":            "prod.12",
 		"type":            "application",
@@ -417,7 +352,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c6",
 		"name":            "prod.11",
 		"type":            "application",
@@ -429,7 +364,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c4",
 		"name":            "prod.10",
 		"type":            "application",
@@ -441,7 +376,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c2",
 		"name":            "prod.9",
 		"type":            "application",
@@ -453,7 +388,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c0",
 		"name":            "prod.8",
 		"type":            "application",
@@ -465,7 +400,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3be",
 		"name":            "prod.7",
 		"type":            "application",
@@ -477,7 +412,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3bc",
 		"name":            "prod.6",
 		"type":            "application",
@@ -680,25 +615,25 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Warnf("GetStationOverviewData at StationNameFromStr: At station %v: %v", body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetStationOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetStationOverviewData: " + errMsg)
+		errMsg := fmt.Sprintf("Station %v does not exist", body.StationName)
+		serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -707,7 +642,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetProducersByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -715,17 +650,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station.Name, user.TenantName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -733,10 +668,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -746,10 +681,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetMessages: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("GetStationOverviewData at GetMessages: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -758,10 +693,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -773,7 +708,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetCgsByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -781,17 +716,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetTagsByEntityWithID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -816,7 +751,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		var schemaDetails models.StationOverviewSchemaDetails
 		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -825,7 +760,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		} else {
 			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 			if err != nil {
-				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+				serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaVersionByNumberAndID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -919,7 +854,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-enter-station-overview")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -998,7 +933,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf("GetSystemLogs: " + err.Error())
+				s.Errorf("GetSystemLogs: %v", err.Error())
 				return
 			}
 
@@ -1330,7 +1265,7 @@ func shortenFloat(f float64) float64 {
 func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 	v, err := serv.Varz(nil)
 	if err != nil {
-		serv.Errorf("GetAvailableReplicas: " + err.Error())
+		serv.Errorf("GetAvailableReplicas: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

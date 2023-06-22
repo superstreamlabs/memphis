@@ -24,6 +24,10 @@
     min-width: 1050px;
     height: 60px;
 }
+.main-header-wrapper{
+    display: flex;
+    flex-direction: column;
+}
 .main-header-h1 {
     font-family: 'InterSemiBold';
     font-size: 24px;
@@ -136,11 +140,15 @@ pre {
 }
 
 .memphis-label {
-    color: #667085;
-    size: 14px;
+    color: rgba(74, 73, 92, 0.8);
+    font-size: 12px;
 
     a {
         color: #6557ff;
         cursor: pointer;
     }
+}
+
+.ant-divider-vertical{
+    border-left-width: 2px;
 }

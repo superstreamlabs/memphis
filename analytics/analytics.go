@@ -14,7 +14,6 @@ package analytics
 import (
 	"memphis/conf"
 	"memphis/db"
-	"strings"
 
 	"github.com/gofrs/uuid"
 	"github.com/posthog/posthog-go"
@@ -30,26 +29,30 @@ var deploymentId string
 var memphisVersion string
 var AnalyticsClient posthog.Client
 
-func InitializeAnalytics(analyticsToken, memphisV string) error {
+func InitializeAnalytics(analyticsToken, memphisV, customDeploymentId string) error {
 	memphisVersion = memphisV
-	exist, deployment, err := db.GetSystemKey("deployment_id", conf.GlobalAccountName)
-	if err != nil {
-		return err
-	} else if !exist {
-		uid, err := uuid.NewV4()
-		if err != nil {
-			return err
-		}
-		deploymentId = uid.String()
-		err = db.InsertSystemKey("deployment_id", deploymentId, conf.GlobalAccountName)
-		if err != nil {
-			return err
-		}
+	if customDeploymentId != "" {
+		deploymentId = customDeploymentId
 	} else {
-		deploymentId = deployment.Value
+		exist, deployment, err := db.GetSystemKey("deployment_id", conf.GlobalAccountName)
+		if err != nil {
+			return err
+		} else if !exist {
+			uid, err := uuid.NewV4()
+			if err != nil {
+				return err
+			}
+			deploymentId = uid.String()
+			err = db.InsertSystemKey("deployment_id", deploymentId, conf.GlobalAccountName)
+			if err != nil {
+				return err
+			}
+		} else {
+			deploymentId = deployment.Value
+		}
 	}
 
-	exist, _, err = db.GetSystemKey("analytics", conf.GlobalAccountName)
+	exist, _, err := db.GetSystemKey("analytics", conf.GlobalAccountName)
 	if err != nil {
 		return err
 	} else if !exist {
@@ -82,14 +85,15 @@ func Close() {
 	}
 }
 
-func SendEvent(userId, eventName string) {
-	var distinctId string
+func SendEvent(tenantName, username, eventName string) {
+	distinctId := deploymentId
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-	} else {
-		distinctId = deploymentId + "-" + userId
 	}
-	distinctId = strings.TrimSuffix(distinctId, "-")
+
+	if tenantName != "" && username != "" {
+		distinctId = distinctId + "-" + tenantName + "-" + username
+	}
 
 	p := posthog.NewProperties()
 	p.Set("memphis-version", memphisVersion)
@@ -101,14 +105,15 @@ func SendEvent(userId, eventName string) {
 	})
 }
 
-func SendEventWithParams(userId string, params []EventParam, eventName string) {
-	var distinctId string
+func SendEventWithParams(tenantName, username string, params []EventParam, eventName string) {
+	distinctId := deploymentId
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
-	} else {
-		distinctId = deploymentId + "-" + userId
 	}
-	distinctId = strings.TrimSuffix(distinctId, "-")
+
+	if tenantName != "" && username != "" {
+		distinctId = distinctId + "-" + tenantName + "-" + username
+	}
 
 	p := posthog.NewProperties()
 	for _, param := range params {

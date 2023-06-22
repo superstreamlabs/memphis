@@ -75,9 +75,21 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	cancelfunc := MetadataDbClient.Cancel
 	defer cancelfunc()
 
+	alterTenantsTable := `
+	DO $$
+	BEGIN
+		IF EXISTS (
+			SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants' AND table_schema = 'public'
+		) THEN
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '' ;
+		END IF;
+	END $$;`
+
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$G',
+		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
+		internal_ws_pass VARCHAR NOT NULL,
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -144,12 +156,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
 			REFERENCES tenants(name),
-		UNIQUE(username, tenant_name),
-		pending BOOL NOT NULL DEFAULT false,
-		team VARCHAR NOT NULL DEFAULT '',
-		position VARCHAR NOT NULL DEFAULT '',
-		owner VARCHAR NOT NULL DEFAULT '',
-		description VARCHAR NOT NULL DEFAULT ''
+		UNIQUE(username, tenant_name)
 		);`
 
 	alterConfigurationsTable := `
@@ -490,7 +497,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1706,8 +1713,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = ANY($1)
 	AND (is_deleted = false)
 	AND tenant_name=$2`
@@ -1733,10 +1739,8 @@ func DeleteStation(name string, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations
-	SET is_deleted = true
+	query := `DELETE FROM stations
 	WHERE name = $1
-	AND (is_deleted = false)
 	AND tenant_name=$2`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_station", query)
 	if err != nil {
@@ -2341,7 +2345,7 @@ func DeleteProducersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE producers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM producers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producers_by_station_id", query)
 	if err != nil {
 		return err
@@ -2710,8 +2714,28 @@ func DeleteConsumersByStationID(stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE consumers SET is_active = false, is_deleted = true WHERE station_id = $1`
+	query := `DELETE FROM consumers WHERE station_id = $1`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_consumers_by_station_id", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteDLSMessagesByStationID(stationId int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM dls_messages WHERE station_id = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_messages_from_chosen_dls", query)
 	if err != nil {
 		return err
 	}
@@ -4037,6 +4061,34 @@ func GetUserForLogin(username string) (bool, models.User, error) {
 	return true, users[0], nil
 }
 
+func GetUserForLoginByUsernameAndTenant(username, tenantname string) (bool, models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM users WHERE username = $1 AND tenant_name = $2  AND NOT type = 'application' LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user_for_login_by_username_and_tenant", query)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantname)
+	if err != nil {
+		return false, models.User{}, err
+	}
+	defer rows.Close()
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, models.User{}, err
+	}
+	if len(users) == 0 {
+		return false, models.User{}, nil
+	}
+	return true, users[0], nil
+}
+
 func GetUserByUserId(userId int) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -5260,8 +5312,33 @@ func GetStationIdsFromDlsMsgs(tenantName string) ([]int, error) {
 	return stationIds, nil
 }
 
+func DeleteDlsMsgsByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeUserQuery := `DELETE FROM dls_messages WHERE tenant_name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_dls_msgs_by_tenant", removeUserQuery)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // Tenants functions
-func UpsertTenant(name string) (models.Tenant, error) {
+func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5271,7 +5348,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) VALUES($1) ON CONFLICT (name) DO NOTHING`
+	query := `INSERT INTO tenants (name, internal_ws_pass) VALUES($1, $2) ON CONFLICT (name) DO NOTHING`
 
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_tenant", query)
 	if err != nil {
@@ -5279,7 +5356,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, encryptrdInternalWSPass)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -5340,7 +5417,7 @@ func UpsertTenant(name string) (models.Tenant, error) {
 	return newTenant, nil
 }
 
-func UpsertBatchOfTenants(tenants []string) error {
+func UpsertBatchOfTenants(tenants []models.TenantForUpsert) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5352,10 +5429,11 @@ func UpsertBatchOfTenants(tenants []string) error {
 	valueStrings := make([]string, 0, len(tenants))
 	valueArgs := make([]interface{}, 0, len(tenants))
 	for i, tenant := range tenants {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d)", i+1))
-		valueArgs = append(valueArgs, tenant)
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
+		valueArgs = append(valueArgs, tenant.Name)
+		valueArgs = append(valueArgs, tenant.InternalWSPass)
 	}
-	query := fmt.Sprintf("INSERT INTO tenants (name) VALUES %s ON CONFLICT (name) DO NOTHING", strings.Join(valueStrings, ","))
+	query := fmt.Sprintf("INSERT INTO tenants (name, internal_ws_pass) VALUES %s ON CONFLICT (name) DO NOTHING", strings.Join(valueStrings, ","))
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_tenants", query)
 	if err != nil {
 		return err
@@ -5511,7 +5589,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5521,7 +5599,7 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name) VALUES($1)`
+	query := `INSERT INTO tenants (name, firebase_organization_id, internal_ws_pass) VALUES($1, $2, $3)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -5529,7 +5607,7 @@ func CreateTenant(name string) (models.Tenant, error) {
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass)
 	if err != nil {
 		return models.Tenant{}, err
 	}

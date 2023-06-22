@@ -10,6 +10,7 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
+import { CLOUD_URL } from '../config';
 import {
     LOCAL_STORAGE_ALREADY_LOGGED_IN,
     LOCAL_STORAGE_AVATAR_ID,
@@ -20,7 +21,6 @@ import {
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_USER_TYPE,
     LOCAL_STORAGE_ENV,
-    LOCAL_STORAGE_WELCOME_MESSAGE,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
@@ -33,9 +33,12 @@ import {
     LOCAL_STORAGE_WS_PORT,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
-    LOCAL_STORAGE_ACCOUNT_ID
+    LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_INTERNAL_WS_PASS,
+    LOCAL_STORAGE_WELCOME_MESSAGE
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
+import { isCloud } from './valueConvertor';
 
 const AuthService = (function () {
     const saveToLocalStorage = (userData) => {
@@ -64,7 +67,8 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_CONNECTION_TOKEN, userData.connection_token);
         localStorage.setItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH, userData.user_pass_based_auth);
         localStorage.setItem(LOCAL_STORAGE_ACCOUNT_ID, userData.account_id);
-        
+        localStorage.setItem(LOCAL_STORAGE_INTERNAL_WS_PASS, userData.internal_ws_pass);
+
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }
@@ -76,7 +80,7 @@ const AuthService = (function () {
         if (isSkipGetStarted === 'true') {
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
         }
-        window.location.assign(pathDomains.login);
+        isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
     };
 
     const isValidToken = () => {

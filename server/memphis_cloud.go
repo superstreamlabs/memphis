@@ -29,7 +29,9 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	dockerClient "github.com/docker/docker/client"
@@ -42,11 +44,24 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const shouldCreateRootUserforGlobalAcc = true
+
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
 type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
+}
+
+type MainOverviewData struct {
+	TotalStations     int                               `json:"total_stations"`
+	TotalMessages     uint64                            `json:"total_messages"`
+	TotalDlsMessages  uint64                            `json:"total_dls_messages"`
+	SystemComponents  []models.SystemComponents         `json:"system_components"`
+	Stations          []models.ExtendedStation          `json:"stations"`
+	K8sEnv            bool                              `json:"k8s_env"`
+	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
+	MetricsEnabled    bool                              `json:"metrics_enabled"`
 }
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
@@ -110,10 +125,11 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 			analyticsParams := []analytics.EventParam{param}
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analytics.SendEventWithParams("", analyticsParams, "installation")
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
+			analytics.SendEventWithParams("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
-				analytics.SendEventWithParams("", analyticsParams, "enable-exporter")
+				analytics.SendEventWithParams("", "", analyticsParams, "enable-exporter")
 			}
 		})
 	}
@@ -585,7 +601,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					if !noMetricsInstalledLog {
-						serv.Warnf("GetSystemComponents: k8s metrics not installed: " + err.Error())
+						serv.Warnf("GetSystemComponents: k8s metrics not installed: %v", err.Error())
 						noMetricsInstalledLog = true
 					}
 					continue
@@ -593,7 +609,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 					metricsEnabled = false
 					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
 					if !noMetricsPermissionLog {
-						serv.Warnf("GetSystemComponents: No permissions for k8s metrics: " + err.Error())
+						serv.Warnf("GetSystemComponents: No permissions for k8s metrics: %v", err.Error())
 						noMetricsPermissionLog = true
 					}
 					continue
@@ -872,7 +888,7 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-syslogs-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)
@@ -939,9 +955,17 @@ func (s *Server) UploadTenantUsageToDB() error {
 	return nil
 }
 
-func IncrementEventCounter(tenantName string, counterType string, amount int64) {}
+func IncrementEventCounter(tenantName string, eventType string, size int64, amount int64, subj string, msg []byte, hdr []byte) {
+}
 
 func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("EditClusterConfig at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	var body models.EditClusterConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -950,7 +974,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
 		err := changeDlsRetention(body.DlsRetention)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -958,19 +982,19 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeLogsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 	if ch.S.opts.TieredStorageUploadIntervalSec != body.TSTimeSec {
 		if body.TSTimeSec > 3600 || body.TSTimeSec < 5 {
-			serv.Errorf("EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes")
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations: Tiered storage time can't be less than 5 seconds or more than 60 minutes", user.TenantName, user.Username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Tiered storage time can't be less than 5 seconds or more than 60 minutes"})
 		} else {
 			err := changeTSTime(body.TSTimeSec)
 			if err != nil {
-				serv.Errorf("EditConfigurations: " + err.Error())
+				serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeTSTime: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -981,7 +1005,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.BrokerHost != brokerHost {
 		err := EditClusterCompHost("broker_host", brokerHost)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost broker_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -991,7 +1015,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.UiHost != uiHost {
 		err := EditClusterCompHost("ui_host", uiHost)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost ui_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1001,7 +1025,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.RestGwHost != restGWHost {
 		err := EditClusterCompHost("rest_gw_host", restGWHost)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at EditClusterCompHost rest_gw_host: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1010,16 +1034,16 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if ch.S.opts.MaxPayload != int32(body.MaxMsgSizeMb) {
 		err := changeMaxMsgSize(body.MaxMsgSizeMb)
 		if err != nil {
-			serv.Errorf("EditConfigurations: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeMaxMsgSize: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 
 	// send signal to reload config
-	err := serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
-		serv.Errorf("EditConfigurations: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditConfigurations at sendInternalAccountMsgWithReply: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1027,7 +1051,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-update-cluster-config")
+		analytics.SendEvent(user.TenantName, user.Username, "user-update-cluster-config")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -1045,7 +1069,7 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-cluster-config-page")
+		analytics.SendEvent(user.TenantName, user.Username, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
 		"dls_retention":           ch.S.opts.DlsRetentionHours,
@@ -1073,10 +1097,6 @@ func SetCors(router *gin.Engine) {
 	}))
 }
 
-func validateTenantName(tenantName string) error {
-	return nil
-}
-
 func (th TenantHandler) CreateTenant(c *gin.Context) {
 	c.IndentedJSON(404, gin.H{})
 }
@@ -1091,7 +1111,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	authenticated, user, err := authenticateUser(username, body.Password)
 	if err != nil {
-		serv.Errorf("Login : User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at authenticateUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1102,7 +1122,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	token, refreshToken, err := CreateTokens(user)
 	if err != nil {
-		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at CreateTokens: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1110,7 +1130,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	if !user.AlreadyLoggedIn {
 		err = db.UpdateUserAlreadyLoggedIn(user.ID)
 		if err != nil {
-			serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]Login at UpdateUserAlreadyLoggedIn: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1118,7 +1138,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-login")
+		analytics.SendEvent(user.TenantName, user.Username, "user-login")
 	}
 
 	env := "K8S"
@@ -1127,15 +1147,24 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 	exist, tenant, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
-		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]Login at GetTenantByName: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("Login: User " + body.Username + ": tenant " + user.TenantName + " does not exist")
+		serv.Warnf("[tenant: %v][user: %v]Login: User %v: tenant %v does not exist", user.TenantName, user.Username, body.Username, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("Login: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	serv.Noticef("[tenant: %v][user: %v] has loged in", user.TenantName, user.Username)
 
 	domain := ""
 	secure := false
@@ -1164,6 +1193,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
 	})
 }
 
@@ -1176,8 +1206,8 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("AddUser: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("AddUser: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1195,19 +1225,19 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
-		serv.Warnf("AddUser: " + usernameError.Error())
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUsername: %v", user.TenantName, user.Username, usernameError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
 	exist, _, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if exist {
-		errMsg := "A user with the name " + body.Username + " already exists"
-		serv.Warnf("CreateUser: " + errMsg)
+		errMsg := fmt.Sprintf("A user with the name %v already exists", body.Username)
+		serv.Warnf("[tenant: %v][user: %v]CreateUser: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -1215,32 +1245,31 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	userType := strings.ToLower(body.UserType)
 	userTypeError := validateUserType(userType)
 	if userTypeError != nil {
-		serv.Warnf("AddUser: " + userTypeError.Error())
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserType: %v", user.TenantName, user.Username, userTypeError.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": userTypeError.Error()})
 		return
 	}
 
+	avatarId := 1
+	if body.AvatarId > 0 {
+		avatarId = body.AvatarId
+	}
+
 	var password string
-	var avatarId int
 	if userType == "management" {
 		if body.Password == "" {
-			serv.Warnf("AddUser: Password was not provided for user " + username)
+			serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 			return
 		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
-			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]AddUser at GenerateFromPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 		password = string(hashedPwd)
-
-		avatarId = 1
-		if body.AvatarId > 0 {
-			avatarId = body.AvatarId
-		}
 	}
 
 	var brokerConnectionCreds string
@@ -1250,19 +1279,15 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		pending = false
 		if configuration.USER_PASS_BASED_AUTH {
 			if body.Password == "" {
-				serv.Warnf("AddUser: Password was not provided for user " + username)
+				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
 			password, err = EncryptAES([]byte(body.Password))
 			if err != nil {
-				serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+				serv.Errorf("[tenant: %v][user: %v]AddUser at EncryptAES: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
-			}
-			avatarId = 1
-			if body.AvatarId > 0 {
-				avatarId = body.AvatarId
 			}
 		} else {
 			brokerConnectionCreds = configuration.CONNECTION_TOKEN
@@ -1271,38 +1296,39 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	newUser, err := db.CreateUser(username, userType, password, fullName, subscription, avatarId, user.TenantName, pending, team, position, owner, description)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
-			serv.Warnf("CreateUserManagement: " + err.Error())
+			serv.Warnf("[tenant: %v][user: %v]CreateUserManagement user already exists: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-		serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AddUser at CreateUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-add-user")
+		analytics.SendEvent(user.TenantName, user.Username, "user-add-user")
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
-			serv.Errorf("AddUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]AddUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 
-	serv.Noticef("User " + username + " has been created")
+	serv.Noticef("[tenant: %v][user: %v]User %v has been created", user.TenantName, user.Username, username)
 	c.IndentedJSON(200, gin.H{
 		"id":                      newUser.ID,
 		"username":                username,
+		"full_name":               fullName,
 		"user_type":               userType,
 		"created_at":              newUser.CreatedAt,
 		"already_logged_in":       false,
-		"avatar_id":               body.AvatarId,
+		"avatar_id":               avatarId,
 		"broker_connection_creds": brokerConnectionCreds,
 		"position":                newUser.Position,
 		"team":                    newUser.Team,
@@ -1322,43 +1348,43 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("RemoveUser: User %v: %v", body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if user.Username == username {
-		serv.Warnf("RemoveUser: You can not remove your own user")
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: You can not remove your own user", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("RemoveUser: User does not exist")
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: User does not exist", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User does not exist"})
 		return
 	}
 	if userToRemove.UserType == "root" {
-		serv.Warnf("RemoveUser: You can not remove the root user")
+		serv.Warnf("[tenant: %v][user: %v]RemoveUser: You can not remove the root user", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove the root user"})
 		return
 	}
 
 	err = updateDeletedUserResources(userToRemove)
 	if err != nil {
-		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at updateDeletedUserResources: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
 		return
 	}
 
 	err = db.DeleteUser(username, userToRemove.TenantName)
 	if err != nil {
-		serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at DeleteUser: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1367,7 +1393,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		// send signal to reload config
 		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
-			serv.Errorf("RemoveUser: User " + body.Username + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1375,10 +1401,10 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-user")
+		analytics.SendEvent(user.TenantName, user.Username, "user-remove-user")
 	}
 
-	serv.Noticef("User " + username + " has been deleted by user " + user.Username)
+	serv.Noticef("[tenant: %v][user: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -1395,8 +1421,8 @@ func validateUsername(username string) error {
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveMyUser: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("RemoveMyUser at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -1413,26 +1439,221 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 	}
 	err = removeTenantResources(tenantName)
 	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
-		return
-	}
-
-	err = db.DeleteUser(user.Username, user.TenantName)
-	if err != nil {
-		serv.Errorf("RemoveMyUser: User " + user.Username + ": " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.Username, "user-remove-himself")
+		analytics.SendEvent(user.TenantName, user.Username, "user-remove-himself")
 	}
 
-	serv.Noticef("Tenant " + user.TenantName + " has been deleted")
+	serv.Noticef("[tenant: %v][user: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) ConnectToFirebaseFunction() {
+func (s *Server) RefreshFirebaseFunctionsKey() {
+}
+
+func shouldPersistSysLogs() bool {
+	return true
+}
+
+func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
+	var body models.EditAnalyticsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	flag := "false"
+	if body.SendAnalytics {
+		flag = "true"
+	}
+
+	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
+	if err != nil {
+		serv.Errorf("EditAnalytics: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if !body.SendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analytics.SendEvent(user.TenantName, user.Username, "user-disable-analytics")
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
+
+func (s *Server) GetCustomDeploymentId() string {
+	return ""
+}
+
+func (s *Server) sendLogToAnalytics(label string, log []byte) {
+	switch label {
+	case "ERR":
+		shouldSend, err := shouldSendAnalytics()
+		if err != nil || !shouldSend {
+			return
+		}
+		analytics.SendErrEvent(s.getLogSource(), string(log))
+	default:
+		return
+	}
+}
+
+func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainOverviewData, error) {
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	mainOverviewData := &MainOverviewData{}
+	generalErr := new(error)
+
+	wg.Add(3)
+	go func() {
+		stationsHandler := StationsHandler{S: mh.S}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.TotalStations = len(stations)
+		mainOverviewData.Stations = stations
+		mainOverviewData.TotalMessages = totalMessages
+		mainOverviewData.TotalDlsMessages = totalDlsMsgs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.SystemComponents = systemComponents
+		mainOverviewData.MetricsEnabled = metricsEnabled
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	go func() {
+		brokersThroughputs, err := mh.GetBrokersThroughputs(tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.BrokersThroughput = brokersThroughputs
+		mu.Unlock()
+		wg.Done()
+	}()
+
+	wg.Wait()
+	if *generalErr != nil {
+		return MainOverviewData{}, *generalErr
+	}
+
+	k8sEnv := true
+	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
+		k8sEnv = false
+	}
+	mainOverviewData.K8sEnv = k8sEnv
+	return *mainOverviewData, nil
+}
+
+func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RefreshToken: " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	username := user.Username
+	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
+	exist, user, err := db.GetUserByUsername(username, user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("RefreshToken: user " + username + " does not exist")
+		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		return
+	}
+
+	token, refreshToken, err := CreateTokens(user)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	env := "K8S"
+	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
+		env = "docker"
+	}
+
+	exist, tenant, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("RefreshToken: User " + username + ": tenant " + user.TenantName + " does not exist")
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	domain := ""
+	secure := true
+	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.IndentedJSON(200, gin.H{
+		"jwt":                     token,
+		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
+		"user_id":                 user.ID,
+		"username":                user.Username,
+		"user_type":               user.UserType,
+		"created_at":              user.CreatedAt,
+		"already_logged_in":       user.AlreadyLoggedIn,
+		"avatar_id":               user.AvatarId,
+		"send_analytics":          sendAnalytics,
+		"env":                     env,
+		"namespace":               serv.opts.K8sNamespace,
+		"full_name":               user.FullName,
+		"skip_get_started":        user.SkipGetStarted,
+		"broker_host":             serv.opts.BrokerHost,
+		"rest_gw_host":            serv.opts.RestGwHost,
+		"ui_host":                 serv.opts.UiHost,
+		"tiered_storage_time_sec": serv.opts.TieredStorageUploadIntervalSec,
+		"ws_port":                 serv.opts.Websocket.Port,
+		"http_port":               serv.opts.UiPort,
+		"clients_port":            serv.opts.Port,
+		"rest_gw_port":            serv.opts.RestGwPort,
+		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
+		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
+	})
 }

@@ -1603,7 +1603,7 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 			go c.srv.saveClosedClient(c, nc, reason)
 			if c.kind == CLIENT {
 				if err := c.memphisInfo.updateDisconnection(c.acc.GetName()); err != nil {
-					c.srv.Errorf("memphis db disconnection update error: " + err.Error())
+					c.srv.Errorf("Disconnection update error: " + err.Error())
 				}
 			}
 		}

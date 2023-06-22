@@ -16,7 +16,7 @@ import { Select } from 'antd';
 import React from 'react';
 
 import { ArrowDropDownRounded, FiberManualRecord } from '@material-ui/icons';
-import VersionBadge from '../versionBadge';
+import ActiveBadge from '../activeBadge';
 import { parsingDateWithotTime } from '../../services/valueConvertor';
 
 const { Option } = Select;
@@ -44,7 +44,7 @@ const SelectVersion = ({ options, onChange, value }) => {
                                 <p className="label">Version {option?.version_number}</p>
                                 {option.active && (
                                     <>
-                                        <VersionBadge content="Active" active={true} />
+                                        <ActiveBadge content="Active" active={true} />
                                     </>
                                 )}
                             </div>

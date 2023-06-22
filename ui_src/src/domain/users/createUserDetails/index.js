@@ -19,19 +19,36 @@ import Input from '../../../components/Input';
 import RadioButton from '../../../components/radioButton';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import SelectComponent from '../../../components/select';
+import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
+import { isCloud } from '../../../services/valueConvertor';
 
 const CreateUserDetails = ({ createUserRef, closeModal }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
-        password: '',
-        user_type: 'management'
+        password: ''
     });
+    const [userType, setUserType] = useState('management');
     const [passwordType, setPasswordType] = useState(0);
-    const userTypeOptions = ['management', 'application'];
+
+    const userTypeOptions = [
+        {
+            id: 1,
+            value: 'management',
+            label: 'Management',
+            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            disabled: false
+        },
+        {
+            id: 2,
+            value: 'application',
+            label: 'Client',
+            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            disabled: false
+        }
+    ];
     const passwordOptions = [
         {
             id: 1,
@@ -75,86 +92,176 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
         generateNewPassword();
     }, [createUserRef, generateNewPassword, onFinish]);
 
+    const updateFormState = (field, value) => {
+        let updatedValue = { ...formFields };
+        updatedValue[field] = value;
+        setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
+    };
+
     const passwordTypeChange = (e) => {
         setPasswordType(e.target.value);
     };
 
-    const handleUserNameChange = (e) => {
-        setFormFields({ ...formFields, username: e.target.value });
-    };
-
-    const handlePasswordChange = (password) => {
-        setFormFields({ ...formFields, password: password });
-    };
-
-    const handleSelectUserType = (e) => {
-        setFormFields({ ...formFields, user_type: e });
+    const handleUserTypeChanged = (value) => {
+        setUserType(value);
+        creationForm.setFieldValue('user_type', value);
     };
 
     return (
         <div className="create-user-form">
             <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish}>
-                <Form.Item
-                    name="username"
-                    rules={[
-                        {
-                            required: true,
-                            message: 'Please input username!'
-                        },
-                        {
-                            message: 'Username has to include only letters/numbers and .',
-                            pattern: new RegExp(/^[a-zA-Z0-9_.]*$/)
-                        }
-                    ]}
-                >
-                    <div className="field username">
-                        <p>
-                            <span className="required-field-mark">* </span>Username
-                        </p>
-                        <Input
-                            placeholder="Type username"
-                            type="text"
-                            radiusType="semi-round"
-                            colorType="black"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            height="40px"
-                            fontSize="12px"
-                            onBlur={handleUserNameChange}
-                            onChange={handleUserNameChange}
-                            value={formFields.name}
-                        />
-                    </div>
-                </Form.Item>
                 <div className="field user-type">
-                    <p>Type</p>
-                    <div className="field username">
-                        <Form.Item name="user_type" initialValue={formFields.user_type}>
-                            <SelectComponent
-                                value={formFields.user_type}
+                    <Form.Item name="user_type" initialValue={userType}>
+                        <SelectCheckBox selectOptions={userTypeOptions} handleOnClick={(e) => handleUserTypeChanged(e.value)} selectedOption={userType} />
+                    </Form.Item>
+                </div>
+                <div className="user-details">
+                    <p className="fields-title">User details</p>
+                    <Form.Item
+                        name="username"
+                        rules={[
+                            {
+                                required: true,
+                                message: userType === 'management' && isCloud() ? 'Please input email!' : 'Please input username!'
+                            },
+                            {
+                                message:
+                                    userType === 'management' && isCloud() ? 'Please enter a valid email address!' : 'Username has to include only letters/numbers and .',
+                                pattern: userType === 'management' && isCloud() ? /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/ : /^[a-zA-Z0-9_.]*$/
+                            }
+                        ]}
+                    >
+                        <div className="field username">
+                            <p className="field-title">{userType === 'management' && isCloud() ? 'Email*' : 'Username*'}</p>
+                            <Input
+                                placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
+                                type="text"
+                                radiusType="semi-round"
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"
-                                radiusType="semi-round"
                                 height="40px"
-                                options={userTypeOptions}
-                                onChange={(e) => handleSelectUserType(e)}
-                                popupClassName="select-options"
+                                fontSize="12px"
+                                onBlur={(e) => updateFormState('username', e.target.value)}
+                                onChange={(e) => updateFormState('username', e.target.value)}
+                                value={formFields.name}
+                            />
+                        </div>
+                    </Form.Item>
+                    {userType === 'management' && (
+                        <>
+                            <Form.Item
+                                name="full_name"
+                                rules={[
+                                    {
+                                        required: isCloud() ? true : false,
+                                        message: 'Please input full name!'
+                                    },
+                                    {
+                                        message: 'Please enter a valid full name!',
+                                        pattern: /^[A-Za-z\s]+$/i
+                                    }
+                                ]}
+                            >
+                                <div className="field fullname">
+                                    <p className="field-title">{isCloud() ? 'Full name*' : 'Full name'}</p>
+                                    <Input
+                                        placeholder="Type full name"
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        fontSize="12px"
+                                        onBlur={(e) => updateFormState('full_name', e.target.value)}
+                                        onChange={(e) => updateFormState('full_name', e.target.value)}
+                                        value={formFields.full_name}
+                                    />
+                                </div>
+                            </Form.Item>
+                            <div className="flex-row">
+                                <Form.Item name="team">
+                                    <div className="field team">
+                                        <p className="field-title">Team</p>
+                                        <Input
+                                            placeholder="Type your team"
+                                            type="text"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            fontSize="12px"
+                                            onBlur={(e) => updateFormState('team', e.target.value)}
+                                            onChange={(e) => updateFormState('team', e.target.value)}
+                                            value={formFields.team}
+                                        />
+                                    </div>
+                                </Form.Item>
+                                <Form.Item name="position">
+                                    <div className="field position">
+                                        <p className="field-title">Position</p>
+                                        <Input
+                                            placeholder="Type your position"
+                                            type="text"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            fontSize="12px"
+                                            onBlur={(e) => updateFormState('position', e.target.value)}
+                                            onChange={(e) => updateFormState('position', e.target.value)}
+                                            value={formFields.position}
+                                        />
+                                    </div>
+                                </Form.Item>
+                            </div>
+                        </>
+                    )}
+                    {userType === 'application' && (
+                        <>
+                            <Form.Item name="description">
+                                <div className="field description">
+                                    <p className="field-title">Description</p>
+                                    <Input
+                                        placeholder="Type your description"
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        fontSize="12px"
+                                        onBlur={(e) => updateFormState('description', e.target.value)}
+                                        onChange={(e) => updateFormState('description', e.target.value)}
+                                        value={formFields.description}
+                                    />
+                                </div>
+                            </Form.Item>
+                        </>
+                    )}
+                </div>
+
+                {((userType === 'management' && !isCloud()) || (userType === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
+                    <div className="password-section">
+                        <p className="fields-title">Set password</p>
+                        <Form.Item name="passwordType" initialValue={passwordType}>
+                            <RadioButton
+                                className="radio-button"
+                                options={passwordOptions}
+                                radioValue={passwordType}
+                                optionType="button"
+                                fontFamily="InterSemiBold"
+                                style={{ marginRight: '20px', content: '' }}
+                                onChange={(e) => passwordTypeChange(e)}
                             />
                         </Form.Item>
-                    </div>
-                </div>
-                {(formFields.user_type === 'management' ||
-                    (formFields.user_type === 'application' && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true')) && (
-                    <div className="password-section">
-                        <p>Password</p>
-                        <Form.Item name="passwordType" initialValue={passwordType}>
-                            <RadioButton options={passwordOptions} radioValue={passwordType} onChange={(e) => passwordTypeChange(e)} />
-                        </Form.Item>
-
                         {passwordType === 0 && (
                             <Form.Item name="generatedPassword" initialValue={generatedPassword}>
                                 <div className="field password">
+                                    <p className="field-title">New password</p>
                                     <Input
                                         type="text"
                                         disabled
@@ -175,7 +282,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                         {passwordType === 1 && (
                             <div>
                                 <div className="field password">
-                                    <p>Type password</p>
+                                    <p className="field-title">Type password*</p>
                                     <Form.Item
                                         name="password"
                                         rules={[
@@ -198,7 +305,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                     </Form.Item>
                                 </div>
                                 <div className="field confirm">
-                                    <p>Confirm Password</p>
+                                    <p className="field-title">Confirm Password*</p>
                                     <Form.Item
                                         name="confirm"
                                         validateTrigger="onChange"
@@ -211,7 +318,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                             ({ getFieldValue }) => ({
                                                 validator(rule, value) {
                                                     if (!value || getFieldValue('password') === value) {
-                                                        handlePasswordChange(value);
+                                                        updateFormState('password', value);
                                                         return Promise.resolve();
                                                     }
                                                     return Promise.reject('Passwords do not match');

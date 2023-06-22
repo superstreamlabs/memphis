@@ -1,0 +1,38 @@
+.total-payment-top {
+    height: 67%;
+    padding: 0px 20px 0px 20px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .total-payment {
+        font-weight: 700;
+        font-size: 24px;
+        margin: 0;
+    }
+    .last-payment {
+        color: #84818a;
+        margin: 0;
+    }
+    .payment-amount {
+        color: #040612;
+        // display: flex;
+        // align-items: flex-start;
+        .payment-amount-number {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: start;
+        }
+    }
+}
+.total-payment-bottom {
+    padding: 0px 20px 0px 20px;
+    height: 33%;
+    background: #f6f6f6;
+    border-radius: 0px 0px 12px 12px;
+    display: flex;
+    align-items: center;
+    color: #ff3b30;
+    cursor: pointer;
+}

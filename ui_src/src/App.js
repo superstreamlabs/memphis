@@ -20,36 +20,103 @@ import { message } from 'antd';
 
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
     LOCAL_STORAGE_WS_PORT
 } from './const/localStorageConsts';
-import { ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
-import { handleRefreshTokenRequest } from './services/http';
+import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
+import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import StationOverview from './domain/stationOverview';
 import MessageJourney from './domain/messageJourney';
+import { isCloud } from './services/valueConvertor';
+import Administration from './domain/administration';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
-import SandboxLogin from './domain/sandboxLogin';
-import Administration from './domain/administration';
-import Profile from './domain/profile';
 import SchemaManagment from './domain/schema';
 import { useHistory } from 'react-router-dom';
 import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
 import Overview from './domain/overview';
 import { Context } from './hooks/store';
-import SysLogs from './domain/sysLogs';
-import Signup from './domain/signup';
+import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
-import Login from './domain/login';
+import { ApiEndpoints } from './const/apiEndpoints';
+import AuthService from './services/auth';
 
-const App = withRouter(() => {
+let SysLogs = undefined;
+let Login = undefined;
+let Signup = undefined;
+
+if (!isCloud()) {
+    SysLogs = require('./domain/sysLogs').default;
+    Login = require('./domain/login').default;
+    Signup = require('./domain/signup').default;
+}
+
+const App = withRouter((props) => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
+    const history = useHistory();
+    const urlParams = new URLSearchParams(window.location.search);
+    const firebase_id_token = urlParams.get('firebase_id_token');
+    const firebase_organization_id = urlParams.get('firebase_organization_id');
+    const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+
+    const handleLoginWithToken = useCallback(async () => {
+        if (firebase_id_token) {
+            try {
+                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
+                if (data) {
+                    AuthService.saveToLocalStorage(data);
+                    try {
+                        const ws_port = data.ws_port;
+                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                        let conn;
+                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                            const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                user: '$memphis_user$' + account_id,
+                                pass: internal_ws_pass,
+                                timeout: '5000'
+                            });
+                        } else {
+                            const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::' + connection_token,
+                                timeout: '5000'
+                            });
+                        }
+                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                    } catch (error) {
+                        return;
+                    }
+                    dispatch({ type: 'SET_USER_DATA', payload: data });
+                }
+                history.push('/overview');
+                setCloudLogedIn(true);
+            } catch (error) {
+                console.log('Login failed:', error);
+            }
+        }
+    },[dispatch, firebase_id_token, firebase_organization_id, history]);
+
+    useEffect(() => {
+        if (isCloud() && !localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+            const fetchData = async () => {
+                await handleLoginWithToken();
+            };
+
+            fetchData();
+        } else setCloudLogedIn(true);
+    }, [handleLoginWithToken]);
+
     useEffect(() => {
         if (isMobile) {
             message.warn({
@@ -64,10 +131,9 @@ const App = withRouter(() => {
         };
     }, [isMobile]);
 
-    const history = useHistory();
     const handleRefresh = useCallback(
         async (firstTime) => {
-            if (window.location.pathname === pathDomains.login) {
+            if (window.location.pathname === pathDomains.login || firebase_id_token) {
                 return;
             } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
                 const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
@@ -77,21 +143,22 @@ const App = withRouter(() => {
                     if (firstTime) {
                         try {
                             let conn;
-                            const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                             if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                                 const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                                const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
                                 conn = await connect({
                                     servers: [SOCKET_URL],
                                     user: '$memphis_user$' + account_id,
-                                    pass: connection_token,
+                                    pass: internal_ws_pass,
                                     timeout: '5000'
                                 });
                             } else {
-                                conn = await connect({
-                                    servers: [SOCKET_URL],
-                                    token: '::' + connection_token,
-                                    timeout: '5000'
-                                });
+                                const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                            conn = await connect({
+                                servers: [SOCKET_URL],
+                                token: '::' + connection_token,
+                                timeout: '5000'
+                            });
                             }
                             dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                         } catch (error) {
@@ -101,11 +168,28 @@ const App = withRouter(() => {
                     return true;
                 }
             } else {
-                history.push(pathDomains.signup);
+                isCloud() ? window.location.replace(CLOUD_URL) : history.push(pathDomains.signup);
             }
         },
-        [dispatch, history]
+        [dispatch, firebase_id_token, history]
     );
+
+    useEffect(() => {
+        const fetchData = async () => {
+            await Promise.all([handleRefresh(true), setAuthCheck(false)]);
+        };
+
+        fetchData();
+
+        const interval = setInterval(() => {
+            handleRefresh(false);
+        }, HANDLE_REFRESH_INTERVAL);
+
+        return () => {
+            clearInterval(interval);
+            state.socket?.close();
+        };
+    }, [handleRefresh, setAuthCheck, state.socket]);
 
     useEffect(() => {
         const callHandleRfresh = async () => {
@@ -128,11 +212,8 @@ const App = withRouter(() => {
         <div className="app-container">
             <div>
                 {' '}
-                {!authCheck && (
+                {!authCheck && cloudLogedIn && (
                     <Switch>
-                        {process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={SandboxLogin} />}
-                        {!process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.signup} component={Signup} />}
-                        {!process.env.REACT_APP_SANDBOX_ENV && <Route exact path={pathDomains.login} component={Login} />}
                         <PrivateRoute
                             exact
                             path={pathDomains.overview}
@@ -165,16 +246,17 @@ const App = withRouter(() => {
                             path={`${pathDomains.administration}/integrations`}
                             component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
                         />
+
                         <PrivateRoute
                             exact
-                            path={`${pathDomains.administration}/cluster_configuration`}
-                            component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                            path={`${pathDomains.administration}/usage`}
+                            component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
                         />
-                        <PrivateRoute
+                        {/* <PrivateRoute
                             exact
-                            path={`${pathDomains.administration}/version_upgrade`}
-                            component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
-                        />
+                            path={`${pathDomains.administration}/payments`}
+                            component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
+                        /> */}
                         <PrivateRoute
                             exact
                             path={pathDomains.stations}
@@ -253,19 +335,45 @@ const App = withRouter(() => {
                                 ></AppWrapper>
                             }
                         />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.sysLogs}`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <SysLogs />
-                                        </div>
+
+                        {!isCloud() && (
+                            <>
+                                <Route exact path={pathDomains.signup} component={Signup} />
+                                <Route exact path={pathDomains.login} component={Login} />
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.sysLogs}`}
+                                    component={
+                                        <AppWrapper
+                                            content={
+                                                <div>
+                                                    <SysLogs />
+                                                </div>
+                                            }
+                                        ></AppWrapper>
                                     }
-                                ></AppWrapper>
-                            }
-                        />
+                                />
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/cluster_configuration`}
+                                    component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                                />
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/version_upgrade`}
+                                    component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
+                                />
+                            </>
+                        )}
+                        {isCloud() && (
+                            <>
+                                <PrivateRoute
+                                    exact
+                                    path={`${pathDomains.administration}/usage`}
+                                    component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
+                                />
+                            </>
+                        )}
                         <PrivateRoute
                             path="/"
                             component={

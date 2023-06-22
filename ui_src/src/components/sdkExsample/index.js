@@ -19,6 +19,7 @@ import * as monaco from 'monaco-editor';
 
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
 import {
+    LOCAL_STORAGE_ACCOUNT_ID,
     LOCAL_STORAGE_BROKER_HOST,
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_REST_GW_HOST,
@@ -32,12 +33,13 @@ import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
 import Copy from '../copy';
+import { isCloud } from '../../services/valueConvertor';
 
 loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
+const selectProtocolOption = isCloud() ? ['SDK (TCP)'] : ['SDK (TCP)', 'REST (HTTP)'];
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -49,28 +51,30 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
     const [generateModal, setGenerateModal] = useState(false);
 
-    const restGWHost = process.env.REACT_APP_SANDBOX_ENV
-        ? 'https://restgw.sandbox.memphis.dev'
-        : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-        ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
-        : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
+    const restGWHost =
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
+            : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
 
     const changeDynamicCode = (lang) => {
         let codeEx = {};
         if (!SDK_CODE_EXAMPLE[lang].link) {
             codeEx.producer = SDK_CODE_EXAMPLE[lang]?.producer;
             codeEx.consumer = SDK_CODE_EXAMPLE[lang]?.consumer;
-            let host = process.env.REACT_APP_SANDBOX_ENV
-                ? 'broker.sandbox.memphis.dev'
-                : localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
-                ? 'localhost'
-                : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                : 'memphis.memphis.svc.cluster.local';
+            let host =
+                localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+                    ? 'localhost'
+                    : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                    ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                    : 'memphis.memphis.svc.cluster.local';
             codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);
             codeEx.consumer = codeEx.consumer?.replaceAll('<station-name>', stationName);
+            codeEx.producer = codeEx.producer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             if (username) {
                 codeEx.producer = codeEx.producer?.replaceAll('<application type username>', username);
                 codeEx.consumer = codeEx.consumer?.replaceAll('<application type username>', username);
@@ -88,6 +92,21 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.consumer = codeEx.consumer?.replaceAll('connection_token', 'password');
                 codeEx.producer = codeEx.producer?.replaceAll('<broker-token>', '<password>');
                 codeEx.consumer = codeEx.consumer?.replaceAll('<broker-token>', '<password>');
+            } else {
+                const accountId = parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID));
+                const regexPatternGo = `, memphis\.AccountId\(${accountId}\)`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternGo, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternGo, '');
+                const regexPatternJs = `accountId: ${accountId}`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, '');
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, '');
+                codeEx.consumer = codeEx.consumer.replace(/^\s*[\r\n]/gm, '');
+                codeEx.producer = codeEx.producer.replace(/^\s*[\r\n]/gm, '');
+                const regexPatternPython = `, account_id=${accountId}`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternPython, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, '');
             }
             setCodeExample(codeEx);
         }

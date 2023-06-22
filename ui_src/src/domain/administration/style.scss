@@ -5,7 +5,6 @@
     width: calc(100% - 90px);
     .menu-container {
         width: 320px;
-        padding-top: 20px;
         padding-left: 30px;
         padding-right: 30px;
         min-width: 285px;
@@ -14,9 +13,12 @@
             font-size: 26px;
             color: #1d1d1d;
             margin-bottom: 0px;
+            padding-top: 20px;
+        }
+        .administration {
+            margin-top: 30px;
         }
         .side-menu {
-            margin-top: 30px;
             .menu-item {
                 margin-bottom: 5px;
                 border-radius: 4px;

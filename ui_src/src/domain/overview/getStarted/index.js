@@ -73,7 +73,7 @@ const initialState = {
         retention_type: 'message_age_sec',
         retention_value: 604800,
         storage_type: 'file',
-        replicas: '1',
+        replicas: 'No HA (1)',
         days: 7,
         hours: 0,
         minutes: 0,

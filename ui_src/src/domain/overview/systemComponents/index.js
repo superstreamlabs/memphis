@@ -31,7 +31,9 @@ const SysComponents = () => {
             const typeComponents = comp.components[type];
             if (typeComponents) {
                 children.push(
-                    ...typeComponents.map((component, index) => ({
+                    ...typeComponents.sort((a, b) => {
+                        return a.name.split("-")[1] - b.name.split("-")[1]
+                    }).map((component, index) => ({
                         title: (
                             <SysContainers
                                 key={`0-${type}-${index}`}

@@ -54,7 +54,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 			if len(connectionIds) > 0 { // in case there are connections
 				bytes, err := json.Marshal(connectionIds)
 				if err != nil {
-					s.Errorf("ListenForZombieConnCheckRequests: " + err.Error())
+					s.Errorf("ListenForZombieConnCheckRequests: %v", err.Error())
 				} else {
 					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
@@ -73,7 +73,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			var integrationUpdate models.CreateIntegrationSchema
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
-				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForIntegrationsUpdateEvents: %v", integrationUpdate.TenantName, err.Error())
 				return
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
@@ -85,7 +85,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			default:
-				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
+				s.Warnf("[tenant: %v] ListenForIntegrationsUpdateEvents: %s %s", integrationUpdate.TenantName, strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))
@@ -102,7 +102,7 @@ func (s *Server) ListenForConfigReloadEvents() error {
 			// reload config
 			err := s.Reload()
 			if err != nil {
-				s.Errorf("Failed reloading: " + err.Error())
+				s.Errorf("Failed reloading: %v", err.Error())
 			}
 		}(copyBytes(msg))
 	})
@@ -117,13 +117,13 @@ func (s *Server) ListenForNotificationEvents() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var notification models.Notification
 			err = json.Unmarshal([]byte(message), &notification)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			notificationMsg := notification.Msg
@@ -147,13 +147,13 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			var msgToAck models.PmAckMsg
 			err = json.Unmarshal([]byte(message), &msgToAck)
 			if err != nil {
-				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName, tenantName)
@@ -173,7 +173,7 @@ func getThroughputSubject(serverName string) string {
 	return throughputStreamNameV1 + tsep + serverName
 }
 
-func (s *Server) InitializeThroughputSampling() error {
+func (s *Server) InitializeThroughputSampling() {
 	LastReadThroughputMap = map[string]models.Throughput{}
 	LastWriteThroughputMap = map[string]models.Throughput{}
 	for _, acc := range s.Opts().Accounts {
@@ -187,11 +187,9 @@ func (s *Server) InitializeThroughputSampling() error {
 		}
 	}
 	go s.CalculateSelfThroughput()
-
-	return nil
 }
 
-func (s *Server) CalculateSelfThroughput() error {
+func (s *Server) CalculateSelfThroughput() {
 	for range time.Tick(time.Second * 1) {
 		readMap := map[string]int64{}
 		writeMap := map[string]int64{}
@@ -221,8 +219,6 @@ func (s *Server) CalculateSelfThroughput() error {
 		}
 		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
 	}
-
-	return nil
 }
 
 func (s *Server) StartBackgroundTasks() error {
@@ -260,13 +256,10 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
 	go s.uploadMsgsToTier2Storage()
-
-	err = s.InitializeThroughputSampling()
-	if err != nil {
-		return err
-	}
+	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
-	go s.ConnectToFirebaseFunction()
+	go s.RefreshFirebaseFunctionsKey()
+
 	return nil
 }
 
@@ -289,7 +282,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			}
 			err := serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
 			if err != nil {
-				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
+				serv.Errorf("Failed add tiered storage consumer: %v", err.Error())
 				return
 			}
 			TIERED_STORAGE_CONSUMER_CREATED = true
@@ -297,7 +290,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		tieredStorageMapLock.Lock()
 		err := flushMapToTire2Storage()
 		if err != nil {
-			serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
+			serv.Errorf("Failed upload messages to tiered 2 storage: %v", err.Error())
 			tieredStorageMapLock.Unlock()
 			continue
 		}
@@ -343,7 +336,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 				}(subject, reply, copyBytes(msg))
 			})
 			if err != nil {
-				s.Errorf("Failed to subscribe to unacked messages: " + err.Error())
+				s.Errorf("Failed to subscribe to unacked messages: %v", err.Error())
 				continue
 			}
 
@@ -410,7 +403,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 				}(subject, reply, copyBytes(msg))
 			})
 			if err != nil {
-				s.Errorf("Failed to subscribe to tiered storage messages: " + err.Error())
+				s.Errorf("Failed to subscribe to tiered storage messages: %v", err.Error())
 				continue
 			}
 
@@ -452,41 +445,41 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 		go func(msg []byte) {
 			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var message models.SchemaVerseDlsMessageSdk
 			err = json.Unmarshal([]byte(stringMessage), &message)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			exist, station, err := db.GetStationByName(message.StationName, tenantName)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + " couldn't been found")
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
 				return
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: producer " + p.Name + " couldn't been found")
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
 				return
 			}
 
 			message.Message.TimeSent = time.Now()
 			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 		}(copyBytes(msg))
@@ -504,7 +497,7 @@ func (s *Server) RemoveOldDlsMsgs() {
 		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
 		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
-			serv.Errorf("RemoveOldDlsMsgs: " + err.Error())
+			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
 		}
 	}
 }

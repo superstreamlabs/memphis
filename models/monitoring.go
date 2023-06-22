@@ -52,17 +52,6 @@ type SystemComponentsStatus struct {
 	RiskyCount     int    `json:"risky_count"`
 }
 
-type MainOverviewData struct {
-	TotalStations     int                        `json:"total_stations"`
-	TotalMessages     uint64                     `json:"total_messages"`
-	TotalDlsMessages  uint64                     `json:"total_dls_messages"`
-	SystemComponents  []SystemComponents         `json:"system_components"`
-	Stations          []ExtendedStation          `json:"stations"`
-	K8sEnv            bool                       `json:"k8s_env"`
-	BrokersThroughput []BrokerThroughputResponse `json:"brokers_throughput"`
-	MetricsEnabled    bool                       `json:"metrics_enabled"`
-}
-
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
 }

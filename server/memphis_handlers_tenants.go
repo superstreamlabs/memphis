@@ -15,18 +15,12 @@ import (
 	"memphis/db"
 )
 
-func isGlobalTenantExist() (bool, error) {
-	exist, _, err := db.GetGlobalTenant()
-	if err != nil {
-		return false, err
-	} else if !exist {
-		return false, nil
-	}
-	return true, nil
-}
-
 func CreateGlobalTenantOnFirstSystemLoad() error {
-	_, err := db.UpsertTenant(globalAccountName)
+	encryptedPass, err := EncryptAES([]byte(generateRandomPassword(12)))
+	if err != nil {
+		return err
+	}
+	_, err = db.UpsertTenant(globalAccountName, encryptedPass)
 	if err != nil {
 		return err
 	}

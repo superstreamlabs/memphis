@@ -347,7 +347,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	err = EncryptOldUnencryptedValues()
 	if err != nil {
-		err = errors.New("Failed encrypt old unencrypted values: " + err.Error())
+		err = fmt.Errorf("Failed encrypt old unencrypted values: %v", err.Error())
 		return nil, db.MetadataStorage{}, err
 	}
 
@@ -1325,6 +1325,14 @@ func (s *Server) setSystemAccount(acc *Account) error {
 
 	// Send out statsz updates periodically.
 	s.wrapChk(s.startStatszTimer)()
+	// ** added by Memphis
+	sysUser := &User{
+		Username: "$SYS",
+		Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
+		Account:  acc,
+	}
+	s.users[sysUser.Username] = sysUser
+	// added by Memphis **
 
 	// If we have existing accounts make sure we enable account tracking.
 	s.mu.Lock()

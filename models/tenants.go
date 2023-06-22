@@ -12,6 +12,13 @@
 package models
 
 type Tenant struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
+	ID                     int    `json:"id"`
+	Name                   string `json:"name"`
+	FirebaseOrganizationId string `json:"firebase_organization_id"`
+	InternalWSPass         string `json:"internal_ws_pass"`
+}
+
+type TenantForUpsert struct {
+	Name           string `json:"name"`
+	InternalWSPass string `json:"internal_ws_pass"`
 }

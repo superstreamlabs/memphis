@@ -25,7 +25,8 @@ export const SDK_CODE_EXAMPLE = {
         memphisConnection = await memphis.connect({
             host: '<memphis-host>',
             username: '<application type username>',
-            connectionToken: '<broker-token>'
+            connectionToken: '<broker-token>',
+            accountId: '<account-id>'
         });
 
         const producer = await memphisConnection.producer({
@@ -56,7 +57,8 @@ export const SDK_CODE_EXAMPLE = {
         memphisConnection = await memphis.connect({
             host: '<memphis-host>',
             username: '<application type username>',
-            connectionToken: '<broker-token>'
+            connectionToken: '<broker-token>',
+            accountId: '<account-id>'
         });
 
         const consumer = await memphisConnection.consumer({
@@ -94,13 +96,14 @@ export const SDK_CODE_EXAMPLE = {
         producer: `import { memphis, Memphis } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection: Memphis;
+    let memphisConnection: Memphis | null = null;
 
     try {
         memphisConnection = await memphis.connect({
             host: '<memphis-host>',
             username: '<application type username>',
-            connectionToken: '<broker-token>'
+            connectionToken: '<broker-token>',
+            accountId: '<account-id>'
         });
 
         const producer = await memphisConnection.producer({
@@ -125,13 +128,14 @@ export const SDK_CODE_EXAMPLE = {
         consumer: `import { memphis, Memphis, Message } from 'memphis-dev';
 
 (async function () {
-    let memphisConnection: Memphis;
+    let memphisConnection: Memphis | null = null;
 
     try {
         memphisConnection = await memphis.connect({
             host: '<memphis-host>',
             username: '<application type username>',
-            connectionToken: '<broker-token>'
+            connectionToken: '<broker-token>',
+            accountId: '<account-id>'
         });
 
         const consumer = await memphisConnection.consumer({
@@ -170,7 +174,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"), memphis.AccountId("<account-id>"))
     if err != nil {
         os.Exit(1)
     }
@@ -205,7 +209,7 @@ import (
 )
 
 func main() {
-    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"))
+    conn, err := memphis.Connect("<memphis-host>", "<application type username>", memphis.ConnectionToken("<broker-token>"), memphis.AccountId("<account-id>"))
     if err != nil {
         os.Exit(1)
     }
@@ -255,7 +259,7 @@ from memphis import Memphis, Headers, MemphisError, MemphisConnectError, Memphis
 async def main():
     try:
         memphis = Memphis()
-        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
+        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
         producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>") # you can send the message parameter as dict as well
         headers = Headers()
@@ -290,7 +294,7 @@ async def main():
         
     try:
         memphis = Memphis()
-        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>")
+        await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
         consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
         consumer.set_context({"key": "value"})
