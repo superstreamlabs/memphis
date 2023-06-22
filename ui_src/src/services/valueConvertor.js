@@ -373,18 +373,20 @@ export const compareVersions = (a, b) => {
     for (let i = 0; i < versionA.length; i++) {
         const numberA = parseInt(versionA[i]);
         const numberB = parseInt(versionB[i]);
-
         if (numberA > numberB) {
             return true;
         } else if (numberA < numberB) {
             return false;
         }
     }
-
     return true;
 };
 
 export const isCloud = () => {
-    const cloud_env = process.env.REACT_APP_CLOUD === 'true';
-    return cloud_env;
+    if (process.env.REACT_APP_CLOUD) {
+        const cloud_env = process.env.REACT_APP_CLOUD === 'true';
+        return cloud_env;
+    } else {
+        return true;
+    }
 };
