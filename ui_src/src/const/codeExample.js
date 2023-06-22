@@ -70,7 +70,6 @@ export const SDK_CODE_EXAMPLE = {
         consumer.on('message', (message, context) => {
             console.log(message.getData().toString());
             message.ack();
-            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {});
@@ -147,7 +146,6 @@ export const SDK_CODE_EXAMPLE = {
         consumer.on('message', (message: Message, context: object) => {
             console.log(message.getData().toString());
             message.ack();
-            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {
@@ -178,19 +176,22 @@ func main() {
         os.Exit(1)
     }
     defer conn.Close()
+
     p, err := conn.CreateProducer("<station-name>", "<producer-name>")
+    if err != nil {
+        fmt.Printf("Producer failed: %v", err)
+        os.Exit(1)
+    }
 
     hdrs := memphis.Headers{}
     hdrs.New()
     err = hdrs.Add("key", "value")
-
     if err != nil {
         fmt.Printf("Header failed: %v", err)
         os.Exit(1)
     }
 
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
-
     if err != nil {
         fmt.Printf("Produce failed: %v", err)
         os.Exit(1)
@@ -215,7 +216,6 @@ func main() {
     defer conn.Close()
 
     consumer, err := conn.CreateConsumer("<station-name>", "<consumer-name>", memphis.PullInterval(15*time.Second))
-
     if err != nil {
         fmt.Printf("Consumer creation failed: %v", err)
         os.Exit(1)
@@ -230,8 +230,6 @@ func main() {
         for _, msg := range msgs {
             fmt.Println(string(msg.Data()))
             msg.Ack()
-            headers := msg.GetHeaders()
-            fmt.Println(headers)
         }
     }
 
@@ -284,7 +282,6 @@ async def main():
             for msg in msgs:
                 print("message: ", msg.get_data())
                 await msg.ack()
-                headers = msg.get_headers()
                 if error:
                     print(error)
         except (MemphisError, MemphisConnectError, MemphisHeaderError) as e:
