@@ -38,22 +38,19 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]CreateIntegration at getUserDetailsFromMiddleware: %v", body.TenantName, err.Error())
+		serv.Errorf("CreateIntegration at getUserDetailsFromMiddleware: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if body.TenantName == "" {
-		body.TenantName = user.TenantName
-	}
 
-	exist, _, err := db.GetTenantByName(body.TenantName)
+	exist, _, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateIntegration at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v][user: %v]CreateIntegration : tenant %v does not exist", user.TenantName, user.Username, body.TenantName)
+		serv.Warnf("[tenant: %v][user: %v]CreateIntegration : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -62,7 +59,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
-		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(body)
+		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("[tenant: %v][user: %v]CreateSlackIntegration at handleCreateSlackIntegration code 500: %v", user.TenantName, user.Username, err.Error())
@@ -76,7 +73,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
-		s3Integration, errorCode, err := it.handleCreateS3Integration(body.TenantName, body.Keys)
+		s3Integration, errorCode, err := it.handleCreateS3Integration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
 				serv.Errorf("[tenant: %v][user: %v]CreateS3Integration at handleCreateS3Integration code 500: %v", user.TenantName, user.Username, err.Error())
@@ -109,18 +106,21 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if body.TenantName == "" {
-		body.TenantName = DEFAULT_GLOBAL_ACCOUNT
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("UpdateIntegration: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
 	}
 
-	exist, _, err := db.GetTenantByName(body.TenantName)
+	exist, _, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]UpdateIntegration at GetTenantByName: %v", body.TenantName, err.Error())
+		serv.Errorf("[tenant: %v]UpdateIntegration at GetTenantByName: %v", user.TenantName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v]UpdateIntegration  at GetTenantByName: tenant %v does not exist", body.TenantName, body.TenantName)
+		serv.Warnf("[tenant: %v]UpdateIntegration at GetTenantByName: tenant %v does not exist", user.TenantName, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -128,13 +128,13 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	var message string
 	switch strings.ToLower(body.Name) {
 	case "slack":
-		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration("slack", body)
+		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration(user.TenantName, "slack", body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration code 500: %v", body.TenantName, err.Error())
+				serv.Errorf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration code 500: %v", user.TenantName, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration: %v", body.TenantName, err.Error())
+				serv.Warnf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration: %v", user.TenantName, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -142,13 +142,13 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
-		s3Integration, errorCode, err := it.handleUpdateS3Integration(body)
+		s3Integration, errorCode, err := it.handleUpdateS3Integration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration code 500: %v", body.TenantName, err.Error())
+				serv.Errorf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration code 500: %v", user.TenantName, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration: %v", body.TenantName, err.Error())
+				serv.Warnf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration: %v", user.TenantName, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -157,7 +157,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		integration = s3Integration
 
 	default:
-		serv.Warnf("[tenant: %v]UpdateIntegration: Unsupported integration type - %v", body.TenantName, body.Name)
+		serv.Warnf("[tenant: %v]UpdateIntegration: Unsupported integration type - %v", user.TenantName, body.Name)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
 		return
 	}
@@ -193,29 +193,25 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", body.TenantName, body.Name, err.Error())
+		serv.Errorf("GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if body.TenantName == "" {
-		body.TenantName = user.TenantName
-	}
-
-	exist, _, err := db.GetTenantByName(body.TenantName)
+	exist, _, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v][user: %v]GetIntegrationDetails : tenant %v does not exist", user.TenantName, user.Username, body.TenantName)
+		serv.Warnf("[tenant: %v][user: %v]GetIntegrationDetails : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), body.TenantName)
+	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.GetIntegration: Integration %v: %v", body.TenantName, user.Username, body.Name, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.GetIntegration: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	} else if !exist {
@@ -277,55 +273,51 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]DisconnectIntegration at getUserDetailsFromMiddleware: Integration %v: %v", body.TenantName, body.Name, err.Error())
+		serv.Errorf("DisconnectIntegration at getUserDetailsFromMiddleware: Integration %v: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if body.TenantName == "" {
-		body.TenantName = user.TenantName
-	}
-
-	exist, _, err := db.GetTenantByName(body.TenantName)
+	exist, _, err := db.GetTenantByName(user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant:%v]DisconnectIntegration at GetTenantByName: %v", body.TenantName, err.Error())
+		serv.Errorf("[tenant:%v]DisconnectIntegration at GetTenantByName: %v", user.TenantName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v]DisconnectIntegration : tenant %v does not exist", body.TenantName, body.TenantName)
+		serv.Warnf("[tenant: %v]DisconnectIntegration : tenant %v does not exist", user.TenantName, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	integrationType := strings.ToLower(body.Name)
-	err = db.DeleteIntegration(integrationType, body.TenantName)
+	err = db.DeleteIntegration(integrationType, user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]DisconnectIntegration at db.DeleteIntegration: Integration %v: %v", body.TenantName, body.Name, err.Error())
+		serv.Errorf("[tenant: %v]DisconnectIntegration at db.DeleteIntegration: Integration %v: %v", user.TenantName, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	if body.TenantName != conf.GlobalAccountName {
-		body.TenantName = strings.ToLower(body.TenantName)
+	if user.TenantName != conf.GlobalAccountName {
+		user.TenantName = strings.ToLower(user.TenantName)
 	}
 
 	integrationUpdate := models.Integration{
 		Name:       strings.ToLower(body.Name),
 		Keys:       nil,
 		Properties: nil,
-		TenantName: body.TenantName,
+		TenantName: user.TenantName,
 	}
 
 	msg, err := json.Marshal(integrationUpdate)
 	if err != nil {
-		serv.Errorf("[tenant: %v]DisconnectIntegration at json.Marshal: Integration %v: %v", body.TenantName, body.Name, err.Error())
+		serv.Errorf("[tenant: %v]DisconnectIntegration at json.Marshal: Integration %v: %v", user.TenantName, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		serv.Errorf("[tenant: %v]DisconnectIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", body.TenantName, body.Name, err.Error())
+		serv.Errorf("[tenant: %v]DisconnectIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", user.TenantName, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

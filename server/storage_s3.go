@@ -82,14 +82,14 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	statusCode, keys, err := it.handleS3Integrtation(body.TenantName, body.Keys)
+func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	statusCode, keys, err := it.handleS3Integrtation(tenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
-	s3Integration, err := updateS3Integration(body.TenantName, keys, properties)
+	s3Integration, err := updateS3Integration(tenantName, keys, properties)
 	if err != nil {
 		return s3Integration, 500, err
 	}
@@ -173,7 +173,6 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
-			TenantName: tenantName,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -206,7 +205,6 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 		Name:       "s3",
 		Keys:       keys,
 		Properties: properties,
-		TenantName: tenantName,
 	}
 
 	msg, err := json.Marshal(integrationToUpdate)

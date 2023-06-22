@@ -70,7 +70,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
 	_, err := s.subscribeOnAcc(s.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var integrationUpdate models.CreateIntegrationSchema
+			var integrationUpdate models.CreateIntegration
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
 				s.Errorf("[tenant: %v]ListenForIntegrationsUpdateEvents: %v", integrationUpdate.TenantName, err.Error())
