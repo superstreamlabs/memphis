@@ -3001,6 +3001,40 @@ func KillConsumersByConnections(connectionIds []string) error {
 	return nil
 }
 
+func GetActiveConsumersByName(names []string, tenantName string) ([]models.LightConsumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.LightConsumer{}, err
+	}
+	defer conn.Release()
+	query := `
+		SELECT c.name, s.name  
+		FROM consumers AS c
+		LEFT JOIN stations AS s ON s.id = c.station_id
+		LEFT JOIN connections AS con ON con.id = c.connection_id
+		WHERE c.tenant_name = $1 AND c.name = ANY($2) AND c.is_active = true
+`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumers_by_name", query)
+	if err != nil {
+		return []models.LightConsumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, names)
+	if err != nil {
+		return []models.LightConsumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightConsumer])
+	if err != nil {
+		return []models.LightConsumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.LightConsumer{}, nil
+	}
+	return consumers, nil
+}
+
 // Schema Functions
 func GetSchemaByName(name string, tenantName string) (bool, models.Schema, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)

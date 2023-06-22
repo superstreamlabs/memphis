@@ -448,6 +448,71 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }
 
+func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.DelayedCgResp, error) {
+	streams, err := ch.S.memphisAllStreamsInfo(tenantName)
+	if err != nil {
+		return []models.DelayedCgResp{}, err
+	}
+	consumers := make(map[string]map[string]models.DelayedCg, 0)
+	consumerNames := []string{}
+	for _, stream := range streams {
+		offset := 0
+		requestSubject := fmt.Sprintf(JSApiConsumerListT, stream.Config.Name)
+		offsetReq := ApiPagedRequest{Offset: offset}
+		request := JSApiConsumersRequest{ApiPagedRequest: offsetReq}
+		rawRequest, err := json.Marshal(request)
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		var resp JSApiConsumerListResponse
+		err = jsApiRequest(tenantName, ch.S, requestSubject, kindConsumerInfo, []byte(rawRequest), &resp)
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		for _, consumer := range resp.Consumers {
+			if consumer.NumAckPending > 0 {
+				stationName := StationNameFromStreamName(consumer.Stream)
+				consumerName := revertDelimiters(consumer.Name)
+				externalStationName := stationName.Ext()
+				if _, ok := consumers[externalStationName]; !ok {
+					consumers[externalStationName] = map[string]models.DelayedCg{consumerName: {CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}}
+				} else {
+					consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}
+				}
+				consumerNames = append(consumerNames, consumerName)
+			}
+		}
+	}
+	consumersFromDb, err := db.GetActiveConsumersByName(consumerNames, tenantName)
+	if err != nil {
+		return []models.DelayedCgResp{}, err
+	}
+	if len(consumersFromDb) == 0 {
+		return []models.DelayedCgResp{}, nil
+	}
+	consumersResp := make(map[string][]models.DelayedCg, 0)
+	for _, c := range consumersFromDb {
+		if mdcg, ok := consumers[c.StationName]; ok {
+			if dcg, ok := mdcg[c.Name]; ok {
+				if _, ok := consumersResp[c.StationName]; !ok {
+					consumersResp[c.StationName] = []models.DelayedCg{dcg}
+				} else {
+					consumersResp[c.StationName] = append(consumersResp[c.StationName], dcg)
+				}
+			}
+		}
+	}
+	delayedCgsResp := []models.DelayedCgResp{}
+	for s, c := range consumersResp {
+		delayedCgsResp = append(delayedCgsResp, models.DelayedCgResp{StationName: s, CGS: c})
+	}
+	return delayedCgsResp, nil
+}
+
 // TODO fix it
 func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
 	var body models.GetAllConsumersByStationSchema
