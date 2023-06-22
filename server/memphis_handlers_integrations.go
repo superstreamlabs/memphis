@@ -38,7 +38,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]CreateIntegration at getUserDetailsFromMiddleware: %v", user.TenantName, err.Error())
+		serv.Errorf("CreateIntegration at getUserDetailsFromMiddleware: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -193,7 +193,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", user.TenantName, body.Name, err.Error())
+		serv.Errorf("GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -273,7 +273,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("[tenant: %v]DisconnectIntegration at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
+		serv.Errorf("DisconnectIntegration at getUserDetailsFromMiddleware: Integration %v: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
