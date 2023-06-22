@@ -169,10 +169,11 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 			return models.Integration{}, insertErr
 		}
 		s3Integration = integrationRes
-		integrationToUpdate := models.CreateIntegrationSchema{
+		integrationToUpdate := models.CreateIntegration{
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
+			TenantName: tenantName,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -201,10 +202,11 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 		return models.Integration{}, err
 	}
 
-	integrationToUpdate := models.CreateIntegrationSchema{
+	integrationToUpdate := models.CreateIntegration{
 		Name:       "s3",
 		Keys:       keys,
 		Properties: properties,
+		TenantName: tenantName,
 	}
 
 	msg, err := json.Marshal(integrationToUpdate)
