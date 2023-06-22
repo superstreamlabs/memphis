@@ -74,6 +74,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             codeEx.consumer = codeEx.consumer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             if (username) {
                 codeEx.producer = codeEx.producer?.replaceAll('<application type username>', username);
                 codeEx.consumer = codeEx.consumer?.replaceAll('<application type username>', username);
@@ -106,6 +108,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 const regexPatternPython = `, account_id=${accountId}`;
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatternPython, '');
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, '');
+                const regexPatterntDotNet = `options\.AccountId = ${accountId};`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatterntDotNet, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet , '');
             }
             setCodeExample(codeEx);
         }

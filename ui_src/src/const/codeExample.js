@@ -329,6 +329,7 @@ namespace Producer
                 options.Username = "<application type username>";
                 options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
+                options.AccountId = "<account-id>";
 
                 var producer = await client.CreateProducer(new MemphisProducerOptions
                 {
@@ -376,6 +377,7 @@ namespace Consumer
                 options.Username = "<application type username>";
                 options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
+                options.AccountId = "<account-id>";
 
                 var consumer = await client.CreateConsumer(new MemphisConsumerOptions
                 {
