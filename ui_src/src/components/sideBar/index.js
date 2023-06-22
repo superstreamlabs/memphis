@@ -47,6 +47,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
 import { compareVersions, isCloud } from '../../services/valueConvertor';
+import Spinner from '../spinner';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -61,7 +62,7 @@ function SideBar() {
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
-
+    const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_COMPANY_LOGO);
@@ -100,13 +101,22 @@ function SideBar() {
     };
 
     const handleLogout = async () => {
+        setLogoutLoader(true);
         if (isCloud()) {
             try {
                 await httpRequest('POST', ApiEndpoints.SIGN_OUT);
                 AuthService.logout();
-            } catch (error) {}
+                setTimeout(() => {
+                    setLogoutLoader(false);
+                }, 1000);
+            } catch (error) {
+                setLogoutLoader(false);
+            }
         } else {
             AuthService.logout();
+            setTimeout(() => {
+                setLogoutLoader(false);
+            }, 1000);
         }
     };
 
@@ -178,9 +188,7 @@ function SideBar() {
             )}
             <div className="item-wrap" onClick={() => handleLogout()}>
                 <div className="item">
-                    <span className="icons">
-                        <ExitToAppOutlined className="icons-sidebar" />
-                    </span>
+                    <span className="icons">{logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />}</span>
                     <p className="item-title">Log out</p>
                 </div>
             </div>

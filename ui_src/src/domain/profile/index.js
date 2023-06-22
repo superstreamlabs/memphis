@@ -91,6 +91,16 @@ function Profile() {
                 </div>
                 <ImgUploader />
                 <Divider />
+                <div className="organization-id-section">
+                    <p className="title">Account ID</p>
+                    <label className="organization-id-description">
+                        Your account ID is a unique identifier for your organization. It is used to identify your organization in Memphis
+                    </label>
+                    <div className="organization-id">
+                        <p className="id">{state?.userData?.account_id}</p>
+                    </div>
+                </div>
+                <Divider />
                 <div className="delete-account-section">
                     <p className="title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
                     {isCloud() ? (
@@ -127,7 +137,7 @@ function Profile() {
                         className="modal-btn"
                         width="200px"
                         height="36px"
-                        placeholder="Delete Account"
+                        placeholder={isCloud ? 'Delete organization' : 'Delete account'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="red"
