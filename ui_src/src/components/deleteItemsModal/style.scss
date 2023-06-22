@@ -1,5 +1,5 @@
 .delete-modal-wrapper{
-    height: 100%;
+    height: calc(100% - 25px);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
