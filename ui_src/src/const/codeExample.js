@@ -332,8 +332,8 @@ namespace Producer
 
                 var producer = await client.CreateProducer(new MemphisProducerOptions
                 {
-                    StationName = "<memphis-station-name>",
-                    ProducerName = "<memphis-producer-name>",
+                    StationName = "<station-name>",
+                    ProducerName = "<producer-name>",
                     GenerateUniqueSuffix = true
                 });
 
