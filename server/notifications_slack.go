@@ -204,11 +204,12 @@ func createSlackIntegration(tenantName string, keys map[string]string, propertie
 			return slackIntegration, insertErr
 		}
 		slackIntegration = integrationRes
-		integrationToUpdate := models.CreateIntegrationSchema{
+		integrationToUpdate := models.CreateIntegration{
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
 			UIUrl:      uiUrl,
+			TenantName: tenantName,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -262,11 +263,12 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		return models.Integration{}, err
 	}
 
-	integrationToUpdate := models.CreateIntegrationSchema{
+	integrationToUpdate := models.CreateIntegration{
 		Name:       "slack",
 		Keys:       keys,
 		Properties: properties,
 		UIUrl:      uiUrl,
+		TenantName: tenantName,
 	}
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
