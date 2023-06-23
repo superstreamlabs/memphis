@@ -62,6 +62,7 @@ type MainOverviewData struct {
 	K8sEnv            bool                              `json:"k8s_env"`
 	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
 	MetricsEnabled    bool                              `json:"metrics_enabled"`
+	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
@@ -1510,7 +1511,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 	mainOverviewData := &MainOverviewData{}
 	generalErr := new(error)
 
-	wg.Add(3)
+	wg.Add(4)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
 		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
@@ -1555,6 +1556,19 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		wg.Done()
 	}()
 
+	go func() {
+		consumersHandler := ConsumersHandler{S: mh.S}
+		delayedConsumersMap, err := consumersHandler.GetDelayedCgsByTenant(tenantName)
+		if err != nil {
+			*generalErr = err
+			wg.Done()
+			return
+		}
+		mu.Lock()
+		mainOverviewData.DelayedCgs = delayedConsumersMap
+		mu.Unlock()
+		wg.Done()
+	}()
 	wg.Wait()
 	if *generalErr != nil {
 		return MainOverviewData{}, *generalErr
