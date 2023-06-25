@@ -46,6 +46,7 @@ import (
 )
 
 const shouldCreateRootUserforGlobalAcc = true
+const TENANT_SEQUENCE_START_ID = 2
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -1823,5 +1824,9 @@ func shouldSendAnalytics() (bool, error) {
 }
 
 func TenantSeqInitialize() error {
+	err := db.SetTenantSequence(TENANT_SEQUENCE_START_ID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
