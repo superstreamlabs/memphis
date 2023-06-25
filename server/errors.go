@@ -25,6 +25,11 @@ var (
 	// ErrAuthentication represents an error condition on failed authentication.
 	ErrAuthentication = errors.New("authentication error")
 
+	// *** added by Memphis
+	// ErrAccountId represents an error condition on missing/wrong account id.
+	ErrAccountId = errors.New("wrong or missing account id")
+	// added by Memphis ***
+
 	// ErrAuthTimeout represents an error condition on failed authorization due to timeout.
 	ErrAuthTimeout = errors.New("authentication timeout")
 

@@ -1671,3 +1671,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"internal_ws_pass":        decryptedUserPassword,
 	})
 }
+
+func (s *Server) validateAccIdInUsername(username string) bool {
+	return true
+}

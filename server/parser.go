@@ -934,6 +934,13 @@ func (c *client) parse(buf []byte) error {
 				if trace {
 					c.traceInOp("CONNECT", removePassFromTrace(arg))
 				}
+
+				// *** added by Memphis
+				if !s.validateAccIdInUsername(c.opts.Username) {
+					goto accountIdErr
+				}
+				// added by Memphis ***
+
 				if err := c.processConnect(arg); err != nil {
 					return err
 				}
@@ -1230,6 +1237,12 @@ func (c *client) parse(buf []byte) error {
 authErr:
 	c.authViolation()
 	return ErrAuthentication
+
+	// *** added by Memphis
+accountIdErr:
+	c.accountIdErr()
+	return ErrAccountId
+	// added by Memphis ***
 
 parseErr:
 	c.sendErr("Unknown Protocol Operation")
