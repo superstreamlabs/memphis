@@ -142,7 +142,7 @@ function Requests() {
                                     <img src={PriceIcon} alt="data in" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.pricePerGBIn?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        {usageData && <label className="total-value">${usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>}
                                     </span>
                                 </div>
                             </div>
@@ -171,7 +171,7 @@ function Requests() {
                                     <img src={PriceIcon} alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.pricePerGBOut?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        {usageData && <label className="total-value">${usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>}
                                     </span>
                                 </div>
                             </div>
