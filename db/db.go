@@ -1962,6 +1962,35 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 	return nil
 }
 
+func GetIsNotActiveStations() ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE is_deleted = true`
+	stmt, err := conn.Conn().Prepare(ctx, "get_not_active_stations", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, err
+	}
+	return stations, nil
+
+}
+
 // Producer Functions
 func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.LightProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)

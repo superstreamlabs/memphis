@@ -2165,3 +2165,24 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 	return username, -1, nil
 
 }
+
+func (s *Server) RemoveOldStations() error {
+	stations, err := db.GetIsNotActiveStations()
+	if err != nil {
+		return err
+	}
+
+	for _, station := range stations {
+		err = removeStationResources(s, station, true)
+		if err != nil {
+			return err
+		}
+
+		err = db.DeleteStation(station.Name, station.TenantName)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
