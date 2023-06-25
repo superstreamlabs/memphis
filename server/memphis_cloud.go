@@ -1801,3 +1801,7 @@ cleanup:
 
 	return throughputs, nil
 }
+
+func (s *Server) validateAccIdInUsername(username string) bool {
+	return true
+}
