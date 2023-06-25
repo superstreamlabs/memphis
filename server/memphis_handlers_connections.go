@@ -137,27 +137,28 @@ func handleConnectMessage(client *client) error {
 				return err
 			}
 		} else {
-			shouldSendAnalytics, _ := shouldSendAnalytics()
-			if shouldSendAnalytics { // exist indicates it is a reconnect
-				splitted := strings.Split(client.opts.Lang, ".")
-				sdkName := splitted[len(splitted)-1]
-				param := analytics.EventParam{
-					Name:  "sdk",
-					Value: sdkName,
+			go func() {
+				shouldSendAnalytics, _ := shouldSendAnalytics()
+				if shouldSendAnalytics { // exist indicates it is a reconnect
+					splitted := strings.Split(client.opts.Lang, ".")
+					sdkName := splitted[len(splitted)-1]
+					param := analytics.EventParam{
+						Name:  "sdk",
+						Value: sdkName,
+					}
+					analyticsParams := []analytics.EventParam{param}
+					event := "user-connect-sdk"
+					if !isNativeMemphisClient {
+						event = "user-connect-nats-sdk"
+					}
+					analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
 				}
-				analyticsParams := []analytics.EventParam{param}
-				event := "user-connect-sdk"
-				if !isNativeMemphisClient {
-					event = "user-connect-nats-sdk"
-				}
-				analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
-			}
+			}()
 		}
 		updateNewClientWithConfig(client, connectionId)
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: connectionId, isNative: isNativeMemphisClient}
-
 	return nil
 }
 
