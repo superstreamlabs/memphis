@@ -22,7 +22,7 @@ const Tags = () => {
     const [state, dispatch] = useContext(Context);
     return (
         <div className="overview-components-wrapper">
-            {state?.monitor_data?.tags_details.length > 0 ? (
+            {state?.monitor_data?.tags_details?.length > 0 ? (
                 <div className="overview-tags-container">
                     <div className="overview-components-header">
                         <p>Most used tags</p>

@@ -32,8 +32,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
     const [activeKey, setActiveKey] = useState(['0', '1', '2']);
 
     useEffect(() => {
-        if (activeKey.length > 3) {
-            const shortActiveKey = activeKey.splice(0, activeKey.length - 3);
+        if (activeKey?.length > 3) {
+            const shortActiveKey = activeKey.splice(0, activeKey?.length - 3);
             setActiveKey(shortActiveKey);
         }
     }, [activeKey]);

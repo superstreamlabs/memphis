@@ -20,7 +20,9 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_SKIP_GET_STARTED
+    LOCAL_STORAGE_SKIP_GET_STARTED,
+    LOCAL_STORAGE_BROKER_HOST,
+    LOCAL_STORAGE_ENV
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
@@ -152,6 +154,12 @@ function OverView() {
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
+    let host =
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? 'localhost'
+            : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            : 'memphis.memphis.svc.cluster.local';
     return (
         <div className="overview-container">
             {isLoading && (
@@ -166,7 +174,7 @@ function OverView() {
                             <div className="bot-wrapper">
                                 <img
                                     className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl} // profile_pic is available only in sandbox env
+                                    src={localStorage.getItem('profile_pic') || botUrl}
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
@@ -175,6 +183,12 @@ function OverView() {
                             </div>
                             <div className="dynamic-sentences">
                                 {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
+                                {isCloud() && (
+                                    <div className="hostname">
+                                        <p>Hostname : </p>
+                                        <span>{host}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div>

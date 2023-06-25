@@ -57,10 +57,10 @@ const Schemaverse = () => {
             ) : (
                 <div className="no-data">
                     <img src={noSchemasFound} alt="no data found" />
-                    <p>No schemas yet</p>
-                    <label>This is where the data contracts concept comes into play. </label>
+                    <p>No schemas yet!</p>
+                    <label>Schemas are made to increase data quality and help architects achieve data governance. </label>
                     <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
-                        + Create Schema
+                        + Create a schema
                     </label>
                 </div>
             )}

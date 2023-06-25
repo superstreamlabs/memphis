@@ -300,12 +300,7 @@ function SideBar() {
                     <label className="icon-name">Support</label>
                 </div> */}
                 <Link to={{ pathname: DOC_URL }} target="_blank">
-                    <div
-                        className="integration-icon-wrapper"
-                        onMouseEnter={() => setHoveredItem('documentation')}
-                        onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.push(`${pathDomains.administration}/integrations`)}
-                    >
+                    <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
                         <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
                         <label className="icon-name">Docs</label>
                     </div>
@@ -329,14 +324,16 @@ function SideBar() {
                         ></img>
                     </div>
                 </Popover>
-                <version
-                    is="x3d"
-                    style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
-                    onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
-                >
-                    {!state.isLatest && <div className="update-note" />}
-                    <p>v{state.currentVersion}</p>
-                </version>
+                {!isCloud() && (
+                    <version
+                        is="x3d"
+                        style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
+                        onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
+                    >
+                        {!state.isLatest && <div className="update-note" />}
+                        <p>v{state.currentVersion}</p>
+                    </version>
+                )}
             </div>
         </div>
     );
