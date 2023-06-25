@@ -39,7 +39,7 @@ const CreateStation = ({ createStationFormRef }) => {
     const updateFormState = (field, value) => {
         if (field === 'name') {
             value = generateName(value);
-            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: value.length === 0 || false });
+            getStartedDispatch({ type: 'SET_NEXT_DISABLE', payload: value?.length === 0 || false });
         }
         getStartedDispatch({ type: 'SET_FORM_FIELDS_CREATE_STATION', payload: { field: field, value: value } });
     };

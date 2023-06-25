@@ -158,7 +158,7 @@ const CreateAppUser = (props) => {
                     marginTop="25px"
                     disabled={
                         !allowEdit ||
-                        user.username.length === 0 ||
+                        user.username?.length === 0 ||
                         (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password === '') ||
                         (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password !== confirmPass)
                     }

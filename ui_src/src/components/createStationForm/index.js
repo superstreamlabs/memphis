@@ -315,16 +315,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <Form.Item name="idempotency">
                         <div>
                             <TitleComponent
-                                headerTitle="Idempotency"
+                                headerTitle="Deduplication (Idempotency)"
                                 typeTitle="sub-header"
-                                headerDescription={
-                                    <span>
-                                        Ensures producers will not produce the same message.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                            Learn more
-                                        </a>
-                                    </span>
-                                }
+                                headerDescription={<span>Deduplication window for which producers will not produce the same message twice.</span>}
                             />
                         </div>
                         <div className="idempotency-value">

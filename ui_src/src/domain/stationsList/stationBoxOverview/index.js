@@ -80,7 +80,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 text={station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
                                 width={'90px'}
                             >
-                                {station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
+                                {station?.station?.schema_name ? station?.station?.schema_name : <MinusOutlined />}
                             </OverflowTip>
                         </div>
                         <div className="station-created">
