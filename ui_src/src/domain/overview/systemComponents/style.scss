@@ -12,13 +12,6 @@
     p {
         margin-bottom: 0px;
     }
-    .collapse-arrow {
-        transform: rotate(-90deg);
-        transition: transform 0.4s;
-    }
-    .open {
-        transform: rotate(0deg);
-    }
     .component-list::-webkit-scrollbar {
         display: none !important;
     }

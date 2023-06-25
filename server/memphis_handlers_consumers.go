@@ -84,7 +84,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
 		return err
 	}
 
@@ -92,7 +92,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Warnf("[tenant: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+			serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
 			return err
 		}
 	} else {
@@ -102,44 +102,44 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	consumerType := strings.ToLower(cType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Warnf("createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
 		return err
 	}
 
 	exist, connection, err := db.GetConnectionByID(connectionId)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetConnectionByID: Consumer %v : %v ", c.acc.Name, consumerName, err.Error())
+		serv.Errorf("createConsumerDirectCommon at GetConnectionByID: Consumer %v : %v ", consumerName, err.Error())
 		return err
 	}
 	if !exist {
-		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v : Connection ID %v  was not found", c.acc.Name, consumerName, cStationName, connectionId)
+		errMsg := fmt.Sprintf("Consumer %v at station %v : Connection ID %v  was not found", consumerName, cStationName, connectionId)
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
 		return errors.New(errMsg)
 	}
 	if !connection.IsActive {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon: Failed creating consumer %v at station %v : Connection is not active", c.acc.Name, consumerName, cStationName)
-		return fmt.Errorf("[tenant: %v]connection is not active", c.acc.Name)
+		serv.Warnf("[tenant: %v]createConsumerDirectCommon: Failed creating consumer %v at station %v : Connection is not active", connection.TenantName, consumerName, cStationName)
+		return fmt.Errorf("[tenant: %v]connection is not active", connection.TenantName)
 	}
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUserByUserId: Consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUserByUserId: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon: user %v is not exists", c.acc.Name, connection.CreatedBy)
+		serv.Warnf("[tenant: %v]createConsumerDirectCommon: user %v is not exists", connection.TenantName, connection.CreatedBy)
 		return err
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetStationByName: Consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetStationByName: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 
@@ -147,13 +147,13 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, connection.CreatedBy, user.Username)
 		if err != nil {
-			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", c.acc.Name, consumerName, cStationName, err.Error())
+			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
 			return err
 		}
 
 		if created {
 			message := fmt.Sprintf("Station %v has been created by user %v", stationName.Ext(), user.Username)
-			serv.Noticef(message)
+			serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				StationName:       stationName.Ext(),
@@ -166,7 +166,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			auditLogs = append(auditLogs, newAuditLog)
 			err = CreateAuditLogs(auditLogs)
 			if err != nil {
-				serv.Errorf("[tenant: %v]createConsumerDirect at CreateAuditLogs: Consumer %v at station %v :%v", c.acc.Name, consumerName, cStationName, err.Error())
+				serv.Errorf("[tenant: %v]createConsumerDirect at CreateAuditLogs: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 			}
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -187,24 +187,24 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at isConsumerGroupExist: Consumer %v at station %v :%v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at isConsumerGroupExist: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 
 	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, connection.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", c.acc.Name, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 	if exist {
 		errMsg := fmt.Sprintf("Consumer %v at station %v: Consumer name has to be unique per station", consumerName, cStationName)
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon: %v", c.acc.Name, errMsg)
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon: %v", user.TenantName, errMsg)
 		return fmt.Errorf("memphis: %v", errMsg)
 	}
 
 	if rowsUpdated == 1 {
 		message := "Consumer " + name + " has been created by user " + user.Username
-		serv.Noticef(message)
+		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 		if consumerGroupExist {
 			if requestVersion == 1 {
 				if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {
@@ -218,9 +218,9 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				err := s.CreateConsumer(station.TenantName, newConsumer, station)
 				if err != nil {
 					if IsNatsErr(err, JSStreamNotFoundErr) {
-						serv.Warnf("[tenant: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", c.acc.Name, consumerName, cStationName)
+						serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", user.TenantName, user.Username, consumerName, cStationName)
 					} else {
-						serv.Errorf("[tenant: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", c.acc.Name, consumerName, cStationName, err.Error())
+						serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
 					}
 					return err
 				}
@@ -229,9 +229,9 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			err := s.CreateConsumer(station.TenantName, newConsumer, station)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
-					serv.Warnf("[tenant: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", c.acc.Name, consumerName, cStationName)
+					serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", user.TenantName, user.Username, consumerName, cStationName)
 				} else {
-					serv.Errorf("[tenant: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", c.acc.Name, consumerName, cStationName, err.Error())
+					serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
 				}
 				return err
 			}
@@ -248,7 +248,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Errorf("[tenant: %v]createConsumerDirectCommon at CreateAuditLogs: Consumer %v at station %v: %v", c.acc.Name, consumerName, cStationName, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -270,7 +270,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createConsumerDirect: %v", c.acc.Name, err.Error())
+		s.Errorf("createConsumerDirect: %v", err.Error())
 		return
 	}
 
@@ -448,6 +448,71 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }
 
+func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.DelayedCgResp, error) {
+	streams, err := ch.S.memphisAllStreamsInfo(tenantName)
+	if err != nil {
+		return []models.DelayedCgResp{}, err
+	}
+	consumers := make(map[string]map[string]models.DelayedCg, 0)
+	consumerNames := []string{}
+	for _, stream := range streams {
+		offset := 0
+		requestSubject := fmt.Sprintf(JSApiConsumerListT, stream.Config.Name)
+		offsetReq := ApiPagedRequest{Offset: offset}
+		request := JSApiConsumersRequest{ApiPagedRequest: offsetReq}
+		rawRequest, err := json.Marshal(request)
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		var resp JSApiConsumerListResponse
+		err = jsApiRequest(tenantName, ch.S, requestSubject, kindConsumerInfo, []byte(rawRequest), &resp)
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return []models.DelayedCgResp{}, err
+		}
+		for _, consumer := range resp.Consumers {
+			if consumer.NumAckPending > 0 {
+				stationName := StationNameFromStreamName(consumer.Stream)
+				consumerName := revertDelimiters(consumer.Name)
+				externalStationName := stationName.Ext()
+				if _, ok := consumers[externalStationName]; !ok {
+					consumers[externalStationName] = map[string]models.DelayedCg{consumerName: {CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}}
+				} else {
+					consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}
+				}
+				consumerNames = append(consumerNames, consumerName)
+			}
+		}
+	}
+	consumersFromDb, err := db.GetActiveConsumersByName(consumerNames, tenantName)
+	if err != nil {
+		return []models.DelayedCgResp{}, err
+	}
+	if len(consumersFromDb) == 0 {
+		return []models.DelayedCgResp{}, nil
+	}
+	consumersResp := make(map[string][]models.DelayedCg, 0)
+	for _, c := range consumersFromDb {
+		if mdcg, ok := consumers[c.StationName]; ok {
+			if dcg, ok := mdcg[c.Name]; ok {
+				if _, ok := consumersResp[c.StationName]; !ok {
+					consumersResp[c.StationName] = []models.DelayedCg{dcg}
+				} else {
+					consumersResp[c.StationName] = append(consumersResp[c.StationName], dcg)
+				}
+			}
+		}
+	}
+	delayedCgsResp := []models.DelayedCgResp{}
+	for s, c := range consumersResp {
+		delayedCgsResp = append(delayedCgsResp, models.DelayedCgResp{StationName: s, CGS: c})
+	}
+	return delayedCgsResp, nil
+}
+
 // TODO fix it
 func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
 	var body models.GetAllConsumersByStationSchema
@@ -498,7 +563,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	var dcr destroyConsumerRequest
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]destroyConsumerDirect at getTenantNameAndMessage: %v", c.acc.Name, err.Error())
+		s.Errorf("destroyConsumerDirect at getTenantNameAndMessage: %v", err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
 		return
 	}
@@ -580,7 +645,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 			return
 		}
 		message := fmt.Sprintf("Consumer %v has been deleted by user %v ", name, username)
-		serv.Noticef(message)
+		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			StationName:       stationName.Ext(),

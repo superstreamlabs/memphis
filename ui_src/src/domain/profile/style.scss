@@ -7,13 +7,14 @@
     background-color: #ffffff;
     box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
     border-radius: 8px;
-    padding: 40px;
+    padding: 40px 2px 40px 40px;
     .profile-container {
         display: flex;
         flex-direction: column;
-        gap: 40px;
+        gap: 20px;
         height: 100%;
         overflow-y: auto;
+        padding-right:38px;
         .header-preferences {
             .main-header {
                 font-family: 'InterSemiBold';
@@ -83,6 +84,33 @@
                         font-size: 12px;
                         color: rgba(74, 73, 92, 0.8);
                     }
+                }
+            }
+        }
+        .organization-id-section{
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            .organization-id-description{
+                font-family: 'Inter';
+                font-size: 12px;
+                color: #b4b4b4;
+                margin-bottom: 10px;
+            }
+            .organization-id{
+                display: flex;
+                width: 70px;
+                font-size: 14px;
+                font-family: 'InterMedium';
+                align-items: flex-start;
+                border-radius: 8px;
+                border: 1px solid #dddddd;
+                height: 30px;
+                color: var(--purple);
+                align-items: center;
+                justify-content: center;
+                p{
+                    margin: 0;
                 }
             }
         }

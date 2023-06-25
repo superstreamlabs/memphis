@@ -38,14 +38,14 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
             id: 1,
             value: 'management',
             label: 'Management',
-            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            desc: 'For management and console access',
             disabled: false
         },
         {
             id: 2,
             value: 'application',
             label: 'Client',
-            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            desc: 'For client-based authentication with the broker',
             disabled: false
         }
     ];
@@ -53,7 +53,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
         {
             id: 1,
             value: 0,
-            label: 'Default'
+            label: 'Auto-Generated'
         },
         {
             id: 2,

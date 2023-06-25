@@ -67,48 +67,47 @@ const App = withRouter((props) => {
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
 
     const handleLoginWithToken = async () => {
-        if (firebase_id_token) {
-            try {
-                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
-                if (data) {
-                    AuthService.saveToLocalStorage(data);
-                    try {
-                        const ws_port = data.ws_port;
-                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-                        let conn;
-                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
-                            const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                user: '$memphis_user$' + account_id,
-                                pass: internal_ws_pass,
-                                timeout: '5000'
-                            });
-                        } else {
-                            const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                token: '::' + connection_token,
-                                timeout: '5000'
-                            });
-                        }
-                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {
-                        return;
+        try {
+            const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
+            if (data) {
+                AuthService.saveToLocalStorage(data);
+                try {
+                    const ws_port = data.ws_port;
+                    const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                    let conn;
+                    if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                        const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            user: '$memphis_user$' + account_id,
+                            pass: internal_ws_pass,
+                            timeout: '5000'
+                        });
+                    } else {
+                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            token: '::' + connection_token,
+                            timeout: '5000'
+                        });
                     }
-                    dispatch({ type: 'SET_USER_DATA', payload: data });
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                } catch (error) {
+                    console.log('Login failed:', error);
+                    return;
                 }
-                history.push('/overview');
-                setCloudLogedIn(true);
-            } catch (error) {
-                console.log('Login failed:', error);
+                dispatch({ type: 'SET_USER_DATA', payload: data });
             }
+            history.push('/overview');
+            setCloudLogedIn(true);
+        } catch (error) {
+            console.log('Login failed:', error);
         }
     };
 
     useEffect(() => {
-        if (isCloud() && !localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+        if (isCloud() && firebase_id_token) {
             const fetchData = async () => {
                 await handleLoginWithToken();
             };

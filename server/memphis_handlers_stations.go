@@ -346,11 +346,18 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	_, user, err := db.GetUserByUsername(username, csr.TenantName)
+	exist, user, err := db.GetUserByUsername(username, csr.TenantName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
+		return
 	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		respondWithErr(globalAccountName, s, reply, err)
+		return
+	}
+
 	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
@@ -967,6 +974,13 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 	}
 
 	var stationNames []string
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	for _, name := range body.StationNames {
 		stationName, err := StationNameFromStr(name)
 		if err != nil {
@@ -976,12 +990,6 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 
 		stationNames = append(stationNames, stationName.Ext())
-		user, err := getUserDetailsFromMiddleware(c)
-		if err != nil {
-			serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: %v", err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
 
 		exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 		if err != nil {
@@ -1004,12 +1012,6 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		}
 	}
 
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
 	err = db.DeleteStationsByNames(stationNames, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveStation at DeleteStationsByNames: %v", user.TenantName, user.Username, err.Error())
@@ -1027,12 +1029,6 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 		if err != nil {
 			serv.Warnf("RemoveStation at StationNameFromStr: Station %v: %v", name, err.Error())
 			continue
-		}
-
-		user, err := getUserDetailsFromMiddleware(c)
-		if err != nil {
-			serv.Errorf("RemoveStation at getUserDetailsFromMiddleware: Station %v: %v", name, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 
 		serv.Noticef("[tenant: %v][user: %v]Station %v has been deleted by user %v", user.TenantName, user.Username, stationName.Ext(), user.Username)

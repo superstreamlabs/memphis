@@ -9,7 +9,7 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
-export const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'NestJS', 'Python'];
+export const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'NestJS', 'Python', '.NET (C#)'];
 
 export const SDK_CODE_EXAMPLE = {
     'Node.js': {
@@ -70,7 +70,6 @@ export const SDK_CODE_EXAMPLE = {
         consumer.on('message', (message, context) => {
             console.log(message.getData().toString());
             message.ack();
-            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {});
@@ -147,7 +146,6 @@ export const SDK_CODE_EXAMPLE = {
         consumer.on('message', (message: Message, context: object) => {
             console.log(message.getData().toString());
             message.ack();
-            const headers = message.getHeaders()
         });
 
         consumer.on('error', (error) => {
@@ -178,19 +176,22 @@ func main() {
         os.Exit(1)
     }
     defer conn.Close()
+
     p, err := conn.CreateProducer("<station-name>", "<producer-name>")
+    if err != nil {
+        fmt.Printf("Producer failed: %v", err)
+        os.Exit(1)
+    }
 
     hdrs := memphis.Headers{}
     hdrs.New()
     err = hdrs.Add("key", "value")
-
     if err != nil {
         fmt.Printf("Header failed: %v", err)
         os.Exit(1)
     }
 
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
-
     if err != nil {
         fmt.Printf("Produce failed: %v", err)
         os.Exit(1)
@@ -215,7 +216,6 @@ func main() {
     defer conn.Close()
 
     consumer, err := conn.CreateConsumer("<station-name>", "<consumer-name>", memphis.PullInterval(15*time.Second))
-
     if err != nil {
         fmt.Printf("Consumer creation failed: %v", err)
         os.Exit(1)
@@ -230,8 +230,6 @@ func main() {
         for _, msg := range msgs {
             fmt.Println(string(msg.Data()))
             msg.Ack()
-            headers := msg.GetHeaders()
-            fmt.Println(headers)
         }
     }
 
@@ -284,7 +282,6 @@ async def main():
             for msg in msgs:
                 print("message: ", msg.get_data())
                 await msg.ack()
-                headers = msg.get_headers()
                 if error:
                     print(error)
         except (MemphisError, MemphisConnectError, MemphisHeaderError) as e:
@@ -332,11 +329,12 @@ namespace Producer
                 options.Username = "<application type username>";
                 options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
+                options.AccountId = "<account-id>";
 
                 var producer = await client.CreateProducer(new MemphisProducerOptions
                 {
-                    StationName = "<memphis-station-name>",
-                    ProducerName = "<memphis-producer-name>",
+                    StationName = "<station-name>",
+                    ProducerName = "<producer-name>",
                     GenerateUniqueSuffix = true
                 });
 
@@ -379,6 +377,7 @@ namespace Consumer
                 options.Username = "<application type username>";
                 options.Password = "<password>";
                 var client = await MemphisClientFactory.CreateClient(options);
+                options.AccountId = "<account-id>";
 
                 var consumer = await client.CreateConsumer(new MemphisConsumerOptions
                 {

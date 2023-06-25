@@ -1262,7 +1262,7 @@ func (c *client) readLoop(pre []byte) {
 				// decremented and their writeLoop signaled.
 				c.flushClients(0)
 				// handled inline
-				if err != ErrMaxPayload && err != ErrAuthentication {
+				if err != ErrMaxPayload && err != ErrAuthentication && err != ErrAccountId { //  ErrAccountId was added by Memphis
 					c.Error(err)
 					c.closeConnection(ProtocolViolation)
 				}
@@ -1935,6 +1935,13 @@ func (c *client) accountAuthExpired() {
 	c.sendErrAndDebug("Account Authentication Expired")
 	c.closeConnection(AuthenticationExpired)
 }
+
+// *** added by Memphis
+func (c *client) accountIdErr() {
+	c.sendErrAndDebug("Wrong / missing account ID")
+	c.closeConnection(MissingAccount)
+}
+// added by Memphis ***
 
 func (c *client) authViolation() {
 	var s *Server

@@ -98,22 +98,6 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 	return newStation, true, nil
 }
 
-func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
-
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
-}
-
 func validateName(name, objectType string) error {
 	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
 	tooLongErrStr := fmt.Sprintf("%v should be under 128 characters", objectType)

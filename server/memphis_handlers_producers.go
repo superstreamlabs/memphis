@@ -99,7 +99,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 		if created {
 			message := "Station " + pStationName.Ext() + " has been created by user " + user.Username
-			serv.Noticef(message)
+			serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 			var auditLogs []interface{}
 			newAuditLog := models.AuditLog{
 				StationName:       pStationName.Ext(),
@@ -148,7 +148,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if rowsUpdated == 1 {
 		message := "Producer " + name + " has been created by user " + user.Username
-		serv.Noticef(message)
+		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
 			StationName:       pStationName.Ext(),
@@ -414,7 +414,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
 	message := "Producer " + name + " has been deleted by user " + username
-	serv.Noticef(message)
+	serv.Noticef("[tenant: %v][user: %v]: %v", tenantName, username, message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		StationName:       stationName.Ext(),
