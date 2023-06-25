@@ -251,7 +251,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		return
 	}
 
-	serv.Noticef(message)
+	serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 	if entity == "station" {
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
