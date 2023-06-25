@@ -1673,10 +1673,6 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 	})
 }
 
-func (s *Server) validateAccIdInUsername(username string) bool {
-	return true
-}
-
 func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.BrokerThroughputResponse, error) {
 	uid := serv.memphis.nuid.Next()
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
