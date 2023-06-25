@@ -936,8 +936,13 @@ func (c *client) parse(buf []byte) error {
 				}
 
 				// *** added by Memphis
-				if !s.validateAccIdInUsername(c.opts.Username) {
-					goto accountIdErr
+				if c.kind == CLIENT &&
+					!strings.Contains(c.opts.Name, "NATS CLI") &&
+					!c.isWebsocket() &&
+					!strings.Contains(c.opts.Name, "MEMPHIS HTTP LOGGER") {
+					if !s.validateAccIdInUsername(c.opts.Username) {
+						goto accountIdErr
+					}
 				}
 				// added by Memphis ***
 
