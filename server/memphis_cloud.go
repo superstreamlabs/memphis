@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -1670,4 +1671,153 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
 	})
+}
+
+func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.BrokerThroughputResponse, error) {
+	uid := serv.memphis.nuid.Next()
+	durableName := "$memphis_fetch_throughput_consumer_" + uid
+	var msgs []StoredMsg
+	var throughputs []models.BrokerThroughputResponse
+	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
+	if err != nil {
+		return throughputs, err
+	}
+
+	amount := streamInfo.State.Msgs
+	startSeq := uint64(1)
+	if streamInfo.State.FirstSeq > 0 {
+		startSeq = streamInfo.State.FirstSeq
+	}
+
+	cc := ConsumerConfig{
+		OptStartSeq:   startSeq,
+		DeliverPolicy: DeliverByStartSequence,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+		Replicas:      1,
+	}
+	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
+	if err != nil {
+		return throughputs, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamNameV1, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+
+	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				serv.Errorf("[tenant: %v]GetBrokersThroughputs: %v", tenantName, err.Error())
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return throughputs, err
+	}
+
+	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	timeout := 300 * time.Millisecond
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() {
+		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
+	})
+
+	sort.Slice(msgs, func(i, j int) bool { // old to new
+		return msgs[i].Time.Before(msgs[j].Time)
+	})
+
+	m := make(map[string]models.BrokerThroughputResponse)
+	for _, msg := range msgs {
+		var brokerThroughput models.BrokerThroughput
+		err = json.Unmarshal(msg.Data, &brokerThroughput)
+		if err != nil {
+			return throughputs, err
+		}
+
+		if _, ok := m[brokerThroughput.Name]; !ok {
+			m[brokerThroughput.Name] = models.BrokerThroughputResponse{
+				Name: brokerThroughput.Name,
+			}
+		}
+
+		mapEntry := m[brokerThroughput.Name]
+		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
+			Timestamp: msg.Time,
+			Read:      brokerThroughput.ReadMap[tenantName],
+		})
+		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
+			Timestamp: msg.Time,
+			Write:     brokerThroughput.WriteMap[tenantName],
+		})
+		m[brokerThroughput.Name] = mapEntry
+	}
+
+	throughputs = make([]models.BrokerThroughputResponse, 0, len(m))
+	totalRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
+	totalWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
+	for _, t := range m {
+		throughputs = append(throughputs, t)
+		for i, r := range t.Read {
+			totalRead[i].Timestamp = r.Timestamp
+			totalRead[i].Read += r.Read
+		}
+		for i, w := range t.Write {
+			totalWrite[i].Timestamp = w.Timestamp
+			totalWrite[i].Write += w.Write
+		}
+	}
+	throughputs = append([]models.BrokerThroughputResponse{{
+		Name:  "total",
+		Read:  totalRead,
+		Write: totalWrite,
+	}}, throughputs...)
+
+	return throughputs, nil
+}
+
+func (s *Server) validateAccIdInUsername(username string) bool {
+	return true
+}
+
+func shouldSendAnalytics() (bool, error) {
+	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	if err != nil {
+		return false, err
+	}
+	if !exist {
+		return false, nil
+	}
+
+	if systemKey.Value == "true" {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
