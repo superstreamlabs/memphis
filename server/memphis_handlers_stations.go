@@ -350,10 +350,12 @@ func (s *Server) createStationDirectIntern(c *client,
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(globalAccountName, s, reply, err)
+		return
 	}
 	if !exist {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
 		respondWithErr(globalAccountName, s, reply, err)
+		return
 	}
 
 	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
