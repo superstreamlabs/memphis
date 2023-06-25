@@ -101,6 +101,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
+	err = server.TenantSeqInitialize()
+	if err != nil {
+		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
+	}
+
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())

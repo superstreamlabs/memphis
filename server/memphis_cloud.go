@@ -1821,3 +1821,7 @@ func shouldSendAnalytics() (bool, error) {
 		return false, nil
 	}
 }
+
+func TenantSeqInitialize() error {
+	return nil
+}

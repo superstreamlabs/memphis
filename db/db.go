@@ -5633,7 +5633,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (name, firebase_organization_id, internal_ws_pass) VALUES($1, $2, $3)`
+	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass) VALUES(nextval('tenants_seq'),$1, $2, $3)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -5723,6 +5723,24 @@ func RemoveTagsResourcesByTenant(tenantName string) error {
 	}
 
 	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetTenantSequence(sequence int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	tenant_seq := fmt.Sprintf("CREATE SEQUENCE IF NOT EXISTS tenants_seq start %v INCREMENT 1;", sequence)
+
+	_, err = conn.Conn().Exec(ctx, tenant_seq)
 	if err != nil {
 		return err
 	}
