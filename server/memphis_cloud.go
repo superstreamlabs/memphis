@@ -1805,3 +1805,19 @@ cleanup:
 func (s *Server) validateAccIdInUsername(username string) bool {
 	return true
 }
+
+func shouldSendAnalytics() (bool, error) {
+	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	if err != nil {
+		return false, err
+	}
+	if !exist {
+		return false, nil
+	}
+
+	if systemKey.Value == "true" {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
