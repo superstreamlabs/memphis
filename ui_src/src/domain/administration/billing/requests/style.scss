@@ -35,55 +35,113 @@
             width: 49%;
             border: 1.4px solid #e4e4e4;
             border-radius: 12px;
-            .total-in-out {
+            .requests-summary-in-out {
                 display: flex;
-                align-items: center;
-                justify-content:space-evenly;
-                .ant-divider-vertical {
-                    margin: 0;
-                    height: 70px;
+                .data-gb {
+                    color: #2e2c34;
+                    font-weight: 700;
+                    font-size: 22px;
+                }
+                .total-value {
+                    color: #2e2c34;
+                    font-weight: 700;
+                    font-size: 18px;
+                }
+                .requests-title-in {
+                    color: #737373;
+                }
+                .data-in {
+                    width: 50%;
+                    margin: 10px 5px 10px 10px;
+                    .requests-total {
+                        padding: 10px;
+                        display: flex;
+                        align-items: flex-start;
+                        background: #cef3dd;
+                        border-radius: 4px 4px 0 0;
+                        .requests-data {
+                            display: flex;
+                            flex-direction: column;
+                            padding-left: 10px;
+                            font-family: 'InterMedium';
+                            font-size: 16px;
+                            align-self: center;
+                            img {
+                                width: 30px;
+                            }
+                            .requests-title-in {
+                                color: #27ae60;
+                            }
+                        }
+                    }
+                    .total-messages {
+                        background-color: #e2f8eb;
+                        border-radius: 0 0 4px 4px;
+                        padding: 10px;
+                        img {
+                            margin: 3px;
+                        }
+                        .requests-data {
+                            display: flex;
+                            flex-direction: column;
+                            padding-left: 10px;
+                        }
+                        .total-messages-in {
+                            display: flex;
+                            align-items: flex-start;
+                        }
+                    }
+                }
+                .data-out {
+                    width: 50%;
+                    margin: 10px 10px 10px 5px;
+                    .requests-total {
+                        padding: 10px;
+                        display: flex;
+                        align-items: flex-start;
+                        background: #ffecc7;
+                        border-radius: 4px 4px 0 0;
+                        .requests-data {
+                            display: flex;
+                            flex-direction: column;
+                            padding-left: 10px;
+                            font-family: 'InterMedium';
+                            font-size: 16px;
+                            align-self: center;
+                            img {
+                                width: 30px;
+                            }
+                            .requests-title-out {
+                                color: #fdb927;
+                            }
+                        }
+                    }
+                    .total-messages {
+                        background-color: #fff5e1;
+                        border-radius: 0 0 4px 4px;
+                        padding: 10px;
+                        img {
+                            margin: 3px;
+                        }
+                        .requests-data {
+                            display: flex;
+                            flex-direction: column;
+                            padding-left: 10px;
+                        }
+                        .total-messages-out {
+                            display: flex;
+                            align-items: flex-start;
+                        }
+                    }
                 }
             }
-            .requests-total {
-                padding: 15px 0px;
-                display: flex;
-                align-items: center;
-                height: 10vh;
-                min-height: 80px;
-                width: 200px;
-                .divider{
-                    width: 2px;
-                }
-                .requests-data {
-                    display: flex;
-                    flex-direction: column;
-                    padding-left: 10px;
-                    font-family: 'InterMedium';
-                    font-size: 16px;
-                    align-self:center;
-                    img{
-                        width: 30px;
-                    }
-                    .requests-title {
-                        color: #6557ff;
-                    }
-                    .requests-title-in {
-                        color: #27ae60;
-                    }
-                    .requests-title-out {
-                        color: #fdb927;
-                    }
-                }
-            }
+
             .cloud-provider {
-                padding: 10px 0px;
+                padding-bottom: 10px;
                 justify-content: space-evenly;
                 display: flex;
-                span{
+                span {
                     width: 200px;
-                }
-                .ant-divider-vertical {
-                    height: 25px;
                 }
                 .cloud-provider-label {
                     font-family: 'InterMedium';
@@ -114,7 +172,7 @@
                 font-size: 12px;
                 color: #84818a;
                 margin: 0;
-                white-space:pre-line;
+                white-space: pre-line;
             }
             .total-payment-header {
                 display: flex;
@@ -163,8 +221,8 @@
         }
     }
     .usage-details {
-        overflow-y: auto;
-        height: calc(100% - 350px);
+        overflow-y: hidden;
+        height: calc(100% - 390px);
         margin-top: 15px;
         .segment-data {
             margin-bottom: 15px;
@@ -208,7 +266,7 @@
                     justify-content: center;
                     margin-right: 20px;
                 }
-                
+
                 div {
                     display: flex;
                     flex-direction: column;
@@ -226,4 +284,3 @@
         }
     }
 }
-    
