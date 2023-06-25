@@ -16,7 +16,8 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { convertBytesToGb } from '../../../../services/valueConvertor';
 import { Divider } from 'antd';
-import TotalRequests from '../../../../assets/images/setting/totalRequests.svg';
+import TotalMsgIcon from '../../../../assets/images/setting/totalMsgIcon.svg';
+import PriceIcon from '../../../../assets/images/setting/priceIcon.svg';
 import RequestsIn from '../../../../assets/images/setting/requestsIn.svg';
 import RequestsOut from '../../../../assets/images/setting/requestsOut.svg';
 import CloudProviderAWS from '../../../../assets/images/setting/cloudProviderAWS.svg';
@@ -48,8 +49,18 @@ function Requests() {
         }
     };
 
-    const getTotalEvents = () => {
-        return usageData?.data_in_events + usageData?.data_out_events;
+    const formatNumber = (number) => {
+        const decimalPlaces = (number.toString().split('.')[1] || '').length;
+        switch (decimalPlaces) {
+            case decimalPlaces >= 3:
+                return number.toFixed(3);
+            case decimalPlaces >= 2:
+                return number.toFixed(2);
+            case decimalPlaces >= 1:
+                return number.toFixed(1);
+            default:
+                return number;
+        }
     };
 
     const getNextPaymentDate = () => {
@@ -106,46 +117,74 @@ function Requests() {
             </div>
             <div className="usage-header-section">
                 <div className="requests-summary">
+                    <div className="requests-summary-in-out">
+                        <div className="data-in">
+                            <div className="requests-total">
+                                <img src={RequestsIn} alt="data in" />
+                                <span className="requests-data">
+                                    <label className="requests-title-in">Data in</label>
+                                    {usageData && (
+                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="total-messages">
+                                <div className="total-messages-in">
+                                    <img src={TotalMsgIcon} alt="data in" />
+                                    <span className="requests-data">
+                                        <label className="requests-title-in">Total Events</label>
+                                        {usageData && (
+                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
+                                        )}
+                                    </span>
+                                </div>
+                                <div className="total-messages-in">
+                                    <img src={PriceIcon} alt="data in" />
+                                    <span className="requests-data">
+                                        <label className="requests-title-in">Price Per Event</label>
+                                        {usageData && <label className="total-value">${usageData?.pricePerGBIn?.toFixed(2).toLocaleString('en-US')}</label>}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="data-out">
+                            <div className="requests-total">
+                                <img src={RequestsOut} alt="data out" />
+                                <span className="requests-data">
+                                    <label className="requests-title-out">Data out</label>
+                                    {usageData && (
+                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
+                                    )}
+                                </span>
+                            </div>
+                            <div className="total-messages">
+                                <div className="total-messages-out">
+                                    <img src={TotalMsgIcon} alt="data out" />
+                                    <span className="requests-data">
+                                        <label className="requests-title-in">Total Events</label>
+                                        {usageData && (
+                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
+                                        )}
+                                    </span>
+                                </div>
+                                <div className="total-messages-out">
+                                    <img src={PriceIcon} alt="data out" />
+                                    <span className="requests-data">
+                                        <label className="requests-title-in">Price Per Event</label>
+                                        {usageData && <label className="total-value">${usageData?.pricePerGBOut?.toFixed(2).toLocaleString('en-US')}</label>}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div className="cloud-provider">
                         <span>
                             <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
                         </span>
-                        <Divider type="vertical" />
                         <span>
                             <label className="cloud-provider-label">Region: </label> <img src={getRegionImage()} alt="region" />
                             <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
                         </span>
-                    </div>
-                    <Divider />
-                    <div className="total-in-out">
-                        <div className="requests-total">
-                            <img src={TotalRequests} alt="TotalRequests" />
-                            <span className="requests-data">
-                                <label className="requests-title">Total requests</label>
-                                {usageData && <label className="requests-value">{getTotalEvents().toLocaleString('en-US')}</label>}
-                            </span>
-                        </div>
-                        <div className="divider"></div>
-                        <div className="requests-total"></div>
-                    </div>
-
-                    <Divider />
-                    <div className="total-in-out">
-                        <div className="requests-total">
-                            <img src={RequestsIn} alt="data in" />
-                            <span className="requests-data">
-                                <label className="requests-title-in">Data in</label>
-                                {usageData && <label className="requests-value">{convertBytesToGb(usageData?.data_in_events)?.toLocaleString('en-US')}Gb</label>}{' '}
-                            </span>
-                        </div>
-                        <Divider type="vertical" />
-                        <div className="requests-total">
-                            <img src={RequestsOut} alt="data out" />
-                            <span className="requests-data">
-                                <label className="requests-title-out">Data out</label>
-                                {usageData && <label className="requests-value">{convertBytesToGb(usageData?.data_out_events)?.toLocaleString('en-US')}Gb</label>}{' '}
-                            </span>
-                        </div>
                     </div>
                 </div>
                 <div className="total-payment">
@@ -192,8 +231,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Consumed events</label>
-                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                    <label className="request-type">Consumed</label>
+                                    <label className="request-description">The total number of consumed events.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.consumed_events?.toLocaleString('en-US')}</label>
@@ -206,8 +245,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Redelivery events</label>
-                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                    <label className="request-type">Redelivered</label>
+                                    <label className="request-description">The total number of redelivered events.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.redelivery_events?.toLocaleString('en-US')}</label>
@@ -220,8 +259,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Storage tiering events</label>
-                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                    <label className="request-type">Storage tiering</label>
+                                    <label className="request-description">The total number of events migrated using storage tiering.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.storage_tiering_events?.toLocaleString('en-US')}</label>
@@ -234,8 +273,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Dead Letter retransmit events</label>
-                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                    <label className="request-type">Dead-letter events retrieval</label>
+                                    <label className="request-description">The total number of events retransmitted from Dead-Letter Stations.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.dls_retransmit_events?.toLocaleString('en-US')}</label>
@@ -252,8 +291,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Data in events</label>
-                                    <label className="request-description">Contrary to popular belief, Lorem Ipsum</label>
+                                    <label className="request-type">Data in</label>
+                                    <label className="request-description">The total number of produced events.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.data_in_events?.toLocaleString('en-US')}</label>
