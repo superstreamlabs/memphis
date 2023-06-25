@@ -93,10 +93,12 @@ function Users() {
 
             if (userData.user_type === 'management') {
                 updatedUserData.management_users = [...updatedUserData.management_users, userData];
+                setTableType(`Management (${updatedUserData?.management_users?.length || 0})`);
             }
 
             if (userData.user_type === 'application') {
                 updatedUserData.application_users = [...updatedUserData.application_users, userData];
+                setTableType(`Client (${updatedUserData?.application_users?.length || 0})`);
             }
             return updatedUserData;
         });
@@ -487,7 +489,7 @@ function Users() {
                         <label>Enter user details to get started</label>
                     </div>
                 }
-                height="550px"
+                height="555px"
                 width="450px"
                 rBtnText="Create"
                 lBtnText="Cancel"
