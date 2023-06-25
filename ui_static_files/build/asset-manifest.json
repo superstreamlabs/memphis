@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.457959b3.css",
-    "main.js": "/static/js/main.36470e18.js",
+    "main.css": "/static/css/main.28caf0b0.css",
+    "main.js": "/static/js/main.2ca7a973.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -184,8 +184,9 @@
     "static/media/file_download.svg": "/static/media/file_download.7010ceaf1a68c3e0941959b6f558ee5b.svg",
     "static/media/deadLetter.svg": "/static/media/deadLetter.0806dd1e9dce011b6b909e31634b0311.svg",
     "static/media/errorindication.svg": "/static/media/errorindication.6f6e388f5a1f899e9d6c810addcaf2d9.svg",
-    "static/media/totalMsgIcon.svg": "/static/media/totalMsgIcon.6915a97cf4f9c4b6b9113182f34576d2.svg",
+    "static/media/totalMsgIcon.svg": "/static/media/totalMsgIcon.675a3a05c808afa5ef84099f1830c3f8.svg",
     "static/media/purgeWrapperIcon.svg": "/static/media/purgeWrapperIcon.c7fe42fb7489dae37e6971645954a1d2.svg",
+    "static/media/priceIcon.svg": "/static/media/priceIcon.54c9dbb4a5b0d1d1cf0128f2c3014575.svg",
     "static/media/logsIcon.svg": "/static/media/logsIcon.bb54b7c67fdffffb0f8759b862733302.svg",
     "static/media/purge.svg": "/static/media/purge.138eb15dd4ab408a29c28c77b2616b8e.svg",
     "static/media/consumeLagIcon.svg": "/static/media/consumeLagIcon.67333d12e2fa8213ea1d0231a1d9f170.svg",
@@ -201,7 +202,6 @@
     "static/media/storage.svg": "/static/media/storage.6a918fd2ccba4582d4b45da508962d21.svg",
     "static/media/grayAppUserIcon.svg": "/static/media/grayAppUserIcon.9401d63d3a38a3310942a1db6bb09bf1.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
-    "static/media/totalRequests.svg": "/static/media/totalRequests.617d730f9641521d803e243a35216bba.svg",
     "static/media/journey.svg": "/static/media/journey.d33d5d460049fb64a1c3b972f2b5c965.svg",
     "static/media/awaitingIcon.svg": "/static/media/awaitingIcon.59904187bbec884701238d6235024deb.svg",
     "static/media/clusterConfGray.svg": "/static/media/clusterConfGray.d6689ce49c492c73ab1f86759fbfbdf1.svg",
@@ -273,7 +273,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.457959b3.css",
-    "static/js/main.36470e18.js"
+    "static/css/main.28caf0b0.css",
+    "static/js/main.2ca7a973.js"
   ]
 }
