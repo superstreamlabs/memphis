@@ -12,15 +12,12 @@
 
 import './style.scss';
 
-import React, { useContext, useState } from 'react';
-import { Badge, Collapse, Divider, Popover } from 'antd';
+import { KeyboardArrowUpRounded } from '@material-ui/icons';
+import React, { useState } from 'react';
+import { Badge, Divider } from 'antd';
 
-import CollapseArrow from '../../../assets/images/collapseArrow.svg';
 import stationsIconActive from '../../../assets/images/stationsIconActive.svg';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
-
-import { Context } from '../../../hooks/store';
-import { KeyboardArrowUpRounded } from '@material-ui/icons';
 
 const ExpandIcon = ({ isActive }) => <KeyboardArrowUpRounded className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} />;
 
