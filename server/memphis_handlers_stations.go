@@ -2179,7 +2179,6 @@ func (s *Server) RemoveOldStations() {
 			s.Errorf("[tenant: %v]RemoveOldStations: at removeStationResources: %v", station.TenantName, err.Error())
 			return
 		}
-
 	}
 
 	err = db.RemoveDeletedStations()
@@ -2187,5 +2186,4 @@ func (s *Server) RemoveOldStations() {
 		s.Warnf("RemoveOldStations: at RemoveDeletedStations: %v", err.Error())
 		return
 	}
-
 }
