@@ -192,7 +192,10 @@ function Requests() {
                             <p className="total-ammount">Total Payment</p>
                             <p className="next-billing">{displayMonth && genetrateSentence()}</p>
                         </span>
-                        <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
+                        <span className="price-val-star">
+                            <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
+                            <p className="pricing-disclaimer">*</p>
+                        </span>
                     </div>
                     <Divider />
                     <span className="billing-item">
@@ -213,6 +216,9 @@ function Requests() {
                     <span className="billing-item">
                         <p className="item">Total price</p>
                         <p className="ammount">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</p>
+                    </span>
+                    <span className="billing-item">
+                        <p className="pricing-disclaimer">*Please note that the pricing is not final</p>
                     </span>
                 </div>
             </div>

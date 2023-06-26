@@ -65,7 +65,7 @@ function SideBar() {
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
-    const [popoverOpenSupport, setPopoverOpenSupport] = useState(true);
+    const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
