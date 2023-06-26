@@ -737,6 +737,8 @@ func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 	if err != nil {
 		return err
 	}
+
+	// *** added by Memphis
 	if configuration.USER_PASS_BASED_AUTH {
 		if !reload {
 			tempOpts := *o
@@ -761,6 +763,7 @@ func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 		m["accounts"] = p["accounts"]
 		m["authorization"] = p["authorization"]
 	}
+	// added by Memphis ***
 
 	// Collect all errors and warnings and report them all together.
 	errors := make([]error, 0)
