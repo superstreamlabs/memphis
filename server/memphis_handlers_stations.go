@@ -2172,20 +2172,15 @@ func (s *Server) RemoveOldStations() error {
 		return err
 	}
 
-	var stationsName []string
 	for _, station := range stations {
 		err = removeStationResources(s, station, true)
 		if err != nil {
 			return err
 		}
 
-		if station.TenantName != conf.GlobalAccountName {
-			station.TenantName = strings.ToLower(station.TenantName)
-		}
-		stationsName = append(stationsName, station.Name)
 	}
 
-	err = db.DeleteStationsByNamesAndIsDeleted(stationsName)
+	err = db.RemoveDeletedStations()
 	if err != nil {
 		return err
 	}

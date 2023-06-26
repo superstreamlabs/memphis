@@ -1731,7 +1731,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	return nil
 }
 
-func DeleteStationsByNamesAndIsDeleted(stationNames []string) error {
+func RemoveDeletedStations() error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1739,15 +1739,13 @@ func DeleteStationsByNamesAndIsDeleted(stationNames []string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM stations
-	WHERE name = ANY($1)
-	AND is_deleted = true`
-	stmt, err := conn.Conn().Prepare(ctx, "delete_stations_by_names_and_is_deleted", query)
+	query := `DELETE FROM stations WHERE is_deleted = true`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_deleted_stations", query)
 	if err != nil {
 		return err
 	}
 
-	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames)
+	_, err = conn.Conn().Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}
