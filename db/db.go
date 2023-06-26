@@ -4440,7 +4440,7 @@ func EditAvatar(username string, avatarId int, tenantName string) error {
 	return nil
 }
 
-func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
+func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4454,7 +4454,43 @@ func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1
 	`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	defer rows.Close()
+	userList, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredUser])
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	if len(userList) == 0 {
+		return []models.FilteredUser{}, nil
+	}
+	return userList, nil
+}
+
+func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	defer conn.Release()
+	query := `
+	SELECT DISTINCT u.username
+	FROM users AS u
+	JOIN schema_versions AS s ON u.id = s.created_by
+	WHERE s.tenant_name=$1
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
@@ -4756,6 +4792,68 @@ func GetAllUsedTags(tenantName string) ([]models.Tag, error) {
 	defer conn.Release()
 	query := `SELECT * FROM tags WHERE (ARRAY_LENGTH(schemas, 1) > 0 OR ARRAY_LENGTH(stations, 1) > 0 OR ARRAY_LENGTH(users, 1) > 0) AND tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_tags", query)
+	if err != nil {
+		return nil, err
+	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
+	}
+	return tags, nil
+}
+
+func GetAllUsedStationsTags(tenantName string) ([]models.Tag, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE (ARRAY_LENGTH(stations, 1) > 0) AND tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_stations_tags", query)
+	if err != nil {
+		return nil, err
+	}
+	if tenantName != conf.GlobalAccountName {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
+	}
+	return tags, nil
+}
+
+func GetAllUsedSchemasTags(tenantName string) ([]models.Tag, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE (ARRAY_LENGTH(schemas, 1) > 0) AND tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_schemas_tags", query)
 	if err != nil {
 		return nil, err
 	}
