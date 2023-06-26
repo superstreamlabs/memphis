@@ -347,16 +347,16 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	err = EncryptOldUnencryptedValues()
 	if err != nil {
-		err = fmt.Errorf("Failed encrypt old unencrypted values: %v", err.Error())
+		err = fmt.Errorf("failed encrypt old unencrypted values: %v", err.Error())
 		return nil, db.MetadataStorage{}, err
 	}
 
-	gacc, memphisOpts, err := GetMemphisOpts(*opts, false)
+	opts, err = GetMemphisOpts(opts, false)
 	if err != nil {
+		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
 		return nil, db.MetadataStorage{}, err
 	}
-	*opts = memphisOpts
-	// added by Memphis **
+	// added by Memphis ***
 
 	setBaselineOptions(opts)
 
@@ -425,12 +425,6 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		leafNodeEnabled:    opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0,
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
-	// ** added by Memphis
-	if configuration.USER_PASS_BASED_AUTH {
-		gacc.srv = s
-		s.gacc = gacc
-	}
-	// added by Memphis **
 
 	// Fill up the maximum in flight syncRequests for this server.
 	// Used in JetStream catchup semantics.
@@ -783,7 +777,36 @@ func (s *Server) configureAccounts() error {
 	// Create the global account.
 	if s.gacc == nil {
 		s.gacc = NewAccount(globalAccountName)
-		s.registerAccountNoLock(s.gacc)
+		// *** added by Memphis
+		s.gacc.jsLimits = map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}
+		globalServicesExport := map[string]*serviceExport{}
+		for _, subj := range memphisServices {
+			se := &serviceExport{
+				acc:        s.gacc,
+				latency:    &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj},
+				respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD,
+			}
+			globalServicesExport[subj] = se
+		}
+
+		globalStreamsExport := map[string]*streamExport{}
+		for _, subj := range memphisSubjects {
+			ea := streamExport{}
+			setExportAuth(&ea.exportAuth, subj, []*Account{}, 0)
+			globalStreamsExport[subj] = &ea
+		}
+
+		s.gacc.exports = exportMap{
+			services: globalServicesExport,
+			streams:  globalStreamsExport,
+		}
+
+		a := s.registerAccountNoLock(s.gacc)
+
+		if a != nil {
+			s.gacc = a
+		}
+		// added by Memphis ***
 	}
 
 	opts := s.opts
@@ -796,6 +819,40 @@ func (s *Server) configureAccounts() error {
 			a = s.gacc
 		} else {
 			a = acc.shallowCopy()
+			// *** added by Memphis
+			if a.Name != DEFAULT_SYSTEM_ACCOUNT {
+				seList := map[string]*serviceImport{}
+				for _, subj := range memphisServices {
+					se := s.gacc.exports.services[subj]
+					seList[subj] = &serviceImport{
+						acc:    s.gacc,
+						claim:  nil,
+						tr:     nil,
+						ts:     0,
+						from:   subj,
+						to:     subj,
+						usePub: true,
+						se:     se,
+					}
+				}
+				siList := []*streamImport{}
+				for _, subj := range memphisSubjects {
+					siList = append(siList, &streamImport{
+						acc:    s.gacc,
+						claim:  nil,
+						tr:     nil,
+						rtr:    nil,
+						from:   subj,
+						to:     subj,
+						usePub: true,
+					})
+				}
+				a.imports = importMap{
+					services: seList,
+					streams:  siList,
+				}
+			}
+			// added by Memphis ***
 		}
 		if acc.hasMappings() {
 			// For now just move and wipe from opts.Accounts version.
@@ -1325,14 +1382,6 @@ func (s *Server) setSystemAccount(acc *Account) error {
 
 	// Send out statsz updates periodically.
 	s.wrapChk(s.startStatszTimer)()
-	// ** added by Memphis
-	sysUser := &User{
-		Username: "$SYS",
-		Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD,
-		Account:  acc,
-	}
-	s.users[sysUser.Username] = sysUser
-	// added by Memphis **
 
 	// If we have existing accounts make sure we enable account tracking.
 	s.mu.Lock()

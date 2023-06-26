@@ -895,13 +895,15 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	if FlagSnapshot != nil {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
+
 	// ** added by Memphis
-	_, memphisOpts, err := GetMemphisOpts(*newOpts, true)
+	newOpts, err := GetMemphisOpts(newOpts, true)
 	if err != nil {
+		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
 		return err
 	}
-	*newOpts = memphisOpts
 	// added by Memphis **
+
 	setBaselineOptions(newOpts)
 
 	// setBaselineOptions sets Port to 0 if set to -1 (RANDOM port)
@@ -937,13 +939,6 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	s.configTime = time.Now().UTC()
 	s.updateVarzConfigReloadableFields(s.varz)
 	s.mu.Unlock()
-	// ** added by Memphis
-	if !s.gacc.JetStreamEnabled() {
-		if err := s.gacc.EnableJetStream(map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}); err != nil {
-			return err
-		}
-	}
-	// added by Memphis **
 	return nil
 }
 func applyBoolFlags(newOpts, flagOpts *Options) {
@@ -1691,9 +1686,8 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
-		// ** removed by memphis
-		// s.gacc = nil
-		// removed by memphis **
+
+		s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()
 		s.mu.Unlock()
