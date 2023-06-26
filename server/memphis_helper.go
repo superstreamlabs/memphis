@@ -1229,7 +1229,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 }
 
 func generateRandomPassword(length int) string {
-	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
+	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$"
 	charsetLength := big.NewInt(int64(len(allowedPasswordChars)))
 	password := make([]byte, length)
 
@@ -1266,7 +1266,7 @@ func generateJSONString(authorizationUsers []UserConfig, accounts map[string]Acc
 		Accounts:      accounts,
 	}
 
-	jsonString, err := json.Marshal(data)
+	jsonString, err := json.MarshalIndent(data, " ", "")
 	if err != nil {
 		return "", err
 	}
@@ -1314,6 +1314,10 @@ func getAccountsAndUsersString() (string, error) {
 		if err != nil {
 			return "", err
 		}
+		if tName == globalAccountName {
+			authorizationUsers = append(authorizationUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			continue
+		}
 		if usrMap, ok := tenantsToUsers[tName]; !ok {
 			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
 		} else {
@@ -1321,9 +1325,16 @@ func getAccountsAndUsersString() (string, error) {
 		}
 	}
 	for _, t := range tenants {
-		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+		decryptedUserPassword, err := DecryptAES(decriptionKey, t.InternalWSPass)
+		if err != nil {
+			return "", err
+		}
+		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
-			usrsList = append(usrsList, usrMap...)
+			for _, usr := range usrMap {
+				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
+				usrsList = append(usrsList, usrChangeName)
+			}
 		}
 		accounts[t.Name] = AccountConfig{Jetstream: boolPtr(true), Users: usrsList}
 	}

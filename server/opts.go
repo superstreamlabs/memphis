@@ -745,7 +745,10 @@ func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 			for k, v := range m {
 				tempOpts.processConfigFileLine(k, v, &tempErrors, &tempWarnings)
 			}
-			upsertAccountsAndUsers(tempOpts.Accounts, tempOpts.Users)
+			err := upsertAccountsAndUsers(tempOpts.Accounts, tempOpts.Users)
+			if err != nil {
+				return err
+			}
 		}
 		accountsString, err := getAccountsAndUsersString()
 		if err != nil {
