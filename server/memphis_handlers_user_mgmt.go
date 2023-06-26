@@ -163,12 +163,12 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	stations, err := db.GetAllStationsDetailsPerTenant(tenantName)
+	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
-	err = db.RemoveStationsByTenant(tenantName)
+	users, err := db.GetApplicationUsersByTenantName(tenantName)
 	if err != nil {
 		return err
 	}
@@ -188,18 +188,22 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	for _, station := range stations {
-		stationName := strings.ToLower(station.Name)
-		sName, err := StationNameFromStr(stationName)
-		if err != nil {
-			return err
-		}
-
-		err = serv.RemoveStream(tenantName, sName.Intern())
+	err = serv.memphisPurgeResourcesAccount(tenantName)
+	if err != nil {
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			serv.Errorf("Failed deleting account %s - %s", tenantName, err.Error())
 			return err
 		}
+	}
 
+	for _, user := range users {
+		if user.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
+			// send signal to reload config
+			err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
