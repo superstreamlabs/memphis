@@ -1229,7 +1229,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 }
 
 func generateRandomPassword(length int) string {
-	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+,.?/:;{}[]~"
+	allowedPasswordChars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$"
 	charsetLength := big.NewInt(int64(len(allowedPasswordChars)))
 	password := make([]byte, length)
 
@@ -1266,7 +1266,7 @@ func generateJSONString(authorizationUsers []UserConfig, accounts map[string]Acc
 		Accounts:      accounts,
 	}
 
-	jsonString, err := json.Marshal(data)
+	jsonString, err := json.MarshalIndent(data, " ", "")
 	if err != nil {
 		return "", err
 	}
@@ -1313,6 +1313,10 @@ func getAccountsAndUsersString() (string, error) {
 		decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
 		if err != nil {
 			return "", err
+		}
+		if tName == globalAccountName {
+			authorizationUsers = append(authorizationUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+			continue
 		}
 		if usrMap, ok := tenantsToUsers[tName]; !ok {
 			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}

@@ -104,6 +104,11 @@ func (s *Server) ListenForConfigReloadEvents() error {
 			if err != nil {
 				s.Errorf("Failed reloading: %v", err.Error())
 			}
+			// TODO: remove
+			err = s.Reload()
+			if err != nil {
+				s.Errorf("Failed reloading: %v", err.Error())
+			}
 		}(copyBytes(msg))
 	})
 	if err != nil {
