@@ -125,41 +125,57 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
-        try {
-            (async () => {
+        const subscribeToOverviewData = async () => {
+            try {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+
                 if (rawBrokerName) {
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                    listenForUpdates();
                 }
-            })();
-        } catch (err) {
-            return;
-        }
-        setTimeout(async () => {
-            if (sub) {
-                (async () => {
+            } catch (err) {
+                console.error('Error subscribing to overview data:', err);
+            }
+        };
+
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         arrangeData(data);
                     }
-                })();
+                }
+            } catch (err) {
+                console.error('Error receiving overview data updates:', err);
             }
-        }, 1000);
+        };
+
+        subscribeToOverviewData();
+
         return () => {
-            sub?.unsubscribe();
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from overview data:', err);
+                }
+            }
         };
     }, [state.socket]);
 
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
+
     let host =
         localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
             ? 'localhost'
             : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
             ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
             : 'memphis.memphis.svc.cluster.local';
+
     return (
         <div className="overview-container">
             {isLoading && (

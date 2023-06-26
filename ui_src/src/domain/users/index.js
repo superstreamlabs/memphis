@@ -500,8 +500,12 @@ function Users() {
                 lBtnText="Cancel"
                 lBtnClick={() => {
                     addUserModalFlip(false);
+                    setCreateUserLoader(false);
                 }}
-                clickOutside={() => addUserModalFlip(false)}
+                clickOutside={() => {
+                    setCreateUserLoader(false);
+                    addUserModalFlip(false);
+                }}
                 rBtnClick={() => {
                     setCreateUserLoader(true);
                     createUserRef.current();
@@ -509,7 +513,7 @@ function Users() {
                 isLoading={createUserLoader}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} />
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
             </Modal>
             <Modal
                 header="User connection details"

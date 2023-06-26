@@ -24,7 +24,7 @@ import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
 
-const CreateUserDetails = ({ createUserRef, closeModal }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
@@ -79,20 +79,25 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
     };
 
     const onFinish = async () => {
-        const fieldsValue = await creationForm.validateFields();
-        if (fieldsValue?.errorFields) {
-            return;
-        } else {
-            if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
-                fieldsValue['password'] = fieldsValue['generatedPassword'];
-            }
-            try {
-                const bodyRequest = fieldsValue;
-                const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
-                if (data) {
-                    closeModal(data);
+        try {
+            const fieldsValue = await creationForm.validateFields();
+            if (fieldsValue?.errorFields) {
+                handleLoader(false);
+                return;
+            } else {
+                if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
+                    fieldsValue['password'] = fieldsValue['generatedPassword'];
                 }
-            } catch (error) {}
+                try {
+                    const bodyRequest = fieldsValue;
+                    const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
+                    if (data) {
+                        closeModal(data);
+                    }
+                } catch (error) {}
+            }
+        } catch (error) {
+            handleLoader(false);
         }
     };
 
