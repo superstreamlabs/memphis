@@ -169,6 +169,11 @@ func main() {
 	fs := flag.NewFlagSet(exe, flag.ExitOnError)
 	fs.Usage = usage
 
+	metadataDb, err := server.InitializeMetadataStorage()
+	if err != nil {
+		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
+	}
+
 	// Configure the options from the flags/config file
 	opts, err := server.ConfigureOptions(fs, os.Args[1:],
 		server.PrintServerAndExit,
@@ -182,7 +187,7 @@ func main() {
 	}
 
 	// Create the server with appropriate options.
-	s, metadataDb, err := server.NewServer(opts)
+	s, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}

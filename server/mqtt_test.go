@@ -313,7 +313,7 @@ func testMQTTRunServer(t testing.TB, o *Options) *Server {
 	if o.StoreDir == _EMPTY_ {
 		o.StoreDir = t.TempDir()
 	}
-	s, _, err := NewServer(o)
+	s, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -369,7 +369,7 @@ func TestMQTTServerNameRequired(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error processing config file: %v", err)
 	}
-	if _, _, err := NewServer(o); err == nil || err.Error() != errMQTTServerNameMustBeSet.Error() {
+	if _, err := NewServer(o); err == nil || err.Error() != errMQTTServerNameMustBeSet.Error() {
 		t.Fatalf("Expected error about requiring server name to be set, got %v", err)
 	}
 }
@@ -389,7 +389,7 @@ func TestMQTTStandaloneRequiresJetStream(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error processing config file: %v", err)
 	}
-	if _, _, err := NewServer(o); err == nil || err.Error() != errMQTTStandaloneNeedsJetStream.Error() {
+	if _, err := NewServer(o); err == nil || err.Error() != errMQTTStandaloneNeedsJetStream.Error() {
 		t.Fatalf("Expected error about requiring JetStream in standalone mode, got %v", err)
 	}
 }
@@ -609,7 +609,7 @@ func TestMQTTStart(t *testing.T) {
 	// Check failure to start due to port in use
 	o2 := testMQTTDefaultOptions()
 	o2.MQTT.Port = o.MQTT.Port
-	s2, _, err := NewServer(o2)
+	s2, err := NewServer(o2)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -1462,7 +1462,7 @@ func TestMQTTNoAuthUserValidation(t *testing.T) {
 	o.Users = []*User{{Username: "user", Password: "pwd"}}
 	// Should fail because it is not part of o.Users.
 	o.MQTT.NoAuthUser = "notfound"
-	if _, _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
+	if _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
 		t.Fatalf("Expected error saying not present as user, got %v", err)
 	}
 
@@ -1470,7 +1470,7 @@ func TestMQTTNoAuthUserValidation(t *testing.T) {
 	// of o.MQTT.NoAuthUser
 	o.NoAuthUser = "user"
 	o.MQTT.NoAuthUser = "notfound"
-	if _, _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
+	if _, err := NewServer(o); err == nil || !strings.Contains(err.Error(), "not present as user") {
 		t.Fatalf("Expected error saying not present as user, got %v", err)
 	}
 }

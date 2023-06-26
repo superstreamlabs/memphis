@@ -1585,7 +1585,7 @@ func TestConfigCheck(t *testing.T) {
 		opts := &Options{
 			CheckConfig: true,
 		}
-		return opts.ProcessConfigFile(config)
+		return opts.ProcessConfigFile(config, false)
 	}
 
 	checkErr := func(t *testing.T, err, expectedErr error) {
@@ -1639,7 +1639,7 @@ func TestConfigCheckIncludes(t *testing.T) {
 	opts := &Options{
 		CheckConfig: true,
 	}
-	err := opts.ProcessConfigFile("./configs/include_conf_check_a.conf")
+	err := opts.ProcessConfigFile("./configs/include_conf_check_a.conf", false)
 	if err != nil {
 		t.Errorf("Unexpected error processing include files with configuration check enabled: %v", err)
 	}
@@ -1647,7 +1647,7 @@ func TestConfigCheckIncludes(t *testing.T) {
 	opts = &Options{
 		CheckConfig: true,
 	}
-	err = opts.ProcessConfigFile("./configs/include_bad_conf_check_a.conf")
+	err = opts.ProcessConfigFile("./configs/include_bad_conf_check_a.conf", false)
 	if err == nil {
 		t.Errorf("Expected error processing include files with configuration check enabled: %v", err)
 	}
@@ -1661,7 +1661,7 @@ func TestConfigCheckMultipleErrors(t *testing.T) {
 	opts := &Options{
 		CheckConfig: true,
 	}
-	err := opts.ProcessConfigFile("./configs/multiple_errors.conf")
+	err := opts.ProcessConfigFile("./configs/multiple_errors.conf", false)
 	if err == nil {
 		t.Errorf("Expected error processing config files with multiple errors check enabled: %v", err)
 	}
