@@ -180,10 +180,7 @@ func (s *Server) KillZombieResources() {
 		s.Debugf("Killing Zombie resources iteration")
 		if firstIteration {
 			s.removeStaleStations()
-			err := s.RemoveOldStations()
-			if err != nil {
-				serv.Errorf("KillZombieResources: RemoveOldStations: %v", err.Error())
-			}
+			s.RemoveOldStations()
 		}
 		killFunc(s)
 
