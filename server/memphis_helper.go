@@ -1159,7 +1159,7 @@ func readMIMEHeader(tp *textproto.Reader) (textproto.MIMEHeader, error) {
 	}
 }
 
-func GetMemphisOpts(opts *Options, reload bool) (*Options, error) {
+func GetMemphisOpts(opts *Options) (*Options, error) {
 	_, configs, err := db.GetAllConfigurations()
 	if err != nil {
 		return nil, err
@@ -1221,4 +1221,149 @@ func generateRandomPassword(length int) string {
 	}
 
 	return string(password)
+}
+
+type UserConfig struct {
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
+type AccountConfig struct {
+	Jetstream *bool        `json:"jetstream,omitempty"`
+	Users     []UserConfig `json:"users,omitempty"`
+}
+
+type Authorization struct {
+	Users []UserConfig `json:"users,omitempty"`
+}
+
+type Data struct {
+	Authorization Authorization            `json:"authorization,omitempty"`
+	Accounts      map[string]AccountConfig `json:"accounts,omitempty"`
+}
+
+func generateJSONString(authorizationUsers []UserConfig, accounts map[string]AccountConfig) (string, error) {
+	data := Data{
+		Authorization: Authorization{Users: authorizationUsers},
+		Accounts:      accounts,
+	}
+
+	jsonString, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+	var dataMap map[string]interface{}
+	err = json.Unmarshal(jsonString, &dataMap)
+	if err != nil {
+		panic(err)
+	}
+	newStr := string(jsonString)[1 : len(string(jsonString))-1]
+	return newStr, nil
+}
+
+func getAccountsAndUsersString() (string, error) {
+	decriptionKey := getAESKey()
+	users, err := db.GetAllUsersByType([]string{"application"})
+	if err != nil {
+		return "", err
+	}
+	tenants, err := db.GetAllTenantsWithoutGlobal()
+	if err != nil {
+		return "", err
+	}
+	authorizationUsers := []UserConfig{{User: "$G", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	if shouldCreateRootUserforGlobalAcc {
+		_, globalT, err := db.GetGlobalTenant()
+		if err != nil {
+			return "", err
+		}
+		decryptedPass, err := DecryptAES(decriptionKey, globalT.InternalWSPass)
+		if err != nil {
+			return "", err
+		}
+		authorizationUsers = append(authorizationUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
+		authorizationUsers = append(authorizationUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
+	}
+	accounts := map[string]AccountConfig{"$SYS": {
+		Users: []UserConfig{
+			{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
+		},
+	}}
+	tenantsToUsers := map[string][]UserConfig{}
+	for _, user := range users {
+		tName := user.TenantName
+		decryptedUserPassword, err := DecryptAES(decriptionKey, user.Password)
+		if err != nil {
+			return "", err
+		}
+		if usrMap, ok := tenantsToUsers[tName]; !ok {
+			tenantsToUsers[tName] = []UserConfig{{User: user.Username, Password: decryptedUserPassword}}
+		} else {
+			tenantsToUsers[tName] = append(usrMap, UserConfig{User: user.Username, Password: decryptedUserPassword})
+		}
+	}
+	for _, t := range tenants {
+		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+		if usrMap, ok := tenantsToUsers[t.Name]; ok {
+			usrsList = append(usrsList, usrMap...)
+		}
+		accounts[t.Name] = AccountConfig{Jetstream: boolPtr(true), Users: usrsList}
+	}
+
+	jsonString, err := generateJSONString(authorizationUsers, accounts)
+	if err != nil {
+		return "", err
+	}
+	return jsonString, nil
+}
+
+func boolPtr(val bool) *bool {
+	return &val
+}
+
+func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
+	if len(Accounts) > 0 {
+		tenantsToUpsert := []models.TenantForUpsert{}
+		for _, account := range Accounts {
+			name := account.GetName()
+			if account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+				name = strings.ToLower(name)
+				encryptedPass, err := EncryptAES([]byte(generateRandomPassword(12)))
+				if err != nil {
+					return err
+				}
+				tenantsToUpsert = append(tenantsToUpsert, models.TenantForUpsert{Name: name, InternalWSPass: encryptedPass})
+			}
+		}
+		err := db.UpsertBatchOfTenants(tenantsToUpsert)
+		if err != nil {
+			return err
+		}
+	}
+	if len(Users) > 0 {
+		usersToUpsert := []models.User{}
+		for _, user := range Users {
+			if user.Account.GetName() != DEFAULT_SYSTEM_ACCOUNT {
+				username := strings.ToLower(user.Username)
+				tenantName := strings.ToLower(user.Account.GetName())
+				newUser := models.User{
+					Username:   username,
+					Password:   user.Password,
+					UserType:   "application",
+					CreatedAt:  time.Now(),
+					AvatarId:   1,
+					FullName:   "",
+					TenantName: tenantName,
+				}
+				usersToUpsert = append(usersToUpsert, newUser)
+			}
+		}
+		if len(usersToUpsert) > 0 {
+			err := db.UpsertBatchOfUsers(usersToUpsert)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

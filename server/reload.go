@@ -897,7 +897,7 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	}
 
 	// ** added by Memphis
-	newOpts, err := GetMemphisOpts(newOpts, true)
+	newOpts, err := GetMemphisOpts(newOpts)
 	if err != nil {
 		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
 		return err

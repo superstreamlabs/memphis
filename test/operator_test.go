@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/jwt/v2"
 	"memphis/server"
+
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 )
@@ -67,12 +68,12 @@ func TestOperatorRestrictions(t *testing.T) {
 		t.Fatalf("Error processing config file: %v", err)
 	}
 	opts.NoSigs = true
-	if _, _, err := server.NewServer(opts); err != nil {
+	if _, err := server.NewServer(opts); err != nil {
 		t.Fatalf("Expected to create a server successfully")
 	}
 	// TrustedKeys get defined when processing from above, trying again with
 	// same opts should not work.
-	if _, _, err := server.NewServer(opts); err == nil {
+	if _, err := server.NewServer(opts); err == nil {
 		t.Fatalf("Expected an error with TrustedKeys defined")
 	}
 	// Must wipe and rebuild to succeed.
@@ -85,23 +86,23 @@ func TestOperatorRestrictions(t *testing.T) {
 
 	wipeOpts()
 	opts.Accounts = []*server.Account{{Name: "TEST"}}
-	if _, _, err := server.NewServer(opts); err == nil {
+	if _, err := server.NewServer(opts); err == nil {
 		t.Fatalf("Expected an error with Accounts defined")
 	}
 	wipeOpts()
 	opts.Users = []*server.User{{Username: "TEST"}}
-	if _, _, err := server.NewServer(opts); err == nil {
+	if _, err := server.NewServer(opts); err == nil {
 		t.Fatalf("Expected an error with Users defined")
 	}
 	wipeOpts()
 	opts.Nkeys = []*server.NkeyUser{{Nkey: "TEST"}}
-	if _, _, err := server.NewServer(opts); err == nil {
+	if _, err := server.NewServer(opts); err == nil {
 		t.Fatalf("Expected an error with Nkey Users defined")
 	}
 	wipeOpts()
 
 	opts.AccountResolver = nil
-	if _, _, err := server.NewServer(opts); err == nil {
+	if _, err := server.NewServer(opts); err == nil {
 		t.Fatalf("Expected an error without an AccountResolver defined")
 	}
 }
@@ -116,7 +117,7 @@ func TestOperatorConfig(t *testing.T) {
 	if len(opts.TrustedOperators) != 1 {
 		t.Fatalf("Expected to load the operator")
 	}
-	_, _, err = server.NewServer(opts)
+	_, err = server.NewServer(opts)
 	if err != nil {
 		t.Fatalf("Expected to create a server: %v", err)
 	}
@@ -135,7 +136,7 @@ func TestOperatorConfigInline(t *testing.T) {
 	if len(opts.TrustedOperators) != 1 {
 		t.Fatalf("Expected to load the operator")
 	}
-	_, _, err = server.NewServer(opts)
+	_, err = server.NewServer(opts)
 	if err != nil {
 		t.Fatalf("Expected to create a server: %v", err)
 	}

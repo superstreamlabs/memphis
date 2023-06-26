@@ -1348,7 +1348,7 @@ func TestPanic(t *testing.T) {
 func TestPingIntervalOld(t *testing.T) {
 	conf := createConfFile(t, []byte(`ping_interval: 5`))
 	opts := &Options{}
-	err := opts.ProcessConfigFile(conf)
+	err := opts.ProcessConfigFile(conf, false)
 	if err == nil {
 		t.Fatalf("expected an error")
 	}
@@ -1370,7 +1370,7 @@ func TestPingIntervalOld(t *testing.T) {
 func TestPingIntervalNew(t *testing.T) {
 	conf := createConfFile(t, []byte(`ping_interval: "5m"`))
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(conf); err != nil {
+	if err := opts.ProcessConfigFile(conf, false); err != nil {
 		t.Fatalf("expected no error")
 	}
 	if opts.PingInterval != 5*time.Minute {
@@ -1389,7 +1389,7 @@ func TestOptionsProcessConfigFile(t *testing.T) {
 		LogFile: logFileName,
 	}
 	configFileName := "./configs/test.conf"
-	if err := opts.ProcessConfigFile(configFileName); err != nil {
+	if err := opts.ProcessConfigFile(configFileName, false); err != nil {
 		t.Fatalf("Error processing config file: %v", err)
 	}
 	// Verify that values are as expected
@@ -2558,7 +2558,7 @@ func TestLargeMaxPayload(t *testing.T) {
 		max_pending = 50000
 	`))
 	o := LoadConfig(confFileName)
-	s, _, err := NewServer(o)
+	s, err := NewServer(o)
 	if err == nil || !strings.Contains(err.Error(), "cannot be higher") {
 		if s != nil {
 			s.Shutdown()
@@ -2577,7 +2577,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 
 	// Verify that we get an error because of unknown "streaming" field.
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(conf); err == nil || !strings.Contains(err.Error(), "streaming") {
+	if err := opts.ProcessConfigFile(conf, false); err == nil || !strings.Contains(err.Error(), "streaming") {
 		t.Fatal("Expected error, got none")
 	}
 
@@ -2585,7 +2585,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 	NoErrOnUnknownFields(true)
 	defer NoErrOnUnknownFields(false)
 
-	if err := opts.ProcessConfigFile(conf); err != nil {
+	if err := opts.ProcessConfigFile(conf, false); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if opts.Port != 1234 {
@@ -2602,7 +2602,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 			id: "me"
 		}
 	`))
-	if err := opts.ProcessConfigFile(conf); err == nil || !strings.Contains(err.Error(), "non_top_level") {
+	if err := opts.ProcessConfigFile(conf, false); err == nil || !strings.Contains(err.Error(), "non_top_level") {
 		t.Fatal("Expected error, got none")
 	}
 }
@@ -2891,7 +2891,7 @@ func TestNoAuthUserCode(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Received unexpected error %s", err)
 			}
-			s, _, err := NewServer(opts)
+			s, err := NewServer(opts)
 			if err != nil {
 				if !strings.HasPrefix(err.Error(), "no_auth_user") {
 					t.Fatalf("Received unexpected error %s", err)
@@ -2946,7 +2946,7 @@ func TestReadOperatorJWTSystemAccountMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
-	s, _, err := NewServer(opts)
+	s, err := NewServer(opts)
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
@@ -2961,7 +2961,7 @@ func TestReadOperatorJWTSystemAccountMismatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
-	s, _, err := NewServer(opts)
+	s, err := NewServer(opts)
 	if err == nil {
 		s.Shutdown()
 		t.Fatalf("Received no error")
@@ -2987,7 +2987,7 @@ func TestReadOperatorAssertVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
-	s, _, err := NewServer(opts)
+	s, err := NewServer(opts)
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
@@ -3011,7 +3011,7 @@ func TestReadOperatorAssertVersionFail(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Received unexpected error %s", err)
 	}
-	s, _, err := NewServer(opts)
+	s, err := NewServer(opts)
 	if err == nil {
 		s.Shutdown()
 		t.Fatalf("Received no error")
@@ -3152,7 +3152,7 @@ func TestResolverPinnedAccountsFail(t *testing.T) {
 	`
 
 	conf := createConfFile(t, []byte(fmt.Sprintf(cfgFmt, ojwt, "f")))
-	srv, _, err := NewServer(LoadConfig(conf))
+	srv, err := NewServer(LoadConfig(conf))
 	defer srv.Shutdown()
 	require_Error(t, err)
 	require_Contains(t, err.Error(), " is not a valid public account nkey")

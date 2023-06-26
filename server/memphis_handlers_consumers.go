@@ -452,6 +452,9 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 	consumers := make(map[string]map[string]models.DelayedCg, 0)
 	consumerNames := []string{}
 	for _, stream := range streams {
+		if strings.HasPrefix(stream.Config.Name, "$memphis") {
+			continue
+		}
 		offset := 0
 		requestSubject := fmt.Sprintf(JSApiConsumerListT, stream.Config.Name)
 		offsetReq := ApiPagedRequest{Offset: offset}

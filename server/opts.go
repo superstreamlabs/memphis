@@ -626,7 +626,7 @@ Available cipher suites include:
 // FIXME(dlc): A bit hacky
 func ProcessConfigFile(configFile string) (*Options, error) {
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(configFile); err != nil {
+	if err := opts.ProcessConfigFile(configFile, true); err != nil {
 		// If only warnings then continue and return the options.
 		if cerr, ok := err.(*processConfigErr); ok && len(cerr.Errors()) == 0 {
 			return opts, nil
@@ -728,7 +728,7 @@ func configureSystemAccount(o *Options, m map[string]interface{}) (retErr error)
 // achieve that with the non receiver ProcessConfigFile() version,
 // since one would not know after the call if "debug" was not present
 // or was present but set to false.
-func (o *Options) ProcessConfigFile(configFile string) error {
+func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 	o.ConfigFile = configFile
 	if configFile == _EMPTY_ {
 		return nil
@@ -737,6 +737,28 @@ func (o *Options) ProcessConfigFile(configFile string) error {
 	if err != nil {
 		return err
 	}
+	if configuration.USER_PASS_BASED_AUTH {
+		if !reload {
+			tempOpts := *o
+			tempErrors := make([]error, 0)
+			tempWarnings := make([]error, 0)
+			for k, v := range m {
+				tempOpts.processConfigFileLine(k, v, &tempErrors, &tempWarnings)
+			}
+			upsertAccountsAndUsers(tempOpts.Accounts, tempOpts.Users)
+		}
+		accountsString, err := getAccountsAndUsersString()
+		if err != nil {
+			return err
+		}
+		p, err := conf.ParsePedantic(accountsString)
+		if err != nil {
+			return err
+		}
+		m["accounts"] = p["accounts"]
+		m["authorization"] = p["authorization"]
+	}
+
 	// Collect all errors and warnings and report them all together.
 	errors := make([]error, 0)
 	warnings := make([]error, 0)
@@ -4925,7 +4947,7 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 	// Parse config if given
 	if configFile != _EMPTY_ {
 		// This will update the options with values from the config file.
-		err := opts.ProcessConfigFile(configFile)
+		err := opts.ProcessConfigFile(configFile, false)
 		if err != nil {
 			if opts.CheckConfig {
 				return nil, err

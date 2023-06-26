@@ -1167,7 +1167,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
-	serv.Noticef("[tenant: %v][user: %v] has loged in", user.TenantName, user.Username)
+	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
 
 	domain := ""
 	secure := false
