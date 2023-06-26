@@ -225,7 +225,7 @@ function Requests() {
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>
@@ -239,7 +239,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Redeliver} alt="Consumed" />
                                 </div>
@@ -253,7 +253,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Storage} alt="Storage" />
                                 </div>
@@ -267,7 +267,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={DeadLetter} alt="Consumed" />
                                 </div>
@@ -285,7 +285,7 @@ function Requests() {
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge green"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>

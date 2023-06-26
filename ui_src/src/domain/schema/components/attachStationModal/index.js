@@ -84,6 +84,11 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
 
     useEffect(() => {
         getAllStations();
+
+        return () => {
+            setAllStations([]);
+            setIsCheck([]);
+        };
     }, []);
 
     const attachToStation = async () => {

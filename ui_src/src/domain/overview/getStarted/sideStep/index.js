@@ -10,7 +10,7 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './style.scss';
 import GetStartedIcon from '../../../../assets/images/getStartedIcon.svg';
 import AppUserIcon from '../../../../assets/images/usersIconActive.svg';
@@ -25,24 +25,14 @@ import GrayConsumeDataImg from '../../../../assets/images/grayConsumeDataImg.svg
 import GrayfinishStep from '../../../../assets/images/grayFinish.svg';
 import CompletedStep from '../../../../assets/images/checkIcon.svg';
 
-const SideStep = (props) => {
-    const { stepNumber, stepName, currentStep, completedSteps, stepsDescription } = props;
-
-    const getDocLink = () => {
-        switch (stepNumber) {
-            case 1:
-                return 'https://docs.memphis.dev/memphis-new/dashboard-ui/stations';
-            case 2:
-                return 'https://docs.memphis.dev/memphis-new/dashboard-ui/users';
-            case 3:
-                return 'https://docs.memphis.dev/memphis-new/memphis/concepts/producer';
-            case 4:
-                return 'https://docs.memphis.dev/memphis-new/memphis/concepts/consumer';
-            default:
-                return;
-        }
+const Step = ({ stepNumber, stepName, currentStep, completedSteps, stepsDescription, onSideBarClick }) => {
+    const docLinks = {
+        1: 'https://docs.memphis.dev/memphis-new/dashboard-ui/stations',
+        2: 'https://docs.memphis.dev/memphis-new/dashboard-ui/users',
+        3: 'https://docs.memphis.dev/memphis-new/memphis/concepts/producer',
+        4: 'https://docs.memphis.dev/memphis-new/memphis/concepts/consumer'
     };
-    const getIcon = () => {
+    const getIcon = useMemo(() => {
         switch (stepNumber) {
             case 1:
                 return <img className="sidebar-image" src={GetStartedIcon} alt="getStartedIcon" />;
@@ -67,16 +57,16 @@ const SideStep = (props) => {
                     <img className="sidebar-image" src={GrayfinishStep} alt="getStartedIcon" />
                 );
             default:
-                return;
+                return null;
         }
-    };
+    }, [stepNumber, completedSteps]);
     return (
         <div
             className={completedSteps + 1 >= stepNumber ? 'side-step-container cursor-allowed' : 'side-step-container'}
-            onClick={() => completedSteps + 1 >= stepNumber && props.onSideBarClick(stepNumber)}
+            onClick={() => completedSteps + 1 >= stepNumber && onSideBarClick(stepNumber)}
         >
             <div className="side-step-header">
-                {getIcon()}
+                {getIcon}
                 <div className="step-name-completed">
                     <p className={currentStep === stepNumber ? 'step-name curr-step-name' : 'step-name'}>{stepName}</p>
                     {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed" />}
@@ -87,7 +77,7 @@ const SideStep = (props) => {
                     <p className={currentStep === stepNumber ? 'step-description curr-step-name' : 'step-description'}>
                         {stepsDescription}
                         {'. '}
-                        <a href={getDocLink()} target="_blank" rel="noopener noreferrer">
+                        <a href={docLinks[stepNumber]} target="_blank" rel="noopener noreferrer">
                             Learn more
                         </a>
                     </p>
@@ -96,4 +86,5 @@ const SideStep = (props) => {
         </div>
     );
 };
-export default SideStep;
+
+export default Step;

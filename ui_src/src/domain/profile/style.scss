@@ -99,7 +99,8 @@
             }
             .organization-id{
                 display: flex;
-                width: 70px;
+                width: fit-content;
+                padding: 0 5px;
                 font-size: 14px;
                 font-family: 'InterMedium';
                 align-items: flex-start;

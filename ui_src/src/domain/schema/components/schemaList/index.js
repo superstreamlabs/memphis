@@ -63,7 +63,7 @@ function SchemaList({ createNew }) {
 
     const onCheckedAll = (e) => {
         setIsCheckAll(!isCheckAll);
-        setIsCheck(state.schemaFilteredList.map((li) => li.name));
+        setIsCheck(state.schemaFilteredList?.map((li) => li.name));
         if (isCheckAll) {
             setIsCheck([]);
         }
