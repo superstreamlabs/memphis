@@ -1327,7 +1327,10 @@ func getAccountsAndUsersString() (string, error) {
 		}
 		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
-			usrsList = append(usrsList, usrMap...)
+			for _, usr := range usrMap {
+				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
+				usrsList = append(usrsList, usrChangeName)
+			}
 		}
 		accounts[t.Name] = AccountConfig{Jetstream: boolPtr(true), Users: usrsList}
 	}
