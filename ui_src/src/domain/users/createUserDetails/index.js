@@ -290,17 +290,26 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                     <p className="field-title">Type password*</p>
                                     <Form.Item
                                         name="password"
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message: 'Password can not be empty'
-                                            },
-                                            {
-                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-<>@#$%])[A-Za-z\d!?\-<>@#$%]{8,}$/,
-                                                message:
-                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character'
-                                            }
-                                        ]}
+                                        rules={
+                                            isCloud()
+                                                ? [
+                                                      {
+                                                          required: true,
+                                                          message: 'Password can not be empty'
+                                                      },
+                                                      {
+                                                          pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-<>@#$%])[A-Za-z\d!?\-<>@#$%]{8,}$/,
+                                                          message:
+                                                              'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character'
+                                                      }
+                                                  ]
+                                                : [
+                                                      {
+                                                          required: true,
+                                                          message: 'Password can not be empty'
+                                                      }
+                                                  ]
+                                        }
                                     >
                                         <Input
                                             placeholder="Type Password"

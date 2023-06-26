@@ -97,5 +97,6 @@ export const ApiEndpoints = {
     GET_BILLING_DETAILS: '/billing/getBill',
     RESEND_INVITATION: '/usermgmt/resendInvitation',
     REVOKED_INVITATION: '/usermgmt/revokeInvitation',
-    SIGN_OUT: '/usermgmt/signOut'
+    SIGN_OUT: '/usermgmt/signOut',
+    SEND_SUPPORT: '/usermgmt/sendSupportRequest'
 };
