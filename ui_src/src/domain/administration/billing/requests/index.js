@@ -123,9 +123,7 @@ function Requests() {
                                 <img src={RequestsIn} alt="data in" />
                                 <span className="requests-data">
                                     <label className="requests-title-in">Data in</label>
-                                    {usageData && (
-                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
-                                    )}
+                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -133,16 +131,17 @@ function Requests() {
                                     <img src={TotalMsgIcon} alt="data in" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
-                                        {usageData && (
-                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
-                                        )}
+
+                                        <label className="total-value">
+                                            {usageData ? formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US') : 0}
+                                        </label>
                                     </span>
                                 </div>
                                 <div className="total-messages-in">
                                     <img src={PriceIcon} alt="data in" />
                                     <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        <label className="requests-title-in">Price Per Gb</label>
+                                        <label className="total-value">${usageData && usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>
                                     </span>
                                 </div>
                             </div>
@@ -152,9 +151,9 @@ function Requests() {
                                 <img src={RequestsOut} alt="data out" />
                                 <span className="requests-data">
                                     <label className="requests-title-out">Data out</label>
-                                    {usageData && (
-                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
-                                    )}
+                                    <label className="data-gb">
+                                        {usageData && formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb
+                                    </label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -162,16 +161,16 @@ function Requests() {
                                     <img src={TotalMsgIcon} alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
-                                        {usageData && (
-                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
-                                        )}
+                                        <label className="total-value">
+                                            {usageData ? formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US') : 0}
+                                        </label>
                                     </span>
                                 </div>
                                 <div className="total-messages-out">
                                     <img src={PriceIcon} alt="data out" />
                                     <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        <label className="requests-title-in">Price Per Gb</label>
+                                        <label className="total-value">${usageData && usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>
                                     </span>
                                 </div>
                             </div>

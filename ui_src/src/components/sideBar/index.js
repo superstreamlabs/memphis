@@ -16,7 +16,6 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
-import Button from '../button';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
@@ -26,7 +25,6 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
-import redirectIcon from '../../assets/images/redirectIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
@@ -37,16 +35,16 @@ import integrationIcon from '../../assets/images/integrationIcon.svg';
 import integrationIconColor from '../../assets/images/integrationIconColor.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
 import supportIconColor from '../../assets/images/supportIconColor.svg';
-
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
+import { LATEST_RELEASE_URL } from '../../config';
 import { compareVersions, isCloud } from '../../services/valueConvertor';
 import Spinner from '../spinner';
+import Support from './support';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -57,7 +55,7 @@ const overlayStyles = {
 };
 const overlayStylesSupport = {
     borderRadius: '8px',
-    width: '350px',
+    width: '380px',
     padding: '15px',
     marginBottom: '10px'
 };
@@ -67,7 +65,7 @@ function SideBar() {
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
-    const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
+    const [popoverOpenSupport, setPopoverOpenSupport] = useState(true);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
@@ -126,46 +124,7 @@ function SideBar() {
             }, 1000);
         }
     };
-    const contentSupport = (
-        <div className="menu-content">
-            <div className="support-container">
-                <div className="support-image">
-                    <img src={supportIconColor} />
-                </div>
-                <p className="popover-header">Need Support?</p>
-                <label>We're here to help!</label>
-                <p className="support-content">If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
-                <div className="support-content">
-                    <p>
-                        Link to Documentation:{' '}
-                        <a href={DOC_URL} target="_blank" rel="noreferrer">
-                            Documentation <img src={redirectIcon} />
-                        </a>
-                    </p>
-                </div>
-                <div className="support-content">
-                    <p>
-                        Contact Email: <label>support@memphis.dev</label>
-                    </p>
-                </div>
-                <div className="close-button">
-                    <Button
-                        width="100%"
-                        height="32px"
-                        placeholder="Close"
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="14px"
-                        fontWeight="bold"
-                        onClick={() => {
-                            setPopoverOpenSupport(false);
-                        }}
-                    />
-                </div>
-            </div>
-        </div>
-    );
+
     const contentSetting = (
         <div className="menu-content">
             <div className="item-wrap-header">
@@ -345,7 +304,7 @@ function SideBar() {
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
                         placement="right"
-                        content={contentSupport}
+                        content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
