@@ -16,7 +16,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
+import Button from '../button';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
@@ -26,14 +26,13 @@ import schemaIconActive from '../../assets/images/schemaIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
+import redirectIcon from '../../assets/images/redirectIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
 import functionsIcon from '../../assets/images/functionsIcon.svg';
-import documentationIcon from '../../assets/images/documentIcon.svg';
-import documentationIconColor from '../../assets/images/documentIconColor.svg';
 import integrationIcon from '../../assets/images/integrationIcon.svg';
 import integrationIconColor from '../../assets/images/integrationIconColor.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
@@ -53,14 +52,22 @@ const overlayStyles = {
     borderRadius: '8px',
     width: '230px',
     paddingTop: '5px',
-    paddingBottom: '5px'
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
+const overlayStylesSupport = {
+    borderRadius: '8px',
+    width: '350px',
+    padding: '15px',
+    marginBottom: '10px'
 };
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
-    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
+    const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
@@ -119,8 +126,47 @@ function SideBar() {
             }, 1000);
         }
     };
-
-    const content = (
+    const contentSupport = (
+        <div className="menu-content">
+            <div className="support-container">
+                <div className="support-image">
+                    <img src={supportIconColor} />
+                </div>
+                <p className="popover-header">Need Support?</p>
+                <label>We're here to help!</label>
+                <p className="support-content">If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
+                <div className="support-content">
+                    <p>
+                        Link to Documentation:{' '}
+                        <a href={DOC_URL} target="_blank" rel="noreferrer">
+                            Documentation <img src={redirectIcon} />
+                        </a>
+                    </p>
+                </div>
+                <div className="support-content">
+                    <p>
+                        Contact Email: <label>support@memphis.dev</label>
+                    </p>
+                </div>
+                <div className="close-button">
+                    <Button
+                        width="100%"
+                        height="32px"
+                        placeholder="Close"
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="14px"
+                        fontWeight="bold"
+                        onClick={() => {
+                            setPopoverOpenSupport(false);
+                        }}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+    const contentSetting = (
         <div className="menu-content">
             <div className="item-wrap-header">
                 <span className="img-section">
@@ -146,7 +192,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(pathDomains.profile);
-                    setPopoverOpen(false);
+                    setPopoverOpenSetting(false);
                 }}
             >
                 <div className="item">
@@ -160,7 +206,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(`${pathDomains.administration}/integrations`);
-                    setPopoverOpen(false);
+                    setPopoverOpenSetting(false);
                 }}
             >
                 <div className="item">
@@ -175,7 +221,7 @@ function SideBar() {
                     className="item-wrap"
                     onClick={() => {
                         history.push(`${pathDomains.administration}/usage`);
-                        setPopoverOpen(false);
+                        setPopoverOpenSetting(false);
                     }}
                 >
                     <div className="item">
@@ -295,25 +341,43 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
-                {/* <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
-                    <label className="icon-name">Support</label>
-                </div> */}
-                <Link to={{ pathname: DOC_URL }} target="_blank">
+                {isCloud && (
+                    <Popover
+                        overlayInnerStyle={overlayStylesSupport}
+                        placement="right"
+                        content={contentSupport}
+                        trigger="click"
+                        onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
+                        open={popoverOpenSupport}
+                    >
+                        <div
+                            className="integration-icon-wrapper"
+                            onMouseEnter={() => setHoveredItem('support')}
+                            onMouseLeave={() => setHoveredItem('')}
+                            onClick={() => setPopoverOpenSupport(true)}
+                        >
+                            <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
+                            <label className="icon-name">Support</label>
+                        </div>
+                    </Popover>
+                )}
+
+                {/* <Link to={{ pathname: DOC_URL }} target="_blank">
                     <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
                         <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
                         <label className="icon-name">Docs</label>
                     </div>
-                </Link>
+                </Link> */}
+
                 <Popover
                     overlayInnerStyle={overlayStyles}
-                    placement="rightBottom"
-                    content={content}
+                    placement="right"
+                    content={contentSetting}
                     trigger="click"
-                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
-                    open={popoverOpen}
+                    onOpenChange={() => setPopoverOpenSetting(!popoverOpenSetting)}
+                    open={popoverOpenSetting}
                 >
-                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
+                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
