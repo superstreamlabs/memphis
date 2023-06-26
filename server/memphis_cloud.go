@@ -872,12 +872,12 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 	logSource := request.LogSource
 	if filterSubjectSuffix != _EMPTY_ {
-		if request.LogSource != "empty" && request.LogType != "external" {
+		if request.LogSource == "empty" || request.LogSource == "" {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
+		} else if request.LogSource != "empty" && request.LogType != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
 		} else if request.LogSource != "empty" && request.LogType == "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
-		} else {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 		}
 	}
 
