@@ -116,10 +116,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Warnf("createConsumerDirectCommon: " + errMsg)
 		return errors.New(errMsg)
 	}
-	if !connection.IsActive {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon: Failed creating consumer %v at station %v : Connection is not active", connection.TenantName, consumerName, cStationName)
-		return fmt.Errorf("[tenant: %v]connection is not active", connection.TenantName)
-	}
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {

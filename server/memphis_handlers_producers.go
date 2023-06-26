@@ -69,11 +69,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		serv.Warnf("createProducerDirectCommon: Producer %v at station %v: %v", pName, pStationName.external, errMsg)
 		return false, false, fmt.Errorf("memphis: %v", errMsg)
 	}
-	if !connection.IsActive {
-		errMsg := fmt.Sprintf("Connection with ID %v is not active", pConnectionId)
-		serv.Warnf("createProducerDirectCommon: Producer %v at station %v: %v", pName, pStationName.external, errMsg)
-		return false, false, fmt.Errorf("memphis: %v", errMsg)
-	}
 
 	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
 	if err != nil {

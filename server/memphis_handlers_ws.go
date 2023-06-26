@@ -97,7 +97,8 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 				for tenant, filler := range updateFiller.tenants {
 					acc, err := s.lookupAccount(tenant)
 					if err != nil {
-						s.Errorf("[tenant: %v]memphisWSLoop at lookupAccount: %v ", tenant, err.Error())
+						s.Warnf("[tenant: %v]memphisWSLoop at lookupAccount: %v ", tenant, err.Error())
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 					if !acc.SubscriptionInterest(replySubj) {
