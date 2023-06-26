@@ -26,6 +26,11 @@ const Support = ({ closeModal }) => {
     const [textInfo, setTextInfo] = useState('');
     const [loader, setLoader] = useState(false);
 
+    const clearValues = () => {
+        setSeverity('Critical (Cannot produce or consume data)');
+        setTextInfo('');
+    };
+
     const sendSupport = async () => {
         setLoader(true);
         const severityValue = severity.split(' ')[0].toLowerCase();
@@ -34,8 +39,7 @@ const Support = ({ closeModal }) => {
                 severity: severityValue,
                 details: textInfo
             });
-            setSeverity('Critical (Cannot produce or consume data)');
-            setTextInfo('');
+            clearValues();
             setLoader(false);
             closeModal(false);
         } catch (error) {
@@ -115,6 +119,7 @@ const Support = ({ closeModal }) => {
                         fontSize="14px"
                         fontWeight="bold"
                         onClick={() => {
+                            clearValues();
                             closeModal(false);
                         }}
                     />
