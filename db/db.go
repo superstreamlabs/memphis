@@ -1731,6 +1731,29 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	return nil
 }
 
+func DeleteStationsByNamesIsDeleted(stationNames []string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM stations
+	WHERE name = ANY($1)
+	AND is_deleted = true`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_stations_by_names_and_is_deleted", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func DeleteStation(name string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1962,7 +1985,7 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 	return nil
 }
 
-func GetIsNotActiveStations() ([]models.Station, error) {
+func GetDeletedStations() ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)

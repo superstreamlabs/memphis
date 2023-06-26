@@ -183,7 +183,6 @@ func (s *Server) KillZombieResources() {
 			err := s.RemoveOldStations()
 			if err != nil {
 				serv.Errorf("KillZombieResources: RemoveOldStations: %v", err.Error())
-				return
 			}
 		}
 		killFunc(s)
