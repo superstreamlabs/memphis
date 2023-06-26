@@ -4419,9 +4419,9 @@ func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	defer conn.Release()
 	query := `
 	SELECT DISTINCT u.username
-	FROM users u
-	JOIN stations s ON u.id = s.created_by
-	WHERE tenant_name=$1
+	FROM users AS u
+	JOIN stations AS s ON u.id = s.created_by
+	WHERE s.tenant_name=$1
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users", query)
 	if err != nil {
