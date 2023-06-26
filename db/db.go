@@ -1731,7 +1731,7 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	return nil
 }
 
-func DeleteStationsByNamesIsDeleted(stationNames []string) error {
+func DeleteStationsByNamesAndIsDeleted(stationNames []string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)

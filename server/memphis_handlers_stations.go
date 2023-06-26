@@ -2185,7 +2185,7 @@ func (s *Server) RemoveOldStations() error {
 		stationsName = append(stationsName, station.Name)
 	}
 
-	err = db.DeleteStationsByNamesIsDeleted(stationsName)
+	err = db.DeleteStationsByNamesAndIsDeleted(stationsName)
 	if err != nil {
 		return err
 	}
