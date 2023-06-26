@@ -871,6 +871,11 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	logSource := request.LogSource
+	if logSource == "" {
+		serv.Warnf("GetSystemLogs: log_source should be one of the following: empty or memphis-{number as amount of clusters}")
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "log_source should be one of the following: empty or memphis-{number as amount of clusters}"})
+		return
+	}
 	if filterSubjectSuffix != _EMPTY_ {
 		if request.LogSource != "empty" && request.LogType != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
