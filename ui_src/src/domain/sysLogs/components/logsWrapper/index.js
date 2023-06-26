@@ -125,19 +125,22 @@ const LogsWrapper = () => {
     const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-        if (logType === 'external' && logSource === '') {
+
+        const subscribeToLogsWithouFilter = async () => {
             try {
                 (async () => {
                     const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.syslogs_data`, sc.encode('SUB'));
                     if (rawBrokerName) {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${brokerName}`);
+                        listenForUpdates();
                     }
                 })();
             } catch (err) {
-                return;
+                console.error('Error subscribing to syslogs_data:', err);
             }
-        } else {
+        };
+        const subscribeToLogsWithFilter = async () => {
             try {
                 (async () => {
                     let logFilter = `${logType}.${logSource}`;
@@ -148,16 +151,22 @@ const LogsWrapper = () => {
                     if (rawBrokerName) {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.syslogs_data.${logFilter}.${brokerName}`);
+                        listenForUpdates();
                     }
                 })();
             } catch (err) {
-                return;
+                console.error(`Error subscribing to syslogs_data_${logType}_${logSource}:`, err);
             }
+        };
+        if (logType === 'external' && logSource === '') {
+            subscribeToLogsWithouFilter();
+        } else {
+            subscribeToLogsWithFilter();
         }
 
-        setTimeout(async () => {
-            if (sub) {
-                (async () => {
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         let lastMgsSeqIndex = data.logs?.findIndex((log) => log.message_seq === stateRef.current[3]);
@@ -169,13 +178,21 @@ const LogsWrapper = () => {
                         setLastMgsSeq(data.logs[0].message_seq);
                         setLogs((users) => [...uniqueItems, ...users]);
                     }
-                })();
+                }
+            } catch (err) {
+                console.error(`Error receiving data updates for system logs:`, err);
             }
-        }, 1000);
+        };
     };
 
     const stopListen = () => {
-        sub?.unsubscribe();
+        if (sub) {
+            try {
+                sub.unsubscribe();
+            } catch (err) {
+                console.error('Error unsubscribing from system logs data:', err);
+            }
+        }
     };
 
     useEffect(() => {

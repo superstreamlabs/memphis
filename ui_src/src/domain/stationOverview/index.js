@@ -89,30 +89,45 @@ const StationOverview = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        try {
-            (async () => {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
-                if (rawBrokerName) {
-                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                    sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
-                }
-            })();
-        } catch (err) {
-            return;
-        }
-        setTimeout(async () => {
-            if (sub) {
+        const subscribeAndListen = async () => {
+            try {
                 (async () => {
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}`, sc.encode('SUB'));
+                    if (rawBrokerName) {
+                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${brokerName}`);
+                        listenForUpdates();
+                    }
+                })();
+            } catch (err) {
+                console.error('Error subscribing to station overview data:', err);
+            }
+        };
+
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         sortData(data);
                         stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
                     }
-                })();
+                }
+            } catch (err) {
+                console.error(`Error receiving data updates for station overview:`, err);
             }
-        }, 1000);
+        };
+
+        subscribeAndListen();
+
         return () => {
-            sub?.unsubscribe();
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from station overview data:', err);
+                }
+            }
         };
     }, [state.socket]);
 

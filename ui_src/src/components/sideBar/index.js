@@ -104,11 +104,13 @@ function SideBar() {
         setLogoutLoader(true);
         if (isCloud()) {
             try {
-                await httpRequest('POST', ApiEndpoints.SIGN_OUT);
-                AuthService.logout();
-                setTimeout(() => {
-                    setLogoutLoader(false);
-                }, 1000);
+                const data = await httpRequest('POST', ApiEndpoints.SIGN_OUT);
+                if (data) {
+                    setTimeout(() => {
+                        AuthService.logout();
+                        setLogoutLoader(false);
+                    }, 1000);
+                }
             } catch (error) {
                 setLogoutLoader(false);
             }

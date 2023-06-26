@@ -64,32 +64,46 @@ const MessageJourney = () => {
         let sub;
         const jc = JSONCodec();
         const sc = StringCodec();
-        try {
-            (async () => {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.poison_message_journey_data.${messageId}`, sc.encode('SUB'));
+
+        const subscribeAndListen = async (subName, pubName, messageId) => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.${subName}.${messageId}`, sc.encode('SUB'));
+
                 if (rawBrokerName) {
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                    sub = state.socket?.subscribe(`$memphis_ws_pubs.poison_message_journey_data.${messageId}.${brokerName}`);
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.${pubName}.${messageId}.${brokerName}`);
+                    listenForUpdates(subName, messageId);
                 }
-            })();
-        } catch (err) {
-            return;
-        }
-        setTimeout(async () => {
-            if (sub) {
-                (async () => {
+            } catch (err) {
+                console.error(`Error subscribing to ${subName} data for messageId ${messageId}:`, err);
+                return;
+            }
+        };
+        const listenForUpdates = async (subName, messageId) => {
+            try {
+                if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         arrangeData(data);
                     }
-                })();
+                }
+            } catch (err) {
+                console.error(`Error receiving ${subName} data updates for messageId ${messageId}:`, err);
             }
-        }, 1000);
+        };
+
+        subscribeAndListen('poison_message_journey_data', 'poison_message_journey_data', messageId);
 
         return () => {
-            sub?.unsubscribe();
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from message journey data:', err);
+                }
+            }
         };
-    }, [state.socket]);
+    }, [messageId, state.socket]);
 
     const returnBack = () => {
         history.push(`${pathDomains.stations}/${stationName}`);

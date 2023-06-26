@@ -90,6 +90,7 @@ const (
 	kindStreamList     = "$memphis_stream_list"
 	kindGetMsg         = "$memphis_get_msg"
 	kindDeleteMsg      = "$memphis_delete_msg"
+	kindPurgeAccount   = "$memphis_purge_account"
 )
 
 // errors
@@ -700,6 +701,23 @@ func (s *Server) memphisStreamInfo(tenantName string, streamName string) (*Strea
 	}
 
 	return resp.StreamInfo, nil
+}
+
+func (s *Server) memphisPurgeResourcesAccount(tenantName string) error {
+	requestSubject := fmt.Sprintf(JSApiAccountPurgeT, tenantName)
+
+	var resp JSApiAccountPurgeResponse
+	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeAccount, nil, &resp)
+	if err != nil {
+		return err
+	}
+
+	err = resp.ToError()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
