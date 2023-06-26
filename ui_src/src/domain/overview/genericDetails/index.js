@@ -34,9 +34,9 @@ const GenericDetails = () => {
                 <span>Track Slow Consumption: Stations with Lag in Traffic</span>
             </div>
             <div className="station-list">
-                {state?.monitor_data?.delayed_cgs?.map((station, index) => {
-                    <StationLagCollapse station={station} key={index} />;
-                })}
+                {state?.monitor_data?.delayed_cgs?.map((station, index) => (
+                    <StationLagCollapse station={station} index={index} />
+                ))}
             </div>
         </div>
     );

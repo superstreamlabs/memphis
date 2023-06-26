@@ -251,12 +251,13 @@
     }
     .popover-header {
         color: #101828;
-        font-weight: 600;
+        font-weight: 'InterSemiBold';
         font-size: 18px;
         margin: 0;
     }
     label {
-        color: #6557ff;
+        color: var(--purple);
+        font-family: 'Inter';
     }
     .support-span {
         border-radius: 8px;
@@ -270,7 +271,7 @@
     }
     .support-content-header {
         color: #475467;
-        font-weight: 400;
+        font-family: 'Inter';
         margin: 20px 0;
     }
     .support-content {
@@ -279,11 +280,22 @@
         margin-bottom: 0;
         display: flex;
         justify-content: space-between;
+        .flex{
+            display: flex;
+            gap: 5px;
+        }
+        a{
+            text-decoration: underline;
+            font-family: 'InterSemiBold';
+        }
+        span{
+            font-family: 'InterSemiBold';
+        }
     }
     .support-title {
         color: #101828;
-        font-size: 14px;
-        font-weight: 500;
+        font-size: 16px;
+        font-family: 'InterMedium';
         margin-top: 15px;
         margin-bottom: 5px;
     }
@@ -292,5 +304,9 @@
         margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
+        .button-container button{
+            font-size: 12px !important;
+            font-family: 'InterSemiBold' !important;
+        }
     }
 }
