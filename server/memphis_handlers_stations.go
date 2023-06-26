@@ -2172,7 +2172,6 @@ func (s *Server) RemoveOldStations() {
 		s.Errorf("RemoveOldStations: at GetDeletedStations: %v", err.Error())
 		return
 	}
-
 	for _, station := range stations {
 		err = removeStationResources(s, station, true)
 		if err != nil {
@@ -2180,7 +2179,6 @@ func (s *Server) RemoveOldStations() {
 			return
 		}
 	}
-
 	err = db.RemoveDeletedStations()
 	if err != nil {
 		s.Warnf("RemoveOldStations: at RemoveDeletedStations: %v", err.Error())
