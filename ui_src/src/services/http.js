@@ -19,6 +19,7 @@ import { ApiEndpoints } from '../const/apiEndpoints';
 import pathDomains from '../router';
 import AuthService from './auth';
 import { isCloud } from './valueConvertor';
+import EmailLink from '../components/emailLink';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
     let isSkipGetStarted;
@@ -74,12 +75,18 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {
             message.error({
                 key: 'memphisErrorMessage',
-                content: (
+                content: isCloud() ? (
                     <>
-                        We have some issues. Please open a
-                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
-                            GitHub issue
-                        </a>
+                        We are experiencing some issues. Please contact us at <EmailLink email="support@memphis.dev" /> for assistance.
+                    </>
+                ) : (
+                    <>
+                        <>
+                            We have some issues. Please open a
+                            <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
+                                GitHub issue
+                            </a>
+                        </>
                     </>
                 ),
                 duration: 5,

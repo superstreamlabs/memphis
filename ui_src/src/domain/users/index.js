@@ -132,6 +132,11 @@ function Users() {
         setUsersList((prevUserData) => {
             const updatedUserData = { ...prevUserData };
             updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            if (type === 'management_users') {
+                setTableType(`Management (${updatedUserData[type]?.length || 0})`);
+            } else {
+                setTableType(`Client (${updatedUserData[type]?.length || 0})`);
+            }
             return updatedUserData;
         });
 
@@ -234,7 +239,7 @@ function Users() {
             render: (_, record) => (
                 <div className="user-action">
                     <Button
-                        width="95px"
+                        width="105px"
                         height="30px"
                         placeholder={
                             <div className="action-button">
@@ -362,7 +367,7 @@ function Users() {
                                     }}
                                 />
                                 <Button
-                                    width="85px"
+                                    width="95px"
                                     height="30px"
                                     placeholder={
                                         <div className="action-button">
@@ -384,7 +389,7 @@ function Users() {
                             </>
                         ) : (
                             <Button
-                                width="95px"
+                                width="105px"
                                 height="30px"
                                 placeholder={
                                     <div className="action-button">
