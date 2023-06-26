@@ -1303,7 +1303,11 @@ func getAccountsAndUsersString() (string, error) {
 		}
 	}
 	for _, t := range tenants {
-		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+		decryptedUserPassword, err := DecryptAES(decriptionKey, t.InternalWSPass)
+		if err != nil {
+			return "", err
+		}
+		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
 			usrsList = append(usrsList, usrMap...)
 		}
