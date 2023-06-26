@@ -13,13 +13,18 @@
 import './style.scss';
 
 import React, { useState } from 'react';
-import Button from '../button';
+
 import supportIconColor from '../../assets/images/supportIconColor.svg';
-import SelectComponent from '../select';
-import Input from '../Input';
-import { DOC_URL } from '../../config';
+import documentIcon from '../../assets/images/documentIcon.svg';
+import mailsendIcon from '../../assets/images/mailsendIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import SelectComponent from '../select';
+import { DOC_URL } from '../../config';
+import EmailLink from '../emailLink';
+import Button from '../button';
+import Input from '../Input';
+import { message } from 'antd';
 
 const Support = ({ closeModal }) => {
     const [severity, setSeverity] = useState('Critical (Cannot produce or consume data)');
@@ -40,8 +45,17 @@ const Support = ({ closeModal }) => {
                 details: textInfo
             });
             clearValues();
-            setLoader(false);
-            closeModal(false);
+            setTimeout(() => {
+                setLoader(false);
+                message.success({
+                    key: 'memphisSuccessMessage',
+                    content: 'We have received your issue and our support team is currently reviewing it.',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
+                closeModal(false);
+            }, 1000);
         } catch (error) {
             setLoader(false);
             return;
@@ -59,14 +73,20 @@ const Support = ({ closeModal }) => {
                 <p className="support-content-header">If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
                 <div className="support-span">
                     <div className="support-content">
-                        <p>Link to Documentation</p>
+                        <div className="flex">
+                            <img src={documentIcon} alt="documentIcon" />
+                            <p>Link to Documentation</p>
+                        </div>
                         <a href={DOC_URL} target="_blank" rel="noreferrer">
                             Documentation
                         </a>
                     </div>
                     <div className="support-content">
-                        <p>Contact Email</p>
-                        <label>support@memphis.dev</label>
+                        <div className="flex">
+                            <img src={mailsendIcon} alt="mailsendIcon" />
+                            <p>Contact Email</p>
+                        </div>
+                        <EmailLink email={'support@memphis.dev'} />
                     </div>
                 </div>
                 <div>
@@ -116,8 +136,8 @@ const Support = ({ closeModal }) => {
                         border="gray"
                         backgroundColorType={'white'}
                         radiusType="circle"
-                        fontSize="14px"
-                        fontWeight="bold"
+                        fontSize="12px !important"
+                        fontFamily="InterSemiBold"
                         onClick={() => {
                             clearValues();
                             closeModal(false);
@@ -130,8 +150,8 @@ const Support = ({ closeModal }) => {
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
-                        fontSize="14px"
-                        fontWeight="bold"
+                        fontSize="12px"
+                        fontFamily="InterSemiBold"
                         onClick={() => {
                             sendSupport();
                         }}
