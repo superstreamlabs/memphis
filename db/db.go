@@ -2009,7 +2009,6 @@ func GetDeletedStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	return stations, nil
-
 }
 
 // Producer Functions
