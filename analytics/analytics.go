@@ -14,6 +14,7 @@ package analytics
 import (
 	"memphis/conf"
 	"memphis/db"
+	"strings"
 
 	"github.com/gofrs/uuid"
 	"github.com/posthog/posthog-go"
@@ -91,6 +92,7 @@ func SendEvent(tenantName, username, eventName string) {
 		distinctId = "dev"
 	}
 
+	tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
 	if tenantName != "" && username != "" {
 		distinctId = distinctId + "-" + tenantName + "-" + username
 	}
@@ -111,6 +113,7 @@ func SendEventWithParams(tenantName, username string, params []EventParam, event
 		distinctId = "dev"
 	}
 
+	tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
 	if tenantName != "" && username != "" {
 		distinctId = distinctId + "-" + tenantName + "-" + username
 	}
