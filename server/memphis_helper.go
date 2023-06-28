@@ -57,25 +57,6 @@ const (
 
 var enableJetStream = true
 
-var memphisSubjects = []string{
-	"$memphis_ws_pubs.>",
-}
-var memphisServices = []string{
-	"$memphis_station_creations",
-	"$memphis_station_destructions",
-	"$memphis_producer_creations",
-	"$memphis_producer_destructions",
-	"$memphis_consumer_creations",
-	"$memphis_consumer_destructions",
-	"$memphis_schema_attachments",
-	"$memphis_schema_detachments",
-	"$memphis_schema_creations",
-	"$memphis_ws_subs.>",
-	"$memphis_integration_updates",
-	"$memphis_notifications",
-	"$memphis_schemaverse_dls",
-	"$memphis_pm_acks",
-}
 var memphisReplaceExportString = "replaceExports"
 var memphisReplaceImportString = "replaceImports"
 var memphisExportString = `[
