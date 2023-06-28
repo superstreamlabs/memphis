@@ -1674,7 +1674,6 @@ func (s *Server) reloadAuthorization() {
 		oldAccounts := make(map[string]*Account)
 		s.accounts.Range(func(k, v interface{}) bool {
 			acc := v.(*Account)
-			// added by Memphis ***
 			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT {
 				return true
 			}

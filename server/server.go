@@ -350,7 +350,6 @@ func InitializeMetadataStorage() (db.MetadataStorage, error) {
 	}
 	return metadataDb, nil
 }
-
 // added by Memphis ***
 
 // NewServer will setup a new server struct after parsing the options.
@@ -792,9 +791,6 @@ func (s *Server) configureAccounts() error {
 	// Create the global account.
 	if s.gacc == nil {
 		s.gacc = NewAccount(globalAccountName)
-		// *** added by Memphis
-		s.gacc.jsLimits = map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}
-		// added by Memphis ***
 		s.registerAccountNoLock(s.gacc)
 	}
 
