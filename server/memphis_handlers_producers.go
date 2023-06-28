@@ -183,12 +183,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0) {
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 	_, _, err = s.createProducerDirectCommon(c, cpr.Name,
 		cpr.ProducerType, cpr.ConnectionId, sn)
-	respondWithErr(globalAccountName, s, reply, err)
+	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
@@ -205,7 +205,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		var cprV0 createProducerRequestV0
 		if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
 			s.Errorf("[tenant: %v]createProducerDirect: %v", tenantName, err.Error())
-			respondWithRespErr(globalAccountName, s, reply, err, &resp)
+			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 			return
 		}
 		s.createProducerDirectV0(c, reply, cprV0)
@@ -215,13 +215,13 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
 		s.Errorf("[tenant: %v][user: %v]createProducerDirect at StationNameFromStr: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
-		respondWithRespErr(globalAccountName, s, reply, err, &resp)
+		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 		return
 	}
 
 	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn)
 	if err != nil {
-		respondWithRespErr(globalAccountName, s, reply, err, &resp)
+		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 		return
 	}
 
@@ -229,17 +229,17 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	resp.ClusterSendNotification = clusterSendNotification
 	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, cpr.TenantName)
 	if err == ErrNoSchema {
-		respondWithResp(globalAccountName, s, reply, &resp)
+		respondWithResp(MEMPHIS_GLOBAL_ACCOUNT, s, reply, &resp)
 		return
 	}
 	if err != nil {
 		s.Errorf("[tenant: %v][user: %v]createProducerDirect at getSchemaUpdateInitFromStation: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
-		respondWithRespErr(globalAccountName, s, reply, err, &resp)
+		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 		return
 	}
 
 	resp.SchemaUpdate = *schemaUpdate
-	respondWithResp(globalAccountName, s, reply, &resp)
+	respondWithResp(MEMPHIS_GLOBAL_ACCOUNT, s, reply, &resp)
 }
 
 func (ph ProducersHandler) GetAllProducers(c *gin.Context) {
@@ -363,12 +363,12 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	tenantName, destoryMessage, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 	if err := json.Unmarshal([]byte(destoryMessage), &dpr); err != nil {
 		s.Errorf("destroyProducerDirect: %v", err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 
@@ -376,27 +376,27 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	stationName, err := StationNameFromStr(dpr.StationName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at StationNameFromStr: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, dpr.ProducerName, dpr.StationName, err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 	name := strings.ToLower(dpr.ProducerName)
 	_, station, err := db.GetStationByName(stationName.Ext(), dpr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetStationByName: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, dpr.ProducerName, dpr.StationName, err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 
 	exist, _, err := db.DeleteProducerByNameAndStationID(name, station.ID)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at DeleteProducerByNameAndStationID: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
-		respondWithErr(globalAccountName, s, reply, err)
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := fmt.Sprintf("Producer %v at station %v does not exist", name, dpr.StationName)
 		serv.Warnf("[tenant: %v][user: %v]destroyProducerDirect: %v", dpr.TenantName, dpr.Username, errMsg)
-		respondWithErr(globalAccountName, s, reply, errors.New(errMsg))
+		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -430,7 +430,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 		analytics.SendEvent(user.TenantName, username, "user-remove-producer-sdk")
 	}
 
-	respondWithErr(globalAccountName, s, reply, nil)
+	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
 }
 
 func (ph ProducersHandler) ReliveProducers(connectionId string) error {

@@ -777,6 +777,15 @@ func (s *Server) globalAccount() *Account {
 	return gacc
 }
 
+func (s *Server) MemphisGlobalAccount() *Account {
+	macc, err := s.LookupAccount(MEMPHIS_GLOBAL_ACCOUNT)
+	if err != nil {
+		fmt.Printf("error resolving memphis system account: %v\n", err)
+		return nil
+	}
+	return macc
+}
+
 // Used to setup Accounts.
 // Lock is held upon entry.
 func (s *Server) configureAccounts() error {
@@ -785,34 +794,8 @@ func (s *Server) configureAccounts() error {
 		s.gacc = NewAccount(globalAccountName)
 		// *** added by Memphis
 		s.gacc.jsLimits = map[string]JetStreamAccountLimits{_EMPTY_: dynamicJSAccountLimits}
-		globalServicesExport := map[string]*serviceExport{}
-		for _, subj := range memphisServices {
-			se := &serviceExport{
-				acc:        s.gacc,
-				latency:    &serviceLatency{sampling: DEFAULT_SERVICE_LATENCY_SAMPLING, subject: subj},
-				respThresh: DEFAULT_SERVICE_EXPORT_RESPONSE_THRESHOLD,
-			}
-			globalServicesExport[subj] = se
-		}
-
-		globalStreamsExport := map[string]*streamExport{}
-		for _, subj := range memphisSubjects {
-			ea := streamExport{}
-			setExportAuth(&ea.exportAuth, subj, []*Account{}, 0)
-			globalStreamsExport[subj] = &ea
-		}
-
-		s.gacc.exports = exportMap{
-			services: globalServicesExport,
-			streams:  globalStreamsExport,
-		}
-
-		a := s.registerAccountNoLock(s.gacc)
-
-		if a != nil {
-			s.gacc = a
-		}
 		// added by Memphis ***
+		s.registerAccountNoLock(s.gacc)
 	}
 
 	opts := s.opts
@@ -825,40 +808,6 @@ func (s *Server) configureAccounts() error {
 			a = s.gacc
 		} else {
 			a = acc.shallowCopy()
-			// *** added by Memphis
-			if a.Name != DEFAULT_SYSTEM_ACCOUNT {
-				seList := map[string]*serviceImport{}
-				for _, subj := range memphisServices {
-					se := s.gacc.exports.services[subj]
-					seList[subj] = &serviceImport{
-						acc:    s.gacc,
-						claim:  nil,
-						tr:     nil,
-						ts:     0,
-						from:   subj,
-						to:     subj,
-						usePub: true,
-						se:     se,
-					}
-				}
-				siList := []*streamImport{}
-				for _, subj := range memphisSubjects {
-					siList = append(siList, &streamImport{
-						acc:    s.gacc,
-						claim:  nil,
-						tr:     nil,
-						rtr:    nil,
-						from:   subj,
-						to:     subj,
-						usePub: true,
-					})
-				}
-				a.imports = importMap{
-					services: seList,
-					streams:  siList,
-				}
-			}
-			// added by Memphis ***
 		}
 		if acc.hasMappings() {
 			// For now just move and wipe from opts.Accounts version.

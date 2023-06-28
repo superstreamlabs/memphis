@@ -747,7 +747,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(globalAccountName, syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -784,7 +784,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(globalAccountName, syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -793,11 +793,10 @@ func (s *Server) GetSystemLogs(amount uint64,
 	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := s.subscribeOnAcc(s.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -819,7 +818,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		return models.SystemLogsResponse{}, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, reply, nil, req, true)
 
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -833,8 +832,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(globalAccountName, syslogsStreamName, durableName) })
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
