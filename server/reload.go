@@ -1675,7 +1675,7 @@ func (s *Server) reloadAuthorization() {
 		s.accounts.Range(func(k, v interface{}) bool {
 			acc := v.(*Account)
 			// added by Memphis ***
-			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT || acc.GetName() == MEMPHIS_GLOBAL_ACCOUNT { // *** added by Memphis
+			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT {
 				return true
 			}
 			acc.mu.Lock()
