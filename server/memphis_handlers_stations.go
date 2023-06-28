@@ -1872,10 +1872,7 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 		return
 	}
 
-	tenantName := station.TenantName
-	if station.TenantName != conf.MemphisGlobalAccountName {
-		tenantName = strings.ToLower(station.TenantName)
-	}
+	tenantName := strings.ToLower(station.TenantName)
 
 	err = removeSchemaFromStation(sh.S, stationName, true, tenantName)
 	if err != nil {

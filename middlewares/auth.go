@@ -135,9 +135,7 @@ func Authenticate(c *gin.Context) {
 
 	if shouldCheckUser {
 		username := strings.ToLower(user.Username)
-		if user.TenantName != conf.MemphisGlobalAccountName {
-			user.TenantName = strings.ToLower(user.TenantName)
-		}
+		user.TenantName = strings.ToLower(user.TenantName)
 
 		exists, _, err := db.GetUserByUsername(username, user.TenantName)
 		if err != nil {
