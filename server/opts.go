@@ -761,7 +761,6 @@ func (o *Options) ProcessConfigFile(configFile string, reload bool) error {
 			return err
 		}
 		m["accounts"] = p["accounts"]
-		m["authorization"] = p["authorization"]
 	}
 	// added by Memphis ***
 

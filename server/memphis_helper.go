@@ -52,28 +52,50 @@ const (
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
+	MEMPHIS_GLOBAL_ACCOUNT = "$memphis"
 )
 
-var memphisSubjects = []string{
-	"$memphis_ws_pubs.>",
-}
-var memphisServices = []string{
-	"$memphis_station_creations",
-	"$memphis_station_destructions",
-	"$memphis_producer_creations",
-	"$memphis_producer_destructions",
-	"$memphis_consumer_creations",
-	"$memphis_consumer_destructions",
-	"$memphis_schema_attachments",
-	"$memphis_schema_detachments",
-	"$memphis_schema_creations",
-	"$memphis_ws_subs.>",
-	"$memphis_integration_updates",
-	"$memphis_notifications",
-	"$memphis_schemaverse_dls",
-	JSAdvisoryConsumerMaxDeliveryExceedPre + ".>",
-	"$memphis_pm_acks",
-}
+var enableJetStream = true
+
+var memphisReplaceExportString = "replaceExports"
+var memphisReplaceImportString = "replaceImports"
+var memphisExportString = `[
+	{service: "$memphis_station_creations"},
+	{service: "$memphis_station_destructions"},
+	{service: "$memphis_producer_creations"},
+	{service: "$memphis_producer_destructions"},
+	{service: "$memphis_consumer_creations"},
+	{service: "$memphis_consumer_destructions"},
+	{service: "$memphis_schema_attachments"},
+	{service: "$memphis_schema_detachments"},
+	{service: "$memphis_schema_creations"},
+	{service: "$memphis_ws_subs.>"},
+	{service: "$memphis_integration_updates"},
+	{service: "$memphis_notifications"},
+	{service: "$memphis_schemaverse_dls"},
+	{service: "$memphis_pm_acks"},
+	{stream: "$memphis_ws_pubs.>"},
+	]
+`
+
+var memphisImportString = `[
+	{service: {account: "$memphis", subject: "$memphis_station_creations"}},
+	{service: {account: "$memphis", subject: "$memphis_station_destructions"}},
+	{service: {account: "$memphis", subject: "$memphis_producer_creations"}},
+	{service: {account: "$memphis", subject: "$memphis_producer_destructions"}},
+	{service: {account: "$memphis", subject: "$memphis_consumer_creations"}},
+	{service: {account: "$memphis", subject: "$memphis_consumer_destructions"}},
+	{service: {account: "$memphis", subject: "$memphis_schema_attachments"}},
+	{service: {account: "$memphis", subject: "$memphis_schema_detachments"}},
+	{service: {account: "$memphis", subject: "$memphis_schema_creations"}},
+	{service: {account: "$memphis", subject: "$memphis_ws_subs.>"}},
+	{service: {account: "$memphis", subject: "$memphis_integration_updates"}},
+	{service: {account: "$memphis", subject: "$memphis_notifications"}},
+	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
+	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
+	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
+	]
+`
 
 // JetStream API request kinds
 const (
@@ -294,7 +316,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// system logs stream
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
-		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
 			Retention:    LimitsPolicy,
@@ -320,7 +342,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
-		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -354,7 +376,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -364,7 +386,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
-		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -391,7 +413,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(globalAccountName, dlsUnackedStream, &cc)
+		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, dlsUnackedStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -401,7 +423,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
-		err = s.memphisDeleteStream(globalAccountName, throughputStreamName)
+		err = s.memphisDeleteStream(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamName)
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 		}
@@ -409,7 +431,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
-		err = s.memphisAddStream(globalAccountName, &StreamConfig{
+		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
 			Retention:    LimitsPolicy,
@@ -1222,7 +1244,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 		tenantName = ci.Account
 		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
 	} else {
-		tenantName = globalAccountName
+		tenantName = MEMPHIS_GLOBAL_ACCOUNT
 	}
 
 	return tenantName, message, nil
@@ -1249,6 +1271,8 @@ type UserConfig struct {
 type AccountConfig struct {
 	Jetstream *bool        `json:"jetstream,omitempty"`
 	Users     []UserConfig `json:"users,omitempty"`
+	Exports   string       `json:"exports,omitempty"`
+	Imports   string       `json:"imports,omitempty"`
 }
 
 type Authorization struct {
@@ -1256,14 +1280,12 @@ type Authorization struct {
 }
 
 type Data struct {
-	Authorization Authorization            `json:"authorization,omitempty"`
-	Accounts      map[string]AccountConfig `json:"accounts,omitempty"`
+	Accounts map[string]AccountConfig `json:"accounts,omitempty"`
 }
 
-func generateJSONString(authorizationUsers []UserConfig, accounts map[string]AccountConfig) (string, error) {
+func generateJSONString(accounts map[string]AccountConfig) (string, error) {
 	data := Data{
-		Authorization: Authorization{Users: authorizationUsers},
-		Accounts:      accounts,
+		Accounts: accounts,
 	}
 
 	jsonString, err := json.MarshalIndent(data, " ", "")
@@ -1289,7 +1311,13 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	authorizationUsers := []UserConfig{{User: "$G", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	globalUsers := []UserConfig{{User: "$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	accounts := map[string]AccountConfig{
+		"$SYS": {
+			Users: []UserConfig{
+				{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
+			}},
+	}
 	if shouldCreateRootUserforGlobalAcc {
 		_, globalT, err := db.GetGlobalTenant()
 		if err != nil {
@@ -1299,14 +1327,9 @@ func getAccountsAndUsersString() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		authorizationUsers = append(authorizationUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
-		authorizationUsers = append(authorizationUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
+		globalUsers = append(globalUsers, UserConfig{User: "$memphis_user$1", Password: decryptedPass})
+		globalUsers = append(globalUsers, UserConfig{User: "root$1", Password: configuration.ROOT_PASSWORD})
 	}
-	accounts := map[string]AccountConfig{"$SYS": {
-		Users: []UserConfig{
-			{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
-		},
-	}}
 	tenantsToUsers := map[string][]UserConfig{}
 	for _, user := range users {
 		tName := user.TenantName
@@ -1314,8 +1337,8 @@ func getAccountsAndUsersString() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if tName == globalAccountName {
-			authorizationUsers = append(authorizationUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
+		if tName == MEMPHIS_GLOBAL_ACCOUNT {
+			globalUsers = append(globalUsers, UserConfig{User: user.Username + "$1", Password: decryptedUserPassword})
 			continue
 		}
 		if usrMap, ok := tenantsToUsers[tName]; !ok {
@@ -1336,18 +1359,16 @@ func getAccountsAndUsersString() (string, error) {
 				usrsList = append(usrsList, usrChangeName)
 			}
 		}
-		accounts[t.Name] = AccountConfig{Jetstream: boolPtr(true), Users: usrsList}
+		accounts[t.Name] = AccountConfig{Jetstream: &enableJetStream, Users: usrsList, Imports: memphisReplaceImportString}
 	}
-
-	jsonString, err := generateJSONString(authorizationUsers, accounts)
+	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Exports: memphisReplaceExportString}
+	jsonString, err := generateJSONString(accounts)
 	if err != nil {
 		return "", err
 	}
+	jsonString = strings.ReplaceAll(jsonString, `"replaceImports"`, memphisImportString)
+	jsonString = strings.ReplaceAll(jsonString, `"replaceExports"`, memphisExportString)
 	return jsonString, nil
-}
-
-func boolPtr(val bool) *bool {
-	return &val
 }
 
 func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {

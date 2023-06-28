@@ -39,9 +39,9 @@ var tieredStorageMsgsMap *concurrentMap[map[string][]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			connInfo := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
+			connInfo := &ConnzOptions{Limit: s.MemphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
@@ -56,7 +56,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 				if err != nil {
 					s.Errorf("ListenForZombieConnCheckRequests: %v", err.Error())
 				} else {
-					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, bytes, true)
+					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
 		}(copyBytes(msg))
@@ -68,7 +68,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var integrationUpdate models.CreateIntegration
 			err := json.Unmarshal(msg, &integrationUpdate)
@@ -97,18 +97,18 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 }
 
 func (s *Server) ListenForConfigReloadEvents() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	var lock sync.Mutex
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
+			lock.Lock()
 			err := s.Reload()
 			if err != nil {
 				s.Errorf("Failed reloading: %v", err.Error())
 			}
-			// TODO: remove
-			err = s.Reload()
-			if err != nil {
-				s.Errorf("Failed reloading: %v", err.Error())
-			}
+			time.AfterFunc(time.Millisecond*500, func() {
+				lock.Unlock()
+			})
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *Server) ListenForConfigReloadEvents() error {
 }
 
 func (s *Server) ListenForNotificationEvents() error {
-	err := s.queueSubscribe(globalAccountName, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
@@ -148,7 +148,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) ListenForPoisonMsgAcks() error {
-	err := s.queueSubscribe(globalAccountName, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
@@ -222,7 +222,7 @@ func (s *Server) CalculateSelfThroughput() {
 			ReadMap:  readMap,
 			WriteMap: writeMap,
 		}
-		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
+		s.sendInternalAccountMsg(s.MemphisGlobalAccount(), subj, tpMsg)
 	}
 }
 
@@ -285,7 +285,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxAckPending: -1,
 				MaxDeliver:    10,
 			}
-			err := serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+			err := serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
 			if err != nil {
 				serv.Errorf("Failed add tiered storage consumer: %v", err.Error())
 				return
@@ -304,7 +304,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			for i, msgs := range tenant {
 				for _, msg := range msgs {
 					reply := msg.ReplySubject
-					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+					s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 				}
 				delete(tenant, i)
 			}
@@ -328,7 +328,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 			replySubj := DLS_UNACKED_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
 			// subscribe to unacked messages
-			sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
 					if reply != "" {
@@ -347,14 +347,14 @@ func (s *Server) ConsumeUnackedMsgs() {
 
 			// send JS API request to get more messages
 			subject := fmt.Sprintf(JSApiRequestNextT, dlsUnackedStream, DLS_UNACKED_CONSUMER)
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
 
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]unAckedMsg, 0)
 			stop := false
 			for {
 				if stop {
-					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 					break
 				}
 				select {
@@ -371,7 +371,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 				err := s.handleNewUnackedMsg(msg.Msg)
 				if err == nil {
 					// send ack
-					s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
 				}
 			}
 		} else {
@@ -395,7 +395,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 			replySubj := TIERED_STORAGE_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
 			// subscribe to unacked messages
-			sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
 					if reply != "" {
@@ -414,14 +414,14 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 
 			// send JS API request to get more messages
 			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, TIERED_STORAGE_CONSUMER)
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
 
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]tsMsg, 0)
 			stop := false
 			for {
 				if stop {
-					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 					break
 				}
 				select {
@@ -446,7 +446,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(globalAccountName, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 			if err != nil {

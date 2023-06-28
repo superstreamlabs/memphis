@@ -21,7 +21,7 @@ import (
 type ConfigurationsHandler struct{ S *Server }
 
 func changeDlsRetention(dlsRetention int) error {
-	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), globalAccountName)
+	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
@@ -29,13 +29,13 @@ func changeDlsRetention(dlsRetention int) error {
 }
 
 func changeLogsRetention(logsRetention int) error {
-	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), globalAccountName)
+	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
 
 	retentionDur := time.Duration(logsRetention) * time.Hour * 24
-	err = serv.memphisUpdateStream(globalAccountName, &StreamConfig{
+	err = serv.memphisUpdateStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
 		Name:         syslogsStreamName,
 		Subjects:     []string{syslogsStreamName + ".>"},
 		Retention:    LimitsPolicy,
@@ -51,7 +51,7 @@ func changeLogsRetention(logsRetention int) error {
 }
 
 func changeTSTime(tsTime int) error {
-	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), globalAccountName)
+	err := db.UpsertConfiguration("tiered_storage_time_sec", strconv.Itoa(tsTime), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func changeTSTime(tsTime int) error {
 func EditClusterCompHost(key string, host string) error {
 	key = strings.ToLower(key)
 	host = strings.ToLower(host)
-	err := db.UpsertConfiguration(key, host, globalAccountName)
+	err := db.UpsertConfiguration(key, host, MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func EditClusterCompHost(key string, host string) error {
 }
 
 func changeMaxMsgSize(newSize int) error {
-	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), globalAccountName)
+	err := db.UpsertConfiguration("max_msg_size_mb", strconv.Itoa(newSize), MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
