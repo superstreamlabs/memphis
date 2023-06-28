@@ -1299,13 +1299,11 @@ type Authorization struct {
 }
 
 type Data struct {
-	// Authorization Authorization            `json:"authorization,omitempty"`
 	Accounts map[string]AccountConfig `json:"accounts,omitempty"`
 }
 
 func generateJSONString(accounts map[string]AccountConfig) (string, error) {
 	data := Data{
-		// Authorization: Authorization{Users: authorizationUsers},
 		Accounts: accounts,
 	}
 

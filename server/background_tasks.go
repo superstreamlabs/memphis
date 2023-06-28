@@ -97,13 +97,18 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 }
 
 func (s *Server) ListenForConfigReloadEvents() error {
+	var lock sync.Mutex
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
+			lock.Lock()
 			err := s.Reload()
 			if err != nil {
 				s.Errorf("Failed reloading: %v", err.Error())
 			}
+			time.AfterFunc(time.Millisecond*500, func() {
+				lock.Unlock()
+			})
 		}(copyBytes(msg))
 	})
 	if err != nil {
