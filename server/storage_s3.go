@@ -179,7 +179,7 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 		if err != nil {
 			return models.Integration{}, err
 		}
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
 			return models.Integration{}, err
 		}
@@ -213,7 +213,7 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 	if err != nil {
 		return s3Integration, err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return s3Integration, err
 	}
@@ -353,7 +353,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		var messages []Msg
 		size := int64(0)
 		for _, msg := range msgs {
-			if tenantName == conf.GlobalAccountName {
+			if tenantName == conf.MemphisGlobalAccountName {
 				tenantName = "global"
 			}
 			objectName = "memphis/" + tenantName + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"
