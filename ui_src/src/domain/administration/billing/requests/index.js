@@ -132,9 +132,7 @@ function Requests() {
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
 
-                                        <label className="total-value">
-                                            {usageData ? formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US') : 0}
-                                        </label>
+                                        <label className="total-value">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</label>
                                     </span>
                                 </div>
                                 <div className="total-messages-in">
@@ -161,9 +159,7 @@ function Requests() {
                                     <img src={TotalMsgIcon} alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
-                                        <label className="total-value">
-                                            {usageData ? formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US') : 0}
-                                        </label>
+                                        <label className="total-value">{usageData ? usageData?.data_out_events?.toLocaleString('en-US') : 0}</label>
                                     </span>
                                 </div>
                                 <div className="total-messages-out">
