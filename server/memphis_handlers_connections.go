@@ -121,21 +121,12 @@ func handleConnectMessage(client *client) error {
 			return err
 		}
 		if exist {
-			err = connectionsHandler.ReliveConnection(connectionId)
+			err = connectionsHandler.ReliveConectionResources(connectionId)
 			if err != nil {
-				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConnection: %v", user.TenantName, username, err.Error())
+				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConectionResources: %v", user.TenantName, username, err.Error())
 				return err
 			}
-			err = producersHandler.ReliveProducers(connectionId)
-			if err != nil {
-				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveProducers: %v", user.TenantName, username, err.Error())
-				return err
-			}
-			err = consumersHandler.ReliveConsumers(connectionId)
-			if err != nil {
-				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConsumers: %v", user.TenantName, username, err.Error())
-				return err
-			}
+
 		} else {
 			go func() {
 				shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -184,10 +175,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 	return false, nil
 }
 
-func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
-	err := db.UpdateConnection(connectionId, true)
+func (ch ConnectionsHandler) ReliveConectionResources(connectionId string) error {
+	err := db.ReliveConectionResources(connectionId, true)
 	if err != nil {
-		serv.Errorf("ReliveConnection error: %v", err.Error())
+		serv.Errorf("ReliveConectionResources error: %v", err.Error())
 		return err
 	}
 	return nil

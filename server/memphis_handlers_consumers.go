@@ -665,13 +665,3 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	respondWithErr(globalAccountName, s, reply, nil)
 }
-
-func (ch ConsumersHandler) ReliveConsumers(connectionId string) error {
-	err := db.UpdateConsumersConnection(connectionId, false)
-	if err != nil {
-		serv.Errorf("ReliveConsumers: %v", err.Error())
-		return err
-	}
-
-	return nil
-}
