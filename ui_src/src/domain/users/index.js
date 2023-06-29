@@ -239,7 +239,7 @@ function Users() {
             render: (_, record) => (
                 <div className="user-action">
                     <Button
-                        width="105px"
+                        width="115px"
                         height="30px"
                         placeholder={
                             <div className="action-button">
@@ -288,7 +288,7 @@ function Users() {
             )
         },
         {
-            title: 'Full Name',
+            title: 'Full name',
             key: 'full_name',
             dataIndex: 'full_name',
             render: (full_name) => (
@@ -389,7 +389,7 @@ function Users() {
                             </>
                         ) : (
                             <Button
-                                width="105px"
+                                width="115px"
                                 height="30px"
                                 placeholder={
                                     <div className="action-button">

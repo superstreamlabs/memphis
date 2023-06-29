@@ -49,7 +49,7 @@ const Support = ({ closeModal }) => {
                 setLoader(false);
                 message.success({
                     key: 'memphisSuccessMessage',
-                    content: 'We have received your issue and our support team is currently reviewing it.',
+                    content: 'Your ticket has been opened and will be reviewed by our support as soon as possible.',
                     duration: 5,
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
@@ -84,7 +84,7 @@ const Support = ({ closeModal }) => {
                     <div className="support-content">
                         <div className="flex">
                             <img src={mailsendIcon} alt="mailsendIcon" />
-                            <p>Contact Email</p>
+                            <p>Support Email</p>
                         </div>
                         <EmailLink email={'support@memphis.dev'} />
                     </div>

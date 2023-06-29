@@ -39,21 +39,28 @@
                     display: flex;
                     align-self: center;
                     flex-direction: column;
-                    .hostname{
-                        border-radius: 32px;
-                        border: 0.8px solid #E2DFFF;
-                        background: #F1F0FF;
+                    .username{
+                        text-transform: capitalize
+                    }
+                    .org-details{
                         display: flex;
-                        width: fit-content;
-                        padding: 0px 10px;
-                        gap: 2px;
-                        font-family: 'InterMedium';
-                        p{
-                            font-size: 12px;
-                        }
-                        span{
-                            color: var(--purple);
-                            font-size: 12px;
+                        gap: 5px;
+                        .hostname{
+                            border-radius: 32px;
+                            border: 0.8px solid #E2DFFF;
+                            background: #F1F0FF;
+                            display: flex;
+                            width: fit-content;
+                            padding: 0px 10px;
+                            gap: 2px;
+                            font-family: 'InterMedium';
+                            p{
+                                font-size: 12px;
+                            }
+                            span{
+                                color: var(--purple);
+                                font-size: 12px;
+                            }
                         }
                     }
                 }
