@@ -65,6 +65,9 @@
                     max-width: 70px;
                 }
             }
+            .full-name{
+                text-transform: capitalize;
+            }
             .created-column{
                 font-family: 'Inter' !important;
                 color: rgba(74, 73, 92, 0.8);

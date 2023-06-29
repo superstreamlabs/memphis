@@ -69,7 +69,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Stored events</span>
+                        <span>Stored messages</span>
                         <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
                     </div>
                 </div>

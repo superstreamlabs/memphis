@@ -22,7 +22,8 @@ import {
     LOCAL_STORAGE_USER_NAME,
     LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
-    LOCAL_STORAGE_ENV
+    LOCAL_STORAGE_ENV,
+    LOCAL_STORAGE_ACCOUNT_ID
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
@@ -198,11 +199,25 @@ function OverView() {
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
-                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
+                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? (
+                                    <h1>
+                                        Welcome back, <span className="username">{username}</span>
+                                    </h1>
+                                ) : (
+                                    <h1>
+                                        Welcome, <span className="username">{username}</span>
+                                    </h1>
+                                )}
                                 {isCloud() && (
-                                    <div className="hostname">
-                                        <p>Hostname : </p>
-                                        <span>{host}</span>
+                                    <div className="org-details">
+                                        <div className="hostname">
+                                            <p>Account ID : </p>
+                                            <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
+                                        </div>
+                                        <div className="hostname">
+                                            <p>Broker Hostname : </p>
+                                            <span>{host}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
