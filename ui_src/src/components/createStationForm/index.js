@@ -166,6 +166,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 case 3:
                     replicas = ['No HA (1)', 'HA (3)'];
                     break;
+                case 5:
+                    replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
+                    break;
                 default:
                     replicas = ['No HA (1)'];
 
