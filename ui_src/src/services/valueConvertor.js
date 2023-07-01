@@ -219,34 +219,23 @@ export const ascii_to_hex = (str) => {
 };
 
 export const isHexString = (str) => {
-    // Check if the string consists of only hexadecimal characters
     const hexChars = /^[0-9a-fA-F]+$/;
     if (hexChars.test(str)) {
         return true;
     }
 
-    // Check if the string can be decoded from URI
     try {
         const decodedStr = decodeURIComponent(str.replace(/%([0-9a-fA-F]{2})/g, "11"));
-        // If the decoded string matches the original string, it is a regular string
         if (decodedStr === str) {
             return false;
         }
     } catch (error) {
-        // If an error occurs during URI decoding, it is not a valid hexadecimal string
         return false;
     }
 
-    // If it does not match either condition, it is a regular string
     return false;
 };
 
-
-export const hex_to_ascii1 = (str1) => {
-    const hex = str1.toString();
-    const str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
-    return str;
-};
 
 export const compareObjects = (object1, object2) => {
     const keys1 = Object.keys(object1);
