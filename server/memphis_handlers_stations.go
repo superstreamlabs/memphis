@@ -100,8 +100,8 @@ func validateStorageType(storageType string) error {
 }
 
 func validateReplicas(replicas int) error {
-	if replicas > 5 {
-		return errors.New("max replicas in a cluster is 5")
+	if replicas > 3 {
+		return errors.New("max replicas in a cluster is 3")
 	}
 
 	return nil
