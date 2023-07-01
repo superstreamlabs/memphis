@@ -317,7 +317,7 @@ export const replicasConvertor = (value, stringToNumber) => {
             case 'No HA (1)':
                 return 1;
             case 'HA (3)':
-                return 3;    
+                return 3;
             case 'Super HA (5)':
                 return 5;
             default:
