@@ -38,7 +38,7 @@
     "react-test-renderer": "^17.0.2",
     "react-virtuoso": "1.2.5",
     "react-window": "^1.8.6",
-    "reaflow": "^5.0.6",
+    "reaflow": "5.0.6",
     "recharts": "^2.1.16",
     "sass": "^1.49.0",
     "uuid": "^9.0.0",
