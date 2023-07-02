@@ -1138,8 +1138,10 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	replicas := v.Routes + 1
+	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
-		"available_replicas": v.Routes + 1})
+		"available_replicas": replicas})
 }
 
 func checkIsMinikube(labels map[string]string) bool {
