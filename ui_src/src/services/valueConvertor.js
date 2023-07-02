@@ -224,15 +224,6 @@ export const isHexString = (str) => {
         return true;
     }
 
-    try {
-        const decodedStr = decodeURIComponent(str.replace(/%([0-9a-fA-F]{2})/g, "11"));
-        if (decodedStr === str) {
-            return false;
-        }
-    } catch (error) {
-        return false;
-    }
-
     return false;
 };
 
