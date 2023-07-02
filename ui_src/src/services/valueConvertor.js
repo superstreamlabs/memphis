@@ -190,10 +190,41 @@ export const diffDate = (date) => {
     return `${dayDiff} days ago`;
 };
 
-export const hex_to_ascii = (str1) => {
-    const hex = str1.toString();
-    const str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
-    return str;
+export const hex_to_ascii = (input) => {
+    if (typeof input === 'string' && /^[0-9a-fA-F]+$/.test(input)) {
+        let str = '';
+        for (let i = 0; i < input.length; i += 2) {
+            str += String.fromCharCode(parseInt(input.substr(i, 2), 16));
+        }
+        return str;
+    }
+    else if (typeof input === 'number') {
+        return String.fromCharCode(input);
+    }
+    else if (typeof input === "string") {
+        return input;
+    }
+    else {
+        return input
+    }
+
+};
+
+export const ascii_to_hex = (str) => {
+    let hex = "";
+    for (let i = 0; i < str.length; i++) {
+        hex += str.charCodeAt(i).toString(16);
+    }
+    return hex;
+};
+
+export const isHexString = (str) => {
+    const hexChars = /^[0-9a-fA-F]+$/;
+    if (hexChars.test(str)) {
+        return true;
+    }
+
+    return false;
 };
 
 export const compareObjects = (object1, object2) => {
@@ -360,7 +391,12 @@ export const messageParser = (type, data) => {
         case 'protobuf':
             return JSON.stringify(decodeMessage(data), null, 2);
         case 'bytes':
-            return data;
+            const isHexStr = isHexString(data)
+            if (isHexStr) {
+                return data;
+            } else {
+                return ascii_to_hex(data);
+            }
         default:
             return hex_to_ascii(data);
     }
