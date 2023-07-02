@@ -74,6 +74,7 @@ var memphisExportString = `[
 	{service: "$memphis_notifications"},
 	{service: "$memphis_schemaverse_dls"},
 	{service: "$memphis_pm_acks"},
+	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
 	{stream: "$memphis_ws_pubs.>"},
 	]
 `
@@ -93,6 +94,7 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_notifications"}},
 	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
+	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
 	]
 `
