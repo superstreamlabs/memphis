@@ -5504,12 +5504,12 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 		return []models.Tenant{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM tenants WHERE name != $1`
+	query := `SELECT * FROM tenants WHERE name != $1 AND name != $2`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_tenants_without_global", query)
 	if err != nil {
 		return []models.Tenant{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MemphisGlobalAccountName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MemphisGlobalAccountName, conf.MemphisGlobalAccount)
 	if err != nil {
 		return []models.Tenant{}, err
 	}
