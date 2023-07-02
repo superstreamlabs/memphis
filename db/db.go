@@ -1705,6 +1705,27 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	return nil
 }
 
+func RemoveDeletedStations() error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM stations WHERE is_deleted = true`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_deleted_stations", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func DeleteStation(name string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1918,6 +1939,34 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 		return err
 	}
 	return nil
+}
+
+func GetDeletedStations() ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE is_deleted = true`
+	stmt, err := conn.Conn().Prepare(ctx, "get_not_active_stations", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, err
+	}
+	return stations, nil
 }
 
 // Producer Functions

@@ -2154,3 +2154,23 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 	return username, -1, nil
 
 }
+
+func (s *Server) RemoveOldStations() {
+	stations, err := db.GetDeletedStations()
+	if err != nil {
+		s.Errorf("RemoveOldStations: at GetDeletedStations: %v", err.Error())
+		return
+	}
+	for _, station := range stations {
+		err = removeStationResources(s, station, true)
+		if err != nil {
+			s.Errorf("[tenant: %v]RemoveOldStations: at removeStationResources: %v", station.TenantName, err.Error())
+			return
+		}
+	}
+	err = db.RemoveDeletedStations()
+	if err != nil {
+		s.Warnf("RemoveOldStations: at RemoveDeletedStations: %v", err.Error())
+		return
+	}
+}
