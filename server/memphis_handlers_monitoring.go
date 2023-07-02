@@ -1139,9 +1139,7 @@ func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 		return
 	}
 	replicas := v.Routes + 1
-	if replicas > 3 {
-		replicas = 3
-	}
+	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
 		"available_replicas": replicas})
 }
