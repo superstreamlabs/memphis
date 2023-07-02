@@ -1834,3 +1834,15 @@ func TenantSeqInitialize() error {
 	}
 	return nil
 }
+
+func GetAvailableReplicas(replicas int) int {
+	return replicas
+}
+
+func validateReplicas(replicas int) error {
+	if replicas > 5 {
+		return errors.New("max replicas in a cluster is 5")
+	}
+
+	return nil
+}
