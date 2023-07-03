@@ -195,21 +195,17 @@ export const hex_to_ascii = (input) => {
         let str = '';
         str = decodeURIComponent(input.replace(/[0-9a-f]{2}/g, '%$&'));
         return str;
-    }
-    else if (typeof input === 'number') {
+    } else if (typeof input === 'number') {
         return String.fromCharCode(input);
-    }
-    else if (typeof input === "string") {
+    } else if (typeof input === 'string') {
+        return input;
+    } else {
         return input;
     }
-    else {
-        return input
-    }
-
 };
 
 export const ascii_to_hex = (str) => {
-    let hex = "";
+    let hex = '';
     for (let i = 0; i < str.length; i++) {
         hex += str.charCodeAt(i).toString(16);
     }
@@ -389,7 +385,7 @@ export const messageParser = (type, data) => {
         case 'protobuf':
             return JSON.stringify(decodeMessage(data), null, 2);
         case 'bytes':
-            const isHexStr = isHexString(data)
+            const isHexStr = isHexString(data);
             if (isHexStr) {
                 return data;
             } else {
