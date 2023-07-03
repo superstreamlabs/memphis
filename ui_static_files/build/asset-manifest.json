@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.28caf0b0.css",
-    "main.js": "/static/js/main.07be597c.js",
+    "main.css": "/static/css/main.af187824.css",
+    "main.js": "/static/js/main.a993c10c.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -116,6 +116,7 @@
     "static/media/noSchemasFound.svg": "/static/media/noSchemasFound.2997919164772bdba31339efbe98cedc.svg",
     "static/media/pagerDutyIcon.svg": "/static/media/pagerDutyIcon.3125f9535963570c1b3fcffb2fc31cf4.svg",
     "static/media/uptodateIcon.svg": "/static/media/uptodateIcon.9e422510ad1f8c01f74e90ce91c9817b.svg",
+    "static/media/rdk.umd.cjs": "/static/media/rdk.umd.a7e14d5d64e2a94eec3a.cjs",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
     "static/media/elasticBanner.webp": "/static/media/elasticBanner.5137ba7446b120da38b2.webp",
     "static/media/grafanaBannerPopup.webp": "/static/media/grafanaBannerPopup.04ea20c13ab4520bc130.webp",
@@ -140,8 +141,6 @@
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
-    "static/media/supportIcon.svg": "/static/media/supportIcon.6c8af541bec7b192941634e35f7d7719.svg",
-    "static/media/supportIconColor.svg": "/static/media/supportIconColor.b0967d8f097fbe3830c8884e4ce3b439.svg",
     "static/media/placeholderSchema.svg": "/static/media/placeholderSchema.cde9d3484259f8c40b67644cd987432c.svg",
     "static/media/schemaAlertIcon.svg": "/static/media/schemaAlertIcon.7fd559db477880ec74a0bf5a1ba2ccfd.svg",
     "static/media/schemaIconActive.svg": "/static/media/schemaIconActive.b27112a20db8d470218830291002c92a.svg",
@@ -157,6 +156,8 @@
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
     "static/media/waitingMessages.svg": "/static/media/waitingMessages.b6dc0edb44eea832a6bc4e9f8357b215.svg",
     "static/media/slackColors.svg": "/static/media/slackColors.7a7fe6a03b120780b453d44f58e179cb.svg",
+    "static/media/supportIcon.svg": "/static/media/supportIcon.c5d30a436f8986ebb1e23a25939eb6da.svg",
+    "static/media/supportIconColor.svg": "/static/media/supportIconColor.574bbce171ddc502e831e55d7a5f1e06.svg",
     "static/media/schemaTypeIcon.svg": "/static/media/schemaTypeIcon.44504b36261f9061119e649aaa92109a.svg",
     "static/media/waitingProducer.svg": "/static/media/waitingProducer.881595ab6b49ba3bbcd2b16b78e399dd.svg",
     "static/media/waitingConsumer.svg": "/static/media/waitingConsumer.9c8fe46e57642589a37ea1e507345af8.svg",
@@ -170,17 +171,17 @@
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "static/media/newrelicBanner.webp": "/static/media/newrelicBanner.7ac3fcee8ec773e5fa4c.webp",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
-    "static/media/documentIcon.svg": "/static/media/documentIcon.306faa66b4f825b04df06fb2ebcc6680.svg",
+    "static/media/mailsendIcon.svg": "/static/media/mailsendIcon.60a41680964cca894b8e3d6645275a84.svg",
     "static/media/influxDBBanner.webp": "/static/media/influxDBBanner.907086855f4791ea3b9f.webp",
     "static/media/usaIcon.svg": "/static/media/usaIcon.3980b30f15cb32cdf2e73598f81ac90c.svg",
     "static/media/slackBanner.webp": "/static/media/slackBanner.568424be397fd884f5a6.webp",
     "static/media/LogsRetentionInDays.svg": "/static/media/LogsRetentionInDays.0a0864bd090b1a520492507a2bf1d5ea.svg",
     "static/media/sourceIcon.svg": "/static/media/sourceIcon.861e550f98f7961a69d58df1977bae8d.svg",
-    "static/media/documentIconColor.svg": "/static/media/documentIconColor.be9b3b0d0861ec49797e1b5911758a9f.svg",
     "static/media/deadLetterPlaceholder.svg": "/static/media/deadLetterPlaceholder.e81a59abbe86b8b18fa9bb9c1475fd4f.svg",
     "static/media/dls_enable_icon.svg": "/static/media/dls_enable_icon.03a3706804e0d1fc7b44336af88b1314.svg",
     "static/media/finishFlag.svg": "/static/media/finishFlag.cdd2d450a2a93dbfa465c9e00803394f.svg",
     "static/media/grayFinish.svg": "/static/media/grayFinish.5ebcc02830185386ebc7d136451079dd.svg",
+    "static/media/index.umd.cjs": "/static/media/index.umd.411bcbb098030aa2d966.cjs",
     "static/media/file_download.svg": "/static/media/file_download.7010ceaf1a68c3e0941959b6f558ee5b.svg",
     "static/media/deadLetter.svg": "/static/media/deadLetter.0806dd1e9dce011b6b909e31634b0311.svg",
     "static/media/errorindication.svg": "/static/media/errorindication.6f6e388f5a1f899e9d6c810addcaf2d9.svg",
@@ -212,6 +213,7 @@
     "static/media/redeliver.svg": "/static/media/redeliver.3caf70ae4dec01ad025a11d1408c6a4f.svg",
     "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
     "static/media/functionsIcon.svg": "/static/media/functionsIcon.c1f188e1d114b3bed6a5a183cb028011.svg",
+    "static/media/documentIcon.svg": "/static/media/documentIcon.cf88b624434747adee9db7508d626a18.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/star.svg": "/static/media/star.8699de919483296eb55b8a677dbb5c7e.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
@@ -273,7 +275,7 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg"
   },
   "entrypoints": [
-    "static/css/main.28caf0b0.css",
-    "static/js/main.07be597c.js"
+    "static/css/main.af187824.css",
+    "static/js/main.a993c10c.js"
   ]
 }

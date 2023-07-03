@@ -55,7 +55,7 @@ func (s *Server) initWS() {
 		Schemas:    SchemasHandler{S: s},
 	}
 
-	s.queueSubscribe(globalAccountName, memphisWS_Subj_Subs,
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, memphisWS_Subj_Subs,
 		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 
@@ -188,7 +188,7 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 			s.Errorf("[tenant: %v]memphis websocket at json.Marshal: %v", tenantName, err.Error())
 			return
 		}
-		s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), reply, serverName)
+		s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), reply, serverName)
 	}
 }
 

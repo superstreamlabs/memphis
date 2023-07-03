@@ -16,7 +16,6 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
-import { Link } from 'react-router-dom';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
@@ -32,35 +31,41 @@ import schemaIcon from '../../assets/images/schemaIcon.svg';
 import usersIcon from '../../assets/images/usersIcon.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
 import functionsIcon from '../../assets/images/functionsIcon.svg';
-import documentationIcon from '../../assets/images/documentIcon.svg';
-import documentationIconColor from '../../assets/images/documentIconColor.svg';
 import integrationIcon from '../../assets/images/integrationIcon.svg';
 import integrationIconColor from '../../assets/images/integrationIconColor.svg';
 import supportIcon from '../../assets/images/supportIcon.svg';
 import supportIconColor from '../../assets/images/supportIconColor.svg';
-
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
+import { LATEST_RELEASE_URL } from '../../config';
 import { compareVersions, isCloud } from '../../services/valueConvertor';
 import Spinner from '../spinner';
+import Support from './support';
 
 const overlayStyles = {
     borderRadius: '8px',
     width: '230px',
     paddingTop: '5px',
-    paddingBottom: '5px'
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
+const overlayStylesSupport = {
+    borderRadius: '8px',
+    width: '380px',
+    padding: '15px',
+    marginBottom: '10px'
 };
 
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
-    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
+    const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
@@ -88,7 +93,9 @@ function SideBar() {
 
     useEffect(() => {
         getCompanyLogo().catch(console.error);
-        getSystemVersion().catch(console.error);
+        {
+            !isCloud() && getSystemVersion().catch(console.error);
+        }
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
     }, []);
 
@@ -104,11 +111,13 @@ function SideBar() {
         setLogoutLoader(true);
         if (isCloud()) {
             try {
-                await httpRequest('POST', ApiEndpoints.SIGN_OUT);
-                AuthService.logout();
-                setTimeout(() => {
-                    setLogoutLoader(false);
-                }, 1000);
+                const data = await httpRequest('POST', ApiEndpoints.SIGN_OUT);
+                if (data) {
+                    setTimeout(() => {
+                        AuthService.logout();
+                        setLogoutLoader(false);
+                    }, 1000);
+                }
             } catch (error) {
                 setLogoutLoader(false);
             }
@@ -120,7 +129,7 @@ function SideBar() {
         }
     };
 
-    const content = (
+    const contentSetting = (
         <div className="menu-content">
             <div className="item-wrap-header">
                 <span className="img-section">
@@ -146,7 +155,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(pathDomains.profile);
-                    setPopoverOpen(false);
+                    setPopoverOpenSetting(false);
                 }}
             >
                 <div className="item">
@@ -160,7 +169,7 @@ function SideBar() {
                 className="item-wrap"
                 onClick={() => {
                     history.push(`${pathDomains.administration}/integrations`);
-                    setPopoverOpen(false);
+                    setPopoverOpenSetting(false);
                 }}
             >
                 <div className="item">
@@ -175,7 +184,7 @@ function SideBar() {
                     className="item-wrap"
                     onClick={() => {
                         history.push(`${pathDomains.administration}/usage`);
-                        setPopoverOpen(false);
+                        setPopoverOpenSetting(false);
                     }}
                 >
                     <div className="item">
@@ -295,25 +304,43 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
-                {/* <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                    <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
-                    <label className="icon-name">Support</label>
-                </div> */}
-                <Link to={{ pathname: DOC_URL }} target="_blank">
+                {isCloud && (
+                    <Popover
+                        overlayInnerStyle={overlayStylesSupport}
+                        placement="right"
+                        content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
+                        trigger="click"
+                        onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
+                        open={popoverOpenSupport}
+                    >
+                        <div
+                            className="integration-icon-wrapper"
+                            onMouseEnter={() => setHoveredItem('support')}
+                            onMouseLeave={() => setHoveredItem('')}
+                            onClick={() => setPopoverOpenSupport(true)}
+                        >
+                            <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
+                            <label className="icon-name">Support</label>
+                        </div>
+                    </Popover>
+                )}
+
+                {/* <Link to={{ pathname: DOC_URL }} target="_blank">
                     <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
                         <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
                         <label className="icon-name">Docs</label>
                     </div>
-                </Link>
+                </Link> */}
+
                 <Popover
                     overlayInnerStyle={overlayStyles}
-                    placement="rightBottom"
-                    content={content}
+                    placement="right"
+                    content={contentSetting}
                     trigger="click"
-                    onOpenChange={() => setPopoverOpen(!popoverOpen)}
-                    open={popoverOpen}
+                    onOpenChange={() => setPopoverOpenSetting(!popoverOpenSetting)}
+                    open={popoverOpenSetting}
                 >
-                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpen(true)}>
+                    <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
                             src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env

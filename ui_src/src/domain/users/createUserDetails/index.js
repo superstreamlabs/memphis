@@ -24,7 +24,7 @@ import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
 
-const CreateUserDetails = ({ createUserRef, closeModal }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
@@ -79,20 +79,25 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
     };
 
     const onFinish = async () => {
-        const fieldsValue = await creationForm.validateFields();
-        if (fieldsValue?.errorFields) {
-            return;
-        } else {
-            if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
-                fieldsValue['password'] = fieldsValue['generatedPassword'];
-            }
-            try {
-                const bodyRequest = fieldsValue;
-                const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
-                if (data) {
-                    closeModal(data);
+        try {
+            const fieldsValue = await creationForm.validateFields();
+            if (fieldsValue?.errorFields) {
+                handleLoader(false);
+                return;
+            } else {
+                if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
+                    fieldsValue['password'] = fieldsValue['generatedPassword'];
                 }
-            } catch (error) {}
+                try {
+                    const bodyRequest = fieldsValue;
+                    const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
+                    if (data) {
+                        closeModal(data);
+                    }
+                } catch (error) {}
+            }
+        } catch (error) {
+            handleLoader(false);
         }
     };
 
@@ -285,17 +290,26 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                     <p className="field-title">Type password*</p>
                                     <Form.Item
                                         name="password"
-                                        rules={[
-                                            {
-                                                required: true,
-                                                message: 'Password can not be empty'
-                                            },
-                                            {
-                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-<>@#$%])[A-Za-z\d!?\-<>@#$%]{8,}$/,
-                                                message:
-                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character'
-                                            }
-                                        ]}
+                                        rules={
+                                            isCloud()
+                                                ? [
+                                                      {
+                                                          required: true,
+                                                          message: 'Password can not be empty'
+                                                      },
+                                                      {
+                                                          pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-<>@#$%])[A-Za-z\d!?\-<>@#$%]{8,}$/,
+                                                          message:
+                                                              'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character'
+                                                      }
+                                                  ]
+                                                : [
+                                                      {
+                                                          required: true,
+                                                          message: 'Password can not be empty'
+                                                      }
+                                                  ]
+                                        }
                                     >
                                         <Input
                                             placeholder="Type Password"

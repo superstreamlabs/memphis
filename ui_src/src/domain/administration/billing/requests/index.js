@@ -123,9 +123,7 @@ function Requests() {
                                 <img src={RequestsIn} alt="data in" />
                                 <span className="requests-data">
                                     <label className="requests-title-in">Data in</label>
-                                    {usageData && (
-                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
-                                    )}
+                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -133,16 +131,15 @@ function Requests() {
                                     <img src={TotalMsgIcon} alt="data in" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
-                                        {usageData && (
-                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
-                                        )}
+
+                                        <label className="total-value">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</label>
                                     </span>
                                 </div>
                                 <div className="total-messages-in">
                                     <img src={PriceIcon} alt="data in" />
                                     <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        <label className="requests-title-in">Price Per Gb</label>
+                                        <label className="total-value">${usageData && usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>
                                     </span>
                                 </div>
                             </div>
@@ -152,9 +149,9 @@ function Requests() {
                                 <img src={RequestsOut} alt="data out" />
                                 <span className="requests-data">
                                     <label className="requests-title-out">Data out</label>
-                                    {usageData && (
-                                        <label className="data-gb">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
-                                    )}
+                                    <label className="data-gb">
+                                        {usageData && formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb
+                                    </label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -162,16 +159,14 @@ function Requests() {
                                     <img src={TotalMsgIcon} alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
-                                        {usageData && (
-                                            <label className="total-value">{formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb</label>
-                                        )}
+                                        <label className="total-value">{usageData ? usageData?.data_out_events?.toLocaleString('en-US') : 0}</label>
                                     </span>
                                 </div>
                                 <div className="total-messages-out">
                                     <img src={PriceIcon} alt="data out" />
                                     <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Event</label>
-                                        {usageData && <label className="total-value">${usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>}
+                                        <label className="requests-title-in">Price Per Gb</label>
+                                        <label className="total-value">${usageData && usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>
                                     </span>
                                 </div>
                             </div>
@@ -193,7 +188,10 @@ function Requests() {
                             <p className="total-ammount">Total Payment</p>
                             <p className="next-billing">{displayMonth && genetrateSentence()}</p>
                         </span>
-                        <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
+                        <span className="price-val-star">
+                            <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
+                            <p className="pricing-disclaimer">*</p>
+                        </span>
                     </div>
                     <Divider />
                     <span className="billing-item">
@@ -215,6 +213,9 @@ function Requests() {
                         <p className="item">Total price</p>
                         <p className="ammount">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</p>
                     </span>
+                    <span className="billing-item">
+                        <p className="pricing-disclaimer">*Please note that the pricing is not final</p>
+                    </span>
                 </div>
             </div>
             <div className="usage-details">
@@ -225,7 +226,7 @@ function Requests() {
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>
@@ -239,7 +240,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Redeliver} alt="Consumed" />
                                 </div>
@@ -253,7 +254,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={Storage} alt="Storage" />
                                 </div>
@@ -267,7 +268,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge yellow"></div>
                                 <div className="circle-img">
                                     <img src={DeadLetter} alt="Consumed" />
                                 </div>
@@ -285,7 +286,7 @@ function Requests() {
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="yellow-edge"></div>
+                                <div className="box-edge green"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>

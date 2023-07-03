@@ -83,6 +83,16 @@ func ParseFile(fp string) (map[string]interface{}, error) {
 	return p.mapping, nil
 }
 
+// ** Added by Memphis
+func ParsePedantic(data string) (map[string]interface{}, error) {
+	p, err := parse(data, "", true)
+	if err != nil {
+		return nil, err
+	}
+	return p.mapping, nil
+}
+// Added by Memphis **
+
 // ParseFileWithChecks is equivalent to ParseFile but runs in pedantic mode.
 func ParseFileWithChecks(fp string) (map[string]interface{}, error) {
 	data, err := os.ReadFile(fp)

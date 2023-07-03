@@ -22,7 +22,6 @@ import (
 	"io"
 	"math"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -95,7 +94,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, globalAccountName)
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return err
 	}
@@ -872,12 +871,12 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 
 	logSource := request.LogSource
 	if filterSubjectSuffix != _EMPTY_ {
-		if request.LogSource != "empty" && request.LogType != "external" {
+		if request.LogSource == "empty" || request.LogSource == "" {
+			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
+		} else if request.LogSource != "empty" && request.LogType != "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
 		} else if request.LogSource != "empty" && request.LogType == "external" {
 			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
-		} else {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
 		}
 	}
 
@@ -1044,7 +1043,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]EditConfigurations at sendInternalAccountMsgWithReply: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1167,7 +1166,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		return
 	}
 
-	serv.Noticef("[tenant: %v][user: %v] has loged in", user.TenantName, user.Username)
+	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
 
 	domain := ""
 	secure := false
@@ -1221,7 +1220,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	owner := user.Username
 	description := strings.ToLower(body.Description)
 
-	if user.TenantName != conf.GlobalAccountName {
+	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
 		user.TenantName = strings.ToLower(user.TenantName)
 	}
 
@@ -1315,7 +1314,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AddUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1394,7 +1393,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1437,7 +1436,7 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	username := strings.ToLower(user.Username)
 	tenantName := user.TenantName
-	if user.TenantName != conf.GlobalAccountName {
+	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
 		user.TenantName = strings.ToLower(user.TenantName)
 	}
 	err = removeTenantResources(tenantName)
@@ -1475,7 +1474,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, globalAccountName)
+	err := db.EditConfigurationValue("analytics", flag, MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1592,7 +1591,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	_, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1679,7 +1678,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
+	streamInfo, err := serv.memphisStreamInfo(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1697,7 +1696,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
+	err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1707,10 +1706,10 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
 
-	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := serv.subscribeOnAcc(serv.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
+			serv.sendInternalAccountMsg(serv.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
@@ -1731,7 +1730,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		return throughputs, err
 	}
 
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
+	serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), subject, reply, nil, req, true)
 	timeout := 300 * time.Millisecond
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -1745,9 +1744,9 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 
 cleanup:
 	timer.Stop()
-	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
+	serv.unsubscribeOnAcc(serv.MemphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
+		serv.memphisRemoveConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, durableName)
 	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
@@ -1808,7 +1807,7 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
+	exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return false, err
 	}
@@ -1828,5 +1827,17 @@ func TenantSeqInitialize() error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func GetAvailableReplicas(replicas int) int {
+	return replicas
+}
+
+func validateReplicas(replicas int) error {
+	if replicas > 5 {
+		return errors.New("max replicas in a cluster is 5")
+	}
+
 	return nil
 }

@@ -17,7 +17,6 @@ import (
 	"strings"
 
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -298,10 +297,6 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 
-	if user.TenantName != conf.GlobalAccountName {
-		user.TenantName = strings.ToLower(user.TenantName)
-	}
-
 	integrationUpdate := models.Integration{
 		Name:       strings.ToLower(body.Name),
 		Keys:       nil,
@@ -315,7 +310,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		serv.Errorf("[tenant: %v]DisconnectIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", user.TenantName, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

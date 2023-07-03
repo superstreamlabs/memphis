@@ -177,6 +177,9 @@
             .total-payment-header {
                 display: flex;
                 justify-content: space-between;
+                .price-val-star {
+                    display: flex;
+                }
                 .total-ammount {
                     margin: 0;
                     font-family: 'InterSemiBold';
@@ -200,6 +203,12 @@
                 .item {
                     margin: 0;
                     color: #84818a;
+                }
+                .pricing-disclaimer {
+                    margin: 0;
+                    color: #84818a;
+                    font-size: 11px;
+                    font-weight: 500;
                 }
                 .ammount {
                     margin: 0;
@@ -248,12 +257,18 @@
                 align-items: center;
                 width: 80%;
                 height: 100%;
-                .yellow-edge {
-                    background-color: #ffc633;
+                .box-edge {
                     width: 10px;
                     height: 100%;
                     margin-right: 20px;
                     border-radius: 8px 0 0 8px;
+                }
+                .yellow{
+                    background-color: #ffecc7;
+
+                }
+                .green{
+                    background-color: #cef3dd;
                 }
                 .circle-img {
                     border: 1px solid #eaeaea;

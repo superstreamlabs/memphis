@@ -34,9 +34,9 @@ const GenericDetails = () => {
                 <span>Track Slow Consumption: Stations with Lag in Traffic</span>
             </div>
             <div className="station-list">
-                {state?.monitor_data?.delayed_cgs?.map((station, index) => {
-                    <StationLagCollapse station={station} key={index} />;
-                })}
+                {state?.monitor_data?.delayed_cgs?.map((station, index) => (
+                    <StationLagCollapse station={station} index={index} />
+                ))}
             </div>
         </div>
     );
@@ -69,7 +69,7 @@ const GenericDetails = () => {
                 <div className="data-box">
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Stored events</span>
+                        <span>Stored messages</span>
                         <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
                     </div>
                 </div>

@@ -76,7 +76,7 @@ func RunServer(opts *Options) *Server {
 	if opts == nil {
 		opts = DefaultOptions()
 	}
-	s, _, err := NewServer(opts)
+	s, err := NewServer(opts)
 	if err != nil || s == nil {
 		panic(fmt.Sprintf("No NATS Server object returned: %v", err))
 	}
@@ -730,7 +730,7 @@ func TestLameDuckOptionsValidation(t *testing.T) {
 	o := DefaultOptions()
 	o.LameDuckDuration = 5 * time.Second
 	o.LameDuckGracePeriod = 10 * time.Second
-	s, _, err := NewServer(o)
+	s, err := NewServer(o)
 	if s != nil {
 		s.Shutdown()
 	}
@@ -1272,7 +1272,7 @@ func TestServerShutdownDuringStart(t *testing.T) {
 	// while Start() runs (in this case, before), we don't
 	// start the listeners and therefore leave accept loops
 	// hanging.
-	s, _, err := NewServer(o)
+	s, err := NewServer(o)
 	if err != nil {
 		t.Fatalf("Error creating server: %v", err)
 	}
@@ -1495,7 +1495,7 @@ func TestClientWriteLoopStall(t *testing.T) {
 func TestInsecureSkipVerifyWarning(t *testing.T) {
 	checkWarnReported := func(t *testing.T, o *Options, expectedWarn string) {
 		t.Helper()
-		s, _, err := NewServer(o)
+		s, err := NewServer(o)
 		if err != nil {
 			t.Fatalf("Error on new server: %v", err)
 		}

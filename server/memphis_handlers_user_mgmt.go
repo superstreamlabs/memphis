@@ -42,7 +42,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(globalAccountName)
+	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -199,7 +199,7 @@ func removeTenantResources(tenantName string) error {
 	for _, user := range users {
 		if user.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 			// send signal to reload config
-			err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+			err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
 			if err != nil {
 				return err
 			}
@@ -377,7 +377,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName, false, "", "", "", "")
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT, false, "", "", "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})

@@ -93,7 +93,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	connectionIds := make(map[string]string)
 	var lock sync.Mutex
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
-	sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
@@ -114,10 +114,10 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	}
 
 	// send message to all brokers to get their connections
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
 	timeout := time.After(50 * time.Second)
 	<-timeout
-	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 	return connectionIds, nil
 }
 
@@ -159,8 +159,6 @@ func killFunc(s *Server) {
 			}
 		}
 	}
-
-	s.removeStaleStations()
 }
 
 func (s *Server) KillZombieResources() {
@@ -180,6 +178,10 @@ func (s *Server) KillZombieResources() {
 	firstIteration := true
 	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
+		if firstIteration {
+			s.removeStaleStations()
+			s.RemoveOldStations()
+		}
 		killFunc(s)
 
 		if firstIteration || count == 1*60 { // once in 1 hour

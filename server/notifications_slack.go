@@ -215,7 +215,7 @@ func createSlackIntegration(tenantName string, keys map[string]string, propertie
 		if err != nil {
 			return slackIntegration, err
 		}
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
 			return slackIntegration, err
 		}
@@ -274,7 +274,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	if err != nil {
 		return models.Integration{}, err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return models.Integration{}, err
 	}
