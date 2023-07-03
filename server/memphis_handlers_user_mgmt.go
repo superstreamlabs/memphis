@@ -127,7 +127,7 @@ func updateDeletedUserResources(user models.User) error {
 	return nil
 }
 
-func removeTenantResources(tenantName string) error {
+func removeTenantResources(tenantName string, user models.User) error {
 	err := db.RemoveProducersByTenant(tenantName)
 	if err != nil {
 		return err
@@ -168,11 +168,6 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	users, err := db.GetApplicationUsersByTenantName(tenantName)
-	if err != nil {
-		return err
-	}
-
 	err = db.DeleteUsersByTenant(tenantName)
 	if err != nil {
 		return err
@@ -191,18 +186,15 @@ func removeTenantResources(tenantName string) error {
 	err = serv.memphisPurgeResourcesAccount(tenantName)
 	if err != nil {
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Errorf("Failed deleting account %s - %s", tenantName, err.Error())
 			return err
 		}
 	}
 
-	for _, user := range users {
-		if user.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
-			// send signal to reload config
-			err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
-			if err != nil {
-				return err
-			}
+	if user.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -722,16 +714,17 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	}
 	tenantName := user.TenantName
+	route := strings.ToLower(body.Route)
 	switch body.Route {
 	case "stations":
-		users, err := umh.GetActiveUsers(tenantName, body.Route)
+		users, err := umh.GetActiveUsers(tenantName, route)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveUsers: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags(tenantName, body.Route)
+		tags, err := umh.GetActiveTags(tenantName, route)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveTags: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -742,14 +735,14 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 		return
 	case "schemaverse":
-		users, err := umh.GetActiveUsers(tenantName, body.Route)
+		users, err := umh.GetActiveUsers(tenantName, route)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveUsers: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags(tenantName, body.Route)
+		tags, err := umh.GetActiveTags(tenantName, route)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveTags: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

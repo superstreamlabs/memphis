@@ -1220,10 +1220,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	owner := user.Username
 	description := strings.ToLower(body.Description)
 
-	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
-		user.TenantName = strings.ToLower(user.TenantName)
-	}
-
+	user.TenantName = strings.ToLower(user.TenantName)
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
@@ -1436,10 +1433,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	username := strings.ToLower(user.Username)
 	tenantName := user.TenantName
-	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
-		user.TenantName = strings.ToLower(user.TenantName)
-	}
-	err = removeTenantResources(tenantName)
+	user.TenantName = strings.ToLower(user.TenantName)
+	err = removeTenantResources(tenantName, user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})
