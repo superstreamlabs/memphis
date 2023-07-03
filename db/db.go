@@ -1485,6 +1485,34 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	return stations, nil
 }
 
+func GetAllStations() ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, err
+	}
+	return stations, nil
+}
+
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2638,6 +2666,34 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	if len(consumers) == 0 {
 		return []models.ExtendedConsumer{}, nil
+	}
+	return consumers, nil
+}
+
+func GetConsumers() ([]models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Consumer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * From consumers`
+	stmt, err := conn.Conn().Prepare(ctx, "get_consumers", query)
+	if err != nil {
+		return []models.Consumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return []models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return []models.Consumer{}, err
 	}
 	return consumers, nil
 }

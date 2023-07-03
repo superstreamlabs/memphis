@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
@@ -1416,6 +1417,41 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 				return err
 			}
 		}
+	}
+	return nil
+}
+
+func (s *Server) DataLocationFromGlobalAccountToMemphisAccount() error {
+	stations, err := db.GetAllStations()
+	if err != nil {
+		return err
+	}
+
+	stationsMap := map[int]models.Station{}
+
+	for _, station := range stations {
+		stationName, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		stationsMap[station.ID] = station
+		err = s.CreateStream(conf.MemphisGlobalAccountName, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		if err != nil {
+			return err
+		}
+
+	}
+	consumers, err := db.GetConsumers()
+	if err != nil {
+		return err
+	}
+	for _, consumer := range consumers {
+		station := stationsMap[consumer.StationId]
+		err = s.CreateConsumer(consumer.TenantName, consumer, station)
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }

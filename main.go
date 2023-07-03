@@ -16,7 +16,6 @@ package main
 //go:generate go run server/errors_gen.go
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"memphis/analytics"
@@ -96,22 +95,6 @@ func usage() {
 	os.Exit(0)
 }
 
-func dataLocationFromGLObalAccountToMemphisAccount(opts *server.Options) error {
-	dir := opts.StoreDir + "/jetstream/"
-	oldName := dir + server.DEFAULT_GLOBAL_ACCOUNT
-	newName := dir + server.MEMPHIS_GLOBAL_ACCOUNT
-
-	f, err := os.Stat(oldName)
-	if f != nil {
-		err = os.Rename(oldName, newName)
-		if err != nil {
-			errMsg := fmt.Sprintf("dataLocationFromGLObalAccountToMemphisAccount: error renaming folder: %s", err)
-			return errors.New(errMsg)
-		}
-	}
-	return nil
-}
-
 func runMemphis(s *server.Server) {
 	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion(), s.GetCustomDeploymentId())
 	if err != nil {
@@ -151,6 +134,16 @@ func runMemphis(s *server.Server) {
 
 		// run only on the leader
 		go s.KillZombieResources()
+		dir := s.Opts().StoreDir + "/jetstream/"
+		folderName := dir + server.DEFAULT_GLOBAL_ACCOUNT
+		f, err := os.Stat(folderName)
+		if f != nil {
+			err = s.DataLocationFromGlobalAccountToMemphisAccount()
+			if err != nil {
+				s.Errorf("Data from global account to memphis account failed: " + err.Error())
+				os.Exit(1)
+			}
+		}
 
 		var env string
 		var message string
@@ -201,11 +194,6 @@ func main() {
 	} else if opts.CheckConfig {
 		fmt.Fprintf(os.Stderr, "%s: configuration file %s is valid\n", exe, opts.ConfigFile)
 		os.Exit(0)
-	}
-
-	err = dataLocationFromGLObalAccountToMemphisAccount(opts)
-	if err != nil {
-		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
 	// Create the server with appropriate options.
