@@ -5759,3 +5759,34 @@ func SetTenantSequence(sequence int) error {
 	}
 	return nil
 }
+
+func ReliveConectionResources(connectionId string, isActive bool) error {
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	var queries []string
+	queries = append(queries, fmt.Sprintf("UPDATE connections SET is_active = %v WHERE id = '%v';", isActive, connectionId))
+	queries = append(queries, fmt.Sprintf("UPDATE producers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
+	queries = append(queries, fmt.Sprintf("UPDATE consumers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
+
+	batch := &pgx.Batch{}
+	for _, q := range queries {
+		batch.Queue(q)
+	}
+
+	br := conn.SendBatch(ctx, batch)
+	for i := 0; i < len(queries); i++ {
+		_, err = br.Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

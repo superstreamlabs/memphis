@@ -432,13 +432,3 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
 }
-
-func (ph ProducersHandler) ReliveProducers(connectionId string) error {
-	err := db.UpdateProducersConnection(connectionId, true)
-	if err != nil {
-		serv.Errorf("ReliveProducers: %v", err.Error())
-		return err
-	}
-
-	return nil
-}
