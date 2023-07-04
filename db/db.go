@@ -5565,7 +5565,7 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 	if err != nil {
 		return []models.Tenant{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MemphisGlobalAccountName, conf.MemphisGlobalAccount)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, conf.MemphisGlobalAccountName, conf.GlobalAccount)
 	if err != nil {
 		return []models.Tenant{}, err
 	}

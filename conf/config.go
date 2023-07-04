@@ -17,7 +17,7 @@ import (
 )
 
 const MemphisGlobalAccountName = "$memphis"
-const MemphisGlobalAccount = "$G"
+const GlobalAccount = "$G"
 
 type Configuration struct {
 	DEV_ENV                 string

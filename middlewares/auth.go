@@ -81,6 +81,10 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return models.User{}, errors.New("f")
 	}
 
+	if claims["tenant_name"] == nil {
+		claims["tenant_name"] = conf.MemphisGlobalAccountName
+	}
+
 	userId := int(claims["user_id"].(float64))
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
 	fmt.Println("test", claims["tenant_name"])
