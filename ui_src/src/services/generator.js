@@ -14,32 +14,49 @@ export const generator = () => {
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numeric = '0123456789';
-    const specialChars = '!?-@#$%';
+    const specialChars = '!?-@#$%^&*';
     const length = 10;
 
     let password = '';
-    let character = '';
 
-    while (password.length < length) {
-        const entity1 = Math.floor(Math.random() * uppercase.length);
-        const entity2 = Math.floor(Math.random() * lowercase.length);
-        const entity3 = Math.floor(Math.random() * numeric.length);
-        const entity4 = Math.floor(Math.random() * specialChars.length);
+    const getRandomChar = (characters) => {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        return characters[randomIndex];
+    };
 
-        character += uppercase.charAt(entity1);
-        character += lowercase.charAt(entity2);
-        character += numeric.charAt(entity3);
-        character += specialChars.charAt(entity4);
+    const hasUppercase = /(?=.*[A-Z])/;
+    const hasLowercase = /(?=.*[a-z])/;
+    const hasNumeric = /(?=.*\d)/;
+    const hasSpecialChars = /(?=.*[!?\-@#$%^&*])/;
 
-        password = character;
+    while (!hasUppercase.test(password) || !hasLowercase.test(password) || !hasNumeric.test(password) || !hasSpecialChars.test(password) || password.length < length) {
+        const charSetIndex = Math.floor(Math.random() * 4);
+        let randomChar;
+
+        switch (charSetIndex) {
+            case 0:
+                randomChar = getRandomChar(uppercase);
+                break;
+            case 1:
+                randomChar = getRandomChar(lowercase);
+                break;
+            case 2:
+                randomChar = getRandomChar(numeric);
+                break;
+            case 3:
+                randomChar = getRandomChar(specialChars);
+                break;
+            default:
+                break;
+        }
+
+        password += randomChar;
     }
 
     password = password
         .split('')
-        .sort(() => {
-            return 0.5 - Math.random();
-        })
+        .sort(() => Math.random() - 0.5)
         .join('');
 
-    return password.substr(0, length);
+    return password;
 };

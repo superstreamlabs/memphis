@@ -114,7 +114,8 @@ const CreateAppUser = (props) => {
                         <div className="create-user-form-field">
                             <TitleComponent headerTitle="Enter password" typeTitle="sub-header" required={true}></TitleComponent>
                             <span className="password-hint">
-                                Hint: Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character
+                                Hint: Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special
+                                character(!?-@#$%^&*).
                             </span>
                             <Input
                                 placeholder="Type password"
