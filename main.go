@@ -139,12 +139,12 @@ func runMemphis(s *server.Server) {
 		folderName := fmt.Sprintf("%s%s", dir, server.DEFAULT_GLOBAL_ACCOUNT)
 		f, err := os.Stat(folderName)
 		if err != nil {
-			s.Errorf(fmt.Sprintf("Get file info failed: %s", err.Error()))
+			s.Errorf("Get file info failed: %s", err.Error())
 		}
 		if f != nil {
 			err = s.MoveResourcesFromOldToNewDefaultAcc()
 			if err != nil {
-				s.Errorf(fmt.Sprintf("Data from global account to memphis account failed: %s", err.Error()))
+				s.Errorf("Data from global account to memphis account failed: %s", err.Error())
 				os.Exit(1)
 			}
 		}
