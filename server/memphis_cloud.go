@@ -1282,6 +1282,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
 				return
 			}
+			err = validatePassword(body.Password)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Invalid Password"})
+				return
+			}
 			password, err = EncryptAES([]byte(body.Password))
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]AddUser at EncryptAES: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
