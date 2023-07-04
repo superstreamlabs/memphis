@@ -11,28 +11,35 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 export const generator = () => {
-    const string = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numeric = '0123456789';
-    const length = 9;
-    const formValid = +length > 0;
-    if (!formValid) {
-        return;
-    }
-    let character = '';
+    const specialChars = '!?-@#$%';
+    const length = 10;
+
     let password = '';
+    let character = '';
+
     while (password.length < length) {
-        const entity1 = Math.ceil(string.length * Math.random() * Math.random());
-        const entity2 = Math.ceil(numeric.length * Math.random() * Math.random());
-        let hold = string.charAt(entity1);
-        character += hold;
-        character += numeric.charAt(entity2);
+        const entity1 = Math.floor(Math.random() * uppercase.length);
+        const entity2 = Math.floor(Math.random() * lowercase.length);
+        const entity3 = Math.floor(Math.random() * numeric.length);
+        const entity4 = Math.floor(Math.random() * specialChars.length);
+
+        character += uppercase.charAt(entity1);
+        character += lowercase.charAt(entity2);
+        character += numeric.charAt(entity3);
+        character += specialChars.charAt(entity4);
+
         password = character;
     }
+
     password = password
         .split('')
         .sort(() => {
             return 0.5 - Math.random();
         })
         .join('');
+
     return password.substr(0, length);
 };

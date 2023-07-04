@@ -9,6 +9,14 @@
 
     .create-user-form-field {
         margin-bottom: 20px;
+        .password-hint{
+            position: relative;
+            max-width: 48%;
+            display: flex;
+            margin-top: -12px;
+            font-size: 12px;
+            color: #b4b4b4;
+        }
     }
 
     .validate-pass {
