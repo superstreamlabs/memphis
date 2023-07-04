@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
@@ -1434,7 +1433,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 			return err
 		}
 		stationsMap[station.ID] = station
-		err = s.CreateStream(conf.MemphisGlobalAccountName, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
 		if err != nil {
 			return err
 		}
