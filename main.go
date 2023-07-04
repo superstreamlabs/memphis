@@ -140,7 +140,6 @@ func runMemphis(s *server.Server) {
 		f, err := os.Stat(folderName)
 		if err != nil {
 			s.Errorf(fmt.Sprintf("Get file info failed: %s", err.Error()))
-			os.Exit(1)
 		}
 		if f != nil {
 			err = s.MoveResourcesFromOldToNewDefaultAcc()
