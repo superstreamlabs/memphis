@@ -136,7 +136,6 @@ func runMemphis(s *server.Server) {
 		go s.KillZombieResources()
 		// For backward compatibility data from old account to memphis default account
 		dir := s.Opts().StoreDir + "/jetstream/"
-		fmt.Println("test", s.Opts().StoreDir)
 		folderName := fmt.Sprintf("%s%s", dir, server.DEFAULT_GLOBAL_ACCOUNT)
 		f, err := os.Stat(folderName)
 		if err != nil {
