@@ -174,7 +174,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
-		key VARCHAR NOT NULL UNIQUE,
+		key VARCHAR NOT NULL,
 		value TEXT NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
@@ -4817,7 +4817,7 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 // Image Functions
 func InsertImage(name string, base64Encoding string, tenantName string) error {
 	tenantName = strings.ToLower(tenantName)
-	err := InsertConfiguration(name, base64Encoding, tenantName)
+	err := UpsertConfiguration(name, base64Encoding, tenantName)
 	if err != nil {
 		return err
 	}
@@ -4857,7 +4857,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 		return false, models.Image{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM configurations WHERE key = $1 AND tenant_name =$2 LIMIT 1`
+	query := `SELECT id, key, value FROM configurations WHERE key = $1 AND tenant_name =$2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_image", query)
 	if err != nil {
 		return false, models.Image{}, err
