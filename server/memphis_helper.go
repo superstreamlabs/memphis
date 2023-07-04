@@ -23,6 +23,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -1450,4 +1451,17 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		}
 	}
 	return nil
+}
+
+func validatePassword(password string) error {
+	pattern := `^([A-Z]*)([a-z]*)(.[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$`
+	regex, err := regexp.Compile(pattern)
+	if err != nil {
+		return err
+	}
+	if regex.MatchString(password) {
+		return nil
+	} else {
+		return errors.New("Invalid Password")
+	}
 }
