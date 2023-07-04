@@ -144,7 +144,6 @@ func runMemphis(s *server.Server) {
 			err = s.MoveResourcesFromOldToNewDefaultAcc()
 			if err != nil {
 				s.Errorf("Data from global account to memphis account failed: %s", err.Error())
-				os.Exit(1)
 			}
 		}
 
