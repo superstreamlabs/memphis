@@ -1428,7 +1428,6 @@ func (s *Server) DataLocationFromGlobalAccountToMemphisAccount() error {
 	}
 
 	stationsMap := map[int]models.Station{}
-
 	for _, station := range stations {
 		stationName, err := StationNameFromStr(station.Name)
 		if err != nil {
@@ -1439,7 +1438,6 @@ func (s *Server) DataLocationFromGlobalAccountToMemphisAccount() error {
 		if err != nil {
 			return err
 		}
-
 	}
 	consumers, err := db.GetConsumers()
 	if err != nil {
@@ -1451,7 +1449,6 @@ func (s *Server) DataLocationFromGlobalAccountToMemphisAccount() error {
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
