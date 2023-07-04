@@ -174,7 +174,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 
 	configurationsTable := `CREATE TABLE IF NOT EXISTS configurations(
 		id SERIAL NOT NULL,
-		key VARCHAR NOT NULL UNIQUE,
+		key VARCHAR NOT NULL,
 		value TEXT NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
@@ -1453,9 +1453,7 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			if consumer.ID != 0 {
 				consumers = append(consumers, consumer)
 			}
-			if tenantName != conf.MemphisGlobalAccountName {
-				tenantName = strings.ToLower(tenantName)
-			}
+			tenantName = strings.ToLower(tenantName)
 			station := models.ExtendedStation{
 				ID:                          stationRes.ID,
 				Name:                        stationRes.Name,
@@ -4092,35 +4090,6 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	return true, users[0], nil
 }
 
-func GetApplicationUsersByTenantName(tenantName string) ([]models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE type = 'application' AND tenant_name = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_application_user_by_tenant_name", query)
-	if err != nil {
-		return []models.User{}, err
-	}
-	tenantName = strings.ToLower(tenantName)
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return []models.User{}, err
-	}
-	if len(users) == 0 {
-		return []models.User{}, nil
-	}
-	return users, nil
-}
-
 func GetUserForLogin(username string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4453,7 +4422,7 @@ func EditAvatar(username string, avatarId int, tenantName string) error {
 	return nil
 }
 
-func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
+func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4467,7 +4436,41 @@ func GetAllActiveUsers(tenantName string) ([]models.FilteredUser, error) {
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1
 	`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	tenantName = strings.ToLower(tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	defer rows.Close()
+	userList, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.FilteredUser])
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	if len(userList) == 0 {
+		return []models.FilteredUser{}, nil
+	}
+	return userList, nil
+}
+
+func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.FilteredUser{}, err
+	}
+	defer conn.Release()
+	query := `
+	SELECT DISTINCT u.username
+	FROM users AS u
+	JOIN schema_versions AS s ON u.id = s.created_by
+	WHERE s.tenant_name=$1
+	`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
@@ -4780,6 +4783,64 @@ func GetAllUsedTags(tenantName string) ([]models.Tag, error) {
 	return tags, nil
 }
 
+func GetAllUsedStationsTags(tenantName string) ([]models.Tag, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE (ARRAY_LENGTH(stations, 1) > 0) AND tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_stations_tags", query)
+	if err != nil {
+		return nil, err
+	}
+	tenantName = strings.ToLower(tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
+	}
+	return tags, nil
+}
+
+func GetAllUsedSchemasTags(tenantName string) ([]models.Tag, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM tags WHERE (ARRAY_LENGTH(schemas, 1) > 0) AND tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_used_schemas_tags", query)
+	if err != nil {
+		return nil, err
+	}
+	tenantName = strings.ToLower(tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Tag])
+	if err != nil {
+		return []models.Tag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.Tag{}, nil
+	}
+	return tags, nil
+}
+
 func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4812,7 +4873,7 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 // Image Functions
 func InsertImage(name string, base64Encoding string, tenantName string) error {
 	tenantName = strings.ToLower(tenantName)
-	err := InsertConfiguration(name, base64Encoding, tenantName)
+	err := UpsertConfiguration(name, base64Encoding, tenantName)
 	if err != nil {
 		return err
 	}
@@ -4852,7 +4913,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 		return false, models.Image{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM configurations WHERE key = $1 AND tenant_name =$2 LIMIT 1`
+	query := `SELECT id, key, value FROM configurations WHERE key = $1 AND tenant_name =$2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_image", query)
 	if err != nil {
 		return false, models.Image{}, err
@@ -5044,9 +5105,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		if tenantName != conf.MemphisGlobalAccountName {
-			tenantName = strings.ToLower(tenantName)
-		}
+		tenantName = strings.ToLower(tenantName)
 		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
 		if err != nil {
 			return 0, err
@@ -5082,9 +5141,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		if tenantName != conf.MemphisGlobalAccountName {
-			tenantName = strings.ToLower(tenantName)
-		}
+		tenantName = strings.ToLower(tenantName)
 		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
 		if err != nil {
 			return 0, err
@@ -5621,9 +5678,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
-	if name != conf.MemphisGlobalAccountName {
-		name = strings.ToLower(name)
-	}
+	name = strings.ToLower(name)
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return false, models.Tenant{}, err
@@ -5758,5 +5813,36 @@ func SetTenantSequence(sequence int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func ReliveConectionResources(connectionId string, isActive bool) error {
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	var queries []string
+	queries = append(queries, fmt.Sprintf("UPDATE connections SET is_active = %v WHERE id = '%v';", isActive, connectionId))
+	queries = append(queries, fmt.Sprintf("UPDATE producers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
+	queries = append(queries, fmt.Sprintf("UPDATE consumers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
+
+	batch := &pgx.Batch{}
+	for _, q := range queries {
+		batch.Queue(q)
+	}
+
+	br := conn.SendBatch(ctx, batch)
+	for i := 0; i < len(queries); i++ {
+		_, err = br.Exec()
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
