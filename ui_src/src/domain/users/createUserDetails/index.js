@@ -94,7 +94,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                     if (data) {
                         closeModal(data);
                     }
-                } catch (error) {}
+                } catch (error) {
+                    handleLoader(false);
+                }
             }
         } catch (error) {
             handleLoader(false);
