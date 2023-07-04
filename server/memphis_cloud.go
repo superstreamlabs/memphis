@@ -1284,7 +1284,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			}
 			err = validatePassword(body.Password)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Invalid Password"})
 				return
 			}

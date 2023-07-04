@@ -1458,10 +1458,10 @@ func validatePassword(password string) error {
 	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
 	match, _ := regexp.MatchString(pattern, password)
 	if !match {
-		return errors.New("Invalid Password")
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 	}
 	if len(password) < 8 {
-		return errors.New("Invalid Password")
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 	}
 	var (
 		hasUppercase   bool
@@ -1487,5 +1487,5 @@ func validatePassword(password string) error {
 		return nil
 	}
 
-	return errors.New("Invalid Password")
+	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }
