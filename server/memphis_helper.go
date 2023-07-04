@@ -1419,3 +1419,35 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 	}
 	return nil
 }
+
+func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
+	stations, err := db.GetAllStations()
+	if err != nil {
+		return err
+	}
+
+	stationsMap := map[int]models.Station{}
+	for _, station := range stations {
+		stationName, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		stationsMap[station.ID] = station
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		if err != nil {
+			return err
+		}
+	}
+	consumers, err := db.GetConsumers()
+	if err != nil {
+		return err
+	}
+	for _, consumer := range consumers {
+		station := stationsMap[consumer.StationId]
+		err = s.CreateConsumer(consumer.TenantName, consumer, station)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
