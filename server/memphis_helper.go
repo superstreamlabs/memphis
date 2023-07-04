@@ -1421,7 +1421,7 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 	return nil
 }
 
-func (s *Server) DataLocationFromGlobalAccountToMemphisAccount() error {
+func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 	stations, err := db.GetAllStations()
 	if err != nil {
 		return err

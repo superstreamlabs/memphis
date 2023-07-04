@@ -134,13 +134,19 @@ func runMemphis(s *server.Server) {
 
 		// run only on the leader
 		go s.KillZombieResources()
+		// For backward compatibility data from old account to memphis default account
 		dir := s.Opts().StoreDir + "/jetstream/"
-		folderName := dir + server.DEFAULT_GLOBAL_ACCOUNT
+		fmt.Println("test", s.Opts().StoreDir)
+		folderName := fmt.Sprintf("%s%s", dir, server.DEFAULT_GLOBAL_ACCOUNT)
 		f, err := os.Stat(folderName)
+		if err != nil {
+			s.Errorf(fmt.Sprintf("Get file info failed: %s", err.Error()))
+			os.Exit(1)
+		}
 		if f != nil {
-			err = s.DataLocationFromGlobalAccountToMemphisAccount()
+			err = s.MoveResourcesFromOldToNewDefaultAcc()
 			if err != nil {
-				s.Errorf("Data from global account to memphis account failed: " + err.Error())
+				s.Errorf(fmt.Sprintf("Data from global account to memphis account failed: %s", err.Error()))
 				os.Exit(1)
 			}
 		}
