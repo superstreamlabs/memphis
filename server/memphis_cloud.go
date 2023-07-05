@@ -127,7 +127,6 @@ func CreateRootUserOnFirstSystemLoad() error {
 			}
 
 			ip := serv.getIp()
-
 			analyticsParams := []analytics.EventParam{param}
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
@@ -1505,7 +1504,6 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 		if err != nil || !shouldSend {
 			return
 		}
-
 		param := analytics.EventParam{
 			Name:  "err_source",
 			Value: s.getLogSource(),

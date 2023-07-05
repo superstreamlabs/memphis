@@ -7,13 +7,13 @@ require (
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/validator/v10 v10.14.0
-	github.com/gofrs/uuid v4.2.0+incompatible
+	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jhump/protoreflect v1.13.0
 	github.com/klauspost/compress v1.16.0
 	github.com/minio/highwayhash v1.0.2
 	github.com/nats-io/jwt/v2 v2.3.0
-	github.com/nats-io/nats.go v1.24.0
-	github.com/nats-io/nkeys v0.3.0
+	github.com/nats-io/nats.go v1.25.0
+	github.com/nats-io/nkeys v0.4.4
 	github.com/nats-io/nuid v1.0.1
 	github.com/tkanos/gonfig v0.0.0-20210106201359-53e13348de2f
 	go.uber.org/automaxprocs v1.5.1
@@ -34,7 +34,7 @@ require (
 	github.com/aws/smithy-go v1.13.5
 	github.com/docker/docker v20.10.24+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
-	github.com/graph-gophers/graphql-go v1.4.0
+	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
@@ -93,7 +93,7 @@ require (
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
-	github.com/memphisdev/memphis.go v0.2.1
+	github.com/memphisdev/memphis.go v1.0.3
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
