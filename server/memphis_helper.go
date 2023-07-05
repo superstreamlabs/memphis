@@ -23,10 +23,12 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
@@ -1418,4 +1420,72 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
+	stations, err := db.GetAllStations()
+	if err != nil {
+		return err
+	}
+
+	stationsMap := map[int]models.Station{}
+	for _, station := range stations {
+		stationName, err := StationNameFromStr(station.Name)
+		if err != nil {
+			return err
+		}
+		stationsMap[station.ID] = station
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		if err != nil {
+			return err
+		}
+	}
+	consumers, err := db.GetConsumers()
+	if err != nil {
+		return err
+	}
+	for _, consumer := range consumers {
+		station := stationsMap[consumer.StationId]
+		err = s.CreateConsumer(consumer.TenantName, consumer, station)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
+	match, _ := regexp.MatchString(pattern, password)
+	if !match {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	if len(password) < 8 {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	var (
+		hasUppercase   bool
+		hasLowercase   bool
+		hasDigit       bool
+		hasSpecialChar bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUppercase = true
+		case unicode.IsLower(char):
+			hasLowercase = true
+		case unicode.IsDigit(char):
+			hasDigit = true
+		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
+			hasSpecialChar = true
+		}
+	}
+
+	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
+		return nil
+	}
+
+	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }

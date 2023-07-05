@@ -13,7 +13,7 @@
 import './App.scss';
 
 import { Switch, Route, withRouter } from 'react-router-dom';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
@@ -65,6 +65,9 @@ const App = withRouter((props) => {
     const firebase_id_token = urlParams.get('firebase_id_token');
     const firebase_organization_id = urlParams.get('firebase_organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+
+    const ref = useRef();
+    ref.current = cloudLogedIn;
 
     const handleLoginWithToken = async () => {
         try {
@@ -130,7 +133,7 @@ const App = withRouter((props) => {
     }, [isMobile]);
 
     const handleRefresh = useCallback(async (firstTime) => {
-        if (window.location.pathname === pathDomains.login || firebase_id_token) {
+        if (window.location.pathname === pathDomains.login || (firebase_id_token !== null && !ref.current)) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);

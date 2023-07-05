@@ -870,11 +870,6 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	}
 
 	logSource := request.LogSource
-	if logSource == "" {
-		serv.Warnf("GetSystemLogs: log_source should be one of the following: empty or memphis-{number as amount of clusters}")
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "log_source should be one of the following: empty or memphis-{number as amount of clusters}"})
-		return
-	}
 	if filterSubjectSuffix != _EMPTY_ {
 		if request.LogSource == "empty" || request.LogSource == "" {
 			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
@@ -1225,10 +1220,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 	owner := user.Username
 	description := strings.ToLower(body.Description)
 
-	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
-		user.TenantName = strings.ToLower(user.TenantName)
-	}
-
+	user.TenantName = strings.ToLower(user.TenantName)
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
@@ -1288,6 +1280,12 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			if body.Password == "" {
 				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+				return
+			}
+			err = validatePassword(body.Password)
+			if err != nil {
+				serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
 			}
 			password, err = EncryptAES([]byte(body.Password))
@@ -1441,10 +1439,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	username := strings.ToLower(user.Username)
 	tenantName := user.TenantName
-	if user.TenantName != MEMPHIS_GLOBAL_ACCOUNT {
-		user.TenantName = strings.ToLower(user.TenantName)
-	}
-	err = removeTenantResources(tenantName)
+	user.TenantName = strings.ToLower(user.TenantName)
+	err = removeTenantResources(tenantName, user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": err.Error()})

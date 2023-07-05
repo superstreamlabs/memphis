@@ -11,28 +11,52 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 export const generator = () => {
-    const string = 'abcdefghijklmnopqrstuvwxyz';
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numeric = '0123456789';
-    const length = 9;
-    const formValid = +length > 0;
-    if (!formValid) {
-        return;
-    }
-    let character = '';
+    const specialChars = '!?-@#$%^&*';
+    const length = 10;
+
     let password = '';
-    while (password.length < length) {
-        const entity1 = Math.ceil(string.length * Math.random() * Math.random());
-        const entity2 = Math.ceil(numeric.length * Math.random() * Math.random());
-        let hold = string.charAt(entity1);
-        character += hold;
-        character += numeric.charAt(entity2);
-        password = character;
+
+    const getRandomChar = (characters) => {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        return characters[randomIndex];
+    };
+
+    const hasUppercase = /(?=.*[A-Z])/;
+    const hasLowercase = /(?=.*[a-z])/;
+    const hasNumeric = /(?=.*\d)/;
+    const hasSpecialChars = /(?=.*[!?\-@#$%^&*])/;
+
+    while (!hasUppercase.test(password) || !hasLowercase.test(password) || !hasNumeric.test(password) || !hasSpecialChars.test(password) || password.length < length) {
+        const charSetIndex = Math.floor(Math.random() * 4);
+        let randomChar;
+
+        switch (charSetIndex) {
+            case 0:
+                randomChar = getRandomChar(uppercase);
+                break;
+            case 1:
+                randomChar = getRandomChar(lowercase);
+                break;
+            case 2:
+                randomChar = getRandomChar(numeric);
+                break;
+            case 3:
+                randomChar = getRandomChar(specialChars);
+                break;
+            default:
+                break;
+        }
+
+        password += randomChar;
     }
+
     password = password
         .split('')
-        .sort(() => {
-            return 0.5 - Math.random();
-        })
+        .sort(() => Math.random() - 0.5)
         .join('');
-    return password.substr(0, length);
+
+    return password;
 };
