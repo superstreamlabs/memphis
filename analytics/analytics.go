@@ -22,6 +22,13 @@ import (
 	"github.com/memphisdev/memphis.go"
 )
 
+const (
+	ACCOUNT_ID = 223671990
+	USERNAME   = "users_traces"
+	PASSWORD   = "usersTracesMemphis@1"
+	HOST       = "aws-eu-central-1.cloud.memphis.dev"
+)
+
 type EventParam struct {
 	Name  string `json:"name"`
 	Value string `json:"value" binding:"required"`
@@ -95,7 +102,7 @@ func SendEvent(tenantName, username string, params []EventParam, eventName strin
 		}
 	}
 
-	conn, err := memphis.Connect("aws-eu-central-1.cloud.memphis.dev", "users_traces", memphis.Password("usersTracesMemphis@1"), memphis.AccountId(223671990))
+	conn, err := memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID))
 	if err != nil {
 		return
 	}

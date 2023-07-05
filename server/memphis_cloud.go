@@ -26,7 +26,6 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
-	"os/exec"
 	"regexp"
 	"runtime"
 	"sort"
@@ -127,25 +126,12 @@ func CreateRootUserOnFirstSystemLoad() error {
 				Value: installationType,
 			}
 
-			os := runtime.GOOS
-			var command string
-			switch os {
-			case "windows":
-				command = "ifconfig.me"
-			default:
-				command = "icanhazip.com"
-			}
-
-			cmd := exec.Command("curl", command)
-			ip, err := cmd.Output()
-			if err != nil {
-				serv.Errorf("Error get ip: %s", err.Error())
-			}
+			ip := serv.getIp()
 
 			analyticsParams := []analytics.EventParam{param}
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
 			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "ip", Value: string(ip)})
+			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "ip", Value: ip})
 			analytics.SendEvent("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {

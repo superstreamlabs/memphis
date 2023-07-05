@@ -19,9 +19,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"memphis/db"
 	"memphis/models"
+	"net/http"
 	"net/textproto"
 	"os"
 	"regexp"
@@ -1486,4 +1488,18 @@ func validatePassword(password string) error {
 	}
 
 	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+}
+
+func (s *Server) getIp() string {
+	resp, err := http.Get("https://ifconfig.me")
+	if err != nil {
+		serv.Errorf("Error get ip: %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	ip, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		serv.Errorf("Error reading response get ip body: %s", err.Error())
+	}
+	return string(ip)
 }
