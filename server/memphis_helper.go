@@ -23,6 +23,7 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"net/textproto"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -684,7 +685,8 @@ func (s *Server) AnalyticsToken() string {
 }
 
 func (s *Server) MemphisVersion() string {
-	return VERSION
+	data, _ := os.ReadFile("version.conf")
+	return string(data)
 }
 
 func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64) error {

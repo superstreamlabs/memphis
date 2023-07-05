@@ -136,10 +136,7 @@ func runMemphis(s *server.Server) {
 		go s.KillZombieResources()
 		// For backward compatibility data from old account to memphis default account
 		folderName := fmt.Sprintf("%s%s%s", s.Opts().StoreDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
-		f, err := os.Stat(folderName)
-		if err != nil {
-			s.Errorf("Get file info failed: %s", err.Error())
-		}
+		f, _ := os.Stat(folderName)
 		if f != nil {
 			err = s.MoveResourcesFromOldToNewDefaultAcc()
 			if err != nil {

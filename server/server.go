@@ -350,6 +350,7 @@ func InitializeMetadataStorage() (db.MetadataStorage, error) {
 	}
 	return metadataDb, nil
 }
+
 // added by Memphis ***
 
 // NewServer will setup a new server struct after parsing the options.
@@ -1661,7 +1662,7 @@ func (s *Server) Start() {
 	opts := s.getOpts()
 	clusterName := s.ClusterName()
 
-	s.Noticef("Version:  %s", VERSION)
+	s.Noticef("Version:  %s", s.MemphisVersion())
 	if clusterName != _EMPTY_ {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}
