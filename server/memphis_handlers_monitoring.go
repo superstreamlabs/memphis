@@ -104,7 +104,7 @@ func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-main-overview")
+		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -724,7 +724,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-station-overview")
+		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)

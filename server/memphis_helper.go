@@ -680,10 +680,6 @@ func (s *Server) Opts() *Options {
 	return s.opts
 }
 
-func (s *Server) AnalyticsToken() string {
-	return ANALYTICS_TOKEN
-}
-
 func (s *Server) MemphisVersion() string {
 	data, _ := os.ReadFile("version.conf")
 	return string(data)

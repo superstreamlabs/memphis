@@ -86,7 +86,7 @@ func updateSystemLiveness() {
 		Value: strconv.Itoa(int(consumersCount)),
 	}
 	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-	analytics.SendEventWithParams("", "", analyticsParams, "system-is-up")
+	analytics.SendEvent("", "", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {

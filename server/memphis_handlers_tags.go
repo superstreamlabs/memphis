@@ -430,7 +430,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 					Value: name,
 				}
 				analyticsParams = append(analyticsParams, param)
-				analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, analyticsEventName)
+				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, analyticsEventName)
 			}
 
 			serv.Noticef("[tenant: %v][user: %v] %v", user.TenantName, user.Username, message)

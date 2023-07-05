@@ -141,7 +141,7 @@ func handleConnectMessage(client *client) error {
 					if !isNativeMemphisClient {
 						event = "user-connect-nats-sdk"
 					}
-					analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
+					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
 				}
 			}()
 		}
