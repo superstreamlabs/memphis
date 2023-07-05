@@ -26,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -776,4 +777,83 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{})
 		return
 	}
+}
+
+func validateUsername(username string) error {
+	if len(username) > 20 {
+		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	}
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
+}
+
+func validateUserDescription(description string) error {
+	if len(description) > 100 {
+		return errors.New("description exceeds the maximum allowed length of 100 characters")
+	}
+	return nil
+}
+
+func validateUserTeam(team string) error {
+	if len(team) > 20 {
+		return errors.New("team exceeds the maximum allowed length of 20 characters")
+	}
+	return nil
+}
+
+func validateUserPosition(position string) error {
+	if len(position) > 30 {
+		return errors.New("position exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validateUserFullName(fullName string) error {
+	if len(fullName) > 30 {
+		return errors.New("full name exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) > 20 {
+		return errors.New("password exceeds the maximum allowed length of 20 characters")
+	}
+	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
+	match, _ := regexp.MatchString(pattern, password)
+	if !match {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	if len(password) < 8 {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	var (
+		hasUppercase   bool
+		hasLowercase   bool
+		hasDigit       bool
+		hasSpecialChar bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUppercase = true
+		case unicode.IsLower(char):
+			hasLowercase = true
+		case unicode.IsDigit(char):
+			hasDigit = true
+		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
+			hasSpecialChar = true
+		}
+	}
+
+	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
+		return nil
+	}
+
+	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }
