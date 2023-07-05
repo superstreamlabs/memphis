@@ -214,7 +214,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	cpr.TenantName = tenantName
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createProducerDirect at StationNameFromStr: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
+		s.Warnf("[tenant: %v][user: %v]createProducerDirect at StationNameFromStr: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
 		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 		return
 	}
