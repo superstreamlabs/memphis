@@ -13,6 +13,8 @@ package analytics
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"memphis/conf"
 	"memphis/db"
 	"strings"
@@ -45,6 +47,7 @@ type EventBody struct {
 var configuration = conf.GetConfig()
 var deploymentId string
 var memphisVersion string
+var sdkConnection *memphis.Conn
 
 func InitializeAnalytics(memphisV, customDeploymentId string) error {
 	memphisVersion = memphisV
@@ -86,7 +89,19 @@ func InitializeAnalytics(memphisV, customDeploymentId string) error {
 		}
 	}
 
+	sdkConnection, err = initalizeSdkConnection()
+	if err != nil {
+		errMsg := fmt.Sprintf("Initalize connection failed %s ", err.Error())
+		return errors.New(errMsg)
+	}
 	return nil
+}
+
+func Close() {
+	_, analytics, _ := db.GetSystemKey("analytics", conf.MemphisGlobalAccountName)
+	if analytics.Value == "true" {
+		sdkConnection.Close()
+	}
 }
 
 func SendEvent(tenantName, username string, params []EventParam, eventName string) {
@@ -102,13 +117,9 @@ func SendEvent(tenantName, username string, params []EventParam, eventName strin
 		}
 	}
 
-	conn, err := memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID))
-	if err != nil {
-		return
-	}
-	defer conn.Close()
 	var eventMsg []byte
 	var event *EventBody
+	var err error
 
 	if eventName == "error" {
 		event = &EventBody{
@@ -126,16 +137,24 @@ func SendEvent(tenantName, username string, params []EventParam, eventName strin
 			TimeStamp:      time.Now(),
 			MemphisVersion: memphisVersion,
 		}
-
-		eventMsg, err = json.Marshal(event)
-		if err != nil {
-			return
-		}
 	}
-	err = conn.Produce("users-traces", "producer_users_traces", []byte(eventMsg), []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+
+	eventMsg, err = json.Marshal(event)
+	if err != nil {
+		return
+	}
+	err = sdkConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
 	if err != nil {
 		return
 	}
 
 	return
+}
+
+func initalizeSdkConnection() (*memphis.Conn, error) {
+	conn, err := memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID))
+	if err != nil {
+		return &memphis.Conn{}, err
+	}
+	return conn, nil
 }

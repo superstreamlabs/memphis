@@ -222,5 +222,6 @@ func main() {
 
 	runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
+	defer analytics.Close()
 	s.WaitForShutdown()
 }

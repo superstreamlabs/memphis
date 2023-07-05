@@ -1493,13 +1493,15 @@ func validatePassword(password string) error {
 func (s *Server) getIp() string {
 	resp, err := http.Get("https://ifconfig.me")
 	if err != nil {
-		serv.Errorf("Error get ip: %s", err.Error())
+		serv.Warnf("Error get ip: %s", err.Error())
+		return ""
 	}
 	defer resp.Body.Close()
 
 	ip, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		serv.Errorf("Error reading response get ip body: %s", err.Error())
+		serv.Warnf("Error reading response get ip body: %s", err.Error())
+		return ""
 	}
 	return string(ip)
 }
