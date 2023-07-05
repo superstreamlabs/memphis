@@ -26,7 +26,6 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
-	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -1215,10 +1214,34 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var subscription, pending bool
 	team := strings.ToLower(body.Team)
+	teamError := validateUserTeam(team)
+	if teamError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserTeam: %v", user.TenantName, user.Username, teamError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": teamError.Error()})
+		return
+	}
 	position := strings.ToLower(body.Position)
+	positionError := validateUserPosition(position)
+	if positionError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserPosition: %v", user.TenantName, user.Username, positionError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": positionError.Error()})
+		return
+	}
 	fullName := strings.ToLower(body.FullName)
+	fullNameError := validateUserFullName(fullName)
+	if fullNameError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserFullName: %v", user.TenantName, user.Username, fullNameError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": fullNameError.Error()})
+		return
+	}
 	owner := user.Username
 	description := strings.ToLower(body.Description)
+	descriptionError := validateUserDescription(description)
+	if descriptionError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserDescription: %v", user.TenantName, user.Username, descriptionError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": descriptionError.Error()})
+		return
+	}
 
 	user.TenantName = strings.ToLower(user.TenantName)
 	username := strings.ToLower(body.Username)
@@ -1254,13 +1277,20 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		avatarId = body.AvatarId
 	}
 
+	if body.Password == "" {
+		serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+		return
+	}
+	passwordErr := validatePassword(body.Password)
+	if passwordErr != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, passwordErr.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": passwordErr.Error()})
+		return
+	}
+
 	var password string
 	if userType == "management" {
-		if body.Password == "" {
-			serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
-			return
-		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
@@ -1280,12 +1310,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			if body.Password == "" {
 				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
-				return
-			}
-			err = validatePassword(body.Password)
-			if err != nil {
-				serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
 			}
 			password, err = EncryptAES([]byte(body.Password))
@@ -1411,16 +1435,6 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
 	c.IndentedJSON(200, gin.H{})
-}
-
-func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
-
-	validName := re.MatchString(username)
-	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_/- ")
-	}
-	return nil
 }
 
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
