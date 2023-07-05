@@ -777,3 +777,15 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	}
 }
+
+func validateUsername(username string) error {
+	if len(username) > 20 {
+		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	}
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
+}

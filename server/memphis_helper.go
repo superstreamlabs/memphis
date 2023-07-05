@@ -1495,18 +1495,6 @@ func validatePassword(password string) error {
 	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }
 
-func validateUsername(username string) error {
-	if len(username) > 20 {
-		return errors.New("username exceeds the maximum allowed length of 20 characters")
-	}
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
-	validName := re.MatchString(username)
-	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_/- ")
-	}
-	return nil
-}
-
 func validateUserDescription(description string) error {
 	if len(description) > 100 {
 		return errors.New("description exceeds the maximum allowed length of 100 characters")
