@@ -509,6 +509,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -4034,6 +4035,38 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 		return false, models.User{}, nil
 	}
 	return true, users[0], nil
+}
+
+func GetAllUsersInDB() (bool, []models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, nil, err
+	}
+
+	defer conn.Release()
+	query := `SELECT * FROM users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user", query)
+	if err != nil {
+		return false, nil, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return false, nil, err
+	}
+	defer rows.Close()
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, nil, err
+	}
+	if len(users) == 0 {
+		return false, nil, nil
+	}
+	return true, users, nil
+
 }
 
 func GetApplicationUsersByTenantName(tenantName string) ([]models.User, error) {
