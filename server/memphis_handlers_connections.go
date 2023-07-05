@@ -126,7 +126,6 @@ func handleConnectMessage(client *client) error {
 				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConectionResources: %v", user.TenantName, username, err.Error())
 				return err
 			}
-
 		} else {
 			go func() {
 				shouldSendAnalytics, _ := shouldSendAnalytics()
