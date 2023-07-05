@@ -26,12 +26,10 @@ import (
 	"net/http"
 	"net/textproto"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
@@ -1452,42 +1450,6 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		}
 	}
 	return nil
-}
-
-func validatePassword(password string) error {
-	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
-	match, _ := regexp.MatchString(pattern, password)
-	if !match {
-		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
-	}
-	if len(password) < 8 {
-		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
-	}
-	var (
-		hasUppercase   bool
-		hasLowercase   bool
-		hasDigit       bool
-		hasSpecialChar bool
-	)
-
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUppercase = true
-		case unicode.IsLower(char):
-			hasLowercase = true
-		case unicode.IsDigit(char):
-			hasDigit = true
-		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
-			hasSpecialChar = true
-		}
-	}
-
-	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
-		return nil
-	}
-
-	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }
 
 func (s *Server) getIp() string {
