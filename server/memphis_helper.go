@@ -1494,31 +1494,3 @@ func validatePassword(password string) error {
 
 	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }
-
-func validateUserDescription(description string) error {
-	if len(description) > 100 {
-		return errors.New("description exceeds the maximum allowed length of 100 characters")
-	}
-	return nil
-}
-
-func validateUserTeam(team string) error {
-	if len(team) > 20 {
-		return errors.New("team exceeds the maximum allowed length of 20 characters")
-	}
-	return nil
-}
-
-func validateUserPosition(position string) error {
-	if len(position) > 30 {
-		return errors.New("position exceeds the maximum allowed length of 30 characters")
-	}
-	return nil
-}
-
-func validateUserFullName(fullName string) error {
-	if len(fullName) > 30 {
-		return errors.New("full name exceeds the maximum allowed length of 30 characters")
-	}
-	return nil
-}
