@@ -13,6 +13,7 @@ package server
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"memphis/analytics"
@@ -168,7 +169,22 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.DeleteUsersByTenant(tenantName)
+	users_list, err := db.DeleteUsersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	deleteRequest := models.DeleteUserRequest{
+		Usernames:  users_list,
+		TenantName: tenantName,
+	}
+
+	msg, err := json.Marshal(deleteRequest)
+	if err != nil {
+		return err
+	}
+
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return err
 	}

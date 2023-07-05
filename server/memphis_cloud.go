@@ -23,6 +23,7 @@ import (
 	"math"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
@@ -1310,6 +1311,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	err = memphis_cache.SetUser(newUser)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.TenantName, user.Username, "user-add-user")
@@ -1360,6 +1366,25 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 	if user.Username == username {
 		serv.Warnf("[tenant: %v][user: %v]RemoveUser: You can not remove your own user", user.TenantName, user.Username)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
+		return
+	}
+
+	deleteRequest := models.DeleteUserRequest{
+		Usernames:  []string{user.Username},
+		TenantName: user.TenantName,
+	}
+
+	msg, err := json.Marshal(deleteRequest)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at json.Marshal: Delete User: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: Delete User : %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 

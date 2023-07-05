@@ -21,8 +21,8 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
+	"memphis/memphis_cache"
 	"memphis/server"
-	"memphis/user_cache"
 
 	"os"
 
@@ -107,7 +107,7 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
 
-	err = user_cache.InitializeUserCache()
+	err = memphis_cache.InitializeUserCache()
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}

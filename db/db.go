@@ -509,7 +509,6 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -4091,70 +4090,6 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	return true, users[0], nil
 }
 
-<<<<<<< HEAD
-func GetAllUsersInDB() (bool, []models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, nil, err
-	}
-
-	defer conn.Release()
-	query := `SELECT * FROM users`
-	stmt, err := conn.Conn().Prepare(ctx, "get_user", query)
-	if err != nil {
-		return false, nil, err
-	}
-
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
-	if err != nil {
-		return false, nil, err
-	}
-	defer rows.Close()
-
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return false, nil, err
-	}
-	if len(users) == 0 {
-		return false, nil, nil
-	}
-	return true, users, nil
-
-}
-
-func GetApplicationUsersByTenantName(tenantName string) ([]models.User, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM users WHERE type = 'application' AND tenant_name = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_application_user_by_tenant_name", query)
-	if err != nil {
-		return []models.User{}, err
-	}
-	tenantName = strings.ToLower(tenantName)
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
-	if err != nil {
-		return []models.User{}, err
-	}
-	defer rows.Close()
-	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
-	if err != nil {
-		return []models.User{}, err
-	}
-	if len(users) == 0 {
-		return []models.User{}, nil
-	}
-	return users, nil
-}
-
-=======
->>>>>>> origin/master
 func GetUserForLogin(username string) (bool, models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4442,28 +4377,35 @@ func DeleteUser(username string, tenantName string) error {
 	return nil
 }
 
-func DeleteUsersByTenant(tenantName string) error {
+func DeleteUsersByTenant(tenantName string) ([]string, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer conn.Release()
 
-	removeUserQuery := `DELETE FROM users WHERE tenant_name = $1`
-
-	stmt, err := conn.Conn().Prepare(ctx, "remove_users_by_tenant", removeUserQuery)
+	removeUserQuery := `DELETE FROM users WHERE tenant_name = $1 RETURNING username`
+	rows, err := conn.Query(ctx, removeUserQuery, tenantName)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
-	if err != nil {
-		return err
+	defer rows.Close()
+
+	var users_list []string
+
+	for rows.Next() {
+		var usermame string
+		err := rows.Scan(&usermame)
+		if err != nil {
+			return nil, err
+		}
+		users_list = append(users_list, usermame)
 	}
 
-	return nil
+	return users_list, err
 }
 
 func EditAvatar(username string, avatarId int, tenantName string) error {
@@ -5910,4 +5852,36 @@ func ReliveConectionResources(connectionId string, isActive bool) error {
 	}
 
 	return nil
+}
+
+func GetAllUsersInDB() (bool, []models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, nil, err
+	}
+
+	defer conn.Release()
+	query := `SELECT * FROM users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_user", query)
+	if err != nil {
+		return false, nil, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return false, nil, err
+	}
+	defer rows.Close()
+
+	users, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.User])
+	if err != nil {
+		return false, nil, err
+	}
+	if len(users) == 0 {
+		return false, nil, nil
+	}
+	return true, users, nil
+
 }

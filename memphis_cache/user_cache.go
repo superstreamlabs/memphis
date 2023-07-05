@@ -1,27 +1,25 @@
-package user_cache
+package memphis_cache
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
-	"time"
 
 	"github.com/allegro/bigcache/v3"
 )
 
 var UCache UserCache
+var configuration = conf.GetConfig()
 
 type UserCache struct {
-	Cache *bigcache.BigCache
+	Cache *MemphisCache
 }
 
 func InitializeUserCache() error {
-	conf := bigcache.DefaultConfig(10 * time.Second)
-	conf.HardMaxCacheSize = 1
-	conf.CleanWindow = time.Second * 1
-	cache, err := bigcache.New(context.Background(), conf)
+	cache, err := New(context.Background(), configuration.USER_CACHE_LIFE_MINUTES, configuration.USER_CACHE_CLEAN_MINUTES, configuration.USER_CACHE_MAX_SIZE)
 	if err != nil {
 		UCache = UserCache{Cache: cache}
 		return err
@@ -41,8 +39,6 @@ func InitializeUserCache() error {
 			UCache = UserCache{Cache: cache}
 			return err
 		}
-		fmt.Printf("new cache entity with key - %v:%v and size - %v \r\n", user.Username, user.TenantName, cap(data))
-
 		cache.Set(fmt.Sprint("%v:%v", user.Username, user.TenantName), data)
 	}
 
@@ -51,17 +47,15 @@ func InitializeUserCache() error {
 
 }
 
-func Get(username, tenentName string) (models.User, error) {
+func GetUser(username, tenentName string) (models.User, error) {
 	var user models.User
-	fmt.Printf("Get entity with key - %v:%v \r\n", username, tenentName)
 	data, err := UCache.Cache.Get(fmt.Sprint("%v:%v", username, tenentName))
 	if err == bigcache.ErrEntryNotFound {
-		fmt.Printf("used the DB : %v \r\n", err)
 		_, userFromDB, err := db.GetUserByUsername(username, tenentName)
 		if err != nil {
 			return models.User{}, err
 		}
-		Set(userFromDB)
+		SetUser(userFromDB)
 		return userFromDB, nil
 	}
 
@@ -74,7 +68,7 @@ func Get(username, tenentName string) (models.User, error) {
 
 }
 
-func Set(user models.User) error {
+func SetUser(user models.User) error {
 	data, err := json.Marshal(user)
 	if err != nil {
 		return err
@@ -82,4 +76,14 @@ func Set(user models.User) error {
 
 	err = UCache.Cache.Set(fmt.Sprint("%v:%v", user.Username, user.TenantName), data)
 	return err
+}
+
+func DeleteUser(tenantName string, users []string) error {
+	for _, user := range users {
+		err := UCache.Cache.Delete(fmt.Sprint("%v:%v", user, tenantName))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -16,8 +16,8 @@ import (
 	"fmt"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
-	"memphis/user_cache"
 
 	"errors"
 	"strings"
@@ -100,25 +100,11 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	/**
-	exist, user, err := db.GetUserByUsername(username, client.acc.GetName())
+	user, err := memphis_cache.GetUser(username, client.acc.GetName())
 	if err != nil {
-		client.Errorf("handleConnectMessage: User %v : %v", username, err.Error())
+		client.Errorf("[tenant:%v][user: %v] could not retrive user model from cache or db error: %v", client.acc.GetName(), username, err)
 		return err
 	}
-	if !exist {
-		errMsg := fmt.Sprintf("handleConnectMessage:  User %v does not exist", username)
-		client.Warnf(errMsg)
-		return errors.New(errMsg)
-	}
-	**/
-
-	start := time.Now()
-	user, err := user_cache.Get(username, client.acc.GetName())
-	if err != nil {
-		return err
-	}
-	fmt.Printf("time to get user %v|%v with cache - %v \r\n", user.Username, user.UserType, time.Now().Sub(start))
 
 	if user.UserType != "root" && user.UserType != "application" {
 		client.Warnf("[tenant: %v][user: %v] handleConnectMessage: Please use a user of type Root/Application and not Management", user.TenantName, user.Username)
