@@ -131,9 +131,9 @@ func CreateRootUserOnFirstSystemLoad() error {
 			var command string
 			switch os {
 			case "windows":
-				command = "icanhazip.com"
-			default:
 				command = "ifconfig.me"
+			default:
+				command = "icanhazip.com"
 			}
 
 			cmd := exec.Command("curl", command)
