@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"memphis/conf"
 	"memphis/db"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +40,7 @@ type EventBody struct {
 	DistinctId     string                 `json:"distinct_id"`
 	Event          string                 `json:"event"`
 	Properties     map[string]interface{} `json:"properties"`
-	TimeStamp      time.Time              `json:"timestamp"`
+	TimeStamp      string                 `json:"timestamp"`
 	MemphisVersion string                 `json:"memphis_version"`
 }
 
@@ -104,43 +105,47 @@ func Close() {
 }
 
 func SendEvent(tenantName, username string, params map[string]interface{}, eventName string) {
-	distinctId := deploymentId
-	if configuration.DEV_ENV != "" {
-		distinctId = "dev"
-	}
-
-	if eventName != "error" {
-		tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
-		if tenantName != "" && username != "" {
-			distinctId = distinctId + "-" + tenantName + "-" + username
+	go func() {
+		distinctId := deploymentId
+		if configuration.DEV_ENV != "" {
+			distinctId = "dev"
 		}
-	}
 
-	var eventMsg []byte
-	var event *EventBody
-	var err error
-
-	if eventName == "error" {
-		event = &EventBody{
-			DistinctId:     distinctId,
-			Event:          "error",
-			Properties:     params,
-			TimeStamp:      time.Now(),
-			MemphisVersion: memphisVersion,
+		if eventName != "error" {
+			tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
+			if tenantName != "" && username != "" {
+				distinctId = distinctId + "-" + tenantName + "-" + username
+			}
 		}
-	} else {
-		event = &EventBody{
-			DistinctId:     distinctId,
-			Event:          eventName,
-			Properties:     params,
-			TimeStamp:      time.Now(),
-			MemphisVersion: memphisVersion,
-		}
-	}
 
-	eventMsg, err = json.Marshal(event)
-	if err != nil {
-		return
-	}
-	memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+		var eventMsg []byte
+		var event *EventBody
+		var err error
+
+		creationTime := time.Now().Unix()
+		timestamp := strconv.FormatInt(creationTime, 10)
+		if eventName == "error" {
+			event = &EventBody{
+				DistinctId:     distinctId,
+				Event:          "error",
+				Properties:     params,
+				TimeStamp:      timestamp,
+				MemphisVersion: memphisVersion,
+			}
+		} else {
+			event = &EventBody{
+				DistinctId:     distinctId,
+				Event:          eventName,
+				Properties:     params,
+				TimeStamp:      timestamp,
+				MemphisVersion: memphisVersion,
+			}
+		}
+
+		eventMsg, err = json.Marshal(event)
+		if err != nil {
+			return
+		}
+		memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+	}()
 }
