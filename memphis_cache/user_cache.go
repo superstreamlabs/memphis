@@ -47,21 +47,30 @@ func InitializeUserCache() error {
 
 }
 
-func GetUser(username, tenentName string) (models.User, error) {
+func GetUser(username, tenentName string, logger func(string, ...interface{})) (models.User, error) {
 	var user models.User
 	data, err := UCache.Cache.Get(fmt.Sprint("%v:%v", username, tenentName))
-	if err == bigcache.ErrEntryNotFound {
-		_, userFromDB, err := db.GetUserByUsername(username, tenentName)
-		if err != nil {
-			return models.User{}, err
+	if err != nil {
+		_, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
+		if db_err != nil {
+			return models.User{}, db_err
 		}
-		SetUser(userFromDB)
+		if err == bigcache.ErrEntryNotFound {
+			SetUser(userFromDB)
+			return userFromDB, nil
+		}
+		logger("[tenant: %v][user: %v]error while using cache, error: %v", tenentName, username, err)
 		return userFromDB, nil
 	}
 
 	err = json.Unmarshal(data, &user)
 	if err != nil {
-		return models.User{}, err
+		_, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
+		if db_err != nil {
+			return models.User{}, db_err
+		}
+		logger("[tenant: %v][user: %v]error while using unmarshal in the cache, error: %v", tenentName, username, err)
+		return userFromDB, nil
 	}
 
 	return user, nil
