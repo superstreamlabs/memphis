@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"memphis/conf"
 	"memphis/db"
+	"strconv"
 	"strings"
 	"time"
 
@@ -121,12 +122,14 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 		var event *EventBody
 		var err error
 
+		creationTime := time.Now().Unix()
+		timestamp := strconv.FormatInt(creationTime, 10)
 		if eventName == "error" {
 			event = &EventBody{
 				DistinctId:     distinctId,
 				Event:          "error",
 				Properties:     params,
-				TimeStamp:      time.Now().Format(time.RFC3339),
+				TimeStamp:      timestamp,
 				MemphisVersion: memphisVersion,
 			}
 		} else {
@@ -134,12 +137,12 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 				DistinctId:     distinctId,
 				Event:          eventName,
 				Properties:     params,
-				TimeStamp:      time.Now().Format(time.RFC3339),
+				TimeStamp:      timestamp,
 				MemphisVersion: memphisVersion,
 			}
 		}
 
-		fmt.Println("####time####", time.Now().Format(time.RFC3339))
+		fmt.Println("####time####", timestamp)
 		eventMsg, err = json.Marshal(event)
 		if err != nil {
 			return
