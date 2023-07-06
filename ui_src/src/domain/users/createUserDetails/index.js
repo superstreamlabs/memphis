@@ -303,9 +303,9 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                                 message: 'Password can not be empty'
                                             },
                                             {
-                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%^&*])[A-Za-z\d!?\-@#$%^&*]{8,}$/,
+                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$/,
                                                 message:
-                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%^&*)'
+                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%)'
                                             }
                                         ]}
                                     >

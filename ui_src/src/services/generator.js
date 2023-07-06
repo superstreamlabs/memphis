@@ -14,7 +14,7 @@ export const generator = () => {
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numeric = '0123456789';
-    const specialChars = '!?-@#$%^&*';
+    const specialChars = '!?-@#$%';
     const length = 10;
 
     let password = '';
