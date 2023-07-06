@@ -39,7 +39,7 @@ type EventBody struct {
 	DistinctId     string                 `json:"distinct_id"`
 	Event          string                 `json:"event"`
 	Properties     map[string]interface{} `json:"properties"`
-	TimeStamp      time.Time              `json:"timestamp"`
+	TimeStamp      string                 `json:"timestamp"`
 	MemphisVersion string                 `json:"memphis_version"`
 }
 
@@ -126,7 +126,7 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 				DistinctId:     distinctId,
 				Event:          "error",
 				Properties:     params,
-				TimeStamp:      time.Now(),
+				TimeStamp:      time.Now().Format(time.RFC3339),
 				MemphisVersion: memphisVersion,
 			}
 		} else {
@@ -134,11 +134,12 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 				DistinctId:     distinctId,
 				Event:          eventName,
 				Properties:     params,
-				TimeStamp:      time.Now(),
+				TimeStamp:      time.Now().Format(time.RFC3339),
 				MemphisVersion: memphisVersion,
 			}
 		}
 
+		fmt.Println("####time####", time.Now().Format(time.RFC3339))
 		eventMsg, err = json.Marshal(event)
 		if err != nil {
 			return
