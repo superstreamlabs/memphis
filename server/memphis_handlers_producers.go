@@ -112,16 +112,8 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				param1 := analytics.EventParam{
-					Name:  "station-name",
-					Value: pStationName.Ext(),
-				}
-				param2 := analytics.EventParam{
-					Name:  "storage-type",
-					Value: "disk",
-				}
-				analyticsParams := []analytics.EventParam{param1, param2}
-				analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
+				analyticsParams := map[string]interface{}{"station-name": pStationName.Ext(), "storage-type": "disk"}
+				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
 	}
@@ -161,14 +153,11 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			param := analytics.EventParam{
-				Name:  "producer-name",
-				Value: newProducer.Name,
-			}
-			analyticsParams := []analytics.EventParam{param}
-			analytics.SendEventWithParams(user.TenantName, connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
+			analyticsParams := map[string]interface{}{"producer-name": newProducer.Name}
+			analytics.SendEvent(user.TenantName, connection.CreatedByUsername, analyticsParams, "user-create-producer-sdk")
 			if strings.HasPrefix(newProducer.Name, "rest_gateway") {
-				analytics.SendEvent(user.TenantName, connection.CreatedByUsername, "user-send-messages-via-rest-gw")
+				analyticsParams = map[string]interface{}{}
+				analytics.SendEvent(user.TenantName, connection.CreatedByUsername, analyticsParams, "user-send-messages-via-rest-gw")
 			}
 		}
 	}
@@ -214,7 +203,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 	cpr.TenantName = tenantName
 	sn, err := StationNameFromStr(cpr.StationName)
 	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createProducerDirect at StationNameFromStr: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
+		s.Warnf("[tenant: %v][user: %v]createProducerDirect at StationNameFromStr: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
 		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
 		return
 	}
@@ -427,7 +416,8 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, username, "user-remove-producer-sdk")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, username, analyticsParams, "user-remove-producer-sdk")
 	}
 
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)

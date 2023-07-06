@@ -19,9 +19,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"memphis/db"
 	"memphis/models"
+	"net/http"
 	"net/textproto"
 	"os"
 	"sort"
@@ -676,10 +678,6 @@ func (s *Server) PurgeStream(tenantName, streamName string) error {
 
 func (s *Server) Opts() *Options {
 	return s.opts
-}
-
-func (s *Server) AnalyticsToken() string {
-	return ANALYTICS_TOKEN
 }
 
 func (s *Server) MemphisVersion() string {
@@ -1452,4 +1450,20 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) getIp() string {
+	resp, err := http.Get("https://ifconfig.me")
+	if err != nil {
+		serv.Warnf("getIp: error get ip: %s", err.Error())
+		return ""
+	}
+	defer resp.Body.Close()
+
+	ip, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		serv.Warnf("getIp: error reading response get ip body: %s", err.Error())
+		return ""
+	}
+	return string(ip)
 }

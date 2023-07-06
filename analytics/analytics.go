@@ -12,12 +12,22 @@
 package analytics
 
 import (
+	"encoding/json"
+	"fmt"
 	"memphis/conf"
 	"memphis/db"
 	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/posthog/posthog-go"
+	"github.com/memphisdev/memphis.go"
+)
+
+const (
+	ACCOUNT_ID = 223671990
+	USERNAME   = "traces_producer"
+	PASSWORD   = "usersTracesMemphis@1"
+	HOST       = "aws-eu-central-1.cloud.memphis.dev"
 )
 
 type EventParam struct {
@@ -25,12 +35,20 @@ type EventParam struct {
 	Value string `json:"value" binding:"required"`
 }
 
+type EventBody struct {
+	DistinctId     string                 `json:"distinct_id"`
+	Event          string                 `json:"event"`
+	Properties     map[string]interface{} `json:"properties"`
+	TimeStamp      time.Time              `json:"timestamp"`
+	MemphisVersion string                 `json:"memphis_version"`
+}
+
 var configuration = conf.GetConfig()
 var deploymentId string
 var memphisVersion string
-var AnalyticsClient posthog.Client
+var memphisConnection *memphis.Conn
 
-func InitializeAnalytics(analyticsToken, memphisV, customDeploymentId string) error {
+func InitializeAnalytics(memphisV, customDeploymentId string) error {
 	memphisVersion = memphisV
 	if customDeploymentId != "" {
 		deploymentId = customDeploymentId
@@ -70,80 +88,59 @@ func InitializeAnalytics(analyticsToken, memphisV, customDeploymentId string) er
 		}
 	}
 
-	client, err := posthog.NewWithConfig(analyticsToken, posthog.Config{Endpoint: "https://app.posthog.com"})
+	memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
 	if err != nil {
-		return err
+		errMsg := fmt.Errorf("InitializeAnalytics: initalize connection failed %s ", err.Error())
+		return errMsg
 	}
-
-	AnalyticsClient = client
 	return nil
 }
 
 func Close() {
 	_, analytics, _ := db.GetSystemKey("analytics", conf.MemphisGlobalAccountName)
 	if analytics.Value == "true" {
-		AnalyticsClient.Close()
+		memphisConnection.Close()
 	}
 }
 
-func SendEvent(tenantName, username, eventName string) {
+func SendEvent(tenantName, username string, params map[string]interface{}, eventName string) {
 	distinctId := deploymentId
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"
 	}
 
-	tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
-	if tenantName != "" && username != "" {
-		distinctId = distinctId + "-" + tenantName + "-" + username
+	if eventName != "error" {
+		tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
+		if tenantName != "" && username != "" {
+			distinctId = distinctId + "-" + tenantName + "-" + username
+		}
 	}
 
-	p := posthog.NewProperties()
-	p.Set("memphis-version", memphisVersion)
+	var eventMsg []byte
+	var event *EventBody
+	var err error
 
-	go AnalyticsClient.Enqueue(posthog.Capture{
-		DistinctId: distinctId,
-		Event:      eventName,
-		Properties: p,
-	})
-}
-
-func SendEventWithParams(tenantName, username string, params []EventParam, eventName string) {
-	distinctId := deploymentId
-	if configuration.DEV_ENV != "" {
-		distinctId = "dev"
+	if eventName == "error" {
+		event = &EventBody{
+			DistinctId:     distinctId,
+			Event:          "error",
+			Properties:     params,
+			TimeStamp:      time.Now(),
+			MemphisVersion: memphisVersion,
+		}
+	} else {
+		event = &EventBody{
+			DistinctId:     distinctId,
+			Event:          eventName,
+			Properties:     params,
+			TimeStamp:      time.Now(),
+			MemphisVersion: memphisVersion,
+		}
 	}
 
-	tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
-	if tenantName != "" && username != "" {
-		distinctId = distinctId + "-" + tenantName + "-" + username
+	eventMsg, err = json.Marshal(event)
+	if err != nil {
+		return
 	}
-
-	p := posthog.NewProperties()
-	for _, param := range params {
-		p.Set(param.Name, param.Value)
-	}
-	p.Set("memphis-version", memphisVersion)
-
-	go AnalyticsClient.Enqueue(posthog.Capture{
-		DistinctId: distinctId,
-		Event:      eventName,
-		Properties: p,
-	})
-}
-
-func SendErrEvent(origin, errMsg string) {
-	distinctId := deploymentId
-	if configuration.DEV_ENV != "" {
-		distinctId = "dev"
-	}
-
-	p := posthog.NewProperties()
-	p.Set("err_log", errMsg)
-	p.Set("err_source", origin)
-	p.Set("memphis-version", memphisVersion)
-	AnalyticsClient.Enqueue(posthog.Capture{
-		DistinctId: distinctId,
-		Event:      "error",
-		Properties: p,
-	})
+	memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
 }
