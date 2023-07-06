@@ -142,7 +142,6 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 			}
 		}
 
-		fmt.Println("####time####", timestamp)
 		eventMsg, err = json.Marshal(event)
 		if err != nil {
 			return
