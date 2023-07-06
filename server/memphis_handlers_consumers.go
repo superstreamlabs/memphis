@@ -167,15 +167,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				param1 := analytics.EventParam{
-					Name:  "station-name",
-					Value: stationName.Ext(),
-				}
-				param2 := analytics.EventParam{
-					Name:  "storage-type",
-					Value: "disk",
-				}
-				analyticsParams := []analytics.EventParam{param1, param2}
+				analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "storage-type": "disk"}
+
 				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
@@ -249,11 +242,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			param := analytics.EventParam{
-				Name:  "consumer-name",
-				Value: newConsumer.Name,
-			}
-			analyticsParams := []analytics.EventParam{param}
+			analyticsParams := map[string]interface{}{"consumer-name": newConsumer.Name}
 			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-consumer-sdk")
 		}
 	}
@@ -662,7 +651,8 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analytics.SendEvent(user.TenantName, username, []analytics.EventParam{}, "user-remove-consumer-sdk")
+			analyticsParams := make(map[string]interface{})
+			analytics.SendEvent(user.TenantName, username, analyticsParams, "user-remove-consumer-sdk")
 		}
 	}
 

@@ -332,7 +332,8 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "", []analytics.EventParam{}, "user-open-ui")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent("", "", analyticsParams, "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
@@ -396,15 +397,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "email",
-			Value: username,
-		}
-		param2 := analytics.EventParam{
-			Name:  "newsletter",
-			Value: strconv.FormatBool(subscription),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
+		analyticsParams := map[string]interface{}{"email": username, "newsletter": strconv.FormatBool(subscription)}
 		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
@@ -456,7 +449,8 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-users-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredGenericUser{}
@@ -616,7 +610,8 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-done-next-steps")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -640,7 +635,8 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-skip-get-started")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})

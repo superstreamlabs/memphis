@@ -65,27 +65,7 @@ func updateSystemLiveness() {
 		return
 	}
 
-	param1 := analytics.EventParam{
-		Name:  "total-messages",
-		Value: strconv.Itoa(int(totalMessages)),
-	}
-	param2 := analytics.EventParam{
-		Name:  "total-dls-messages",
-		Value: strconv.Itoa(int(totalDlsMsgs)),
-	}
-	param3 := analytics.EventParam{
-		Name:  "total-stations",
-		Value: strconv.Itoa(len(stations)),
-	}
-	param4 := analytics.EventParam{
-		Name:  "active-producers",
-		Value: strconv.Itoa(int(producersCount)),
-	}
-	param5 := analytics.EventParam{
-		Name:  "active-consumers",
-		Value: strconv.Itoa(int(consumersCount)),
-	}
-	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
+	analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
 	analytics.SendEvent("", "", analyticsParams, "system-is-up")
 }
 

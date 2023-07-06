@@ -120,16 +120,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 				}
 			}
 
-			param := analytics.EventParam{
-				Name:  "installation-type",
-				Value: installationType,
-			}
-
 			ip := serv.getIp()
-			analyticsParams := []analytics.EventParam{param}
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "ip", Value: ip})
+			analyticsParams := map[string]interface{}{"installation-type": installationType, "device-id": deviceIdValue, "source": configuration.INSTALLATION_SOURCE, "ip": ip}
 			analytics.SendEvent("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
@@ -892,7 +884,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-syslogs-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)
@@ -1055,7 +1048,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-update-cluster-config")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-update-cluster-config")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -1073,7 +1067,8 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-cluster-config-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
 		"dls_retention":           ch.S.opts.DlsRetentionHours,
@@ -1142,7 +1137,8 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-login")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
 	}
 
 	env := "K8S"
@@ -1339,7 +1335,8 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-add-user")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-add-user")
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
@@ -1433,7 +1430,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-remove-user")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-user")
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
@@ -1466,7 +1464,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-remove-himself")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-himself")
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
@@ -1501,7 +1500,8 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 
 	if !body.SendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-disable-analytics")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disable-analytics")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1518,13 +1518,7 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 		if err != nil || !shouldSend {
 			return
 		}
-		param := analytics.EventParam{
-			Name:  "err_source",
-			Value: s.getLogSource(),
-		}
-
-		analyticsParams := []analytics.EventParam{param}
-		analyticsParams = append(analyticsParams, analytics.EventParam{Name: "err_log", Value: string(log)})
+		analyticsParams := map[string]interface{}{"err_source": s.getLogSource(), "err_log": string(log)}
 		analytics.SendEvent("", "", analyticsParams, "error")
 	default:
 		return

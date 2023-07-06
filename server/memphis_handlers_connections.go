@@ -132,15 +132,11 @@ func handleConnectMessage(client *client) error {
 				if shouldSendAnalytics { // exist indicates it is a reconnect
 					splitted := strings.Split(client.opts.Lang, ".")
 					sdkName := splitted[len(splitted)-1]
-					param := analytics.EventParam{
-						Name:  "sdk",
-						Value: sdkName,
-					}
-					analyticsParams := []analytics.EventParam{param}
 					event := "user-connect-sdk"
 					if !isNativeMemphisClient {
 						event = "user-connect-nats-sdk"
 					}
+					analyticsParams := map[string]interface{}{"sdk": sdkName}
 					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
 				}
 			}()

@@ -425,11 +425,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
-				param := analytics.EventParam{
-					Name:  "tag-name",
-					Value: name,
-				}
-				analyticsParams = append(analyticsParams, param)
+				analyticsParams := map[string]interface{}{"tag-name": name}
 				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, analyticsEventName)
 			}
 

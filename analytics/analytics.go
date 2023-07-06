@@ -36,11 +36,11 @@ type EventParam struct {
 }
 
 type EventBody struct {
-	DistinctId     string       `json:"distinct_id"`
-	Event          string       `json:"event"`
-	Properties     []EventParam `json:"properties"`
-	TimeStamp      time.Time    `json:"time_stamp"`
-	MemphisVersion string       `json:"memphis_version"`
+	DistinctId     string                 `json:"distinct_id"`
+	Event          string                 `json:"event"`
+	Properties     map[string]interface{} `json:"properties"`
+	TimeStamp      time.Time              `json:"timestamp"`
+	MemphisVersion string                 `json:"memphis_version"`
 }
 
 var configuration = conf.GetConfig()
@@ -103,7 +103,7 @@ func Close() {
 	}
 }
 
-func SendEvent(tenantName, username string, params []EventParam, eventName string) {
+func SendEvent(tenantName, username string, params map[string]interface{}, eventName string) {
 	distinctId := deploymentId
 	if configuration.DEV_ENV != "" {
 		distinctId = "dev"

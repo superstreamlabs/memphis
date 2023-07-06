@@ -378,27 +378,11 @@ func (s *Server) createStationDirectIntern(c *client,
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "tiered-storage",
-				Value: strconv.FormatBool(csr.TieredStorageEnabled),
-			}
-			param3 := analytics.EventParam{
-				Name:  "nats-comp",
-				Value: strconv.FormatBool(!isNative),
-			}
 			storageType = "memory"
 			if storageType == "file" {
 				storageType = "disk"
 			}
-			param4 := analytics.EventParam{
-				Name:  "storage-type",
-				Value: storageType,
-			}
-			analyticsParams := []analytics.EventParam{param1, param2, param3, param4}
+			analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "tiered-storage": strconv.FormatBool(csr.TieredStorageEnabled), "nats-comp": strconv.FormatBool(!isNative), "storage-type": storageType}
 			analytics.SendEvent(user.TenantName, username, analyticsParams, "user-create-station-sdk")
 		}
 	}
@@ -703,7 +687,8 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-stations-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-stations-page")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -901,19 +886,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
-		}
-		param3 := analytics.EventParam{
-			Name:  "storage-type",
-			Value: storageTypeForResponse,
-		}
-		analyticsParams := []analytics.EventParam{param1, param2, param3}
+		analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "tiered-storage": strconv.FormatBool(newStation.TieredStorageEnabled), "storage-type": storageTypeForResponse}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station")
 	}
 
@@ -1013,7 +986,8 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-remove-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-station")
 	}
 
 	for _, name := range body.StationNames {
@@ -1153,7 +1127,8 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, dsr.Username, []analytics.EventParam{}, "user-delete-station-sdk")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, dsr.Username, analyticsParams, "user-delete-station-sdk")
 	}
 
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
@@ -1236,7 +1211,8 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-enter-message-journey")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-message-journey")
 	}
 
 	c.IndentedJSON(200, poisonMessage)
@@ -1259,7 +1235,8 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-ack-poison-message")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-ack-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1336,7 +1313,8 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-resend-poison-message")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-resend-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1638,15 +1616,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		sh.S.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
 
 		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "schema-name",
-				Value: schemaName,
-			}
-			analyticsParams := []analytics.EventParam{param1, param2}
+			analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "schema-name": schemaName}
 			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
 		}
 	}
@@ -1743,15 +1713,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "schema-name",
-			Value: schemaName,
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
+		analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "schema-name": schemaName}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
 	}
 
@@ -1826,7 +1788,8 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(tenantName, dsr.Username, []analytics.EventParam{}, "user-detach-schema-from-station-sdk")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(tenantName, dsr.Username, analyticsParams, "user-detach-schema-from-station-sdk")
 	}
 
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
@@ -1891,7 +1854,8 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-remove-schema-from-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-schema-from-station")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1956,7 +1920,8 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-apply-schema-updates-on-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-apply-schema-updates-on-station")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -1966,7 +1931,8 @@ func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-pushed-tierd-storage-button")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-pushed-tierd-storage-button")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -2080,7 +2046,8 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-purge-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-purge-station")
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -2133,7 +2100,8 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, []analytics.EventParam{}, "user-remove-messages")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-messages")
 	}
 
 	c.IndentedJSON(200, gin.H{})
