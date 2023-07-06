@@ -142,10 +142,5 @@ func SendEvent(tenantName, username string, params []EventParam, eventName strin
 	if err != nil {
 		return
 	}
-	err = memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
-	if err != nil {
-		return
-	}
-
-	return
+	memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
 }
