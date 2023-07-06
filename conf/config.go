@@ -82,10 +82,10 @@ func GetConfig() Configuration {
 		configuration.REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
 	}
 	if configuration.METADATA_DB_MAX_CONNS == 0 {
-		configuration.METADATA_DB_MAX_CONNS = 100 //change back to 10
+		configuration.METADATA_DB_MAX_CONNS = 10
 	}
 	if configuration.USER_CACHE_LIFE_MINUTES == 0 {
-		configuration.USER_CACHE_LIFE_MINUTES = 100
+		configuration.USER_CACHE_LIFE_MINUTES = 10
 	}
 	if configuration.USER_CACHE_MAX_SIZE == 0 {
 		configuration.USER_CACHE_MAX_SIZE = 10
