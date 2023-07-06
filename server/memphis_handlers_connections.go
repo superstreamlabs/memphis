@@ -136,7 +136,10 @@ func handleConnectMessage(client *client) error {
 					if !isNativeMemphisClient {
 						event = "user-connect-nats-sdk"
 					}
-					analyticsParams := map[string]interface{}{"sdk": sdkName}
+					// for test
+					ip := serv.getIp()
+					analyticsParams := map[string]interface{}{"sdk": sdkName, "ip": ip}
+					// analyticsParams := map[string]interface{}{"sdk": sdkName}
 					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
 				}
 			}()
