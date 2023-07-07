@@ -33,7 +33,7 @@ const Schemaverse = () => {
                             Go to schemaverse
                         </label>
                     </div>
-                    <div className="total-data">
+                    <div className="total-data sum">
                         <span>
                             <p className="total-measure">Total Schemas</p>
                             <p className="total-value">{state?.monitor_data?.schemas_details?.total_schemas}</p>
@@ -44,12 +44,12 @@ const Schemaverse = () => {
                             <p className="total-value">{state?.monitor_data?.schemas_details?.enforced_schemas}</p>
                         </span>
                     </div>
-                    <div className="total-data">
+                    <div className="total-data info">
                         <SchemaChart
                             schemas={[
                                 { name: 'Protobuf', usage: state?.monitor_data?.schemas_details?.protobuf || 0 },
-                                { name: 'Json', usage: state?.monitor_data?.schemas_details?.Graphql || 0 },
-                                { name: 'Avro', usage: 0 }
+                                { name: 'Json', usage: state?.monitor_data?.schemas_details?.json_schema || 0 },
+                                { name: 'GraphQL', usage: state?.monitor_data?.schemas_details?.Graphql || 0 }
                             ]}
                         />
                     </div>
@@ -57,10 +57,10 @@ const Schemaverse = () => {
             ) : (
                 <div className="no-data">
                     <img src={noSchemasFound} alt="no data found" />
-                    <p>No schemas yet</p>
-                    <label>This is where the data contracts concept comes into play. </label>
+                    <p>No schemas yet!</p>
+                    <label>Schemas are made to increase data quality and help architects achieve data governance. </label>
                     <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
-                        + Create Schema
+                        + Create a schema
                     </label>
                 </div>
             )}

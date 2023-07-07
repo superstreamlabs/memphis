@@ -64,14 +64,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
                     ? 'localhost'
                     : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                        ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
-                        : 'memphis.memphis.svc.cluster.local';
+                    ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+                    : 'memphis.memphis.svc.cluster.local';
             codeEx.producer = codeEx.producer?.replaceAll('<memphis-host>', host);
             codeEx.consumer = codeEx.consumer?.replaceAll('<memphis-host>', host);
             codeEx.producer = codeEx.producer?.replaceAll('<station-name>', stationName);
             codeEx.consumer = codeEx.consumer?.replaceAll('<station-name>', stationName);
             codeEx.producer = codeEx.producer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             codeEx.consumer = codeEx.consumer?.replaceAll(`'<account-id>'`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+            codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             codeEx.producer = codeEx.producer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             codeEx.consumer = codeEx.consumer?.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
             if (username) {
@@ -92,20 +94,23 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = codeEx.producer?.replaceAll('<broker-token>', '<password>');
                 codeEx.consumer = codeEx.consumer?.replaceAll('<broker-token>', '<password>');
             } else {
-                const accountId = parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID))
-                const regexPatternGo = `, memphis\.AccountId\(${accountId}\)`; 
-                codeEx.producer = codeEx.producer?.replaceAll(regexPatternGo, "");
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternGo, "");
-                const regexPatternJs = `accountId: ${accountId}`; 
-                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, "");
-                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, "");
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, "");
+                const accountId = parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID));
+                const regexPatternGo = `, memphis\.AccountId\(${accountId}\)`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternGo, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternGo, '');
+                const regexPatternJs = `accountId: ${accountId}`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, '');
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternJs, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternJs, '');
                 codeEx.consumer = codeEx.consumer.replace(/^\s*[\r\n]/gm, '');
                 codeEx.producer = codeEx.producer.replace(/^\s*[\r\n]/gm, '');
                 const regexPatternPython = `, account_id=${accountId}`;
-                codeEx.producer = codeEx.producer?.replaceAll(regexPatternPython, "");
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, "");
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatternPython, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, '');
+                const regexPatterntDotNet = `options\.AccountId = ${accountId};`;
+                codeEx.producer = codeEx.producer?.replaceAll(regexPatterntDotNet, '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet , '');
             }
             setCodeExample(codeEx);
         }

@@ -29,26 +29,28 @@ const SchemaChart = ({ schemas }) => {
     return (
         <div className="schema-chart-container">
             {max &&
-                schemas?.map((schema) => {
-                    return (
-                        <div className="schema-item">
-                            <div
-                                className="schema-bar"
-                                style={{ width: getLength(schema.usage) === 0 ? `1px` : `calc((100% - 100px)*${getLength(schema.usage)})` }}
-                            ></div>
-                            <label className="schema-name">{schema.name}</label>{' '}
-                            <Badge
-                                className="site-badge-count-109"
-                                count={schema.usage}
-                                style={{
-                                    backgroundColor: '#6557FF'
-                                }}
-                                overflowCount={999}
-                                showZero
-                            />
-                        </div>
-                    );
-                })}
+                schemas
+                    ?.sort((a, b) => b.usage - a.usage)
+                    ?.map((schema, index) => {
+                        return (
+                            <div key={index} className="schema-item">
+                                <div
+                                    className="schema-bar"
+                                    style={{ width: getLength(schema.usage) === 0 ? `1px` : `calc((100% - 100px)*${getLength(schema.usage)})` }}
+                                ></div>
+                                <label className="schema-name">{schema.name}</label>{' '}
+                                <Badge
+                                    className="site-badge-count-109"
+                                    count={schema.usage}
+                                    style={{
+                                        backgroundColor: '#6557FF'
+                                    }}
+                                    overflowCount={999}
+                                    showZero
+                                />
+                            </div>
+                        );
+                    })}
         </div>
     );
 };

@@ -50,7 +50,6 @@ const (
 	DEFAULT_WS_TOKEN                           = "memphis"
 	DEFAULT_CLIENTS_TOKEN                      = "memphis"
 	SHOWABLE_ERROR_STATUS_CODE                 = 666
-	ANALYTICS_TOKEN                            = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
 	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
 	DEFAULT_DLS_RETENTION_HOURS                = 3
 

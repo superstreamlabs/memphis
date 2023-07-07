@@ -107,7 +107,9 @@ export const parsingDateWithotTime = (date) => {
 function isFloat(n) {
     return Number(n) === n && n % 1 !== 0;
 }
-
+export const convertBytesToGb = (bytes) => {
+    return bytes / 1024 / 1024 / 1024;
+};
 export const convertBytes = (bytes, round) => {
     const KB = 1024;
     const MB = KB * 1024;
@@ -188,10 +190,35 @@ export const diffDate = (date) => {
     return `${dayDiff} days ago`;
 };
 
-export const hex_to_ascii = (str1) => {
-    const hex = str1.toString();
-    const str = decodeURIComponent(hex.replace(/[0-9a-f]{2}/g, '%$&'));
-    return str;
+export const hex_to_ascii = (input) => {
+    if (typeof input === 'string' && /^[0-9a-fA-F]+$/.test(input)) {
+        let str = '';
+        str = decodeURIComponent(input.replace(/[0-9a-f]{2}/g, '%$&'));
+        return str;
+    } else if (typeof input === 'number') {
+        return String.fromCharCode(input);
+    } else if (typeof input === 'string') {
+        return input;
+    } else {
+        return input;
+    }
+};
+
+export const ascii_to_hex = (str) => {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        hex += str.charCodeAt(i).toString(16);
+    }
+    return hex;
+};
+
+export const isHexString = (str) => {
+    const hexChars = /^[0-9a-fA-F]+$/;
+    if (hexChars.test(str)) {
+        return true;
+    }
+
+    return false;
 };
 
 export const compareObjects = (object1, object2) => {
@@ -358,7 +385,12 @@ export const messageParser = (type, data) => {
         case 'protobuf':
             return JSON.stringify(decodeMessage(data), null, 2);
         case 'bytes':
-            return data;
+            const isHexStr = isHexString(data);
+            if (isHexStr) {
+                return data;
+            } else {
+                return ascii_to_hex(data);
+            }
         default:
             return hex_to_ascii(data);
     }
@@ -371,18 +403,20 @@ export const compareVersions = (a, b) => {
     for (let i = 0; i < versionA.length; i++) {
         const numberA = parseInt(versionA[i]);
         const numberB = parseInt(versionB[i]);
-
         if (numberA > numberB) {
             return true;
         } else if (numberA < numberB) {
             return false;
         }
     }
-
     return true;
 };
 
 export const isCloud = () => {
-    const cloud_env = process.env.REACT_APP_CLOUD === 'true';
-    return cloud_env;
+    if (process.env.REACT_APP_CLOUD) {
+        const cloud_env = process.env.REACT_APP_CLOUD === 'true';
+        return cloud_env;
+    } else {
+        return false;
+    }
 };

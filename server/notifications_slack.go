@@ -147,7 +147,7 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 	return keys, properties, 0, nil
 }
 
-func (it IntegrationsHandler) handleCreateSlackIntegration(body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.Integration, int, error) {
+func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.Integration, int, error) {
 	keys, properties, errorCode, err := it.getSlackIntegrationDetails(body)
 	if err != nil {
 		return keys, properties, models.Integration{}, errorCode, err
@@ -155,7 +155,7 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(body models.CreateInt
 	if it.S.opts.UiHost == "" {
 		EditClusterCompHost("ui_host", body.UIUrl)
 	}
-	slackIntegration, err := createSlackIntegration(body.TenantName, keys, properties, body.UIUrl)
+	slackIntegration, err := createSlackIntegration(tenantName, keys, properties, body.UIUrl)
 	if err != nil {
 		errMsg := strings.ToLower(err.Error())
 		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") || strings.Contains(errMsg, "already exists") {
@@ -167,12 +167,12 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(body models.CreateInt
 	return keys, properties, slackIntegration, 0, nil
 }
 
-func (it IntegrationsHandler) handleUpdateSlackIntegration(integrationType string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
+func (it IntegrationsHandler) handleUpdateSlackIntegration(tenantName, integrationType string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
 	keys, properties, errorCode, err := it.getSlackIntegrationDetails(body)
 	if err != nil {
 		return models.Integration{}, errorCode, err
 	}
-	slackIntegration, err := updateSlackIntegration(body.TenantName, keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
+	slackIntegration, err := updateSlackIntegration(tenantName, keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
 	if err != nil {
 		errMsg := strings.ToLower(err.Error())
 		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") {
@@ -204,7 +204,7 @@ func createSlackIntegration(tenantName string, keys map[string]string, propertie
 			return slackIntegration, insertErr
 		}
 		slackIntegration = integrationRes
-		integrationToUpdate := models.CreateIntegrationSchema{
+		integrationToUpdate := models.CreateIntegration{
 			Name:       "slack",
 			Keys:       keys,
 			Properties: properties,
@@ -215,7 +215,7 @@ func createSlackIntegration(tenantName string, keys map[string]string, propertie
 		if err != nil {
 			return slackIntegration, err
 		}
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
 			return slackIntegration, err
 		}
@@ -263,17 +263,18 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		return models.Integration{}, err
 	}
 
-	integrationToUpdate := models.CreateIntegrationSchema{
+	integrationToUpdate := models.CreateIntegration{
 		Name:       "slack",
 		Keys:       keys,
 		Properties: properties,
 		UIUrl:      uiUrl,
+		TenantName: tenantName,
 	}
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
 		return models.Integration{}, err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return models.Integration{}, err
 	}

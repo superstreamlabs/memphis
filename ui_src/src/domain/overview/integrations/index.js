@@ -28,7 +28,7 @@ const Integrations = () => {
                 <div className="overview-components-header integrations-header">
                     <p>Integrations</p>
                     <label className="link-to-page" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
-                        Go to integrations
+                        Explore more Integration
                     </label>
                 </div>
                 <div className="integrations-list">

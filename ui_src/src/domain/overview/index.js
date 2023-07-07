@@ -20,7 +20,10 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_SKIP_GET_STARTED
+    LOCAL_STORAGE_SKIP_GET_STARTED,
+    LOCAL_STORAGE_BROKER_HOST,
+    LOCAL_STORAGE_ENV,
+    LOCAL_STORAGE_ACCOUNT_ID
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
@@ -123,35 +126,57 @@ function OverView() {
         const sc = StringCodec();
         const jc = JSONCodec();
         let sub;
-        try {
-            (async () => {
+        const subscribeToOverviewData = async () => {
+            try {
                 const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.main_overview_data`, sc.encode('SUB'));
+
                 if (rawBrokerName) {
                     const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                     sub = state.socket?.subscribe(`$memphis_ws_pubs.main_overview_data.${brokerName}`);
+                    listenForUpdates();
                 }
-            })();
-        } catch (err) {
-            return;
-        }
-        setTimeout(async () => {
-            if (sub) {
-                (async () => {
+            } catch (err) {
+                console.error('Error subscribing to overview data:', err);
+            }
+        };
+
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
                         arrangeData(data);
                     }
-                })();
+                }
+            } catch (err) {
+                console.error('Error receiving overview data updates:', err);
             }
-        }, 1000);
+        };
+
+        subscribeToOverviewData();
+
         return () => {
-            sub?.unsubscribe();
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from overview data:', err);
+                }
+            }
         };
     }, [state.socket]);
 
     const setBotImage = (botId) => {
         SetBotUrl(require(`../../assets/images/bots/avatar${botId}.svg`));
     };
+
+    let host =
+        localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
+            ? 'localhost'
+            : localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            ? localStorage.getItem(LOCAL_STORAGE_BROKER_HOST)
+            : 'memphis.memphis.svc.cluster.local';
+
     return (
         <div className="overview-container">
             {isLoading && (
@@ -166,7 +191,7 @@ function OverView() {
                             <div className="bot-wrapper">
                                 <img
                                     className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl} // profile_pic is available only in sandbox env
+                                    src={localStorage.getItem('profile_pic') || botUrl}
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem('profile_pic') ? 60 : 40}
                                     height={localStorage.getItem('profile_pic') ? 60 : 40}
@@ -174,7 +199,27 @@ function OverView() {
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">
-                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? <h1>Welcome back, {username}</h1> : <h1>Welcome, {username}</h1>}
+                                {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? (
+                                    <h1>
+                                        Welcome back, <span className="username">{username}</span>
+                                    </h1>
+                                ) : (
+                                    <h1>
+                                        Welcome, <span className="username">{username}</span>
+                                    </h1>
+                                )}
+                                {isCloud() && (
+                                    <div className="org-details">
+                                        <div className="hostname">
+                                            <p>Account ID : </p>
+                                            <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
+                                        </div>
+                                        <div className="hostname">
+                                            <p>Broker Hostname : </p>
+                                            <span>{host}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         <div>

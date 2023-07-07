@@ -156,37 +156,37 @@ func (csresp *SchemaResponse) SetError(err error) {
 
 func (s *Server) initializeSDKHandlers() {
 	//stations
-	s.queueSubscribe(globalAccountName, "$memphis_station_creations",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_station_destructions",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe(globalAccountName, "$memphis_producer_creations",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_producer_destructions",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe(globalAccountName, "$memphis_consumer_creations",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_consumer_destructions",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
 	// schemas
-	s.queueSubscribe(globalAccountName, "$memphis_schema_attachments",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_schema_detachments",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
-	s.queueSubscribe(globalAccountName, "$memphis_schema_creations",
+	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_creations",
 		"memphis_schema_creations_listeners_group",
 		createSchemaHandler(s))
 
@@ -265,19 +265,19 @@ func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Accoun
 		s.sendAPIErrResponseWithEcho(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	tenantName := globalAccountName
+	tenantName := MEMPHIS_GLOBAL_ACCOUNT
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 
 func respondWithResp(tenantName string, s *Server, replySubject string, resp memphisResponse) {
 	account, err := s.lookupAccount(tenantName)
 	if err != nil {
-		serv.Errorf("respondWithResp: " + err.Error())
+		serv.Errorf("[tenant: %v]respondWithResp at lookupAccount: %v", tenantName, err.Error())
 		return
 	}
 	rawResp, err := json.Marshal(resp)
 	if err != nil {
-		serv.Errorf("respondWithResp: response marshal error: " + err.Error())
+		serv.Errorf("[tenant: %v]respondWithResp: response marshal error: %v", tenantName, err.Error())
 		return
 	}
 	s.sendInternalAccountMsgWithEcho(account, replySubject, rawResp)
@@ -292,8 +292,8 @@ func (s *Server) SendUpdateToClients(sdkClientsUpdate models.SdkClientsUpdates) 
 	subject := sdkClientsUpdatesSubject
 	msg, err := json.Marshal(sdkClientsUpdate)
 	if err != nil {
-		s.Errorf("SendUpdateToClients: " + err.Error())
+		s.Errorf("SendUpdateToClients: %v", err.Error())
 		return
 	}
-	s.sendInternalAccountMsg(s.GlobalAccount(), subject, msg)
+	s.sendInternalAccountMsg(s.MemphisGlobalAccount(), subject, msg)
 }

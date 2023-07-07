@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"sort"
@@ -33,7 +34,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	var message JSConsumerDeliveryExceededAdvisory
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: %v", err.Error())
 		return err
 	}
 
@@ -41,12 +42,12 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	accountName := message.Account
 	// backward compatibility
 	if accountName == "" {
-		accountName = DEFAULT_GLOBAL_ACCOUNT
+		accountName = MEMPHIS_GLOBAL_ACCOUNT
 	}
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
 		return err
 	}
 	if !station.DlsConfigurationPoison {
@@ -61,7 +62,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil
 		}
-		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
 		return err
 	}
 
@@ -70,7 +71,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	if poisonMessageContent.Header != nil {
 		headersJson, err = DecodeHeader(poisonMessageContent.Header)
 		if err != nil {
-			serv.Errorf("handleNewUnackedMsg: " + err.Error())
+			serv.Errorf("handleNewUnackedMsg: %v", err.Error())
 			return err
 		}
 	}
@@ -98,11 +99,11 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		connId := connectionIdHeader
 		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
 		if err != nil {
-			serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+			serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: %v", err.Error())
 			return err
 		}
 		if !exist {
-			serv.Warnf("handleNewUnackedMsg: producer " + producedByHeader + " couldn't been found")
+			serv.Warnf("handleNewUnackedMsg: producer %v couldn't been found", producedByHeader)
 			return nil
 		}
 		producerId = p.ID
@@ -118,7 +119,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 
 	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: " + err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg atStorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
 	}
 	if dlsMsgId == 0 { // nothing to do
@@ -129,7 +130,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	var msgUrl = s.opts.UiHost + "/stations/" + stationName.Ext() + "/" + idForUrl
 	err = SendNotification(station.TenantName, PoisonMessageTitle, "Poison message has been identified, for more details head to: "+msgUrl, PoisonMAlert)
 	if err != nil {
-		serv.Warnf("handleNewUnackedMsg: Error while sending a poison message notification: " + err.Error())
+		serv.Warnf("[tenant: %v]handleNewUnackedMsg at SendNotification: Error while sending a poison message notification: %v", station.TenantName, err.Error())
 		return nil
 	}
 	return nil
@@ -198,7 +199,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		return models.DlsMessageResponse{}, err
 	}
 	if !exist {
-		return models.DlsMessageResponse{}, errors.New("Station " + station.Name + " does not exists")
+		return models.DlsMessageResponse{}, fmt.Errorf("Station %v does not exists", station.Name)
 	}
 
 	sn, err := StationNameFromStr(station.Name)
@@ -250,7 +251,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 			return models.DlsMessageResponse{}, err
 		}
 		if !exist {
-			return models.DlsMessageResponse{}, errors.New("Producer " + prod.Name + " does not exist")
+			return models.DlsMessageResponse{}, fmt.Errorf("Producer %v does not exist", prod.Name)
 		}
 		producer = prod
 

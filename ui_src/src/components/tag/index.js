@@ -21,7 +21,7 @@ const Tag = ({ tag, onDelete, editable, border = false, onClick }) => {
             className="tag-wrapper"
             key={tag.name}
             style={{ background: `rgba(${tag.color},0.2)`, borderColor: border ? `rgb(${tag.color})` : 'transparent' }}
-            onClick={() => onClick(tag.name)}
+            onClick={() => onClick && onClick(tag.name)}
         >
             <div className="tag-content" style={{ color: `rgb(${tag.color})` }}>
                 {tag.name}

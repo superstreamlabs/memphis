@@ -14,7 +14,6 @@ package server
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -86,155 +85,27 @@ func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": mh.S.MemphisVersion()})
 }
 
-func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.BrokerThroughputResponse, error) {
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_throughput_consumer_" + uid
-	var msgs []StoredMsg
-	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(globalAccountName, throughputStreamNameV1)
-	if err != nil {
-		return throughputs, err
-	}
-
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-
-	cc := ConsumerConfig{
-		OptStartSeq:   startSeq,
-		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		Replicas:      1,
-	}
-	err = serv.memphisAddConsumer(globalAccountName, throughputStreamNameV1, &cc)
-	if err != nil {
-		return throughputs, err
-	}
-
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamNameV1, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := serv.subscribeOnAcc(serv.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("GetBrokersThroughputs: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return throughputs, err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-	timeout := 300 * time.Millisecond
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
-	}
-
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnAcc(serv.GlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(globalAccountName, throughputStreamNameV1, durableName)
-	})
-
-	sort.Slice(msgs, func(i, j int) bool { // old to new
-		return msgs[i].Time.Before(msgs[j].Time)
-	})
-
-	m := make(map[string]models.BrokerThroughputResponse)
-	for _, msg := range msgs {
-		var brokerThroughput models.BrokerThroughput
-		err = json.Unmarshal(msg.Data, &brokerThroughput)
-		if err != nil {
-			return throughputs, err
-		}
-
-		if _, ok := m[brokerThroughput.Name]; !ok {
-			m[brokerThroughput.Name] = models.BrokerThroughputResponse{
-				Name: brokerThroughput.Name,
-			}
-		}
-
-		mapEntry := m[brokerThroughput.Name]
-		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
-			Timestamp: msg.Time,
-			Read:      brokerThroughput.ReadMap[tenantName],
-		})
-		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
-			Timestamp: msg.Time,
-			Write:     brokerThroughput.WriteMap[tenantName],
-		})
-		m[brokerThroughput.Name] = mapEntry
-	}
-
-	throughputs = make([]models.BrokerThroughputResponse, 0, len(m))
-	totalRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
-	totalWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
-	for _, t := range m {
-		throughputs = append(throughputs, t)
-		for i, r := range t.Read {
-			totalRead[i].Timestamp = r.Timestamp
-			totalRead[i].Read += r.Read
-		}
-		for i, w := range t.Write {
-			totalWrite[i].Timestamp = w.Timestamp
-			totalWrite[i].Write += w.Write
-		}
-	}
-	throughputs = append([]models.BrokerThroughputResponse{{
-		Name:  "total",
-		Read:  totalRead,
-		Write: totalWrite,
-	}}, throughputs...)
-
-	return throughputs, nil
-}
-
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetMainOverviewData: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetMainOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
-			serv.Warnf("GetMainOverviewData: " + err.Error())
+			serv.Warnf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
-			serv.Errorf("GetMainOverviewData: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-main-overview")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -615,25 +486,25 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Warnf("GetStationOverviewData at StationNameFromStr: At station %v: %v", body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetStationOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetStationOverviewData: " + errMsg)
+		errMsg := fmt.Sprintf("Station %v does not exist", body.StationName)
+		serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -642,7 +513,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetProducersByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -650,17 +521,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station.Name, user.TenantName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -668,10 +539,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -681,10 +552,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetMessages: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("GetStationOverviewData at GetMessages: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -693,10 +564,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -708,7 +579,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetCgsByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -716,17 +587,17 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetTagsByEntityWithID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -751,7 +622,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		var schemaDetails models.StationOverviewSchemaDetails
 		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -760,7 +631,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		} else {
 			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 			if err != nil {
-				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+				serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaVersionByNumberAndID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -854,7 +725,8 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-station-overview")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -877,7 +749,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(globalAccountName, syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -914,7 +786,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(globalAccountName, syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -923,17 +795,16 @@ func (s *Server) GetSystemLogs(amount uint64,
 	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := s.subscribeOnAcc(s.GlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf("GetSystemLogs: " + err.Error())
+				s.Errorf("GetSystemLogs: %v", err.Error())
 				return
 			}
 
@@ -949,7 +820,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		return models.SystemLogsResponse{}, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, reply, nil, req, true)
 
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -963,8 +834,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnAcc(s.GlobalAccount(), sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(globalAccountName, syslogsStreamName, durableName) })
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(MEMPHIS_GLOBAL_ACCOUNT, syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
@@ -1265,12 +1136,14 @@ func shortenFloat(f float64) float64 {
 func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 	v, err := serv.Varz(nil)
 	if err != nil {
-		serv.Errorf("GetAvailableReplicas: " + err.Error())
+		serv.Errorf("GetAvailableReplicas: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	replicas := v.Routes + 1
+	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
-		"available_replicas": v.Routes + 1})
+		"available_replicas": replicas})
 }
 
 func checkIsMinikube(labels map[string]string) bool {

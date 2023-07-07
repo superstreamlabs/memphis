@@ -2,7 +2,9 @@
     position: relative;
     height: 100%;
     padding: 15px;
-
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     .schemaverse-header {
         display: flex;
         justify-content: space-between;
@@ -15,26 +17,32 @@
         }
     }
     .total-data {
-        margin-top: 10px;
         border: 1px solid #e6e6e6;
         border-radius: 8px;
         display: flex;
-        justify-content: space-evenly;
         align-items: center;
         padding: 5px;
+        position: relative;
         p {
             margin: 0;
         }
         .total-measure {
-            font-weight: 500;
             font-size: 14px;
-            color: #d5d5d7;
+            color: #979797;
+            font-family: 'InterMedium';
         }
         .total-value {
             font-weight: 600;
             font-size: 20px;
             color: #2e2c34;
         }
+    }
+    .sum{
+        height: 70px;
+        justify-content: space-around;
+    }
+    .info{
+        height: calc(100% - 130px);
     }
     .ant-divider-vertical {
         height: 40px;
@@ -47,15 +55,17 @@
         position: relative;
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        height: calc(100% - 10px);
         .schema-item {
             display: flex;
             align-items: center;
             margin-bottom: 4px;
+            position: relative;
+            height: 33%;
             .schema-bar {
                 background: rgba(101, 87, 255, 0.4);
                 border-radius: 4px;
-                height: 35px;
+                height: 85%;
             }
             .schema-bar:hover {
                 opacity: 0.9;

@@ -16,7 +16,8 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
-const GlobalAccountName = "$G"
+const MemphisGlobalAccountName = "$memphis"
+const GlobalAccount = "$G"
 
 type Configuration struct {
 	DEV_ENV                 string
@@ -32,6 +33,7 @@ type Configuration struct {
 	METADATA_DB_DBNAME      string
 	METADATA_DB_HOST        string
 	METADATA_DB_PORT        string
+	METADATA_DB_MAX_CONNS   int
 	METADATA_DB_TLS_ENABLED bool
 	METADATA_DB_TLS_MUTUAL  bool
 	METADATA_DB_TLS_KEY     string
@@ -75,6 +77,9 @@ func GetConfig() Configuration {
 	}
 	if configuration.REFRESH_JWT_SECRET == "" {
 		configuration.REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
+	}
+	if configuration.METADATA_DB_MAX_CONNS == 0 {
+		configuration.METADATA_DB_MAX_CONNS = 10
 	}
 
 	gin.SetMode(gin.ReleaseMode)

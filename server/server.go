@@ -322,41 +322,47 @@ type stats struct {
 // New will setup a new server struct after parsing the options.
 // DEPRECATED: Use NewServer(opts)
 func New(opts *Options) *Server {
-	s, _, _ := NewServer(opts)
+	s, _ := NewServer(opts)
 	return s
 }
 
-// NewServer will setup a new server struct after parsing the options.
-// Could return an error if options can not be validated.
-func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
-	// ** added by Memphis
+// ** added by Memphis
+func InitializeMetadataStorage() (db.MetadataStorage, error) {
 	metadataDb, err := db.InitalizeMetadataDbConnection()
 	if err != nil {
-		return nil, db.MetadataStorage{}, err
+		return db.MetadataStorage{}, err
 	}
 
 	err = CreateGlobalTenantOnFirstSystemLoad()
 	if err != nil {
-		return nil, db.MetadataStorage{}, err
+		return db.MetadataStorage{}, err
 	}
 
 	err = CreateRootUserOnFirstSystemLoad()
 	if err != nil {
-		return nil, db.MetadataStorage{}, err
+		return db.MetadataStorage{}, err
 	}
 
 	err = EncryptOldUnencryptedValues()
 	if err != nil {
-		err = errors.New("Failed encrypt old unencrypted values: " + err.Error())
-		return nil, db.MetadataStorage{}, err
+		err = fmt.Errorf("failed encrypt old unencrypted values: %v", err.Error())
+		return db.MetadataStorage{}, err
 	}
+	return metadataDb, nil
+}
 
-	gacc, memphisOpts, err := GetMemphisOpts(*opts, false)
+// added by Memphis ***
+
+// NewServer will setup a new server struct after parsing the options.
+// Could return an error if options can not be validated.
+func NewServer(opts *Options) (*Server, error) {
+	// ** added by Memphis
+	opts, err := GetMemphisOpts(opts)
 	if err != nil {
-		return nil, db.MetadataStorage{}, err
+		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
+		return nil, err
 	}
-	*opts = memphisOpts
-	// added by Memphis **
+	// added by Memphis ***
 
 	setBaselineOptions(opts)
 
@@ -380,7 +386,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	// report issues). Its options can be (incorrectly) set by hand when
 	// server is embedded. If there is an error, return nil.
 	if err := validateOptions(opts); err != nil {
-		return nil, db.MetadataStorage{}, err
+		return nil, err
 	}
 
 	info := Info{
@@ -425,12 +431,6 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 		leafNodeEnabled:    opts.LeafNode.Port != 0 || len(opts.LeafNode.Remotes) > 0,
 		syncOutSem:         make(chan struct{}, maxConcurrentSyncRequests),
 	}
-	// ** added by Memphis
-	if configuration.USER_PASS_BASED_AUTH {
-		gacc.srv = s
-		s.gacc = gacc
-	}
-	// added by Memphis **
 
 	// Fill up the maximum in flight syncRequests for this server.
 	// Used in JetStream catchup semantics.
@@ -444,7 +444,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	// Trusted root operator keys.
 	if !s.processTrustedKeys() {
-		return nil, db.MetadataStorage{}, fmt.Errorf("Error processing trusted operator keys")
+		return nil, fmt.Errorf("Error processing trusted operator keys")
 	}
 
 	// If we have solicited leafnodes but no clustering and no clustername.
@@ -495,14 +495,14 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	// Setup OCSP Stapling. This will abort server from starting if there
 	// are no valid staples and OCSP policy is set to Always or MustStaple.
 	if err := s.enableOCSP(); err != nil {
-		return nil, db.MetadataStorage{}, err
+		return nil, err
 	}
 
 	// Call this even if there is no gateway defined. It will
 	// initialize the structure so we don't have to check for
 	// it to be nil or not in various places in the code.
 	if err := s.newGateway(opts); err != nil {
-		return nil, db.MetadataStorage{}, err
+		return nil, err
 	}
 
 	// If we have a cluster definition but do not have a cluster name, create one.
@@ -550,13 +550,13 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	// Check for configured account resolvers.
 	if err := s.configureResolver(); err != nil {
-		return nil, db.MetadataStorage{}, err
+		return nil, err
 	}
 	// If there is an URL account resolver, do basic test to see if anyone is home.
 	if ar := opts.AccountResolver; ar != nil {
 		if ur, ok := ar.(*URLAccResolver); ok {
 			if _, err := ur.Fetch(_EMPTY_); err != nil {
-				return nil, db.MetadataStorage{}, err
+				return nil, err
 			}
 		}
 	}
@@ -585,7 +585,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 
 	// For tracking accounts
 	if err := s.configureAccounts(); err != nil {
-		return nil, db.MetadataStorage{}, err
+		return nil, err
 	}
 
 	// Used to setup Authorization.
@@ -594,7 +594,7 @@ func NewServer(opts *Options) (*Server, db.MetadataStorage, error) {
 	// Start signal handler
 	s.handleSignals()
 
-	return s, metadataDb, nil
+	return s, nil
 }
 
 func (s *Server) logRejectedTLSConns() {
@@ -775,6 +775,15 @@ func (s *Server) globalAccount() *Account {
 	gacc := s.gacc
 	s.mu.RUnlock()
 	return gacc
+}
+
+func (s *Server) MemphisGlobalAccount() *Account {
+	macc, err := s.LookupAccount(MEMPHIS_GLOBAL_ACCOUNT)
+	if err != nil {
+		fmt.Printf("error resolving memphis system account: %v\n", err)
+		return nil
+	}
+	return macc
 }
 
 // Used to setup Accounts.
@@ -1653,7 +1662,7 @@ func (s *Server) Start() {
 	opts := s.getOpts()
 	clusterName := s.ClusterName()
 
-	s.Noticef("Version:  %s", VERSION)
+	s.Noticef("Version:  %s", s.MemphisVersion())
 	if clusterName != _EMPTY_ {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}

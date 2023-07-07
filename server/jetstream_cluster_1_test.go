@@ -48,7 +48,7 @@ func TestJetStreamClusterConfig(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if _, _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), errStr) {
+		if _, err := NewServer(opts); err == nil || !strings.Contains(err.Error(), errStr) {
 			t.Fatalf("Expected an error of `%s`, got `%v`", errStr, err)
 		}
 	}

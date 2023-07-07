@@ -140,11 +140,23 @@ pre {
 }
 
 .memphis-label {
-    color: #667085;
-    size: 14px;
+    color: rgba(74, 73, 92, 0.8);
+    font-size: 12px;
 
     a {
         color: #6557ff;
         cursor: pointer;
     }
+}
+
+.ant-divider-vertical{
+    border-left-width: 2px;
+}
+
+.collapse-arrow {
+    transform: rotate(-90deg);
+    transition: transform 0.4s;
+}
+.open {
+    transform: rotate(0deg);
 }

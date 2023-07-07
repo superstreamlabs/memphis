@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
 import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { isCloud } from '../../services/valueConvertor';
@@ -91,6 +91,20 @@ function Profile() {
                 </div>
                 <ImgUploader />
                 <Divider />
+                {isCloud() && (
+                    <>
+                        <div className="organization-id-section">
+                            <p className="title">Account ID</p>
+                            <label className="organization-id-description">
+                                Your account ID is a unique identifier for your organization. It is used to identify your organization in Memphis
+                            </label>
+                            <div className="organization-id">
+                                <p className="id">{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</p>
+                            </div>
+                        </div>
+                        <Divider />
+                    </>
+                )}
                 <div className="delete-account-section">
                     <p className="title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
                     {isCloud() ? (
@@ -127,7 +141,7 @@ function Profile() {
                         className="modal-btn"
                         width="200px"
                         height="36px"
-                        placeholder="Delete Account"
+                        placeholder={isCloud ? 'Delete organization' : 'Delete account'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="red"

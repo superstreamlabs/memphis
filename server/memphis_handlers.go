@@ -71,9 +71,6 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	if len(userModel.Username) == 0 {
 		return userModel, errors.New("username is empty")
 	}
-	if userModel.TenantName == strings.ToLower(DEFAULT_GLOBAL_ACCOUNT) {
-		userModel.TenantName = DEFAULT_GLOBAL_ACCOUNT
-	}
 	return userModel, nil
 }
 
@@ -96,22 +93,6 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 	}
 
 	return newStation, true, nil
-}
-
-func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", globalAccountName)
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
-
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
 }
 
 func validateName(name, objectType string) error {

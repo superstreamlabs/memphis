@@ -84,14 +84,14 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleUpdateS3Integration(body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	statusCode, keys, err := it.handleS3Integration(body.TenantName, body.Keys)
+func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	statusCode, keys, err := it.handleS3Integration(tenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
 	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"], keys["url"], keys["s3_path_style"])
-	s3Integration, err := updateS3Integration(body.TenantName, keys, properties)
+	s3Integration, err := updateS3Integration(tenantName, keys, properties)
 	if err != nil {
 		return s3Integration, 500, err
 	}
@@ -192,7 +192,7 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 			return models.Integration{}, insertErr
 		}
 		s3Integration = integrationRes
-		integrationToUpdate := models.CreateIntegrationSchema{
+		integrationToUpdate := models.CreateIntegration{
 			Name:       "s3",
 			Keys:       keys,
 			Properties: properties,
@@ -202,7 +202,7 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 		if err != nil {
 			return models.Integration{}, err
 		}
-		err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 		if err != nil {
 			return models.Integration{}, err
 		}
@@ -225,7 +225,7 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 		return models.Integration{}, err
 	}
 
-	integrationToUpdate := models.CreateIntegrationSchema{
+	integrationToUpdate := models.CreateIntegration{
 		Name:       "s3",
 		Keys:       keys,
 		Properties: properties,
@@ -236,7 +236,7 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 	if err != nil {
 		return s3Integration, err
 	}
-	err = serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
 		return s3Integration, err
 	}
@@ -384,7 +384,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		var messages []Msg
 		size := int64(0)
 		for _, msg := range msgs {
-			if tenantName == conf.GlobalAccountName {
+			if tenantName == conf.MemphisGlobalAccountName {
 				tenantName = "global"
 			}
 			objectName = "memphis/" + tenantName + "/" + k + "/" + uid + "(" + strconv.Itoa(len(msgs)) + ").json"

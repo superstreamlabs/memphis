@@ -81,6 +81,10 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return models.User{}, errors.New("f")
 	}
 
+	if claims["tenant_name"] == nil {
+		claims["tenant_name"] = conf.MemphisGlobalAccountName
+	}
+
 	userId := int(claims["user_id"].(float64))
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
 	user := models.User{
@@ -135,9 +139,7 @@ func Authenticate(c *gin.Context) {
 
 	if shouldCheckUser {
 		username := strings.ToLower(user.Username)
-		if user.TenantName != conf.GlobalAccountName {
-			user.TenantName = strings.ToLower(user.TenantName)
-		}
+		user.TenantName = strings.ToLower(user.TenantName)
 
 		exists, _, err := db.GetUserByUsername(username, user.TenantName)
 		if err != nil {

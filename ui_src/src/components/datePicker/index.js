@@ -15,29 +15,27 @@ import './style.scss';
 import React, { useState } from 'react';
 import { DatePicker } from 'antd';
 import CalendarIcon from '../../assets/images/Calendar.svg';
-const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, picker }) => {
+const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, picker, dateFrom }) => {
     const [disabledMonths, setDisabledMonths] = useState([]);
 
     const disabledDate = (current) => {
-      // Disable months before January 2023
-      const disabledBefore = current && current < new Date('2023-06-01');
-      // Disable months after the current month
-      const disabledAfter = current && current > new Date();
-  
-      return disabledBefore || disabledAfter;
+        const startingDate = dateFrom ? new Date(dateFrom) : new Date('2023-06-01');
+        const disabledBefore = current && current < startingDate;
+        const disabledAfter = current && current > new Date();
+
+        return disabledBefore || disabledAfter;
     };
-  
+
     const onOpenChange = (open) => {
-      if (open) {
-        // Generate the list of disabled months
-        const disabledMonths = [];
-        let currentDate = new Date();
-        while (currentDate > new Date('2023-06-01')) {
-          disabledMonths.push(currentDate);
-          currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+        if (open) {
+            const disabledMonths = [];
+            let currentDate = new Date();
+            while (currentDate > new Date('2023-06-01')) {
+                disabledMonths.push(currentDate);
+                currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+            }
+            setDisabledMonths(disabledMonths);
         }
-        setDisabledMonths(disabledMonths);
-      }
     };
     return (
         <div className="date-picker-container">
@@ -58,7 +56,7 @@ const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, p
                     borderRadius: '32px',
                     zIndex: 9999
                 }}
-                disabledDate={disabledDate}
+                disabledDate={picker === 'month' && disabledDate}
                 onOpenChange={onOpenChange}
                 disabledMonths={disabledMonths}
             />

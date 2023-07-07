@@ -22,35 +22,36 @@ const Tags = () => {
     const [state, dispatch] = useContext(Context);
     return (
         <div className="overview-components-wrapper">
-            {state?.monitor_data?.tags_details.length > 0 ? (
+            {state?.monitor_data?.tags_details?.length > 0 ? (
                 <div className="overview-tags-container">
                     <div className="overview-components-header">
                         <p>Most used tags</p>
                     </div>
-                    {state?.monitor_data?.tags_details?.map((tag, index) => {
-                        return (
-                            <div key={index}>
-                                <span className="tag-item">
-                                    <span className="item">
-                                        <label className="item-num">{`${index + 1}`}</label>
-                                        <Tag tag={{ color: tag.color, name: tag.name }} onClick={() => ''}></Tag>
+                    <div className="tags-items-container">
+                        {state?.monitor_data?.tags_details?.map((tag, index) => {
+                            return (
+                                <div key={index}>
+                                    <span className="tag-item">
+                                        <span className="item">
+                                            <label className="item-num">{`${index + 1}`}</label>
+                                            <Tag tag={{ color: tag.color, name: tag.name }} />
+                                        </span>
+                                        <label className="attached-component">
+                                            {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
+                                                tag.schemas_count === 1 ? '' : 's'
+                                            }.`}
+                                        </label>
                                     </span>
-                                    <label className="attached-component">
-                                        {' '}
-                                        {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
-                                            tag.schemas_count === 1 ? '' : 's'
-                                        }.`}{' '}
-                                    </label>
-                                </span>
-                                <Divider />
-                            </div>
-                        );
-                    })}
+                                    <Divider />
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             ) : (
                 <div className="no-data">
                     <img src={noTagsFound} alt="no data found" />
-                    <p>No tags yet</p>
+                    <p>No tags yet!</p>
                     <label>Tags are a great way to organize your data.</label>
                     <label>Create a tag to get started.</label>
                 </div>

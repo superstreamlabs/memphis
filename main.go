@@ -96,9 +96,14 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) {
-	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion(), s.GetCustomDeploymentId())
+	err := analytics.InitializeAnalytics(s.MemphisVersion(), s.GetCustomDeploymentId())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
+	}
+
+	err = server.TenantSeqInitialize()
+	if err != nil {
+		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
 
 	err = s.InitializeEventCounter()
@@ -129,6 +134,15 @@ func runMemphis(s *server.Server) {
 
 		// run only on the leader
 		go s.KillZombieResources()
+		// For backward compatibility data from old account to memphis default account
+		folderName := fmt.Sprintf("%s%s%s", s.Opts().StoreDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
+		f, _ := os.Stat(folderName)
+		if f != nil {
+			err = s.MoveResourcesFromOldToNewDefaultAcc()
+			if err != nil {
+				s.Errorf("Data from global account to memphis account failed: %s", err.Error())
+			}
+		}
 
 		var env string
 		var message string
@@ -164,6 +178,11 @@ func main() {
 	fs := flag.NewFlagSet(exe, flag.ExitOnError)
 	fs.Usage = usage
 
+	metadataDb, err := server.InitializeMetadataStorage()
+	if err != nil {
+		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
+	}
+
 	// Configure the options from the flags/config file
 	opts, err := server.ConfigureOptions(fs, os.Args[1:],
 		server.PrintServerAndExit,
@@ -177,7 +196,7 @@ func main() {
 	}
 
 	// Create the server with appropriate options.
-	s, metadataDb, err := server.NewServer(opts)
+	s, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}

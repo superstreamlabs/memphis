@@ -13,13 +13,14 @@
 import './App.scss';
 
 import { Switch, Route, withRouter } from 'react-router-dom';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { connect } from 'nats.ws';
 import { message } from 'antd';
 
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
+    LOCAL_STORAGE_INTERNAL_WS_PASS,
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
@@ -65,52 +66,54 @@ const App = withRouter((props) => {
     const firebase_organization_id = urlParams.get('firebase_organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
 
+    const ref = useRef();
+    ref.current = cloudLogedIn;
+
     const handleLoginWithToken = async () => {
-        if (firebase_id_token) {
-            try {
-                const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
-                if (data) {
-                    AuthService.saveToLocalStorage(data);
-                    try {
-                        const ws_port = data.ws_port;
-                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-                        let conn;
+        try {
+            const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
+            if (data) {
+                AuthService.saveToLocalStorage(data);
+                try {
+                    const ws_port = data.ws_port;
+                    const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                    let conn;
+                    if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                        const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                        const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            user: '$memphis_user$' + account_id,
+                            pass: internal_ws_pass,
+                            timeout: '5000'
+                        });
+                    } else {
                         const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
-                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                            const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                user: '$memphis_user$' + account_id,
-                                pass: connection_token,
-                                timeout: '5000'
-                            });
-                        } else {
-                            conn = await connect({
-                                servers: [SOCKET_URL],
-                                token: '::' + connection_token,
-                                timeout: '5000'
-                            });
-                        }
-                        dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
-                    } catch (error) {
-                        return;
+                        conn = await connect({
+                            servers: [SOCKET_URL],
+                            token: '::' + connection_token,
+                            timeout: '5000'
+                        });
                     }
-                    dispatch({ type: 'SET_USER_DATA', payload: data });
+                    dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
+                } catch (error) {
+                    console.log('Login failed:', error);
+                    return;
                 }
-                history.push('/overview');
-                setCloudLogedIn(true);
-            } catch (error) {
-                console.log('Login failed:', error);
+                dispatch({ type: 'SET_USER_DATA', payload: data });
             }
+            history.push('/overview');
+            setCloudLogedIn(true);
+        } catch (error) {
+            console.log('Login failed:', error);
         }
     };
 
     useEffect(() => {
-        if (isCloud() && !localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
+        if (isCloud() && firebase_id_token) {
             const fetchData = async () => {
                 await handleLoginWithToken();
             };
-
             fetchData();
         } else setCloudLogedIn(true);
     }, []);
@@ -130,7 +133,7 @@ const App = withRouter((props) => {
     }, [isMobile]);
 
     const handleRefresh = useCallback(async (firstTime) => {
-        if (window.location.pathname === pathDomains.login || firebase_id_token) {
+        if (window.location.pathname === pathDomains.login || (firebase_id_token !== null && !ref.current)) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
@@ -140,16 +143,17 @@ const App = withRouter((props) => {
                 if (firstTime) {
                     try {
                         let conn;
-                        const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
                             const account_id = localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID);
+                            const internal_ws_pass = localStorage.getItem(LOCAL_STORAGE_INTERNAL_WS_PASS);
                             conn = await connect({
                                 servers: [SOCKET_URL],
                                 user: '$memphis_user$' + account_id,
-                                pass: connection_token,
+                                pass: internal_ws_pass,
                                 timeout: '5000'
                             });
                         } else {
+                            const connection_token = localStorage.getItem(LOCAL_STORAGE_CONNECTION_TOKEN);
                             conn = await connect({
                                 servers: [SOCKET_URL],
                                 token: '::' + connection_token,
@@ -189,176 +193,301 @@ const App = withRouter((props) => {
         <div className="app-container">
             <div>
                 {' '}
-                {!authCheck && cloudLogedIn && (
-                    <Switch>
-                        <PrivateRoute
-                            exact
-                            path={pathDomains.overview}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Overview />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={pathDomains.users}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Users />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.administration}/integrations`}
-                            component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
-                        />
+                {!authCheck &&
+                    cloudLogedIn &&
+                    (!isCloud() ? (
+                        <Switch>
+                            <Route exact path={pathDomains.signup} component={Signup} />
+                            <Route exact path={pathDomains.login} component={Login} />
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.overview}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Overview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.stations}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <StationsList />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.stations}/:id`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <StationOverview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.stations}/:id/:id`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <MessageJourney />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/create`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/list`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/list/:name`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.users}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Users />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.sysLogs}`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SysLogs />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/integrations`}
+                                component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/cluster_configuration`}
+                                component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/version_upgrade`}
+                                component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                path="/"
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Overview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <Route>
+                                <Redirect to={pathDomains.overview} />
+                            </Route>
+                        </Switch>
+                    ) : (
+                        <Switch>
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.overview}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Overview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.stations}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <StationsList />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.stations}/:id`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <StationOverview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.stations}/:id/:id`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <MessageJourney />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/create`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/list`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.schemaverse}/list/:name`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <SchemaManagment />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={pathDomains.users}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Users />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
 
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.administration}/usage`}
-                            component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
-                        />
-                        {/* <PrivateRoute
+                            <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/integrations`}
+                                component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/usage`}
+                                component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
+                            />
+                            {/* <PrivateRoute
                             exact
                             path={`${pathDomains.administration}/payments`}
                             component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
                         /> */}
-                        <PrivateRoute
-                            exact
-                            path={pathDomains.stations}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <StationsList />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.stations}/:id`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <StationOverview />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.stations}/:id/:id`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <MessageJourney />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.schemaverse}/create`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <SchemaManagment />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.schemaverse}/list`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <SchemaManagment />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <PrivateRoute
-                            exact
-                            path={`${pathDomains.schemaverse}/list/:name`}
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <SchemaManagment />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-
-                        {!isCloud() && (
-                            <>
-                                <Route exact path={pathDomains.signup} component={Signup} />
-                                <Route exact path={pathDomains.login} component={Login} />
-                                <PrivateRoute
-                                    exact
-                                    path={`${pathDomains.sysLogs}`}
-                                    component={
-                                        <AppWrapper
-                                            content={
-                                                <div>
-                                                    <SysLogs />
-                                                </div>
-                                            }
-                                        ></AppWrapper>
-                                    }
-                                />
-                                <PrivateRoute
-                                    exact
-                                    path={`${pathDomains.administration}/cluster_configuration`}
-                                    component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
-                                />
-                                <PrivateRoute
-                                    exact
-                                    path={`${pathDomains.administration}/version_upgrade`}
-                                    component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
-                                />
-                            </>
-                        )}
-                        <PrivateRoute
-                            path="/"
-                            component={
-                                <AppWrapper
-                                    content={
-                                        <div>
-                                            <Overview />
-                                        </div>
-                                    }
-                                ></AppWrapper>
-                            }
-                        />
-                        <Route>
-                            <Redirect to={pathDomains.overview} />
-                        </Route>
-                    </Switch>
-                )}
+                            <PrivateRoute
+                                path="/"
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Overview />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <Route>
+                                <Redirect to={pathDomains.overview} />
+                            </Route>
+                        </Switch>
+                    ))}
             </div>
         </div>
     );

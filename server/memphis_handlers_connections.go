@@ -40,7 +40,7 @@ func updateNewClientWithConfig(c *client, connId string) {
 
 	slackEnabled, err := IsSlackEnabled(c.acc.GetName())
 	if err != nil {
-		c.Errorf("updateNewClientWithConfig: " + err.Error())
+		c.Errorf("updateNewClientWithConfig: %v", err.Error())
 	}
 
 	config := models.GlobalConfigurationsUpdate{
@@ -54,7 +54,7 @@ func sendConnectUpdate(c *client, ccu models.GlobalConfigurationsUpdate, connId 
 	s := c.srv
 	rawMsg, err := json.Marshal(ccu)
 	if err != nil {
-		s.Errorf("sendConnectUpdate: " + err.Error())
+		s.Errorf("sendConnectUpdate: %v", err.Error())
 		return
 	}
 	subject := fmt.Sprintf(connectConfigUpdatesSubjectTemplate, connId)
@@ -88,10 +88,9 @@ func handleConnectMessage(client *client) error {
 				client.Warnf("handleConnectMessage: missing username or token")
 				return errors.New("missing username or token")
 			}
-			username, _, err = getUserAndTenantIdFromString(strings.ToLower(splittedToken[0]))
+			username, tenantId, err := getUserAndTenantIdFromString(strings.ToLower(splittedToken[0]))
 			if err != nil {
-				errMsg := "User " + username + ": " + err.Error()
-				client.Errorf("handleConnectMessage: " + errMsg)
+				client.Errorf("[tenant Id: %v]handleConnectMessage: User %v : %v", tenantId, username, err.Error())
 				return err
 			}
 		}
@@ -101,17 +100,16 @@ func handleConnectMessage(client *client) error {
 	}
 	exist, user, err := db.GetUserByUsername(username, client.acc.GetName())
 	if err != nil {
-		errMsg := "User " + username + ": " + err.Error()
-		client.Errorf("handleConnectMessage: " + errMsg)
+		client.Errorf("handleConnectMessage: User %v : %v", username, err.Error())
 		return err
 	}
 	if !exist {
-		errMsg := "User " + username + " does not exist"
-		client.Warnf("handleConnectMessage: " + errMsg)
+		errMsg := fmt.Sprintf("handleConnectMessage:  User %v does not exist", username)
+		client.Warnf(errMsg)
 		return errors.New(errMsg)
 	}
 	if user.UserType != "root" && user.UserType != "application" {
-		client.Warnf("handleConnectMessage: Please use a user of type Root/Application and not Management")
+		client.Warnf("[tenant: %v][user: %v] handleConnectMessage: Please use a user of type Root/Application and not Management", user.TenantName, user.Username)
 		return errors.New("please use a user of type Root/Application and not Management")
 	}
 
@@ -119,51 +117,34 @@ func handleConnectMessage(client *client) error {
 		connectionId = splittedMemphisInfo[0]
 		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
 		if err != nil {
-			errMsg := "User " + username + ": " + err.Error()
-			client.Errorf("handleConnectMessage: " + errMsg)
+			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at CreateConnection: %v", user.TenantName, username, err.Error())
 			return err
 		}
 		if exist {
-			err = connectionsHandler.ReliveConnection(connectionId)
+			err = connectionsHandler.ReliveConectionResources(connectionId)
 			if err != nil {
-				errMsg := "User " + username + ": " + err.Error()
-				client.Errorf("handleConnectMessage: " + errMsg)
-				return err
-			}
-			err = producersHandler.ReliveProducers(connectionId)
-			if err != nil {
-				errMsg := "User " + username + ": " + err.Error()
-				client.Errorf("handleConnectMessage: " + errMsg)
-				return err
-			}
-			err = consumersHandler.ReliveConsumers(connectionId)
-			if err != nil {
-				errMsg := "User " + username + ": " + err.Error()
-				client.Errorf("handleConnectMessage: " + errMsg)
+				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConectionResources: %v", user.TenantName, username, err.Error())
 				return err
 			}
 		} else {
-			shouldSendAnalytics, _ := shouldSendAnalytics()
-			if shouldSendAnalytics { // exist indicates it is a reconnect
-				splitted := strings.Split(client.opts.Lang, ".")
-				sdkName := splitted[len(splitted)-1]
-				param := analytics.EventParam{
-					Name:  "sdk",
-					Value: sdkName,
+			go func() {
+				shouldSendAnalytics, _ := shouldSendAnalytics()
+				if shouldSendAnalytics { // exist indicates it is a reconnect
+					splitted := strings.Split(client.opts.Lang, ".")
+					sdkName := splitted[len(splitted)-1]
+					event := "user-connect-sdk"
+					if !isNativeMemphisClient {
+						event = "user-connect-nats-sdk"
+					}
+					analyticsParams := map[string]interface{}{"sdk": sdkName}
+					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
 				}
-				analyticsParams := []analytics.EventParam{param}
-				event := "user-connect-sdk"
-				if !isNativeMemphisClient {
-					event = "user-connect-nats-sdk"
-				}
-				analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
-			}
+			}()
 		}
 		updateNewClientWithConfig(client, connectionId)
 	}
 
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: connectionId, isNative: isNativeMemphisClient}
-
 	return nil
 }
 
@@ -189,10 +170,10 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 	return false, nil
 }
 
-func (ch ConnectionsHandler) ReliveConnection(connectionId string) error {
-	err := db.UpdateConnection(connectionId, true)
+func (ch ConnectionsHandler) ReliveConectionResources(connectionId string) error {
+	err := db.ReliveConectionResources(connectionId, true)
 	if err != nil {
-		serv.Errorf("ReliveConnection error: " + err.Error())
+		serv.Errorf("ReliveConectionResources error: %v", err.Error())
 		return err
 	}
 	return nil

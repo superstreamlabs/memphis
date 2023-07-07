@@ -47,7 +47,7 @@ function Users() {
     const createUserRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [tableType, setTableType] = useState('Management');
+    const [tableType, setTableType] = useState('Management (0)');
     const [resendEmailLoader, setResendEmailLoader] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [userToResend, setuserToResend] = useState('');
@@ -64,6 +64,7 @@ function Users() {
             if (data) {
                 data.management_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
                 data.application_users.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+                setTableType(`Management (${data?.management_users?.length || 0})`);
                 setUsersList(data);
                 setCopyOfUserList(data);
             }
@@ -92,10 +93,12 @@ function Users() {
 
             if (userData.user_type === 'management') {
                 updatedUserData.management_users = [...updatedUserData.management_users, userData];
+                setTableType(`Management (${updatedUserData?.management_users?.length || 0})`);
             }
 
             if (userData.user_type === 'application') {
                 updatedUserData.application_users = [...updatedUserData.application_users, userData];
+                setTableType(`Client (${updatedUserData?.application_users?.length || 0})`);
             }
             return updatedUserData;
         });
@@ -129,6 +132,11 @@ function Users() {
         setUsersList((prevUserData) => {
             const updatedUserData = { ...prevUserData };
             updatedUserData[type] = updatedUserData[type].filter((user) => user.username !== name);
+            if (type === 'management_users') {
+                setTableType(`Management (${updatedUserData[type]?.length || 0})`);
+            } else {
+                setTableType(`Client (${updatedUserData[type]?.length || 0})`);
+            }
             return updatedUserData;
         });
 
@@ -231,7 +239,7 @@ function Users() {
             render: (_, record) => (
                 <div className="user-action">
                     <Button
-                        width="95px"
+                        width="115px"
                         height="30px"
                         placeholder={
                             <div className="action-button">
@@ -280,7 +288,7 @@ function Users() {
             )
         },
         {
-            title: 'Full Name',
+            title: 'Full name',
             key: 'full_name',
             dataIndex: 'full_name',
             render: (full_name) => (
@@ -359,7 +367,7 @@ function Users() {
                                     }}
                                 />
                                 <Button
-                                    width="85px"
+                                    width="95px"
                                     height="30px"
                                     placeholder={
                                         <div className="action-button">
@@ -381,7 +389,7 @@ function Users() {
                             </>
                         ) : (
                             <Button
-                                width="95px"
+                                width="115px"
                                 height="30px"
                                 placeholder={
                                     <div className="action-button">
@@ -414,7 +422,12 @@ function Users() {
         return (
             <div className="table-header">
                 <p>User type:</p>
-                <SegmentButton value={tableType} size="middle" options={['Management', 'Client']} onChange={(e) => changeTableView(e)} />
+                <SegmentButton
+                    value={tableType}
+                    size="middle"
+                    options={[`Management (${copyOfUserList?.management_users?.length || 0})`, `Client (${copyOfUserList?.application_users?.length || 0})`]}
+                    onChange={(e) => changeTableView(e)}
+                />
             </div>
         );
     };
@@ -466,8 +479,8 @@ function Users() {
                         className="users-table"
                         tableRowClassname="user-row"
                         title={tableHeader}
-                        columns={tableType === 'Management' ? managmentColumns : clientColumns}
-                        data={tableType === 'Management' ? copyOfUserList?.management_users : copyOfUserList?.application_users}
+                        columns={tableType.includes('Management') ? managmentColumns : clientColumns}
+                        data={tableType.includes('Management') ? copyOfUserList?.management_users : copyOfUserList?.application_users}
                     />
                 )}
             </div>
@@ -481,14 +494,18 @@ function Users() {
                         <label>Enter user details to get started</label>
                     </div>
                 }
-                height="550px"
+                height="555px"
                 width="450px"
                 rBtnText="Create"
                 lBtnText="Cancel"
                 lBtnClick={() => {
                     addUserModalFlip(false);
+                    setCreateUserLoader(false);
                 }}
-                clickOutside={() => addUserModalFlip(false)}
+                clickOutside={() => {
+                    setCreateUserLoader(false);
+                    addUserModalFlip(false);
+                }}
                 rBtnClick={() => {
                     setCreateUserLoader(true);
                     createUserRef.current();
@@ -496,7 +513,7 @@ function Users() {
                 isLoading={createUserLoader}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} />
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
             </Modal>
             <Modal
                 header="User connection details"

@@ -24,7 +24,7 @@ import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
 
-const CreateUserDetails = ({ createUserRef, closeModal }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
@@ -38,14 +38,14 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
             id: 1,
             value: 'management',
             label: 'Management',
-            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            desc: 'For management and console access',
             disabled: false
         },
         {
             id: 2,
             value: 'application',
             label: 'Client',
-            desc: 'omnis iste natus error sit voluptatem accusantium doloremque laudantium',
+            desc: 'For client-based authentication with the broker',
             disabled: false
         }
     ];
@@ -53,7 +53,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
         {
             id: 1,
             value: 0,
-            label: 'Default'
+            label: 'Auto-Generated'
         },
         {
             id: 2,
@@ -79,20 +79,27 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
     };
 
     const onFinish = async () => {
-        const fieldsValue = await creationForm.validateFields();
-        if (fieldsValue?.errorFields) {
-            return;
-        } else {
-            if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
-                fieldsValue['password'] = fieldsValue['generatedPassword'];
-            }
-            try {
-                const bodyRequest = fieldsValue;
-                const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
-                if (data) {
-                    closeModal(data);
+        try {
+            const fieldsValue = await creationForm.validateFields();
+            if (fieldsValue?.errorFields) {
+                handleLoader(false);
+                return;
+            } else {
+                if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
+                    fieldsValue['password'] = fieldsValue['generatedPassword'];
                 }
-            } catch (error) {}
+                try {
+                    const bodyRequest = fieldsValue;
+                    const data = await httpRequest('POST', ApiEndpoints.ADD_USER, bodyRequest);
+                    if (data) {
+                        closeModal(data);
+                    }
+                } catch (error) {
+                    handleLoader(false);
+                }
+            }
+        } catch (error) {
+            handleLoader(false);
         }
     };
 
@@ -137,6 +144,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                 placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
                                 type="text"
                                 radiusType="semi-round"
+                                maxLength={20}
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"
@@ -168,6 +176,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                     <Input
                                         placeholder="Type full name"
                                         type="text"
+                                        maxLength={30}
                                         radiusType="semi-round"
                                         colorType="black"
                                         backgroundColorType="none"
@@ -187,6 +196,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                         <Input
                                             placeholder="Type your team"
                                             type="text"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -205,6 +215,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                         <Input
                                             placeholder="Type your position"
                                             type="text"
+                                            maxLength={30}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -228,6 +239,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                     <Input
                                         placeholder="Type your description"
                                         type="text"
+                                        maxLength={100}
                                         radiusType="semi-round"
                                         colorType="black"
                                         backgroundColorType="none"
@@ -289,12 +301,18 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                             {
                                                 required: true,
                                                 message: 'Password can not be empty'
+                                            },
+                                            {
+                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$/,
+                                                message:
+                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%)'
                                             }
                                         ]}
                                     >
                                         <Input
                                             placeholder="Type Password"
                                             type="password"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -329,6 +347,7 @@ const CreateUserDetails = ({ createUserRef, closeModal }) => {
                                         <Input
                                             placeholder="Type Password"
                                             type="password"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"

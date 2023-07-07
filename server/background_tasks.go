@@ -39,9 +39,9 @@ var tieredStorageMsgsMap *concurrentMap[map[string][]StoredMsg]
 var tieredStorageMapLock sync.Mutex
 
 func (s *Server) ListenForZombieConnCheckRequests() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			connInfo := &ConnzOptions{Limit: s.GlobalAccount().MaxActiveConnections()}
+			connInfo := &ConnzOptions{Limit: s.MemphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
@@ -54,9 +54,9 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 			if len(connectionIds) > 0 { // in case there are connections
 				bytes, err := json.Marshal(connectionIds)
 				if err != nil {
-					s.Errorf("ListenForZombieConnCheckRequests: " + err.Error())
+					s.Errorf("ListenForZombieConnCheckRequests: %v", err.Error())
 				} else {
-					s.sendInternalAccountMsgWithReply(s.GlobalAccount(), reply, _EMPTY_, nil, bytes, true)
+					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
 		}(copyBytes(msg))
@@ -68,12 +68,12 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 }
 
 func (s *Server) ListenForIntegrationsUpdateEvents() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, INTEGRATIONS_UPDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var integrationUpdate models.CreateIntegrationSchema
+			var integrationUpdate models.CreateIntegration
 			err := json.Unmarshal(msg, &integrationUpdate)
 			if err != nil {
-				s.Errorf("ListenForIntegrationsUpdateEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForIntegrationsUpdateEvents: %v", integrationUpdate.TenantName, err.Error())
 				return
 			}
 			switch strings.ToLower(integrationUpdate.Name) {
@@ -85,7 +85,7 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			default:
-				s.Warnf("ListenForIntegrationsUpdateEvents: %s %s", strings.ToLower(integrationUpdate.Name), "unknown integration")
+				s.Warnf("[tenant: %v] ListenForIntegrationsUpdateEvents: %s %s", integrationUpdate.TenantName, strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return
 			}
 		}(copyBytes(msg))
@@ -97,13 +97,18 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 }
 
 func (s *Server) ListenForConfigReloadEvents() error {
-	_, err := s.subscribeOnAcc(s.GlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	var lock sync.Mutex
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, CONFIGURATIONS_RELOAD_SIGNAL_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			// reload config
+			lock.Lock()
 			err := s.Reload()
 			if err != nil {
-				s.Errorf("Failed reloading: " + err.Error())
+				s.Errorf("Failed reloading: %v", err.Error())
 			}
+			time.AfterFunc(time.Millisecond*500, func() {
+				lock.Unlock()
+			})
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -113,17 +118,17 @@ func (s *Server) ListenForConfigReloadEvents() error {
 }
 
 func (s *Server) ListenForNotificationEvents() error {
-	err := s.queueSubscribe(globalAccountName, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var notification models.Notification
 			err = json.Unmarshal([]byte(message), &notification)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			notificationMsg := notification.Msg
@@ -143,17 +148,17 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) ListenForPoisonMsgAcks() error {
-	err := s.queueSubscribe(globalAccountName, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			var msgToAck models.PmAckMsg
 			err = json.Unmarshal([]byte(message), &msgToAck)
 			if err != nil {
-				s.Errorf("ListenForPoisonMsgAcks: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
 				return
 			}
 			err = db.RemoveCgFromDlsMsg(msgToAck.ID, msgToAck.CgName, tenantName)
@@ -217,7 +222,7 @@ func (s *Server) CalculateSelfThroughput() {
 			ReadMap:  readMap,
 			WriteMap: writeMap,
 		}
-		s.sendInternalAccountMsg(s.GlobalAccount(), subj, tpMsg)
+		s.sendInternalAccountMsg(s.MemphisGlobalAccount(), subj, tpMsg)
 	}
 }
 
@@ -281,9 +286,9 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxAckPending: -1,
 				MaxDeliver:    10,
 			}
-			err := serv.memphisAddConsumer(globalAccountName, tieredStorageStream, &cc)
+			err := serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
 			if err != nil {
-				serv.Errorf("Failed add tiered storage consumer: " + err.Error())
+				serv.Errorf("Failed add tiered storage consumer: %v", err.Error())
 				return
 			}
 			TIERED_STORAGE_CONSUMER_CREATED = true
@@ -291,7 +296,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 		tieredStorageMapLock.Lock()
 		err := flushMapToTier2Storage()
 		if err != nil {
-			serv.Errorf("Failed upload messages to tiered 2 storage: " + err.Error())
+			serv.Errorf("Failed upload messages to tiered 2 storage: %v", err.Error())
 			tieredStorageMapLock.Unlock()
 			continue
 		}
@@ -300,7 +305,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 			for i, msgs := range tenant {
 				for _, msg := range msgs {
 					reply := msg.ReplySubject
-					s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+					s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 				}
 				delete(tenant, i)
 			}
@@ -324,7 +329,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 			replySubj := DLS_UNACKED_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
 			// subscribe to unacked messages
-			sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
 					if reply != "" {
@@ -337,20 +342,20 @@ func (s *Server) ConsumeUnackedMsgs() {
 				}(subject, reply, copyBytes(msg))
 			})
 			if err != nil {
-				s.Errorf("Failed to subscribe to unacked messages: " + err.Error())
+				s.Errorf("Failed to subscribe to unacked messages: %v", err.Error())
 				continue
 			}
 
 			// send JS API request to get more messages
 			subject := fmt.Sprintf(JSApiRequestNextT, dlsUnackedStream, DLS_UNACKED_CONSUMER)
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
 
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]unAckedMsg, 0)
 			stop := false
 			for {
 				if stop {
-					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 					break
 				}
 				select {
@@ -367,7 +372,7 @@ func (s *Server) ConsumeUnackedMsgs() {
 				err := s.handleNewUnackedMsg(msg.Msg)
 				if err == nil {
 					// send ack
-					s.sendInternalAccountMsgWithEcho(s.GlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), msg.ReplySubject, []byte(_EMPTY_))
 				}
 			}
 		} else {
@@ -391,7 +396,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 			replySubj := TIERED_STORAGE_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
 			// subscribe to unacked messages
-			sub, err := s.subscribeOnAcc(s.GlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
 				go func(subject, reply string, msg []byte) {
 					// Ignore 409 Exceeded MaxWaiting cases
 					if reply != "" {
@@ -404,20 +409,20 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 				}(subject, reply, copyBytes(msg))
 			})
 			if err != nil {
-				s.Errorf("Failed to subscribe to tiered storage messages: " + err.Error())
+				s.Errorf("Failed to subscribe to tiered storage messages: %v", err.Error())
 				continue
 			}
 
 			// send JS API request to get more messages
 			subject := fmt.Sprintf(JSApiRequestNextT, tieredStorageStream, TIERED_STORAGE_CONSUMER)
-			s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, replySubj, nil, req, true)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
 
 			timeout := time.NewTimer(5 * time.Second)
 			msgs := make([]tsMsg, 0)
 			stop := false
 			for {
 				if stop {
-					s.unsubscribeOnAcc(s.GlobalAccount(), sub)
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 					break
 				}
 				select {
@@ -442,45 +447,45 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(globalAccountName, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("ListenForNotificationEvents: " + err.Error())
+				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
 				return
 			}
 			var message models.SchemaVerseDlsMessageSdk
 			err = json.Unmarshal([]byte(stringMessage), &message)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			exist, station, err := db.GetStationByName(message.StationName, tenantName)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: station " + message.StationName + " couldn't been found")
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
 				return
 			}
 
 			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 
 			if !exist {
-				serv.Warnf("ListenForSchemaverseDlsEvents: producer " + p.Name + " couldn't been found")
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
 				return
 			}
 
 			message.Message.TimeSent = time.Now()
 			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
-				serv.Errorf("ListenForSchemaverseDlsEvents: " + err.Error())
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
 			}
 		}(copyBytes(msg))
@@ -498,7 +503,7 @@ func (s *Server) RemoveOldDlsMsgs() {
 		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
 		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
-			serv.Errorf("RemoveOldDlsMsgs: " + err.Error())
+			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
 		}
 	}
 }

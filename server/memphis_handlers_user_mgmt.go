@@ -14,6 +14,7 @@ package server
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
@@ -25,6 +26,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -41,7 +43,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(globalAccountName)
+	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -74,7 +76,7 @@ func authenticateUser(username string, password string) (bool, models.User, erro
 
 func validateUserType(userType string) error {
 	if userType != "application" && userType != "management" {
-		return errors.New("user type has to be application/management")
+		return fmt.Errorf("user type has to be application/management and not %v", userType)
 	}
 	return nil
 }
@@ -126,7 +128,7 @@ func updateDeletedUserResources(user models.User) error {
 	return nil
 }
 
-func removeTenantResources(tenantName string) error {
+func removeTenantResources(tenantName string, user models.User) error {
 	err := db.RemoveProducersByTenant(tenantName)
 	if err != nil {
 		return err
@@ -162,11 +164,6 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	stations, err := db.GetAllStationsDetailsPerTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err
@@ -187,18 +184,19 @@ func removeTenantResources(tenantName string) error {
 		return err
 	}
 
-	for _, station := range stations {
-		stationName := strings.ToLower(station.Name)
-		sName, err := StationNameFromStr(stationName)
-		if err != nil {
-			return err
-		}
-
-		err = serv.RemoveStream(tenantName, sName.Intern())
+	err = serv.memphisPurgeResourcesAccount(tenantName)
+	if err != nil {
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			return err
 		}
+	}
 
+	if configuration.USER_PASS_BASED_AUTH {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -279,31 +277,31 @@ func (umh UserMgmtHandler) ChangePassword(c *gin.Context) {
 	username := strings.ToLower(body.Username)
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditPassword at getUserDetailsFromMiddleware: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if username == ROOT_USERNAME && user.UserType != "root" {
 		errMsg := "Change root password: This operation can be done only by the root user"
-		serv.Warnf("EditPassword: " + errMsg)
+		serv.Warnf("[tenant: %v][user: %v]EditPassword: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	} else if username != strings.ToLower(user.Username) && strings.ToLower(user.Username) != ROOT_USERNAME {
 		errMsg := "Change user password: This operation can be done only by the user or the root user"
-		serv.Warnf("EditPassword: " + errMsg)
+		serv.Warnf("[tenant: %v][user: %v]EditPassword: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 	if err != nil {
-		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditPassword at GenerateFromPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	hashedPwdString := string(hashedPwd)
 	err = db.ChangeUserPassword(username, hashedPwdString, user.TenantName)
 	if err != nil {
-		serv.Errorf("EditPassword: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditPassword at ChangeUserPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -314,7 +312,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	showSignup := true
 	loggedIn, err := isRootUserLoggedIn()
 	if err != nil {
-		serv.Errorf("GetSignUpFlag: " + err.Error())
+		serv.Errorf("GetSignUpFlag: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -323,7 +321,7 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 	} else {
 		count, err := db.CountAllUsers()
 		if err != nil {
-			serv.Errorf("GetSignUpFlag: " + err.Error())
+			serv.Errorf("GetSignUpFlag: %v", err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -334,12 +332,21 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "", "user-open-ui")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent("", "", analyticsParams, "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
+
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("AddUserSignUp: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	var body models.AddUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -357,28 +364,28 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 	if err != nil {
-		serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp at GenerateFromPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, globalAccountName, false, "", "", "", "")
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT, false, "", "", "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
 			return
 		}
-		serv.Errorf("CreateUserSignUp error: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp error at db.CreateUser: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	serv.Noticef("User " + username + " has been signed up")
+	serv.Noticef("[tenant: %v][user: %v]User %v has been signed up", user.TenantName, user.Username, username)
 	token, refreshToken, err := CreateTokens(newUser)
 	if err != nil {
-		serv.Errorf("CreateUserSignUp error: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp error at CreateTokens: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -390,16 +397,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "email",
-			Value: username,
-		}
-		param2 := analytics.EventParam{
-			Name:  "newsletter",
-			Value: strconv.FormatBool(subscription),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(newUser.TenantName, username, analyticsParams, "user-signup")
+		analyticsParams := map[string]interface{}{"email": username, "newsletter": strconv.FormatBool(subscription)}
+		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
@@ -435,14 +434,14 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetAllUsers: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetAllUsers: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	users, err := db.GetAllUsers(user.TenantName)
 	if err != nil {
-		serv.Errorf("GetAllUsers: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetAllUsers: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -450,7 +449,8 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-users-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredGenericUser{}
@@ -474,13 +474,13 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 func (umh UserMgmtHandler) GetApplicationUsers(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetApplicationUsers: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetApplicationUsers: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	users, err := db.GetAllUsersByTypeAndTenantName([]string{"application"}, user.TenantName)
 	if err != nil {
-		serv.Errorf("GetApplicationUsers: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetApplicationUsers at GetAllUsersByTypeAndTenantName: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -506,14 +506,14 @@ func (umh UserMgmtHandler) EditAvatar(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditAvatar: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("EditAvatar: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	err = db.EditAvatar(user.Username, avatarId, user.TenantName)
 	if err != nil {
-		serv.Errorf("EditAvatar: User " + user.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditAvatar: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -537,21 +537,21 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("EditCompanyLogo: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("EditCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	fileName := "company_logo" + filepath.Ext(file.Filename)
 	if err := c.SaveUploadedFile(&file, fileName); err != nil {
-		serv.Errorf("EditCompanyLogo: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditCompanyLogo at SaveUploadedFile: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	base64Encoding, err := imageToBase64(fileName)
 	if err != nil {
-		serv.Errorf("EditCompanyLogo: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditCompanyLogo at imageToBase64: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -560,7 +560,7 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 
 	err = db.InsertImage("company_logo", base64Encoding, user.TenantName)
 	if err != nil {
-		serv.Errorf("EditCompanyLogo: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]EditCompanyLogo error insertin image to db: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -571,13 +571,13 @@ func (umh UserMgmtHandler) EditCompanyLogo(c *gin.Context) {
 func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("RemoveCompanyLogo: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("RemoveCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	err = db.DeleteImage("company_logo", user.TenantName)
 	if err != nil {
-		serv.Errorf("RemoveCompanyLogo: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]RemoveCompanyLogo at deleting from the db: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -588,13 +588,13 @@ func (umh UserMgmtHandler) RemoveCompanyLogo(c *gin.Context) {
 func (umh UserMgmtHandler) GetCompanyLogo(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetCompanyLogo: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetCompanyLogo at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	exist, image, err := db.GetImage("company_logo", user.TenantName)
 	if err != nil {
-		serv.Errorf("GetCompanyLogo: " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetCompanyLogo at db.GetImage: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -610,7 +610,8 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-done-next-steps")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -619,34 +620,46 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("SkipGetStarted: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("SkipGetStarted at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	username := strings.ToLower(user.Username)
 	err = db.UpdateSkipGetStarted(username, user.TenantName)
 	if err != nil {
-		serv.Errorf("SkipGetStarted: User " + user.Username + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]SkipGetStarted at UpdateSkipGetStarted: User %v: %v", user.TenantName, user.Username, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-skip-get-started")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (umh UserMgmtHandler) GetActiveUsers(tenantName string) ([]string, error) {
-	userList, err := db.GetAllActiveUsers(tenantName)
-	if err != nil {
-		return []string{}, err
+func (umh UserMgmtHandler) GetActiveUsers(tenantName, page string) ([]string, error) {
+	var users []string
+	var userList []models.FilteredUser
+	var err error
+
+	switch page {
+	case "stations":
+		userList, err = db.GetAllActiveUsersStations(tenantName)
+		if err != nil {
+			return []string{}, err
+		}
+	case "schemaverse":
+		userList, err = db.GetAllActiveUsersSchemaVersions(tenantName)
+		if err != nil {
+			return []string{}, err
+		}
 	}
 
-	var users []string
 	for _, user := range userList {
 		if user.Username != "" {
 			users = append(users, user.Username)
@@ -656,13 +669,24 @@ func (umh UserMgmtHandler) GetActiveUsers(tenantName string) ([]string, error) {
 	return users, nil
 }
 
-func (umh UserMgmtHandler) GetActiveTags(tenantName string) ([]models.CreateTag, error) {
-	tags, err := db.GetAllUsedTags(tenantName)
-	if err != nil {
-		return []models.CreateTag{}, err
+func (umh UserMgmtHandler) GetActiveTags(tenantName, page string) ([]models.CreateTag, error) {
+	tagsRes := []models.CreateTag{}
+	var tags []models.Tag
+	var err error
+
+	switch page {
+	case "stations":
+		tags, err = db.GetAllUsedStationsTags(tenantName)
+		if err != nil {
+			return []models.CreateTag{}, err
+		}
+	case "schemaverse":
+		tags, err = db.GetAllUsedSchemasTags(tenantName)
+		if err != nil {
+			return []models.CreateTag{}, err
+		}
 	}
 
-	tagsRes := []models.CreateTag{}
 	for _, tag := range tags {
 		tagRes := models.CreateTag{
 			Name:  tag.Name,
@@ -682,23 +706,24 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetFilterDetails: " + err.Error())
-		c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+		serv.Errorf("GetFilterDetails at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	tenantName := user.TenantName
+	route := strings.ToLower(body.Route)
 	switch body.Route {
 	case "stations":
-		users, err := umh.GetActiveUsers(tenantName)
+		users, err := umh.GetActiveUsers(tenantName, route)
 		if err != nil {
-			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveUsers: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags(tenantName)
+		tags, err := umh.GetActiveTags(tenantName, route)
 		if err != nil {
-			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveTags: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -707,16 +732,16 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{"tags": tags, "users": users, "storage": storage})
 		return
 	case "schemaverse":
-		users, err := umh.GetActiveUsers(tenantName)
+		users, err := umh.GetActiveUsers(tenantName, route)
 		if err != nil {
-			serv.Errorf("GetFilterDetails: GetActiveUsers: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveUsers: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		tags, err := umh.GetActiveTags(tenantName)
+		tags, err := umh.GetActiveTags(tenantName, route)
 		if err != nil {
-			serv.Errorf("GetFilterDetails: GetActiveTags: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: GetActiveTags: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -729,7 +754,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		logType := []string{"info", "warn", "err"}
 		v, err := serv.Varz(nil)
 		if err != nil {
-			serv.Errorf("GetFilterDetails: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetFilterDetails: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -748,4 +773,83 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{})
 		return
 	}
+}
+
+func validateUsername(username string) error {
+	if len(username) > 20 {
+		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	}
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
+}
+
+func validateUserDescription(description string) error {
+	if len(description) > 100 {
+		return errors.New("description exceeds the maximum allowed length of 100 characters")
+	}
+	return nil
+}
+
+func validateUserTeam(team string) error {
+	if len(team) > 20 {
+		return errors.New("team exceeds the maximum allowed length of 20 characters")
+	}
+	return nil
+}
+
+func validateUserPosition(position string) error {
+	if len(position) > 30 {
+		return errors.New("position exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validateUserFullName(fullName string) error {
+	if len(fullName) > 30 {
+		return errors.New("full name exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) > 20 {
+		return errors.New("password exceeds the maximum allowed length of 20 characters")
+	}
+	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
+	match, _ := regexp.MatchString(pattern, password)
+	if !match {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	if len(password) < 8 {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	var (
+		hasUppercase   bool
+		hasLowercase   bool
+		hasDigit       bool
+		hasSpecialChar bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUppercase = true
+		case unicode.IsLower(char):
+			hasLowercase = true
+		case unicode.IsDigit(char):
+			hasDigit = true
+		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
+			hasSpecialChar = true
+		}
+	}
+
+	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
+		return nil
+	}
+
+	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }

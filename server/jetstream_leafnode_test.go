@@ -756,7 +756,7 @@ leafnodes:{
 
 	confL := createConfFile(t, []byte(fmt.Sprintf(tmplL, sd, creds, creds)))
 	opts := LoadConfig(confL)
-	sL, _, err := NewServer(opts)
+	sL, err := NewServer(opts)
 	require_NoError(t, err)
 
 	l := captureNoticeLogger{}
@@ -917,7 +917,7 @@ leafnodes: {
 			sHubUpd2.Shutdown()
 			sHubUpd2.WaitForShutdown()
 			checkLeafNodeConnectedCount(t, sLeaf, 0)
-			sHubUpd3, _, err := NewServer(LoadConfig(confHub))
+			sHubUpd3, err := NewServer(LoadConfig(confHub))
 			sHubUpd3.Shutdown()
 
 			require_Error(t, err)

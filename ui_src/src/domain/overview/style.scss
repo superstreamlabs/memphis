@@ -37,7 +37,32 @@
 
                 .dynamic-sentences {
                     display: flex;
-                    align-items: center;
+                    align-self: center;
+                    flex-direction: column;
+                    .username{
+                        text-transform: capitalize
+                    }
+                    .org-details{
+                        display: flex;
+                        gap: 5px;
+                        .hostname{
+                            border-radius: 32px;
+                            border: 0.8px solid #E2DFFF;
+                            background: #F1F0FF;
+                            display: flex;
+                            width: fit-content;
+                            padding: 0px 10px;
+                            gap: 2px;
+                            font-family: 'InterMedium';
+                            p{
+                                font-size: 12px;
+                            }
+                            span{
+                                color: var(--purple);
+                                font-size: 12px;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -98,10 +123,9 @@
                     margin-bottom: 0;
                 }
                 label {
-                    font-weight: 400;
-                    font-size: 12px;
+                    font-size: 14px;
                     color: #b4b4b4;
-                    font-family: 'Inter';
+                    font-family: 'InterMedium';
                 }
             }
         }
@@ -127,12 +151,12 @@
                 height: 100%;
                 position: relative;
                 min-height: 580px;
-                min-width: 420px;
-                display: grid;
+                min-width: 430px;
                 align-content: space-between;
             }
-            .cloud{
-                grid-template-rows: 49% 32% 15%;
+            .cloud {
+                display: grid;
+                grid-template-rows: 49% 30% 17%;
             }
 
             .system-components-wrapper {
@@ -147,6 +171,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        height: 100%;
         img {
             width: 90px;
             height: 90px;
@@ -158,9 +183,10 @@
             color: #1d1d1d;
         }
         label {
-            font-weight: 500;
-            font-size: 12px;
+            font-family: 'Inter';
+            font-size: 14px;
             color: #979797;
+            text-align: center;
         }
         .link {
             cursor: pointer;

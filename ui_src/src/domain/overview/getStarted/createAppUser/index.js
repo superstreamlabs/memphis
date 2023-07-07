@@ -113,6 +113,10 @@ const CreateAppUser = (props) => {
                     <div>
                         <div className="create-user-form-field">
                             <TitleComponent headerTitle="Enter password" typeTitle="sub-header" required={true}></TitleComponent>
+                            <span className="password-hint">
+                                Hint: Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special
+                                character(!?\-@#$%).
+                            </span>
                             <Input
                                 placeholder="Type password"
                                 type="password"
@@ -158,7 +162,7 @@ const CreateAppUser = (props) => {
                     marginTop="25px"
                     disabled={
                         !allowEdit ||
-                        user.username.length === 0 ||
+                        user.username?.length === 0 ||
                         (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password === '') ||
                         (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' && user.password !== confirmPass)
                     }

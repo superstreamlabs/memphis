@@ -35,17 +35,22 @@ type CreateIntegrationSchema struct {
 	Keys       map[string]string `json:"keys"`
 	Properties map[string]bool   `json:"properties"`
 	UIUrl      string            `json:"ui_url"`
+}
+
+type CreateIntegration struct {
+	Name       string            `json:"name"`
+	Keys       map[string]string `json:"keys"`
+	Properties map[string]bool   `json:"properties"`
+	UIUrl      string            `json:"ui_url"`
 	TenantName string            `json:"tenant_name"`
 }
 
 type GetIntegrationDetailsSchema struct {
-	Name       string `form:"name" json:"name" binding:"required"`
-	TenantName string `form:"tenant_name" json:"tenant_name"`
+	Name string `form:"name" json:"name" binding:"required"`
 }
 
 type DisconnectIntegrationSchema struct {
-	Name       string `form:"name" json:"name" binding:"required"`
-	TenantName string `form:"tenant_name" json:"tenant_name"`
+	Name string `form:"name" json:"name" binding:"required"`
 }
 
 type Notification struct {

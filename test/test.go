@@ -80,7 +80,7 @@ func RunServerCallback(opts *server.Options, callback func(*server.Server)) *ser
 	opts.Trace = doTrace
 	opts.Debug = doDebug
 
-	s, _, err := server.NewServer(opts)
+	s, err := server.NewServer(opts)
 	if err != nil || s == nil {
 		panic(fmt.Sprintf("No NATS Server object returned: %v", err))
 	}
