@@ -123,6 +123,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
+	err = s.Force3ReplicationsPerStation()
+	if err != nil {
+		s.Errorf("Failed forece 3 replications per station: " + err.Error())
+	}
+
 	go func() {
 		s.CreateInternalJetStreamResources()
 		go http_server.InitializeHttpServer(s)

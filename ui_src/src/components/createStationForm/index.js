@@ -84,7 +84,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
-    const [actualPods, setActualPods] = useState(['No HA (1)']);
+    const [actualPods, setActualPods] = useState(isCloud() ? [' HA (3)'] : ['No HA (1)']);
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
     const [schemas, setSchemas] = useState([]);
@@ -164,14 +164,17 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     replicas = ['No HA (1)'];
                     break;
                 case 3:
-                    replicas = ['No HA (1)', 'HA (3)'];
+                    if (isCloud()) {
+                        replicas = ['HA (3)'];
+                    } else {
+                        replicas = ['No HA (1)', 'HA (3)'];
+                    }
                     break;
                 case 5:
                     replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
                     break;
                 default:
                     replicas = ['No HA (1)'];
-
                     break;
             }
             setActualPods(replicas);

@@ -337,6 +337,9 @@ export const tieredStorageTimeValidator = (value) => {
 };
 
 export const replicasConvertor = (value, stringToNumber) => {
+    if (isCloud()) {
+        value = 3
+    }
     if (stringToNumber) {
         switch (value) {
             case 'No HA (1)':

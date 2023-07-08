@@ -1328,6 +1328,34 @@ func InsertNewStation(
 	return newStation, rowsAffected, nil
 }
 
+func GetAllStationsWithNoHA3() ([]models.Station, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM stations WHERE replicas = 1 OR replicas = 5`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_with_no_ha_3", query)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Station{}, err
+	}
+	defer rows.Close()
+	stations, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Station])
+	if err != nil {
+		return []models.Station{}, err
+	}
+	if len(stations) == 0 {
+		return []models.Station{}, err
+	}
+	return stations, nil
+}
+
 func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1856,6 +1884,26 @@ func UpdateStationsOfDeletedUser(userId int, tenantName string) error {
 	}
 	tenantName = strings.ToLower(tenantName)
 	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UpdateStationsWithNoHA3() error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE stations SET replicas = 3 WHERE replicas = 1 OR replicas = 5`
+	stmt, err := conn.Conn().Prepare(ctx, "update_stations_with_no_ha_3", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}

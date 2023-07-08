@@ -1860,3 +1860,18 @@ func validateReplicas(replicas int) error {
 
 	return nil
 }
+
+func (s *Server) Force3ReplicationsPerStation() error {
+	return nil
+}
+
+func getStationReplicas(replicas int) int {
+	if replicas <= 0 {
+		return 1
+	} else if replicas == 2 || replicas == 4 {
+		return 3
+	} else if replicas > 5 {
+		return 5
+	}
+	return replicas
+}
