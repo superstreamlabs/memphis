@@ -555,7 +555,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	exist, consumer, err := db.DeleteConsumer(name, station.ID)
+	exist, consumers, err := db.DeleteConsumer(dcr.ConnectionId, name, station.ID)
 	if !exist {
 		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v does not exist", tenantName, dcr.ConsumerName, dcr.StationName)
 		serv.Warnf("DestroyConsumer: %v", errMsg)
@@ -570,7 +570,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	// ensure not part of an active consumer group
-	count, err := db.CountActiveConsumersInCG(consumer.ConsumersGroup, station.ID)
+	count, err := db.CountActiveConsumersInCG(consumers[0].ConsumersGroup, station.ID)
 	if err != nil {
 		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v: %v", tenantName, dcr.ConsumerName, dcr.StationName, err.Error())
 		serv.Errorf("DestroyConsumer at CountActiveConsumersInCG: %v", errMsg)
@@ -580,9 +580,9 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 
 	deleted := false
 	if count == 0 { // no other members in this group
-		err = s.RemoveConsumer(station.TenantName, stationName, consumer.ConsumersGroup)
+		err = s.RemoveConsumer(station.TenantName, stationName, consumers[0].ConsumersGroup)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumers[0].ConsumersGroup, dcr.StationName, err.Error())
 			serv.Errorf("DestroyConsumer at RemoveConsumer: %v", errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
@@ -590,9 +590,9 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if err == nil {
 			deleted = true
 		}
-		err = db.RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
+		err = db.RemovePoisonedCg(station.ID, consumers[0].ConsumersGroup)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumers[0].ConsumersGroup, dcr.StationName, err.Error())
 			serv.Errorf("DestroyConsumer at RemovePoisonedCg: %v", errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
@@ -604,9 +604,9 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		if username == "" {
 			username = dcr.Username
 		}
-		_, user, err := db.GetUserByUsername(username, dcr.TenantName)
+		_, user, err := memphis_cache.GetUser(username, dcr.TenantName)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumers[0].ConsumersGroup, dcr.StationName, err.Error())
 			serv.Errorf("DestroyConsumer at GetUserByUsername: " + errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return

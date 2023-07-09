@@ -2759,41 +2759,32 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func DeleteConsumer(name string, stationId int) (bool, models.Consumer, error) {
+func DeleteConsumer(connectionId, name string, stationId int) (bool, []models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, models.Consumer{}, err
+		return false, []models.Consumer{}, err
 	}
 	defer conn.Release()
-	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
-	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
+	query := ` DELETE FROM consumers WHERE connection_id = $1 name = $2 AND station_id = $3 RETURNING *`
+	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
-		return false, models.Consumer{}, err
+		return false, []models.Consumer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
+	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, connectionId, name, stationId)
 	if err != nil {
-		return false, models.Consumer{}, err
+		return false, []models.Consumer{}, err
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err != nil {
-		return false, models.Consumer{}, err
+		return false, []models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
-		return false, models.Consumer{}, err
+		return false, []models.Consumer{}, err
 	}
-	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
-	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
-	if err != nil {
-		return false, models.Consumer{}, err
-	}
-	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
-	if err != nil {
-		return false, models.Consumer{}, err
-	}
-	return true, consumers[0], nil
+	return true, consumers, nil
 }
 
 func DeleteConsumersByStationID(stationId int) error {
@@ -2845,7 +2836,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_deleted = false`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
 	if err != nil {
 		return 0, err

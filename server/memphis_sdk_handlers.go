@@ -123,6 +123,7 @@ type destroyConsumerRequest struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
 	Username     string `json:"username"`
+	ConnectionId string `json:"connection_id"`
 	TenantName   string `json:"tenant_name"`
 }
 
