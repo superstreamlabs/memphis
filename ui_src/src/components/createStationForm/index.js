@@ -287,7 +287,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {isCloud() ? null :
+                {isCloud() ? null : (
                     <div className="replicas-container">
                         <TitleComponent
                             headerTitle="Replicas"
@@ -312,7 +312,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 />
                             </Form.Item>
                         </div>
-                    </div>}
+                    </div>
+                )}
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
@@ -444,7 +445,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                             <InputNumberComponent
                                                 min={0}
-                                                max={isCloud ? 14 : 1000}
+                                                max={isCloud() ? 14 : 1000}
                                                 onChange={(e) => getStarted && updateFormState('days', e)}
                                                 value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                 placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
