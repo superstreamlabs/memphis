@@ -76,15 +76,9 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 	return dedupedConsumers, nil
 }
 
-<<<<<<< HEAD
 func (s *Server) createConsumerDirectV0(c *client, reply, tenantName string, ccr createConsumerRequestV0, requestVersion int) {
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
-=======
-func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
-	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
-	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
->>>>>>> cached_user_model
 }
 
 func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId, tenantName, userName string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
@@ -287,13 +281,8 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-<<<<<<< HEAD
 	err = s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
-=======
-	err = s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
-	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
->>>>>>> cached_user_model
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
