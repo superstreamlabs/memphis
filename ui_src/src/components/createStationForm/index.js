@@ -144,7 +144,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_type: formFields.retention_type || retentionType,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: replicasConvertor(formFields.replicas, true),
+            replicas: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -287,7 +287,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {isCloud() ? null : (
+                {isCloud() &&
                     <div className="replicas-container">
                         <TitleComponent
                             headerTitle="Replicas"
@@ -313,7 +313,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             </Form.Item>
                         </div>
                     </div>
-                )}
+                }
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
