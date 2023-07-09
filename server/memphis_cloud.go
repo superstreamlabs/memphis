@@ -1875,3 +1875,7 @@ func getStationReplicas(replicas int) int {
 	}
 	return replicas
 }
+
+func getDefaultReplicas() int {
+	return 1
+}

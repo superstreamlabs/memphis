@@ -48,7 +48,7 @@ type srvMemphis struct {
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
 	// jsApiMu                sync.Mutex
-	ws                     memphisWS
+	ws memphisWS
 }
 
 type memphisWS struct {
@@ -76,7 +76,8 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 
 func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
-	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, 1, false)
+	replicas := getDefaultReplicas()
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, replicas, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -84,7 +85,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 	schemaName := ""
 	schemaVersionNumber := 0
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
