@@ -587,7 +587,9 @@ func GetSystemKey(key string, tenantName string) (bool, models.SystemKey, error)
 	if err != nil {
 		return false, models.SystemKey{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, key, tenantName)
 	if err != nil {
 		return false, models.SystemKey{}, err
@@ -604,7 +606,9 @@ func GetSystemKey(key string, tenantName string) (bool, models.SystemKey, error)
 }
 
 func InsertSystemKey(key string, value string, tenantName string) error {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	err := InsertConfiguration(key, value, tenantName)
 	if err != nil {
 		return err
@@ -625,7 +629,9 @@ func EditConfigurationValue(key string, value string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, tenantName)
 	if err != nil {
 		return err
@@ -686,7 +692,9 @@ func InsertConfiguration(key string, value string, tenantName string) error {
 	}
 
 	newConfiguration := models.ConfigurationsValue{}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		key, value, tenantName)
 	if err != nil {
@@ -735,7 +743,9 @@ func UpsertConfiguration(key string, value string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, key, value, tenantName)
 	if err != nil {
 		return err
@@ -770,7 +780,9 @@ func InsertConnection(connection models.Connection, tenantName string) error {
 	}
 
 	createdAt := time.Now()
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, connection.ID,
 		connection.CreatedBy, connection.CreatedByUsername, connection.IsActive, createdAt, connection.ClientAddress, tenantName)
 	if err != nil {
@@ -836,7 +848,9 @@ func UpdateConnectionsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
@@ -1113,7 +1127,9 @@ func GetActiveStationsPerTenant(tenantName string) ([]models.Station, error) {
 	if err != nil {
 		return []models.Station{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.Station{}, err
@@ -1170,7 +1186,9 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	if err != nil {
 		return false, models.Station{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Station{}, err
@@ -1199,7 +1217,9 @@ func GetStationById(messageId int, tenantName string) (bool, models.Station, err
 	if err != nil {
 		return false, models.Station{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId, tenantName)
 	if err != nil {
 		return false, models.Station{}, err
@@ -1269,7 +1289,9 @@ func InsertNewStation(
 	createAt := time.Now()
 	updatedAt := time.Now()
 	var stationId int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
 		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName)
@@ -1300,7 +1322,9 @@ func InsertNewStation(
 			return models.Station{}, 0, err
 		}
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 
 	newStation := models.Station{
 		ID:                          stationId,
@@ -1453,7 +1477,9 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			if consumer.ID != 0 {
 				consumers = append(consumers, consumer)
 			}
-			tenantName = strings.ToLower(tenantName)
+			if tenantName != conf.GlobalAccount {
+				tenantName = strings.ToLower(tenantName)
+			}
 			station := models.ExtendedStation{
 				ID:                          stationRes.ID,
 				Name:                        stationRes.Name,
@@ -1723,7 +1749,9 @@ func DeleteStationsByNames(stationNames []string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, stationNames, tenantName)
 	if err != nil {
 		return err
@@ -1767,7 +1795,9 @@ func DeleteStation(name string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
@@ -1789,7 +1819,9 @@ func AttachSchemaToStation(stationName string, schemaName string, versionNumber 
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, schemaName, versionNumber, tenantName)
 	if err != nil {
 		return err
@@ -1811,7 +1843,9 @@ func DetachSchemaFromStation(stationName string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, tenantName)
 	if err != nil {
 		return err
@@ -1833,7 +1867,9 @@ func UpdateStationDlsConfig(stationName string, poison bool, schemaverse bool, t
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, stationName, poison, schemaverse, tenantName)
 	if err != nil {
 		return err
@@ -1854,7 +1890,9 @@ func UpdateStationsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
@@ -1899,7 +1937,9 @@ func GetStationNamesUsingSchema(schemaName string, tenantName string) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, tenantName)
 	if err != nil {
 		return nil, err
@@ -1937,7 +1977,9 @@ func GetCountStationsUsingSchema(schemaName string, tenantName string) (int, err
 		return 0, err
 	}
 	var count int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaName, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
@@ -1959,7 +2001,9 @@ func RemoveSchemaFromAllUsingStations(schemaName string, tenantName string) erro
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, schemaName, tenantName)
 	if err != nil {
 		return err
@@ -2197,7 +2241,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	createAt := time.Now()
 	isActive := true
 	isDeleted := false
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType, tenantName)
 	if err != nil {
 		return models.Producer{}, 0, err
@@ -3108,7 +3154,9 @@ func GetSchemaByName(name string, tenantName string) (bool, models.Schema, error
 	if err != nil {
 		return false, models.Schema{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Schema{}, err
@@ -3232,7 +3280,9 @@ func UpdateSchemasOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
@@ -3279,7 +3329,9 @@ func UpdateSchemaVersionsOfDeletedUser(userId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, userId, tenantName)
 	if err != nil {
 		return err
@@ -3389,7 +3441,9 @@ func GetShcemaVersionsCount(schemaId int, tenantName string) (int, error) {
 		return 0, err
 	}
 	var count int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	err = conn.Conn().QueryRow(ctx, stmt.Name, schemaId, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
@@ -3416,7 +3470,9 @@ func GetAllSchemasDetails(tenantName string) ([]models.ExtendedSchema, error) {
 	if err != nil {
 		return []models.ExtendedSchema{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ExtendedSchema{}, err
@@ -3501,7 +3557,9 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 	}
 
 	var schemaId int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaName, schemaType, createdByUsername, tenantName)
 	if err != nil {
 		return models.Schema{}, 0, err
@@ -3571,7 +3629,9 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 
 	var schemaVersionId int
 	createdAt := time.Now()
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, schemaVersionNumber, active, userId, username, createdAt, schemaContent, schemaId, messageStructName, []byte(descriptor), tenantName)
 	if err != nil {
 		return models.SchemaVersion{}, 0, err
@@ -3620,7 +3680,9 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 
 // Integration Functions
 func GetIntegration(name string, tenantName string) (bool, models.Integration, error) {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3705,7 +3767,9 @@ func GetAllIntegrationsByTenant(tenantName string) (bool, []models.Integration, 
 }
 
 func DeleteIntegration(name string, tenantName string) error {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3731,7 +3795,9 @@ func DeleteIntegration(name string, tenantName string) error {
 }
 
 func InsertNewIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -3793,7 +3859,9 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]string
 }
 
 func UpdateIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -3841,7 +3909,9 @@ func UpdtaePendingUser(tenantName, username string, pending bool) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, username, pending, tenantName)
 	if err != nil {
 		return err
@@ -3887,7 +3957,9 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 	alreadyLoggedIn := false
 
 	var userId int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position, owner, description)
 	if err != nil {
 		return models.User{}, err
@@ -3916,7 +3988,9 @@ func CreateUser(username string, userType string, hashedPassword string, fullNam
 			return models.User{}, err
 		}
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	newUser := models.User{
 		ID:              userId,
 		Username:        username,
@@ -3973,7 +4047,9 @@ func UpsertUserUpdatePassword(username string, userType string, hashedPassword s
 
 	var userId int
 	var op string
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName)
 	if err != nil {
 		return false, err
@@ -4024,7 +4100,9 @@ func ChangeUserPassword(username string, hashedPassword string, tenantName strin
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, tenantName)
 	if err != nil {
 		return err
@@ -4045,7 +4123,9 @@ func GetRootUser(tenantName string) (bool, models.User, error) {
 	if err != nil {
 		return false, models.User{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return false, models.User{}, err
@@ -4074,7 +4154,9 @@ func GetUserByUsername(username string, tenantName string) (bool, models.User, e
 	if err != nil {
 		return false, models.User{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return false, models.User{}, err
@@ -4187,7 +4269,9 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -4239,7 +4323,9 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	if err != nil {
 		return []models.User{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err = conn.Conn().Query(ctx, stmt.Name, userType, tenantName)
 	if err != nil {
 		return []models.User{}, err
@@ -4344,7 +4430,9 @@ func UpdateSkipGetStarted(username string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return err
@@ -4368,7 +4456,9 @@ func DeleteUser(username string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Exec(ctx, stmt.Name, username, tenantName)
 	if err != nil {
 		return err
@@ -4414,7 +4504,9 @@ func EditAvatar(username string, avatarId int, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, username, avatarId, tenantName)
 	if err != nil {
 		return err
@@ -4440,7 +4532,9 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4474,7 +4568,9 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	if err != nil {
 		return []models.FilteredUser{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4547,7 +4643,9 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	}
 
 	var tagId int
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, color, userArr, stationArr, schemaArr, tenantName)
 	if err != nil {
 		return models.Tag{}, err
@@ -4576,7 +4674,9 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 			return models.Tag{}, err
 		}
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	newTag := models.Tag{
 		ID:         tagId,
 		Name:       name,
@@ -4738,7 +4838,9 @@ func GetTagsByEntityType(entity string, tenantName string) ([]models.Tag, error)
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
@@ -4767,7 +4869,9 @@ func GetAllUsedTags(tenantName string) ([]models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
@@ -4796,7 +4900,9 @@ func GetAllUsedStationsTags(tenantName string) ([]models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
@@ -4825,7 +4931,9 @@ func GetAllUsedSchemasTags(tenantName string) ([]models.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return nil, err
@@ -4854,7 +4962,9 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 	if err != nil {
 		return false, models.Tag{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Tag{}, err
@@ -4872,7 +4982,9 @@ func GetTagByName(name string, tenantName string) (bool, models.Tag, error) {
 
 // Image Functions
 func InsertImage(name string, base64Encoding string, tenantName string) error {
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	err := UpsertConfiguration(name, base64Encoding, tenantName)
 	if err != nil {
 		return err
@@ -4897,7 +5009,9 @@ func DeleteImage(name string, tenantName string) error {
 	if err != nil {
 		return err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	_, err = conn.Conn().Exec(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return err
@@ -4918,7 +5032,9 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 	if err != nil {
 		return false, models.Image{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName)
 	if err != nil {
 		return false, models.Image{}, err
@@ -4963,7 +5079,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		return models.DlsMessage{}, err
 	}
 	updatedAt := time.Now()
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName)
 	if err != nil {
 		return models.DlsMessage{}, err
@@ -4980,7 +5098,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	deadLetterPayload := models.DlsMessage{
 		ID:          messagePayloadId,
 		StationId:   stationId,
@@ -5072,7 +5192,9 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 	if err != nil {
 		return 0, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName)
 	if err != nil {
 		return 0, err
@@ -5105,7 +5227,9 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		tenantName = strings.ToLower(tenantName)
+		if tenantName != conf.GlobalAccount {
+			tenantName = strings.ToLower(tenantName)
+		}
 		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
 		if err != nil {
 			return 0, err
@@ -5141,7 +5265,9 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 			return 0, err
 		}
 		updatedAt := time.Now()
-		tenantName = strings.ToLower(tenantName)
+		if tenantName != conf.GlobalAccount {
+			tenantName = strings.ToLower(tenantName)
+		}
 		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
 		if err != nil {
 			return 0, err
@@ -5375,7 +5501,9 @@ func GetTotalDlsMessages(tenantName string) (uint64, error) {
 		return 0, err
 	}
 	var count uint64
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
@@ -5397,7 +5525,9 @@ func GetStationIdsFromDlsMsgs(tenantName string) ([]int, error) {
 	if err != nil {
 		return []int{}, err
 	}
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []int{}, err
@@ -5678,7 +5808,11 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	if err != nil {
 		return false, models.Tenant{}, err
 	}
-	name = strings.ToLower(name)
+
+	if name != conf.GlobalAccount {
+		name = strings.ToLower(name)
+	}
+
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name)
 	if err != nil {
 		return false, models.Tenant{}, err
@@ -5766,7 +5900,9 @@ func RemoveTenant(tenantName string) error {
 		return err
 	}
 
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 
 	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
 	if err != nil {

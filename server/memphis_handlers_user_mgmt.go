@@ -43,7 +43,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
+	exist, user, err := db.GetRootUser(serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -371,7 +371,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT, false, "", "", "", "")
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, serv.MemphisGlobalAccountString(), false, "", "", "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})

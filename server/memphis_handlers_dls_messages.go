@@ -42,7 +42,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	accountName := message.Account
 	// backward compatibility
 	if accountName == "" {
-		accountName = MEMPHIS_GLOBAL_ACCOUNT
+		accountName = s.MemphisGlobalAccountString()
 	}
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext(), accountName)

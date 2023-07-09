@@ -55,7 +55,7 @@ func (s *Server) initWS() {
 		Schemas:    SchemasHandler{S: s},
 	}
 
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, memphisWS_Subj_Subs,
+	s.queueSubscribe(s.MemphisGlobalAccountString(), memphisWS_Subj_Subs,
 		memphisWs_Cgroup_Subs,
 		s.createWSRegistrationHandler(&handlers))
 

@@ -150,6 +150,11 @@ func handleConnectMessage(client *client) error {
 
 func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string, tenantName string) (bool, error) {
 	createdByUsername = strings.ToLower(createdByUsername)
+
+	if tenantName != DEFAULT_GLOBAL_ACCOUNT {
+		tenantName = strings.ToLower(tenantName)
+	}
+
 	newConnection := models.Connection{
 		ID:                connectionId,
 		CreatedBy:         userId,
@@ -157,7 +162,7 @@ func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, 
 		IsActive:          true,
 		CreatedAt:         time.Now(),
 		ClientAddress:     clientAddress,
-		TenantName:        strings.ToLower(tenantName),
+		TenantName:        tenantName,
 	}
 
 	err := db.InsertConnection(newConnection, tenantName)
