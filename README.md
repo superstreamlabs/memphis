@@ -9,7 +9,7 @@
 
   <h4>
 
-**[Memphis](https://memphis.dev)** is a next-generation alternative to traditional message brokers.
+**[Memphis](https://memphis.dev)** is an intelligent, frictionless message broker.<br>Made to enable developers to build real-time and streaming features fast.
 
   </h4>
   

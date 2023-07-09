@@ -94,7 +94,8 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-create-integration-"+integrationType)
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, integration)
 }
@@ -258,7 +259,8 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-integration-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-integration-page")
 	}
 
 	c.IndentedJSON(200, integrations)
@@ -329,7 +331,8 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-disconnect-integration-"+integrationType)
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -344,12 +347,8 @@ func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		param := analytics.EventParam{
-			Name:  "request-content",
-			Value: body.RequestContent,
-		}
-		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-request-integration")
+		analyticsParams := map[string]interface{}{"request-content": body.RequestContent}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-request-integration")
 	}
 
 	c.IndentedJSON(200, gin.H{})

@@ -23,6 +23,7 @@ import (
 	"memphis/http_server"
 	"memphis/memphis_cache"
 	"memphis/server"
+	"strings"
 
 	"os"
 
@@ -97,7 +98,7 @@ func usage() {
 }
 
 func runMemphis(s *server.Server) {
-	err := analytics.InitializeAnalytics(s.AnalyticsToken(), s.MemphisVersion(), s.GetCustomDeploymentId())
+	err := analytics.InitializeAnalytics(s.MemphisVersion(), s.GetCustomDeploymentId())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
@@ -140,22 +141,29 @@ func runMemphis(s *server.Server) {
 
 		// run only on the leader
 		go s.KillZombieResources()
-		// For backward compatibility data from old account to memphis default account
-		folderName := fmt.Sprintf("%s%s%s", s.Opts().StoreDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
-		f, err := os.Stat(folderName)
-		if err != nil {
-			s.Errorf("Get file info failed: %s", err.Error())
-		}
-		if f != nil {
-			err = s.MoveResourcesFromOldToNewDefaultAcc()
-			if err != nil {
-				s.Errorf("Data from global account to memphis account failed: %s", err.Error())
+
+		isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
+
+		if isUserPassBased {
+			// For backward compatibility data from old account to memphis default account
+			storeDir := s.Opts().StoreDir
+			if storeDir == "" {
+				storeDir = os.TempDir()
+				storeDir = strings.TrimSuffix(storeDir, "/")
+			}
+
+			folderName := fmt.Sprintf("%s%s%s", storeDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
+			f, _ := os.Stat(folderName)
+			if f != nil {
+				err = s.MoveResourcesFromOldToNewDefaultAcc()
+				if err != nil {
+					s.Errorf("Data from global account to memphis account failed: %s", err.Error())
+				}
 			}
 		}
 
 		var env string
 		var message string
-		isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
 		if os.Getenv("DOCKER_ENV") != "" {
 			env = "Docker"
 			if isUserPassBased {

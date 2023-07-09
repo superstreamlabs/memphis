@@ -4949,6 +4949,14 @@ func ConfigureOptions(fs *flag.FlagSet, args []string, printVersion, printHelp, 
 		}
 	}
 
+	// ** added by memphis
+	if configFile == _EMPTY_ {
+		os.Create("temp.conf")
+		defer os.Remove("temp.conf")
+		configFile = "temp.conf"
+	}
+	// ** added by memphis
+
 	// Parse config if given
 	if configFile != _EMPTY_ {
 		// This will update the options with values from the config file.

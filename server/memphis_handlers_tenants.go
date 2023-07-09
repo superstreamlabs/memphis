@@ -20,7 +20,7 @@ func CreateGlobalTenantOnFirstSystemLoad() error {
 	if err != nil {
 		return err
 	}
-	_, err = db.UpsertTenant(MEMPHIS_GLOBAL_ACCOUNT, encryptedPass)
+	_, err = db.UpsertTenant(serv.MemphisGlobalAccountString(), encryptedPass)
 	if err != nil {
 		return err
 	}

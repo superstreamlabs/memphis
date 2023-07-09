@@ -17,6 +17,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/url"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -851,6 +852,14 @@ func (s *Server) Reload() error {
 	// 	return errors.New("can only reload config when a file is provided using -c or --config")
 	// }
 
+	// ** added by memphis
+	if configFile == "temp.conf" {
+		os.Create("temp.conf")
+		defer os.Remove("temp.conf")
+		configFile = "temp.conf"
+	}
+	// ** added by memphis
+	
 	newOpts, err := ProcessConfigFile(configFile)
 	if err != nil {
 		// TODO: Dump previous good config to a .bak file?
