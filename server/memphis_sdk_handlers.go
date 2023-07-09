@@ -73,11 +73,20 @@ type createProducerResponse struct {
 	Err                     string                          `json:"error"`
 }
 
-type destroyProducerRequest struct {
+type destroyProducerRequestV0 struct {
 	StationName  string `json:"station_name"`
 	ProducerName string `json:"name"`
 	Username     string `json:"username"`
 	TenantName   string `json:"tenant_name"`
+}
+
+type destroyProducerRequestV1 struct {
+	StationName    string `json:"station_name"`
+	ProducerName   string `json:"name"`
+	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
+	ConnectionId   string `json:"connection_id"`
+	RequestVersion int    `json:"req_version"`
 }
 
 type createConsumerRequestV0 struct {
@@ -119,11 +128,20 @@ type detachSchemaRequest struct {
 	TenantName  string `json:"tenant_name"`
 }
 
-type destroyConsumerRequest struct {
+type destroyConsumerRequestV0 struct {
 	StationName  string `json:"station_name"`
 	ConsumerName string `json:"name"`
 	Username     string `json:"username"`
 	TenantName   string `json:"tenant_name"`
+}
+
+type destroyConsumerRequestV1 struct {
+	StationName    string `json:"station_name"`
+	ConsumerName   string `json:"name"`
+	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
+	ConnectionId   string `json:"connection_id"`
+	RequestVersion int    `json:"req_version"`
 }
 
 type CreateSchemaReq struct {

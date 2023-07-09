@@ -17,9 +17,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// TODO: remove?
 func InitializeProducersRoutes(router *gin.RouterGroup, h *server.Handlers) {
-	producersHandler := h.Producers
-	producersRoutes := router.Group("/producers")
-	producersRoutes.GET("/getAllProducers", producersHandler.GetAllProducers)
-	producersRoutes.GET("/getAllProducersByStation", producersHandler.GetAllProducersByStation)
+	_ = h.Producers
+	_ = router.Group("/producers")
 }

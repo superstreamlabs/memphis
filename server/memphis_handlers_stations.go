@@ -1423,10 +1423,8 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetails{
-				Name:          "",
-				ClientAddress: "",
-				IsActive:      false,
-				IsDeleted:     false,
+				Name:     "",
+				IsActive: false,
 			},
 			PoisonedCgs: []models.PoisonedCg{},
 		}
@@ -1508,13 +1506,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	_, conn, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConnectionByID: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	msg := models.MessageResponse{
 		MessageSeq: body.MessageSeq,
 		Message: models.MessagePayload{
@@ -1524,13 +1515,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Headers:  headersJson,
 		},
 		Producer: models.ProducerDetails{
-			Name:              producedByHeader,
-			ConnectionId:      connectionId,
-			ClientAddress:     conn.ClientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+			Name:         producedByHeader,
+			ConnectionId: connectionId,
+			IsActive:     producer.IsActive,
 		},
 		PoisonedCgs: poisonedCgs,
 	}

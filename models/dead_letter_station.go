@@ -16,13 +16,9 @@ import (
 )
 
 type ProducerDetails struct {
-	Name              string `json:"name"`
-	ClientAddress     string `json:"client_address"`
-	ConnectionId      string `json:"connection_id"`
-	CreatedBy         int    `json:"created_by"`
-	IsActive          bool   `json:"is_active"`
-	IsDeleted         bool   `json:"is_deleted"`
-	CreatedByUsername string `json:"created_by_username"`
+	Name         string `json:"name"`
+	ConnectionId string `json:"connection_id"`
+	IsActive     bool   `json:"is_active"`
 }
 type MsgHeader struct {
 	HeaderKey   string `json:"header_key"`

@@ -48,9 +48,6 @@ export const ApiEndpoints = {
     TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
     UPDATE_DLS_CONFIGURATION: '/stations/updateDlsConfig',
 
-    //Producers
-    GET_ALL_PRODUCERS_BY_STATION: '/producers/getAllProducersByStation',
-
     //Consumers
     GET_ALL_CONSUMERS_BY_STATION: '/consumers/getAllConsumersByStation',
 

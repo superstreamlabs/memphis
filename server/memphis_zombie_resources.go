@@ -136,19 +136,15 @@ func killFunc(s *Server) {
 			return
 		}
 		for _, conn := range connections {
-			if _, exist := clientConnectionIds[conn.ID]; exist { // existence check
+			if _, exist := clientConnectionIds[conn]; exist { // existence check
 				continue
 			} else {
-				zombieConnections = append(zombieConnections, conn.ID)
+				zombieConnections = append(zombieConnections, conn)
 			}
 		}
 
 		if len(zombieConnections) > 0 {
 			serv.Warnf("Zombie connections found, killing")
-			err := db.KillRelevantConnections(zombieConnections)
-			if err != nil {
-				serv.Errorf("killFunc: killRelevantConnections: %v", err.Error())
-			}
 			err = db.KillProducersByConnections(zombieConnections)
 			if err != nil {
 				serv.Errorf("killFunc: killProducersByConnections: %v", err.Error())

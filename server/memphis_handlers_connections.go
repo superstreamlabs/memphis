@@ -21,14 +21,9 @@ import (
 
 	"errors"
 	"strings"
-	"time"
 )
 
 type ConnectionsHandler struct{}
-
-var connectionsHandler ConnectionsHandler
-var producersHandler ProducersHandler
-var consumersHandler ConsumersHandler
 
 const (
 	connectItemSep                      = "::"
@@ -100,7 +95,7 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	user, err := memphis_cache.GetUser(username, client.acc.GetName())
+	user, err := memphis_cache.GetUser(username, client.acc.GetName(), client.Errorf)
 	if err != nil {
 		client.Errorf("[tenant:%v][user: %v] could not retrive user model from cache or db error: %v", client.acc.GetName(), username, err)
 		return err
@@ -113,19 +108,12 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-		exist, err := connectionsHandler.CreateConnection(user.ID, client.RemoteAddress().String(), connectionId, user.Username, client.Account().GetName())
+		exist, err := db.UpdateConnection(connectionId, true)
 		if err != nil {
-			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at CreateConnection: %v", user.TenantName, username, err.Error())
+			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateConnection: %v", user.TenantName, username, err.Error())
 			return err
 		}
-		if exist {
-			err = connectionsHandler.ReliveConectionResources(connectionId)
-			if err != nil {
-				client.Errorf("[tenant: %v][user: %v]handleConnectMessage at ReliveConectionResources: %v", user.TenantName, username, err.Error())
-				return err
-			}
-
-		} else {
+		if !exist {
 			go func() {
 				shouldSendAnalytics, _ := shouldSendAnalytics()
 				if shouldSendAnalytics { // exist indicates it is a reconnect
@@ -151,88 +139,61 @@ func handleConnectMessage(client *client) error {
 	return nil
 }
 
-func (ch ConnectionsHandler) CreateConnection(userId int, clientAddress string, connectionId string, createdByUsername string, tenantName string) (bool, error) {
-	createdByUsername = strings.ToLower(createdByUsername)
-	newConnection := models.Connection{
-		ID:                connectionId,
-		CreatedBy:         userId,
-		CreatedByUsername: createdByUsername,
-		IsActive:          true,
-		CreatedAt:         time.Now(),
-		ClientAddress:     clientAddress,
-		TenantName:        strings.ToLower(tenantName),
-	}
-
-	err := db.InsertConnection(newConnection, tenantName)
-	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			return true, nil
-		}
-		return false, err
-	}
-	return false, nil
-}
-
-func (ch ConnectionsHandler) ReliveConectionResources(connectionId string) error {
-	err := db.ReliveConectionResources(connectionId, true)
-	if err != nil {
-		serv.Errorf("ReliveConectionResources error: %v", err.Error())
-		return err
-	}
-	return nil
-}
 
 func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 	if mci.connectionId == "" {
 		return nil
 	}
 
-	err := db.UpdateConnection(mci.connectionId, false)
+	_, err := db.UpdateConnection(mci.connectionId, false)
 	if err != nil {
 		return err
 	}
-	producers, err := db.GetProducersByConnectionIDWithStationDetails(mci.connectionId)
-	if err != nil {
-		return err
-	}
-	var producerNames, consumerNames string
-	if len(producers) > 0 {
-		err = db.UpdateProducersConnection(mci.connectionId, false)
+
+	if shouldSendNotification(tenantName) {
+		producers, err := db.GetProducersByConnectionIDWithStationDetails(mci.connectionId)
 		if err != nil {
 			return err
 		}
+		var producerNames, consumerNames string
+		if len(producers) > 0 {
+			err = db.UpdateProducersConnection(mci.connectionId, false)
+			if err != nil {
+				return err
+			}
 
-		for i := 0; i < len(producers); i++ {
-			producerNames = producerNames + "Producer: " + producers[i].Name + " Station: " + producers[i].StationName + "\n"
+			for i := 0; i < len(producers); i++ {
+				producerNames = producerNames + "Producer: " + producers[i].Name + " Station: " + producers[i].StationName + "\n"
+			}
 		}
-	}
 
-	consumers, err := db.GetConsumersByConnectionIDWithStationDetails(mci.connectionId)
-	if err != nil {
-		return err
-	}
-	if len(consumers) > 0 {
-		err = db.UpdateConsumersConnection(mci.connectionId, false)
+		consumers, err := db.GetConsumersByConnectionIDWithStationDetails(mci.connectionId)
 		if err != nil {
 			return err
 		}
+		if len(consumers) > 0 {
+			err = db.UpdateConsumersConnection(mci.connectionId, false)
+			if err != nil {
+				return err
+			}
 
-		for i := 0; i < len(consumers); i++ {
-			consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
+			for i := 0; i < len(consumers); i++ {
+				consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
+			}
 		}
-	}
-	msg := ""
-	if len(producerNames) > 0 {
-		msg = producerNames
-	}
-	if len(consumerNames) > 0 {
-		msg = msg + consumerNames
-	}
+		msg := ""
+		if len(producerNames) > 0 {
+			msg = producerNames
+		}
+		if len(consumerNames) > 0 {
+			msg = msg + consumerNames
+		}
 
-	if len(consumerNames) > 0 || len(producerNames) > 0 {
-		err = SendNotification(tenantName, "Disconnection events", msg, DisconEAlert)
-		if err != nil {
-			return err
+		if len(consumerNames) > 0 || len(producerNames) > 0 {
+			err = SendNotification(tenantName, "Disconnection events", msg, DisconEAlert)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

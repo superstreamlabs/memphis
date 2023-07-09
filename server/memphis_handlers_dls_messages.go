@@ -209,8 +209,6 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 
 	poisonedCgs := []models.PoisonedCg{}
 	var producer models.Producer
-	var clientAddress string
-	var connectionId string
 
 	msgDetails := models.MessagePayload{
 		TimeSent: dlsMessage.MessageDetails.TimeSent,
@@ -231,20 +229,6 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	}
 
 	if station.IsNative {
-		connectionIdHeader := dlsMsg.MessageDetails.Headers["$memphis_connectionId"]
-		//This check for backward compatability
-		if connectionIdHeader == "" {
-			connectionIdHeader = dlsMsg.MessageDetails.Headers["connectionId"]
-			if connectionIdHeader == "" {
-				return models.DlsMessageResponse{}, nil
-			}
-		}
-		connectionId = connectionIdHeader
-		_, conn, err := db.GetConnectionByID(connectionId)
-		if err != nil {
-			return models.DlsMessageResponse{}, err
-		}
-		clientAddress = conn.ClientAddress
 
 		exist, prod, err := db.GetProducerByID(dlsMsg.ProducerId)
 		if err != nil {
@@ -312,13 +296,9 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
 		Producer: models.ProducerDetails{
-			Name:              producer.Name,
-			ConnectionId:      producer.ConnectionId,
-			ClientAddress:     clientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+			Name:         producer.Name,
+			ConnectionId: producer.ConnectionId,
+			IsActive:     producer.IsActive,
 		},
 		Message:         dlsMsg.MessageDetails,
 		UpdatedAt:       dlsMsg.UpdatedAt,

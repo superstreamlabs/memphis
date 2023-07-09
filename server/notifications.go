@@ -37,3 +37,12 @@ func SendNotification(tenantName string, title string, message string, msgType s
 	return nil
 
 }
+
+func shouldSendNotification(tenantName string) bool {
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+		if _, ok := tenantInetgrations["slack"].(models.SlackIntegration); ok {
+			return true
+		}
+	}
+	return false
+}
