@@ -304,7 +304,7 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
-                {isCloud && (
+                {isCloud() && (
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
                         placement="right"
@@ -343,7 +343,7 @@ function SideBar() {
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            src={localStorage.getItem('profile_pic') || avatarUrl}
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}
                             height={localStorage.getItem('profile_pic') ? 35 : 25}
