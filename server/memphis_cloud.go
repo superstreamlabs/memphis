@@ -27,7 +27,6 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
-	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -95,7 +94,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, MEMPHIS_GLOBAL_ACCOUNT)
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return err
 	}
@@ -122,17 +121,12 @@ func CreateRootUserOnFirstSystemLoad() error {
 				}
 			}
 
-			param := analytics.EventParam{
-				Name:  "installation-type",
-				Value: installationType,
-			}
-			analyticsParams := []analytics.EventParam{param}
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "device-id", Value: deviceIdValue})
-			analyticsParams = append(analyticsParams, analytics.EventParam{Name: "source", Value: configuration.INSTALLATION_SOURCE})
-			analytics.SendEventWithParams("", "", analyticsParams, "installation")
+			ip := serv.getIp()
+			analyticsParams := map[string]interface{}{"installation-type": installationType, "device-id": deviceIdValue, "source": configuration.INSTALLATION_SOURCE, "ip": ip}
+			analytics.SendEvent("", "", analyticsParams, "installation")
 
 			if configuration.EXPORTER {
-				analytics.SendEventWithParams("", "", analyticsParams, "enable-exporter")
+				analytics.SendEvent("", "", analyticsParams, "enable-exporter")
 			}
 		})
 	}
@@ -891,7 +885,8 @@ func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-syslogs-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-syslogs-page")
 	}
 
 	c.IndentedJSON(200, response)
@@ -1054,7 +1049,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-update-cluster-config")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-update-cluster-config")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -1072,7 +1068,8 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-cluster-config-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
 		"dls_retention":           ch.S.opts.DlsRetentionHours,
@@ -1139,11 +1136,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		}
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-login")
-	}
-
 	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
@@ -1168,6 +1160,11 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
+	}
 
 	domain := ""
 	secure := false
@@ -1216,12 +1213,38 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	var subscription, pending bool
 	team := strings.ToLower(body.Team)
+	teamError := validateUserTeam(team)
+	if teamError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserTeam: %v", user.TenantName, user.Username, teamError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": teamError.Error()})
+		return
+	}
 	position := strings.ToLower(body.Position)
+	positionError := validateUserPosition(position)
+	if positionError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserPosition: %v", user.TenantName, user.Username, positionError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": positionError.Error()})
+		return
+	}
 	fullName := strings.ToLower(body.FullName)
+	fullNameError := validateUserFullName(fullName)
+	if fullNameError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserFullName: %v", user.TenantName, user.Username, fullNameError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": fullNameError.Error()})
+		return
+	}
 	owner := user.Username
 	description := strings.ToLower(body.Description)
+	descriptionError := validateUserDescription(description)
+	if descriptionError != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser at validateUserDescription: %v", user.TenantName, user.Username, descriptionError.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": descriptionError.Error()})
+		return
+	}
 
-	user.TenantName = strings.ToLower(user.TenantName)
+	if user.TenantName != DEFAULT_GLOBAL_ACCOUNT {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
@@ -1255,13 +1278,20 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		avatarId = body.AvatarId
 	}
 
+	if body.Password == "" {
+		serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
+		return
+	}
+	passwordErr := validatePassword(body.Password)
+	if passwordErr != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, passwordErr.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": passwordErr.Error()})
+		return
+	}
+
 	var password string
 	if userType == "management" {
-		if body.Password == "" {
-			serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
-			return
-		}
 
 		hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 		if err != nil {
@@ -1281,12 +1311,6 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 			if body.Password == "" {
 				serv.Warnf("[tenant: %v][user: %v]AddUser: Password was not provided for user %v", user.TenantName, user.Username, username)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Password was not provided"})
-				return
-			}
-			err = validatePassword(body.Password)
-			if err != nil {
-				serv.Warnf("[tenant: %v][user: %v]AddUser validate password : User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 				return
 			}
 			password, err = EncryptAES([]byte(body.Password))
@@ -1318,7 +1342,8 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-add-user")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-add-user")
 	}
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
@@ -1369,24 +1394,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	deleteRequest := models.DeleteUserRequest{
-		Usernames:  []string{user.Username},
-		TenantName: user.TenantName,
-	}
-
-	msg, err := json.Marshal(deleteRequest)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]RemoveUser at json.Marshal: Delete User: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: Delete User : %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+	SendUserCacheUpdates([]string{user.Username}, user.TenantName)
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
@@ -1431,21 +1439,12 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-user")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-user")
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]User %v has been deleted by user %v", user.TenantName, user.Username, username, user.Username)
 	c.IndentedJSON(200, gin.H{})
-}
-
-func validateUsername(username string) error {
-	re := regexp.MustCompile("^[a-z0-9_.-]*$")
-
-	validName := re.MatchString(username)
-	if !validName || len(username) == 0 {
-		return errors.New("username has to include only letters/numbers/./_/- ")
-	}
-	return nil
 }
 
 func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
@@ -1464,7 +1463,9 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	username := strings.ToLower(user.Username)
 	tenantName := user.TenantName
-	user.TenantName = strings.ToLower(user.TenantName)
+	if user.TenantName != DEFAULT_GLOBAL_ACCOUNT {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
 	err = removeTenantResources(tenantName, user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
@@ -1474,7 +1475,8 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-himself")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-himself")
 	}
 
 	serv.Noticef("[tenant: %v][user: %v]Tenant %v has been deleted", tenantName, username, user.TenantName)
@@ -1500,7 +1502,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, MEMPHIS_GLOBAL_ACCOUNT)
+	err := db.EditConfigurationValue("analytics", flag, serv.MemphisGlobalAccountString())
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1509,7 +1511,8 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 
 	if !body.SendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-disable-analytics")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disable-analytics")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1526,7 +1529,8 @@ func (s *Server) sendLogToAnalytics(label string, log []byte) {
 		if err != nil || !shouldSend {
 			return
 		}
-		analytics.SendErrEvent(s.getLogSource(), string(log))
+		analyticsParams := map[string]interface{}{"err_source": s.getLogSource(), "err_log": string(log)}
+		analytics.SendEvent("", "", analyticsParams, "error")
 	default:
 		return
 	}
@@ -1617,7 +1621,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	_, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1704,7 +1708,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1)
+	streamInfo, err := serv.memphisStreamInfo(serv.MemphisGlobalAccountString(), throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1722,7 +1726,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-	err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, &cc)
+	err = serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1772,7 +1776,7 @@ cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.MemphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, durableName)
+		serv.memphisRemoveConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, durableName)
 	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
@@ -1833,19 +1837,20 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
+	return true, nil
+	// exist, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
+	// if err != nil {
+	// 	return false, err
+	// }
+	// if !exist {
+	// 	return false, nil
+	// }
 
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	// if systemKey.Value == "true" {
+	// 	return true, nil
+	// } else {
+	// 	return false, nil
+	// }
 }
 
 func TenantSeqInitialize() error {

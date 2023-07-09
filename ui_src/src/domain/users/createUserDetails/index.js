@@ -144,6 +144,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                 placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
                                 type="text"
                                 radiusType="semi-round"
+                                maxLength={20}
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"
@@ -175,6 +176,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                     <Input
                                         placeholder="Type full name"
                                         type="text"
+                                        maxLength={30}
                                         radiusType="semi-round"
                                         colorType="black"
                                         backgroundColorType="none"
@@ -194,6 +196,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                         <Input
                                             placeholder="Type your team"
                                             type="text"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -212,6 +215,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                         <Input
                                             placeholder="Type your position"
                                             type="text"
+                                            maxLength={30}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -235,6 +239,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                     <Input
                                         placeholder="Type your description"
                                         type="text"
+                                        maxLength={100}
                                         radiusType="semi-round"
                                         colorType="black"
                                         backgroundColorType="none"
@@ -298,15 +303,16 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                                 message: 'Password can not be empty'
                                             },
                                             {
-                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%^&*])[A-Za-z\d!?\-@#$%^&*]{8,}$/,
+                                                pattern: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!?\-@#$%])[A-Za-z\d!?\-@#$%]{8,}$/,
                                                 message:
-                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%^&*)'
+                                                    'Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character(!?-@#$%)'
                                             }
                                         ]}
                                     >
                                         <Input
                                             placeholder="Type Password"
                                             type="password"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
@@ -341,6 +347,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                         <Input
                                             placeholder="Type Password"
                                             type="password"
+                                            maxLength={20}
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"

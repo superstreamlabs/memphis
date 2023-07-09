@@ -19,16 +19,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math/big"
 	"memphis/db"
 	"memphis/models"
+	"net/http"
 	"net/textproto"
-	"regexp"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
@@ -320,7 +321,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// system logs stream
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
 			Retention:    LimitsPolicy,
@@ -346,7 +347,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -380,7 +381,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -390,7 +391,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -417,7 +418,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, dlsUnackedStream, &cc)
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsUnackedStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -427,7 +428,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
-		err = s.memphisDeleteStream(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamName)
+		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 		}
@@ -435,7 +436,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
 			Retention:    LimitsPolicy,
@@ -679,12 +680,9 @@ func (s *Server) Opts() *Options {
 	return s.opts
 }
 
-func (s *Server) AnalyticsToken() string {
-	return ANALYTICS_TOKEN
-}
-
 func (s *Server) MemphisVersion() string {
-	return VERSION
+	data, _ := os.ReadFile("version.conf")
+	return string(data)
 }
 
 func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64) error {
@@ -1248,7 +1246,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 		tenantName = ci.Account
 		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
 	} else {
-		tenantName = MEMPHIS_GLOBAL_ACCOUNT
+		tenantName = s.MemphisGlobalAccountString()
 	}
 
 	return tenantName, message, nil
@@ -1439,6 +1437,10 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		if err != nil {
 			return err
 		}
+		err = s.RemoveStream(DEFAULT_SYSTEM_ACCOUNT, stationName.Intern())
+		if err != nil {
+			return err
+		}
 	}
 	consumers, err := db.GetConsumers()
 	if err != nil {
@@ -1454,38 +1456,18 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 	return nil
 }
 
-func validatePassword(password string) error {
-	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
-	match, _ := regexp.MatchString(pattern, password)
-	if !match {
-		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+func (s *Server) getIp() string {
+	resp, err := http.Get("https://ifconfig.me")
+	if err != nil {
+		serv.Warnf("getIp: error get ip: %s", err.Error())
+		return ""
 	}
-	if len(password) < 8 {
-		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
-	}
-	var (
-		hasUppercase   bool
-		hasLowercase   bool
-		hasDigit       bool
-		hasSpecialChar bool
-	)
+	defer resp.Body.Close()
 
-	for _, char := range password {
-		switch {
-		case unicode.IsUpper(char):
-			hasUppercase = true
-		case unicode.IsLower(char):
-			hasLowercase = true
-		case unicode.IsDigit(char):
-			hasDigit = true
-		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
-			hasSpecialChar = true
-		}
+	ip, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		serv.Warnf("getIp: error reading response get ip body: %s", err.Error())
+		return ""
 	}
-
-	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
-		return nil
-	}
-
-	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	return string(ip)
 }

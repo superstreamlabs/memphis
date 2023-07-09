@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -43,7 +44,7 @@ const (
 type UserMgmtHandler struct{}
 
 func isRootUserLoggedIn() (bool, error) {
-	exist, user, err := db.GetRootUser(MEMPHIS_GLOBAL_ACCOUNT)
+	exist, user, err := db.GetRootUser(serv.MemphisGlobalAccountString())
 	if err != nil {
 		return false, err
 	} else if !exist {
@@ -154,20 +155,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	deleteRequest := models.DeleteUserRequest{
-		Usernames:  users_list,
-		TenantName: tenantName,
-	}
-
-	msg, err := json.Marshal(deleteRequest)
-	if err != nil {
-		return err
-	}
-
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return err
-	}
+	SendUserCacheUpdates(users_list, tenantName)
 
 	err = db.DeleteDlsMsgsByTenant(tenantName)
 	if err != nil {
@@ -327,7 +315,8 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent("", "", "user-open-ui")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent("", "", analyticsParams, "user-open-ui")
 	}
 	c.IndentedJSON(200, gin.H{"show_signup": showSignup})
 }
@@ -365,7 +354,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	hashedPwdString := string(hashedPwd)
 	subscription := body.Subscribtion
 
-	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, MEMPHIS_GLOBAL_ACCOUNT, false, "", "", "", "")
+	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, serv.MemphisGlobalAccountString(), false, "", "", "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
@@ -391,16 +380,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "email",
-			Value: username,
-		}
-		param2 := analytics.EventParam{
-			Name:  "newsletter",
-			Value: strconv.FormatBool(subscription),
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(newUser.TenantName, username, analyticsParams, "user-signup")
+		analyticsParams := map[string]interface{}{"email": username, "newsletter": strconv.FormatBool(subscription)}
+		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
 	domain := ""
@@ -451,7 +432,8 @@ func (umh UserMgmtHandler) GetAllUsers(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-users-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-users-page")
 	}
 
 	applicationUsers := []models.FilteredGenericUser{}
@@ -611,7 +593,8 @@ func (umh UserMgmtHandler) DoneNextSteps(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-done-next-steps")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-done-next-steps")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -635,7 +618,8 @@ func (umh UserMgmtHandler) SkipGetStarted(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-skip-get-started")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-skip-get-started")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -772,4 +756,105 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{})
 		return
 	}
+}
+
+func SendUserCacheUpdates(usernames []string, tenantName string) {
+	deleteRequest := models.CacheUpdateRequest{
+		CacheType:  "user",
+		Operation:  "delete",
+		Usernames:  usernames,
+		TenantName: tenantName,
+	}
+
+	msg, err := json.Marshal(deleteRequest)
+	if err != nil {
+		serv.Errorf("[tenant: %v] user cache at SendUserCacheUpdates json.Marshal: %v", tenantName, err.Error())
+		return
+	}
+
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("[tenant: %v]user cache at SendUserCacheUpdates: error sending internal msg : %v", tenantName, err.Error())
+		return
+	}
+
+}
+
+func validateUsername(username string) error {
+	if len(username) > 20 {
+		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	}
+	re := regexp.MustCompile("^[a-z0-9_.-]*$")
+	validName := re.MatchString(username)
+	if !validName || len(username) == 0 {
+		return errors.New("username has to include only letters/numbers/./_/- ")
+	}
+	return nil
+}
+
+func validateUserDescription(description string) error {
+	if len(description) > 100 {
+		return errors.New("description exceeds the maximum allowed length of 100 characters")
+	}
+	return nil
+}
+
+func validateUserTeam(team string) error {
+	if len(team) > 20 {
+		return errors.New("team exceeds the maximum allowed length of 20 characters")
+	}
+	return nil
+}
+
+func validateUserPosition(position string) error {
+	if len(position) > 30 {
+		return errors.New("position exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validateUserFullName(fullName string) error {
+	if len(fullName) > 30 {
+		return errors.New("full name exceeds the maximum allowed length of 30 characters")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) > 20 {
+		return errors.New("password exceeds the maximum allowed length of 20 characters")
+	}
+	pattern := `^[A-Za-z0-9!?\-@#$%]+$`
+	match, _ := regexp.MatchString(pattern, password)
+	if !match {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	if len(password) < 8 {
+		return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+	}
+	var (
+		hasUppercase   bool
+		hasLowercase   bool
+		hasDigit       bool
+		hasSpecialChar bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUppercase = true
+		case unicode.IsLower(char):
+			hasLowercase = true
+		case unicode.IsDigit(char):
+			hasDigit = true
+		case char == '!' || char == '?' || char == '-' || char == '@' || char == '#' || char == '$' || char == '%':
+			hasSpecialChar = true
+		}
+	}
+
+	if hasUppercase && hasLowercase && hasDigit && hasSpecialChar {
+		return nil
+	}
+
+	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
 }

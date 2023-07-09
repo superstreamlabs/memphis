@@ -95,10 +95,14 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	user, err := memphis_cache.GetUser(username, client.acc.GetName(), client.Errorf)
+	exist, user, err := memphis_cache.GetUser(username, client.acc.GetName())
 	if err != nil {
-		client.Errorf("[tenant:%v][user: %v] could not retrive user model from cache or db error: %v", client.acc.GetName(), username, err)
+		client.Errorf("[tenant:%v][user: %v] handleConnectMessage could not retrive user model from cache or db error: %v", client.acc.GetName(), username, err)
 		return err
+	}
+	if !exist {
+		client.Errorf("[tenant:%v][user: %v] handleConnectMessage user doesn't exist in db : %v", client.acc.GetName(), username, err)
+		return fmt.Errorf("user doesn't exist")
 	}
 
 	if user.UserType != "root" && user.UserType != "application" {
@@ -119,16 +123,12 @@ func handleConnectMessage(client *client) error {
 				if shouldSendAnalytics { // exist indicates it is a reconnect
 					splitted := strings.Split(client.opts.Lang, ".")
 					sdkName := splitted[len(splitted)-1]
-					param := analytics.EventParam{
-						Name:  "sdk",
-						Value: sdkName,
-					}
-					analyticsParams := []analytics.EventParam{param}
 					event := "user-connect-sdk"
 					if !isNativeMemphisClient {
 						event = "user-connect-nats-sdk"
 					}
-					analytics.SendEventWithParams(user.TenantName, username, analyticsParams, event)
+					analyticsParams := map[string]interface{}{"sdk": sdkName}
+					analytics.SendEvent(user.TenantName, username, analyticsParams, event)
 				}
 			}()
 		}
@@ -138,7 +138,6 @@ func handleConnectMessage(client *client) error {
 	client.memphisInfo = memphisClientInfo{username: username, connectionId: connectionId, isNative: isNativeMemphisClient}
 	return nil
 }
-
 
 func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 	if mci.connectionId == "" {

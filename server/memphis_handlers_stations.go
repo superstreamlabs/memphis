@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -170,7 +169,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {
 		s.Errorf("[tenant: %v]createStationDirect: failed creating station: %v", tenantName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	csr.TenantName = tenantName
@@ -328,12 +327,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		if err != nil {
 			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 				serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
-				respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
 				return
 			}
 
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-			respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 			return
 		}
 	}
@@ -341,12 +340,12 @@ func (s *Server) createStationDirectIntern(c *client,
 	exist, user, err := db.GetUserByUsername(username, csr.TenantName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if !exist {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
@@ -355,7 +354,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		}
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if rowsUpdated > 0 {
@@ -378,32 +377,16 @@ func (s *Server) createStationDirectIntern(c *client,
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "tiered-storage",
-				Value: strconv.FormatBool(csr.TieredStorageEnabled),
-			}
-			param3 := analytics.EventParam{
-				Name:  "nats-comp",
-				Value: strconv.FormatBool(!isNative),
-			}
 			storageType = "memory"
 			if storageType == "file" {
 				storageType = "disk"
 			}
-			param4 := analytics.EventParam{
-				Name:  "storage-type",
-				Value: storageType,
-			}
-			analyticsParams := []analytics.EventParam{param1, param2, param3, param4}
-			analytics.SendEventWithParams(user.TenantName, username, analyticsParams, "user-create-station-sdk")
+			analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "tiered-storage": strconv.FormatBool(csr.TieredStorageEnabled), "nats-comp": strconv.FormatBool(!isNative), "storage-type": storageType}
+			analytics.SendEvent(user.TenantName, username, analyticsParams, "user-create-station-sdk")
 		}
 	}
 
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
+	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
 func (sh StationsHandler) GetStation(c *gin.Context) {
@@ -579,7 +562,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	var stations []models.ExtendedStation
 	totalMessages := uint64(0)
 	if tenantName == "" {
-		tenantName = conf.MemphisGlobalAccountName
+		tenantName = serv.MemphisGlobalAccountString()
 	}
 	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
 	if err != nil {
@@ -703,7 +686,8 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-stations-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-stations-page")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -901,20 +885,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "tiered-storage",
-			Value: strconv.FormatBool(newStation.TieredStorageEnabled),
-		}
-		param3 := analytics.EventParam{
-			Name:  "storage-type",
-			Value: storageTypeForResponse,
-		}
-		analyticsParams := []analytics.EventParam{param1, param2, param3}
-		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-station")
+		analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "tiered-storage": strconv.FormatBool(newStation.TieredStorageEnabled), "storage-type": storageTypeForResponse}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station")
 	}
 
 	if schemaName != "" {
@@ -1013,7 +985,8 @@ func (sh StationsHandler) RemoveStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-station")
 	}
 
 	for _, name := range body.StationNames {
@@ -1039,12 +1012,12 @@ func (s *Server) removeStationDirect(c *client, reply string, msg []byte) {
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("removeStationDirect at getTenantNameAndMessage: %v", err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &dsr); err != nil {
 		s.Errorf("[tenant: %v]removeStationDirect at json.Unmarshal: %v", tenantName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
@@ -1115,21 +1088,21 @@ func (s *Server) removeStationDirectIntern(c *client,
 	err = removeStationResources(s, station, shouldDeleteStream)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at removeStationResources: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	err = db.DeleteStation(station.Name, station.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at DeleteStation: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at GetUserByUsername: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	message := "Station " + stationName.Ext() + " has been deleted by user " + dsr.Username
@@ -1153,10 +1126,11 @@ func (s *Server) removeStationDirectIntern(c *client,
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, dsr.Username, "user-delete-station-sdk")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, dsr.Username, analyticsParams, "user-delete-station-sdk")
 	}
 
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
+	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
 func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string) (int, error) {
@@ -1236,7 +1210,8 @@ func (sh StationsHandler) GetPoisonMessageJourney(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-message-journey")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-message-journey")
 	}
 
 	c.IndentedJSON(200, poisonMessage)
@@ -1259,7 +1234,8 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-ack-poison-message")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-ack-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1336,7 +1312,8 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-resend-poison-message")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-resend-poison-message")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1625,16 +1602,8 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 		sh.S.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
 
 		if shouldSendAnalytics {
-			param1 := analytics.EventParam{
-				Name:  "station-name",
-				Value: stationName.Ext(),
-			}
-			param2 := analytics.EventParam{
-				Name:  "schema-name",
-				Value: schemaName,
-			}
-			analyticsParams := []analytics.EventParam{param1, param2}
-			analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
+			analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "schema-name": schemaName}
+			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
 		}
 	}
 
@@ -1646,14 +1615,14 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	tenantName, attachSchemaMessage, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("useSchemaDirect at getTenantNameAndMessage: %v", err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	if err := json.Unmarshal([]byte(attachSchemaMessage), &asr); err != nil {
 		errMsg := fmt.Sprintf("failed attaching schema %v: %v", asr.Name, err.Error())
 		s.Errorf("[tenant: %v]useSchemaDirect: At station %v %v", tenantName, asr.StationName, errMsg)
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New(errMsg))
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
 		return
 	}
 
@@ -1661,47 +1630,47 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	stationName, err := StationNameFromStr(asr.StationName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]useSchemaDirect at StationNameFromStr: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	exist, station, err := db.GetStationByName(stationName.Ext(), asr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at GetStationByName: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	if !exist {
 		errMsg := fmt.Sprintf("Station %v does not exist", stationName.external)
 		serv.Warnf("[tenant: %v][user: %v]useSchemaDirect: %v", asr.TenantName, asr.Username, errMsg)
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New("memphis: "+errMsg))
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("memphis: "+errMsg))
 		return
 	}
 	schemaName := strings.ToLower(asr.Name)
 	exist, schema, err := db.GetSchemaByName(schemaName, station.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at GetSchemaByName: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if !exist {
 		errMsg := fmt.Sprintf("Schema %v does not exist", schemaName)
 		serv.Warnf("[tenant: %v][user: %v]useSchemaDirect: %v", asr.TenantName, asr.Username, errMsg)
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New(errMsg))
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
 		return
 	}
 
 	schemaVersion, err := getActiveVersionBySchemaId(schema.ID)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at getActiveVersionBySchemaId: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	err = db.AttachSchemaToStation(stationName.Ext(), schemaName, schemaVersion.VersionNumber, station.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at db.AttachSchemaToStation: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
@@ -1710,7 +1679,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	_, user, err := db.GetUserByUsername(asr.Username, asr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at GetUserByUsername: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	var auditLogs []interface{}
@@ -1730,16 +1699,8 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param1 := analytics.EventParam{
-			Name:  "station-name",
-			Value: stationName.Ext(),
-		}
-		param2 := analytics.EventParam{
-			Name:  "schema-name",
-			Value: schemaName,
-		}
-		analyticsParams := []analytics.EventParam{param1, param2}
-		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
+		analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "schema-name": schemaName}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-attach-schema-to-station")
 	}
 
 	updateContent, err := generateSchemaUpdateInit(schema)
@@ -1754,7 +1715,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 	}
 
 	serv.updateStationProducersOfSchemaChange(station.TenantName, stationName, update)
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
+	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
 func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantName string) error {
@@ -1786,13 +1747,13 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("removeSchemaFromStationDirect at getTenantNameAndMessage: %v", err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	if err := json.Unmarshal([]byte(message), &dsr); err != nil {
 		s.Errorf("[tenant: %v]removeSchemaFromStationDirect at json.Unmarshal: failed removing schema at station %v: %v", tenantName, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
@@ -1800,23 +1761,24 @@ func (s *Server) removeSchemaFromStationDirect(c *client, reply string, msg []by
 	stationName, err := StationNameFromStr(dsr.StationName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]removeSchemaFromStationDirec at StationNameFromStrt: At station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	err = removeSchemaFromStation(serv, stationName, true, dsr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeSchemaFromStationDirect at removeSchemaFromStation: At station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
-		respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(tenantName, dsr.Username, "user-detach-schema-from-station-sdk")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(tenantName, dsr.Username, analyticsParams, "user-detach-schema-from-station-sdk")
 	}
 
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, nil)
+	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
 func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
@@ -1878,7 +1840,8 @@ func (sh StationsHandler) RemoveSchemaFromStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-schema-from-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-schema-from-station")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -1943,7 +1906,8 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-apply-schema-updates-on-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-apply-schema-updates-on-station")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -1953,7 +1917,8 @@ func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-pushed-tierd-storage-button")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-pushed-tierd-storage-button")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -2067,7 +2032,8 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-purge-station")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-purge-station")
 	}
 	c.IndentedJSON(200, gin.H{})
 }
@@ -2120,7 +2086,8 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-messages")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-messages")
 	}
 
 	c.IndentedJSON(200, gin.H{})
