@@ -73,7 +73,7 @@ const initialState = {
         retention_type: 'message_age_sec',
         retention_value: 604800,
         storage_type: 'file',
-        replicas: isCloud() ? 'HA (3)' : 'No HA (1)',
+        replicas: 'No HA (1)',
         days: 7,
         hours: 0,
         minutes: 0,
@@ -195,7 +195,9 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     };
 
     useEffect(() => {
-        getAvailableReplicas();
+        if (!isCloud()) {
+            getAvailableReplicas();
+        }
         return () => {
             getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
         };
