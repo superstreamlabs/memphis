@@ -481,12 +481,8 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		param := analytics.EventParam{
-			Name:  "schema-name",
-			Value: newSchema.Name,
-		}
-		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-create-schema")
+		analyticsParams := map[string]interface{}{"schema-name": newSchema.Name}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-schema")
 	}
 
 	c.IndentedJSON(200, newSchema)
@@ -508,7 +504,8 @@ func (sh SchemasHandler) GetAllSchemas(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-enter-schemas-page")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-schemas-page")
 	}
 
 	c.IndentedJSON(200, schemas)
@@ -550,12 +547,8 @@ func (sh SchemasHandler) GetSchemaDetails(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		param := analytics.EventParam{
-			Name:  "schema-name",
-			Value: schemaName,
-		}
-		analyticsParams := []analytics.EventParam{param}
-		analytics.SendEventWithParams(user.TenantName, user.Username, analyticsParams, "user-enter-schema-details")
+		analyticsParams := map[string]interface{}{"schema-name": schemaName}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-schema-details")
 	}
 
 	c.IndentedJSON(200, schemaDetails)
@@ -633,7 +626,8 @@ func (sh SchemasHandler) RemoveSchema(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-remove-schema")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{})
@@ -722,7 +716,8 @@ func (sh SchemasHandler) CreateNewVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-create-new-schema-version")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-new-schema-version")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -795,7 +790,8 @@ func (sh SchemasHandler) RollBackVersion(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analytics.SendEvent(user.TenantName, user.Username, "user-rollback-schema-version")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-rollback-schema-version")
 	}
 
 	c.IndentedJSON(200, extedndedSchemaDetails)
@@ -827,7 +823,8 @@ func (sh SchemasHandler) ValidateSchema(c *gin.Context) {
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.TenantName, user.Username, "user-validate-schema")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-validate-schema")
 	}
 
 	c.IndentedJSON(200, gin.H{
@@ -842,19 +839,19 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", tenantName, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at json.Unmarshal - failed creating Schema: %v", tenantName, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
 	err = validateSchemaContent(csr.SchemaContent, csr.Type)
 	if err != nil {
 		s.Warnf("[tenant: %v]createSchemaDirect at validateSchemaContent- Schema is not in the right %v format, error: %v", tenantName, csr.Type, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
@@ -862,7 +859,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		csr.MessageStructName, err = getProtoMessageStructName(csr.SchemaContent)
 		if err != nil {
 			s.Errorf("[tenant: %v]createSchemaDirect at getProtoMessageStructName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		}
 	}
 
@@ -870,7 +867,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		err := validateMessageStructName(csr.MessageStructName)
 		if err != nil {
 			s.Warnf("[tenant: %v]createSchemaDirect at validateMessageStructName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 			return
 		}
 	}
@@ -878,7 +875,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	exist, existedSchema, err := db.GetSchemaByName(csr.Name, tenantName)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at GetSchemaByName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
@@ -887,15 +884,15 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 			err = s.updateSchemaVersion(existedSchema.ID, tenantName, csr)
 			if err != nil {
 				s.Errorf("[tenant: %v]createSchemaDirect at updateSchemaVersion - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-				respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+				respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 				return
 			}
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 			return
 		} else {
 			s.Warnf("[tenant: %v]createSchemaDirect: %v Bad Schema Type", tenantName, csr.Name)
 			badTypeError := fmt.Sprintf("%v already exist with type - %v", csr.Name, existedSchema.Type)
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New(badTypeError), &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, errors.New(badTypeError), &resp)
 			return
 		}
 	}
@@ -903,11 +900,11 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	err = s.createNewSchema(csr, tenantName)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
-	respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+	respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 
 }
 

@@ -156,37 +156,37 @@ func (csresp *SchemaResponse) SetError(err error) {
 
 func (s *Server) initializeSDKHandlers() {
 	//stations
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_station_creations",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_station_creations",
 		"memphis_station_creations_listeners_group",
 		createStationHandler(s))
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_station_destructions",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_station_destructions",
 		"memphis_station_destructions_listeners_group",
 		destroyStationHandler(s))
 
 	// producers
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_producer_creations",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_producer_creations",
 		"memphis_producer_creations_listeners_group",
 		createProducerHandler(s))
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_producer_destructions",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_producer_destructions",
 		"memphis_producer_destructions_listeners_group",
 		destroyProducerHandler(s))
 
 	// consumers
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_consumer_creations",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_consumer_creations",
 		"memphis_consumer_creations_listeners_group",
 		createConsumerHandler(s))
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_consumer_destructions",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_consumer_destructions",
 		"memphis_consumer_destructions_listeners_group",
 		destroyConsumerHandler(s))
 
 	// schemas
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_attachments",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_schema_attachments",
 		"memphis_schema_attachments_listeners_group",
 		attachSchemaHandler(s))
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_detachments",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_schema_detachments",
 		"memphis_schema_detachments_listeners_group",
 		detachSchemaHandler(s))
-	s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, "$memphis_schema_creations",
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_schema_creations",
 		"memphis_schema_creations_listeners_group",
 		createSchemaHandler(s))
 
@@ -265,7 +265,7 @@ func respondWithErrOrJsApiRespWithEcho[T any](jsApi bool, c *client, acc *Accoun
 		s.sendAPIErrResponseWithEcho(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
-	tenantName := MEMPHIS_GLOBAL_ACCOUNT
+	tenantName := serv.MemphisGlobalAccountString()
 	respondWithErr(tenantName, c.srv, reply, err)
 }
 

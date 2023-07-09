@@ -350,6 +350,7 @@ func InitializeMetadataStorage() (db.MetadataStorage, error) {
 	}
 	return metadataDb, nil
 }
+
 // added by Memphis ***
 
 // NewServer will setup a new server struct after parsing the options.
@@ -777,12 +778,25 @@ func (s *Server) globalAccount() *Account {
 }
 
 func (s *Server) MemphisGlobalAccount() *Account {
-	macc, err := s.LookupAccount(MEMPHIS_GLOBAL_ACCOUNT)
+	acc := MEMPHIS_GLOBAL_ACCOUNT
+	if !configuration.USER_PASS_BASED_AUTH {
+		acc = DEFAULT_GLOBAL_ACCOUNT
+	}
+
+	macc, err := s.LookupAccount(acc)
 	if err != nil {
 		fmt.Printf("error resolving memphis system account: %v\n", err)
 		return nil
 	}
 	return macc
+}
+
+func (s *Server) MemphisGlobalAccountString() string {
+	acc := MEMPHIS_GLOBAL_ACCOUNT
+	if !configuration.USER_PASS_BASED_AUTH {
+		acc = DEFAULT_GLOBAL_ACCOUNT
+	}
+	return acc
 }
 
 // Used to setup Accounts.
@@ -1661,7 +1675,7 @@ func (s *Server) Start() {
 	opts := s.getOpts()
 	clusterName := s.ClusterName()
 
-	s.Noticef("Version:  %s", VERSION)
+	s.Noticef("Version:  %s", s.MemphisVersion())
 	if clusterName != _EMPTY_ {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}
@@ -1690,9 +1704,11 @@ func (s *Server) Start() {
 		s.StartProfiler()
 	}
 
-	if opts.ConfigFile != _EMPTY_ {
-		s.Noticef("Using configuration file: %s", opts.ConfigFile)
-	}
+	// ** removed by memphis
+	// if opts.ConfigFile != _EMPTY_ {
+	// 	s.Noticef("Using configuration file: %s", opts.ConfigFile)
+	// }
+	// ** removed by memphis
 
 	hasOperators := len(opts.TrustedOperators) > 0
 	if hasOperators {
