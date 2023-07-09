@@ -338,7 +338,7 @@ export const tieredStorageTimeValidator = (value) => {
 
 export const replicasConvertor = (value, stringToNumber) => {
     if (isCloud()) {
-        value = 3
+        value = 3;
     }
     if (stringToNumber) {
         switch (value) {
@@ -420,6 +420,6 @@ export const isCloud = () => {
         const cloud_env = process.env.REACT_APP_CLOUD === 'true';
         return cloud_env;
     } else {
-        return false;
+        return true;
     }
 };

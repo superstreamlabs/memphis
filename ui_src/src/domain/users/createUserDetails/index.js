@@ -144,7 +144,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                 placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
                                 type="text"
                                 radiusType="semi-round"
-                                maxLength={20}
+                                maxLength={60}
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"
