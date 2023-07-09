@@ -100,7 +100,7 @@ func handleConnectMessage(client *client) error {
 		return errors.New("missing username or connectionId")
 	}
 
-	user, err := memphis_cache.GetUser(username, client.acc.GetName())
+	user, err := memphis_cache.GetUser(username, client.acc.GetName(), client.Errorf)
 	if err != nil {
 		client.Errorf("[tenant:%v][user: %v] could not retrive user model from cache or db error: %v", client.acc.GetName(), username, err)
 		return err

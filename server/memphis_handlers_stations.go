@@ -1196,21 +1196,11 @@ func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string,
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
-	deletedCount := 0
 	for _, member := range members {
 		if member.IsActive {
 			return true, false
 		}
-
-		if member.IsDeleted {
-			deletedCount++
-		}
 	}
-
-	if len(members) == deletedCount {
-		return false, true
-	}
-
 	return false, false
 }
 
