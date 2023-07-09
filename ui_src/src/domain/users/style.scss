@@ -65,9 +65,6 @@
                     max-width: 70px;
                 }
             }
-            .full-name{
-                text-transform: capitalize;
-            }
             .created-column{
                 font-family: 'Inter' !important;
                 color: rgba(74, 73, 92, 0.8);
@@ -76,6 +73,9 @@
                 display: flex;
                 gap: 10px;
                 .action-button{
+                    display: flex;
+                    position: relative;
+                    align-items: center;
                     img{
                         margin-right: 5px;
                     }
