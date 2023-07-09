@@ -42,7 +42,9 @@
     "recharts": "^2.1.16",
     "sass": "^1.49.0",
     "uuid": "^9.0.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "rdk":"6.4.4"
+
   },
   "scripts": {
     "start": "PORT=5555 react-scripts start",
