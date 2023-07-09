@@ -420,6 +420,6 @@ export const isCloud = () => {
         const cloud_env = process.env.REACT_APP_CLOUD === 'true';
         return cloud_env;
     } else {
-        return true;
+        return false;
     }
 };
