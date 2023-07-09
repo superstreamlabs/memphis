@@ -2767,7 +2767,7 @@ func DeleteConsumer(connectionId, name string, stationId int) (bool, []models.Co
 		return false, []models.Consumer{}, err
 	}
 	defer conn.Release()
-	query := ` DELETE FROM consumers WHERE connection_id = $1 name = $2 AND station_id = $3 RETURNING *`
+	query := ` DELETE FROM consumers WHERE connection_id = $1 AND name = $2 AND station_id = $3 RETURNING *`
 	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
 		return false, []models.Consumer{}, err
