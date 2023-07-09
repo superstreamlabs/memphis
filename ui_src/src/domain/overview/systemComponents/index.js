@@ -68,7 +68,7 @@ const SysComponents = () => {
                             <Tree
                                 key={`tree-node${i}`}
                                 blockNode
-                                showLine={childrenData?.length > 0}
+                                // showLine={childrenData?.length > 0} //currently disabled due to bug in antd
                                 selectable={childrenData?.length > 0}
                                 expandedKeys={expandedNodes}
                                 switcherIcon={({ expanded }) =>
