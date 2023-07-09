@@ -174,20 +174,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	deleteRequest := models.DeleteUserRequest{
-		Usernames:  users_list,
-		TenantName: tenantName,
-	}
-
-	msg, err := json.Marshal(deleteRequest)
-	if err != nil {
-		return err
-	}
-
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		return err
-	}
+	SendUserCacheUpdates(users_list, tenantName)
 
 	err = db.DeleteDlsMsgsByTenant(tenantName)
 	if err != nil {
@@ -790,6 +777,27 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		return
 	default:
 		c.IndentedJSON(200, gin.H{})
+		return
+	}
+}
+
+func SendUserCacheUpdates(usernames []string, tenantName string) {
+	deleteRequest := models.CacheUpdateRequest{
+		CacheType:  "user",
+		Operation:  "delete",
+		Usernames:  usernames,
+		TenantName: tenantName,
+	}
+
+	msg, err := json.Marshal(deleteRequest)
+	if err != nil {
+		serv.Errorf("[tenant: %v] user cache at SendUserCacheUpdates json.Marshal: %v", tenantName, err.Error())
+		return
+	}
+
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("[tenant: %v]user cache at SendUserCacheUpdates: error sending internal msg : %v", tenantName, err.Error())
 		return
 	}
 }

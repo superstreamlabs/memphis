@@ -107,7 +107,7 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
 
-	err = memphis_cache.InitializeUserCache()
+	err = memphis_cache.InitializeUserCache(s.Errorf)
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}

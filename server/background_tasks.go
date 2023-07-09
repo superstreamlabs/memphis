@@ -33,7 +33,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
-const USER_CACHE_DELETE_SUBJ = "$memphis_user_cache_delete"
+const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -69,20 +69,27 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 	return nil
 }
 
-func (s *Server) ListenForUserCacheDeletion() error {
-	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, USER_CACHE_DELETE_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+func (s *Server) ListenForCacheUpdates() error {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, CACHE_UDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			var delete_req models.DeleteUserRequest
-			err := json.Unmarshal(msg, &delete_req)
+			var cache_req models.CacheUpdateRequest
+			err := json.Unmarshal(msg, &cache_req)
 			if err != nil {
 				s.Errorf("ListenForUserCacheDeletion at Unmarshal could not delete from cache, error: %v", err)
 				return
 			}
-			err = memphis_cache.DeleteUser(delete_req.TenantName, delete_req.Usernames)
-			if err != nil {
-				s.Errorf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
-				return
+
+			switch cache_req.CacheType {
+			case "user":
+				if cache_req.Operation == "delete" {
+					err = memphis_cache.DeleteUser(cache_req.TenantName, cache_req.Usernames)
+					if err != nil {
+						s.Errorf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
+						return
+					}
+				}
 			}
+
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -281,9 +288,9 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
-	err = s.ListenForUserCacheDeletion()
+	err = s.ListenForCacheUpdates()
 	if err != nil {
-		return errors.New("Failed to subscribing for cache deletion" + err.Error())
+		return errors.New("Failed to subscribing for cache updates" + err.Error())
 	}
 
 	go s.ConsumeUnackedMsgs()
