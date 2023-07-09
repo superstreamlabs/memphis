@@ -13,13 +13,17 @@ import (
 
 var UCache UserCache
 var configuration = conf.GetConfig()
+var logger func(string, ...interface{})
 
 type UserCache struct {
 	Cache *MemphisCache
 }
 
-func InitializeUserCache() error {
-	cache, err := New(context.Background(), configuration.USER_CACHE_LIFE_MINUTES, configuration.USER_CACHE_CLEAN_MINUTES, configuration.USER_CACHE_MAX_SIZE)
+func InitializeUserCache(logger_func func(string, ...interface{})) error {
+
+	logger = logger_func
+
+	cache, err := New(context.Background(), configuration.USER_CACHE_LIFE_MINUTES, configuration.USER_CACHE_CLEAN_MINUTES, configuration.USER_CACHE_MAX_SIZE_MB)
 	if err != nil {
 		UCache = UserCache{Cache: cache}
 		return err
@@ -47,33 +51,33 @@ func InitializeUserCache() error {
 
 }
 
-func GetUser(username, tenentName string, logger func(string, ...interface{})) (models.User, error) {
+func GetUser(username, tenentName string) (bool, models.User, error) {
 	var user models.User
 	data, err := UCache.Cache.Get(fmt.Sprint("%v:%v", username, tenentName))
 	if err != nil {
-		_, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
+		exist, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
 		if db_err != nil {
-			return models.User{}, db_err
+			return exist, models.User{}, db_err
 		}
 		if err == bigcache.ErrEntryNotFound {
 			SetUser(userFromDB)
-			return userFromDB, nil
+			return exist, userFromDB, nil
 		}
 		logger("[tenant: %v][user: %v]error while using cache, error: %v", tenentName, username, err)
-		return userFromDB, nil
+		return exist, userFromDB, nil
 	}
 
 	err = json.Unmarshal(data, &user)
 	if err != nil {
-		_, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
+		exist, userFromDB, db_err := db.GetUserByUsername(username, tenentName)
 		if db_err != nil {
-			return models.User{}, db_err
+			return exist, models.User{}, db_err
 		}
 		logger("[tenant: %v][user: %v]error while using unmarshal in the cache, error: %v", tenentName, username, err)
-		return userFromDB, nil
+		return exist, userFromDB, nil
 	}
 
-	return user, nil
+	return true, user, nil
 
 }
 

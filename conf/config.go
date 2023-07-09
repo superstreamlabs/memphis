@@ -48,7 +48,7 @@ type Configuration struct {
 	INSTALLATION_SOURCE      string
 	USER_CACHE_LIFE_MINUTES  int
 	USER_CACHE_CLEAN_MINUTES int
-	USER_CACHE_MAX_SIZE      int
+	USER_CACHE_MAX_SIZE_MB   int
 }
 
 func GetConfig() Configuration {
@@ -87,8 +87,8 @@ func GetConfig() Configuration {
 	if configuration.USER_CACHE_LIFE_MINUTES == 0 {
 		configuration.USER_CACHE_LIFE_MINUTES = 10
 	}
-	if configuration.USER_CACHE_MAX_SIZE == 0 {
-		configuration.USER_CACHE_MAX_SIZE = 10
+	if configuration.USER_CACHE_MAX_SIZE_MB == 0 {
+		configuration.USER_CACHE_MAX_SIZE_MB = 10
 	}
 
 	gin.SetMode(gin.ReleaseMode)

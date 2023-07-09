@@ -1369,24 +1369,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	deleteRequest := models.DeleteUserRequest{
-		Usernames:  []string{user.Username},
-		TenantName: user.TenantName,
-	}
-
-	msg, err := json.Marshal(deleteRequest)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]RemoveUser at json.Marshal: Delete User: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), USER_CACHE_DELETE_SUBJ, _EMPTY_, nil, msg, true)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: Delete User : %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
+	SendUserCacheUpdates([]string{user.Username}, user.TenantName)
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
