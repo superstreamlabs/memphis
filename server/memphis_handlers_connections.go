@@ -106,7 +106,7 @@ func handleConnectMessage(client *client) error {
 		return err
 	}
 	if !exist {
-		client.Errorf("[tenant:%v][user: %v] handleConnectMessage user doesn't exist in db : %v", client.acc.GetName(), username, err)
+		client.Warnf("[tenant:%v][user: %v] handleConnectMessage user doesn't exist in db : %v", client.acc.GetName(), username, err)
 		return fmt.Errorf("user doesn't exist")
 	}
 
