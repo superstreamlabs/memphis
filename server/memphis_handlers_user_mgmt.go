@@ -776,8 +776,8 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 }
 
 func validateUsername(username string) error {
-	if len(username) > 20 {
-		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	if len(username) > 60 {
+		return errors.New("username exceeds the maximum allowed length of 60 characters")
 	}
 	re := regexp.MustCompile("^[a-z0-9_.-]*$")
 	validName := re.MatchString(username)

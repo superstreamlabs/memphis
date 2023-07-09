@@ -41,7 +41,7 @@ type Image struct {
 }
 
 type AddUserSchema struct {
-	Username     string `json:"username" binding:"required,min=1,max=60"`
+	Username     string `json:"username" binding:"required,min=1"`
 	Password     string `json:"password"`
 	UserType     string `json:"user_type" binding:"required"`
 	AvatarId     int    `json:"avatar_id"`
