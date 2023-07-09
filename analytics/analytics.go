@@ -146,6 +146,14 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 		if err != nil {
 			return
 		}
-		memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+		if memphisConnection != nil {
+			err := memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+			if err != nil { // retry
+				memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
+				if err == nil {
+					memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+				}
+			}
+		}
 	}()
 }

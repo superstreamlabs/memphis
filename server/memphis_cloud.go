@@ -1826,19 +1826,20 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
+	return true, nil
+	// exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	// if err != nil {
+	// 	return false, err
+	// }
+	// if !exist {
+	// 	return false, nil
+	// }
 
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	// if systemKey.Value == "true" {
+	// 	return true, nil
+	// } else {
+	// 	return false, nil
+	// }
 }
 
 func TenantSeqInitialize() error {
