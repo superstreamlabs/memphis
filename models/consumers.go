@@ -24,11 +24,11 @@ type Consumer struct {
 	ConsumersGroup      string    `json:"consumers_group"`
 	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
 	IsActive            bool      `json:"is_active"`
-	UpdatedAt           time.Time `json:"updated_at" `
 	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
 	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
 	LastMessages        int64     `json:"last_messages"`
 	TenantName          string    `json:"tenant_name"`
+	UpdatedAt           time.Time `json:"updated_at" `
 }
 
 type ExtendedConsumer struct {

@@ -1355,11 +1355,8 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	COALESCE(c.connection_id, ''),
 	COALESCE(c.consumers_group, ''),
 	COALESCE(c.max_ack_time_ms, 0), 
-	COALESCE(c.created_by, 0), 
-	COALESCE(c.created_by_username, ''), 
 	COALESCE(c.is_active, false), 
-	COALESCE(c.created_at, CURRENT_TIMESTAMP), 
-	COALESCE(c.is_deleted, false), 
+	COALESCE(c.updated_at, CURRENT_TIMESTAMP), 
 	COALESCE(c.max_msg_deliveries, 0), 
 	COALESCE(c.start_consume_from_seq, 0),
 	COALESCE(c.last_msgs, 0) 

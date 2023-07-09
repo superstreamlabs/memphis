@@ -113,10 +113,13 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	user, err := memphis_cache.GetUser(userName, tenantName, s.Errorf)
+	exist, user, err := memphis_cache.GetUser(userName, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 		return err
+	} else if !exist {
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUser from cache: user does not exist in db %v : %v", tenantName, consumerName, cStationName, err.Error())
+		return fmt.Errorf("user does not exist in db")
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
