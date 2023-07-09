@@ -286,7 +286,7 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		err = fmt.Errorf("getBucketAcl error: you don't have permission to get the access control list of a bucket %s ", err.Error())
+		err = fmt.Errorf("getBucketAcl error: you don’t have enough permissions to get the access to bucket %s ", err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
