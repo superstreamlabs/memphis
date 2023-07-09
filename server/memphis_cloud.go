@@ -98,7 +98,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if created && configuration.ANALYTICS == "true" {
+	if created {
 		time.AfterFunc(5*time.Second, func() {
 			var deviceIdValue string
 			installationType := "stand-alone-k8s"
@@ -1829,6 +1829,9 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
+	if configuration.ENV == "staging" {
+		return false, nil
+	}
 	return true, nil
 	// exist, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
 	// if err != nil {
