@@ -93,7 +93,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 	}
 	hashedPwdString := string(hashedPwd)
 
-	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, MEMPHIS_GLOBAL_ACCOUNT)
+	created, err := db.UpsertUserUpdatePassword(ROOT_USERNAME, "root", hashedPwdString, "", false, 1, serv.MemphisGlobalAccountString())
 	if err != nil {
 		return err
 	}
@@ -1135,12 +1135,6 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		}
 	}
 
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
-	}
-
 	env := "K8S"
 	if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {
 		env = "docker"
@@ -1165,6 +1159,11 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 	}
 
 	serv.Noticef("[tenant: %v][user: %v] has logged in", user.TenantName, user.Username)
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-login")
+	}
 
 	domain := ""
 	secure := false
@@ -1242,7 +1241,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
-	user.TenantName = strings.ToLower(user.TenantName)
+	if user.TenantName != DEFAULT_GLOBAL_ACCOUNT {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
 	username := strings.ToLower(body.Username)
 	usernameError := validateUsername(username)
 	if usernameError != nil {
@@ -1454,7 +1455,9 @@ func (umh UserMgmtHandler) RemoveMyUser(c *gin.Context) {
 
 	username := strings.ToLower(user.Username)
 	tenantName := user.TenantName
-	user.TenantName = strings.ToLower(user.TenantName)
+	if user.TenantName != DEFAULT_GLOBAL_ACCOUNT {
+		user.TenantName = strings.ToLower(user.TenantName)
+	}
 	err = removeTenantResources(tenantName, user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveMyUser at removeTenantResources: User %v: %v", tenantName, username, username, err.Error())
@@ -1491,7 +1494,7 @@ func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 		flag = "true"
 	}
 
-	err := db.EditConfigurationValue("analytics", flag, MEMPHIS_GLOBAL_ACCOUNT)
+	err := db.EditConfigurationValue("analytics", flag, serv.MemphisGlobalAccountString())
 	if err != nil {
 		serv.Errorf("EditAnalytics: " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1610,7 +1613,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	username := user.Username
-	_, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	_, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1697,7 +1700,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 	durableName := "$memphis_fetch_throughput_consumer_" + uid
 	var msgs []StoredMsg
 	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1)
+	streamInfo, err := serv.memphisStreamInfo(serv.MemphisGlobalAccountString(), throughputStreamNameV1)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1715,7 +1718,7 @@ func (mh MonitoringHandler) GetBrokersThroughputs(tenantName string) ([]models.B
 		Durable:       durableName,
 		Replicas:      1,
 	}
-	err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, &cc)
+	err = serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, &cc)
 	if err != nil {
 		return throughputs, err
 	}
@@ -1765,7 +1768,7 @@ cleanup:
 	timer.Stop()
 	serv.unsubscribeOnAcc(serv.MemphisGlobalAccount(), sub)
 	time.AfterFunc(500*time.Millisecond, func() {
-		serv.memphisRemoveConsumer(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamNameV1, durableName)
+		serv.memphisRemoveConsumer(serv.MemphisGlobalAccountString(), throughputStreamNameV1, durableName)
 	})
 
 	sort.Slice(msgs, func(i, j int) bool { // old to new
@@ -1827,7 +1830,7 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 
 func shouldSendAnalytics() (bool, error) {
 	return true, nil
-	// exist, systemKey, err := db.GetSystemKey("analytics", MEMPHIS_GLOBAL_ACCOUNT)
+	// exist, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
 	// if err != nil {
 	// 	return false, err
 	// }

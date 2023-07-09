@@ -118,7 +118,7 @@ func (s *Server) ListenForConfigReloadEvents() error {
 }
 
 func (s *Server) ListenForNotificationEvents() error {
-	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), NOTIFICATION_EVENTS_SUBJ, NOTIFICATION_EVENTS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
@@ -148,7 +148,7 @@ func (s *Server) ListenForNotificationEvents() error {
 }
 
 func (s *Server) ListenForPoisonMsgAcks() error {
-	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
@@ -285,7 +285,7 @@ func (s *Server) uploadMsgsToTier2Storage() {
 				MaxAckPending: -1,
 				MaxDeliver:    10,
 			}
-			err := serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
+			err := serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
 			if err != nil {
 				serv.Errorf("Failed add tiered storage consumer: %v", err.Error())
 				return
@@ -446,7 +446,7 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 }
 
 func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(MEMPHIS_GLOBAL_ACCOUNT, SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 			if err != nil {

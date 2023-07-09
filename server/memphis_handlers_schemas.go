@@ -839,19 +839,19 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", tenantName, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at json.Unmarshal - failed creating Schema: %v", tenantName, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
 	err = validateSchemaContent(csr.SchemaContent, csr.Type)
 	if err != nil {
 		s.Warnf("[tenant: %v]createSchemaDirect at validateSchemaContent- Schema is not in the right %v format, error: %v", tenantName, csr.Type, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
@@ -859,7 +859,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		csr.MessageStructName, err = getProtoMessageStructName(csr.SchemaContent)
 		if err != nil {
 			s.Errorf("[tenant: %v]createSchemaDirect at getProtoMessageStructName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		}
 	}
 
@@ -867,7 +867,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		err := validateMessageStructName(csr.MessageStructName)
 		if err != nil {
 			s.Warnf("[tenant: %v]createSchemaDirect at validateMessageStructName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 			return
 		}
 	}
@@ -875,7 +875,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	exist, existedSchema, err := db.GetSchemaByName(csr.Name, tenantName)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect at GetSchemaByName- failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
@@ -884,15 +884,15 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 			err = s.updateSchemaVersion(existedSchema.ID, tenantName, csr)
 			if err != nil {
 				s.Errorf("[tenant: %v]createSchemaDirect at updateSchemaVersion - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-				respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+				respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 				return
 			}
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 			return
 		} else {
 			s.Warnf("[tenant: %v]createSchemaDirect: %v Bad Schema Type", tenantName, csr.Name)
 			badTypeError := fmt.Sprintf("%v already exist with type - %v", csr.Name, existedSchema.Type)
-			respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, errors.New(badTypeError), &resp)
+			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, errors.New(badTypeError), &resp)
 			return
 		}
 	}
@@ -900,11 +900,11 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	err = s.createNewSchema(csr, tenantName)
 	if err != nil {
 		s.Errorf("[tenant: %v]createSchemaDirect - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
-		respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
 
-	respondWithRespErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err, &resp)
+	respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 
 }
 

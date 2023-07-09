@@ -15,7 +15,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/conf"
 	"memphis/models"
 	"reflect"
 	"strconv"
@@ -72,7 +71,7 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 					seqNumber := strconv.Itoa(int(seq))
 					msgId["msg-id"] = streamName + seqNumber
 					if tenantName == "" {
-						tenantName = conf.MemphisGlobalAccountName
+						tenantName = serv.MemphisGlobalAccountString()
 					}
 					subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)
 					// TODO: if the stream is not exists save the messages in buffer

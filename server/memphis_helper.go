@@ -321,7 +321,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// system logs stream
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
 			Retention:    LimitsPolicy,
@@ -347,7 +347,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -381,7 +381,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, tieredStorageStream, &cc)
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -391,7 +391,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
 			Retention:    WorkQueuePolicy,
@@ -418,7 +418,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
-		err = serv.memphisAddConsumer(MEMPHIS_GLOBAL_ACCOUNT, dlsUnackedStream, &cc)
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsUnackedStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
@@ -428,7 +428,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
-		err = s.memphisDeleteStream(MEMPHIS_GLOBAL_ACCOUNT, throughputStreamName)
+		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
 		}
@@ -436,7 +436,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
-		err = s.memphisAddStream(MEMPHIS_GLOBAL_ACCOUNT, &StreamConfig{
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
 			Retention:    LimitsPolicy,
@@ -1246,7 +1246,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 		tenantName = ci.Account
 		message = message[len(hdrLine)+len(ClientInfoHdr)+len(hdr)+6:]
 	} else {
-		tenantName = MEMPHIS_GLOBAL_ACCOUNT
+		tenantName = s.MemphisGlobalAccountString()
 	}
 
 	return tenantName, message, nil
@@ -1434,6 +1434,10 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		}
 		stationsMap[station.ID] = station
 		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		if err != nil {
+			return err
+		}
+		err = s.RemoveStream(DEFAULT_SYSTEM_ACCOUNT, stationName.Intern())
 		if err != nil {
 			return err
 		}
