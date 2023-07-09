@@ -1861,7 +1861,7 @@ func validateReplicas(replicas int) error {
 	return nil
 }
 
-func (s *Server) Force3ReplicationsPerStation() error {
+func (s *Server) Force3ReplicationsForExistingStations() error {
 	return nil
 }
 
