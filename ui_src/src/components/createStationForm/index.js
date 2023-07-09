@@ -101,7 +101,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
     useEffect(() => {
-        getAvailableReplicas();
+        if (!isCloud()) {
+            getAvailableReplicas();
+        }
         getAllSchemas();
         getIntegration();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
@@ -171,7 +173,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     break;
                 default:
                     replicas = ['No HA (1)'];
-
                     break;
             }
             setActualPods(replicas);
@@ -286,31 +287,32 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                <div className="replicas-container">
-                    <TitleComponent
-                        headerTitle="Replicas"
-                        typeTitle="sub-header"
-                        headerDescription="Amount of mirrors per message."
-                        learnMore={true}
-                        link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                    />
-                    <div>
-                        <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
-                            <SelectComponent
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                radiusType="semi-round"
-                                height="40px"
-                                popupClassName="select-options"
-                                options={actualPods}
-                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                onChange={(e) => getStarted && updateFormState('replicas', e)}
-                                disabled={!allowEdit}
-                            />
-                        </Form.Item>
-                    </div>
-                </div>
+                {isCloud() ? null :
+                    <div className="replicas-container">
+                        <TitleComponent
+                            headerTitle="Replicas"
+                            typeTitle="sub-header"
+                            headerDescription="Amount of mirrors per message."
+                            learnMore={true}
+                            link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                        />
+                        <div>
+                            <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
+                                <SelectComponent
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    radiusType="semi-round"
+                                    height="40px"
+                                    popupClassName="select-options"
+                                    options={actualPods}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                    onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                        </div>
+                    </div>}
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>

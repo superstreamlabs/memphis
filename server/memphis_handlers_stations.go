@@ -98,17 +98,6 @@ func validateStorageType(storageType string) error {
 	return nil
 }
 
-func getStationReplicas(replicas int) int {
-	if replicas <= 0 {
-		return 1
-	} else if replicas == 2 || replicas == 4 {
-		return 3
-	} else if replicas > 5 {
-		return 5
-	}
-	return replicas
-}
-
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
 	if idempotencyWindow > 86400000 { // 24 hours
 		return errors.New("idempotency window can not exceed 24 hours")
@@ -713,7 +702,6 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 }
 
 func (sh StationsHandler) CreateStation(c *gin.Context) {
-
 	var body models.CreateStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
