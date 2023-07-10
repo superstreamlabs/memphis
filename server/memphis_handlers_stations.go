@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"memphis/analytics"
-	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -673,58 +672,6 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
 	}
-}
-
-func (sh StationsHandler) GetAllStationsDetailsPerTenant(tenantName []string) (map[string]StationsDetailsPerAccount, error) {
-	var stations []models.ExtendedStation
-	totalMessages := uint64(0)
-	StationsDetailsPerTenant := make(map[string]StationsDetailsPerAccount)
-	for _, tenantName := range tenantName {
-		if tenantName == "" {
-			tenantName = conf.MemphisGlobalAccountName
-		}
-		totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
-		if err != nil {
-			return map[string]StationsDetailsPerAccount{}, err
-		}
-
-		stations, err = db.GetAllStationsDetailsPerTenant(tenantName)
-		if err != nil {
-			return map[string]StationsDetailsPerAccount{}, err
-		}
-		if len(stations) == 0 {
-			res := StationsDetailsPerAccount{
-				TotalMessages:    0,
-				TotalDlsMessages: 0,
-				TotalStations:    0,
-			}
-			StationsDetailsPerTenant[tenantName] = res
-		} else {
-			acc, err := sh.S.lookupAccount(tenantName)
-			if err != nil {
-				return map[string]StationsDetailsPerAccount{}, err
-			}
-			accName := acc.Name
-			allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
-			if err != nil {
-				return map[string]StationsDetailsPerAccount{}, err
-			}
-			for _, info := range allStreamInfo {
-				streamName := info.Config.Name
-				if !strings.Contains(streamName, "$memphis") {
-					totalMessages += info.State.Msgs
-				}
-			}
-			stationDetailsPerAccountRes := StationsDetailsPerAccount{
-				TotalMessages:    totalMessages,
-				TotalDlsMessages: totalDlsMessages,
-				TotalStations:    len(stations),
-			}
-
-			StationsDetailsPerTenant[tenantName] = stationDetailsPerAccountRes
-		}
-	}
-	return StationsDetailsPerTenant, nil
 }
 
 func (sh StationsHandler) GetStations(c *gin.Context) {
