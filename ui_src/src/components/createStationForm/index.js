@@ -594,6 +594,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     storageTierTwoOptions.map((value) => {
                                         return (
                                             <SelectCheckBox
+                                                hideCircle={true}
                                                 selectOptions={storageTierTwoOptions}
                                                 allowEdit={allowEdit}
                                                 handleOnClick={(e) =>
