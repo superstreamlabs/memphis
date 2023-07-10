@@ -42,6 +42,7 @@ import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
+import Copy from '../../components/copy';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -213,10 +214,12 @@ function OverView() {
                                         <div className="hostname">
                                             <p>Account ID : </p>
                                             <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
+                                            <Copy width="12" text={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                         </div>
                                         <div className="hostname">
                                             <p>Broker Hostname : </p>
                                             <span>{host}</span>
+                                            <Copy width="12" text={host} />
                                         </div>
                                     </div>
                                 )}
