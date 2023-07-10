@@ -146,7 +146,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = db.DeleteConsumersByStationID(station.ID)
+	err = db.DeleteAllConsumersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
@@ -1433,18 +1433,19 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(station.TenantName, stationName, cg.CgName)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+				cgInfo = &ConsumerInfo{
+					NumPending:    0,
+					NumAckPending: 0,
+				}
 			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+				cgMembers = []models.CgMember{models.CgMember{
+					MaxAckTimeMs:     0,
+					MaxMsgDeliveries: 0,
+				}}
 			}
 
 			isActive, isDeleted := getCgStatus(cgMembers)

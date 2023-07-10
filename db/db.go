@@ -2735,11 +2735,12 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `
-		SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
-		LEFT JOIN stations AS s ON s.id = c.station_id
-		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE c.station_id = $1 ORDER BY c.name, c.updated_at DESC`
+	query := `SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
+				FROM consumers AS c
+				LEFT JOIN stations AS s ON s.id = c.station_id
+				LEFT JOIN connections AS con ON con.id = c.connection_id
+				WHERE c.station_id = $1 ORDER BY c.name, c.updated_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
@@ -2759,35 +2760,63 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func DeleteConsumer(connectionId, name string, stationId int) (bool, []models.Consumer, error) {
+func DeleteConsumeByNameStationIDAndConnID(connectionId, name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, []models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
-	query := ` DELETE FROM consumers WHERE connection_id = $1 AND name = $2 AND station_id = $3 RETURNING *`
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE connection_id = $1 AND name = $2 AND station_id = $3 LIMIT 1) RETURNING *`
 	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
-		return false, []models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, connectionId, name, stationId)
 	if err != nil {
-		return false, []models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	defer rows.Close()
 	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
 	if err != nil {
-		return false, []models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
-		return false, []models.Consumer{}, err
+		return false, models.Consumer{}, err
 	}
-	return true, consumers, nil
+	return true, consumers[0], nil
 }
 
-func DeleteConsumersByStationID(stationId int) error {
+func DeleteConsumerByNameAndStationId(name string, stationId int) (bool, models.Consumer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	defer conn.Release()
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE name = $1 AND station_id = $ LIMIT 1) RETURNING *`
+	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, name, stationId)
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	defer rows.Close()
+	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Consumer])
+	if err != nil {
+		return false, models.Consumer{}, err
+	}
+	if len(consumers) == 0 {
+		return false, models.Consumer{}, err
+	}
+	return true, consumers[0], nil
+}
+
+func DeleteAllConsumersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2904,21 +2933,17 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	query := `
 		SELECT
 			c.name,
-			con.client_address,
+			c.connection_id,
 			c.is_active,
-			c.is_deleted,
-			c.created_by,
-			c.created_by_username,
 			c.max_msg_deliveries,
 			c.max_ack_time_ms
 		FROM
 			consumers AS c
-			INNER JOIN connections AS con ON c.connection_id = con.id
 		WHERE
 			c.consumers_group = $1
 			AND c.station_id = $2
 		ORDER BY
-			c.created_at DESC
+			c.updated_at DESC
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumer_group_members", query)
 	if err != nil {
@@ -5447,27 +5472,6 @@ func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {
 		return false, models.DlsMessage{}, nil
 	}
 	return true, dlsMsgs[0], nil
-}
-
-func RemovePoisonedCg(stationId int, cgName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_poisoned_cg", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetTotalDlsMessages(tenantName string) (uint64, error) {

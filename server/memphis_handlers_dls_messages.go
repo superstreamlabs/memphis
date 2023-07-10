@@ -260,11 +260,17 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		for _, v := range pCg {
 			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
-				return models.DlsMessageResponse{}, err
+				cgInfo = &ConsumerInfo{
+					NumPending:    0,
+					NumAckPending: 0,
+				}
 			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
 			if err != nil {
-				return models.DlsMessageResponse{}, err
+				cgMembers = []models.CgMember{models.CgMember{
+					MaxAckTimeMs:     0,
+					MaxMsgDeliveries: 0,
+				}}
 			}
 			pc.IsActive, pc.IsDeleted = getCgStatus(cgMembers)
 
@@ -347,11 +353,17 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		}
 		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
-			return []models.PoisonedCg{}, err
+			cgInfo = &ConsumerInfo{
+				NumPending:    0,
+				NumAckPending: 0,
+			}
 		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
 		if err != nil {
-			return []models.PoisonedCg{}, err
+			cgMembers = []models.CgMember{models.CgMember{
+				MaxAckTimeMs:     0,
+				MaxMsgDeliveries: 0,
+			}}
 		}
 		poisonedCg.IsActive, poisonedCg.IsDeleted = getCgStatus(cgMembers)
 

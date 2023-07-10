@@ -34,13 +34,14 @@ type Consumer struct {
 type ExtendedConsumer struct {
 	ID               int       `json:"id"`
 	Name             string    `json:"name"`
-	UpdatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 	IsActive         bool      `json:"is_active"`
 	ClientAddress    string    `json:"client_address"`
 	ConsumersGroup   string    `json:"consumers_group"`
 	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
 	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
 	StationName      string    `json:"station_name,omitempty"`
+	Count            int       `json:"count"`
 }
 
 type LightConsumer struct {
@@ -82,13 +83,11 @@ type DestroyConsumerSchema struct {
 }
 
 type CgMember struct {
-	Name              string `json:"name"`
-	ClientAddress     string `json:"client_address"`
-	IsActive          bool   `json:"is_active"`
-	CreatedBy         int    `json:"created_by"`
-	CreatedByUsername string `json:"created_by_username"`
-	MaxMsgDeliveries  int    `json:"max_msg_deliveries"`
-	MaxAckTimeMs      int64  `json:"max_ack_time_ms"`
+	Name             string `json:"name"`
+	ConnectionID     string `json:"Connection_id"`
+	IsActive         bool   `json:"is_active"`
+	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+	MaxAckTimeMs     int64  `json:"max_ack_time_ms"`
 }
 
 type DelayedCg struct {
