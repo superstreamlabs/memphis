@@ -32,7 +32,7 @@ import Loader from '../../../components/loader';
 import { isCloud } from '../../../services/valueConvertor';
 
 const Integrations = () => {
-    const [dispatch] = useContext(Context);
+    const [state, dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrationRequest, setIntegrationRequest] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');

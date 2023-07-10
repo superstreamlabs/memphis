@@ -28,7 +28,7 @@ const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
-    const [dispatch] = useContext(Context);
+    const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 's3',
         keys: {
@@ -64,7 +64,6 @@ const S3Integration = ({ close, value }) => {
         Promise.all(promises).then(() => {
             setImagesLoaded(true);
         });
-
     }, []);
 
     const updateKeysState = (field, value) => {
@@ -130,6 +129,7 @@ const S3Integration = ({ close, value }) => {
             setLoadingSubmit(false);
         }
     };
+
     const disconnect = async () => {
         setLoadingDisconnect(true);
         try {
@@ -192,9 +192,9 @@ const S3Integration = ({ close, value }) => {
                             <div className="api-key">
                                 <p>Secret access key</p>
                                 <span className="desc">
-                                    When you use S3 compatible storage programmatically, you provide your access keys so that the provider can verify your identity in programmatic calls. Access
-                                    keys can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user, provider provided keys or credentials.{' '}
-                                    <br />
+                                    When you use S3 compatible storage programmatically, you provide your access keys so that the provider can verify your identity in
+                                    programmatic calls. Access keys can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user,
+                                    provider provided keys or credentials. <br />
                                     <b>Memphis encrypts all stored information using Triple DES algorithm</b>
                                 </span>
                                 <Form.Item
@@ -249,106 +249,111 @@ const S3Integration = ({ close, value }) => {
                                     />
                                 </Form.Item>
                             </div>
-                            <div className="select-field">
-                                <p>Region</p>
-                                <Form.Item
-                                    name="region"
-                                    initialValue={formFields?.keys?.region}
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please insert region'
-                                        }
-                                    ]}
-                                >
-                                    <Input
-                                        type="text"
-                                        placeholder="us-east-1"
-                                        fontSize="12px"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        radiusType="semi-round"
-                                        height="40px"
-                                        value={formFields?.keys?.region}
-                                        onBlur={(e) => updateKeysState('region', e.target.value)}
-                                        onChange={(e) => updateKeysState('region', e.target.value)}
-                                    />
-                                </Form.Item>
+                            <div className="flex-fields">
+                                <div className="input-field">
+                                    <p>Region</p>
+                                    <Form.Item
+                                        name="region"
+                                        initialValue={formFields?.keys?.region}
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Please insert region'
+                                            }
+                                        ]}
+                                    >
+                                        <Input
+                                            type="text"
+                                            placeholder="us-east-1"
+                                            fontSize="12px"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            radiusType="semi-round"
+                                            height="40px"
+                                            value={formFields?.keys?.region}
+                                            onBlur={(e) => updateKeysState('region', e.target.value)}
+                                            onChange={(e) => updateKeysState('region', e.target.value)}
+                                        />
+                                    </Form.Item>
+                                </div>
+                                <div className="input-field">
+                                    <p>Bucket name</p>
+                                    <Form.Item
+                                        name="bucket_name"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: 'Please insert bucket name'
+                                            }
+                                        ]}
+                                        initialValue={formFields?.keys?.bucket_name}
+                                    >
+                                        <Input
+                                            placeholder="Insert your bucket name"
+                                            type="text"
+                                            fontSize="12px"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
+                                            onChange={(e) => updateKeysState('bucket_name', e.target.value)}
+                                            value={formFields.keys?.bucket_name}
+                                        />
+                                    </Form.Item>
+                                </div>
                             </div>
-                            <div className="input-field">
-                                <p>Bucket name</p>
-                                <Form.Item
-                                    name="bucket_name"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please insert bucket name'
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.bucket_name}
-                                >
-                                    <Input
-                                        placeholder="Insert your bucket name"
-                                        type="text"
-                                        fontSize="12px"
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        onBlur={(e) => updateKeysState('bucket_name', e.target.value)}
-                                        onChange={(e) => updateKeysState('bucket_name', e.target.value)}
-                                        value={formFields.keys?.bucket_name}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="input-field">
-                                <p>Endpoint URL (optional)</p>
-                                <Form.Item
-                                    name="url"
-                                    rules={[
-                                        {
-                                            required: false,
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.url}
-                                >
-                                    <Input
-                                        placeholder="Insert custom S3 API endpoint url (Optional; leave empty for AWS)"
-                                        type="text"
-                                        fontSize="12px"
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        onBlur={(e) => updateKeysState('url', e.target.value)}
-                                        onChange={(e) => updateKeysState('url', e.target.value)}
-                                        value={formFields.keys?.url}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="input-field">
-                                <p>Use Path Style</p>
-                                <Form.Item
-                                    name="s3_path_style"
-                                    rules={[
-                                        {
-                                            required: false,
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.s3_path_style}
-                                >
-                                    <>
-                                        <Checkbox
-                                            defaultChecked={false}
-                                            checkName="s3_path_style"
-                                            checked={formFields.keys?.s3_path_style === "1" ? true : false}
-                                            onChange={(e) => updateKeysState('s3_path_style', e.target.checked ? "1" : "0")}
-                                        /> Enable
-                                    </>
-                                </Form.Item>
+                            <div className="flex-fields">
+                                <div className="input-field">
+                                    <p>Endpoint URL (optional)</p>
+                                    <Form.Item
+                                        name="url"
+                                        rules={[
+                                            {
+                                                required: false
+                                            }
+                                        ]}
+                                        initialValue={formFields?.keys?.url}
+                                    >
+                                        <Input
+                                            placeholder="Insert custom S3 API endpoint url (Optional; leave empty for AWS)"
+                                            type="text"
+                                            fontSize="12px"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            onBlur={(e) => updateKeysState('url', e.target.value)}
+                                            onChange={(e) => updateKeysState('url', e.target.value)}
+                                            value={formFields.keys?.url}
+                                        />
+                                    </Form.Item>
+                                </div>
+                                <div className="input-field">
+                                    <p>Use Path Style</p>
+                                    <Form.Item
+                                        name="s3_path_style"
+                                        rules={[
+                                            {
+                                                required: false
+                                            }
+                                        ]}
+                                        initialValue={formFields?.keys?.s3_path_style}
+                                    >
+                                        <>
+                                            <Checkbox
+                                                defaultChecked={false}
+                                                checkName="s3_path_style"
+                                                checked={formFields.keys?.s3_path_style === '1' ? true : false}
+                                                onChange={(e) => updateKeysState('s3_path_style', e.target.checked ? '1' : '0')}
+                                            />{' '}
+                                            Enable
+                                        </>
+                                    </Form.Item>
+                                </div>
                             </div>
                         </div>
                         <Form.Item className="button-container">
