@@ -30,7 +30,7 @@ import { Line } from 'react-chartjs-2';
 import { Chart } from 'chart.js';
 import 'chartjs-plugin-streaming';
 import moment from 'moment';
-import { convertBytes } from '../../../services/valueConvertor';
+import { convertBytes, isCloud } from '../../../services/valueConvertor';
 import SelectThroughput from '../../../components/selectThroughput';
 import SegmentButton from '../../../components/segmentButton';
 import Loader from '../../../components/loader';
@@ -152,8 +152,8 @@ function Throughput() {
     };
 
     useEffect(() => {
-        if (Object.keys(dataSamples).length > 0) {
-            selectOptions.length === 0 && getSelectComponentList();
+        if (Object.keys(dataSamples)?.length > 0) {
+            selectOptions?.length === 0 && getSelectComponentList();
             state?.monitor_data?.brokers_throughput?.forEach((component) => {
                 let updatedDataSamples = { ...dataSamples };
                 updatedDataSamples[component.name].read = [...updatedDataSamples[component.name]?.read, ...component.read];
@@ -222,7 +222,7 @@ function Throughput() {
             displayColors: false,
             callbacks: {
                 title: () => {
-                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent.slice(1)} - ${throughputType}`;
+                    return `${selectedComponent.charAt(0).toUpperCase() + selectedComponent?.slice(1)} - ${throughputType}`;
                 },
                 label: (tooltipItem) => {
                     return `${tooltipItem.label}`;
@@ -277,7 +277,7 @@ function Throughput() {
                     <div className="play-pause-btn" onClick={() => setstop(!stop)}>
                         {stop ? <PlayArrowRounded /> : <PauseRounded />}
                     </div>
-                    <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />
+                    {!isCloud() && <SelectThroughput value={selectedComponent || 'total'} options={selectOptions} onChange={(e) => setSelectedComponent(e)} />}
                 </div>
             </div>
             <div className="external-monitoring">

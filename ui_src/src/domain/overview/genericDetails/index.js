@@ -13,15 +13,33 @@
 import './style.scss';
 
 import React, { useContext } from 'react';
-import { Context } from '../../../hooks/store';
+import { Divider, Popover } from 'antd';
+
+import consumeLagIcon from '../../../assets/images/consumeLagIcon.svg';
+
 import TotalMsg from '../../../assets/images/TotalMessages.svg';
 import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
 import TotalStations from '../../../assets/images/TotalStations.svg';
-import { Divider } from 'antd';
+import { Context } from '../../../hooks/store';
+import { InfoOutlined, InfoRounded } from '@material-ui/icons';
+import StationLagCollapse from './stationCollapse';
 
 const GenericDetails = () => {
     const [state, dispatch] = useContext(Context);
 
+    const consumptionLag = (
+        <div className="box-wrapper">
+            <div className="box-header">
+                <p>Slow consumption stations</p>
+                <span>Track Slow Consumption: Stations with Lag in Traffic</span>
+            </div>
+            <div className="station-list">
+                {state?.monitor_data?.delayed_cgs?.map((station, index) => (
+                    <StationLagCollapse station={station} index={index} />
+                ))}
+            </div>
+        </div>
+    );
     return (
         <div className="overview-components-wrapper">
             <div className="generic-details-container">
@@ -34,9 +52,24 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
+                    <img src={consumeLagIcon} width={50} height={50} alt="Logo" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Slow consumption stations</span>
+                        <div className="info-icon-wrapper">
+                            <p>{state?.monitor_data?.delayed_cgs?.length?.toLocaleString()}</p>
+                            {state?.monitor_data?.delayed_cgs?.length > 0 && (
+                                <Popover overlayClassName="consumption-stations-box" placement="bottom" content={consumptionLag} trigger="hover">
+                                    <InfoOutlined />
+                                </Popover>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
                     <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
-                        <span>Messages</span>
+                        <span>Stored messages</span>
                         <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
                     </div>
                 </div>

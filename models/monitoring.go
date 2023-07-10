@@ -52,25 +52,14 @@ type SystemComponentsStatus struct {
 	RiskyCount     int    `json:"risky_count"`
 }
 
-type MainOverviewData struct {
-	TotalStations     int                        `json:"total_stations"`
-	TotalMessages     uint64                     `json:"total_messages"`
-	TotalDlsMessages  uint64                     `json:"total_dls_messages"`
-	SystemComponents  []SystemComponents         `json:"system_components"`
-	Stations          []ExtendedStation          `json:"stations"`
-	K8sEnv            bool                       `json:"k8s_env"`
-	BrokersThroughput []BrokerThroughputResponse `json:"brokers_throughput"`
-	MetricsEnabled    bool                       `json:"metrics_enabled"`
-}
-
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
 }
 
 type SystemLogsRequest struct {
 	LogType   string `form:"log_type" json:"log_type"  binding:"required"`
-	StartIdx  int    `form:"start_index" json:"start_index"  binding:"required"`
 	LogSource string `form:"log_source" json:"log_source"`
+	StartIdx  int    `form:"start_index" json:"start_index"  binding:"required"`
 }
 
 type Log struct {
@@ -92,9 +81,9 @@ type RestGwMonitoringResponse struct {
 }
 
 type BrokerThroughput struct {
-	Name  string `json:"name"`
-	Read  int64  `json:"read"`
-	Write int64  `json:"write"`
+	Name     string           `json:"name"`
+	ReadMap  map[string]int64 `json:"read_map"`
+	WriteMap map[string]int64 `json:"write_map"`
 }
 
 type BrokerThroughputResponse struct {

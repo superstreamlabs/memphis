@@ -128,6 +128,7 @@ type fileStore struct {
 	closed      bool
 	fip         bool
 	receivedAny bool
+	account     *Account // ** added by memphis **
 }
 
 // Represents a message store block and its data.
@@ -278,6 +279,104 @@ const (
 func newFileStore(fcfg FileStoreConfig, cfg StreamConfig) (*fileStore, error) {
 	return newFileStoreWithCreated(fcfg, cfg, time.Now().UTC(), nil)
 }
+
+// ** added by memphis
+func newFileStoreWithCreatedMemphis(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen, account *Account) (*fileStore, error) {
+	if cfg.Name == _EMPTY_ {
+		return nil, fmt.Errorf("name required")
+	}
+	if cfg.Storage != FileStorage {
+		return nil, fmt.Errorf("fileStore requires file storage type in config")
+	}
+	// Default values.
+	if fcfg.BlockSize == 0 {
+		fcfg.BlockSize = dynBlkSize(cfg.Retention, cfg.MaxBytes)
+	}
+	if fcfg.BlockSize > maxBlockSize {
+		return nil, fmt.Errorf("filestore max block size is %s", friendlyBytes(maxBlockSize))
+	}
+	if fcfg.CacheExpire == 0 {
+		fcfg.CacheExpire = defaultCacheBufferExpiration
+	}
+	if fcfg.SyncInterval == 0 {
+		fcfg.SyncInterval = defaultSyncInterval
+	}
+
+	// Check the directory
+	if stat, err := os.Stat(fcfg.StoreDir); os.IsNotExist(err) {
+		if err := os.MkdirAll(fcfg.StoreDir, defaultDirPerms); err != nil {
+			return nil, fmt.Errorf("could not create storage directory - %v", err)
+		}
+	} else if stat == nil || !stat.IsDir() {
+		return nil, fmt.Errorf("storage directory is not a directory")
+	}
+	tmpfile, err := os.CreateTemp(fcfg.StoreDir, "_test_")
+	if err != nil {
+		return nil, fmt.Errorf("storage directory is not writable")
+	}
+	tmpfile.Close()
+	os.Remove(tmpfile.Name())
+
+	fs := &fileStore{
+		fcfg:    fcfg,
+		psim:    make(map[string]*psi),
+		bim:     make(map[uint32]*msgBlock),
+		cfg:     FileStreamInfo{Created: created, StreamConfig: cfg},
+		prf:     prf,
+		qch:     make(chan struct{}),
+		account: account, // ** added by memphis **
+	}
+
+	// Set flush in place to AsyncFlush which by default is false.
+	fs.fip = !fcfg.AsyncFlush
+
+	// Check if this is a new setup.
+	mdir := filepath.Join(fcfg.StoreDir, msgDir)
+	odir := filepath.Join(fcfg.StoreDir, consumerDir)
+	if err := os.MkdirAll(mdir, defaultDirPerms); err != nil {
+		return nil, fmt.Errorf("could not create message storage directory - %v", err)
+	}
+	if err := os.MkdirAll(odir, defaultDirPerms); err != nil {
+		return nil, fmt.Errorf("could not create consumer storage directory - %v", err)
+	}
+
+	// Create highway hash for message blocks. Use sha256 of directory as key.
+	key := sha256.Sum256([]byte(cfg.Name))
+	fs.hh, err = highwayhash.New64(key[:])
+	if err != nil {
+		return nil, fmt.Errorf("could not create hash: %v", err)
+	}
+
+	// Recover our message state.
+	if err := fs.recoverMsgs(); err != nil {
+		return nil, err
+	}
+
+	// Write our meta data if it does not exist or is zero'd out.
+	meta := filepath.Join(fcfg.StoreDir, JetStreamMetaFile)
+	fi, err := os.Stat(meta)
+	if err != nil && os.IsNotExist(err) || fi != nil && fi.Size() == 0 {
+		if err := fs.writeStreamMeta(); err != nil {
+			return nil, err
+		}
+	}
+
+	// If we expect to be encrypted check that what we are restoring is not plaintext.
+	// This can happen on snapshot restores or conversions.
+	if fs.prf != nil {
+		keyFile := filepath.Join(fs.fcfg.StoreDir, JetStreamMetaFileKey)
+		if _, err := os.Stat(keyFile); err != nil && os.IsNotExist(err) {
+			if err := fs.writeStreamMeta(); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	fs.syncTmr = time.AfterFunc(fs.fcfg.SyncInterval, fs.syncBlocks)
+
+	return fs, nil
+}
+// added by memphis **
 
 func newFileStoreWithCreated(fcfg FileStoreConfig, cfg StreamConfig, created time.Time, prf keyGen) (*fileStore, error) {
 	if cfg.Name == _EMPTY_ {
@@ -2201,7 +2300,9 @@ func (fs *fileStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts in
 	if fs.closed {
 		return ErrStoreClosed
 	}
-
+	// *** added by memphis
+	IncrementEventCounter(fs.account.GetName(), "produced_event", 0, 1, subj, msg, hdr)
+	// added by memphis ***
 	// Per subject max check needed.
 	mmp := uint64(fs.cfg.MaxMsgsPer)
 	var psmc uint64

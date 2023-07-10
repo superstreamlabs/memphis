@@ -20,13 +20,6 @@
                 font-family: 'InterMedium';
                 font-size: 15px;
             }
-            .collapse-arrow {
-                transform: rotate(-90deg);
-                transition: transform 0.4s;
-            }
-            .open {
-                transform: rotate(0deg);
-            }
         }
         .ant-collapse-content-box{
             padding: 0;

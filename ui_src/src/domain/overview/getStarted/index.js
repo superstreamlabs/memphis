@@ -32,7 +32,7 @@ import CreateStation from './createStation';
 import Reducer from './hooks/reducer';
 import SideStep from './sideStep';
 import Finish from './finish';
-import { capitalizeFirst } from '../../../services/valueConvertor';
+import { capitalizeFirst, isCloud } from '../../../services/valueConvertor';
 
 const steps = [{ stepName: 'Create Station' }, { stepName: 'Create App user' }, { stepName: 'Produce data' }, { stepName: 'Consume data' }, { stepName: 'Finish' }];
 
@@ -73,7 +73,7 @@ const initialState = {
         retention_type: 'message_age_sec',
         retention_value: 604800,
         storage_type: 'file',
-        replicas: '1',
+        replicas: 'No HA (1)',
         days: 7,
         hours: 0,
         minutes: 0,
@@ -195,7 +195,9 @@ const GetStarted = ({ username, dataSentence, skip }) => {
     };
 
     useEffect(() => {
-        getAvailableReplicas();
+        if (!isCloud()) {
+            getAvailableReplicas();
+        }
         return () => {
             getStartedDispatch({ type: 'INITIAL_STATE', payload: {} });
         };

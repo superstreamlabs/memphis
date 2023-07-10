@@ -19,7 +19,6 @@ import (
 	"memphis/models"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"
@@ -36,6 +35,8 @@ type Handlers struct {
 	Schemas        SchemasHandler
 	Integrations   IntegrationsHandler
 	Configurations ConfigurationsHandler
+	Tenants        TenantHandler
+	Billing        BillingHandler
 }
 
 var serv *Server
@@ -46,12 +47,12 @@ type srvMemphis struct {
 	nuid                   *nuid.NUID
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
-	jsApiMu                sync.Mutex
-	ws                     memphisWS
+	// jsApiMu                sync.Mutex
+	ws memphisWS
 }
 
 type memphisWS struct {
-	subscriptions *concurrentMap[memphisWSReqFiller]
+	subscriptions *concurrentMap[memphisWSReqTenantsToFiller]
 	quitCh        chan struct{}
 }
 
@@ -61,6 +62,7 @@ func (s *Server) InitializeMemphisHandlers() {
 
 	s.initializeSDKHandlers()
 	s.initWS()
+
 }
 
 func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
@@ -72,16 +74,18 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 	return userModel, nil
 }
 
-func CreateDefaultStation(s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
+func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
-	err := s.CreateStream(sn, "message_age_sec", 604800, "file", 120000, 1, false)
+	replicas := getDefaultReplicas()
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, replicas, false)
 	if err != nil {
 		return models.Station{}, false, err
 	}
 
 	schemaName := ""
 	schemaVersionNumber := 0
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", 1, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false)
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -90,22 +94,6 @@ func CreateDefaultStation(s *Server, sn StationName, userId int, username string
 	}
 
 	return newStation, true, nil
-}
-
-func shouldSendAnalytics() (bool, error) {
-	exist, systemKey, err := db.GetSystemKey("analytics")
-	if err != nil {
-		return false, err
-	}
-	if !exist {
-		return false, nil
-	}
-
-	if systemKey.Value == "true" {
-		return true, nil
-	} else {
-		return false, nil
-	}
 }
 
 func validateName(name, objectType string) error {

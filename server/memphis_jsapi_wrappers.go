@@ -51,7 +51,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 		go func(msg []byte, respCh chan *JSApiStreamCreateResponse) {
 			var resp JSApiStreamCreateResponse
 			if err := json.Unmarshal(msg, &resp); err != nil {
-				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: " + err.Error())
+				s.Errorf("memphisJSApiWrapStreamCreate: unmarshal error: %v", err.Error())
 				respCh <- nil
 				return
 			}
@@ -59,7 +59,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 		}(copyBytes(msg), respCh)
 	})
 	if err != nil {
-		s.Errorf("memphisJSApiWrapStreamCreate: failed to subscribe: " + err.Error())
+		s.Errorf("memphisJSApiWrapStreamCreate: failed to subscribe: %v", err.Error())
 		return
 	}
 
@@ -121,7 +121,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 		go func(msg []byte, respCh chan *JSApiStreamDeleteResponse) {
 			var resp JSApiStreamDeleteResponse
 			if err := json.Unmarshal(msg, &resp); err != nil {
-				s.Errorf("memphisJSApiWrapStreamDelete: unmarshal error: " + err.Error())
+				s.Errorf("memphisJSApiWrapStreamDelete: unmarshal error: %v", err.Error())
 				respCh <- nil
 				return
 			}
@@ -129,7 +129,7 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 		}(copyBytes(msg), respCh)
 	})
 	if err != nil {
-		s.Errorf("memphisJSApiWrapStreamDelete: failed to subscribe: " + err.Error())
+		s.Errorf("memphisJSApiWrapStreamDelete: failed to subscribe: %v", err.Error())
 		return
 	}
 
@@ -137,7 +137,11 @@ func memphisDeleteNonNativeStationIfNeeded(s *Server, reply string, streamName s
 	select {
 	case resp := <-respCh:
 		if resp != nil && resp.Success {
-			dsr := destroyStationRequest{StationName: streamName}
+			username := c.opts.Username
+			if username == "" {
+				username = strings.Split(c.getRawAuthUser(), "::")[0]
+			}
+			dsr := destroyStationRequest{StationName: streamName, Username: username}
 			s.removeStationDirectIntern(c, reply, &dsr, false)
 		}
 	case <-timeout.C:

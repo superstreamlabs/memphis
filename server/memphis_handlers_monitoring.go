@@ -12,36 +12,27 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
 	"net"
-	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/docker/docker/api/types"
-	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-gonic/gin"
 
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1Apimachinery "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -90,917 +81,31 @@ func clientSetClusterConfig() error {
 	return nil
 }
 
-func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bool, error) {
-	components := []models.SystemComponents{}
-	allComponents := []models.SysComponent{}
-	portsMap := map[string][]int{}
-	hosts := []string{}
-	metricsEnabled := true
-	defaultStat := models.CompStats{
-		Total:      0,
-		Current:    0,
-		Percentage: 0,
-	}
-	if configuration.DOCKER_ENV == "true" { // docker env
-		metricsEnabled = true
-		hosts = []string{"localhost"}
-		if configuration.DEV_ENV == "true" {
-			maxCpu := float64(runtime.GOMAXPROCS(0))
-			v, err := serv.Varz(nil)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			var storageComp models.CompStats
-			memUsage := float64(0)
-			os := runtime.GOOS
-			storage_size := float64(0)
-			isWindows := false
-			switch os {
-			case "windows":
-				isWindows = true
-				storageComp = defaultStat // TODO: add support for windows
-			default:
-				storage_size, err = getUnixStorageSize()
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				storageComp = models.CompStats{
-					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
-				}
-				memUsage, err = getUnixMemoryUsage()
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-			}
-			memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
-			comp := models.SysComponent{
-				Name: "memphis-0",
-				CPU: models.CompStats{
-					Total:      shortenFloat(maxCpu),
-					Current:    shortenFloat((v.CPU / 100) * maxCpu),
-					Percentage: int(math.Ceil(v.CPU)),
-				},
-				Memory: models.CompStats{
-					Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-					Current:    shortenFloat(memUsage),
-					Percentage: int(math.Ceil(memPerc)),
-				},
-				Storage: storageComp,
-				Healthy: true,
-			}
-			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
-			components = append(components, models.SystemComponents{
-				Name:        "memphis",
-				Components:  getComponentsStructByOneComp(comp),
-				Status:      comp.Status,
-				Ports:       []int{mh.S.opts.UiPort, mh.S.opts.Port, mh.S.opts.Websocket.Port, mh.S.opts.HTTPPort},
-				DesiredPods: 1,
-				ActualPods:  1,
-				Hosts:       hosts,
-			})
-			healthy := false
-			restGwComp := defaultSystemComp("memphis-rest-gateway", healthy)
-			resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", mh.S.opts.RestGwPort))
-			if err == nil {
-				healthy = true
-				var restGwMonitorInfo models.RestGwMonitoringResponse
-				defer resp.Body.Close()
-				err = json.NewDecoder(resp.Body).Decode(&restGwMonitorInfo)
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				if !isWindows {
-					storageComp = models.CompStats{
-						Total:      shortenFloat(storage_size),
-						Current:    shortenFloat((restGwMonitorInfo.Storage / 100) * storage_size),
-						Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
-					}
-				}
-				restGwComp = models.SysComponent{
-					Name: "memphis-rest-gateway",
-					CPU: models.CompStats{
-						Total:      shortenFloat(maxCpu),
-						Current:    shortenFloat((restGwMonitorInfo.CPU / 100) * maxCpu),
-						Percentage: int(math.Ceil(restGwMonitorInfo.CPU)),
-					},
-					Memory: models.CompStats{
-						Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-						Current:    shortenFloat((restGwMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
-						Percentage: int(math.Ceil(float64(restGwMonitorInfo.Memory))),
-					},
-					Storage: storageComp,
-					Healthy: healthy,
-				}
-				restGwComp.Status = checkPodStatus(restGwComp.CPU.Percentage, restGwComp.Memory.Percentage, restGwComp.Storage.Percentage)
-			}
-			actualRestGw := 1
-			if !healthy {
-				actualRestGw = 0
-			}
-			components = append(components, models.SystemComponents{
-				Name:        "memphis-rest-gateway",
-				Components:  getComponentsStructByOneComp(restGwComp),
-				Status:      restGwComp.Status,
-				Ports:       []int{mh.S.opts.RestGwPort},
-				DesiredPods: 1,
-				ActualPods:  actualRestGw,
-				Hosts:       hosts,
-			})
-		}
-
-		ctx := context.Background()
-		dockerCli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-		containers, err := dockerCli.ContainerList(ctx, types.ContainerListOptions{})
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-
-		for _, container := range containers {
-			containerName := container.Names[0]
-			if !strings.Contains(containerName, "memphis") {
-				continue
-			}
-			containerName = strings.TrimPrefix(containerName, "/")
-			if container.State != "running" {
-				comp := defaultSystemComp(containerName, false)
-				allComponents = append(allComponents, comp)
-				continue
-			}
-			containerStats, err := dockerCli.ContainerStats(ctx, container.ID, false)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			defer containerStats.Body.Close()
-
-			body, err := io.ReadAll(containerStats.Body)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			var dockerStats types.Stats
-			err = json.Unmarshal(body, &dockerStats)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			cpuLimit := float64(runtime.GOMAXPROCS(0))
-			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
-			totalCpuUsage := (cpuPercentage / 100) * cpuLimit
-			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
-			memoryLimit := float64(dockerStats.MemoryStats.Limit)
-			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			cpuStat := models.CompStats{
-				Total:      shortenFloat(cpuLimit),
-				Current:    shortenFloat(totalCpuUsage),
-				Percentage: int(cpuPercentage),
-			}
-			memoryStat := models.CompStats{
-				Total:      shortenFloat(memoryLimit),
-				Current:    shortenFloat(totalMemoryUsage),
-				Percentage: int(memoryPercentage),
-			}
-			storageStat := defaultStat
-			dockerPorts := []int{}
-			if strings.Contains(containerName, "metadata") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
-				}
-				containerName = strings.TrimPrefix(containerName, "memphis-")
-			} else if strings.Contains(containerName, "cluster") {
-				v, err := serv.Varz(nil)
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				storageStat = models.CompStats{
-					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
-				}
-			}
-			for _, port := range container.Ports {
-				if int(port.PublicPort) != 0 {
-					dockerPorts = append(dockerPorts, int(port.PublicPort))
-				}
-			}
-			comp := models.SysComponent{
-				Name:    containerName,
-				CPU:     cpuStat,
-				Memory:  memoryStat,
-				Storage: storageStat,
-				Healthy: true,
-			}
-			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
-			components = append(components, models.SystemComponents{
-				Name:        strings.TrimSuffix(containerName, "-1"),
-				Components:  getComponentsStructByOneComp(comp),
-				Status:      comp.Status,
-				Ports:       dockerPorts,
-				DesiredPods: 1,
-				ActualPods:  1,
-				Hosts:       hosts,
-			})
-		}
-	} else if configuration.LOCAL_CLUSTER_ENV { // TODO not fully supported - currently shows the current broker stats only
-		metricsEnabled = true
-		hosts = []string{"localhost"}
-		maxCpu := float64(runtime.GOMAXPROCS(0))
-		v, err := serv.Varz(nil)
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-		var storageComp models.CompStats
-		memUsage := float64(0)
-		os := runtime.GOOS
-		storage_size := float64(0)
-		isWindows := false
-		switch os {
-		case "windows":
-			isWindows = true
-			storageComp = defaultStat // TODO: add support for windows
-		default:
-			storage_size, err = getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			storageComp = models.CompStats{
-				Total:      shortenFloat(storage_size),
-				Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-				Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
-			}
-			memUsage, err = getUnixMemoryUsage()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-		}
-		memPerc := (memUsage / float64(v.JetStream.Config.MaxMemory)) * 100
-		comp := models.SysComponent{
-			Name: "memphis-0",
-			CPU: models.CompStats{
-				Total:      shortenFloat(maxCpu),
-				Current:    shortenFloat((v.CPU / 100) * maxCpu),
-				Percentage: int(math.Ceil(v.CPU)),
-			},
-			Memory: models.CompStats{
-				Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-				Current:    shortenFloat(memUsage),
-				Percentage: int(math.Ceil(memPerc)),
-			},
-			Storage: storageComp,
-			Healthy: true,
-		}
-		comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
-		components = append(components, models.SystemComponents{
-			Name:        "memphis",
-			Components:  getComponentsStructByOneComp(comp),
-			Status:      comp.Status,
-			Ports:       []int{mh.S.opts.UiPort, mh.S.opts.Port, mh.S.opts.Websocket.Port, mh.S.opts.HTTPPort},
-			DesiredPods: 1,
-			ActualPods:  1,
-			Hosts:       hosts,
-		})
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%v/monitoring/getResourcesUtilization", mh.S.opts.RestGwPort))
-		healthy := false
-		restGwComp := defaultSystemComp("memphis-rest-gateway", healthy)
-		if err == nil {
-			healthy = true
-			var restGwMonitorInfo models.RestGwMonitoringResponse
-			defer resp.Body.Close()
-			err = json.NewDecoder(resp.Body).Decode(&restGwMonitorInfo)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if !isWindows {
-				storageComp = models.CompStats{
-					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat((restGwMonitorInfo.Storage / 100) * storage_size),
-					Percentage: int(math.Ceil(float64(restGwMonitorInfo.Storage))),
-				}
-			}
-			restGwComp := models.SysComponent{
-				Name: "memphis-rest-gateway",
-				CPU: models.CompStats{
-					Total:      shortenFloat(maxCpu),
-					Current:    shortenFloat((restGwMonitorInfo.CPU / 100) * maxCpu),
-					Percentage: int(math.Ceil(restGwMonitorInfo.CPU)),
-				},
-				Memory: models.CompStats{
-					Total:      shortenFloat(float64(v.JetStream.Config.MaxMemory)),
-					Current:    shortenFloat((restGwMonitorInfo.Memory / 100) * float64(v.JetStream.Config.MaxMemory)),
-					Percentage: int(math.Ceil(float64(restGwMonitorInfo.Memory))),
-				},
-				Storage: storageComp,
-				Healthy: healthy,
-			}
-			restGwComp.Status = checkPodStatus(restGwComp.CPU.Percentage, restGwComp.Memory.Percentage, restGwComp.Storage.Percentage)
-		}
-		actualRestGw := 1
-		if !healthy {
-			actualRestGw = 0
-		}
-		components = append(components, models.SystemComponents{
-			Name:        "memphis-rest-gateway",
-			Components:  getComponentsStructByOneComp(restGwComp),
-			Status:      restGwComp.Status,
-			Ports:       []int{mh.S.opts.RestGwPort},
-			DesiredPods: 1,
-			ActualPods:  actualRestGw,
-			Hosts:       hosts,
-		})
-
-		ctx := context.Background()
-		dockerCli, err := dockerClient.NewClientWithOpts(dockerClient.FromEnv)
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-		containers, err := dockerCli.ContainerList(ctx, types.ContainerListOptions{})
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-
-		for _, container := range containers {
-			containerName := container.Names[0]
-			if !strings.Contains(containerName, "memphis") {
-				continue
-			}
-			containerName = strings.TrimPrefix(containerName, "/")
-			if container.State != "running" {
-				comp := defaultSystemComp(containerName, false)
-				allComponents = append(allComponents, comp)
-				continue
-			}
-			containerStats, err := dockerCli.ContainerStats(ctx, container.ID, false)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			defer containerStats.Body.Close()
-
-			body, err := io.ReadAll(containerStats.Body)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			var dockerStats types.Stats
-			err = json.Unmarshal(body, &dockerStats)
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			cpuLimit := float64(runtime.GOMAXPROCS(0))
-			cpuPercentage := math.Ceil((float64(dockerStats.CPUStats.CPUUsage.TotalUsage) / float64(dockerStats.CPUStats.SystemUsage)) * 100)
-			totalCpuUsage := (cpuPercentage / 100) * cpuLimit
-			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
-			memoryLimit := float64(dockerStats.MemoryStats.Limit)
-			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			cpuStat := models.CompStats{
-				Total:      shortenFloat(cpuLimit),
-				Current:    shortenFloat(totalCpuUsage),
-				Percentage: int(cpuPercentage),
-			}
-			memoryStat := models.CompStats{
-				Total:      shortenFloat(memoryLimit),
-				Current:    shortenFloat(totalMemoryUsage),
-				Percentage: int(memoryPercentage),
-			}
-			storageStat := defaultStat
-			dockerPorts := []int{}
-			if strings.Contains(containerName, "metadata") && !strings.Contains(containerName, "coordinator") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
-				}
-
-			} else if strings.Contains(containerName, "cluster") {
-				v, err := serv.Varz(nil)
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-				storageStat = models.CompStats{
-					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
-				}
-			}
-			for _, port := range container.Ports {
-				if int(port.PublicPort) != 0 {
-					dockerPorts = append(dockerPorts, int(port.PublicPort))
-				}
-			}
-			comp := models.SysComponent{
-				Name:    containerName,
-				CPU:     cpuStat,
-				Memory:  memoryStat,
-				Storage: storageStat,
-				Healthy: true,
-			}
-			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
-			components = append(components, models.SystemComponents{
-				Name:        containerName,
-				Components:  getComponentsStructByOneComp(comp),
-				Status:      comp.Status,
-				Ports:       dockerPorts,
-				DesiredPods: 1,
-				ActualPods:  1,
-				Hosts:       hosts,
-			})
-		}
-	} else { // k8s env
-		if clientset == nil {
-			err := clientSetClusterConfig()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-		}
-		deploymentsClient := clientset.AppsV1().Deployments(mh.S.opts.K8sNamespace)
-		deploymentsList, err := deploymentsClient.List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-
-		pods, err := clientset.CoreV1().Pods(mh.S.opts.K8sNamespace).List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-		minikubeCheck := false
-		isMinikube := false
-		for _, pod := range pods.Items {
-			if pod.Status.Phase != v1.PodRunning {
-				allComponents = append(allComponents, defaultSystemComp(pod.Name, false))
-				continue
-			}
-			var ports []int
-			podMetrics, err := metricsclientset.MetricsV1beta1().PodMetricses(mh.S.opts.K8sNamespace).Get(context.TODO(), pod.Name, metav1.GetOptions{})
-			if err != nil {
-				if strings.Contains(err.Error(), "could not find the requested resource") {
-					metricsEnabled = false
-					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
-					if !noMetricsInstalledLog {
-						serv.Warnf("GetSystemComponents: k8s metrics not installed: " + err.Error())
-						noMetricsInstalledLog = true
-					}
-					continue
-				} else if strings.Contains(err.Error(), "is forbidden") {
-					metricsEnabled = false
-					allComponents = append(allComponents, defaultSystemComp(pod.Name, true))
-					if !noMetricsPermissionLog {
-						serv.Warnf("GetSystemComponents: No permissions for k8s metrics: " + err.Error())
-						noMetricsPermissionLog = true
-					}
-					continue
-				}
-				return components, metricsEnabled, err
-			}
-			node, err := clientset.CoreV1().Nodes().Get(context.TODO(), pod.Spec.NodeName, metav1.GetOptions{})
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			if !minikubeCheck {
-				isMinikube = checkIsMinikube(node.Labels)
-			}
-			pvcClient := clientset.CoreV1().PersistentVolumeClaims(mh.S.opts.K8sNamespace)
-			pvcList, err := pvcClient.List(context.TODO(), metav1.ListOptions{})
-			if err != nil {
-				return components, metricsEnabled, err
-			}
-			cpuLimit := pod.Spec.Containers[0].Resources.Limits.Cpu().AsApproximateFloat64()
-			if cpuLimit == float64(0) {
-				cpuLimit = node.Status.Capacity.Cpu().AsApproximateFloat64()
-			}
-			memLimit := pod.Spec.Containers[0].Resources.Limits.Memory().AsApproximateFloat64()
-			if memLimit == float64(0) {
-				memLimit = node.Status.Capacity.Memory().AsApproximateFloat64()
-			}
-			storageLimit := float64(0)
-			if len(pvcList.Items) == 1 {
-				size := pvcList.Items[0].Status.Capacity[v1.ResourceStorage]
-				floatSize := size.AsApproximateFloat64()
-				if floatSize != float64(0) {
-					storageLimit = floatSize
-				}
-			} else {
-				for _, pvc := range pvcList.Items {
-					if strings.Contains(pvc.Name, pod.Name) {
-						size := pvc.Status.Capacity[v1.ResourceStorage]
-						floatSize := size.AsApproximateFloat64()
-						if floatSize != float64(0) {
-							storageLimit = floatSize
-						}
-						break
-					}
-				}
-			}
-			mountpath := ""
-			containerForExec := ""
-			for _, container := range pod.Spec.Containers {
-				for _, port := range container.Ports {
-					if int(port.ContainerPort) != 0 {
-						ports = append(ports, int(port.ContainerPort))
-					}
-				}
-				if strings.Contains(container.Name, "memphis") || strings.Contains(container.Name, "postgresql") {
-					for _, mount := range pod.Spec.Containers[0].VolumeMounts {
-						if strings.Contains(mount.Name, "memphis") || strings.Contains(mount.Name, "data") { // data is for postgres mount name
-							mountpath = mount.MountPath
-							break
-						}
-					}
-					containerForExec = container.Name
-				}
-			}
-
-			cpuUsage := float64(0)
-			memUsage := float64(0)
-			for _, container := range podMetrics.Containers {
-				cpuUsage += container.Usage.Cpu().AsApproximateFloat64()
-				memUsage += container.Usage.Memory().AsApproximateFloat64()
-			}
-			storageUsage := float64(0)
-			if isMinikube {
-				if strings.Contains(strings.ToLower(pod.Name), "metadata") {
-					storageUsage, _, err = getDbStorageSize()
-					if err != nil {
-						return components, metricsEnabled, err
-					}
-				} else if strings.Contains(strings.ToLower(pod.Name), "cluster") {
-					v, err := serv.Varz(nil)
-					if err != nil {
-						return components, metricsEnabled, err
-					}
-					storageUsage = shortenFloat(float64(v.JetStream.Stats.Store))
-				}
-			} else if containerForExec != "" && mountpath != "" {
-				storageUsage, err = getContainerStorageUsage(config, mountpath, containerForExec, pod.Name, mh.S.opts.K8sNamespace)
-				if err != nil {
-					return components, metricsEnabled, err
-				}
-			}
-			storagePercentage := 0
-			if storageUsage > float64(0) && storageLimit > float64(0) {
-				storagePercentage = int(math.Ceil((storageUsage / storageLimit) * 100))
-			}
-
-			comp := models.SysComponent{
-				Name: pod.Name,
-				CPU: models.CompStats{
-					Total:      shortenFloat(cpuLimit),
-					Current:    shortenFloat(cpuUsage),
-					Percentage: int(math.Ceil((float64(cpuUsage) / float64(cpuLimit)) * 100)),
-				},
-				Memory: models.CompStats{
-					Total:      shortenFloat(memLimit),
-					Current:    shortenFloat(memUsage),
-					Percentage: int(math.Ceil((float64(memUsage) / float64(memLimit)) * 100)),
-				},
-				Storage: models.CompStats{
-					Total:      shortenFloat(storageLimit),
-					Current:    shortenFloat(storageUsage),
-					Percentage: storagePercentage,
-				},
-				Healthy: true,
-			}
-			comp.Status = checkPodStatus(comp.CPU.Percentage, comp.Memory.Percentage, comp.Storage.Percentage)
-			allComponents = append(allComponents, comp)
-			portsMap[pod.Name] = ports
-		}
-
-		for _, d := range deploymentsList.Items {
-			desired := int(*d.Spec.Replicas)
-			actual := int(d.Status.ReadyReplicas)
-			relevantComponents := getRelevantComponents(d.Name, allComponents, desired)
-			var relevantPorts []int
-			var status string
-			if metricsEnabled {
-				relevantPorts = getRelevantPorts(d.Name, portsMap)
-				status = checkCompStatus(relevantComponents)
-			} else {
-				for _, container := range d.Spec.Template.Spec.Containers {
-					for _, port := range container.Ports {
-						if int(port.ContainerPort) != 0 {
-							relevantPorts = append(relevantPorts, int(port.ContainerPort))
-						}
-					}
-				}
-				if desired == actual {
-					status = healthyStatus
-				} else {
-					status = unhealthyStatus
-				}
-			}
-			if d.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
-				}
-			} else if d.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
-					hosts = []string{}
-				} else {
-					hosts = []string{mh.S.opts.BrokerHost}
-				}
-				if mh.S.opts.UiHost != "" {
-					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(d.Name, "metadata") {
-				hosts = []string{}
-			}
-			components = append(components, models.SystemComponents{
-				Name:        d.Name,
-				Components:  relevantComponents,
-				Status:      status,
-				Ports:       relevantPorts,
-				DesiredPods: desired,
-				ActualPods:  actual,
-				Hosts:       hosts,
-			})
-		}
-
-		statefulsetsClient := clientset.AppsV1().StatefulSets(mh.S.opts.K8sNamespace)
-		statefulsetsList, err := statefulsetsClient.List(context.TODO(), metav1.ListOptions{})
-		if err != nil {
-			return components, metricsEnabled, err
-		}
-		for _, s := range statefulsetsList.Items {
-			desired := int(*s.Spec.Replicas)
-			actual := int(s.Status.ReadyReplicas)
-			relevantComponents := getRelevantComponents(s.Name, allComponents, desired)
-			var relevantPorts []int
-			var status string
-			if metricsEnabled {
-				relevantPorts = getRelevantPorts(s.Name, portsMap)
-				status = checkCompStatus(relevantComponents)
-			} else {
-				for _, container := range s.Spec.Template.Spec.Containers {
-					for _, port := range container.Ports {
-						if int(port.ContainerPort) != 0 {
-							relevantPorts = append(relevantPorts, int(port.ContainerPort))
-						}
-					}
-				}
-				if desired == actual {
-					status = healthyStatus
-				} else {
-					status = unhealthyStatus
-				}
-			}
-			if s.Name == "memphis-rest-gateway" {
-				if mh.S.opts.RestGwHost != "" {
-					hosts = []string{mh.S.opts.RestGwHost}
-				}
-			} else if s.Name == "memphis" {
-				if mh.S.opts.BrokerHost == "" {
-					hosts = []string{}
-				} else {
-					hosts = []string{mh.S.opts.BrokerHost}
-				}
-				if mh.S.opts.UiHost != "" {
-					hosts = append(hosts, mh.S.opts.UiHost)
-				}
-			} else if strings.Contains(s.Name, "metadata") {
-				hosts = []string{}
-			}
-			components = append(components, models.SystemComponents{
-				Name:        s.Name,
-				Components:  relevantComponents,
-				Status:      status,
-				Ports:       relevantPorts,
-				DesiredPods: desired,
-				ActualPods:  actual,
-				Hosts:       hosts,
-			})
-		}
-	}
-	return components, metricsEnabled, nil
-}
-
 func (mh MonitoringHandler) GetClusterInfo(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{"version": mh.S.MemphisVersion()})
 }
 
-func (mh MonitoringHandler) GetBrokersThroughputs() ([]models.BrokerThroughputResponse, error) {
-	uid := serv.memphis.nuid.Next()
-	durableName := "$memphis_fetch_throughput_consumer_" + uid
-	var msgs []StoredMsg
-	var throughputs []models.BrokerThroughputResponse
-	streamInfo, err := serv.memphisStreamInfo(throughputStreamNameV1)
-	if err != nil {
-		return throughputs, err
-	}
-
-	amount := streamInfo.State.Msgs
-	startSeq := uint64(1)
-	if streamInfo.State.FirstSeq > 0 {
-		startSeq = streamInfo.State.FirstSeq
-	}
-
-	cc := ConsumerConfig{
-		OptStartSeq:   startSeq,
-		DeliverPolicy: DeliverByStartSequence,
-		AckPolicy:     AckExplicit,
-		Durable:       durableName,
-		Replicas:      1,
-	}
-
-	err = serv.memphisAddConsumer(throughputStreamNameV1, &cc)
-	if err != nil {
-		return throughputs, err
-	}
-
-	responseChan := make(chan StoredMsg)
-	subject := fmt.Sprintf(JSApiRequestNextT, throughputStreamNameV1, durableName)
-	reply := durableName + "_reply"
-	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := serv.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
-		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
-			// ack
-			serv.sendInternalAccountMsg(serv.GlobalAccount(), reply, []byte(_EMPTY_))
-			rawTs := tokenAt(reply, 8)
-			seq, _, _ := ackReplyInfo(reply)
-
-			intTs, err := strconv.Atoi(rawTs)
-			if err != nil {
-				serv.Errorf("GetBrokersThroughputs: " + err.Error())
-			}
-
-			respCh <- StoredMsg{
-				Subject:  subject,
-				Sequence: uint64(seq),
-				Data:     msg,
-				Time:     time.Unix(0, int64(intTs)),
-			}
-		}(responseChan, subject, reply, copyBytes(msg))
-	})
-	if err != nil {
-		return throughputs, err
-	}
-
-	serv.sendInternalAccountMsgWithReply(serv.GlobalAccount(), subject, reply, nil, req, true)
-	timeout := 300 * time.Millisecond
-	timer := time.NewTimer(timeout)
-	for i := uint64(0); i < amount; i++ {
-		select {
-		case <-timer.C:
-			goto cleanup
-		case msg := <-responseChan:
-			msgs = append(msgs, msg)
-		}
-	}
-
-cleanup:
-	timer.Stop()
-	serv.unsubscribeOnGlobalAcc(sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(throughputStreamNameV1, durableName) })
-
-	sort.Slice(msgs, func(i, j int) bool { // old to new
-		return msgs[i].Time.Before(msgs[j].Time)
-	})
-
-	m := make(map[string]models.BrokerThroughputResponse)
-	for _, msg := range msgs {
-		var brokerThroughput models.BrokerThroughput
-		err = json.Unmarshal(msg.Data, &brokerThroughput)
-		if err != nil {
-			return throughputs, err
-		}
-
-		if _, ok := m[brokerThroughput.Name]; !ok {
-			m[brokerThroughput.Name] = models.BrokerThroughputResponse{
-				Name: brokerThroughput.Name,
-			}
-		}
-
-		mapEntry := m[brokerThroughput.Name]
-		mapEntry.Read = append(m[brokerThroughput.Name].Read, models.ThroughputReadResponse{
-			Timestamp: msg.Time,
-			Read:      brokerThroughput.Read,
-		})
-		mapEntry.Write = append(m[brokerThroughput.Name].Write, models.ThroughputWriteResponse{
-			Timestamp: msg.Time,
-			Write:     brokerThroughput.Write,
-		})
-		m[brokerThroughput.Name] = mapEntry
-	}
-
-	throughputs = make([]models.BrokerThroughputResponse, 0, len(m))
-	totalRead := make([]models.ThroughputReadResponse, ws_updates_interval_sec)
-	totalWrite := make([]models.ThroughputWriteResponse, ws_updates_interval_sec)
-	for _, t := range m {
-		throughputs = append(throughputs, t)
-		for i, r := range t.Read {
-			totalRead[i].Timestamp = r.Timestamp
-			totalRead[i].Read += r.Read
-		}
-		for i, w := range t.Write {
-			totalWrite[i].Timestamp = w.Timestamp
-			totalWrite[i].Write += w.Write
-		}
-	}
-	throughputs = append([]models.BrokerThroughputResponse{{
-		Name:  "total",
-		Read:  totalRead,
-		Write: totalWrite,
-	}}, throughputs...)
-
-	return throughputs, nil
-}
-
-func (mh MonitoringHandler) getMainOverviewDataDetails() (models.MainOverviewData, error) {
-	var wg sync.WaitGroup
-	var mu sync.Mutex
-	mainOverviewData := &models.MainOverviewData{}
-	generalErr := new(error)
-
-	wg.Add(3)
-	go func() {
-		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.TotalStations = len(stations)
-		mainOverviewData.Stations = stations
-		mainOverviewData.TotalMessages = totalMessages
-		mainOverviewData.TotalDlsMessages = totalDlsMsgs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.SystemComponents = systemComponents
-		mainOverviewData.MetricsEnabled = metricsEnabled
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	go func() {
-		brokersThroughputs, err := mh.GetBrokersThroughputs()
-		if err != nil {
-			*generalErr = err
-			wg.Done()
-			return
-		}
-		mu.Lock()
-		mainOverviewData.BrokersThroughput = brokersThroughputs
-		mu.Unlock()
-		wg.Done()
-	}()
-
-	wg.Wait()
-	if *generalErr != nil {
-		return models.MainOverviewData{}, *generalErr
-	}
-
-	k8sEnv := true
-	if configuration.DOCKER_ENV == "true" || configuration.LOCAL_CLUSTER_ENV {
-		k8sEnv = false
-	}
-	mainOverviewData.K8sEnv = k8sEnv
-	return *mainOverviewData, nil
-}
-
 func (mh MonitoringHandler) GetMainOverviewData(c *gin.Context) {
-	response, err := mh.getMainOverviewDataDetails()
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetMainOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	response, err := mh.getMainOverviewDataDetails(user.TenantName)
 	if err != nil {
 		if strings.Contains(strings.ToLower(err.Error()), "cannot connect to the docker daemon") {
-			serv.Warnf("GetMainOverviewData: " + err.Error())
+			serv.Warnf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Failed getting system components data: " + err.Error()})
 		} else {
-			serv.Errorf("GetMainOverviewData: " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetMainOverviewData: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-main-overview")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-main-overview")
 	}
 
 	c.IndentedJSON(200, response)
@@ -1058,7 +163,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 	})
 
 	disconnectedProducers := make([]map[string]interface{}, 0)
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3d0",
 		"name":            "prod.16",
 		"type":            "application",
@@ -1070,7 +175,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ce",
 		"name":            "prod.15",
 		"type":            "application",
@@ -1082,7 +187,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3cc",
 		"name":            "prod.14",
 		"type":            "application",
@@ -1094,7 +199,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3ca",
 		"name":            "prod.13",
 		"type":            "application",
@@ -1106,7 +211,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c8",
 		"name":            "prod.12",
 		"type":            "application",
@@ -1118,7 +223,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c6",
 		"name":            "prod.11",
 		"type":            "application",
@@ -1130,7 +235,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c4",
 		"name":            "prod.10",
 		"type":            "application",
@@ -1142,7 +247,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c2",
 		"name":            "prod.9",
 		"type":            "application",
@@ -1154,7 +259,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3c0",
 		"name":            "prod.8",
 		"type":            "application",
@@ -1166,7 +271,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3be",
 		"name":            "prod.7",
 		"type":            "application",
@@ -1178,7 +283,7 @@ func getFakeProdsAndConsForPreview() ([]map[string]interface{}, []map[string]int
 		"is_deleted":      false,
 		"client_address":  "127.0.0.1:61430",
 	})
-	disconnectedProducers = append(connectedProducers, map[string]interface{}{
+	disconnectedProducers = append(disconnectedProducers, map[string]interface{}{
 		"id":              "63b68df439e19dd69996f3bc",
 		"name":            "prod.6",
 		"type":            "application",
@@ -1381,19 +486,25 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	stationName, err := StationNameFromStr(body.StationName)
 	if err != nil {
-		serv.Warnf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Warnf("GetStationOverviewData at StationNameFromStr: At station %v: %v", body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	exist, station, err := db.GetStationByName(stationName.Ext())
+	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("GetStationOverviewData at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if !exist {
-		errMsg := "Station " + body.StationName + " does not exist"
-		serv.Warnf("GetStationOverviewData: " + errMsg)
+		errMsg := fmt.Sprintf("Station %v does not exist", body.StationName)
+		serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData: %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		return
 	}
@@ -1402,25 +513,25 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetProducersByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 	}
 
-	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station)
+	auditLogs, err := auditLogsHandler.GetAuditLogsByStation(station.Name, user.TenantName)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station.Name)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -1428,10 +539,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	avgMsgSize, err := stationsHandler.GetAvgMsgSize(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetAvgMsgSize: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -1441,10 +552,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	messages, err := stationsHandler.GetMessages(station, messagesToFetch)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetMessages: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("GetStationOverviewData at GetMessages: At station " + body.StationName + ": " + err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -1453,10 +564,10 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
@@ -1468,7 +579,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.IsNative {
 		connectedCgs, disconnectedCgs, deletedCgs, err = consumersHandler.GetCgsByStation(stationName, station)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetCgsByStation: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1476,25 +587,32 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 	if err != nil {
-		serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetTagsByEntityWithID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	leader, followers, err := stationsHandler.GetLeaderAndFollowers(station)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Warnf("GetStationOverviewData: Station " + body.StationName + " does not exist")
+			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 		} else {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetLeaderAndFollowers: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		}
 		return
 	}
-
-	_, ok = IntegrationsCache["s3"].(models.Integration)
-	if !ok {
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); !ok {
 		station.TieredStorageEnabled = false
+	} else {
+		_, ok = tenantInetgrations["s3"].(models.Integration)
+		if !ok {
+			station.TieredStorageEnabled = false
+		} else if station.TieredStorageEnabled {
+			station.TieredStorageEnabled = true
+		} else {
+			station.TieredStorageEnabled = false
+		}
 	}
 	var response gin.H
 
@@ -1502,9 +620,9 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
 		var schemaDetails models.StationOverviewSchemaDetails
-		exist, schema, err := db.GetSchemaByName(station.SchemaName)
+		exist, schema, err := db.GetSchemaByName(station.SchemaName, station.TenantName)
 		if err != nil {
-			serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1513,7 +631,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		} else {
 			_, schemaVersion, err := db.GetSchemaVersionByNumberAndID(station.SchemaVersionNumber, schema.ID)
 			if err != nil {
-				serv.Errorf("GetStationOverviewData: At station " + body.StationName + ": " + err.Error())
+				serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetSchemaVersionByNumberAndID: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
@@ -1607,88 +725,11 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-station-overview")
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-station-overview")
 	}
 
 	c.IndentedJSON(200, response)
-}
-
-func (mh MonitoringHandler) GetSystemLogs(c *gin.Context) {
-	const amount = 100
-	const timeout = 500 * time.Millisecond
-
-	var request models.SystemLogsRequest
-	ok := utils.Validate(c, &request, false, nil)
-	if !ok {
-		return
-	}
-
-	startSeq := uint64(request.StartIdx)
-	getLast := false
-	if request.StartIdx == -1 {
-		getLast = true
-	}
-
-	filterSubject, filterSubjectSuffix := _EMPTY_, _EMPTY_
-	switch request.LogType {
-	case "err":
-		filterSubjectSuffix = syslogsErrSubject
-	case "warn":
-		filterSubjectSuffix = syslogsWarnSubject
-	case "info":
-		filterSubjectSuffix = syslogsInfoSubject
-	case "sys":
-		filterSubjectSuffix = syslogsSysSubject
-	case "external":
-		filterSubjectSuffix = syslogsExternalSubject
-	}
-
-	logSource := request.LogSource
-	if filterSubjectSuffix != _EMPTY_ {
-		if request.LogSource != "empty" && request.LogType != "external" {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, logSource, filterSubjectSuffix)
-		} else if request.LogSource != "empty" && request.LogType == "external" {
-			filterSubject = fmt.Sprintf("%s.%s.%s.%s", syslogsStreamName, logSource, "extern", ">")
-		} else {
-			filterSubject = fmt.Sprintf("%s.%s.%s", syslogsStreamName, "*", filterSubjectSuffix)
-		}
-	}
-
-	response, err := mh.S.GetSystemLogs(amount, timeout, getLast, startSeq, filterSubject, false)
-	if err != nil {
-		serv.Errorf("GetSystemLogs: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analytics.SendEvent(user.Username, "user-enter-syslogs-page")
-	}
-
-	c.IndentedJSON(200, response)
-}
-
-func (mh MonitoringHandler) DownloadSystemLogs(c *gin.Context) {
-	const timeout = 20 * time.Second
-	response, err := mh.S.GetSystemLogs(100, timeout, false, 0, _EMPTY_, true)
-	if err != nil {
-		serv.Errorf("DownloadSystemLogs: " + err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	b := new(bytes.Buffer)
-	datawriter := bufio.NewWriter(b)
-
-	for _, log := range response.Logs {
-		_, _ = datawriter.WriteString(log.Source + ": " + log.Data + "\n")
-	}
-
-	datawriter.Flush()
-	c.Writer.Write(b.Bytes())
 }
 
 func min(x, y uint64) uint64 {
@@ -1708,7 +749,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 	durableName := "$memphis_fetch_logs_consumer_" + uid
 	var msgs []StoredMsg
 
-	streamInfo, err := s.memphisStreamInfo(syslogsStreamName)
+	streamInfo, err := s.memphisStreamInfo(s.MemphisGlobalAccountString(), syslogsStreamName)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1745,7 +786,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		cc.FilterSubject = filterSubject
 	}
 
-	err = s.memphisAddConsumer(syslogsStreamName, &cc)
+	err = s.memphisAddConsumer(s.MemphisGlobalAccountString(), syslogsStreamName, &cc)
 	if err != nil {
 		return models.SystemLogsResponse{}, err
 	}
@@ -1754,17 +795,16 @@ func (s *Server) GetSystemLogs(amount uint64,
 	subject := fmt.Sprintf(JSApiRequestNextT, syslogsStreamName, durableName)
 	reply := durableName + "_reply"
 	req := []byte(strconv.FormatUint(amount, 10))
-
-	sub, err := s.subscribeOnGlobalAcc(reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
 			// ack
-			s.sendInternalAccountMsg(s.GlobalAccount(), reply, []byte(_EMPTY_))
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
 			rawTs := tokenAt(reply, 8)
 			seq, _, _ := ackReplyInfo(reply)
 
 			intTs, err := strconv.Atoi(rawTs)
 			if err != nil {
-				s.Errorf("GetSystemLogs: " + err.Error())
+				s.Errorf("GetSystemLogs: %v", err.Error())
 				return
 			}
 
@@ -1780,7 +820,7 @@ func (s *Server) GetSystemLogs(amount uint64,
 		return models.SystemLogsResponse{}, err
 	}
 
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), subject, reply, nil, req, true)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, reply, nil, req, true)
 
 	timer := time.NewTimer(timeout)
 	for i := uint64(0); i < amount; i++ {
@@ -1794,8 +834,8 @@ func (s *Server) GetSystemLogs(amount uint64,
 
 cleanup:
 	timer.Stop()
-	s.unsubscribeOnGlobalAcc(sub)
-	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(syslogsStreamName, durableName) })
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() { serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), syslogsStreamName, durableName) })
 
 	var resMsgs []models.Log
 	if uint64(len(msgs)) < amount && streamInfo.State.Msgs > amount && streamInfo.State.FirstSeq < startSeq {
@@ -2096,12 +1136,14 @@ func shortenFloat(f float64) float64 {
 func (mh MonitoringHandler) GetAvailableReplicas(c *gin.Context) {
 	v, err := serv.Varz(nil)
 	if err != nil {
-		serv.Errorf("GetAvailableReplicas: " + err.Error())
+		serv.Errorf("GetAvailableReplicas: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+	replicas := v.Routes + 1
+	replicas = GetAvailableReplicas(replicas)
 	c.IndentedJSON(200, gin.H{
-		"available_replicas": v.Routes + 1})
+		"available_replicas": replicas})
 }
 
 func checkIsMinikube(labels map[string]string) bool {
@@ -2178,7 +1220,7 @@ func getDockerMacAddress() (string, error) {
 	}
 
 	for _, iface := range ifaces {
-		if (iface.HardwareAddr == nil) {
+		if iface.HardwareAddr == nil {
 			continue
 		} else {
 			macAdress = iface.HardwareAddr.String()

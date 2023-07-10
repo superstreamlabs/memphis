@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nats-io/jwt/v2"
 	"memphis/server"
+
+	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 )

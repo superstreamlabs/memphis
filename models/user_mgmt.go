@@ -26,6 +26,12 @@ type User struct {
 	FullName        string    `json:"full_name"`
 	Subscribtion    bool      `json:"subscription"`
 	SkipGetStarted  bool      `json:"skip_get_started"`
+	TenantName      string    `json:"tenant_name"`
+	Pending         bool      `json:"pending"`
+	Position        string    `json:"position"`
+	Team            string    `json:"team"`
+	Owner           string    `json:"owner"`
+	Description     string    `json:"description"`
 }
 
 type Image struct {
@@ -35,20 +41,19 @@ type Image struct {
 }
 
 type AddUserSchema struct {
-	Username     string `json:"username" binding:"required,min=1,max=60"`
+	Username     string `json:"username" binding:"required,min=1"`
 	Password     string `json:"password"`
 	UserType     string `json:"user_type" binding:"required"`
 	AvatarId     int    `json:"avatar_id"`
 	FullName     string `json:"full_name"`
 	Subscribtion bool   `json:"subscription"`
+	Team         string `json:"team"`
+	Position     string `json:"position"`
+	Owner        string `json:"owner"`
+	Description  string `json:"description"`
 }
 
 type AuthenticateNatsSchema struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-type LoginSchema struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
@@ -83,8 +88,13 @@ type FilteredGenericUser struct {
 	Username        string    `json:"username"`
 	UserType        string    `json:"user_type"`
 	CreatedAt       time.Time `json:"created_at"`
-	AlreadyLoggedIn bool      `json:"already_logged_in"`
 	AvatarId        int       `json:"avatar_id"`
+	FullName        string    `json:"full_name"`
+	Pending         bool      `json:"pending"`
+	Position        string    `json:"position"`
+	Team            string    `json:"team"`
+	Owner           string    `json:"owner"`
+	Description     string    `json:"description"`
 }
 
 type FilteredApplicationUser struct {

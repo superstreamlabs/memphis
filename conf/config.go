@@ -16,6 +16,9 @@ import (
 	"github.com/tkanos/gonfig"
 )
 
+const MemphisGlobalAccountName = "$memphis"
+const GlobalAccount = "$G"
+
 type Configuration struct {
 	DEV_ENV                 string
 	LOCAL_CLUSTER_ENV       bool
@@ -30,6 +33,7 @@ type Configuration struct {
 	METADATA_DB_DBNAME      string
 	METADATA_DB_HOST        string
 	METADATA_DB_PORT        string
+	METADATA_DB_MAX_CONNS   int
 	METADATA_DB_TLS_ENABLED bool
 	METADATA_DB_TLS_MUTUAL  bool
 	METADATA_DB_TLS_KEY     string
@@ -38,15 +42,10 @@ type Configuration struct {
 	USER_PASS_BASED_AUTH    bool
 	CONNECTION_TOKEN        string
 	ENCRYPTION_SECRET_KEY   string
-	// SANDBOX_SLACK_BOT_TOKEN        string
-	// SANDBOX_SLACK_CHANNEL_ID       string
-	// SANDBOX_UI_URL                 string
-	// GOOGLE_CLIENT_ID               string
-	// GOOGLE_CLIENT_SECRET           string
-	// SANDBOX_ENV                    string
-	// GITHUB_CLIENT_ID               string
-	// GITHUB_CLIENT_SECRET           string
-	// SANDBOX_REDIRECT_URI           string
+	ENV                     string
+	PROVIDER                string
+	REGION                  string
+	INSTALLATION_SOURCE     string
 }
 
 func GetConfig() Configuration {
@@ -78,6 +77,9 @@ func GetConfig() Configuration {
 	}
 	if configuration.REFRESH_JWT_SECRET == "" {
 		configuration.REFRESH_JWT_SECRET = "refresh_jwt_test_purpose"
+	}
+	if configuration.METADATA_DB_MAX_CONNS == 0 {
+		configuration.METADATA_DB_MAX_CONNS = 10
 	}
 
 	gin.SetMode(gin.ReleaseMode)

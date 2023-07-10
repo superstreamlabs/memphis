@@ -31,6 +31,7 @@ type Consumer struct {
 	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
 	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
 	LastMessages        int64     `json:"last_messages"`
+	TenantName          string    `json:"tenant_name"`
 }
 
 type ExtendedConsumer struct {
@@ -46,6 +47,11 @@ type ExtendedConsumer struct {
 	MaxAckTimeMs      int64     `json:"max_ack_time_ms"`
 	MaxMsgDeliveries  int       `json:"max_msg_deliveries"`
 	StationName       string    `json:"station_name,omitempty"`
+}
+
+type LightConsumer struct {
+	Name        string `json:"name"`
+	StationName string `json:"station_name"`
 }
 
 type Cg struct {
@@ -91,4 +97,14 @@ type CgMember struct {
 	CreatedByUsername string `json:"created_by_username"`
 	MaxMsgDeliveries  int    `json:"max_msg_deliveries"`
 	MaxAckTimeMs      int64  `json:"max_ack_time_ms"`
+}
+
+type DelayedCg struct {
+	CGName           string `json:"cg_name"`
+	NumOfDelayedMsgs uint64 `json:"num_of_delayed_msgs"`
+}
+
+type DelayedCgResp struct {
+	StationName string      `json:"station_name"`
+	CGS         []DelayedCg `json:"cgs"`
 }

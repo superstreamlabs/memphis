@@ -12,7 +12,7 @@
     "@testing-library/user-event": "^13.5.0",
     "ajv": "^8.11.2",
     "ajv-draft-04": "^1.0.0",
-    "antd": "^4.23.1",
+    "antd": "4.23.1",
     "axios": "^0.25.0",
     "buffer": "^6.0.3",
     "chart.js": "^2.9.4",
@@ -31,7 +31,6 @@
     "react-chartjs-2": "^2.11.2",
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.5",
-    "react-google-login": "^5.2.2",
     "react-markdown": "^8.0.5",
     "react-player": "2.11.0",
     "react-responsive": "^9.0.0-beta.6",
@@ -39,11 +38,13 @@
     "react-test-renderer": "^17.0.2",
     "react-virtuoso": "1.2.5",
     "react-window": "^1.8.6",
-    "reaflow": "^5.0.6",
+    "reaflow": "5.0.6",
     "recharts": "^2.1.16",
     "sass": "^1.49.0",
     "uuid": "^9.0.0",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "rdk":"6.4.4"
+
   },
   "scripts": {
     "start": "PORT=5555 react-scripts start",

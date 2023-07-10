@@ -12,31 +12,75 @@
     }
     .users-list-container {
         margin-top: 30px;
-        .users-list-header {
+        .ant-table-thead .ant-table-cell{
+            background: white;
+            border-top: 1px solid #E4E6E9;
+        }
+        .table-header{
             display: flex;
-            position: relative;
-            height: 20px;
-            p {
-                position: absolute;
-                font-family: 'InterSemiBold';
+            align-items:center;
+            p{
+                margin-bottom: 0;
+                margin-right: 10px;
+                font-family: 'InterMedium';
                 font-size: 14px;
             }
-            .user-name-title {
-                padding-left: 45px;
-            }
-            .type-title {
-                padding-left: 350px;
-            }
-            .creation-date-title {
-                padding-left: 700px;
-            }
         }
-        .users-list {
-            height: calc(95vh - 140px);
-            overflow: auto;
-            margin-top: 5px;
-            padding-bottom: 5px;
-            padding-left: 3px;
+        .user-row{
+            p{
+                margin: 0;
+                font-family: 'InterMedium';
+                font-size: 14px;
+            }
+            .user-name {
+                display: flex;
+                align-items: center;
+                .user-avatar {
+                    width: 35px;
+                    height: 35px;
+                    background: #ffffff;
+                    box-shadow: 0px 0px 2px 1px rgba(170, 170, 170, 0.25);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-right: 20px;
+                    svg{
+                        color: var(--purple)
+                    }
+                }
+                .badgeOrange{
+                    min-width: unset !important;
+                    border-radius: 32px;
+                    height: 20px;
+                    margin-left: 10px;
+                    
+                }
+            }
+            .status{
+                .version-badge{
+                    justify-content: center;
+                    height: 24px;
+                    min-width: unset;
+                    max-width: 70px;
+                }
+            }
+            .created-column{
+                font-family: 'Inter' !important;
+                color: rgba(74, 73, 92, 0.8);
+            }
+            .user-action{
+                display: flex;
+                gap: 10px;
+                .action-button{
+                    display: flex;
+                    position: relative;
+                    align-items: center;
+                    img{
+                        margin-right: 5px;
+                    }
+                }
+            }
         }
     }
     ::-webkit-scrollbar-thumb {

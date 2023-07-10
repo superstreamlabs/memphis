@@ -41,7 +41,7 @@ var (
 
 const (
 	// VERSION is the current version for the memphis.
-	VERSION = "1.0.3"
+	VERSION = "1.1.0"
 
 	DEFAULT_SERVER_NAME                        = "memphis-0"
 	DEFAULT_WS_PORT                            = 7770
@@ -50,7 +50,6 @@ const (
 	DEFAULT_WS_TOKEN                           = "memphis"
 	DEFAULT_CLIENTS_TOKEN                      = "memphis"
 	SHOWABLE_ERROR_STATUS_CODE                 = 666
-	ANALYTICS_TOKEN                            = "phc_9f3IO36XrBJBtfs54eHQLIpG8cPfOnV1sJ0TEKHlmOm"
 	DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC = 8
 	DEFAULT_DLS_RETENTION_HOURS                = 3
 

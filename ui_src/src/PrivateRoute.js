@@ -15,14 +15,26 @@ import {} from 'react-router-dom';
 import { Route, Redirect } from 'react-router-dom';
 
 import AuthService from './services/auth';
+import { isCloud } from './services/valueConvertor';
+import { CLOUD_URL } from './config';
+import pathDomains from './router';
+import { LOCAL_STORAGE_SKIP_GET_STARTED } from './const/localStorageConsts';
 
 function PrivateRoute(props) {
     const { component: Component, ...rest } = props;
-
     if (AuthService.isValidToken()) {
         return <Route {...rest} render={() => Component} />;
     } else {
-        return <Redirect to={{ pathname: '/login', state: { referer: props.location } }} />;
+        if (isCloud()) {
+            const isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
+            localStorage.clear();
+            if (isSkipGetStarted === 'true') {
+                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
+            }
+            window.location.replace(CLOUD_URL);
+        } else {
+            return <Redirect to={{ pathname: pathDomains.login, state: { referer: props.location } }} />;
+        }
     }
 }
 

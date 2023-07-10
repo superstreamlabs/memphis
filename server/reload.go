@@ -17,6 +17,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/url"
+	"os"
 	"reflect"
 	"sort"
 	"strings"
@@ -851,14 +852,20 @@ func (s *Server) Reload() error {
 	// 	return errors.New("can only reload config when a file is provided using -c or --config")
 	// }
 
+	// ** added by memphis
+	if configFile == "temp.conf" {
+		os.Create("temp.conf")
+		defer os.Remove("temp.conf")
+		configFile = "temp.conf"
+	}
+	// ** added by memphis
+	
 	newOpts, err := ProcessConfigFile(configFile)
 	if err != nil {
 		// TODO: Dump previous good config to a .bak file?
 		return err
 	}
-
-	memphisOpts, _ := s.GetMemphisOpts(*newOpts)
-	return s.ReloadOptions(&memphisOpts)
+	return s.ReloadOptions(newOpts)
 }
 
 // ReloadOptions applies any supported options from the provided Option
@@ -897,6 +904,14 @@ func (s *Server) ReloadOptions(newOpts *Options) error {
 	if FlagSnapshot != nil {
 		applyBoolFlags(newOpts, FlagSnapshot)
 	}
+
+	// ** added by Memphis
+	newOpts, err := GetMemphisOpts(newOpts)
+	if err != nil {
+		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
+		return err
+	}
+	// added by Memphis **
 
 	setBaselineOptions(newOpts)
 
@@ -1668,6 +1683,9 @@ func (s *Server) reloadAuthorization() {
 		oldAccounts := make(map[string]*Account)
 		s.accounts.Range(func(k, v interface{}) bool {
 			acc := v.(*Account)
+			if acc.GetName() == DEFAULT_GLOBAL_ACCOUNT {
+				return true
+			}
 			acc.mu.Lock()
 			oldAccounts[acc.Name] = acc
 			// Need to clear out eventing timers since they close over this account and not the new one.
@@ -1677,6 +1695,7 @@ func (s *Server) reloadAuthorization() {
 			s.accounts.Delete(k)
 			return true
 		})
+
 		s.gacc = nil
 		s.configureAccounts()
 		s.configureAuthorization()

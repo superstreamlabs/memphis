@@ -1348,7 +1348,7 @@ func TestPanic(t *testing.T) {
 func TestPingIntervalOld(t *testing.T) {
 	conf := createConfFile(t, []byte(`ping_interval: 5`))
 	opts := &Options{}
-	err := opts.ProcessConfigFile(conf)
+	err := opts.ProcessConfigFile(conf, false)
 	if err == nil {
 		t.Fatalf("expected an error")
 	}
@@ -1370,7 +1370,7 @@ func TestPingIntervalOld(t *testing.T) {
 func TestPingIntervalNew(t *testing.T) {
 	conf := createConfFile(t, []byte(`ping_interval: "5m"`))
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(conf); err != nil {
+	if err := opts.ProcessConfigFile(conf, false); err != nil {
 		t.Fatalf("expected no error")
 	}
 	if opts.PingInterval != 5*time.Minute {
@@ -1389,7 +1389,7 @@ func TestOptionsProcessConfigFile(t *testing.T) {
 		LogFile: logFileName,
 	}
 	configFileName := "./configs/test.conf"
-	if err := opts.ProcessConfigFile(configFileName); err != nil {
+	if err := opts.ProcessConfigFile(configFileName, false); err != nil {
 		t.Fatalf("Error processing config file: %v", err)
 	}
 	// Verify that values are as expected
@@ -2577,7 +2577,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 
 	// Verify that we get an error because of unknown "streaming" field.
 	opts := &Options{}
-	if err := opts.ProcessConfigFile(conf); err == nil || !strings.Contains(err.Error(), "streaming") {
+	if err := opts.ProcessConfigFile(conf, false); err == nil || !strings.Contains(err.Error(), "streaming") {
 		t.Fatal("Expected error, got none")
 	}
 
@@ -2585,7 +2585,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 	NoErrOnUnknownFields(true)
 	defer NoErrOnUnknownFields(false)
 
-	if err := opts.ProcessConfigFile(conf); err != nil {
+	if err := opts.ProcessConfigFile(conf, false); err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
 	if opts.Port != 1234 {
@@ -2602,7 +2602,7 @@ func TestHandleUnknownTopLevelConfigurationField(t *testing.T) {
 			id: "me"
 		}
 	`))
-	if err := opts.ProcessConfigFile(conf); err == nil || !strings.Contains(err.Error(), "non_top_level") {
+	if err := opts.ProcessConfigFile(conf, false); err == nil || !strings.Contains(err.Error(), "non_top_level") {
 		t.Fatal("Expected error, got none")
 	}
 }

@@ -50,7 +50,7 @@ const FailedStations = ({ createStationTrigger }) => {
                             <div className="coulmns-table">
                                 <span className="station-name">Name</span>
                                 <span>Creation date</span>
-                                <span className="title-center">Total messages</span>
+                                <span className="title-center">Stored messages</span>
                                 <span className="title-center">Status</span>
                                 <span></span>
                             </div>
@@ -96,7 +96,7 @@ const FailedStations = ({ createStationTrigger }) => {
                     ) : (
                         <div className="empty-stations-container">
                             <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
-                            <p>No station exist</p>
+                            <p>No stations yet</p>
                             <Button
                                 className="modal-btn"
                                 width="160px"

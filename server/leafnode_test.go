@@ -30,10 +30,10 @@ import (
 
 	"github.com/nats-io/nkeys"
 
+	"memphis/internal/testhelper"
+
 	jwt "github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
-
-	"memphis/internal/testhelper"
 )
 
 type captureLeafNodeRandomIPLogger struct {

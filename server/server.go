@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"memphis/db"
 	"memphis/logger"
 	"net"
 	"net/http"
@@ -325,9 +326,44 @@ func New(opts *Options) *Server {
 	return s
 }
 
+// ** added by Memphis
+func InitializeMetadataStorage() (db.MetadataStorage, error) {
+	metadataDb, err := db.InitalizeMetadataDbConnection()
+	if err != nil {
+		return db.MetadataStorage{}, err
+	}
+
+	err = CreateGlobalTenantOnFirstSystemLoad()
+	if err != nil {
+		return db.MetadataStorage{}, err
+	}
+
+	err = CreateRootUserOnFirstSystemLoad()
+	if err != nil {
+		return db.MetadataStorage{}, err
+	}
+
+	err = EncryptOldUnencryptedValues()
+	if err != nil {
+		err = fmt.Errorf("failed encrypt old unencrypted values: %v", err.Error())
+		return db.MetadataStorage{}, err
+	}
+	return metadataDb, nil
+}
+
+// added by Memphis ***
+
 // NewServer will setup a new server struct after parsing the options.
 // Could return an error if options can not be validated.
 func NewServer(opts *Options) (*Server, error) {
+	// ** added by Memphis
+	opts, err := GetMemphisOpts(opts)
+	if err != nil {
+		err = fmt.Errorf("failed getting memphis opts: %v", err.Error())
+		return nil, err
+	}
+	// added by Memphis ***
+
 	setBaselineOptions(opts)
 
 	// Process TLS options, including whether we require client certificates.
@@ -739,6 +775,28 @@ func (s *Server) globalAccount() *Account {
 	gacc := s.gacc
 	s.mu.RUnlock()
 	return gacc
+}
+
+func (s *Server) MemphisGlobalAccount() *Account {
+	acc := MEMPHIS_GLOBAL_ACCOUNT
+	if !configuration.USER_PASS_BASED_AUTH {
+		acc = DEFAULT_GLOBAL_ACCOUNT
+	}
+
+	macc, err := s.LookupAccount(acc)
+	if err != nil {
+		fmt.Printf("error resolving memphis system account: %v\n", err)
+		return nil
+	}
+	return macc
+}
+
+func (s *Server) MemphisGlobalAccountString() string {
+	acc := MEMPHIS_GLOBAL_ACCOUNT
+	if !configuration.USER_PASS_BASED_AUTH {
+		acc = DEFAULT_GLOBAL_ACCOUNT
+	}
+	return acc
 }
 
 // Used to setup Accounts.
@@ -1617,7 +1675,7 @@ func (s *Server) Start() {
 	opts := s.getOpts()
 	clusterName := s.ClusterName()
 
-	s.Noticef("Version:  %s", VERSION)
+	s.Noticef("Version:  %s", s.MemphisVersion())
 	if clusterName != _EMPTY_ {
 		s.Noticef("  Cluster:  %s", clusterName)
 	}
@@ -1646,9 +1704,11 @@ func (s *Server) Start() {
 		s.StartProfiler()
 	}
 
-	if opts.ConfigFile != _EMPTY_ {
-		s.Noticef("Using configuration file: %s", opts.ConfigFile)
-	}
+	// ** removed by memphis
+	// if opts.ConfigFile != _EMPTY_ {
+	// 	s.Noticef("Using configuration file: %s", opts.ConfigFile)
+	// }
+	// ** removed by memphis
 
 	hasOperators := len(opts.TrustedOperators) > 0
 	if hasOperators {

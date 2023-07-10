@@ -41,7 +41,8 @@ export const CATEGORY_LIST = {
     },
     Monitoring: {
         name: 'Monitoring',
-        color: ColorPalette[8]
+        color: ColorPalette[8],
+        osOnly: true
     },
     Notifications: {
         name: 'Notifications',
@@ -169,6 +170,7 @@ export const INTEGRATION_LIST = {
         icon: <img src={datadogIcon} alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={datadogIcon} alt="datadogIcon" />
@@ -237,14 +239,14 @@ export const INTEGRATION_LIST = {
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <img src={s3Logo} alt="s3Logo" />,
-        description: 'AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
+        description: 'S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
         header: (
             <div className="header-left-side">
                 <img src={s3Logo} alt="s3Logo" />
                 <div className="details">
-                    <p>S3</p>
+                    <p>S3 Compatible Object Storage</p>
                     <span>by memphis</span>
                 </div>
             </div>
@@ -252,7 +254,7 @@ export const INTEGRATION_LIST = {
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
+                <span className="content">S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.</span>
             </div>
         )
     },
@@ -265,6 +267,7 @@ export const INTEGRATION_LIST = {
         description: 'Monitor and observe Memphis infrastructure using Elasticsearch Observability and Kibana',
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={elasticIcon} alt="elasticIcon" />
@@ -307,6 +310,7 @@ export const INTEGRATION_LIST = {
         icon: <img src={grafanaIcon} alt="grafanaIcon" />,
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={grafanaIcon} alt="grafanaIcon" />
@@ -346,6 +350,7 @@ export const INTEGRATION_LIST = {
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={pagerDutyIcon} alt="pagerDutyIcon" />
@@ -373,6 +378,7 @@ export const INTEGRATION_LIST = {
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         comingSoon: true,
         category: CATEGORY_LIST['Monitoring'],
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={newrelicIcon} alt="newrelicIcon" />
@@ -400,6 +406,7 @@ export const INTEGRATION_LIST = {
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
+        osOnly: true,
         header: (
             <div className="header-left-side">
                 <img src={influxDBIcon} alt="influxDBIcon" />

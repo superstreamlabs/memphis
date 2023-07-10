@@ -13,11 +13,13 @@
 import { message } from 'antd';
 import axios from 'axios';
 
-import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, SANDBOX_SHOWABLE_ERROR_STATUS_CODE } from '../config';
-import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_EXPIRED_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED } from '../const/localStorageConsts.js';
+import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, CLOUD_URL } from '../config';
+import { LOCAL_STORAGE_TOKEN, LOCAL_STORAGE_SKIP_GET_STARTED } from '../const/localStorageConsts.js';
 import { ApiEndpoints } from '../const/apiEndpoints';
 import pathDomains from '../router';
 import AuthService from './auth';
+import { isCloud } from './valueConvertor';
+import EmailLink from '../components/emailLink';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
     let isSkipGetStarted;
@@ -59,27 +61,7 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             if (isSkipGetStarted === 'true') {
                 localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
             }
-            window.location.assign('/login');
-        }
-        if (err?.response?.data?.message !== undefined && err?.response?.status === SANDBOX_SHOWABLE_ERROR_STATUS_CODE) {
-            message.warning({
-                key: 'memphisWarningMessage',
-                content: (
-                    <>
-                        You are in a sandbox environment; this operation is not allowed. <hr /> For a full Memphis experience, please
-                        <a
-                            className="a-link"
-                            href="https://docs.memphis.dev/memphis/getting-started/readme?utm_source=sandbox&utm_medium=banner&utm_campaign=sandbox+installation+banner#getting-started"
-                            target="_blank"
-                        >
-                            install
-                        </a>
-                    </>
-                ),
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisWarningMessage')
-            });
+            isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
             message.warning({
@@ -93,12 +75,18 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {
             message.error({
                 key: 'memphisErrorMessage',
-                content: (
+                content: isCloud() ? (
                     <>
-                        We have some issues. Please open a
-                        <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
-                            GitHub issue
-                        </a>
+                        We are experiencing some issues. Please contact us at <EmailLink email="support@memphis.dev" /> for assistance.
+                    </>
+                ) : (
+                    <>
+                        <>
+                            We have some issues. Please open a
+                            <a className="a-link" href="https://github.com/memphisdev/memphis" target="_blank">
+                                GitHub issue
+                            </a>
+                        </>
                     </>
                 ),
                 duration: 5,
@@ -127,14 +115,7 @@ export async function handleRefreshTokenRequest() {
     try {
         const url = `${SERVER_URL}${ApiEndpoints.REFRESH_TOKEN}`;
         const res = await HTTP({ method: 'POST', url });
-        const now = new Date();
-        const expiryToken = now.getTime() + res.data.expires_in;
-        if (process.env.REACT_APP_SANDBOX_ENV) {
-            localStorage.setItem(LOCAL_STORAGE_TOKEN, res.data.jwt);
-            localStorage.setItem(LOCAL_STORAGE_EXPIRED_TOKEN, expiryToken);
-        } else {
-            await AuthService.saveToLocalStorage(res.data);
-        }
+        await AuthService.saveToLocalStorage(res.data);
         return true;
     } catch (err) {
         isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
@@ -142,7 +123,7 @@ export async function handleRefreshTokenRequest() {
         if (isSkipGetStarted === 'true') {
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
         }
-        window.location.assign('/login');
+        isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         return false;
     }
 }

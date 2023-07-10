@@ -1,0 +1,37 @@
+.overview-integrations-container {
+    position: relative;
+    height: 100%;
+    padding: 15px;
+    .integrations-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .link-to-page {
+            font-weight: 500;
+            font-size: 12 !important;
+            color: #6557ff !important;
+            cursor: pointer;
+        }
+    }
+    .integrations-list {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+        .integration-item {
+            border: 1px solid #f1f1f1;
+            border-radius: 4px;
+            padding: 8px;
+            width: 48%;
+            .img-icon {
+                height: 20px;
+                width: 20px;
+            }
+            .integration-name {
+                font-weight: 600;
+                font-size: 14px;
+                color: #2e2c34;
+                margin-left: 10px;
+            }
+        }
+    }
+}

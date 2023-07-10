@@ -13,10 +13,8 @@ package server
 
 import (
 	"encoding/json"
-	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -24,77 +22,37 @@ import (
 func (srv *Server) removeStaleStations() {
 	stations, err := db.GetActiveStations()
 	if err != nil {
-		srv.Errorf("removeStaleStations: " + err.Error())
+		srv.Errorf("removeStaleStations: %v", err.Error())
 	}
 	for _, s := range stations {
 		go func(srv *Server, s models.Station) {
 			stationName, _ := StationNameFromStr(s.Name)
-			_, err = srv.memphisStreamInfo(stationName.Intern())
+			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("removeStaleStations: Found zombie station to delete: " + s.Name)
-				err := db.DeleteStation(s.Name)
+				srv.Warnf("[tenant: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
+				err := removeStationResources(srv, s, false)
 				if err != nil {
-					srv.Errorf("removeStaleStations: " + err.Error())
+					srv.Errorf("[tenant: %v]removeStaleStations at removeStationResources: %v", s.TenantName, err.Error())
+				}
+				err = db.DeleteStation(s.Name, s.TenantName)
+				if err != nil {
+					srv.Errorf("[tenant: %v]removeStaleStations at DeleteStation: %v", s.TenantName, err.Error())
 				}
 			}
 		}(srv, s)
 	}
 }
 
-func updateSystemLiveness() {
-	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false)
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
-		return
-	}
-
-	producersCount, err := db.CountAllActiveProudcers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
-		return
-	}
-
-	consumersCount, err := db.CountAllActiveConsumers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: " + err.Error())
-		return
-	}
-
-	param1 := analytics.EventParam{
-		Name:  "total-messages",
-		Value: strconv.Itoa(int(totalMessages)),
-	}
-	param2 := analytics.EventParam{
-		Name:  "total-dls-messages",
-		Value: strconv.Itoa(int(totalDlsMsgs)),
-	}
-	param3 := analytics.EventParam{
-		Name:  "total-stations",
-		Value: strconv.Itoa(len(stations)),
-	}
-	param4 := analytics.EventParam{
-		Name:  "active-producers",
-		Value: strconv.Itoa(int(producersCount)),
-	}
-	param5 := analytics.EventParam{
-		Name:  "active-consumers",
-		Value: strconv.Itoa(int(consumersCount)),
-	}
-	analyticsParams := []analytics.EventParam{param1, param2, param3, param4, param5}
-	analytics.SendEventWithParams("", analyticsParams, "system-is-up")
-}
-
 func aggregateClientConnections(s *Server) (map[string]string, error) {
 	connectionIds := make(map[string]string)
 	var lock sync.Mutex
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
-	sub, err := s.subscribeOnGlobalAcc(replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
 			if err != nil {
-				s.Errorf("aggregateClientConnections: " + err.Error())
+				s.Errorf("aggregateClientConnections: %v", err.Error())
 				return
 			}
 
@@ -110,17 +68,17 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	}
 
 	// send message to all brokers to get their connections
-	s.sendInternalAccountMsgWithReply(s.GlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
 	timeout := time.After(50 * time.Second)
 	<-timeout
-	s.unsubscribeOnGlobalAcc(sub)
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 	return connectionIds, nil
 }
 
 func killFunc(s *Server) {
 	connections, err := db.GetActiveConnections()
 	if err != nil {
-		serv.Errorf("killFunc: GetActiveConnections: " + err.Error())
+		serv.Errorf("killFunc: GetActiveConnections: %v", err.Error())
 		return
 	}
 
@@ -128,7 +86,7 @@ func killFunc(s *Server) {
 		var zombieConnections []string
 		clientConnectionIds, err := aggregateClientConnections(s)
 		if err != nil {
-			serv.Errorf("killFunc: aggregateClientConnections: " + err.Error())
+			serv.Errorf("killFunc: aggregateClientConnections: %v", err.Error())
 			return
 		}
 		for _, conn := range connections {
@@ -143,20 +101,18 @@ func killFunc(s *Server) {
 			serv.Warnf("Zombie connections found, killing")
 			err := db.KillRelevantConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killRelevantConnections: " + err.Error())
+				serv.Errorf("killFunc: killRelevantConnections: %v", err.Error())
 			}
 			err = db.KillProducersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killProducersByConnections: " + err.Error())
+				serv.Errorf("killFunc: killProducersByConnections: %v", err.Error())
 			}
 			err = db.KillConsumersByConnections(zombieConnections)
 			if err != nil {
-				serv.Errorf("killFunc: killConsumersByConnections: " + err.Error())
+				serv.Errorf("killFunc: killConsumersByConnections: %v", err.Error())
 			}
 		}
 	}
-
-	s.removeStaleStations()
 }
 
 func (s *Server) KillZombieResources() {
@@ -176,6 +132,10 @@ func (s *Server) KillZombieResources() {
 	firstIteration := true
 	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
+		if firstIteration {
+			s.removeStaleStations()
+			s.RemoveOldStations()
+		}
 		killFunc(s)
 
 		if firstIteration || count == 1*60 { // once in 1 hour

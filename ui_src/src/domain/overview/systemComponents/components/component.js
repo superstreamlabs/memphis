@@ -90,7 +90,7 @@ const Component = ({ comp, i }) => {
                     {comp?.ports && (
                         <div className="ports">
                             <label className="comp-label">Ports</label>
-                            <label className="value">{comp?.ports.length > 0 ? comp?.ports[0] : 'None'}</label>
+                            <label className="value">{comp?.ports?.length > 0 ? comp?.ports[0] : 'None'}</label>
                             {comp?.ports?.length > 1 && (
                                 <Popover
                                     overlayInnerStyle={remainingPorstPopInnerStyle}

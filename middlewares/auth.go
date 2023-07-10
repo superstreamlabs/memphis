@@ -16,13 +16,14 @@ import (
 	"fmt"
 
 	"memphis/conf"
+	"memphis/db"
 	"memphis/models"
 
 	"strings"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 var noNeedAuthRoutes = []string{
@@ -31,8 +32,9 @@ var noNeedAuthRoutes = []string{
 	"/api/usermgmt/addusersignup",
 	"/api/usermgmt/getsignupflag",
 	"/api/status",
-	// "/api/sandbox/login",
 	"/api/monitoring/getclusterinfo",
+	"/api/tenants/createtenant",
+	"/api/usermgmt/approveinvitation",
 }
 
 var refreshTokenRoute string = "/api/usermgmt/refreshtoken"
@@ -79,6 +81,10 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return models.User{}, errors.New("f")
 	}
 
+	if claims["tenant_name"] == nil {
+		claims["tenant_name"] = conf.MemphisGlobalAccountName
+	}
+
 	userId := int(claims["user_id"].(float64))
 	creationDate, _ := time.Parse("2006-01-02T15:04:05.000Z", claims["creation_date"].(string))
 	user := models.User{
@@ -88,6 +94,7 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		CreatedAt:       creationDate,
 		AlreadyLoggedIn: claims["already_logged_in"].(bool),
 		AvatarId:        int(claims["avatar_id"].(float64)),
+		TenantName:      claims["tenant_name"].(string),
 	}
 
 	return user, nil
@@ -96,38 +103,57 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 func Authenticate(c *gin.Context) {
 	path := strings.ToLower(c.Request.URL.Path)
 	needToAuthenticate := isAuthNeeded(path)
+	var tokenString string
+	var err error
+	var user models.User
+	shouldCheckUser := false
 	if needToAuthenticate {
-		var tokenString string
-		var err error
 		tokenString, err = extractToken(c.GetHeader("authorization"))
-
 		if err != nil || tokenString == "" {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		user, err := verifyToken(tokenString, configuration.JWT_SECRET)
+		user, err = verifyToken(tokenString, configuration.JWT_SECRET)
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		c.Set("user", user)
+		shouldCheckUser = true
 	} else if path == refreshTokenRoute {
-		tokenString, err := c.Cookie("jwt-refresh-token")
+		tokenString, err = c.Cookie("jwt-refresh-token")
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		user, err := verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
+		user, err = verifyToken(tokenString, configuration.REFRESH_JWT_SECRET)
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return
 		}
 
-		c.Set("user", user)
+		shouldCheckUser = true
 	}
 
+	if shouldCheckUser {
+		username := strings.ToLower(user.Username)
+		if user.TenantName != conf.GlobalAccount {
+			user.TenantName = strings.ToLower(user.TenantName)
+		}
+
+		exists, _, err := db.GetUserByUsername(username, user.TenantName)
+		if err != nil {
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !exists {
+			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
+			return
+		}
+	}
+
+	c.Set("user", user)
 	c.Next()
 }

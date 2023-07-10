@@ -3285,7 +3285,8 @@ func (mset *stream) setupStore(fsCfg *FileStoreConfig) error {
 
 	switch mset.cfg.Storage {
 	case MemoryStorage:
-		ms, err := newMemStore(&mset.cfg)
+		// ** added by memphis - add mset.acc to function
+		ms, err := newMemStoreMemphis(&mset.cfg, mset.acc)
 		if err != nil {
 			mset.mu.Unlock()
 			return err
@@ -3298,7 +3299,8 @@ func (mset *stream) setupStore(fsCfg *FileStoreConfig) error {
 			// We are encrypted here, fill in correct cipher selection.
 			fsCfg.Cipher = s.getOpts().JetStreamCipher
 		}
-		fs, err := newFileStoreWithCreated(*fsCfg, mset.cfg, mset.created, prf)
+		// ** added by mamphis **
+		fs, err := newFileStoreWithCreatedMemphis(*fsCfg, mset.cfg, mset.created, prf, mset.acc)
 		if err != nil {
 			mset.mu.Unlock()
 			return err
@@ -4276,6 +4278,7 @@ type StoredMsg struct {
 	Data         []byte    `json:"data,omitempty"`
 	Time         time.Time `json:"time"`
 	ReplySubject string    `json:"reply_subject"`
+	TenantName   string    `json:"tenant_name"`
 }
 
 // This is similar to system semantics but did not want to overload the single system sendq,

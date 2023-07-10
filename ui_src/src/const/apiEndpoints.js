@@ -25,7 +25,6 @@ export const ApiEndpoints = {
     EDIT_COMPANY_LOGO: '/usermgmt/editCompanyLogo',
     REMOVE_COMPANY_LOGO: '/usermgmt/removeCompanyLogo',
     EDIT_ANALYTICS: '/usermgmt/editAnalytics',
-    SANDBOX_LOGIN: '/sandbox/login',
     DONE_NEXT_STEPS: '/usermgmt/doneNextSteps',
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
@@ -81,7 +80,7 @@ export const ApiEndpoints = {
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',
-    UPDATE_INTEGRATIONL: '/integrations/updateIntegration',
+    UPDATE_INTEGRATION: '/integrations/updateIntegration',
     GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
     GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
@@ -92,5 +91,12 @@ export const ApiEndpoints = {
     EDIT_CLUSTER_CONFIGURATION: '/configurations/editClusterConfig',
 
     //Auth
-    GENERATE_TOKEN: '/auth/authenticate'
+    GENERATE_TOKEN: '/auth/authenticate',
+
+    //Cloud
+    GET_BILLING_DETAILS: '/billing/getBill',
+    RESEND_INVITATION: '/usermgmt/resendInvitation',
+    REVOKED_INVITATION: '/usermgmt/revokeInvitation',
+    SIGN_OUT: '/usermgmt/signOut',
+    SEND_SUPPORT: '/usermgmt/sendSupportRequest'
 };

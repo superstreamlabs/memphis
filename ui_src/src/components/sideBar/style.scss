@@ -1,10 +1,9 @@
 .sidebar-container {
     width: 90px;
     height: 100vh;
-    position: relative;
     text-align: center;
     background: #fcfcfc;
-    min-height: 450px;
+    min-height: 555px;
     border-right: 1px solid #f4f4f4;
     display: flex;
     flex-direction: column;
@@ -16,15 +15,37 @@
             margin-bottom: 5vh;
         }
         .item-wrapper {
+            margin-bottom: 15px;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             p {
                 font-size: 80%;
                 color: var(--gray);
                 font-family: 'InterSemiBold';
+                margin: 0;
             }
             .checked {
                 color: var(--purple);
             }
+        }
+        .item-wrapper:hover {
+            .name {
+                color: var(--purple);
+            }
+        }
+        .not-available {
+            cursor: not-allowed;
+        }
+        .coming-soon {
+            background-color: var(--purple);
+            color: var(--white);
+            font-size: 10px;
+            position: relative;
+            border-radius: 32px;
+            cursor: not-allowed;
+            width: 70%;
         }
     }
     .sandboxUserImg {
@@ -54,14 +75,25 @@
             cursor: pointer;
             height: 30px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            .icon-name {
+                font-size: 11px;
+                color: rgba(74, 73, 92, 0.8);
+                font-family: 'InterSemiBold';
+                margin: 0;
+                cursor: pointer;
+            }
             img {
                 width: 18px;
             }
         }
         .integration-icon-wrapper:hover {
-            background-color: rgba(132, 129, 138, 0.1);
-            border-radius: 10px;
+            .icon-name {
+                color: var(--purple);
+            }
         }
         version {
             margin-bottom: 10px;
@@ -78,15 +110,14 @@
                 font-size: 12px;
                 font-family: 'InterSemiBold';
             }
-            .update-note{
+            .update-note {
                 width: 7px;
                 height: 7px;
-                background: #FC3400;
+                background: #fc3400;
                 border-radius: 9px;
                 position: absolute;
                 top: -2px;
                 right: -2px;
-            
             }
         }
     }
@@ -192,4 +223,90 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.support-container {
+    a {
+        color: #6557ff;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    p {
+        margin-bottom: 0;
+    }
+    .support-image {
+        width: 40px;
+        height: 40px;
+        background-color: #e2e0fc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 5px;
+        img {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    .popover-header {
+        color: #101828;
+        font-weight: 'InterSemiBold';
+        font-size: 18px;
+        margin: 0;
+    }
+    label {
+        color: var(--purple);
+        font-family: 'Inter';
+    }
+    .support-span {
+        border-radius: 8px;
+        background: rgba(74, 73, 92, 0.05);
+        padding: 10px 10px;
+        margin: 15px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 65px;
+    }
+    .support-content-header {
+        color: #475467;
+        font-family: 'Inter';
+        margin: 20px 0;
+    }
+    .support-content {
+        color: #475467;
+        font-weight: 400;
+        margin-bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        .flex{
+            display: flex;
+            gap: 5px;
+        }
+        a{
+            text-decoration: underline;
+            font-family: 'InterSemiBold';
+        }
+        span{
+            font-family: 'InterSemiBold';
+        }
+    }
+    .support-title {
+        color: #101828;
+        font-size: 16px;
+        font-family: 'InterMedium';
+        margin-top: 15px;
+        margin-bottom: 5px;
+    }
+    .close-button {
+        margin-top: 25px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        .button-container button{
+            font-size: 12px !important;
+            font-family: 'InterSemiBold' !important;
+        }
+    }
 }

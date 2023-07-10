@@ -72,62 +72,77 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
         let sub;
         let jc;
         let sc;
+
+        const subscribeAndListen = async (subName, pubName, dataHandler) => {
+            jc = JSONCodec();
+            sc = StringCodec();
+
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.${subName}`, sc.encode('SUB'));
+
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.${pubName}.${brokerName}`);
+                }
+            } catch (err) {
+                console.error(`Error subscribing to ${subName} data:`, err);
+                return;
+            }
+
+            setTimeout(async () => {
+                if (sub) {
+                    try {
+                        for await (const msg of sub) {
+                            let data = jc.decode(msg.data);
+                            dataHandler(data);
+                        }
+                    } catch (err) {
+                        console.error(`Error receiving ${subName} data updates:`, err);
+                    }
+                }
+            }, 1000);
+        };
+
         switch (filterComponent) {
             case 'stations':
-                jc = JSONCodec();
-                sc = StringCodec();
-                try {
-                    (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_stations_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_stations_data.${brokerName}`);
-                    })();
-                } catch (err) {
-                    return;
-                }
-                setTimeout(async () => {
-                    if (sub) {
-                        (async () => {
-                            for await (const msg of sub) {
-                                let data = jc.decode(msg.data);
-                                data?.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
-                                dispatch({ type: 'SET_STATION_LIST', payload: data });
-                            }
-                        })();
+                (async () => {
+                    try {
+                        await subscribeAndListen('get_all_stations_data', 'get_all_stations_data', (data) => {
+                            data?.sort((a, b) => new Date(b.station.created_at) - new Date(a.station.created_at));
+                            dispatch({ type: 'SET_STATION_LIST', payload: data });
+                        });
+                    } catch (err) {
+                        console.error('Error subscribing and listening to get_all_stations_data:', err);
                     }
-                }, 1000);
+                })();
+                break;
 
-                return () => {
-                    sub?.unsubscribe();
-                };
             case 'schemaverse':
-                jc = JSONCodec();
-                sc = StringCodec();
-                try {
-                    (async () => {
-                        const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_all_schema_data`, sc.encode('SUB'));
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.get_all_schema_data.${brokerName}`);
-                    })();
-                } catch (err) {
-                    return;
-                }
-                setTimeout(async () => {
-                    if (sub) {
-                        (async () => {
-                            for await (const msg of sub) {
-                                let data = jc.decode(msg.data);
-                                dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
-                            }
-                        })();
+                (async () => {
+                    try {
+                        await subscribeAndListen('get_all_schema_data', 'get_all_schema_data', (data) => {
+                            dispatch({ type: 'SET_SCHEMA_LIST', payload: data });
+                        });
+                    } catch (err) {
+                        console.error('Error subscribing and listening to get_all_schema_data:', err);
                     }
-                }, 1000);
+                })();
+                break;
 
-                return () => {
-                    sub?.unsubscribe();
-                };
+            default:
+                break;
         }
-    }, [state.socket]);
+
+        return () => {
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from filters data:', err);
+                }
+            }
+        };
+    }, [filterComponent, state.socket]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);

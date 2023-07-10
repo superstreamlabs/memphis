@@ -84,6 +84,11 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
 
     useEffect(() => {
         getAllStations();
+
+        return () => {
+            setAllStations([]);
+            setIsCheck([]);
+        };
     }, []);
 
     const attachToStation = async () => {
@@ -121,7 +126,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                 ) : (
                     <div className="placeholder">
                         <img src={attachedPlaceholder} alt="attachedPlaceholder" />
-                        <p>No station found</p>
+                        <p>No stations yet</p>
                     </div>
                 )}
                 {allStations?.length > 0 && (
@@ -167,7 +172,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                         <Button
                             width="150px"
                             height="34px"
-                            placeholder="Attach Selected"
+                            placeholder="Enforce Selected"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

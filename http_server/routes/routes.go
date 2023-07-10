@@ -17,25 +17,13 @@ import (
 	ui "memphis/ui_static_files"
 	"memphis/utils"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(cors.New(cors.Config{
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		AllowWildcard:    true,
-		AllowWebSockets:  true,
-		AllowFiles:       true,
-	}))
+	server.SetCors(router)
 	mainRouter := router.Group("/api")
 	mainRouter.Use(middlewares.Authenticate)
 
@@ -47,9 +35,10 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeTagsRoutes(mainRouter, handlers)
 	InitializeSchemasRoutes(mainRouter, handlers)
-	// InitializeSandboxRoutes(mainRouter)
 	InitializeIntegrationsRoutes(mainRouter, handlers)
 	InitializeConfigurationsRoutes(mainRouter, handlers)
+	server.InitializeTenantsRoutes(mainRouter, handlers)
+	server.InitializeBillingRoutes(mainRouter, handlers)
 	ui.InitializeUIRoutes(router)
 
 	mainRouter.GET("/status", func(c *gin.Context) {

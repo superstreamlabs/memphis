@@ -13,36 +13,43 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { Context } from '../../hooks/store';
-import pathDomains from '../../router';
-import { LOCAL_STORAGE_USER_NAME, LOCAL_STORAGE_AVATAR_ID } from '../../const/localStorageConsts';
-import { Checkbox, Divider } from 'antd';
-import Button from '../../components/button';
-import Modal from '../../components/modal';
+
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
+import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
+import { isCloud } from '../../services/valueConvertor';
 import { httpRequest } from '../../services/http';
+import AuthService from '../../services/auth';
+import Button from '../../components/button';
+import { Context } from '../../hooks/store';
+import Modal from '../../components/modal';
+import { Checkbox, Divider } from 'antd';
+import pathDomains from '../../router';
 import ImgUploader from './imgUploader';
+import DeleteItemsModal from '../../components/deleteItemsModal';
 
 function Profile() {
-    const [userName, setUserName] = useState('');
+    const [userType, setUserType] = useState('');
     const [state, dispatch] = useContext(Context);
     const [avatar, setAvatar] = useState(1);
     const [open, modalFlip] = useState(false);
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
+    const [delateLoader, setDelateLoader] = useState(false);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
-        setUserName(localStorage.getItem(LOCAL_STORAGE_USER_NAME));
+        setUserType(localStorage.getItem(LOCAL_STORAGE_USER_TYPE));
         setAvatar(Number(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID)) || state?.userData?.avatar_id);
     }, []);
 
     const removeMyUser = async () => {
+        setDelateLoader(true);
         try {
             await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MY_UER}`);
             modalFlip(false);
-            localStorage.clear();
-            window.location.assign(pathDomains.login);
+            AuthService.logout();
         } catch (err) {
+            setDelateLoader(false);
             return;
         }
     };
@@ -68,24 +75,14 @@ function Profile() {
                 <div className="avatar-section">
                     <p className="title">Avatar</p>
                     <div className="avatar-images">
-                        {process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic') && (
+                        {localStorage.getItem('profile_pic') && (
                             <div className={'avatar-img selected'}>
                                 <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
                             </div>
                         )}
                         {Array.from(Array(8).keys()).map((item, index) => {
                             return (
-                                <div
-                                    key={index}
-                                    className={
-                                        process.env.REACT_APP_SANDBOX_ENV && localStorage.getItem('profile_pic')
-                                            ? 'avatar-img avatar-disable'
-                                            : avatar === item + 1
-                                            ? 'avatar-img selected'
-                                            : 'avatar-img'
-                                    }
-                                    onClick={process.env.REACT_APP_SANDBOX_ENV ? '' : () => editAvatar(item + 1)}
-                                >
+                                <div key={index} className={avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'} onClick={() => editAvatar(item + 1)}>
                                     <img src={require(`../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                                 </div>
                             );
@@ -94,29 +91,57 @@ function Profile() {
                 </div>
                 <ImgUploader />
                 <Divider />
+                {isCloud() && (
+                    <>
+                        <div className="organization-id-section">
+                            <p className="title">Account ID</p>
+                            <label className="organization-id-description">
+                                Your account ID is a unique identifier for your organization. It is used to identify your organization in Memphis
+                            </label>
+                            <div className="organization-id">
+                                <p className="id">{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</p>
+                            </div>
+                        </div>
+                        <Divider />
+                    </>
+                )}
                 <div className="delete-account-section">
-                    <p className="title">Delete your account</p>
-                    <label className="delete-account-description">
-                        When you delete your account, you will lose access to Memphis,
-                        <br />
-                        and your profile will be permanently deleted. You can cancel the deletion for 14 days.
-                    </label>
+                    <p className="title">{isCloud() ? 'Delete your organization' : 'Delete your account'}</p>
+                    {isCloud() ? (
+                        <label className="delete-account-description">
+                            When you delete your organization, you will lose access to Memphis,
+                            <br />
+                            and your entire organization data will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    ) : (
+                        <label className="delete-account-description">
+                            When you delete your account, you will lose access to Memphis,
+                            <br />
+                            and your profile will be permanently deleted. You can cancel the deletion for 14 days.
+                        </label>
+                    )}
+
                     <div className="delete-account-checkbox">
                         <Checkbox
                             checked={checkboxdeleteAccount}
-                            disabled={userName === 'root'}
+                            disabled={isCloud() ? userType !== 'root' : userType === 'root'}
                             onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                             name="delete-account"
                         />
-                        <p className={userName === 'root' ? 'disabled' : ''} onClick={() => userName !== 'root' && setCheckboxdeleteAccount(!checkboxdeleteAccount)}>
-                            Confirm that I want to delete my account.
+                        <p
+                            className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}
+                            onClick={() =>
+                                ((isCloud() && userType === 'root') || (!isCloud() && userType !== 'root')) && setCheckboxdeleteAccount(!checkboxdeleteAccount)
+                            }
+                        >
+                            Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
                         </p>
                     </div>
                     <Button
                         className="modal-btn"
                         width="200px"
                         height="36px"
-                        placeholder="Delete Account"
+                        placeholder={isCloud() ? 'Delete organization' : 'Delete account'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="red"
@@ -130,20 +155,27 @@ function Profile() {
                     />
                 </div>
                 <Modal
-                    header="Remove accont"
-                    height="120px"
-                    rBtnText="Cancel"
-                    lBtnText="Remove"
-                    lBtnClick={() => {
-                        removeMyUser();
-                    }}
+                    header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                    width="520px"
+                    height="270px"
+                    displayButtons={false}
                     clickOutside={() => modalFlip(false)}
-                    rBtnClick={() => modalFlip(false)}
                     open={open}
                 >
-                    <label>Are you sure you want to remove user account?</label>
+                    <DeleteItemsModal
+                        title={isCloud() ? 'Delete your organization' : 'Delete your account'}
+                        desc={
+                            <>
+                                Are you sure you want to delete {isCloud() ? 'your organization' : 'your account'}?
+                                <br />
+                                Please note that this action is irreversible.
+                            </>
+                        }
+                        buttontxt={<>I understand, delete my {isCloud() ? 'organization' : 'account'}</>}
+                        handleDeleteSelected={() => removeMyUser()}
+                        loader={delateLoader}
+                    />
                     <br />
-                    <label>Please note that this action is irreversible.</label>
                 </Modal>
             </div>
         </div>
