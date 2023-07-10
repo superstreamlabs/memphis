@@ -42,21 +42,6 @@ type StationName struct {
 	external string
 }
 
-type StationsDetailsPerAccount struct {
-	TotalMessages    uint64 `json:"total_messages"`
-	TotalDlsMessages uint64 `json:"total_dls_messages"`
-	TotalStations    int    `json:"total_stations"`
-}
-
-type StationsDetailsPerAccountRes struct {
-	Account          string `json:"account"`
-	TotalMessages    string `json:"total_messages"`
-	TotalDlsMessages string `json:"total_dls_messages"`
-	TotalStations    string `json:"total_stations"`
-	ActiveProducers  int    `json:"active_producers"`
-	ActiveConsumers  int    `json:"active_consumers"`
-}
-
 func (sn StationName) Ext() string {
 	return sn.external
 }
