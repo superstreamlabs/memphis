@@ -193,7 +193,11 @@ export const diffDate = (date) => {
 export const hex_to_ascii = (input) => {
     if (typeof input === 'string' && /^[0-9a-fA-F]+$/.test(input)) {
         let str = '';
-        str = decodeURIComponent(input.replace(/[0-9a-f]{2}/g, '%$&'));
+        try {
+            str = decodeURIComponent(input.replace(/[0-9a-f]{2}/g, '%$&'));
+        } catch {
+            return input
+        }
         return str;
     } else if (typeof input === 'number') {
         return String.fromCharCode(input);
