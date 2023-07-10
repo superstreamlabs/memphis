@@ -287,7 +287,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {isCloud() &&
+                {isCloud() && (
                     <div className="replicas-container">
                         <TitleComponent
                             headerTitle="Replicas"
@@ -313,7 +313,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             </Form.Item>
                         </div>
                     </div>
-                }
+                )}
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
@@ -594,6 +594,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     storageTierTwoOptions.map((value) => {
                                         return (
                                             <SelectCheckBox
+                                                hideCircle={true}
                                                 selectOptions={storageTierTwoOptions}
                                                 allowEdit={allowEdit}
                                                 handleOnClick={(e) =>
