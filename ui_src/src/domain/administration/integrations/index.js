@@ -32,7 +32,7 @@ import Loader from '../../../components/loader';
 import { isCloud } from '../../../services/valueConvertor';
 
 const Integrations = () => {
-    const [state, dispatch] = useContext(Context);
+    const [dispatch] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrationRequest, setIntegrationRequest] = useState('');
     const [categoryFilter, setCategoryFilter] = useState('All');
@@ -159,7 +159,7 @@ const Integrations = () => {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <img src={cloudeBadge} />
+                                        <img src={cloudeBadge} alt="cloud badge" />
                                         <div className="cloud-icon">
                                             <CloudQueueRounded />
                                         </div>
@@ -173,7 +173,7 @@ const Integrations = () => {
                             return (
                                 <div key={key}>
                                     <div className="experimental-badge">
-                                        <img src={experimentalIcon} />
+                                        <img src={experimentalIcon} alt="experimental" />
                                     </div>
                                     {integrationElement}
                                 </div>

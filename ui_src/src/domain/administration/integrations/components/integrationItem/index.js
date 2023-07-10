@@ -26,7 +26,7 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 
 const IntegrationItem = ({ value }) => {
-    const [state, dispatch] = useContext(Context);
+    const [state] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrateValue, setIntegrateValue] = useState({});
 
