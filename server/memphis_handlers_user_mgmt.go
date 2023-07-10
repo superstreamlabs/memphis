@@ -164,17 +164,17 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = db.DeleteDlsMsgsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
 
 	err = db.DeleteUsersByTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.DeleteDlsMsgsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
