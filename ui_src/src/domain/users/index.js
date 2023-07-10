@@ -74,12 +74,34 @@ function Users() {
 
     useEffect(() => {
         if (searchInput.length > 1) {
-            const results = userList?.filter(
-                (userData) => userData?.username?.toLowerCase()?.includes(searchInput) || userData?.user_type?.toLowerCase()?.includes(searchInput)
-            );
-            setUsersList(results);
+            let copy = copyOfUserList;
+            const results = {
+                management_users: copy.management_users.filter(
+                    (userData) =>
+                        userData?.username?.toLowerCase()?.includes(searchInput.toLowerCase()) || userData?.user_type?.toLowerCase()?.includes(searchInput.toLowerCase())
+                ),
+                application_users: copy.application_users.filter(
+                    (userData) =>
+                        userData?.username?.toLowerCase()?.includes(searchInput.toLowerCase()) || userData?.user_type?.toLowerCase()?.includes(searchInput.toLowerCase())
+                )
+            };
+            if (tableType.includes('Management')) {
+                setTableType(`Management (${results?.management_users?.length || 0})`);
+            }
+
+            if (tableType.includes('Client')) {
+                setTableType(`Client (${results?.application_users?.length || 0})`);
+            }
+            setCopyOfUserList(results);
         } else {
-            setUsersList(copyOfUserList);
+            if (tableType.includes('Management')) {
+                setTableType(`Management (${userList?.management_users?.length || 0})`);
+            }
+
+            if (tableType.includes('Client')) {
+                setTableType(`Client (${userList?.application_users?.length || 0})`);
+            }
+            setCopyOfUserList(userList);
         }
     }, [searchInput]);
 
