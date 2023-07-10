@@ -83,7 +83,7 @@ function SideBar() {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
             if (data) {
                 const latest = await GithubRequest(LATEST_RELEASE_URL);
-                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', ''));
+                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', '').replace('-latest', '').replace('-stable', ''));
                 let system_version = data.version;
                 dispatch({ type: 'IS_LATEST', payload: is_latest });
                 dispatch({ type: 'CURRENT_VERSION', payload: system_version });
