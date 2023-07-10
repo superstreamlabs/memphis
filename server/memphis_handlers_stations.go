@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis/analytics"
+	"memphis/conf"
 	"memphis/db"
 	"memphis/models"
 	"memphis/utils"
@@ -40,6 +41,21 @@ const (
 type StationName struct {
 	internal string
 	external string
+}
+
+type StationsDetailsPerAccount struct {
+	TotalMessages    uint64 `json:"total_messages"`
+	TotalDlsMessages uint64 `json:"total_dls_messages"`
+	TotalStations    int    `json:"total_stations"`
+}
+
+type StationsDetailsPerAccountRes struct {
+	Account          string `json:"account"`
+	TotalMessages    string `json:"total_messages"`
+	TotalDlsMessages string `json:"total_dls_messages"`
+	TotalStations    string `json:"total_stations"`
+	ActiveProducers  int    `json:"active_producers"`
+	ActiveConsumers  int    `json:"active_consumers"`
 }
 
 func (sn StationName) Ext() string {
@@ -657,6 +673,134 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
 	}
+}
+
+func (sh StationsHandler) GetAllStationsDetailsPerTenant(shouldGetTags bool, tenantName []string) (map[string]StationsDetailsPerAccount, error) {
+	var stations []models.ExtendedStation
+	totalMessages := uint64(0)
+	StationsDetailsPerTenant := make(map[string]StationsDetailsPerAccount)
+	for _, tenantName := range tenantName {
+		if tenantName == "" {
+			tenantName = conf.MemphisGlobalAccountName
+		}
+		totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
+		if err != nil {
+			return map[string]StationsDetailsPerAccount{}, err
+		}
+
+		stations, err = db.GetAllStationsDetailsPerTenant(tenantName)
+		if err != nil {
+			return map[string]StationsDetailsPerAccount{}, err
+		}
+		if len(stations) == 0 {
+			res := StationsDetailsPerAccount{
+				TotalMessages:    0,
+				TotalDlsMessages: 0,
+				TotalStations:    0,
+			}
+			StationsDetailsPerTenant[tenantName] = res
+		} else {
+			stationTotalMsgs := make(map[string]int)
+			tagsHandler := TagsHandler{S: sh.S}
+			acc, err := sh.S.lookupAccount(tenantName)
+			if err != nil {
+				return map[string]StationsDetailsPerAccount{}, err
+			}
+			accName := acc.Name
+			allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+			if err != nil {
+				return map[string]StationsDetailsPerAccount{}, err
+			}
+			for _, info := range allStreamInfo {
+				streamName := info.Config.Name
+				if !strings.Contains(streamName, "$memphis") {
+					totalMessages += info.State.Msgs
+					stationTotalMsgs[streamName] = int(info.State.Msgs)
+				}
+			}
+
+			stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
+			if err != nil {
+				return map[string]StationsDetailsPerAccount{}, err
+			}
+
+			var extStations []models.ExtendedStation
+			for i := 0; i < len(stations); i++ {
+				fullStationName, err := StationNameFromStr(stations[i].Name)
+				if err != nil {
+					return map[string]StationsDetailsPerAccount{}, err
+				}
+				hasDlsMsgs := false
+				for _, stationId := range stationIdsDlsMsgs {
+					if stationId == stations[i].ID {
+						hasDlsMsgs = true
+					}
+				}
+
+				if shouldGetTags {
+					tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
+					if err != nil {
+						return map[string]StationsDetailsPerAccount{}, err
+					}
+					stations[i].Tags = tags
+				}
+
+				stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
+				stations[i].HasDlsMsgs = hasDlsMsgs
+
+				found := false
+				for _, p := range stations[i].Producers {
+					if p.IsActive {
+						stations[i].Activity = true
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					for _, c := range stations[i].Consumers {
+						if c.IsActive {
+							stations[i].Activity = true
+							break
+						}
+					}
+				}
+				if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+					stations[i].TieredStorageEnabled = false
+				} else {
+					_, ok = tenantInetgrations["s3"].(models.Integration)
+					if !ok {
+						stations[i].TieredStorageEnabled = false
+					} else if stations[i].TieredStorageEnabled {
+						stations[i].TieredStorageEnabled = true
+					} else {
+						stations[i].TieredStorageEnabled = false
+					}
+				}
+
+				stationRes := models.ExtendedStation{
+					ID:            stations[i].ID,
+					Name:          stations[i].Name,
+					CreatedAt:     stations[i].CreatedAt,
+					TotalMessages: stations[i].TotalMessages,
+					HasDlsMsgs:    stations[i].HasDlsMsgs,
+					Activity:      stations[i].Activity,
+					IsNative:      stations[i].IsNative,
+				}
+
+				extStations = append(extStations, stationRes)
+			}
+
+			stationDetailsPerAccountRes := StationsDetailsPerAccount{
+				TotalMessages:    totalMessages,
+				TotalDlsMessages: totalDlsMessages,
+				TotalStations:    len(extStations),
+			}
+
+			StationsDetailsPerTenant[tenantName] = stationDetailsPerAccountRes
+		}
+	}
+	return StationsDetailsPerTenant, nil
 }
 
 func (sh StationsHandler) GetStations(c *gin.Context) {
