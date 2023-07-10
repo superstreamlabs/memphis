@@ -287,7 +287,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {isCloud() &&
+                {!isCloud() &&
                     <div className="replicas-container">
                         <TitleComponent
                             headerTitle="Replicas"
