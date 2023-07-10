@@ -15,27 +15,29 @@ import './style.scss';
 import React, { useState, useContext, useEffect } from 'react';
 import { Form, message } from 'antd';
 
-import { INTEGRATION_LIST, REGIONS_OPTIONS } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
-import SelectComponent from '../../../../../components/select';
+import Checkbox from '../../../../../components/checkBox';
 import Loader from '../../../../../components/loader';
 
 const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
-    const [state, dispatch] = useContext(Context);
+    const [dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 's3',
         keys: {
             secret_key: value?.keys?.secret_key || '',
             access_key: value?.keys?.access_key || '',
-            region: value?.keys?.region || REGIONS_OPTIONS[0].value,
-            bucket_name: value?.keys?.bucket_name || ''
+            region: value?.keys?.region || '',
+            bucket_name: value?.keys?.bucket_name || '',
+            url: value?.keys?.url || '',
+            s3_path_style: value?.keys?.s3_path_style || ''
         }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -62,7 +64,9 @@ const S3Integration = ({ close, value }) => {
         Promise.all(promises).then(() => {
             setImagesLoaded(true);
         });
+
     }, []);
+
     const updateKeysState = (field, value) => {
         let updatedValue = { ...formFields.keys };
         updatedValue[field] = value;
@@ -109,7 +113,7 @@ const S3Integration = ({ close, value }) => {
             newFormFields = { ...newFormFields, keys: updatedKeys };
         }
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATIONL, { ...newFormFields });
+            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, { ...newFormFields });
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
             closeModal(data);
         } catch (err) {
@@ -188,8 +192,8 @@ const S3Integration = ({ close, value }) => {
                             <div className="api-key">
                                 <p>Secret access key</p>
                                 <span className="desc">
-                                    When you use AWS programmatically, you provide your AWS access keys so that AWS can verify your identity in programmatic calls. Access
-                                    keys can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user or the AWS account root user.{' '}
+                                    When you use S3 compatible storage programmatically, you provide your access keys so that the provider can verify your identity in programmatic calls. Access
+                                    keys can be either temporary (short-term) credentials or long-term credentials, such as for an IAM user, provider provided keys or credentials.{' '}
                                     <br />
                                     <b>Memphis encrypts all stored information using Triple DES algorithm</b>
                                 </span>
@@ -247,17 +251,28 @@ const S3Integration = ({ close, value }) => {
                             </div>
                             <div className="select-field">
                                 <p>Region</p>
-                                <Form.Item name="region" initialValue={formFields?.keys?.region || REGIONS_OPTIONS[0].name}>
-                                    <SelectComponent
+                                <Form.Item
+                                    name="region"
+                                    initialValue={formFields?.keys?.region}
+                                    rules={[
+                                        {
+                                            required: true,
+                                            message: 'Please insert region'
+                                        }
+                                    ]}
+                                >
+                                    <Input
+                                        type="text"
+                                        placeholder="us-east-1"
+                                        fontSize="12px"
                                         colorType="black"
                                         backgroundColorType="none"
                                         borderColorType="gray"
                                         radiusType="semi-round"
                                         height="40px"
-                                        popupClassName="select-options"
-                                        options={REGIONS_OPTIONS}
-                                        value={formFields?.keys?.region || REGIONS_OPTIONS[0].name}
-                                        onChange={(e) => updateKeysState('region', e.match(/\[(.*?)\]/)[1])}
+                                        value={formFields?.keys?.region}
+                                        onBlur={(e) => updateKeysState('region', e.target.value)}
+                                        onChange={(e) => updateKeysState('region', e.target.value)}
                                     />
                                 </Form.Item>
                             </div>
@@ -286,6 +301,53 @@ const S3Integration = ({ close, value }) => {
                                         onChange={(e) => updateKeysState('bucket_name', e.target.value)}
                                         value={formFields.keys?.bucket_name}
                                     />
+                                </Form.Item>
+                            </div>
+                            <div className="input-field">
+                                <p>Endpoint URL (optional)</p>
+                                <Form.Item
+                                    name="url"
+                                    rules={[
+                                        {
+                                            required: false,
+                                        }
+                                    ]}
+                                    initialValue={formFields?.keys?.url}
+                                >
+                                    <Input
+                                        placeholder="Insert custom S3 API endpoint url (Optional; leave empty for AWS)"
+                                        type="text"
+                                        fontSize="12px"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        onBlur={(e) => updateKeysState('url', e.target.value)}
+                                        onChange={(e) => updateKeysState('url', e.target.value)}
+                                        value={formFields.keys?.url}
+                                    />
+                                </Form.Item>
+                            </div>
+                            <div className="input-field">
+                                <p>Use Path Style</p>
+                                <Form.Item
+                                    name="s3_path_style"
+                                    rules={[
+                                        {
+                                            required: false,
+                                        }
+                                    ]}
+                                    initialValue={formFields?.keys?.s3_path_style}
+                                >
+                                    <>
+                                        <Checkbox
+                                            defaultChecked={false}
+                                            checkName="s3_path_style"
+                                            checked={formFields.keys?.s3_path_style === "1" ? true : false}
+                                            onChange={(e) => updateKeysState('s3_path_style', e.target.checked ? "1" : "0")}
+                                        /> Enable
+                                    </>
                                 </Form.Item>
                             </div>
                         </div>

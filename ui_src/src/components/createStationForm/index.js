@@ -73,7 +73,7 @@ const storageTierTwoOptions = [
     {
         id: 1,
         value: 's3',
-        label: 'S3',
+        label: 'S3 Compatible Object Storage',
         desc: 'Use object storage as a 2nd tier storage for archiving and post-stream analysis'
     }
 ];
@@ -176,21 +176,21 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     break;
             }
             setActualPods(replicas);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const getAllSchemas = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             setSchemas(data);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=s3`);
             setIntegrateValue(data);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const createStation = async (bodyRequest) => {

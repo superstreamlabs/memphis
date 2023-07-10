@@ -239,14 +239,14 @@ export const INTEGRATION_LIST = {
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <img src={s3Logo} alt="s3Logo" />,
-        description: 'AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages',
+        description: 'S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
         header: (
             <div className="header-left-side">
                 <img src={s3Logo} alt="s3Logo" />
                 <div className="details">
-                    <p>S3</p>
+                    <p>S3 Compatible Object Storage</p>
                     <span>by memphis</span>
                 </div>
             </div>
@@ -254,7 +254,7 @@ export const INTEGRATION_LIST = {
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">AWS S3 offers cost-efficient object storage and can act as a 2nd tier storage option for ingested messages.</span>
+                <span className="content">S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.</span>
             </div>
         )
     },
