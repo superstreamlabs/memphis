@@ -99,6 +99,11 @@ func InitializeAnalytics(memphisV, customDeploymentId string) error {
 		errMsg := fmt.Errorf("InitializeAnalytics: initalize connection failed %s ", err.Error())
 		return errMsg
 	}
+
+	_, err = memphisConnection.CreateStation("users-traces", memphis.Replicas(3), memphis.TieredStorageEnabled(true), memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds), memphis.RetentionVal(14400))
+	if err != nil {
+		fmt.Println(err)
+	}
 	return nil
 }
 
