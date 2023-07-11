@@ -184,29 +184,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 		);`
 
-	// alterConnectionsTable := `
-	// DO $$
-	// BEGIN
-	// 	IF EXISTS (
-	// 		SELECT 1 FROM information_schema.tables WHERE table_name = 'connections' AND table_schema = 'public'
-	// 	) THEN
-	// 	ALTER TABLE connections ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
-	// 	END IF;
-	// END $$;`
-
-	// connectionsTable := `CREATE TABLE IF NOT EXISTS connections(
-	// 	id VARCHAR NOT NULL,
-	// 	created_by INTEGER,
-	// 	created_by_username VARCHAR NOT NULL,
-	// 	is_active BOOL NOT NULL DEFAULT false,
-	// 	created_at TIMESTAMPTZ NOT NULL,
-	// 	client_address VARCHAR NOT NULL,
-	// 	tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
-	// 	PRIMARY KEY (id),
-	// 	CONSTRAINT fk_tenant_name_connections
-	// 		FOREIGN KEY(tenant_name)
-	// 		REFERENCES tenants(name)
-	// 	);`
+	alterConnectionsTable := `DROP TABLE IF EXISTS connections;`
 
 	alterIntegrationsTable := `
 	DO $$
@@ -305,6 +283,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		DROP INDEX IF EXISTS unique_consumer_table;
+		ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
 		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
 		END IF;
@@ -511,7 +490,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable, alterConnectionsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
