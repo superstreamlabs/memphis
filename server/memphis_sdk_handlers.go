@@ -139,8 +139,8 @@ type destroyConsumerRequestV1 struct {
 	StationName    string `json:"station_name"`
 	ConsumerName   string `json:"name"`
 	Username       string `json:"username"`
-	TenantName     string `json:"tenant_name"`
 	ConnectionId   string `json:"connection_id"`
+	TenantName     string `json:"tenant_name"`
 	RequestVersion int    `json:"req_version"`
 }
 
