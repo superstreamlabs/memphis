@@ -506,8 +506,19 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
+			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
+			if err != nil {
+				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
+				return
+			}
+
+			if !exist {
+				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
+				return
+			}
+
 			message.Message.TimeSent = time.Now()
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
 				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
