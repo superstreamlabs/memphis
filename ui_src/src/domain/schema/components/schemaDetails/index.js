@@ -48,6 +48,7 @@ import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
 import SegmentButton from '../../../../components/segmentButton';
 import AttachStationModal from '../attachStationModal';
+const avro = require('avro-js')
 
 loader.init();
 loader.config({ monaco });
@@ -258,6 +259,17 @@ function SchemaDetails({ schemaName, closeDrawer }) {
         }
     };
 
+    const validateAvroSchema = (value) => {
+        try {
+            avro.parse(value);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError('Your schema is invalid');
+        }
+    };
+
     const checkContent = (value) => {
         const { type } = schemaDetails;
         if (value === ' ' || value === '') {
@@ -271,6 +283,8 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 validateJsonSchema(value);
             } else if (type === 'graphql') {
                 validateGraphQlSchema(value);
+            } else if (type === 'avro') {
+                validateAvroSchema(value);
             }
         }
     };
@@ -441,7 +455,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 fontSize: '14px',
                                 fontFamily: 'Inter'
                             }}
-                            language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
+                            language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type === 'avro' ? 'json' : schemaDetails?.type}
                             height="calc(100% - 104px)"
                             defaultValue={versionSelected?.schema_content}
                             value={newVersion}
@@ -465,7 +479,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         fontSize: '14px',
                                         fontFamily: 'Inter'
                                     }}
-                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type === 'avro' ? 'json' : schemaDetails?.type}
                                     height="calc(100% - 100px)"
                                     value={versionSelected?.schema_content}
                                 />
@@ -473,7 +487,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             {isDiff === 'Yes' && (
                                 <DiffEditor
                                     height="calc(100% - 100px)"
-                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type}
+                                    language={schemaDetails?.type === 'protobuf' ? 'proto' : schemaDetails?.type === 'avro' ? 'json' : schemaDetails?.type}
                                     original={currentVersion?.schema_content}
                                     modified={versionSelected?.schema_content}
                                     options={{

@@ -248,7 +248,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	END $$;`
 
 	schemasTable := `
-	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
+	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf', 'avro');
 	CREATE TABLE IF NOT EXISTS schemas(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
