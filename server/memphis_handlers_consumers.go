@@ -544,7 +544,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		}
 		dcrV0.TenantName = tenantName
 		if c.memphisInfo.connectionId == "" {
-			s.destroyProducerDirectV0(c, reply, dcrV0)
+			s.destroyConsumerDirectV0(c, reply, dcrV0)
 			return
 		} else {
 			dcr = destroyConsumerRequestV1{
@@ -591,10 +591,10 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	s.destroyCGFromNats(c, reply, dcr.Username, tenantName, stationName, consumer, station)
 }
 
-func (s *Server) destroyProducerDirectV0(c *client, reply string, dcr destroyConsumerRequestV0) { //make competibel
+func (s *Server) destroyConsumerDirectV0(c *client, reply string, dcr destroyConsumerRequestV0) { //make competibel
 	stationName, err := StationNameFromStr(dcr.StationName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]destroyProducerDirectV0 at StationNameFromStr: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0 at StationNameFromStr: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -602,20 +602,20 @@ func (s *Server) destroyProducerDirectV0(c *client, reply string, dcr destroyCon
 	name := strings.ToLower(dcr.ConsumerName)
 	_, station, err := db.GetStationByName(stationName.Ext(), dcr.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]destroyProducerDirectV0 at GetStationByName: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0 at GetStationByName: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	exist, consumer, err := db.DeleteConsumerByNameAndStationId(name, station.ID)
 	if !exist {
 		errMsg := fmt.Sprintf("Consumer %v at station %v does not exist", dcr.ConsumerName, dcr.StationName)
-		serv.Warnf("[tenant: %v]destroyProducerDirectV0: %v", dcr.TenantName, errMsg)
+		serv.Warnf("[tenant: %v]destroyConsumerDirectV0: %v", dcr.TenantName, errMsg)
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
 		return
 	}
 	if err != nil {
 		errMsg := fmt.Sprintf("Consumer %v at station %v: %v", dcr.ConsumerName, dcr.StationName, err.Error())
-		serv.Errorf("[tenant: %v]destroyProducerDirectV0: %v", dcr.TenantName, errMsg)
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0: %v", dcr.TenantName, errMsg)
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
