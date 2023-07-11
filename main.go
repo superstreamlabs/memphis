@@ -117,6 +117,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
 
+	err = s.InitializeMessagesCollectionInFireStore()
+	if err != nil {
+		s.Errorf("Failed initializing messages collection inn firestore: " + err.Error())
+	}
+
 	s.InitializeMemphisHandlers()
 
 	err = server.InitializeIntegrations()
