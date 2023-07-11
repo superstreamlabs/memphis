@@ -78,7 +78,7 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 
 func (s *Server) createConsumerDirectV0(c *client, reply, tenantName string, ccr createConsumerRequestV0, requestVersion int) {
 	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 }
 
 func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId, tenantName, userName string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
@@ -282,7 +282,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	err = s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
-	respondWithErr(MEMPHIS_GLOBAL_ACCOUNT, s, reply, err)
+	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 }
 
 func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
@@ -574,7 +574,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	exist, consumer, err := db.DeleteConsumeByNameStationIDAndConnID(dcr.ConnectionId, name, station.ID)
+	exist, consumer, err := db.DeleteConsumerByNameStationIDAndConnID(dcr.ConnectionId, name, station.ID)
 	if !exist {
 		errMsg := fmt.Sprintf("Consumer %v at station %v does not exist", dcr.ConsumerName, dcr.StationName)
 		serv.Warnf("[tenant: %v]DestroyConsumer: %v", tenantName, errMsg)
@@ -591,7 +591,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	s.destroyCGFromNats(c, reply, dcr.Username, tenantName, stationName, consumer, station)
 }
 
-func (s *Server) destroyConsumerDirectV0(c *client, reply string, dcr destroyConsumerRequestV0) { //make competibel
+func (s *Server) destroyConsumerDirectV0(c *client, reply string, dcr destroyConsumerRequestV0) {
 	stationName, err := StationNameFromStr(dcr.StationName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]destroyConsumerDirectV0 at StationNameFromStr: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())

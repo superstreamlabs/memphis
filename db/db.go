@@ -302,8 +302,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by_username;
 		ALTER TABLE consumers DROP COLUMN IF EXISTS is_deleted;
 		ALTER TABLE consumers DROP COLUMN IF EXISTS created_at;
-		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		DROP INDEX IF EXISTS unique_consumer_table;
 		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
@@ -321,11 +321,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		updated_at TIMESTAMPTZ NOT NULL,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		updated_at TIMESTAMPTZ NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -2798,7 +2798,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func DeleteConsumeByNameStationIDAndConnID(connectionId, name string, stationId int) (bool, models.Consumer, error) {
+func DeleteConsumerByNameStationIDAndConnID(connectionId, name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
