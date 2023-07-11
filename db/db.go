@@ -1451,7 +1451,6 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			&consumer.MaxMsgDeliveries,
 			&consumer.StartConsumeFromSeq,
 			&consumer.LastMessages,
-			&consumer.TenantName,
 		); err != nil {
 			return []models.ExtendedStation{}, err
 		}

@@ -1441,7 +1441,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				}
 			}
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil {
+			if err != nil || len(cgMembers) == 0 {
 				cgMembers = []models.CgMember{models.CgMember{
 					MaxAckTimeMs:     0,
 					MaxMsgDeliveries: 0,

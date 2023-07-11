@@ -266,7 +266,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 				}
 			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
-			if err != nil {
+			if err != nil || len(cgMembers) == 0 {
 				cgMembers = []models.CgMember{models.CgMember{
 					MaxAckTimeMs:     0,
 					MaxMsgDeliveries: 0,
@@ -359,7 +359,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 			}
 		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
-		if err != nil {
+		if err != nil || len(cgMembers) == 0 {
 			cgMembers = []models.CgMember{models.CgMember{
 				MaxAckTimeMs:     0,
 				MaxMsgDeliveries: 0,
