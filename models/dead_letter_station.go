@@ -16,9 +16,18 @@ import (
 )
 
 type ProducerDetails struct {
-	Name         string `json:"name"`
-	ConnectionId string `json:"connection_id"`
-	IsActive     bool   `json:"is_active"`
+	Name              string `json:"name"`
+	ClientAddress     string `json:"client_address"`
+	ConnectionId      string `json:"connection_id"`
+	CreatedBy         int    `json:"created_by"`
+	IsActive          bool   `json:"is_active"`
+	IsDeleted         bool   `json:"is_deleted"`
+	CreatedByUsername string `json:"created_by_username"`
+}
+
+type ProducerDetailsResp struct {
+	Name     string `json:"name"`
+	IsActive bool   `json:"is_active"`
 }
 type MsgHeader struct {
 	HeaderKey   string `json:"header_key"`
@@ -59,25 +68,25 @@ type DlsMessage struct {
 	ID              int            `json:"id"`
 	StationId       int            `json:"station_id"`
 	MessageSeq      int            `json:"message_seq"`
-	ProducerId      int            `json:"producer_id"`
 	PoisonedCgs     []string       `json:"poisoned_cgs"`
 	MessageDetails  MessagePayload `json:"message_details"`
 	UpdatedAt       time.Time      `json:"updated_at"`
 	MessageType     string         `json:"message_type"`
 	ValidationError string         `json:"validation_error"`
 	TenantName      string         `json:"tenant_name"`
+	ProducerName    string         `json:"producer_name"`
 }
 
 type DlsMessageResponse struct {
-	ID              int             `json:"id"`
-	StationName     string          `json:"station_name"`
-	SchemaType      string          `json:"schema_type"`
-	MessageSeq      int             `json:"message_seq"`
-	Producer        ProducerDetails `json:"producer"`
-	PoisonedCgs     []PoisonedCg    `json:"poisoned_cgs"`
-	Message         MessagePayload  `json:"message"`
-	UpdatedAt       time.Time       `json:"updated_at"`
-	ValidationError string          `json:"validation_error"`
+	ID              int                 `json:"id"`
+	StationName     string              `json:"station_name"`
+	SchemaType      string              `json:"schema_type"`
+	MessageSeq      int                 `json:"message_seq"`
+	Producer        ProducerDetailsResp `json:"producer"`
+	PoisonedCgs     []PoisonedCg        `json:"poisoned_cgs"`
+	Message         MessagePayload      `json:"message"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	ValidationError string              `json:"validation_error"`
 }
 
 type PmAckMsg struct {

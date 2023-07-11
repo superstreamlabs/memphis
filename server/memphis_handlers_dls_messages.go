@@ -208,7 +208,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	}
 
 	poisonedCgs := []models.PoisonedCg{}
-	var producer models.Producer
+	isActive := false
 
 	msgDetails := models.MessagePayload{
 		TimeSent: dlsMessage.MessageDetails.TimeSent,
@@ -220,7 +220,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		ID:              dlsMessage.ID,
 		StationId:       dlsMessage.StationId,
 		MessageSeq:      dlsMessage.MessageSeq,
-		ProducerId:      dlsMessage.ProducerId,
+		ProducerName:    dlsMessage.ProducerName,
 		PoisonedCgs:     dlsMessage.PoisonedCgs,
 		MessageDetails:  msgDetails,
 		UpdatedAt:       dlsMessage.UpdatedAt,
@@ -229,15 +229,13 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	}
 
 	if station.IsNative {
-
-		exist, prod, err := db.GetProducerByID(dlsMsg.ProducerId)
+		exist, prod, err := db.GetProducerByNameAndStationID(dlsMsg.ProducerName, dlsMsg.StationId)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}
-		if !exist {
-			return models.DlsMessageResponse{}, fmt.Errorf("Producer %v does not exist", prod.Name)
+		if exist {
+			isActive = prod.IsActive
 		}
-		producer = prod
 
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
@@ -295,10 +293,9 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		StationName: station.Name,
 		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
-		Producer: models.ProducerDetails{
-			Name:         producer.Name,
-			ConnectionId: producer.ConnectionId,
-			IsActive:     producer.IsActive,
+		Producer: models.ProducerDetailsResp{
+			Name:     dlsMsg.ProducerName,
+			IsActive: isActive,
 		},
 		Message:         dlsMsg.MessageDetails,
 		UpdatedAt:       dlsMsg.UpdatedAt,

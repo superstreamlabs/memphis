@@ -23,10 +23,10 @@ type Message struct {
 }
 
 type MessageResponse struct {
-	MessageSeq  int             `json:"message_seq"`
-	Producer    ProducerDetails `json:"producer"`
-	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs"`
-	Message     MessagePayload  `json:"message"`
+	MessageSeq  int                 `json:"message_seq"`
+	Producer    ProducerDetailsResp `json:"producer"`
+	PoisonedCgs []PoisonedCg        `json:"poisoned_cgs"`
+	Message     MessagePayload      `json:"message"`
 }
 
 type MessageDetails struct {

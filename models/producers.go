@@ -22,8 +22,8 @@ type Producer struct {
 	Type         string    `json:"type"`
 	ConnectionId string    `json:"connection_id"`
 	IsActive     bool      `json:"is_active"`
-	UpdatedAt    time.Time `json:"updated_at"`
 	TenantName   string    `json:"tenant_name"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type ExtendedProducer struct {

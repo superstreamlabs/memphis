@@ -1399,7 +1399,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
-			Producer: models.ProducerDetails{
+			Producer: models.ProducerDetailsResp{
 				Name:     "",
 				IsActive: false,
 			},
@@ -1469,18 +1469,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
-
-	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	isActive := false
+	exist, producer, err := db.GetProducerByStationIDAndConnectionId(producedByHeader, station.ID, connectionId)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetProducerByStationIDAndUsername: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
-		serv.Warnf("[tenant: %v][user: %v]GetMessageDetails: %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
+	if exist {
+		isActive = producer.IsActive
 	}
 
 	msg := models.MessageResponse{
@@ -1491,10 +1488,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
-		Producer: models.ProducerDetails{
-			Name:         producedByHeader,
-			ConnectionId: connectionId,
-			IsActive:     producer.IsActive,
+		Producer: models.ProducerDetailsResp{
+			Name:     producedByHeader,
+			IsActive: isActive,
 		},
 		PoisonedCgs: poisonedCgs,
 	}

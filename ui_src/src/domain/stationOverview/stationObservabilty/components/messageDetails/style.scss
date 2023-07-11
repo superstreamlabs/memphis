@@ -1,0 +1,19 @@
+.info-box{
+    background: #FFFFFF;
+    border: 1px solid #EFEFEF;
+    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
+    border-radius: 8px;
+    display: flex;
+    padding: 12px 16px;
+    margin: 0;
+    justify-content: space-between;
+    .title{
+        font-family: "InterSemiBold";
+        font-size: 14px;
+    }
+    .content{
+        font-family: "Inter";
+        font-size: 12px;
+        color: #84818A;
+    }
+}

@@ -443,8 +443,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		type enum_producer_type NOT NULL DEFAULT 'application',
 		connection_id VARCHAR NOT NULL, 
 		is_active BOOL NOT NULL DEFAULT true,
-		updated_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		updated_at TIMESTAMPTZ NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -458,13 +458,23 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
 		CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);`
 
-	alterDlsMsgsTable := `
-	DO $$
+	alterDlsMsgsTable := `DO $$
 	BEGIN
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'dls_messages' AND table_schema = 'public'
 		) THEN
-		ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL;
+			DROP INDEX IF EXISTS dls_producer_id;
+			IF EXISTS (
+				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
+			) THEN
+				UPDATE dls_messages
+				SET producer_name = p.name
+				FROM producers p
+				WHERE dls_messages.producer_id = p.id AND EXISTS (SELECT 1 FROM producers WHERE id = dls_messages.producer_id);
+				ALTER TABLE dls_messages DROP COLUMN IF EXISTS producer_id;
+			END IF;
 		END IF;
 	END $$;`
 
@@ -478,14 +488,14 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	CREATE TABLE IF NOT EXISTS dls_messages(
 		id SERIAL NOT NULL,    
 		station_id INT NOT NULL,
-		message_seq INT NOT NULL,
-		producer_id INT NOT NULL, 
+		message_seq INT NOT NULL, 
 		poisoned_cgs VARCHAR[],
 		message_details JSON NOT NULL,    
 		updated_at TIMESTAMPTZ NOT NULL,
 		message_type VARCHAR NOT NULL,
 		validation_error VARCHAR DEFAULT '',
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		producer_name VARCHAR NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -495,9 +505,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 	);
 	CREATE INDEX IF NOT EXISTS dls_station_id
-		ON dls_messages(station_id);
-	CREATE INDEX IF NOT EXISTS dls_producer_id
-		ON dls_messages(producer_id);`
+		ON dls_messages(station_id);`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
@@ -2065,7 +2073,7 @@ func GetProducerByNameAndConnectionID(name string, connectionId string) (bool, m
 	return true, producers[0], nil
 }
 
-func GetProducerByStationIDAndUsername(username string, stationId int, connectionId string) (bool, models.Producer, error) {
+func GetProducerByStationIDAndConnectionId(name string, stationId int, connectionId string) (bool, models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2073,12 +2081,40 @@ func GetProducerByStationIDAndUsername(username string, stationId int, connectio
 		return false, models.Producer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_username", query)
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 ORDER BY is_active DESC LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_station_id_and_connection_id", query)
 	if err != nil {
 		return false, models.Producer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, username, stationId, connectionId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionId)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Producer])
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	if len(producers) == 0 {
+		return false, models.Producer{}, nil
+	}
+	return true, producers[0], nil
+}
+
+func GetProducerByNameAndStationID(name string, stationId int) (bool, models.Producer, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM producers WHERE name = $1 AND station_id = $2 ORDER BY is_active DESC LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producer_by_name_and_station_id", query)
+	if err != nil {
+		return false, models.Producer{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId)
 	if err != nil {
 		return false, models.Producer{}, err
 	}
@@ -2400,7 +2436,13 @@ func DeleteProducerByNameStationIDAndConnID(name string, stationId int, connId s
 		return false, err
 	}
 	defer conn.Release()
-	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3`
+	// query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
+	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3
+	AND EXISTS (
+		SELECT 1 FROM producers
+		WHERE name = $1 AND station_id = $2 AND connection_id = $3
+		FETCH FIRST 1 ROW ONLY
+	);`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_producer_by_name_and_station_id", query)
 	if err != nil {
 		return false, err
@@ -5095,7 +5137,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string) (models.DlsMessage, error) {
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5107,14 +5149,13 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 	query := `INSERT INTO dls_messages( 
 			station_id,
 			message_seq,
-			producer_id,
 			poisoned_cgs,
 			message_details,
 			updated_at,
 			message_type,
 			validation_error,
-			tenant_name
-			) 
+			tenant_name,
+			producer_name) 
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`
 
@@ -5126,7 +5167,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName, producerName)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -5146,11 +5187,11 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerId int, pois
 		tenantName = strings.ToLower(tenantName)
 	}
 	deadLetterPayload := models.DlsMessage{
-		ID:          messagePayloadId,
-		StationId:   stationId,
-		MessageSeq:  messageSeq,
-		ProducerId:  producerId,
-		PoisonedCgs: poisonedCgs,
+		ID:           messagePayloadId,
+		StationId:    stationId,
+		MessageSeq:   messageSeq,
+		ProducerName: producerName,
+		PoisonedCgs:  poisonedCgs,
 		MessageDetails: models.MessagePayload{
 			TimeSent: messageDetails.TimeSent,
 			Size:     messageDetails.Size,
