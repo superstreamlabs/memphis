@@ -298,9 +298,15 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'consumers' AND table_schema = 'public'
 		) THEN
+		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by;
+		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by_username;
+		ALTER TABLE consumers DROP COLUMN IF EXISTS is_deleted;
+		ALTER TABLE consumers DROP COLUMN IF EXISTS created_at;
+		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		DROP INDEX IF EXISTS unique_consumer_table;
-		CREATE UNIQUE INDEX unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;
+		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
+		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
 		END IF;
 	END $$;`
 
@@ -314,19 +320,13 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		connection_id VARCHAR NOT NULL,
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
-		created_by INTEGER,
-		created_by_username VARCHAR NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
-		created_at TIMESTAMPTZ NOT NULL,
-		is_deleted BOOL NOT NULL DEFAULT false,
+		updated_at TIMESTAMPTZ NOT NULL,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
-		CONSTRAINT fk_connection_id
-			FOREIGN KEY(connection_id)
-			REFERENCES connections(id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
 			REFERENCES stations(id),
@@ -335,8 +335,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			REFERENCES tenants(name)
 		);
 		CREATE INDEX IF NOT EXISTS station_id ON consumers (station_id);
-		CREATE INDEX IF NOT EXISTS connection_id ON consumers (connection_id);
-		CREATE UNIQUE INDEX IF NOT EXISTS unique_consumer_table ON consumers(name, station_id, is_active, tenant_name) WHERE is_active = true;`
+		CREATE INDEX IF NOT EXISTS consumer_name ON consumers (name);
+		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
+		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);`
 
 	alterStationsTable := `
 	DO $$
@@ -1305,11 +1306,8 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	COALESCE(c.connection_id, ''),
 	COALESCE(c.consumers_group, ''),
 	COALESCE(c.max_ack_time_ms, 0), 
-	COALESCE(c.created_by, 0), 
-	COALESCE(c.created_by_username, ''), 
 	COALESCE(c.is_active, false), 
-	COALESCE(c.created_at, CURRENT_TIMESTAMP), 
-	COALESCE(c.is_deleted, false), 
+	COALESCE(c.updated_at, CURRENT_TIMESTAMP), 
 	COALESCE(c.max_msg_deliveries, 0), 
 	COALESCE(c.start_consume_from_seq, 0),
 	COALESCE(c.last_msgs, 0) 
@@ -1372,11 +1370,8 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			&consumer.ConnectionId,
 			&consumer.ConsumersGroup,
 			&consumer.MaxAckTimeMs,
-			&consumer.CreatedBy,
-			&consumer.CreatedByUsername,
 			&consumer.IsActive,
-			&consumer.CreatedAt,
-			&consumer.IsDeleted,
+			&consumer.UpdatedAt,
 			&consumer.MaxMsgDeliveries,
 			&consumer.StartConsumeFromSeq,
 			&consumer.LastMessages,
@@ -1557,11 +1552,8 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&consumer.ConnectionId,
 			&consumer.ConsumersGroup,
 			&consumer.MaxAckTimeMs,
-			&consumer.CreatedBy,
-			&consumer.CreatedByUsername,
 			&consumer.IsActive,
-			&consumer.CreatedAt,
-			&consumer.IsDeleted,
+			&consumer.UpdatedAt,
 			&consumer.MaxMsgDeliveries,
 			&consumer.StartConsumeFromSeq,
 			&consumer.LastMessages,
@@ -1636,7 +1628,7 @@ func getFilteredExtendedStations(stationsMap map[int]models.ExtendedStation) []m
 		consumersMap := map[string]models.Consumer{}
 		for _, c := range station.Consumers {
 			if _, ok := consumersMap[c.Name]; ok {
-				if consumersMap[c.Name].CreatedAt.Before(c.CreatedAt) {
+				if consumersMap[c.Name].UpdatedAt.Before(c.UpdatedAt) {
 					consumersMap[c.Name] = c
 				}
 			} else {
@@ -2588,7 +2580,7 @@ func GetActiveConsumerByCG(consumersGroup string, stationId int) (bool, models.C
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 AND is_deleted = false LIMIT 1`
+	query := `SELECT * FROM consumers WHERE consumers_group = $1 AND station_id = $2 LIMIT 1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumer_by_cg", query)
 	if err != nil {
 		return false, models.Consumer{}, err
@@ -2612,8 +2604,6 @@ func InsertNewConsumer(name string,
 	stationId int,
 	consumerType string,
 	connectionIdObj string,
-	createdBy int,
-	createdByUsername string,
 	cgName string,
 	maxAckTime int,
 	maxMsgDeliveries int,
@@ -2635,17 +2625,14 @@ func InsertNewConsumer(name string,
 		connection_id,
 		consumers_group,
 		max_ack_time_ms,
-		created_by,
-		created_by_username,
 		is_active, 
-		is_deleted, 
-		created_at,
+		updated_at,
 		max_msg_deliveries,
 		start_consume_from_seq,
 		last_msgs,
 		type,
 		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
@@ -2654,12 +2641,11 @@ func InsertNewConsumer(name string,
 	}
 
 	var consumerId int
-	createdAt := time.Now()
+	updatedAt := time.Now()
 	isActive := true
-	isDeleted := false
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, createdBy, createdByUsername, isActive, isDeleted, createdAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName)
+		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -2707,16 +2693,14 @@ func InsertNewConsumer(name string,
 		StationId:           stationId,
 		Type:                consumerType,
 		ConnectionId:        connectionIdObj,
-		CreatedBy:           createdBy,
-		CreatedByUsername:   createdByUsername,
 		ConsumersGroup:      cgName,
 		IsActive:            isActive,
-		CreatedAt:           time.Now(),
-		IsDeleted:           isDeleted,
+		UpdatedAt:           time.Now(),
 		MaxAckTimeMs:        int64(maxAckTime),
 		MaxMsgDeliveries:    maxMsgDeliveries,
 		StartConsumeFromSeq: startConsumeFromSequence,
 		LastMessages:        lastMessages,
+		TenantName:          tenantName,
 	}
 	return false, newConsumer, rowsAffected, nil
 }
@@ -2790,11 +2774,12 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `
-		SELECT DISTINCT ON (c.name) c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name FROM consumers AS c
-		LEFT JOIN stations AS s ON s.id = c.station_id
-		LEFT JOIN connections AS con ON con.id = c.connection_id
-	WHERE c.station_id = $1 ORDER BY c.name, c.created_at DESC`
+	query := `SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
+				FROM consumers AS c
+				LEFT JOIN stations AS s ON s.id = c.station_id
+				LEFT JOIN connections AS con ON con.id = c.connection_id
+				WHERE c.station_id = $1 ORDER BY c.name, c.updated_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
@@ -2814,7 +2799,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func DeleteConsumerByNameStationIDAndConnID(name string, stationId int, connId string) (bool, models.Consumer, error) {
+func DeleteConsumeByNameStationIDAndConnID(connectionId, name string, stationId int) (bool, models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2822,13 +2807,12 @@ func DeleteConsumerByNameStationIDAndConnID(name string, stationId int, connId s
 		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
-	// TODO: change to delete
-	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND connection_id = $3 AND is_active = true RETURNING *`
-	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE connection_id = $1 AND name = $2 AND station_id = $3 LIMIT 1) RETURNING *`
+	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
 		return false, models.Consumer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
+	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, connectionId, name, stationId)
 	if err != nil {
 		return false, models.Consumer{}, err
 	}
@@ -2838,15 +2822,6 @@ func DeleteConsumerByNameStationIDAndConnID(name string, stationId int, connId s
 		return false, models.Consumer{}, err
 	}
 	if len(consumers) == 0 {
-		return false, models.Consumer{}, err
-	}
-	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
-	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
-	if err != nil {
-		return false, models.Consumer{}, err
-	}
-	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
-	if err != nil {
 		return false, models.Consumer{}, err
 	}
 	return true, consumers[0], nil
@@ -2860,13 +2835,12 @@ func DeleteConsumerByNameAndStationId(name string, stationId int) (bool, models.
 		return false, models.Consumer{}, err
 	}
 	defer conn.Release()
-	// TODO: change to delete
-	query1 := ` UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2 AND is_active = true RETURNING *`
-	findAndUpdateStmt, err := conn.Conn().Prepare(ctx, "find_and_update_consumers", query1)
+	query := ` DELETE FROM consumers WHERE ctid = ( SELECT ctid FROM consumers WHERE name = $1 AND station_id = $ LIMIT 1) RETURNING *`
+	deleteStmt, err := conn.Conn().Prepare(ctx, "delete_consumers", query)
 	if err != nil {
 		return false, models.Consumer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, findAndUpdateStmt.Name, name, stationId)
+	rows, err := conn.Conn().Query(ctx, deleteStmt.Name, name, stationId)
 	if err != nil {
 		return false, models.Consumer{}, err
 	}
@@ -2878,19 +2852,10 @@ func DeleteConsumerByNameAndStationId(name string, stationId int) (bool, models.
 	if len(consumers) == 0 {
 		return false, models.Consumer{}, err
 	}
-	query2 := `UPDATE consumers SET is_active = false, is_deleted = true WHERE name = $1 AND station_id = $2`
-	updateAllStmt, err := conn.Conn().Prepare(ctx, "update_all_related_consumers", query2)
-	if err != nil {
-		return false, models.Consumer{}, err
-	}
-	_, err = conn.Conn().Query(ctx, updateAllStmt.Name, name, stationId)
-	if err != nil {
-		return false, models.Consumer{}, err
-	}
 	return true, consumers[0], nil
 }
 
-func DeleteConsumersByStationID(stationId int) error {
+func DeleteAllConsumersByStationID(stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2939,7 +2904,7 @@ func CountActiveConsumersInCG(consumersGroup string, stationId int) (int64, erro
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_deleted = false`
+	query := `SELECT COUNT(*) FROM consumers WHERE station_id = $1 AND consumers_group = $2 AND is_active = true`
 	stmt, err := conn.Conn().Prepare(ctx, "count_active_consumers_in_cg", query)
 	if err != nil {
 		return 0, err
@@ -3007,21 +2972,17 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	query := `
 		SELECT
 			c.name,
-			con.client_address,
+			c.connection_id,
 			c.is_active,
-			c.is_deleted,
-			c.created_by,
-			c.created_by_username,
 			c.max_msg_deliveries,
 			c.max_ack_time_ms
 		FROM
 			consumers AS c
-			INNER JOIN connections AS con ON c.connection_id = con.id
 		WHERE
 			c.consumers_group = $1
 			AND c.station_id = $2
 		ORDER BY
-			c.created_at DESC
+			c.updated_at DESC
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumer_group_members", query)
 	if err != nil {
@@ -5549,27 +5510,6 @@ func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {
 		return false, models.DlsMessage{}, nil
 	}
 	return true, dlsMsgs[0], nil
-}
-
-func RemovePoisonedCg(stationId int, cgName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_poisoned_cg", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, cgName, stationId)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func GetTotalDlsMessages(tenantName string) (uint64, error) {
