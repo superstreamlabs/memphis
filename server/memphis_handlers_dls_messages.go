@@ -66,7 +66,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 
-	producedByHeader := ""
 	var headersJson map[string]string
 	if poisonMessageContent.Header != nil {
 		headersJson, err = DecodeHeader(poisonMessageContent.Header)
@@ -75,18 +74,16 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			return err
 		}
 	}
-
-	var producerId int
+	
+	producedByHeader := ""
 	poisonedCgs := []string{}
 	if station.IsNative {
-		connectionIdHeader := headersJson["$memphis_connectionId"]
 		producedByHeader = headersJson["$memphis_producedBy"]
 
 		// This check for backward compatability
-		if connectionIdHeader == "" || producedByHeader == "" {
-			connectionIdHeader = headersJson["connectionId"]
+		if producedByHeader == "" {
 			producedByHeader = headersJson["producedBy"]
-			if connectionIdHeader == "" || producedByHeader == "" {
+			if producedByHeader == "" {
 				serv.Warnf("handleNewUnackedMsg: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 				return nil
 			}
@@ -95,18 +92,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
 			return nil
 		}
-
-		connId := connectionIdHeader
-		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
-		if err != nil {
-			serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: %v", err.Error())
-			return err
-		}
-		if !exist {
-			serv.Warnf("handleNewUnackedMsg: producer %v couldn't been found", producedByHeader)
-			return nil
-		}
-		producerId = p.ID
 		poisonedCgs = append(poisonedCgs, cgName)
 	}
 
@@ -117,7 +102,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg atStorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err

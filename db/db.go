@@ -5256,7 +5256,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5296,7 +5296,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 		query = `INSERT INTO dls_messages( 
 			station_id,
 			message_seq,
-			producer_id,
+			producer_name,
 			poisoned_cgs,
 			message_details,
 			updated_at,
@@ -5315,7 +5315,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerId int, po
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerId, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
 		if err != nil {
 			return 0, err
 		}
