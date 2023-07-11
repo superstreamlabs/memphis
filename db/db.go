@@ -783,53 +783,6 @@ func UpdateConnection(connectionId string, isActive bool) (bool, error) {
 }
 
 // TODO: Remove
-func GetConnectionByID(connectionId string) (bool, models.Connection, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return false, models.Connection{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * FROM connections AS c WHERE id = $1 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_connection_by_id", query)
-	if err != nil {
-		return false, models.Connection{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
-	if err != nil {
-		return false, models.Connection{}, err
-	}
-	defer rows.Close()
-	connections, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Connection])
-	if err != nil {
-		return false, models.Connection{}, err
-	}
-	if len(connections) == 0 {
-		return false, models.Connection{}, nil
-	}
-	return true, connections[0], nil
-}
-
-// func KillRelevantConnections(ids []string) error {
-// 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-// 	defer cancelfunc()
-// 	conn, err := MetadataDbClient.Client.Acquire(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer conn.Release()
-// 	query := `UPDATE connections SET is_active = false WHERE id = ANY($1)`
-// 	stmt, err := conn.Conn().Prepare(ctx, "kill_relevant_connections", query)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	_, err = conn.Conn().Query(ctx, stmt.Name, ids)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
 
 func GetActiveConnections() ([]string, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -1945,8 +1898,6 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	FROM producers AS p
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
-	LEFT JOIN connections AS c
-	ON c.id = p.connection_id
 	WHERE p.connection_id = $1 AND p.is_active = true
 	GROUP BY p.id, s.id, c.client_address`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
@@ -2289,7 +2240,6 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted , c.client_address
 		FROM producers AS p
 		LEFT JOIN stations AS s ON p.station_id = s.id
-		LEFT JOIN connections AS c ON p.connection_id = c.id
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_producers", query)
 	if err != nil {
@@ -2696,7 +2646,6 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON c.station_id = s.id
-		LEFT JOIN connections AS con ON c.connection_id = con.id
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers", query)
 	if err != nil {
@@ -2994,7 +2943,6 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 		SELECT c.name, s.name  
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
-		LEFT JOIN connections AS con ON con.id = c.connection_id
 		WHERE c.connection_id = $1
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
@@ -3136,7 +3084,6 @@ func GetActiveConsumersByName(names []string, tenantName string) ([]models.Light
 		SELECT c.name, s.name  
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
-		LEFT JOIN connections AS con ON con.id = c.connection_id
 		WHERE c.tenant_name = $1 AND c.name = ANY($2) AND c.is_active = true
 `
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumers_by_name", query)
@@ -5635,7 +5582,6 @@ func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, e
 	queryAlterUsersTable := `
 	ALTER TABLE IF EXISTS users ADD CONSTRAINT fk_tenant_name_users FOREIGN KEY (tenant_name) REFERENCES tenants (name);
 	ALTER TABLE IF EXISTS configurations ADD CONSTRAINT fk_tenant_name_configurations FOREIGN KEY(tenant_name) REFERENCES tenants(name);
-	ALTER TABLE IF EXISTS connections ADD CONSTRAINT fk_tenant_name_connections FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS schemas ADD CONSTRAINT fk_tenant_name_schemas FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS tags ADD CONSTRAINT fk_tenant_name_tags FOREIGN KEY(tenant_name) REFERENCES tenants(name);
 	ALTER TABLE IF EXISTS consumers ADD CONSTRAINT fk_tenant_name_consumers FOREIGN KEY(tenant_name) REFERENCES tenants(name);
@@ -5966,7 +5912,6 @@ func ReliveConectionResources(connectionId string, isActive bool) error {
 	defer conn.Release()
 
 	var queries []string
-	queries = append(queries, fmt.Sprintf("UPDATE connections SET is_active = %v WHERE id = '%v';", isActive, connectionId))
 	queries = append(queries, fmt.Sprintf("UPDATE producers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
 	queries = append(queries, fmt.Sprintf("UPDATE consumers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
 
