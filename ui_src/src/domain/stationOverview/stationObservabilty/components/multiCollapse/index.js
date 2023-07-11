@@ -20,7 +20,7 @@ import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
+const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [activeChiledKey, setActiveChiledKey] = useState();
     const [collapseData, setCollapseData] = useState();
@@ -49,9 +49,12 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                     <p className="title">
                                         {header} <span className="consumer-number">{collapseData?.length}</span>
                                     </p>
-
+                                    
                                     <status is="x3d">
-                                        <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                        {
+                                           arrow && <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+
+                                        }
                                     </status>
                                 </div>
                             </TooltipComponent>
@@ -61,19 +64,33 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                         <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
                             {collapseData?.length > 0 &&
                                 collapseData?.map((row, index) => {
-                                    return (
-                                        <Panel
+                                    if (row.count >= 0){
+                                        return (
+                                            <div className="collapse-child-with-count">
+                                                    <p className="title-with-count">
+                                                        {row.name}
+                                                    <span className="consumer-number-title">{row.count}</span>
+                                                    </p>
+                                                    <status is="x3d">
+                                                        <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                    </status>
+                                                </div>
+                                        );
+                                    } else {
+                                        return (<Panel
                                             showArrow={false}
                                             header={
                                                 <div className="collapse-header">
                                                     <p className="title">{row.name}</p>
                                                     <status is="x3d">
                                                         <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                        {arrow &&
                                                         <img
                                                             className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
                                                             src={CollapseArrow}
                                                             alt="collapse-arrow"
                                                         />
+                                                        }
                                                     </status>
                                                 </div>
                                             }
@@ -93,7 +110,8 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                                     }
                                                 })}
                                         </Panel>
-                                    );
+                                        );
+                                    }
                                 })}
                         </Collapse>
                     </Panel>
@@ -111,11 +129,13 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                                 <p className="title">{row.name}</p>
                                                 <status is="x3d">
                                                     <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                    {arrow &&
                                                     <img
                                                         className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
                                                         src={CollapseArrow}
                                                         alt="collapse-arrow"
                                                     />
+                                                    }
                                                 </status>
                                             </div>
                                         }

@@ -94,14 +94,6 @@ const ProduceConsumList = ({ producer }) => {
                     name: 'Name',
                     value: producersList[rowIndex]?.name
                 },
-                {
-                    name: 'User',
-                    value: producersList[rowIndex]?.created_by_username
-                },
-                {
-                    name: 'IP',
-                    value: producersList[rowIndex]?.client_address
-                }
             ];
             setProducerDetails(details);
         } else {
@@ -110,18 +102,9 @@ const ProduceConsumList = ({ producer }) => {
             concatAllConsumers.map((row, index) => {
                 let consumer = {
                     name: row.name,
+                    count: row.count,
                     is_active: row.is_active,
                     is_deleted: row.is_deleted,
-                    details: [
-                        {
-                            name: 'User',
-                            value: row.created_by_username
-                        },
-                        {
-                            name: 'IP',
-                            value: row.client_address
-                        }
-                    ]
                 };
                 consumersDetails.push(consumer);
             });
@@ -175,7 +158,7 @@ const ProduceConsumList = ({ producer }) => {
                 {producer && producersList?.length > 0 && (
                     <div className="coulmns-table">
                         <span style={{ width: '100px' }}>Name</span>
-                        <span style={{ width: '80px' }}>User</span>
+                        <span style={{ width: '100px' }}>Count</span>
                         <span style={{ width: '35px' }}>Status</span>
                     </div>
                 )}
@@ -208,11 +191,11 @@ const ProduceConsumList = ({ producer }) => {
                                             <OverflowTip text={row.name} width={'100px'}>
                                                 {row.name}
                                             </OverflowTip>
-                                            <OverflowTip text={row.created_by_username} width={'80px'}>
-                                                {row.created_by_username}
+                                            <OverflowTip text={row.count} width={'70px'}>
+                                                {row.count}
                                             </OverflowTip>
                                             <span className="status-icon" style={{ width: '38px' }}>
-                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_active} />
                                             </span>
                                         </div>
                                     )}
@@ -247,7 +230,7 @@ const ProduceConsumList = ({ producer }) => {
                             )}
                         </div>
                         <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
-                            {producer && producersList?.length > 0 && <CustomCollapse header="Details" defaultOpen={true} data={producerDetails} />}
+                            {producer && producersList?.length > 0 }
                             {!producer && cgsList?.length > 0 && (
                                 <Space direction="vertical">
                                     <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
