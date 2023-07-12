@@ -1,9 +1,9 @@
 .poison-producer {
     position: relative;
     width: 100%;
-    height: 100%;
+    margin-top: 55px;
     background: #ffffff;
-    box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.14);
+    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
     border-radius: 8px;
     p {
         margin: 0;
@@ -15,38 +15,17 @@
         justify-content: space-between;
         height: 55px;
         align-items: center;
-        border-bottom: 1px solid #eff0f2;
-        p {
+        .header-title{
             font-family: 'InterSemiBold';
             font-size: 14px;
             margin-left: 15px;
         }
+        .header-name{
+            font-family: 'Inter';
+            font-size: 14px;
+        }
         .circle-status {
             margin-right: 15px;
-        }
-    }
-    .content-wrapper {
-        display: flex;
-        flex-direction: column;
-        height: calc(100% - 60px);
-        position: relative;
-        justify-content: space-around;
-        content {
-            display: flex;
-            justify-content: space-between;
-            line-height: 30px;
-            margin-right: 15px;
-            margin-left: 15px;
-            p {
-                font-family: 'Inter';
-                font-size: 12px;
-                color: #84818a;
-            }
-            span {
-                font-size: 12px;
-                color: #1d1d1d;
-                font-family: 'InterSemiBold';
-            }
         }
     }
 }

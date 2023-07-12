@@ -19,12 +19,11 @@ import (
 
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
-	"memphis/utils"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -75,16 +74,16 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 	return dedupedConsumers, nil
 }
 
-func (s *Server) createConsumerDirectV0(c *client, reply string, ccr createConsumerRequestV0, requestVersion int) {
-	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
+func (s *Server) createConsumerDirectV0(c *client, reply, tenantName string, ccr createConsumerRequestV0, requestVersion int) {
+	err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
 	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 }
 
-func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
+func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId, tenantName, userName string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) error {
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	}
 
@@ -92,7 +91,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+			serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 			return err
 		}
 	} else {
@@ -102,48 +101,36 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	consumerType := strings.ToLower(cType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
-	}
-
-	exist, connection, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("createConsumerDirectCommon at GetConnectionByID: Consumer %v : %v ", consumerName, err.Error())
-		return err
-	}
-	if !exist {
-		errMsg := fmt.Sprintf("Consumer %v at station %v : Connection ID %v  was not found", consumerName, cStationName, connectionId)
-		serv.Warnf("createConsumerDirectCommon: " + errMsg)
-		return errors.New(errMsg)
 	}
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	}
 
-	exist, user, err := db.GetUserByUserId(connection.CreatedBy)
+	exist, user, err := memphis_cache.GetUser(userName, tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUserByUserId: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon: user %v is not exists", connection.TenantName, connection.CreatedBy)
-		return err
+	} else if !exist {
+		serv.Warnf("[tenant: %v][user: %v] createConsumerDirectCommon at GetUser from cache: user does not exist", tenantName, userName)
+		return fmt.Errorf("user does not exist in db")
 	}
 
 	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetStationByName: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetStationByName: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 		return err
 	}
 
 	if !exist {
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, connection.CreatedBy, user.Username)
+		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username)
 		if err != nil {
-			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", connection.TenantName, consumerName, cStationName, err.Error())
+			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return err
 		}
 
@@ -154,8 +141,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			newAuditLog := models.AuditLog{
 				StationName:       stationName.Ext(),
 				Message:           message,
-				CreatedBy:         connection.CreatedBy,
-				CreatedByUsername: connection.CreatedByUsername,
+				CreatedBy:         user.ID,
+				CreatedByUsername: user.Username,
 				CreatedAt:         time.Now(),
 				TenantName:        user.TenantName,
 			}
@@ -180,7 +167,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, connection.CreatedBy, user.Username, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, connection.TenantName)
+	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return err
@@ -192,7 +179,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	if rowsUpdated == 1 {
-		message := "Consumer " + name + " has been created by user " + user.Username
+		message := "Consumer " + name + " connected"
 		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 		if consumerGroupExist {
 			if requestVersion == 1 {
@@ -229,8 +216,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		newAuditLog := models.AuditLog{
 			StationName:       stationName.Ext(),
 			Message:           message,
-			CreatedBy:         connection.CreatedBy,
-			CreatedByUsername: connection.CreatedByUsername,
+			CreatedBy:         user.ID,
+			CreatedByUsername: user.Username,
 			CreatedAt:         time.Now(),
 			TenantName:        user.TenantName,
 		}
@@ -266,7 +253,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 			respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
 			return
 		}
-		s.createConsumerDirectV0(c, reply, ccrV0, ccr.RequestVersion)
+		s.createConsumerDirectV0(c, reply, tenantName, ccrV0, ccr.RequestVersion)
 		return
 	}
 
@@ -292,22 +279,8 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	err = s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
+	err = s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
-}
-
-func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
-	consumers, err := db.GetAllConsumers()
-	if err != nil {
-		serv.Errorf("GetAllConsumers: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if len(consumers) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, consumers)
-	}
 }
 
 func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
@@ -340,8 +313,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				DisconnectedConsumers: []models.ExtendedConsumer{},
 				DeletedConsumers:      []models.ExtendedConsumer{},
 				IsActive:              consumer.IsActive,
-				IsDeleted:             consumer.IsDeleted,
-				LastStatusChangeDate:  consumer.CreatedAt,
+				LastStatusChangeDate:  consumer.UpdatedAt,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -349,30 +321,25 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			m[consumer.ConsumersGroup].MaxAckTimeMs = consumer.MaxAckTimeMs
 			m[consumer.ConsumersGroup].MaxMsgDeliveries = consumer.MaxMsgDeliveries
 			m[consumer.ConsumersGroup].IsActive = consumer.IsActive
-			m[consumer.ConsumersGroup].IsDeleted = consumer.IsDeleted
-			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.CreatedAt
+			m[consumer.ConsumersGroup].LastStatusChangeDate = consumer.UpdatedAt
 			cg = m[consumer.ConsumersGroup]
 		}
 
 		consumerRes := models.ExtendedConsumer{
-			ID:                consumer.ID,
-			Name:              consumer.Name,
-			CreatedByUsername: consumer.CreatedByUsername,
-			CreatedAt:         consumer.CreatedAt,
-			IsActive:          consumer.IsActive,
-			ClientAddress:     consumer.ClientAddress,
-			ConsumersGroup:    consumer.ConsumersGroup,
-			MaxAckTimeMs:      consumer.MaxAckTimeMs,
-			MaxMsgDeliveries:  consumer.MaxMsgDeliveries,
-			StationName:       consumer.StationName,
+			ID:               consumer.ID,
+			Name:             consumer.Name,
+			IsActive:         consumer.IsActive,
+			ConsumersGroup:   consumer.ConsumersGroup,
+			MaxAckTimeMs:     consumer.MaxAckTimeMs,
+			MaxMsgDeliveries: consumer.MaxMsgDeliveries,
+			StationName:      consumer.StationName,
+			Count:            consumer.Count,
 		}
 
 		if consumer.IsActive {
 			cg.ConnectedConsumers = append(cg.ConnectedConsumers, consumerRes)
-		} else if !consumer.IsDeleted && !consumer.IsActive {
+		} else {
 			cg.DisconnectedConsumers = append(cg.DisconnectedConsumers, consumerRes)
-		} else if consumer.IsDeleted {
-			cg.DeletedConsumers = append(cg.DeletedConsumers, consumerRes)
 		}
 	}
 
@@ -381,26 +348,23 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	var deletedCgs []models.Cg
 
 	for _, cg := range m {
-		if cg.IsDeleted {
-			cg.IsActive = false
-			cg.IsDeleted = true
-		} else { // not deleted
-			cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
-			if err != nil {
-				continue // ignoring cases where the consumer exist in memphis but not in nats
-			}
 
-			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
-			if err != nil {
-				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
-			}
-
-			cg.InProcessMessages = cgInfo.NumAckPending
-			cg.UnprocessedMessages = int(cgInfo.NumPending)
-			cg.PoisonMessages = totalPoisonMsgs
+		cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
+		if err != nil {
+			continue // ignoring cases where the consumer exist in memphis but not in nats
 		}
 
+		totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
+		if err != nil {
+			return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
+		}
+
+		cg.InProcessMessages = cgInfo.NumAckPending
+		cg.UnprocessedMessages = int(cgInfo.NumPending)
+		cg.PoisonMessages = totalPoisonMsgs
+
 		if len(cg.ConnectedConsumers) > 0 {
+			cg.IsActive = true
 			connectedCgs = append(connectedCgs, *cg)
 		} else if len(cg.DisconnectedConsumers) > 0 {
 			disconnectedCgs = append(disconnectedCgs, *cg)
@@ -462,14 +426,14 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 			return []models.DelayedCgResp{}, err
 		}
 		for _, consumer := range resp.Consumers {
-			if consumer.NumAckPending > 0 {
+			if consumer.NumPending > 0 {
 				stationName := StationNameFromStreamName(consumer.Stream)
 				consumerName := revertDelimiters(consumer.Name)
 				externalStationName := stationName.Ext()
 				if _, ok := consumers[externalStationName]; !ok {
-					consumers[externalStationName] = map[string]models.DelayedCg{consumerName: {CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}}
+					consumers[externalStationName] = map[string]models.DelayedCg{consumerName: {CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumPending)}}
 				} else {
-					consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumAckPending)}
+					consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumPending)}
 				}
 				consumerNames = append(consumerNames, consumerName)
 			}
@@ -501,64 +465,36 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 	return delayedCgsResp, nil
 }
 
-// TODO fix it
-func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
-	var body models.GetAllConsumersByStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	sn, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	exist, station, err := db.GetStationByName(sn.Ext(), user.TenantName)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("GetAllConsumersByStation: Station %v does not exist", body.StationName)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
-		return
-	}
-
-	consumers, err := db.GetAllConsumersByStation(station.ID)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: Station %v : %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if len(consumers) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, consumers)
-	}
-}
-
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
-	var dcr destroyConsumerRequest
+	var dcr destroyConsumerRequestV1
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
 		s.Errorf("destroyConsumerDirect at getTenantNameAndMessage: %v", err.Error())
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	if err := json.Unmarshal([]byte(message), &dcr); err != nil {
-		s.Errorf("[tenant: %v]destroyConsumerDirect at json.Unmarshal: %v", tenantName, err.Error())
-		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
-		return
+	if err := json.Unmarshal([]byte(message), &dcr); err != nil || dcr.RequestVersion < 1 {
+		var dcrV0 destroyConsumerRequestV0
+		if err := json.Unmarshal([]byte(message), &dcrV0); err != nil {
+			s.Errorf("[tenant: %v]destroyConsumerDirect at json.Unmarshal: %v", tenantName, err.Error())
+			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+			return
+		}
+		dcrV0.TenantName = tenantName
+		if c.memphisInfo.connectionId == "" {
+			s.destroyConsumerDirectV0(c, reply, dcrV0)
+			return
+		} else {
+			dcr = destroyConsumerRequestV1{
+				StationName:    dcrV0.StationName,
+				ConsumerName:   dcrV0.ConsumerName,
+				Username:       dcrV0.Username,
+				ConnectionId:   c.memphisInfo.connectionId,
+				RequestVersion: 1,
+			}
+		}
+
+		dcr.TenantName = tenantName
 	}
 
 	dcr.TenantName = tenantName
@@ -576,25 +512,62 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	exist, consumer, err := db.DeleteConsumer(name, station.ID)
+	exist, consumer, err := db.DeleteConsumerByNameStationIDAndConnID(dcr.ConnectionId, name, station.ID)
 	if !exist {
-		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v does not exist", tenantName, dcr.ConsumerName, dcr.StationName)
-		serv.Warnf("DestroyConsumer: %v", errMsg)
+		errMsg := fmt.Sprintf("Consumer %v at station %v does not exist", dcr.ConsumerName, dcr.StationName)
+		serv.Warnf("[tenant: %v]DestroyConsumer: %v", tenantName, errMsg)
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
 		return
 	}
 	if err != nil {
-		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v: %v", tenantName, dcr.ConsumerName, dcr.StationName, err.Error())
-		serv.Errorf("DestroyConsumer: %v", errMsg)
+		errMsg := fmt.Sprintf("Consumer %v at station %v: %v", dcr.ConsumerName, dcr.StationName, err.Error())
+		serv.Errorf("[tenant: %v]DestroyConsumer: %v", tenantName, errMsg)
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
+	s.destroyCGFromNats(c, reply, dcr.Username, tenantName, stationName, consumer, station)
+}
+
+func (s *Server) destroyConsumerDirectV0(c *client, reply string, dcr destroyConsumerRequestV0) {
+	stationName, err := StationNameFromStr(dcr.StationName)
+	if err != nil {
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0 at StationNameFromStr: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	name := strings.ToLower(dcr.ConsumerName)
+	_, station, err := db.GetStationByName(stationName.Ext(), dcr.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0 at GetStationByName: Station %v: %v", dcr.TenantName, dcr.StationName, err.Error())
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+	exist, consumer, err := db.DeleteConsumerByNameAndStationId(name, station.ID)
+	if !exist {
+		errMsg := fmt.Sprintf("Consumer %v at station %v does not exist", dcr.ConsumerName, dcr.StationName)
+		serv.Warnf("[tenant: %v]destroyConsumerDirectV0: %v", dcr.TenantName, errMsg)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, errors.New(errMsg))
+		return
+	}
+	if err != nil {
+		errMsg := fmt.Sprintf("Consumer %v at station %v: %v", dcr.ConsumerName, dcr.StationName, err.Error())
+		serv.Errorf("[tenant: %v]destroyConsumerDirectV0: %v", dcr.TenantName, errMsg)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+		return
+	}
+
+	s.destroyCGFromNats(c, reply, dcr.Username, dcr.TenantName, stationName, consumer, station)
+}
+
+func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string, stationName StationName, consumer models.Consumer, station models.Station) {
+
 	// ensure not part of an active consumer group
 	count, err := db.CountActiveConsumersInCG(consumer.ConsumersGroup, station.ID)
 	if err != nil {
-		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v: %v", tenantName, dcr.ConsumerName, dcr.StationName, err.Error())
-		serv.Errorf("DestroyConsumer at CountActiveConsumersInCG: %v", errMsg)
+		errMsg := fmt.Sprintf("[tenant: %v]Consumer %v at station %v: %v", tenantName, consumer.Name, station.Name, err.Error())
+		serv.Errorf("destroyCGFromNats at CountActiveConsumersInCG: %v", errMsg)
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -603,36 +576,30 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	if count == 0 { // no other members in this group
 		err = s.RemoveConsumer(station.TenantName, stationName, consumer.ConsumersGroup)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
-			serv.Errorf("DestroyConsumer at RemoveConsumer: %v", errMsg)
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
+			serv.Errorf("destroyCGFromNats at RemoveConsumer: %v", errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
 		}
 		if err == nil {
 			deleted = true
 		}
-		err = db.RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
-		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
-			serv.Errorf("DestroyConsumer at RemovePoisonedCg: %v", errMsg)
-			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
-			return
-		}
 	}
 
+	name := strings.ToLower(consumer.Name)
 	if deleted {
 		username := c.memphisInfo.username
 		if username == "" {
-			username = dcr.Username
+			username = userName
 		}
-		_, user, err := db.GetUserByUsername(username, dcr.TenantName)
+		_, user, err := memphis_cache.GetUser(username, consumer.TenantName)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
-			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, dcr.StationName, err.Error())
-			serv.Errorf("DestroyConsumer at GetUserByUsername: " + errMsg)
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
+			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)
 			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 			return
 		}
-		message := fmt.Sprintf("Consumer %v has been deleted by user %v ", name, username)
+		message := fmt.Sprintf("Consumer %v has been destroyed", name)
 		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 		var auditLogs []interface{}
 		newAuditLog := models.AuditLog{
@@ -646,7 +613,7 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 		auditLogs = append(auditLogs, newAuditLog)
 		err = CreateAuditLogs(auditLogs)
 		if err != nil {
-			serv.Errorf("[tenant: %v]DestroyConsumer at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, dcr.ConsumerName, dcr.StationName, err.Error())
+			serv.Errorf("[tenant: %v]destroyCGFromNats at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, consumer.Name, station.Name, err.Error())
 		}
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -657,4 +624,5 @@ func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, nil)
+
 }

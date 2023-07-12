@@ -66,7 +66,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 
-	producedByHeader := ""
 	var headersJson map[string]string
 	if poisonMessageContent.Header != nil {
 		headersJson, err = DecodeHeader(poisonMessageContent.Header)
@@ -75,18 +74,16 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			return err
 		}
 	}
-
-	var producerId int
+	
+	producedByHeader := ""
 	poisonedCgs := []string{}
 	if station.IsNative {
-		connectionIdHeader := headersJson["$memphis_connectionId"]
 		producedByHeader = headersJson["$memphis_producedBy"]
 
 		// This check for backward compatability
-		if connectionIdHeader == "" || producedByHeader == "" {
-			connectionIdHeader = headersJson["connectionId"]
+		if producedByHeader == "" {
 			producedByHeader = headersJson["producedBy"]
-			if connectionIdHeader == "" || producedByHeader == "" {
+			if producedByHeader == "" {
 				serv.Warnf("handleNewUnackedMsg: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
 				return nil
 			}
@@ -95,18 +92,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
 			return nil
 		}
-
-		connId := connectionIdHeader
-		exist, p, err := db.GetProducerByNameAndConnectionID(producedByHeader, connId)
-		if err != nil {
-			serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: %v", err.Error())
-			return err
-		}
-		if !exist {
-			serv.Warnf("handleNewUnackedMsg: producer %v couldn't been found", producedByHeader)
-			return nil
-		}
-		producerId = p.ID
 		poisonedCgs = append(poisonedCgs, cgName)
 	}
 
@@ -117,7 +102,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producerId, poisonedCgs, messageDetails, station.TenantName)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg atStorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
@@ -208,9 +193,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	}
 
 	poisonedCgs := []models.PoisonedCg{}
-	var producer models.Producer
-	var clientAddress string
-	var connectionId string
+	isActive := false
 
 	msgDetails := models.MessagePayload{
 		TimeSent: dlsMessage.MessageDetails.TimeSent,
@@ -222,7 +205,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		ID:              dlsMessage.ID,
 		StationId:       dlsMessage.StationId,
 		MessageSeq:      dlsMessage.MessageSeq,
-		ProducerId:      dlsMessage.ProducerId,
+		ProducerName:    dlsMessage.ProducerName,
 		PoisonedCgs:     dlsMessage.PoisonedCgs,
 		MessageDetails:  msgDetails,
 		UpdatedAt:       dlsMessage.UpdatedAt,
@@ -231,40 +214,30 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	}
 
 	if station.IsNative {
-		connectionIdHeader := dlsMsg.MessageDetails.Headers["$memphis_connectionId"]
-		//This check for backward compatability
-		if connectionIdHeader == "" {
-			connectionIdHeader = dlsMsg.MessageDetails.Headers["connectionId"]
-			if connectionIdHeader == "" {
-				return models.DlsMessageResponse{}, nil
-			}
-		}
-		connectionId = connectionIdHeader
-		_, conn, err := db.GetConnectionByID(connectionId)
+		exist, prod, err := db.GetProducerByNameAndStationID(dlsMsg.ProducerName, dlsMsg.StationId)
 		if err != nil {
 			return models.DlsMessageResponse{}, err
 		}
-		clientAddress = conn.ClientAddress
-
-		exist, prod, err := db.GetProducerByID(dlsMsg.ProducerId)
-		if err != nil {
-			return models.DlsMessageResponse{}, err
+		if exist {
+			isActive = prod.IsActive
 		}
-		if !exist {
-			return models.DlsMessageResponse{}, fmt.Errorf("Producer %v does not exist", prod.Name)
-		}
-		producer = prod
 
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		for _, v := range pCg {
 			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
-				return models.DlsMessageResponse{}, err
+				cgInfo = &ConsumerInfo{
+					NumPending:    0,
+					NumAckPending: 0,
+				}
 			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
-			if err != nil {
-				return models.DlsMessageResponse{}, err
+			if err != nil || len(cgMembers) == 0 {
+				cgMembers = []models.CgMember{models.CgMember{
+					MaxAckTimeMs:     0,
+					MaxMsgDeliveries: 0,
+				}}
 			}
 			pc.IsActive, pc.IsDeleted = getCgStatus(cgMembers)
 
@@ -311,14 +284,9 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		StationName: station.Name,
 		SchemaType:  schemaType,
 		MessageSeq:  dlsMsg.MessageSeq,
-		Producer: models.ProducerDetails{
-			Name:              producer.Name,
-			ConnectionId:      producer.ConnectionId,
-			ClientAddress:     clientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+		Producer: models.ProducerDetailsResp{
+			Name:     dlsMsg.ProducerName,
+			IsActive: isActive,
 		},
 		Message:         dlsMsg.MessageDetails,
 		UpdatedAt:       dlsMsg.UpdatedAt,
@@ -347,11 +315,17 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		}
 		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
-			return []models.PoisonedCg{}, err
+			cgInfo = &ConsumerInfo{
+				NumPending:    0,
+				NumAckPending: 0,
+			}
 		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
-		if err != nil {
-			return []models.PoisonedCg{}, err
+		if err != nil || len(cgMembers) == 0 {
+			cgMembers = []models.CgMember{models.CgMember{
+				MaxAckTimeMs:     0,
+				MaxMsgDeliveries: 0,
+			}}
 		}
 		poisonedCg.IsActive, poisonedCg.IsDeleted = getCgStatus(cgMembers)
 

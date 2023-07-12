@@ -12,31 +12,10 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
-import MultiCollapse from '../../../stationOverview/stationObservabilty/components/multiCollapse';
+import React from 'react';
+import ConsumerWithStatus from '../../../../components/consumerWithStatus';
 
 const ConsumerGroup = ({ header, details, cgMembers }) => {
-    const [consumers, setConsumers] = useState([]);
-    useEffect(() => {
-        cgMembers?.map((row, index) => {
-            let consumer = {
-                name: row.name,
-                is_active: row.is_active,
-                is_deleted: row.is_deleted,
-                details: [
-                    {
-                        name: 'User',
-                        value: row.created_by_username
-                    },
-                    {
-                        name: 'IP',
-                        value: row.client_address
-                    }
-                ]
-            };
-            setConsumers([consumer]);
-        });
-    }, [cgMembers]);
 
     return (
         <div className="consumer-group">
@@ -58,7 +37,13 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                     })}
                 </div>
                 <div className="consumers">
-                    <MultiCollapse data={consumers} />
+                {cgMembers?.map((row, index) => {
+                            return (
+                                <div className="consumer" key={index}>
+                                    <ConsumerWithStatus name={row.name} is_active={row.is_active} count={row.count}></ConsumerWithStatus> 
+                                </div>
+                            );
+                    })}
                 </div>
             </div>
         </div>

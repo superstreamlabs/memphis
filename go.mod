@@ -26,6 +26,7 @@ require (
 )
 
 require (
+	github.com/allegro/bigcache/v3 v3.1.0
 	github.com/aws/aws-sdk-go-v2 v1.18.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.22
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.21
@@ -49,8 +50,6 @@ require (
 
 require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
-	github.com/allegro/bigcache v1.2.1 // indirect
-	github.com/allegro/bigcache/v3 v3.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.10 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.13.3 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.33 // indirect
