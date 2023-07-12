@@ -5843,8 +5843,8 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) error {
 
 	var queries []string
 	// change to updated_at
-	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND created_at < $1")
-	queries = append(queries, "DELETE FROM consumers WHERE is_active = false AND created_at < $1")
+	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
+	queries = append(queries, "DELETE FROM consumers WHERE is_active = false AND updated_at < $1")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
