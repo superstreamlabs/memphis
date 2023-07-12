@@ -146,7 +146,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = db.DeleteConsumersByStationID(station.ID)
+	err = db.DeleteAllConsumersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
@@ -1170,21 +1170,11 @@ func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string,
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
-	deletedCount := 0
 	for _, member := range members {
 		if member.IsActive {
 			return true, false
 		}
-
-		if member.IsDeleted {
-			deletedCount++
-		}
 	}
-
-	if len(members) == deletedCount {
-		return false, true
-	}
-
 	return false, false
 }
 
@@ -1399,11 +1389,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
-			Producer: models.ProducerDetails{
-				Name:          "",
-				ClientAddress: "",
-				IsActive:      false,
-				IsDeleted:     false,
+			Producer: models.ProducerDetailsResp{
+				Name:     "",
+				IsActive: false,
 			},
 			PoisonedCgs: []models.PoisonedCg{},
 		}
@@ -1443,18 +1431,25 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(station.TenantName, stationName, cg.CgName)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+				if err != nil {
+					serv.Errorf("[tenant: %v]GetMessageDetails at GetCgInfo: %v", station.TenantName, err.Error())
+				}
+				cgInfo = &ConsumerInfo{
+					NumPending:    0,
+					NumAckPending: 0,
+				}
 			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
+			if err != nil || len(cgMembers) == 0 {
+				if err != nil {
+					serv.Errorf("[tenant: %v]GetMessageDetails at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				}
+				cgMembers = []models.CgMember{{
+					MaxAckTimeMs:     0,
+					MaxMsgDeliveries: 0,
+				}}
 			}
 
 			isActive, isDeleted := getCgStatus(cgMembers)
@@ -1471,25 +1466,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
-
-	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	isActive := false
+	exist, producer, err := db.GetProducerByStationIDAndConnectionId(producedByHeader, station.ID, connectionId)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetProducerByStationIDAndUsername: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
-		serv.Warnf("[tenant: %v][user: %v]GetMessageDetails: %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	_, conn, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConnectionByID: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	if exist {
+		isActive = producer.IsActive
 	}
 
 	msg := models.MessageResponse{
@@ -1500,14 +1485,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
-		Producer: models.ProducerDetails{
-			Name:              producedByHeader,
-			ConnectionId:      connectionId,
-			ClientAddress:     conn.ClientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+		Producer: models.ProducerDetailsResp{
+			Name:     producedByHeader,
+			IsActive: isActive,
 		},
 		PoisonedCgs: poisonedCgs,
 	}

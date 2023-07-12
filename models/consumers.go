@@ -23,11 +23,8 @@ type Consumer struct {
 	ConnectionId        string    `json:"connection_id"`
 	ConsumersGroup      string    `json:"consumers_group"`
 	MaxAckTimeMs        int64     `json:"max_ack_time_ms"`
-	CreatedBy           int       `json:"created_by"`
-	CreatedByUsername   string    `json:"created_by_username"`
 	IsActive            bool      `json:"is_active"`
-	CreatedAt           time.Time `json:"created_at" `
-	IsDeleted           bool      `json:"is_deleted"`
+	UpdatedAt           time.Time `json:"updated_at"`
 	MaxMsgDeliveries    int       `json:"max_msg_deliveries"`
 	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
 	LastMessages        int64     `json:"last_messages"`
@@ -35,18 +32,15 @@ type Consumer struct {
 }
 
 type ExtendedConsumer struct {
-	ID                int       `json:"id"`
-	Name              string    `json:"name"`
-	CreatedBy         string    `json:"created_by,omitempty"`
-	CreatedByUsername string    `json:"created_by_username"`
-	CreatedAt         time.Time `json:"created_at"`
-	IsActive          bool      `json:"is_active"`
-	IsDeleted         bool      `json:"is_deleted"`
-	ClientAddress     string    `json:"client_address"`
-	ConsumersGroup    string    `json:"consumers_group"`
-	MaxAckTimeMs      int64     `json:"max_ack_time_ms"`
-	MaxMsgDeliveries  int       `json:"max_msg_deliveries"`
-	StationName       string    `json:"station_name,omitempty"`
+	ID               int       `json:"id"`
+	Name             string    `json:"name"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	IsActive         bool      `json:"is_active"`
+	ConsumersGroup   string    `json:"consumers_group"`
+	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
+	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
+	StationName      string    `json:"station_name,omitempty"`
+	Count            int       `json:"count"`
 }
 
 type LightConsumer struct {
@@ -59,7 +53,6 @@ type Cg struct {
 	UnprocessedMessages   int                `json:"unprocessed_messages"`
 	PoisonMessages        int                `json:"poison_messages"`
 	IsActive              bool               `json:"is_active"`
-	IsDeleted             bool               `json:"is_deleted"`
 	InProcessMessages     int                `json:"in_process_messages"`
 	MaxAckTimeMs          int64              `json:"max_ack_time_ms"`
 	MaxMsgDeliveries      int                `json:"max_msg_deliveries"`
@@ -89,14 +82,12 @@ type DestroyConsumerSchema struct {
 }
 
 type CgMember struct {
-	Name              string `json:"name"`
-	ClientAddress     string `json:"client_address"`
-	IsActive          bool   `json:"is_active"`
-	IsDeleted         bool   `json:"is_deleted"`
-	CreatedBy         int    `json:"created_by"`
-	CreatedByUsername string `json:"created_by_username"`
-	MaxMsgDeliveries  int    `json:"max_msg_deliveries"`
-	MaxAckTimeMs      int64  `json:"max_ack_time_ms"`
+	Name             string `json:"name"`
+	ConnectionID     string `json:"Connection_id"`
+	IsActive         bool   `json:"is_active"`
+	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
+	MaxAckTimeMs     int64  `json:"max_ack_time_ms"`
+	Count            int    `json:"count"`
 }
 
 type DelayedCg struct {

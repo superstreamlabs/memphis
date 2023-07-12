@@ -96,21 +96,6 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
-	err = db.UpdateConnectionsOfDeletedUser(user.ID, tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.UpdateProducersOfDeletedUser(user.ID)
-	if err != nil {
-		return err
-	}
-
-	err = db.UpdateConsumersOfDeletedUser(user.ID)
-	if err != nil {
-		return err
-	}
-
 	err = db.UpdateSchemasOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
@@ -136,11 +121,6 @@ func removeTenantResources(tenantName string, user models.User) error {
 	}
 
 	err = db.RemoveConsumersByTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.RemoveConnectionsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
