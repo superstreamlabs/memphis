@@ -2534,38 +2534,6 @@ func InsertNewConsumer(name string,
 	return false, newConsumer, rowsAffected, nil
 }
 
-func GetAllConsumers() ([]models.ExtendedConsumer, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	defer conn.Release()
-	query := `
-		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
-		FROM consumers AS c
-		LEFT JOIN stations AS s ON c.station_id = s.id
-	`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers", query)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	defer rows.Close()
-	consumers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedConsumer])
-	if err != nil {
-		return []models.ExtendedConsumer{}, err
-	}
-	if len(consumers) == 0 {
-		return []models.ExtendedConsumer{}, nil
-	}
-	return consumers, nil
-}
-
 func GetConsumers() ([]models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
