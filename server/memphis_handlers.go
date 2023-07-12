@@ -37,6 +37,7 @@ type Handlers struct {
 	Configurations ConfigurationsHandler
 	Tenants        TenantHandler
 	Billing        BillingHandler
+	userMgmt       UserMgmtHandler
 }
 
 var serv *Server
