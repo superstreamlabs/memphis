@@ -21,11 +21,9 @@ import (
 	"memphis/db"
 	"memphis/memphis_cache"
 	"memphis/models"
-	"memphis/utils"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"k8s.io/utils/strings/slices"
 )
 
@@ -285,20 +283,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 }
 
-func (ch ConsumersHandler) GetAllConsumers(c *gin.Context) {
-	consumers, err := db.GetAllConsumers()
-	if err != nil {
-		serv.Errorf("GetAllConsumers: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if len(consumers) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, consumers)
-	}
-}
-
 func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint
 	var cgs []models.Cg
 	consumers, err := db.GetAllConsumersByStation(station.ID)
@@ -479,52 +463,6 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 		delayedCgsResp = append(delayedCgsResp, models.DelayedCgResp{StationName: s, CGS: c})
 	}
 	return delayedCgsResp, nil
-}
-
-// TODO fix it
-func (ch ConsumersHandler) GetAllConsumersByStation(c *gin.Context) { // for REST endpoint
-	var body models.GetAllConsumersByStationSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-
-	sn, err := StationNameFromStr(body.StationName)
-	if err != nil {
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	exist, station, err := db.GetStationByName(sn.Ext(), user.TenantName)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: At station %v: %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("GetAllConsumersByStation: Station %v does not exist", body.StationName)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station does not exist"})
-		return
-	}
-
-	consumers, err := db.GetAllConsumersByStation(station.ID)
-	if err != nil {
-		serv.Errorf("GetAllConsumersByStation: Station %v : %v", body.StationName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if len(consumers) == 0 {
-		c.IndentedJSON(200, []string{})
-	} else {
-		c.IndentedJSON(200, consumers)
-	}
 }
 
 func (s *Server) destroyConsumerDirect(c *client, reply string, msg []byte) {

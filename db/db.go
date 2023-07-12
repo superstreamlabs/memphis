@@ -279,13 +279,19 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by;
 		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by_username;
 		ALTER TABLE consumers DROP COLUMN IF EXISTS is_deleted;
-		ALTER TABLE consumers DROP COLUMN IF EXISTS created_at;
 		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
-		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		DROP INDEX IF EXISTS unique_consumer_table;
 		ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
 		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
+		END IF;
+		IF EXISTS (
+			SELECT 1
+			FROM information_schema.columns
+			WHERE table_name = 'consumers'
+			AND column_name = 'created_at'
+		) THEN
+			ALTER TABLE consumers RENAME COLUMN created_at TO updated_at;
 		END IF;
 	END $$;`
 
@@ -300,11 +306,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		consumers_group VARCHAR NOT NULL,
 		max_ack_time_ms SERIAL NOT NULL,
 		is_active BOOL NOT NULL DEFAULT true,
+		updated_at TIMESTAMPTZ NOT NULL,
 		max_msg_deliveries SERIAL NOT NULL,
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
-		updated_at TIMESTAMPTZ NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -400,10 +406,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE producers ADD COLUMN IF NOT EXISTS connection_id INTEGER NOT NULL;
-		ALTER TABLE producers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL;
 		ALTER TABLE producers DROP COLUMN IF EXISTS created_by;
 		ALTER TABLE producers DROP COLUMN IF EXISTS created_by_username;
-		ALTER TABLE producers DROP COLUMN IF EXISTS created_at;
 		ALTER TABLE producers DROP COLUMN IF EXISTS is_deleted;
 		ALTER TABLE producers DROP CONSTRAINT IF EXISTS fk_connection_id;
 		DROP INDEX IF EXISTS unique_producer_table;
@@ -411,6 +415,14 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		CREATE INDEX IF NOT EXISTS producer_name ON producers(name);
 		CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
 		CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
+		END IF;
+		IF EXISTS (
+			SELECT 1
+			FROM information_schema.columns
+			WHERE table_name = 'producers'
+			AND column_name = 'created_at'
+		) THEN
+			ALTER TABLE producers RENAME COLUMN created_at TO updated_at;
 		END IF;
 	END $$;`
 
@@ -423,8 +435,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		type enum_producer_type NOT NULL DEFAULT 'application',
 		connection_id VARCHAR NOT NULL, 
 		is_active BOOL NOT NULL DEFAULT true,
-		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		updated_at TIMESTAMPTZ NOT NULL,
+		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -782,7 +794,6 @@ func UpdateProducersCounsumersConnection(connectionId string, isActive bool) (bo
 	return false, nil
 }
 
-// TODO: Remove
 func GetActiveConnections() ([]string, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2079,84 +2090,6 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func UpsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, createdByUser int, createdByUsername string, tenantName string) (models.Producer, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return models.Producer{}, err
-	}
-	defer conn.Release()
-
-	query := `INSERT INTO producers ( 
-		name, 
-		station_id, 
-		connection_id,
-		created_by, 
-		created_by_username,
-		is_active, 
-		is_deleted, 
-		created_at, 
-		type,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-	ON CONFLICT (name, station_id) DO UPDATE SET counter = producers.counter + 1
-	RETURNING id`
-
-	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
-	if err != nil {
-		return models.Producer{}, err
-	}
-
-	var producerId int
-	createAt := time.Now()
-	isActive := true
-	isDeleted := false
-	if tenantName != conf.GlobalAccount {
-		tenantName = strings.ToLower(tenantName)
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, createdByUser, createdByUsername, isActive, isDeleted, createAt, producerType, tenantName)
-	if err != nil {
-		return models.Producer{}, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&producerId)
-		if err != nil {
-			return models.Producer{}, err
-		}
-	}
-
-	if err := rows.Err(); err != nil {
-		return models.Producer{}, err
-	}
-
-	if err := rows.Err(); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Detail != "" {
-				return models.Producer{}, errors.New(pgErr.Detail)
-			} else {
-				return models.Producer{}, errors.New(pgErr.Message)
-			}
-		} else {
-			return models.Producer{}, err
-		}
-	}
-
-	newProducer := models.Producer{
-		ID:           producerId,
-		Name:         name,
-		StationId:    stationId,
-		Type:         producerType,
-		ConnectionId: connectionIdObj,
-		IsActive:     isActive,
-		UpdatedAt:    time.Now(),
-	}
-	return newProducer, nil
-}
-
 func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string) (models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2225,38 +2158,6 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 		UpdatedAt:    time.Now(),
 	}
 	return newProducer, nil
-}
-
-func GetAllProducers() ([]models.ExtendedProducer, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	defer conn.Release()
-	query := `
-		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted
-		FROM producers AS p
-		LEFT JOIN stations AS s ON p.station_id = s.id
-	`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_producers", query)
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	defer rows.Close()
-	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ExtendedProducer])
-	if err != nil {
-		return []models.ExtendedProducer{}, err
-	}
-	if len(producers) == 0 {
-		return []models.ExtendedProducer{}, nil
-	}
-	return producers, nil
 }
 
 func GetNotDeletedProducersByStationID(stationId int) ([]models.Producer, error) {

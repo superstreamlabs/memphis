@@ -114,7 +114,7 @@ func handleConnectMessage(client *client) error {
 		connectionId = splittedMemphisInfo[0]
 		exist, err := db.UpdateProducersCounsumersConnection(connectionId, true)
 		if err != nil {
-			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateConnection: %v", user.TenantName, username, err.Error())
+			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateProducersCounsumersConnection: %v", user.TenantName, username, err.Error())
 			return err
 		}
 		if !exist {

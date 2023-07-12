@@ -44,7 +44,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
         let obj = [];
         for (const property in headers) {
             obj.push(
-                <div className="headers-container">
+                <div className="headers-container" key={property}>
                     <p>{property}</p>
                     <div className="copy-section">
                         <Copy data={headers[property]}></Copy>
@@ -71,7 +71,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 <p className="title">
                                     {header}
                                     {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} />}
+                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} alt="warningCircle" />}
                                 </p>
                                 <status is="x3d">
                                     <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
@@ -111,9 +111,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                     <>
                         {!status &&
                             data?.length > 0 &&
-                            data?.map((row) => {
+                            data?.map((row,index) => {
                                 return (
-                                    <content is="x3d" key={row.name}>
+                                    <content is="x3d" key={index}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>
@@ -121,9 +121,9 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                             })}
                         {status &&
                             data?.details?.length > 0 &&
-                            data?.details?.map((row) => {
+                            data?.details?.map((row,index) => {
                                 return (
-                                    <content is="x3d" key={row.name}>
+                                    <content is="x3d" key={index}>
                                         <p>{row.name}</p>
                                         <span>{row.value}</span>
                                     </content>

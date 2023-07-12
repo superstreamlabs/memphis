@@ -66,7 +66,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                 collapseData?.map((row, index) => {
                                     if (row.count >= 0){
                                         return (
-                                            <div className="collapse-child-with-count">
+                                            <div className="collapse-child-with-count" key={index}>
                                                     <p className="title-with-count">
                                                         {row.name}
                                                     {row.count > 1 && <span className="consumer-number-title">{row.count}</span>}
