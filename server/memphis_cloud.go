@@ -1913,10 +1913,10 @@ func updateSystemLiveness() {
 	analytics.SendEvent("", "", analyticsParams, "system-is-up")
 }
 
-func (s *Server) InitializeMessagesCollectionInFireStore() error {
+func (s *Server) CreateFirestoreSystemMessagesCollectionIfNotExist() error {
 	return nil
 }
 
-func (umh UserMgmtHandler) GetFirebaseValidMessages() ([]SendMessageToUser, error) {
+func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SendMessageToUser, error) {
 	return []SendMessageToUser{}, nil
 }
