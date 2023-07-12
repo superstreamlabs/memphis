@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-func flushMapToTire2Storage() error {
+func flushMapToTier2Storage() error {
 	for t, tenant := range tieredStorageMsgsMap.m {
 		for k, f := range StorageFunctionsMap {
 			switch k {

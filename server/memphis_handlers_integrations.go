@@ -165,7 +165,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	c.IndentedJSON(200, integration)
 }
 
-func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region string) (map[string]string, map[string]bool) {
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle string) (map[string]string, map[string]bool) {
 	keys := make(map[string]string)
 	properties := make(map[string]bool)
 	switch integrationType {
@@ -179,7 +179,9 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 		keys["access_key"] = accessKey
 		keys["secret_key"] = secretKey
 		keys["bucket_name"] = bucketName
+		keys["s3_path_style"] = forceS3PathStyle
 		keys["region"] = region
+		keys["url"] = url
 	}
 
 	return keys, properties

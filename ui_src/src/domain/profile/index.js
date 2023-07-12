@@ -141,7 +141,7 @@ function Profile() {
                         className="modal-btn"
                         width="200px"
                         height="36px"
-                        placeholder={isCloud ? 'Delete organization' : 'Delete account'}
+                        placeholder={isCloud() ? 'Delete organization' : 'Delete account'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="red"
@@ -157,7 +157,7 @@ function Profile() {
                 <Modal
                     header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
                     width="520px"
-                    height="240px"
+                    height="270px"
                     displayButtons={false}
                     clickOutside={() => modalFlip(false)}
                     open={open}

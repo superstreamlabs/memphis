@@ -125,7 +125,7 @@ const SlackIntegration = ({ close, value }) => {
             newFormFields = { ...newFormFields, keys: updatedKeys };
         }
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATIONL, { ...newFormFields });
+            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, { ...newFormFields });
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
             closeModal(data);
         } catch (err) {

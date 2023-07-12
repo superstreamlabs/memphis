@@ -73,7 +73,7 @@ const storageTierTwoOptions = [
     {
         id: 1,
         value: 's3',
-        label: 'S3',
+        label: 'S3 Compatible Object Storage',
         desc: 'Use object storage as a 2nd tier storage for archiving and post-stream analysis'
     }
 ];
@@ -101,7 +101,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
     useEffect(() => {
-        getAvailableReplicas();
+        if (!isCloud()) {
+            getAvailableReplicas();
+        }
         getAllSchemas();
         getIntegration();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
@@ -142,7 +144,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_type: formFields.retention_type || retentionType,
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
-            replicas: replicasConvertor(formFields.replicas, true),
+            replicas: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -171,25 +173,24 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     break;
                 default:
                     replicas = ['No HA (1)'];
-
                     break;
             }
             setActualPods(replicas);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const getAllSchemas = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             setSchemas(data);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=s3`);
             setIntegrateValue(data);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     const createStation = async (bodyRequest) => {
@@ -286,31 +287,33 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                <div className="replicas-container">
-                    <TitleComponent
-                        headerTitle="Replicas"
-                        typeTitle="sub-header"
-                        headerDescription="Amount of mirrors per message."
-                        learnMore={true}
-                        link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                    />
-                    <div>
-                        <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
-                            <SelectComponent
-                                colorType="black"
-                                backgroundColorType="none"
-                                borderColorType="gray"
-                                radiusType="semi-round"
-                                height="40px"
-                                popupClassName="select-options"
-                                options={actualPods}
-                                value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                onChange={(e) => getStarted && updateFormState('replicas', e)}
-                                disabled={!allowEdit}
-                            />
-                        </Form.Item>
+                {!isCloud() &&
+                    <div className="replicas-container">
+                        <TitleComponent
+                            headerTitle="Replicas"
+                            typeTitle="sub-header"
+                            headerDescription="Amount of mirrors per message."
+                            learnMore={true}
+                            link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                        />
+                        <div>
+                            <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
+                                <SelectComponent
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    radiusType="semi-round"
+                                    height="40px"
+                                    popupClassName="select-options"
+                                    options={actualPods}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                    onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                    disabled={!allowEdit}
+                                />
+                            </Form.Item>
+                        </div>
                     </div>
-                </div>
+                }
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
@@ -442,7 +445,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
                                             <InputNumberComponent
                                                 min={0}
-                                                max={isCloud ? 14 : 1000}
+                                                max={isCloud() ? 14 : 1000}
                                                 onChange={(e) => getStarted && updateFormState('days', e)}
                                                 value={getStartedStateRef?.formFieldsCreateStation?.days}
                                                 placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
@@ -591,6 +594,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     storageTierTwoOptions.map((value) => {
                                         return (
                                             <SelectCheckBox
+                                                hideCircle={true}
                                                 selectOptions={storageTierTwoOptions}
                                                 allowEdit={allowEdit}
                                                 handleOnClick={(e) =>

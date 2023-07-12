@@ -134,7 +134,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                             {
                                 message:
                                     userType === 'management' && isCloud() ? 'Please enter a valid email address!' : 'Username has to include only letters/numbers and .',
-                                pattern: userType === 'management' && isCloud() ? /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,})+$/ : /^[a-zA-Z0-9_.]*$/
+                                pattern: userType === 'management' && isCloud() ? /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ : /^[a-zA-Z0-9_.]*$/
                             }
                         ]}
                     >
@@ -144,7 +144,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                                 placeholder={userType === 'management' && isCloud() ? 'Type email' : 'Type username'}
                                 type="text"
                                 radiusType="semi-round"
-                                maxLength={20}
+                                maxLength={60}
                                 colorType="black"
                                 backgroundColorType="none"
                                 borderColorType="gray"

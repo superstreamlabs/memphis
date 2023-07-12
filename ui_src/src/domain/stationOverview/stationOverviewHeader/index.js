@@ -17,7 +17,7 @@ import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { MinusOutlined } from '@ant-design/icons';
 
-import { convertBytes, convertSecondsToDate, replicasConvertor } from '../../../services/valueConvertor';
+import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
 import purgeWrapperIcon from '../../../assets/images/purgeWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
@@ -183,7 +183,7 @@ const StationOverviewHeader = () => {
                             <b>Retention:</b> {retentionValue}
                         </p>
                         <p>
-                            <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
+                            <b>Replicas:</b> {isCloud() ? replicasConvertor(3, false) : replicasConvertor(stationState?.stationMetaData?.replicas, false)}
                         </p>
                         <div className="storage-section">
                             <p>

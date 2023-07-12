@@ -66,6 +66,8 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
+type SystemMessage struct{}
+
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
 
@@ -99,7 +101,7 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if created && configuration.ANALYTICS == "true" {
+	if created {
 		time.AfterFunc(5*time.Second, func() {
 			var deviceIdValue string
 			installationType := "stand-alone-k8s"
@@ -1837,6 +1839,9 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
+	if configuration.ENV == "staging" {
+		return false, nil
+	}
 	return true, nil
 	// exist, systemKey, err := db.GetSystemKey("analytics", serv.MemphisGlobalAccountString())
 	// if err != nil {
@@ -1871,4 +1876,51 @@ func validateReplicas(replicas int) error {
 	}
 
 	return nil
+}
+
+func (s *Server) Force3ReplicationsForExistingStations() error {
+	return nil
+}
+
+func getStationReplicas(replicas int) int {
+	if replicas <= 0 {
+		return 1
+	} else if replicas == 2 || replicas == 4 {
+		return 3
+	} else if replicas > 5 {
+		return 5
+	}
+	return replicas
+}
+
+func getDefaultReplicas() int {
+	return 1
+}
+
+func updateSystemLiveness() {
+	stationsHandler := StationsHandler{S: serv}
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	producersCount, err := db.CountAllActiveProudcers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	consumersCount, err := db.CountAllActiveConsumers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
+	analytics.SendEvent("", "", analyticsParams, "system-is-up")
+}
+
+func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
+	return []SystemMessage{}, nil
 }

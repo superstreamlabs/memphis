@@ -90,7 +90,9 @@ node {
       	sh "rm -rf memphis-k8s"
       	dir ('memphis-k8s'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-          sh "helm install memphis-tests memphis --set analytics='false',teston='cp' --create-namespace --namespace memphis-$unique_id --wait"
+          sh """
+	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,teston='cp' --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
+          """
       	}
     }
 
@@ -152,7 +154,9 @@ node {
 	  """
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
-	    sh 'helm install my-memphis memphis --set analytics="false",global.cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --create-namespace --namespace memphis --wait'
+	    sh """
+              helm install my-memphis memphis --set memphis.extraEnvironmentVars.enabled=true,global.cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis --wait
+	    """
 	  }
           sh "rm -rf memphis-k8s"
 	}
@@ -178,10 +182,13 @@ node {
         }
 	      
    	stage('Create staging user') {
-   	  sh """
-   	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
-   	    mem user add -u staging -p memphis
-   	  """
+   	  withCredentials([string(credentialsId: 'staging_pass', variable: 'staging_pass')]) {
+   	    sh '''
+     	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
+     	    mem user add -u staging -p $staging_pass
+    	    /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+    	  '''
+   	  }
    	}
 	      
     	stage('Tests - remove port-forwarding') {

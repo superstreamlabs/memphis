@@ -15,7 +15,7 @@ import './style.scss';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import React from 'react';
 
-const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handleOnClick, button }) => {
+const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handleOnClick, button, hideCircle }) => {
     return (
         <div className="selecte-check-box-wrapper">
             {selectOptions.map((value) => {
@@ -37,8 +37,8 @@ const SelectCheckBox = ({ selectOptions, selectedOption, allowEdit = true, handl
                                 <span>{value.desc}</span>
                             </div>
                             <div className="ceheck-button">
-                                {selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
-                                {selectedOption !== value.value && <div className="uncheck-icon" />}
+                                {!hideCircle && selectedOption === value.value && <CheckCircleIcon className="check-icon" />}
+                                {!hideCircle && selectedOption !== value.value && <div className="uncheck-icon" />}
                                 {button}
                             </div>
                         </div>

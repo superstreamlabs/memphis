@@ -145,6 +145,11 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = db.DeleteDlsMsgsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err
@@ -156,11 +161,6 @@ func removeTenantResources(tenantName string, user models.User) error {
 	}
 
 	SendUserDeleteCacheUpdate(users_list, tenantName)
-
-	err = db.DeleteDlsMsgsByTenant(tenantName)
-	if err != nil {
-		return err
-	}
 
 	err = db.RemoveTenant(tenantName)
 	if err != nil {
@@ -357,7 +357,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 	newUser, err := db.CreateUser(username, "management", hashedPwdString, fullName, subscription, 1, serv.MemphisGlobalAccountString(), false, "", "", "", "")
 	if err != nil {
 		if strings.Contains(err.Error(), "already exist") {
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exist"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exists"})
 			return
 		}
 		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp error at db.CreateUser: %v", user.TenantName, user.Username, err.Error())
@@ -781,8 +781,8 @@ func SendUserDeleteCacheUpdate(usernames []string, tenantName string) {
 }
 
 func validateUsername(username string) error {
-	if len(username) > 20 {
-		return errors.New("username exceeds the maximum allowed length of 20 characters")
+	if len(username) > 60 {
+		return errors.New("username exceeds the maximum allowed length of 60 characters")
 	}
 	re := regexp.MustCompile("^[a-z0-9_.-]*$")
 	validName := re.MatchString(username)

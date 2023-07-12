@@ -12,10 +12,10 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 
 import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
-import { ExtractFeatures, GithubRequest } from '../../../services/githubRequests';
+import { GithubRequest } from '../../../services/githubRequests';
 import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
 import upgradeBanner from '../../../assets/images/upgradeBanner.svg';
 import uptodateIcon from '../../../assets/images/uptodateIcon.svg';
@@ -24,6 +24,9 @@ import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import NoteItem from './components/noteItem';
 import Loader from '../../../components/loader';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { compareVersions } from '../../../services/valueConvertor';
 
 function VersionUpgrade() {
     const [state, dispatch] = useContext(Context);
@@ -34,7 +37,24 @@ function VersionUpgrade() {
     const [versionUrl, setversionUrl] = useState('');
 
     useEffect(() => {
-        !state.isLatest && getConfigurationValue();
+        if (state.isLatest) {
+            getSystemVersion();
+        } else {
+            getConfigurationValue();
+        }
+    }, []);
+
+    const getSystemVersion = useCallback(async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
+            if (data) {
+                const latest = await GithubRequest(LATEST_RELEASE_URL);
+                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', '').replace('-latest', '').replace('-stable', ''));
+                if (is_latest) {
+                    getConfigurationValue();
+                }
+            }
+        } catch (error) {}
     }, []);
 
     const getConfigurationValue = async () => {
@@ -52,32 +72,46 @@ function VersionUpgrade() {
             const mdFile = mdFiles[0];
             setversionUrl(`${RELEASE_DOCS_URL}${mdFile.name.replace('.md', '')}`);
             const file = await GithubRequest(mdFile.download_url);
-            const featuresHeadlines = ['Added Features', 'Enhancements', 'Fixed Bugs', 'Known Issues'];
-            let regex = /###\s*!\[:sparkles:\].*?Added\s*features\s*(.*?)\s*(?=###|$)/is;
-            let FetchFeatures = {};
+            const featuresHeadlines = ['Added Features', 'Enhancements', 'Fixed bugs', 'Known issues'];
+            let fetchFeatures = {};
 
             featuresHeadlines.map((featureHeadline) => {
+                let sectionRegex = /Added features(.*?)###/s;
                 switch (featureHeadline) {
                     case 'Added Features':
-                        regex = /###\s*!\[:sparkles:\].*?Added\s*features\s*(.*?)\s*(?=###|$)/is;
+                        sectionRegex = /Added features(.*?)###/s;
                         break;
                     case 'Enhancements':
-                        regex = /###\s*!\[:sparkles:\].*?Enhancements\s*(.*?)\s*(?=###|$)/is;
+                        sectionRegex = /Enhancements([\s\S]*?)##/s;
                         break;
-                    case 'Fixed Bugs':
-                        regex = /###\s*!\[:sparkles:\].*?Fixed\s*bugs\s*(.*?)\s*(?=###|$)/is;
+                    case 'Fixed bugs':
+                        sectionRegex = /Fixed bugs(.*?)##/s;
                         break;
-                    case 'Known Issues':
-                        regex = /###\s*!\[:sparkles:\].*?Known\s*issues\s*(.*?)\s*(?=###|$)/is;
+                    case 'Known issues':
+                        sectionRegex = /Known issues([\s\S]*?)(?=##|$)/s;
                         break;
+                    default:
+                        sectionRegex = /Added features(.*?)###/s;
                 }
-
-                const featuresList = ExtractFeatures(file, regex);
-                if (featuresList.length !== 0) {
-                    FetchFeatures[featureHeadline] = featuresList;
+                const sectionMatch = file.match(sectionRegex);
+                if (sectionMatch) {
+                    const featuresList = sectionMatch[1]
+                        .split('\n')
+                        .map((feature) => {
+                            const regex = /[*-]\s*(.*)/;
+                            const match = feature.match(regex);
+                            if (match) {
+                                return match[1].trim();
+                            }
+                            return null;
+                        })
+                        .filter((feature) => !!feature);
+                    if (featuresList.length !== 0) {
+                        fetchFeatures[featureHeadline] = featuresList;
+                    }
                 }
             });
-            setFeatures(FetchFeatures);
+            setFeatures(fetchFeatures);
             setIsLoading(false);
         } catch (err) {
             setIsLoading(false);
@@ -146,8 +180,9 @@ function VersionUpgrade() {
                         </div>
                     </div>
                     <div className="feature-buttons">
-                        {Object.keys(features).map((key) => (
+                        {Object.keys(features)?.map((key) => (
                             <Button
+                                key={key}
                                 width="180px"
                                 height="40px"
                                 placeholder={key}
@@ -168,7 +203,7 @@ function VersionUpgrade() {
                             </div>
                         )}
 
-                        {!isLoading && features[selectedfeatures].map((feature) => <NoteItem key={feature} feature={feature} />)}
+                        {!isLoading && features[selectedfeatures]?.map((feature) => <NoteItem key={feature} feature={feature} />)}
                     </div>
                 </>
             )}

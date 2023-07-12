@@ -83,7 +83,7 @@ function SideBar() {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_INFO);
             if (data) {
                 const latest = await GithubRequest(LATEST_RELEASE_URL);
-                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', ''));
+                let is_latest = compareVersions(data.version, latest[0].name.replace('v', '').replace('-beta', '').replace('-latest', '').replace('-stable', ''));
                 let system_version = data.version;
                 dispatch({ type: 'IS_LATEST', payload: is_latest });
                 dispatch({ type: 'CURRENT_VERSION', payload: system_version });
@@ -304,7 +304,7 @@ function SideBar() {
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
                 </div>
-                {isCloud && (
+                {isCloud() && (
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
                         placement="right"
@@ -343,7 +343,7 @@ function SideBar() {
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                            src={localStorage.getItem('profile_pic') || avatarUrl}
                             referrerPolicy="no-referrer"
                             width={localStorage.getItem('profile_pic') ? 35 : 25}
                             height={localStorage.getItem('profile_pic') ? 35 : 25}

@@ -155,7 +155,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			shouldSendAnalytics, _ := shouldSendAnalytics()
 			if shouldSendAnalytics {
 				analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "storage-type": "disk"}
-
 				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}

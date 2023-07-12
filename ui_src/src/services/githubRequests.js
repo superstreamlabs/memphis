@@ -38,26 +38,3 @@ export async function GithubRequest(serverUrl) {
         throw err.response;
     }
 }
-
-export function ExtractFeatures(mdFile, regex) {
-    if (!mdFile) {
-        return [];
-    }
-    const match = mdFile.match(regex);
-    if (!match) {
-        return [];
-    }
-    const features = match[1]
-        .split('\n')
-        .map((feature) => {
-            const regex = /[*-]\s*(.*)/;
-            const match = feature.match(regex);
-            if (match) {
-                return match[1].trim();
-            }
-            return null;
-        })
-        .filter((feature) => !!feature);
-
-    return features;
-}

@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"memphis/db"
 	"memphis/models"
@@ -51,25 +52,27 @@ func cacheDetailsS3(keys map[string]string, properties map[string]bool, tenantNa
 	s3Integration.Keys["secret_key"] = keys["secret_key"]
 	s3Integration.Keys["bucket_name"] = keys["bucket_name"]
 	s3Integration.Keys["region"] = keys["region"]
+	s3Integration.Keys["url"] = keys["url"]
+	s3Integration.Keys["s3_path_style"] = keys["s3_path_style"]
 	s3Integration.Name = "s3"
 	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 		IntegrationsConcurrentCache.Add(tenantName, map[string]interface{}{"s3": s3Integration})
 	} else {
 		err := addIntegrationToTenant(tenantName, "s3", IntegrationsConcurrentCache, s3Integration)
 		if err != nil {
-			serv.Errorf("cacheDetailsSlack: " + err.Error())
+			serv.Errorf("cacheDetailsSlack: %s ", err.Error())
 			return
 		}
 	}
 }
 
 func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys map[string]string) (models.Integration, int, error) {
-	statusCode, _, err := it.handleS3Integrtation(tenantName, keys)
+	statusCode, _, err := it.handleS3Integration(tenantName, keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+	keys, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"], keys["url"], keys["s3_path_style"])
 	s3Integration, err := createS3Integration(tenantName, keys, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
@@ -82,12 +85,12 @@ func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys 
 }
 
 func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body models.CreateIntegrationSchema) (models.Integration, int, error) {
-	statusCode, keys, err := it.handleS3Integrtation(tenantName, body.Keys)
+	statusCode, keys, err := it.handleS3Integration(tenantName, body.Keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
-	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"])
+	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"], keys["url"], keys["s3_path_style"])
 	s3Integration, err := updateS3Integration(tenantName, keys, properties)
 	if err != nil {
 		return s3Integration, 500, err
@@ -95,11 +98,29 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 	return s3Integration, statusCode, nil
 }
 
-func (it IntegrationsHandler) handleS3Integrtation(tenantName string, keys map[string]string) (int, map[string]string, error) {
+func getS3EndpointResolver(region, url string) aws.EndpointResolverWithOptionsFunc {
+	return aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		// Override default endpoint lookup if the url was specified explicitly
+		if url != "" {
+			return aws.Endpoint{
+				PartitionID:   "other",
+				URL:           url,
+				SigningRegion: region,
+			}, nil
+		}
+
+		// returning an EndpointNotFoundError will trigger default endpoint lookup
+		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+	})
+}
+
+func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[string]string) (int, map[string]string, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
 	bucketName := keys["bucket_name"]
+	pathStyle, _ := strconv.ParseBool(keys["s3_path_style"])
+	url := keys["url"]
 
 	if keys["secret_key"] == "" {
 		exist, integrationFromDb, err := db.GetIntegration("s3", tenantName)
@@ -134,16 +155,15 @@ func (it IntegrationsHandler) handleS3Integrtation(tenantName string, keys map[s
 	cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithCredentialsProvider(provider),
 		awsconfig.WithRegion(region),
+		awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region, url)),
 	)
 	if err != nil {
 		return 500, map[string]string{}, err
 	}
 
-	svc := s3.NewFromConfig(cfg)
-	if err != nil {
-		err = errors.New("NewSession failure " + err.Error())
-		return 500, map[string]string{}, err
-	}
+	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.UsePathStyle = pathStyle
+	})
 
 	statusCode, err := testS3Integration(svc, bucketName)
 	if err != nil {
@@ -244,7 +264,7 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		} else if strings.Contains(err.Error(), "could not find region configuration") {
 			var oe *smithy.OperationError
 			if errors.As(err, &oe) {
-				err = errors.New(oe.Error() + " : region name is empty")
+				err = fmt.Errorf("%s : region name is empty", oe.Error())
 			}
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "validation error(s) found") || strings.Contains(err.Error(), "BadRequest: Bad Request") {
@@ -253,8 +273,11 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		} else if strings.Contains(err.Error(), "incorrect region") {
 			var oe *smithy.OperationError
 			if errors.As(err, &oe) {
-				err = errors.New(oe.Error() + " : incorrect region")
+				err = fmt.Errorf("%s: incorrect region", oe.Error())
 			}
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "failed to parse endpoint") || strings.Contains(err.Error(), "no such host") {
+			err = errors.New("invalid bucket name or region")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
@@ -266,14 +289,14 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Bucket: aws.String(bucketName),
 	})
 	if err != nil {
-		err = errors.New("getBucketAcl error: " + err.Error())
-		return 500, err
+		err = fmt.Errorf("getBucketAcl error: you don’t have enough permissions to get the access to bucket %s ", err.Error())
+		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
 	permission := acl.Grants[0].Permission
 
 	if permission != types.PermissionFullControl {
-		err = errors.New("creds should have full access on this bucket")
+		err = fmt.Errorf("creds should have full access on this bucket")
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
@@ -286,7 +309,7 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Body:   reader,
 	})
 	if err != nil {
-		err = errors.New("could not upload objects - " + err.Error())
+		err = fmt.Errorf("could not upload objects -  %s", err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 	_, err = svc.DeleteObject(context.Background(), &s3.DeleteObjectInput{
@@ -294,7 +317,7 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 		Key:    aws.String("memphis"),
 	})
 	if err != nil {
-		err = errors.New("could not delete objects - " + err.Error())
+		err = fmt.Errorf("could not delete objects -  %s", err.Error())
 		return SHOWABLE_ERROR_STATUS_CODE, err
 	}
 
@@ -331,6 +354,11 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			credentialsMap.Keys["secret_key"],
 			"",
 		)
+
+		region := credentialsMap.Keys["region"]
+		url := credentialsMap.Keys["url"]
+		pathStyle, _ := strconv.ParseBool(credentialsMap.Keys["s3_path_style"])
+
 		_, err := provider.Retrieve(context.Background())
 		if err != nil {
 			err = errors.New("uploadToS3Storage: Invalid credentials")
@@ -339,8 +367,11 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
 			awsconfig.WithCredentialsProvider(provider),
 			awsconfig.WithRegion(credentialsMap.Keys["region"]),
+			awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region, url)),
 		)
-		svc := s3.NewFromConfig(cfg)
+		svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
+			o.UsePathStyle = pathStyle
+		})
 		if err != nil {
 			err = errors.New("uploadToS3Storage failure " + err.Error())
 			return err
