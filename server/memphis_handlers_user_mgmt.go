@@ -155,7 +155,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	SendUserCacheUpdates(users_list, tenantName)
+	SendUserDeleteCacheUpdate(users_list, tenantName)
 
 	err = db.DeleteDlsMsgsByTenant(tenantName)
 	if err != nil {
@@ -758,7 +758,7 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 	}
 }
 
-func SendUserCacheUpdates(usernames []string, tenantName string) {
+func SendUserDeleteCacheUpdate(usernames []string, tenantName string) {
 	deleteRequest := models.CacheUpdateRequest{
 		CacheType:  "user",
 		Operation:  "delete",
