@@ -74,7 +74,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			return err
 		}
 	}
-	
+
 	producedByHeader := ""
 	poisonedCgs := []string{}
 	if station.IsNative {
@@ -227,6 +227,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		for _, v := range pCg {
 			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
+				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
 				cgInfo = &ConsumerInfo{
 					NumPending:    0,
 					NumAckPending: 0,
@@ -234,7 +235,10 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
 			if err != nil || len(cgMembers) == 0 {
-				cgMembers = []models.CgMember{models.CgMember{
+				if err != nil {
+					serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				}
+				cgMembers = []models.CgMember{{
 					MaxAckTimeMs:     0,
 					MaxMsgDeliveries: 0,
 				}}
@@ -315,6 +319,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		}
 		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
+			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
 			cgInfo = &ConsumerInfo{
 				NumPending:    0,
 				NumAckPending: 0,
@@ -322,7 +327,10 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
 		if err != nil || len(cgMembers) == 0 {
-			cgMembers = []models.CgMember{models.CgMember{
+			if err != nil {
+				serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+			}
+			cgMembers = []models.CgMember{{
 				MaxAckTimeMs:     0,
 				MaxMsgDeliveries: 0,
 			}}
