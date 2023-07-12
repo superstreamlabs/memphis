@@ -119,55 +119,53 @@ func Close() {
 }
 
 func SendEvent(tenantName, username string, params map[string]interface{}, eventName string) {
-	go func() {
-		distinctId := deploymentId
-		if configuration.DEV_ENV != "" {
-			distinctId = "dev"
-		}
+	distinctId := deploymentId
+	if configuration.DEV_ENV != "" {
+		distinctId = "dev"
+	}
 
-		if eventName != "error" {
-			tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
-			if tenantName != "" && username != "" {
-				distinctId = distinctId + "-" + tenantName + "-" + username
+	if eventName != "error" {
+		tenantName = strings.ReplaceAll(tenantName, "-", "_") // for parsing purposes
+		if tenantName != "" && username != "" {
+			distinctId = distinctId + "-" + tenantName + "-" + username
+		}
+	}
+
+	var eventMsg []byte
+	var event *EventBody
+	var err error
+
+	creationTime := time.Now().Unix()
+	timestamp := strconv.FormatInt(creationTime, 10)
+	if eventName == "error" {
+		event = &EventBody{
+			DistinctId:     distinctId,
+			Event:          "error",
+			Properties:     params,
+			TimeStamp:      timestamp,
+			MemphisVersion: memphisVersion,
+		}
+	} else {
+		event = &EventBody{
+			DistinctId:     distinctId,
+			Event:          eventName,
+			Properties:     params,
+			TimeStamp:      timestamp,
+			MemphisVersion: memphisVersion,
+		}
+	}
+
+	eventMsg, err = json.Marshal(event)
+	if err != nil {
+		return
+	}
+	if memphisConnection != nil {
+		err := memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
+		if err != nil { // retry
+			memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
+			if err == nil {
+				memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
 			}
 		}
-
-		var eventMsg []byte
-		var event *EventBody
-		var err error
-
-		creationTime := time.Now().Unix()
-		timestamp := strconv.FormatInt(creationTime, 10)
-		if eventName == "error" {
-			event = &EventBody{
-				DistinctId:     distinctId,
-				Event:          "error",
-				Properties:     params,
-				TimeStamp:      timestamp,
-				MemphisVersion: memphisVersion,
-			}
-		} else {
-			event = &EventBody{
-				DistinctId:     distinctId,
-				Event:          eventName,
-				Properties:     params,
-				TimeStamp:      timestamp,
-				MemphisVersion: memphisVersion,
-			}
-		}
-
-		eventMsg, err = json.Marshal(event)
-		if err != nil {
-			return
-		}
-		if memphisConnection != nil {
-			err := memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
-			if err != nil { // retry
-				memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
-				if err == nil {
-					memphisConnection.Produce("users-traces", "producer_users_traces", eventMsg, []memphis.ProducerOpt{memphis.ProducerGenUniqueSuffix()}, []memphis.ProduceOpt{})
-				}
-			}
-		}
-	}()
+	}
 }
