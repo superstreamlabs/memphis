@@ -65,7 +65,7 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
-type SendMessageToUser struct{}
+type SystemMessage struct{}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -1917,6 +1917,6 @@ func (s *Server) CreateFirestoreSystemMessagesCollectionIfNotExist() error {
 	return nil
 }
 
-func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SendMessageToUser, error) {
-	return []SendMessageToUser{}, nil
+func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
+	return []SystemMessage{}, nil
 }
