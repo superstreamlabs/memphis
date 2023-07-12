@@ -20,7 +20,7 @@ import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const { Panel } = Collapse;
 
-const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true }) => {
+const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [activeChiledKey, setActiveChiledKey] = useState();
     const [collapseData, setCollapseData] = useState();
@@ -51,10 +51,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                     </p>
                                     
                                     <status is="x3d">
-                                        {
-                                           arrow && <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
-
-                                        }
+                                        <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
                                     </status>
                                 </div>
                             </TooltipComponent>
@@ -71,13 +68,11 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                                     <p className="title">{row.name}</p>
                                                     <status is="x3d">
                                                         <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                        {arrow &&
                                                         <img
                                                             className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
                                                             src={CollapseArrow}
                                                             alt="collapse-arrow"
                                                         />
-                                                        }
                                                     </status>
                                                 </div>
                                             }
@@ -115,13 +110,11 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                                 <p className="title">{row.name}</p>
                                                 <status is="x3d">
                                                     <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                    {arrow &&
                                                     <img
                                                         className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
                                                         src={CollapseArrow}
                                                         alt="collapse-arrow"
                                                     />
-                                                    }
                                                 </status>
                                             </div>
                                         }

@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import MultiCollapse from '../../../stationOverview/stationObservabilty/components/multiCollapse';
+import StatusIndication from '../../../../components/indication';
 
 const ConsumerGroup = ({ header, details, cgMembers }) => {
     const [consumers, setConsumers] = useState([]);
@@ -48,7 +48,18 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                     })}
                 </div>
                 <div className="consumers">
-                    <MultiCollapse data={consumers} arrow={false} />
+                {consumers?.map((row, index) => {
+                            return (
+                                <div className="consumer" key={index}>
+                                        <p className="title">
+                                            {row.name}
+                                        </p>
+                                        <status is="x3d">
+                                            <StatusIndication is_active={row.is_active} is_deleted={false} />
+                                        </status>
+                                </div>
+                            );
+                    })}
                 </div>
             </div>
         </div>

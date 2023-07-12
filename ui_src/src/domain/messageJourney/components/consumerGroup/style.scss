@@ -28,7 +28,6 @@
     }
     .content-wrapper{
         padding: 15px;
-        padding-right: 2px;
         display: flex;
         height: calc(100% - 30px);
         position: relative;
@@ -71,27 +70,29 @@
         .consumers {
             width: 49%;
             overflow: auto;
-            .multi {
-                padding-right: 5px;
-                .ant-collapse-header{
-                    padding-right: 2px !important;
-                }
-                .collapse-child .ant-collapse-item.ant-collapse-no-arrow{
-                    border: 1px solid #EFEFEF !important;
-                    border-radius: 8px !important;
-                    margin-bottom: 8px;        
-                }
-                .collapse-header{
-                    .title{
-                        max-width: 160px;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        white-space: nowrap;
-                        display: inline-block;
-                    }
+            display: flex;
+            flex-direction: column;
+            background: #FFFFFF;
+            .consumer{
+                border: 1px solid #EFEFEF;
+                border-radius: 8px;
+                display: flex;
+                justify-content: space-between;
+                color: rgba(0, 0, 0, 0.85);
+                font-size: 14px;
+                padding: 12px 16px;
+                align-items: flex-start;
+                display: flex;
+                .title{
+                    display: flex;
+                    margin-top: 0;
+                    margin-bottom: 0;
+                    align-items: center;
+                    align-content: space-between;
+                    font-family: 'InterSemiBold';
+                    font-size: 12px;
                 }
             }
-
         }
     }
 }
