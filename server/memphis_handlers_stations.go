@@ -1433,6 +1433,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		for i, cg := range poisonedCgs {
 			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
+				if err != nil {
+					serv.Errorf("[tenant: %v]GetMessageDetails at GetCgInfo: %v", station.TenantName, err.Error())
+				}
 				cgInfo = &ConsumerInfo{
 					NumPending:    0,
 					NumAckPending: 0,
@@ -1440,7 +1443,10 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			}
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil || len(cgMembers) == 0 {
-				cgMembers = []models.CgMember{models.CgMember{
+				if err != nil {
+					serv.Errorf("[tenant: %v]GetMessageDetails at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				}
+				cgMembers = []models.CgMember{{
 					MaxAckTimeMs:     0,
 					MaxMsgDeliveries: 0,
 				}}
