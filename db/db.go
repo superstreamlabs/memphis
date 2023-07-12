@@ -244,6 +244,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS name;
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS schemas_name_tenant_name_key;
 		ALTER TABLE schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
+		ALTER TYPE enum_type ADD VALUE 'avro';
 		END IF;
 	END $$;`
 
