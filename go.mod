@@ -35,6 +35,7 @@ require (
 	github.com/docker/docker v20.10.24+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/graph-gophers/graphql-go v1.5.0
+	github.com/hamba/avro/v2 v2.12.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
@@ -94,6 +95,7 @@ require (
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/memphisdev/memphis.go v1.0.4
+	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20221205130635-1aeaba878587 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
