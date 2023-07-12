@@ -69,7 +69,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                             <div className="collapse-child-with-count">
                                                     <p className="title-with-count">
                                                         {row.name}
-                                                    <span className="consumer-number-title">{row.count}</span>
+                                                    {row.count > 1 && <span className="consumer-number-title">{row.count}</span>}
                                                     </p>
                                                     <status is="x3d">
                                                         <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />

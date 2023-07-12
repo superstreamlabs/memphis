@@ -747,7 +747,7 @@ func UpsertConfiguration(key string, value string, tenantName string) error {
 }
 
 // Connection Functions
-func UpdateConnection(connectionId string, isActive bool) (bool, error) {
+func UpdateProducersCounsumersConnection(connectionId string, isActive bool) (bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -783,7 +783,6 @@ func UpdateConnection(connectionId string, isActive bool) (bool, error) {
 }
 
 // TODO: Remove
-
 func GetActiveConnections() ([]string, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1899,7 +1898,7 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	LEFT JOIN stations AS s
 	ON s.id = p.station_id
 	WHERE p.connection_id = $1 AND p.is_active = true
-	GROUP BY p.id, s.id, c.client_address`
+	GROUP BY p.id, s.id`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.LightProducer{}, err
@@ -2237,7 +2236,7 @@ func GetAllProducers() ([]models.ExtendedProducer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted , c.client_address
+		SELECT p.id, p.name, p.type, p.connection_id, p.created_by, p.created_by_username, p.created_at, s.name , p.is_active, p.is_deleted
 		FROM producers AS p
 		LEFT JOIN stations AS s ON p.station_id = s.id
 	`
@@ -2643,7 +2642,7 @@ func GetAllConsumers() ([]models.ExtendedConsumer, error) {
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, con.client_address, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
+		SELECT c.id, c.name, c.created_by, c.created_by_username, c.created_at, c.is_active, c.is_deleted, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name 
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON c.station_id = s.id
 	`
@@ -2702,7 +2701,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, c.connection_id, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+	query := `SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id

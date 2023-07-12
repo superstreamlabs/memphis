@@ -101,7 +101,7 @@ func handleConnectMessage(client *client) error {
 		return err
 	}
 	if !exist {
-		client.Errorf("[tenant:%v][user: %v] handleConnectMessage user doesn't exist in db : %v", client.acc.GetName(), username, err)
+		client.Warnf("[tenant:%v][user: %v] handleConnectMessage user does not exist", client.acc.GetName(), username)
 		return fmt.Errorf("user doesn't exist")
 	}
 
@@ -112,7 +112,7 @@ func handleConnectMessage(client *client) error {
 
 	if isNativeMemphisClient {
 		connectionId = splittedMemphisInfo[0]
-		exist, err := db.UpdateConnection(connectionId, true)
+		exist, err := db.UpdateProducersCounsumersConnection(connectionId, true)
 		if err != nil {
 			client.Errorf("[tenant: %v][user: %v]handleConnectMessage at UpdateConnection: %v", user.TenantName, username, err.Error())
 			return err
@@ -144,12 +144,12 @@ func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 		return nil
 	}
 
-	_, err := db.UpdateConnection(mci.connectionId, false)
+	_, err := db.UpdateProducersCounsumersConnection(mci.connectionId, false)
 	if err != nil {
 		return err
 	}
 
-	if shouldSendNotification(tenantName) {
+	if shouldSendNotification(tenantName, DisconEAlert) {
 		producers, err := db.GetProducersByConnectionIDWithStationDetails(mci.connectionId)
 		if err != nil {
 			return err

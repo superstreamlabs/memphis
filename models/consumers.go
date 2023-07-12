@@ -36,7 +36,6 @@ type ExtendedConsumer struct {
 	Name             string    `json:"name"`
 	UpdatedAt        time.Time `json:"updated_at"`
 	IsActive         bool      `json:"is_active"`
-	ClientAddress    string    `json:"client_address"`
 	ConsumersGroup   string    `json:"consumers_group"`
 	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
 	MaxMsgDeliveries int       `json:"max_msg_deliveries"`

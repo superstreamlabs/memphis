@@ -85,7 +85,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	}
 
@@ -93,7 +93,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	if consumerGroup != "" {
 		err = validateConsumerName(consumerGroup)
 		if err != nil {
-			serv.Warnf("createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+			serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerName: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 			return err
 		}
 	} else {
@@ -103,22 +103,22 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	consumerType := strings.ToLower(cType)
 	err = validateConsumerType(consumerType)
 	if err != nil {
-		serv.Warnf("createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at validateConsumerType: Failed creating consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	}
 
 	stationName, err := StationNameFromStr(cStationName)
 	if err != nil {
-		serv.Warnf("[tenant: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon at StationNameFromStr: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	}
 
 	exist, user, err := memphis_cache.GetUser(userName, tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
 	} else if !exist {
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon at GetUser from cache: user does not exist in db %v : %v", tenantName, consumerName, cStationName, err.Error())
+		serv.Warnf("[tenant: %v][user: %v] createConsumerDirectCommon at GetUser from cache: user does not exist", tenantName, userName)
 		return fmt.Errorf("user does not exist in db")
 	}
 
@@ -345,7 +345,6 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			ID:               consumer.ID,
 			Name:             consumer.Name,
 			IsActive:         consumer.IsActive,
-			ClientAddress:    consumer.ClientAddress,
 			ConsumersGroup:   consumer.ConsumersGroup,
 			MaxAckTimeMs:     consumer.MaxAckTimeMs,
 			MaxMsgDeliveries: consumer.MaxMsgDeliveries,
@@ -381,6 +380,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 		cg.PoisonMessages = totalPoisonMsgs
 
 		if len(cg.ConnectedConsumers) > 0 {
+			cg.IsActive = true
 			connectedCgs = append(connectedCgs, *cg)
 		} else if len(cg.DisconnectedConsumers) > 0 {
 			disconnectedCgs = append(disconnectedCgs, *cg)

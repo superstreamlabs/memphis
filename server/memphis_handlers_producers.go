@@ -60,7 +60,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 	exist, user, err := memphis_cache.GetUser(username, tenantName)
 	if err != nil {
-		serv.Warnf("createProducerDirectCommon at GetUser: Producer %v at station %v: %v", pName, pStationName.external, err.Error())
+		serv.Errorf("createProducerDirectCommon at GetUser: Producer %v at station %v: %v", pName, pStationName.external, err.Error())
 		return false, false, err
 	}
 	if !exist {
@@ -126,6 +126,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	err = CreateAuditLogs(auditLogs)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateAuditLogs: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+		return false, false, err
 	}
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
@@ -138,11 +139,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
-	shouldSendNotifications, err := IsSlackEnabled(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at IsSlackEnabled: Producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
-	}
-
+	shouldSendNotifications := shouldSendNotification(user.TenantName, SchemaVAlert)
 	return shouldSendNotifications, station.DlsConfigurationSchemaverse, nil
 }
 
