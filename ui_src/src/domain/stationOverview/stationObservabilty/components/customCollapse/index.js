@@ -22,10 +22,11 @@ import { messageParser } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
+import StatusIndication from '../../../../../components/indication';
 
 const { Panel } = Collapse;
 
-const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip, schemaType }) => {
+const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, message, tooltip, schemaType, consumerList = false }) => {
     const [activeKey, setActiveKey] = useState(defaultOpen ? ['1'] : []);
     const [parser, setParser] = useState(schemaType || localStorage.getItem(LOCAL_STORAGE_MSG_PARSER) || 'string');
     const [payload, setPayload] = useState(data);
@@ -82,7 +83,22 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                 }
                 key="1"
             >
-                {message ? (
+                {consumerList &&
+                            data?.length > 0 &&
+                            data?.map((row,index) => {
+                                return (
+                                    <div className="collapse-child-with-count" key={index}>
+                                            <p className="title-with-count">
+                                                {row.name}
+                                            {row.count > 1 && <span className="consumer-number-title">{row.count}</span>}
+                                            </p>
+                                            <status is="x3d">
+                                                <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
+                                            </status>
+                                        </div>
+                                );
+                            })}
+                    {!consumerList && message ? (
                     <div className="message">
                         {header === 'Headers' && drawHeaders(data)}
                         {header === 'Payload' && (
@@ -109,7 +125,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                     </div>
                 ) : (
                     <>
-                        {!status &&
+                        {!consumerList && !status &&
                             data?.length > 0 &&
                             data?.map((row,index) => {
                                 return (

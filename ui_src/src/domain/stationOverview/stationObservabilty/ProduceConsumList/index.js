@@ -234,7 +234,7 @@ const ProduceConsumList = ({ producer }) => {
                             {!producer && cgsList?.length > 0 && (
                                 <Space direction="vertical">
                                     <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
-                                    <MultiCollapse header="Consumers" data={cgDetails.consumers} />
+                                    <CustomCollapse header="Consumers" data={cgDetails.consumers} consumerList={true} />
                                 </Space>
                             )}
                         </div>

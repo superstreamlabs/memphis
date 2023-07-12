@@ -64,19 +64,6 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                         <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
                             {collapseData?.length > 0 &&
                                 collapseData?.map((row, index) => {
-                                    if (row.count >= 0){
-                                        return (
-                                            <div className="collapse-child-with-count" key={index}>
-                                                    <p className="title-with-count">
-                                                        {row.name}
-                                                    {row.count > 1 && <span className="consumer-number-title">{row.count}</span>}
-                                                    </p>
-                                                    <status is="x3d">
-                                                        <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                    </status>
-                                                </div>
-                                        );
-                                    } else {
                                         return (<Panel
                                             showArrow={false}
                                             header={
@@ -111,7 +98,6 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null, arrow = true
                                                 })}
                                         </Panel>
                                         );
-                                    }
                                 })}
                         </Collapse>
                     </Panel>
