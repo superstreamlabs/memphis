@@ -1913,10 +1913,6 @@ func updateSystemLiveness() {
 	analytics.SendEvent("", "", analyticsParams, "system-is-up")
 }
 
-func (s *Server) CreateFirestoreSystemMessagesCollectionIfNotExist() error {
-	return nil
-}
-
 func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
 	return []SystemMessage{}, nil
 }
