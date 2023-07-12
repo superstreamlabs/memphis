@@ -5831,3 +5831,33 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 	return true, users, nil
 
 }
+
+func DeleteOldProducersAndConsumers(timeInterval time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	var queries []string
+	// change to updated_at
+	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
+	queries = append(queries, "DELETE FROM consumers WHERE is_active = false AND updated_at < $1")
+
+	batch := &pgx.Batch{}
+	for _, q := range queries {
+		batch.Queue(q, timeInterval)
+	}
+
+	br := conn.SendBatch(ctx, batch)
+	for i := 0; i < len(queries); i++ {
+		_, err = br.Exec()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

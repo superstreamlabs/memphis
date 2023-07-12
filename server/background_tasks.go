@@ -300,6 +300,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
+	go s.RemoveOldProducersAndConsumers()
 
 	return nil
 }
@@ -528,6 +529,17 @@ func (s *Server) RemoveOldDlsMsgs() {
 		err := db.DeleteOldDlsMessageByRetention(configurationTime)
 		if err != nil {
 			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+		}
+	}
+}
+
+func (s *Server) RemoveOldProducersAndConsumers() {
+	ticker := time.NewTicker(10 * time.Minute)
+	for range ticker.C {
+		timeInterval := time.Now().Add(time.Duration(time.Hour * -2))
+		err := db.DeleteOldProducersAndConsumers(timeInterval)
+		if err != nil {
+			serv.Errorf("RemoveOldProducersAndConsumers: %v", err.Error())
 		}
 	}
 }
