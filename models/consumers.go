@@ -87,6 +87,7 @@ type CgMember struct {
 	IsActive         bool   `json:"is_active"`
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
 	MaxAckTimeMs     int64  `json:"max_ack_time_ms"`
+	Count            int    `json:"count"`
 }
 
 type DelayedCg struct {

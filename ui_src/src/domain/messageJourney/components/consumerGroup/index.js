@@ -12,21 +12,10 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
-import StatusIndication from '../../../../components/indication';
+import React from 'react';
+import ConsumerWithStatus from '../../../../components/consumerWithStatus';
 
 const ConsumerGroup = ({ header, details, cgMembers }) => {
-    const [consumers, setConsumers] = useState([]);
-    useEffect(() => {
-        cgMembers?.map((row, index) => {
-            let consumer = {
-                name: row.name,
-                is_active: row.is_active,
-                is_deleted: row.is_deleted,
-            };
-            setConsumers([consumer]);
-        });
-    }, [cgMembers]);
 
     return (
         <div className="consumer-group">
@@ -48,15 +37,10 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                     })}
                 </div>
                 <div className="consumers">
-                {consumers?.map((row, index) => {
+                {cgMembers?.map((row, index) => {
                             return (
                                 <div className="consumer" key={index}>
-                                        <p className="title">
-                                            {row.name}
-                                        </p>
-                                        <status is="x3d">
-                                            <StatusIndication is_active={row.is_active} is_deleted={false} />
-                                        </status>
+                                    <ConsumerWithStatus name={row.name} is_active={row.is_active} count={row.count}></ConsumerWithStatus> 
                                 </div>
                             );
                     })}

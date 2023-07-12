@@ -2570,11 +2570,11 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT DISTINCT ON (c.name) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
-				WHERE c.station_id = $1 ORDER BY c.name, c.updated_at DESC`
+				WHERE c.station_id = $1 ORDER BY c.name, c.consumers_group, c.updated_at DESC`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
@@ -2770,14 +2770,15 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.connection_id,
 			c.is_active,
 			c.max_msg_deliveries,
-			c.max_ack_time_ms
+			c.max_ack_time_ms,
+			COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 		FROM
 			consumers AS c
 		WHERE
 			c.consumers_group = $1
 			AND c.station_id = $2
 		ORDER BY
-			c.updated_at DESC
+			c.name, c.updated_at DESC
 	`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumer_group_members", query)
 	if err != nil {

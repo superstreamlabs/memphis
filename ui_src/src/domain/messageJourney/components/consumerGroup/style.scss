@@ -72,26 +72,18 @@
             overflow: auto;
             display: flex;
             flex-direction: column;
+            gap: 8px;
             background: #FFFFFF;
             .consumer{
                 border: 1px solid #EFEFEF;
                 border-radius: 8px;
                 display: flex;
+                box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
                 justify-content: space-between;
                 color: rgba(0, 0, 0, 0.85);
                 font-size: 14px;
                 padding: 12px 16px;
-                align-items: flex-start;
-                display: flex;
-                .title{
-                    display: flex;
-                    margin-top: 0;
-                    margin-bottom: 0;
-                    align-items: center;
-                    align-content: space-between;
-                    font-family: 'InterSemiBold';
-                    font-size: 12px;
-                }
+                align-items: center;
             }
         }
     }
