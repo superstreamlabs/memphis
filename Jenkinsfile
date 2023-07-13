@@ -182,10 +182,13 @@ node {
         }
 	      
    	stage('Create staging user') {
-   	  sh """
-   	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
-   	    mem user add -u staging -p memphis
-   	  """
+   	  withCredentials([string(credentialsId: 'staging_pass', variable: 'staging_pass')]) {
+   	    sh '''
+     	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
+     	    mem user add -u staging -p $staging_pass
+    	    /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+    	  '''
+   	  }
    	}
 	      
     	stage('Tests - remove port-forwarding') {

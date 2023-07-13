@@ -339,14 +339,6 @@ func (umh UserMgmtHandler) GetSignUpFlag(c *gin.Context) {
 }
 
 func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
-
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("AddUserSignUp: %v", err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	var body models.AddUserSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -364,7 +356,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	hashedPwd, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.MinCost)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp at GenerateFromPassword: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
+		serv.Errorf("CreateUserSignUp at GenerateFromPassword: User %v: %v", body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -377,15 +369,15 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "User already exists"})
 			return
 		}
-		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp error at db.CreateUser: %v", user.TenantName, user.Username, err.Error())
+		serv.Errorf("CreateUserSignUp error at db.CreateUser: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
-	serv.Noticef("[tenant: %v][user: %v]User %v has been signed up", user.TenantName, user.Username, username)
+	serv.Noticef("User %v has been signed up", username)
 	token, refreshToken, err := CreateTokens(newUser)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp error at CreateTokens: %v", user.TenantName, user.Username, err.Error())
+		serv.Errorf("CreateUserSignUp error at CreateTokens: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
