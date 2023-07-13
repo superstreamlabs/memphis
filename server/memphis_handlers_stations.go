@@ -1421,23 +1421,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		for i, cg := range poisonedCgs {
 			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
-				if err != nil {
-					serv.Errorf("[tenant: %v]GetMessageDetails at GetCgInfo: %v", station.TenantName, err.Error())
-				}
-				cgInfo = &ConsumerInfo{
-					NumPending:    0,
-					NumAckPending: 0,
-				}
+				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
 			}
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil || len(cgMembers) == 0 {
-				if err != nil {
-					serv.Errorf("[tenant: %v]GetMessageDetails at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
-				}
-				cgMembers = []models.CgMember{{
-					MaxAckTimeMs:     0,
-					MaxMsgDeliveries: 0,
-				}}
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
 			}
 
 			isActive, isDeleted := getCgStatus(cgMembers)

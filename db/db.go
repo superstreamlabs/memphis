@@ -5880,19 +5880,18 @@ func GetAllUsersInDB() (bool, []models.User, error) {
 
 }
 
-func DeleteOldProducersAndConsumers(timeInterval time.Time) error {
+func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return err
+		return []models.LightCG{}, err
 	}
 	defer conn.Release()
 
 	var queries []string
-	// change to updated_at
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "DELETE FROM consumers WHERE is_active = false AND updated_at < $1")
+	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
@@ -5900,11 +5899,98 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) error {
 	}
 
 	br := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(queries); i++ {
-		_, err = br.Exec()
+
+	_, err = br.Exec()
+	if err != nil {
+		return []models.LightCG{}, err
+	}
+
+	rows, err := br.Query()
+	if err != nil {
+		return []models.LightCG{}, err
+	}
+
+	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.LightCG])
+	if err != nil {
+		return []models.LightCG{}, err
+	}
+
+	return cgs, err
+}
+
+func GetAllDeletedConsumersFromList(consumers []string) ([]string, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []string{}, err
+	}
+	defer conn.Release()
+	query := "SELECT consumers_group FROM consumers WHERE consumers_group = ANY($1) GROUP BY station_id, consumers_group"
+
+	rows, err := conn.Query(ctx, query, consumers)
+	if err != nil {
+		return []string{}, err
+	}
+	defer rows.Close()
+	var remainingCG []string
+	for rows.Next() {
+		var cgName string
+		err := rows.Scan(&cgName)
 		if err != nil {
-			return err
+			return []string{}, err
 		}
+		remainingCG = append(remainingCG, cgName)
+	}
+
+	return remainingCG, nil
+}
+
+func RemovePoisonedCg(stationId int, cgName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	connection, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer connection.Release()
+
+	tx, err := connection.Conn().Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	query := `UPDATE dls_messages SET poisoned_cgs = ARRAY_REMOVE(poisoned_cgs, $1) WHERE station_id=$2 ;`
+
+	stmt, err := tx.Prepare(ctx, "update_dls_message", query)
+	if err != nil {
+		return err
+	}
+
+	rows, err := tx.Query(ctx, stmt.Name, cgName, stationId)
+	if err != nil {
+		return err
+	}
+	rows.Close()
+
+	query = `DELETE FROM dls_messages WHERE poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
+	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
+	if err != nil {
+		return err
+	}
+
+	rows, err = tx.Query(ctx, stmt.Name)
+	if err != nil {
+		return err
+	}
+
+	rows.Close()
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -99,3 +99,10 @@ type DelayedCgResp struct {
 	StationName string      `json:"station_name"`
 	CGS         []DelayedCg `json:"cgs"`
 }
+
+type LightCG struct {
+	CGName      string `json:"cg_name"`
+	StationName string `json:"station_name"`
+	StationId   int    `json:"station_id"`
+	TenantName  string `json:"tenant_name"`
+}
