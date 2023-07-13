@@ -276,23 +276,32 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'consumers' AND table_schema = 'public'
 		) THEN
-		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by;
-		ALTER TABLE consumers DROP COLUMN IF EXISTS created_by_username;
-		ALTER TABLE consumers DROP COLUMN IF EXISTS is_deleted;
-		ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
-		DROP INDEX IF EXISTS unique_consumer_table;
-		ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
-		CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
-		CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
+			IF EXISTS (
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_name = 'consumers'
+				AND column_name = 'is_deleted'
+			) THEN
+				DELETE FROM consumers WHERE is_deleted = true;
+			END IF;
+			ALTER TABLE consumers DROP COLUMN IF EXISTS created_by;
+			ALTER TABLE consumers DROP COLUMN IF EXISTS created_by_username;
+			ALTER TABLE consumers DROP COLUMN IF EXISTS is_deleted;
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+			DROP INDEX IF EXISTS unique_consumer_table;
+			ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
+			CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
+			CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
+			IF EXISTS (
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_name = 'consumers'
+				AND column_name = 'created_at'
+			) THEN
+				ALTER TABLE consumers RENAME COLUMN created_at TO updated_at;
+			END IF;
 		END IF;
-		IF EXISTS (
-			SELECT 1
-			FROM information_schema.columns
-			WHERE table_name = 'consumers'
-			AND column_name = 'created_at'
-		) THEN
-			ALTER TABLE consumers RENAME COLUMN created_at TO updated_at;
-		END IF;
+		
 	END $$;`
 
 	consumersTable := `
@@ -404,25 +413,33 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'producers' AND table_schema = 'public'
 		) THEN
-		ALTER TABLE producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
-		ALTER TABLE producers ADD COLUMN IF NOT EXISTS connection_id INTEGER NOT NULL;
-		ALTER TABLE producers DROP COLUMN IF EXISTS created_by;
-		ALTER TABLE producers DROP COLUMN IF EXISTS created_by_username;
-		ALTER TABLE producers DROP COLUMN IF EXISTS is_deleted;
-		ALTER TABLE producers DROP CONSTRAINT IF EXISTS fk_connection_id;
-		DROP INDEX IF EXISTS unique_producer_table;
-		DROP INDEX IF EXISTS producer_connection_id;
-		CREATE INDEX IF NOT EXISTS producer_name ON producers(name);
-		CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
-		CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
-		END IF;
-		IF EXISTS (
-			SELECT 1
-			FROM information_schema.columns
-			WHERE table_name = 'producers'
-			AND column_name = 'created_at'
-		) THEN
-			ALTER TABLE producers RENAME COLUMN created_at TO updated_at;
+			IF EXISTS (
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_name = 'producers'
+				AND column_name = 'is_deleted'
+			) THEN
+				DELETE FROM producers WHERE is_deleted = true;
+			END IF;
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS connection_id INTEGER NOT NULL;
+			ALTER TABLE producers DROP COLUMN IF EXISTS created_by;
+			ALTER TABLE producers DROP COLUMN IF EXISTS created_by_username;
+			ALTER TABLE producers DROP COLUMN IF EXISTS is_deleted;
+			ALTER TABLE producers DROP CONSTRAINT IF EXISTS fk_connection_id;
+			DROP INDEX IF EXISTS unique_producer_table;
+			DROP INDEX IF EXISTS producer_connection_id;
+			CREATE INDEX IF NOT EXISTS producer_name ON producers(name);
+			CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
+			CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
+			IF EXISTS (
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_name = 'producers'
+				AND column_name = 'created_at'
+			) THEN
+				ALTER TABLE producers RENAME COLUMN created_at TO updated_at;
+			END IF;
 		END IF;
 	END $$;`
 
