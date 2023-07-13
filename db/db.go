@@ -5060,6 +5060,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 }
 
 func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
+
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5075,13 +5076,31 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 	}
 	defer tx.Rollback(ctx)
 
-	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 LIMIT 1 FOR UPDATE`
-	stmt, err := tx.Prepare(ctx, "handle_insert_dls_message", query)
+	query := `SELECT EXISTS(SELECT 1 FROM consumers WHERE tenant_name = $1 AND consumers_group = $2)`
+	stmt, err := tx.Prepare(ctx, "check_if_consumer_exists", query)
 	if err != nil {
 		return 0, err
 	}
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
+	}
+	checkRows, err := tx.Query(ctx, stmt.Name, tenantName, cgName)
+	if err != nil {
+		return 0, err
+	}
+	var exists bool
+	for checkRows.Next() {
+		checkRows.Scan(&exists)
+	}
+	if !exists {
+		return 0, err
+	}
+	checkRows.Close()
+
+	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 LIMIT 1 FOR UPDATE`
+	stmt, err = tx.Prepare(ctx, "handle_insert_dls_message", query)
+	if err != nil {
+		return 0, err
 	}
 	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName)
 	if err != nil {
