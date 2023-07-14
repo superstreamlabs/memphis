@@ -157,7 +157,7 @@ Async produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :
 Message ID | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | ? | :x:
 Destroy a producer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | Partial | :x:
 Consume | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
-Conte:x:t to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Context to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Ack a message | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Fetch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
 Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
