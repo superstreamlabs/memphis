@@ -148,7 +148,7 @@ Retention values | :white_check_mark: | :white_check_mark: | :white_check_mark: 
 Storage types | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
 Create a new schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Enforce a schema Protobuf | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :warning: (WIP)
+Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :construction: (WIP)
 Enforce a schema GraphQL | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Detach a schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
@@ -157,7 +157,7 @@ Async produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :
 Message ID | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | ? | :white_check_mark:
 Destroy a producer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | Partial | :white_check_mark:
 Consume | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
-Context to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Context to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | Not Applicable
 Ack a message | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Fetch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
 Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
