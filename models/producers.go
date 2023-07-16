@@ -40,6 +40,7 @@ type ExtendedProducer struct {
 type LightProducer struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
+	Count       int    `json:"count"`
 }
 
 type GetAllProducersByStationSchema struct {
