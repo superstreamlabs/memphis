@@ -1445,6 +1445,7 @@ func upsertAccountsAndUsers(Accounts []*Account, Users []*User) error {
 }
 
 func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
+	fmt.Println("Start MoveResourcesFromOldToNewDefaultAcc")
 	stations, err := db.GetAllStations()
 	if err != nil {
 		return err
@@ -1477,6 +1478,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 			return err
 		}
 	}
+	fmt.Println("End MoveResourcesFromOldToNewDefaultAcc")
 	return nil
 }
 

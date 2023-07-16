@@ -162,7 +162,9 @@ func runMemphis(s *server.Server) {
 			folderName := fmt.Sprintf("%s%s%s", storeDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
 			f, _ := os.Stat(folderName)
 			if f != nil {
+				fmt.Println("Before MoveResourcesFromOldToNewDefaultAcc")
 				err = s.MoveResourcesFromOldToNewDefaultAcc()
+				fmt.Println("After MoveResourcesFromOldToNewDefaultAcc")
 				if err != nil {
 					s.Errorf("Data from global account to memphis account failed: %s", err.Error())
 				}
