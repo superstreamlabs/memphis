@@ -208,18 +208,6 @@ function OverView() {
                                         Welcome, <span className="username">{username}</span>
                                     </h1>
                                 )}
-                                {isCloud() && (
-                                    <div className="org-details">
-                                        <div className="hostname">
-                                            <p>Account ID : </p>
-                                            <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                        </div>
-                                        <div className="hostname">
-                                            <p>Broker Hostname : </p>
-                                            <span>{host}</span>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                         <div>
