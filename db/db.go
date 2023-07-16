@@ -1960,7 +1960,7 @@ func GetDeletedStations() ([]models.Station, error) {
 }
 
 // Producer Functions
-func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models.LightProducer, error) {
+func UpdateProducersActiveAndGetDetails(connectionId string, isActive bool) ([]models.LightProducer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1969,17 +1969,22 @@ func GetProducersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-	SELECT p.name, s.name
-	FROM producers AS p
-	LEFT JOIN stations AS s
-	ON s.id = p.station_id
-	WHERE p.connection_id = $1 AND p.is_active = true
-	GROUP BY p.id, s.id`
+	WITH updated_producers AS (
+		UPDATE producers
+		SET is_active = $2
+		WHERE connection_id = $1 AND is_active = true
+		RETURNING *
+	)
+	SELECT DISTINCT ON (p.name) p.name, s.name, COUNT(*) OVER (PARTITION BY p.name)
+	FROM updated_producers AS p
+	LEFT JOIN stations AS s ON s.id = p.station_id
+	GROUP BY p.name, p.id, s.id
+	LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.LightProducer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId, isActive)
 	if err != nil {
 		return []models.LightProducer{}, err
 	}
@@ -2865,7 +2870,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 	return consumers, nil
 }
 
-func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models.LightConsumer, error) {
+func UpdateCosnumersActiveAndGetDetails(connectionId string, isActive bool) ([]models.LightConsumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2874,16 +2879,22 @@ func GetConsumersByConnectionIDWithStationDetails(connectionId string) ([]models
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, s.name  
-		FROM consumers AS c
-		LEFT JOIN stations AS s ON s.id = c.station_id
-		WHERE c.connection_id = $1
-`
+	WITH updated_consumers AS (
+		UPDATE consumers
+		SET is_active = $2
+		WHERE connection_id = $1 AND is_active = true
+		RETURNING *
+	)
+	SELECT DISTINCT ON (c.name) c.name, s.name, COUNT(*) OVER (PARTITION BY c.name)
+	FROM updated_consumers AS c
+	LEFT JOIN stations AS s ON s.id = c.station_id
+	GROUP BY c.name, c.id, s.id
+	LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_connection_id_with_station_details", query)
 	if err != nil {
 		return []models.LightConsumer{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, connectionId, isActive)
 	if err != nil {
 		return []models.LightConsumer{}, err
 	}

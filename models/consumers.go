@@ -46,6 +46,7 @@ type ExtendedConsumer struct {
 type LightConsumer struct {
 	Name        string `json:"name"`
 	StationName string `json:"station_name"`
+	Count       int    `json:"count"`
 }
 
 type Cg struct {
