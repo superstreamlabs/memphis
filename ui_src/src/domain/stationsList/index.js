@@ -241,7 +241,7 @@ const StationsList = () => {
                     open={modalIsOpen}
                     isLoading={creatingProsessd}
                 >
-                    <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                    <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
                 </Modal>
             </div>
             <Modal

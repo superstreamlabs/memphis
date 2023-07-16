@@ -35,12 +35,12 @@ const Schemaverse = () => {
                     </div>
                     <div className="total-data sum">
                         <span>
-                            <p className="total-measure">Total Schemas</p>
+                            <p className="total-measure">Total schemas</p>
                             <p className="total-value">{state?.monitor_data?.schemas_details?.total_schemas}</p>
                         </span>
                         <Divider type="vertical" />
                         <span>
-                            <p className="total-measure">Enforced Schemas</p>
+                            <p className="total-measure">Enforced schemas</p>
                             <p className="total-value">{state?.monitor_data?.schemas_details?.enforced_schemas}</p>
                         </span>
                     </div>
