@@ -261,7 +261,9 @@ func (s *Server) WaitForLeaderElection() {
 }
 
 func (s *Server) CreateInternalJetStreamResources() {
+	fmt.Println("Before JetStreamIsClustered")
 	ready := !s.JetStreamIsClustered()
+	fmt.Println("After JetStreamIsClustered")
 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
 
 	successCh := make(chan error)
@@ -273,11 +275,17 @@ func (s *Server) CreateInternalJetStreamResources() {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: %v", err.Error())
 		}
 	} else {
+		fmt.Println("Before WaitForLeaderElection")
 		s.WaitForLeaderElection()
+		fmt.Println("After WaitForLeaderElection")
+		fmt.Println("Before JetStreamIsLeader")
 		if s.JetStreamIsLeader() {
+			fmt.Println("After JetStreamIsLeader")
 			for !ready { // wait for cluster to be ready if we are in cluster mode
 				timeout := time.NewTimer(1 * time.Minute)
+				fmt.Println("Before tryCreateInternalJetStreamResources")
 				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
+				fmt.Println("After tryCreateInternalJetStreamResources")
 				select {
 				case <-timeout.C:
 					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
@@ -320,7 +328,10 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// system logs stream
+	fmt.Println("Before shouldPersistSysLogs")
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
+		fmt.Println("After shouldPersistSysLogs")
+		fmt.Println("Before memphisAddStream memphis_syslogs")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
@@ -332,9 +343,12 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Storage:      FileStorage,
 			Replicas:     replicas,
 		})
+		fmt.Println("After memphisAddStream memphis_syslogs")
 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
 			time.Sleep(1 * time.Second)
+			fmt.Println("Before tryCreateInternalJetStreamResources")
 			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			fmt.Println("After tryCreateInternalJetStreamResources")
 			return
 		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
@@ -347,6 +361,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
+		fmt.Println("Before memphisAddStream memphis_syslogs")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
@@ -363,6 +378,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
 			return
 		}
+		fmt.Println("After memphisAddStream memphis_tiered_storage")
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
 			successCh <- err
 			return
@@ -381,16 +397,19 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
+		fmt.Println("Before memphisAddConsumer memphis_tiered_storage")
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
 		}
+		fmt.Println("After memphisAddConsumer memphis_tiered_storage")
 		TIERED_STORAGE_CONSUMER_CREATED = true
 	}
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
+		fmt.Println("Before memphisAddStream memphis_dls_unacked")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
@@ -405,6 +424,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
+		fmt.Println("After memphisAddStream memphis_dls_unacked")
 		DLS_UNACKED_STREAM_CREATED = true
 	}
 
@@ -418,11 +438,13 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			MaxAckPending: -1,
 			MaxDeliver:    10,
 		}
+		fmt.Println("Before memphisAddConsumer memphis_dls_unacked")
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsUnackedStream, &cc)
 		if err != nil {
 			successCh <- err
 			return
 		}
+		fmt.Println("After memphisAddConsumer memphis_dls_unacked")
 		DLS_UNACKED_CONSUMER_CREATED = true
 	}
 
@@ -436,6 +458,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
+		fmt.Println("Before memphisAddStream memphis-throughput-v1")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
@@ -453,6 +476,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
+		fmt.Println("After memphisAddStream memphis-throughput-v1")
 		TIERED_STORAGE_STREAM_CREATED = true
 	}
 	successCh <- nil

@@ -136,7 +136,9 @@ func runMemphis(s *server.Server) {
 	}
 
 	go func() {
+		fmt.Println("Before CreateInternalJetStreamResources")
 		s.CreateInternalJetStreamResources()
+		fmt.Println("After CreateInternalJetStreamResources")
 		go http_server.InitializeHttpServer(s)
 		err = s.StartBackgroundTasks()
 		if err != nil {
