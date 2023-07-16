@@ -970,7 +970,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
+	if ch.S.opts.DlsRetentionHours[user.TenantName] != body.DlsRetention {
 		err := changeDlsRetention(body.DlsRetention)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
@@ -1055,7 +1055,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          ch.S.opts.LogsRetentionDays,
 		"broker_host":             ch.S.opts.BrokerHost,
 		"ui_host":                 ch.S.opts.UiHost,
@@ -1066,14 +1066,20 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 }
 
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetClusterConfig at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analyticsParams := make(map[string]interface{})
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          ch.S.opts.LogsRetentionDays,
 		"broker_host":             ch.S.opts.BrokerHost,
 		"ui_host":                 ch.S.opts.UiHost,

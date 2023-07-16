@@ -5525,7 +5525,7 @@ func GetTotalPoisonMsgsPerCg(cgName string, stationId int) (int, error) {
 	return count, nil
 }
 
-func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
+func DeleteOldDlsMessageByRetention(updatedAt time.Time, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5534,12 +5534,12 @@ func DeleteOldDlsMessageByRetention(updatedAt time.Time) error {
 	}
 	defer conn.Release()
 
-	query := `DELETE FROM dls_messages WHERE updated_at < $1`
+	query := `DELETE FROM dls_messages WHERE tenant_name = $1 AND updated_at < $2`
 	stmt, err := conn.Conn().Prepare(ctx, "delete_old_dls_messages", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, updatedAt)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName, updatedAt)
 	if err != nil {
 		return err
 	}
