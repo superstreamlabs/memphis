@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import { compareObjects } from '../../../services/valueConvertor';
+import { compareObjects, isCloud } from '../../../services/valueConvertor';
 import BrokerHostname from '../../../assets/images/BrokerHostname.svg';
 import UIHostname from '../../../assets/images/UIHostname.svg';
 import DeadLetterInHours from '../../../assets/images/DeadLetterInHours.svg';
@@ -111,16 +111,18 @@ function ClusterConfiguration() {
             {!isLoading && (
                 <>
                     <div className="configuration-body">
-                        <SliderRow
-                            title="MAX MESSAGE SIZE"
-                            desc="Maximum  message size (payload + headers) in megabytes"
-                            value={formFields?.max_msg_size_mb}
-                            img={DeadLetterInHours}
-                            min={1}
-                            max={12}
-                            unit={'mb'}
-                            onChanges={(e) => handleChange('max_msg_size_mb', e)}
-                        />
+                        {!isCloud && (
+                            <SliderRow
+                                title="MAX MESSAGE SIZE"
+                                desc="Maximum  message size (payload + headers) in megabytes"
+                                value={formFields?.max_msg_size_mb}
+                                img={DeadLetterInHours}
+                                min={1}
+                                max={12}
+                                unit={'mb'}
+                                onChanges={(e) => handleChange('max_msg_size_mb', e)}
+                            />
+                        )}
                         <SliderRow
                             title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
                             desc="Amount of hours to retain dead lettered messages in a DLS"
@@ -131,26 +133,30 @@ function ClusterConfiguration() {
                             unit={'h'}
                             onChanges={(e) => handleChange('dls_retention', e)}
                         />
-                        <SliderRow
-                            title="LOGS RETENTION IN DAYS"
-                            desc="Amount of days to retain system logs"
-                            img={LogsRetentionInDays}
-                            value={formFields?.logs_retention}
-                            min={1}
-                            max={100}
-                            unit={'d'}
-                            onChanges={(e) => handleChange('logs_retention', e)}
-                        />
-                        <TieredInputRow
-                            title="TIERED STORAGE UPLOAD INTERVAL"
-                            desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
-                            img={TieredStorageInterval}
-                            value={formFields?.tiered_storage_time_sec}
-                            onChanges={(e, err) => {
-                                handleChange('tiered_storage_time_sec', e, err);
-                            }}
-                        />
-                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && (
+                        {!isCloud && (
+                            <SliderRow
+                                title="LOGS RETENTION IN DAYS"
+                                desc="Amount of days to retain system logs"
+                                img={LogsRetentionInDays}
+                                value={formFields?.logs_retention}
+                                min={1}
+                                max={100}
+                                unit={'d'}
+                                onChanges={(e) => handleChange('logs_retention', e)}
+                            />
+                        )}
+                        {!isCloud && (
+                            <TieredInputRow
+                                title="TIERED STORAGE UPLOAD INTERVAL"
+                                desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
+                                img={TieredStorageInterval}
+                                value={formFields?.tiered_storage_time_sec}
+                                onChanges={(e, err) => {
+                                    handleChange('tiered_storage_time_sec', e, err);
+                                }}
+                            />
+                        )}
+                        {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !isCloud() && (
                             <>
                                 <InputRow
                                     title="BROKER HOSTNAME"
