@@ -1537,160 +1537,59 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	return stations, nil
 }
 
-func GetAllStationsExtendedDetailsPerTenant(tenantName string) ([]models.ExtendedStation, error) {
+func GetAllStationsWithActiveProducersConsumersPerTenant(tenantName string) ([]models.ActiveProducersConsumersDetails, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.ExtendedStation{}, err
+		return []models.ActiveProducersConsumersDetails{}, err
 	}
 	defer conn.Release()
 	query := `
-	SELECT s.*, COALESCE(p.id, 0),  
-	COALESCE(p.name, ''), 
-	COALESCE(p.station_id, 0), 
-	COALESCE(p.type, 'application'), 
-	COALESCE(p.connection_id, ''), 
-	COALESCE(p.created_by, 0), 
-	COALESCE(p.created_by_username, ''), 
-	COALESCE(p.is_active, false), 
-	COALESCE(p.created_at, CURRENT_TIMESTAMP), 
-	COALESCE(p.is_deleted, false), 
-	COALESCE(c.id, 0),  
-	COALESCE(c.name, ''), 
-	COALESCE(c.station_id, 0), 
-	COALESCE(c.type, 'application'), 
-	COALESCE(c.connection_id, ''),
-	COALESCE(c.consumers_group, ''),
-	COALESCE(c.max_ack_time_ms, 0), 
-	COALESCE(c.created_by, 0), 
-	COALESCE(c.created_by_username, ''), 
-	COALESCE(c.is_active, false), 
-	COALESCE(c.created_at, CURRENT_TIMESTAMP), 
-	COALESCE(c.is_deleted, false), 
-	COALESCE(c.max_msg_deliveries, 0), 
-	COALESCE(c.start_consume_from_seq, 0),
-	COALESCE(c.last_msgs, 0) 
-	FROM stations AS s
-	LEFT JOIN producers AS p
-	ON s.id = p.station_id AND p.is_active = true
-	LEFT JOIN consumers AS c 
-	ON s.id = c.station_id AND c.is_active = true
-	WHERE s.is_deleted = false AND s.tenant_name = $1 
-	GROUP BY s.id,p.id,c.id`
+	SELECT s.id,
+			   COUNT(DISTINCT CASE WHEN p.is_active THEN p.id END) FILTER (WHERE p.is_active = true) AS active_producers_count,
+			   COUNT(DISTINCT CASE WHEN c.is_active THEN c.id END) AS active_consumers_count
+		FROM stations AS s
+		LEFT JOIN producers AS p ON s.id = p.station_id AND p.is_active = true
+		LEFT JOIN consumers AS c ON s.id = c.station_id AND c.is_active = true
+		WHERE s.is_deleted = false AND s.tenant_name = $1
+	GROUP BY s.id;
+`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_extedned_details_per_tenant", query)
 	if err != nil {
-		return []models.ExtendedStation{}, err
+		return []models.ActiveProducersConsumersDetails{}, err
 	}
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
-		return []models.ExtendedStation{}, err
+		return []models.ActiveProducersConsumersDetails{}, err
 	}
 	if err == pgx.ErrNoRows {
-		return []models.ExtendedStation{}, nil
+		return []models.ActiveProducersConsumersDetails{}, nil
 	}
 	defer rows.Close()
-	stationsMap := map[int]models.ExtendedStation{}
+	stations := []models.ActiveProducersConsumersDetails{}
 	for rows.Next() {
-		var stationRes models.Station
-		var producer models.Producer
-		var consumer models.Consumer
+		var stationId int
+		var activeProducersCount int
+		var activeConsumersCount int
 		if err := rows.Scan(
-			&stationRes.ID,
-			&stationRes.Name,
-			&stationRes.RetentionType,
-			&stationRes.RetentionValue,
-			&stationRes.StorageType,
-			&stationRes.Replicas,
-			&stationRes.CreatedBy,
-			&stationRes.CreatedByUsername,
-			&stationRes.CreatedAt,
-			&stationRes.UpdatedAt,
-			&stationRes.IsDeleted,
-			&stationRes.SchemaName,
-			&stationRes.SchemaVersionNumber,
-			&stationRes.IdempotencyWindow,
-			&stationRes.IsNative,
-			&stationRes.DlsConfigurationPoison,
-			&stationRes.DlsConfigurationSchemaverse,
-			&stationRes.TieredStorageEnabled,
-			&stationRes.TenantName,
-			&producer.ID,
-			&producer.Name,
-			&producer.StationId,
-			&producer.Type,
-			&producer.ConnectionId,
-			&producer.CreatedBy,
-			&producer.CreatedByUsername,
-			&producer.IsActive,
-			&producer.CreatedAt,
-			&producer.IsDeleted,
-			&consumer.ID,
-			&consumer.Name,
-			&consumer.StationId,
-			&consumer.Type,
-			&consumer.ConnectionId,
-			&consumer.ConsumersGroup,
-			&consumer.MaxAckTimeMs,
-			&consumer.CreatedBy,
-			&consumer.CreatedByUsername,
-			&consumer.IsActive,
-			&consumer.CreatedAt,
-			&consumer.IsDeleted,
-			&consumer.MaxMsgDeliveries,
-			&consumer.StartConsumeFromSeq,
-			&consumer.LastMessages,
+			&stationId,
+			&activeProducersCount,
+			&activeConsumersCount,
 		); err != nil {
-			return []models.ExtendedStation{}, err
+			return []models.ActiveProducersConsumersDetails{}, err
 		}
-		if _, ok := stationsMap[stationRes.ID]; ok {
-			tempStation := stationsMap[stationRes.ID]
-			if producer.ID != 0 {
-				tempStation.Producers = append(tempStation.Producers, producer)
-			}
-			if consumer.ID != 0 {
-				tempStation.Consumers = append(tempStation.Consumers, consumer)
-			}
-			stationsMap[stationRes.ID] = tempStation
-		} else {
-			producers := []models.Producer{}
-			consumers := []models.Consumer{}
-			if producer.ID != 0 {
-				producers = append(producers, producer)
-			}
-			if consumer.ID != 0 {
-				consumers = append(consumers, consumer)
-			}
-			if tenantName != conf.GlobalAccount {
-				tenantName = strings.ToLower(tenantName)
-			}
-			station := models.ExtendedStation{
-				ID:                          stationRes.ID,
-				Name:                        stationRes.Name,
-				RetentionType:               stationRes.RetentionType,
-				RetentionValue:              stationRes.RetentionValue,
-				StorageType:                 stationRes.StorageType,
-				Replicas:                    stationRes.Replicas,
-				CreatedBy:                   stationRes.CreatedBy,
-				CreatedAt:                   stationRes.CreatedAt,
-				UpdatedAt:                   stationRes.UpdatedAt,
-				IdempotencyWindow:           stationRes.IdempotencyWindow,
-				IsNative:                    stationRes.IsNative,
-				DlsConfigurationPoison:      stationRes.DlsConfigurationPoison,
-				DlsConfigurationSchemaverse: stationRes.DlsConfigurationSchemaverse,
-				Producers:                   producers,
-				Consumers:                   consumers,
-				TieredStorageEnabled:        stationRes.TieredStorageEnabled,
-				TenantName:                  tenantName,
-			}
-			stationsMap[station.ID] = station
+		station := models.ActiveProducersConsumersDetails{
+			ID:                   stationId,
+			ActiveProducersCount: activeProducersCount,
+			ActiveConsumersCount: activeConsumersCount,
 		}
+		stations = append(stations, station)
 	}
 	if err := rows.Err(); err != nil {
-		return []models.ExtendedStation{}, err
+		return []models.ActiveProducersConsumersDetails{}, err
 	}
-	stations := getFilteredExtendedStations(stationsMap)
 	return stations, nil
 }
 

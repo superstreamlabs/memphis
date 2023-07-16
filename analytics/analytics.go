@@ -37,11 +37,10 @@ type EventParam struct {
 }
 
 type EventBody struct {
-	DistinctId     string                 `json:"distinct_id"`
-	Event          string                 `json:"event"`
-	Properties     map[string]interface{} `json:"properties"`
-	TimeStamp      string                 `json:"timestamp"`
-	MemphisVersion string                 `json:"memphis_version"`
+	DistinctId string                 `json:"distinct_id"`
+	Event      string                 `json:"event"`
+	Properties map[string]interface{} `json:"properties"`
+	TimeStamp  string                 `json:"timestamp"`
 }
 
 var configuration = conf.GetConfig()
@@ -140,21 +139,20 @@ func SendEvent(tenantName, username string, params map[string]interface{}, event
 
 	creationTime := time.Now().Unix()
 	timestamp := strconv.FormatInt(creationTime, 10)
+	params["memphis_version"] = memphisVersion
 	if eventName == "error" {
 		event = &EventBody{
-			DistinctId:     distinctId,
-			Event:          "error",
-			Properties:     params,
-			TimeStamp:      timestamp,
-			MemphisVersion: memphisVersion,
+			DistinctId: distinctId,
+			Event:      "error",
+			Properties: params,
+			TimeStamp:  timestamp,
 		}
 	} else {
 		event = &EventBody{
-			DistinctId:     distinctId,
-			Event:          eventName,
-			Properties:     params,
-			TimeStamp:      timestamp,
-			MemphisVersion: memphisVersion,
+			DistinctId: distinctId,
+			Event:      eventName,
+			Properties: params,
+			TimeStamp:  timestamp,
 		}
 	}
 
