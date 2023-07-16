@@ -206,7 +206,12 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={Logo} width="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                {isCloud() ? (
+                    <img src={state?.companyLogo || Logo} width="45" height="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                ) : (
+                    <img src={Logo} width="45" height="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                )}
+
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('overview')}
