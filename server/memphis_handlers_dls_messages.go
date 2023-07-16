@@ -228,20 +228,12 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
 			if err != nil {
 				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
-				cgInfo = &ConsumerInfo{
-					NumPending:    0,
-					NumAckPending: 0,
-				}
+				return models.DlsMessageResponse{}, err
 			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
-			if err != nil || len(cgMembers) == 0 {
-				if err != nil {
-					serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
-				}
-				cgMembers = []models.CgMember{{
-					MaxAckTimeMs:     0,
-					MaxMsgDeliveries: 0,
-				}}
+			if err != nil {
+				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				return models.DlsMessageResponse{}, err
 			}
 			pc.IsActive, pc.IsDeleted = getCgStatus(cgMembers)
 
@@ -320,20 +312,12 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
 		if err != nil {
 			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
-			cgInfo = &ConsumerInfo{
-				NumPending:    0,
-				NumAckPending: 0,
-			}
+			return []models.PoisonedCg{}, err
 		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
-		if err != nil || len(cgMembers) == 0 {
-			if err != nil {
-				serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
-			}
-			cgMembers = []models.CgMember{{
-				MaxAckTimeMs:     0,
-				MaxMsgDeliveries: 0,
-			}}
+		if err != nil {
+			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+			return []models.PoisonedCg{}, err
 		}
 		poisonedCg.IsActive, poisonedCg.IsDeleted = getCgStatus(cgMembers)
 

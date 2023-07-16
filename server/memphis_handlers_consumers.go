@@ -583,6 +583,14 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 		if err == nil {
 			deleted = true
 		}
+
+		err = db.RemovePoisonedCg(station.ID, consumer.ConsumersGroup)
+		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
+			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
+			serv.Errorf("DestroyConsumer at RemovePoisonedCg: %v", errMsg)
+			respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+			return
+		}
 	}
 
 	name := strings.ToLower(consumer.Name)
