@@ -535,12 +535,12 @@ func (s *Server) RemoveOldDlsMsgs() {
 }
 
 func (s *Server) RemoveOldProducersAndConsumers() {
-	ticker := time.NewTicker(15 * time.Minute) // Change
+	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
 		timeInterval := time.Now().Add(time.Duration(time.Hour * -2))
 		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
 		if err != nil {
-			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error()) // Change
+			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
 		}
 
 		var CGsList []string
