@@ -18,6 +18,7 @@ import (
 	"memphis/db"
 	"memphis/memphis_cache"
 	"memphis/models"
+	"strconv"
 
 	"errors"
 	"strings"
@@ -144,40 +145,33 @@ func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 		return nil
 	}
 
-	_, err := db.UpdateProducersCounsumersConnection(mci.connectionId, false)
-	if err != nil {
-		return err
-	}
-
 	if shouldSendNotification(tenantName, DisconEAlert) {
-		producers, err := db.GetProducersByConnectionIDWithStationDetails(mci.connectionId)
+		producers, err := db.UpdateProducersActiveAndGetDetails(mci.connectionId, false)
 		if err != nil {
 			return err
 		}
 		var producerNames, consumerNames string
 		if len(producers) > 0 {
-			err = db.UpdateProducersConnection(mci.connectionId, false)
-			if err != nil {
-				return err
-			}
-
 			for i := 0; i < len(producers); i++ {
-				producerNames = producerNames + "Producer: " + producers[i].Name + " Station: " + producers[i].StationName + "\n"
+				if producers[i].Count > 1 {
+					producerNames = producerNames + strconv.Itoa(producers[i].Count) + " producers: " + producers[i].Name + " | Station: " + producers[i].StationName + "\n"
+				} else {
+					producerNames = producerNames + "1 producer: " + producers[i].Name + " | Station: " + producers[i].StationName + "\n"
+				}
 			}
 		}
 
-		consumers, err := db.GetConsumersByConnectionIDWithStationDetails(mci.connectionId)
+		consumers, err := db.UpdateCosnumersActiveAndGetDetails(mci.connectionId, false)
 		if err != nil {
 			return err
 		}
 		if len(consumers) > 0 {
-			err = db.UpdateConsumersConnection(mci.connectionId, false)
-			if err != nil {
-				return err
-			}
-
 			for i := 0; i < len(consumers); i++ {
-				consumerNames = consumerNames + "Consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
+				if consumers[i].Count > 1 {
+					consumerNames = consumerNames + strconv.Itoa(consumers[i].Count) + " consumers: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
+				} else {
+					consumerNames = consumerNames + "1 consumer: " + consumers[i].Name + " | Station: " + consumers[i].StationName + "\n"
+				}
 			}
 		}
 		msg := ""
@@ -193,6 +187,11 @@ func (mci *memphisClientInfo) updateDisconnection(tenantName string) error {
 			if err != nil {
 				return err
 			}
+		}
+	} else {
+		_, err := db.UpdateProducersCounsumersConnection(mci.connectionId, false)
+		if err != nil {
+			return err
 		}
 	}
 
