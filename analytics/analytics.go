@@ -94,16 +94,19 @@ func InitializeAnalytics(memphisV, customDeploymentId string) error {
 		}
 	}
 
-	memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
-	if err != nil {
-		errMsg := fmt.Errorf("InitializeAnalytics: initalize connection failed %s ", err.Error())
-		return errMsg
+	timeout := 0 * time.Minute
+	if configuration.PROVIDER == "aws" && configuration.REGION == "eu-central-1" {
+		timeout = 1 * time.Minute
 	}
+	time.AfterFunc(timeout, func() {
+		memphisConnection, err = memphis.Connect(HOST, USERNAME, memphis.Password(PASSWORD), memphis.AccountId(ACCOUNT_ID), memphis.MaxReconnect(500), memphis.ReconnectInterval(1*time.Second))
+		if err != nil {
+			fmt.Printf("InitializeAnalytics: initalize connection failed %s \n", err.Error())
+		} else {
+			memphisConnection.CreateStation("users-traces", memphis.Replicas(3), memphis.TieredStorageEnabled(true), memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds), memphis.RetentionVal(14400))
+		}
+	})
 
-	_, err = memphisConnection.CreateStation("users-traces", memphis.Replicas(3), memphis.TieredStorageEnabled(true), memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds), memphis.RetentionVal(14400))
-	if err != nil {
-		fmt.Println(err)
-	}
 	return nil
 }
 
