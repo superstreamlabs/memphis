@@ -26,9 +26,12 @@ import TagsList from '../../../../components/tagList';
 import SchemaDetails from '../schemaDetails';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import pathDomains from '../../../../router';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { httpRequest } from '../../../../services/http';
 
-function SchemaBox({ schema, handleCheckedClick, isCheck }) {
+function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
     const history = useHistory();
+    const [schema, setSchema] = useState(schemaBox);
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
@@ -37,19 +40,30 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
         if (schemaName === schema?.name) setOpen(true);
     }, []);
 
+    useEffect(() => {
+        setSchema(schemaBox);
+    }, [schemaBox]);
+
     const handleDrawer = (flag) => {
         setOpen(flag);
         if (flag) history.push(`${pathDomains.schemaverse}/list/${schema?.name}`);
         else history.push(`${pathDomains.schemaverse}/list`);
     };
 
+    const removeTag = async (tagName, schemaName) => {
+        try {
+            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'schema', entity_name: schemaName });
+            schema.tags = schema.tags.filter((tag) => tag.name !== tagName);
+            setSchema({ ...schema });
+        } catch (error) {}
+    };
     return (
         <>
             <div>
                 <CheckboxComponent checked={isCheck} id={schema.name} onChange={handleCheckedClick} name={schema.name} />
-                <div key={schema.name} onClick={() => handleDrawer(true)} className="schema-box-wrapper">
+                <div key={schema.name} className="schema-box-wrapper">
                     <header is="x3d">
-                        <div className="header-wrapper">
+                        <div className="header-wrapper" onClick={() => handleDrawer(true)}>
                             <div className="schema-name">
                                 <OverflowTip text={schema.name} maxWidth={'150px'}>
                                     <span>{schema.name}</span>
@@ -61,7 +75,7 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                             </div>
                         </div>
                     </header>
-                    <type is="x3d">
+                    <type is="x3d" onClick={() => handleDrawer(true)}>
                         <div className="field-wrapper">
                             <p>Type : </p>
                             {schema.type === 'json' ? <span>JSON schema</span> : <span> {capitalizeFirst(schema.type)}</span>}
@@ -74,9 +88,16 @@ function SchemaBox({ schema, handleCheckedClick, isCheck }) {
                         </div>
                     </type>
                     <tags is="x3d">
-                        <TagsList tagsToShow={3} tags={schema?.tags} />
+                        <TagsList
+                            tagsToShow={3}
+                            tags={schema?.tags}
+                            editable
+                            entityType="schema"
+                            entityName={schema.name}
+                            handleDelete={(tag) => removeTag(tag, schema.name)}
+                        />
                     </tags>
-                    <date is="x3d">
+                    <date is="x3d" onClick={() => handleDrawer(true)}>
                         <img src={createdDateIcon} alt="createdDateIcon" />
                         <p>{parsingDate(schema.created_at)}</p>
                     </date>
