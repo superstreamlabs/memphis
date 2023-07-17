@@ -971,7 +971,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		return
 	}
 	if ch.S.opts.DlsRetentionHours[user.TenantName] != body.DlsRetention {
-		err := changeDlsRetention(body.DlsRetention)
+		err := changeDlsRetention(body.DlsRetention, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
