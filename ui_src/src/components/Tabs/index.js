@@ -50,7 +50,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                     };
                 })}
                 disabled={disabled}
-            ></Tabs>
+            />
         </div>
     );
 };

@@ -15,15 +15,24 @@
         min-width: 300px;
         min-height: 400px;
         list-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px;
-            .header-title {
-                font-family: 'InterSemiBold';
-                font-size: 18px;
-                color: #1d1d1d;
-                line-height: 18px;
+            .header-title-wrapper{
+                padding: 20px 20px 0px 20px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                .header-title {
+                    font-family: 'InterSemiBold';
+                    font-size: 18px;
+                    color: #1d1d1d;
+                    line-height: 18px;
+                }
+            }
+            .header-subtitle {
+                font-family: 'Inter';
+                font-size: 14px;
+                color: #6e6e6e;
+                line-height: 12px;
+                padding: 5px 20px 5px 20px;
             }
             .search-input-container {
                 margin-right: 0;

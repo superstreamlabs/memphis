@@ -93,10 +93,17 @@
             p {
                 margin: 0;
             }
-            .left-coulmn {
+            .left-coulmn-wrapper{
                 width: 40%;
                 display: flex;
                 justify-content: center;
+                svg {
+                    color: #737373;
+                    width: 11px;
+                    margin-left: 5px;
+                    height: 100%;
+                    cursor: pointer;
+                }
             }
             .right-coulmn {
                 width: 60%;

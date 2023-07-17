@@ -70,7 +70,7 @@ const DebeziumIntegration = ({ close }) => {
                 return (
                     <div className="steps-content">
                         <h3>
-                            If you haven't already created an application-type Memphis user, please visit the{' '}
+                            If you haven't already created an client-type Memphis user, please visit the{' '}
                             <label onClick={() => createNewUser()} style={{ cursor: 'pointer' }}>
                                 User page
                             </label>{' '}
@@ -90,8 +90,8 @@ debezium.sink.http.url=http://<Memphis REST Gateway URL>:4444/stations/todo-cdc-
 debezium.sink.http.time-out.ms=500
 debezium.sink.http.retries=3
 debezium.sink.http.authentication.type=jwt
-debezium.sink.http.authentication.jwt.username=<Memphis Application-type username>
-debezium.sink.http.authentication.jwt.password=<Memphis Application-type password>
+debezium.sink.http.authentication.jwt.username=<Memphis client-type username>
+debezium.sink.http.authentication.jwt.password=<Memphis client-type password>
 debezium.sink.http.authentication.jwt.url=http://<Memphis REST Gateway URL>:4444/
 debezium.format.key=json
 debezium.format.value=json
@@ -102,8 +102,8 @@ quarkus.log.console.json=false`}</pre>
                                 debezium.sink.http.time-out.ms=500
                                 debezium.sink.http.retries=3
                                 debezium.sink.http.authentication.type=jwt
-                                debezium.sink.http.authentication.jwt.username=<Memphis Application-type username>
-                                debezium.sink.http.authentication.jwt.password=<Memphis Application-type password>
+                                debezium.sink.http.authentication.jwt.username=<Memphis client-type username>
+                                debezium.sink.http.authentication.jwt.password=<Memphis client-type password>
                                 debezium.sink.http.authentication.jwt.url=http://<Memphis REST Gateway URL>:4444/
                                 debezium.format.key=json
                                 debezium.format.value=json
@@ -112,15 +112,28 @@ quarkus.log.console.json=false`}</pre>
                         </div>
 
                         <p>
-                            In case Debezium is not installed yet, here is a quick Dockerfile to start one (Don't forget to attach the config file within the container)
+                            In case Debezium is not installed yet, here is a quick Dockerfile to start one <br />
+                            (Don't forget to attach the config file within the container)
                         </p>
                         <div className="editor">
                             <pre>
-                                FROM debian:bullseye-slim RUN apt update && apt upgrade -y && apt install -y openjdk-11-jdk-headless wget git curl && rm -rf
-                                /var/cache/apt/* WORKDIR / RUN git clone https://github.com/debezium/debezium WORKDIR /debezium RUN ./mvnw clean install -DskipITs
-                                -DskipTests WORKDIR / RUN git clone https://github.com/debezium/debezium-server debezium-server-build WORKDIR /debezium-server-build RUN
-                                ./mvnw package -DskipITs -DskipTests -Passembly RUN tar -xzvf debezium-server-dist/target/debezium-server-dist-*.tar.gz -C / WORKDIR
-                                /debezium-server RUN mkdir data CMD ./run.sh
+                                {`FROM debian:bullseye-slim
+
+RUN apt update && apt upgrade -y && apt install -y openjdk-11-jdk-headless wget git curl && rm -rf /var/cache/apt/*
+
+WORKDIR /
+RUN git clone https://github.com/debezium/debezium
+WORKDIR /debezium
+RUN ./mvnw clean install -DskipITs -DskipTests
+WORKDIR /
+RUN git clone https://github.com/debezium/debezium-server debezium-server-build
+WORKDIR /debezium-server-build
+RUN ./mvnw package -DskipITs -DskipTests -Passembly
+RUN tar -xzvf debezium-server-dist/target/debezium-server-dist-*.tar.gz -C /
+WORKDIR /debezium-server
+RUN mkdir data
+
+CMD ./run.sh`}
                             </pre>
                             <Copy
                                 data={`FROM debian:bullseye-slim

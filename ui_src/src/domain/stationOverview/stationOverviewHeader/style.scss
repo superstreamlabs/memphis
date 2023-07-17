@@ -92,9 +92,21 @@
                 .storage-section{
                     display: flex;
                     justify-content: space-between;
+                    align-items:center;
+                    div{
+                        display: flex;
+                        align-items: center;
+                    }
                     span{
                         position: relative;
                         top: 1px;
+                    }
+                    svg {
+                        cursor: pointer;
+                        color: #737373;
+                        width: 11px;
+                        margin-left: 5px;
+                        height: 100%;
                     }
                 }
             }
