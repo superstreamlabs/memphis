@@ -463,6 +463,11 @@ const App = withRouter((props) => {
                             />
                             <PrivateRoute
                                 exact
+                                path={`${pathDomains.administration}/cluster_configuration`}
+                                component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                exact
                                 path={`${pathDomains.administration}/usage`}
                                 component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
                             />
