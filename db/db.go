@@ -324,6 +324,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
+		resend_disabled BOOL NOT NULL DEFAULT false,
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
@@ -345,6 +346,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'stations' AND table_schema = 'public'
 		) THEN
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -494,10 +496,22 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	CREATE INDEX IF NOT EXISTS dls_producer_id
 		ON dls_messages(producer_id);`
 
+	asyncTasksTable := `
+        CREATE TABLE IF NOT EXISTS async_tasks(
+            id SERIAL NOT NULL,    
+            name VARCHAR NOT NULL DEFAULT '',
+            broker_in_charge VARCHAR NOT NULL DEFAULT 'broker-0',
+            created_at TIMESTAMPTZ NOT NULL,
+            updated_at TIMESTAMPTZ NOT NULL,
+            meta_data JSON NOT NULL DEFAULT '{}',
+			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+			UNIQUE(name, tenant_name)
+        );`
+
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterConnectionsTable, connectionsTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterDlsMsgsTable, dlsMessagesTable, asyncTasksTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1459,6 +1473,7 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 			&stationRes.DlsConfigurationSchemaverse,
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
+			&stationRes.ResendDisabled,
 			&producer.ID,
 			&producer.Name,
 			&producer.StationId,
@@ -1998,6 +2013,25 @@ func UpdateStationsWithNoHA3() error {
 		return err
 	}
 	_, err = conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func UpdateResendDisabledInStation(resendDisabled bool, stationName, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE stations SET resend_disabled = $1 WHERE name = $2 AND tenant_name = $3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_resend_disabled_in_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationName, tenantName)
 	if err != nil {
 		return err
 	}
@@ -5678,6 +5712,83 @@ func DeleteDlsMsgsByTenant(tenantName string) error {
 
 }
 
+func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time) (bool, []models.DlsMsgResendAll, int, int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.DlsMsgResendAll{}, -1, -1, err
+	}
+	defer conn.Release()
+	query := `
+		WITH limited_rows AS (
+		SELECT *
+		FROM dls_messages
+		WHERE tenant_name = $1 AND updated_at <= $2 AND message_type = 'poison'
+		)
+		SELECT *,
+		(SELECT MIN(id) FROM limited_rows) AS min_id,
+		(SELECT MAX(id) FROM limited_rows) AS max_id
+		FROM limited_rows;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_min_max_id_dls_msgs_by_created_at", query)
+	if err != nil {
+		return false, []models.DlsMsgResendAll{}, -1, -1, err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, createdAt)
+	if err != nil {
+		return false, []models.DlsMsgResendAll{}, -1, -1, err
+	}
+	defer rows.Close()
+
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMsgResendAll])
+	if err != nil {
+		return false, []models.DlsMsgResendAll{}, -1, -1, err
+	}
+	if len(dlsMsgs) == 0 {
+		return false, []models.DlsMsgResendAll{}, -1, -1, nil
+	}
+	return true, dlsMsgs, dlsMsgs[0].MinId, dlsMsgs[0].MaxId, nil
+}
+
+func GetDlsMsgsBatch(tenantName string, min, max int) (bool, []models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `
+		SELECT *
+		FROM dls_messages
+		WHERE tenant_name = $1 AND message_type = 'poison' AND id  > $2 AND id <= $3 LIMIT 10
+		`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msgs_batch_between_min_max_id", query)
+	if err != nil {
+		return false, []models.DlsMessage{}, err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, min, max)
+	if err != nil {
+		return false, []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return false, []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return false, []models.DlsMessage{}, nil
+	}
+	return true, dlsMsgs, nil
+}
+
 // Tenants functions
 func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -6057,7 +6168,6 @@ func SetTenantSequence(sequence int) error {
 }
 
 func ReliveConectionResources(connectionId string, isActive bool) error {
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -6084,5 +6194,141 @@ func ReliveConectionResources(connectionId string, isActive bool) error {
 		}
 	}
 
+	return nil
+}
+
+// Async tasks functions
+func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string) (models.AsyncTask, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.AsyncTask{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name) VALUES($1, $2, $3, $4, $5) ON CONFLICT (name, tenant_name) DO NOTHING`
+	stmt, err := conn.Conn().Prepare(ctx, "upsert_async_task", query)
+	if err != nil {
+		return models.AsyncTask{}, err
+	}
+
+	updatedAt := time.Now()
+	var asyncTaskId int
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName)
+	if err != nil {
+		return models.AsyncTask{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&asyncTaskId)
+		if err != nil {
+			return models.AsyncTask{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.AsyncTask{}, errors.New("Async task " + task + " already exists")
+				} else {
+					return models.AsyncTask{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.AsyncTask{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.AsyncTask{}, err
+		}
+	}
+
+	asyncTask := models.AsyncTask{
+		Name:          task,
+		BrokrInCharge: brokerInCharge,
+		CreatedAt:     createdAt,
+		UpdatedAt:     updatedAt,
+	}
+
+	return asyncTask, nil
+}
+
+func GetAsyncTask(task, tenantName string) (bool, models.AsyncTask, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.AsyncTask{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT * FROM async_tasks WHERE name = $1 AND tenant_name = $2 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_async_task", query)
+	if err != nil {
+		return false, models.AsyncTask{}, err
+	}
+
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task, tenantName)
+	if err != nil {
+		return false, models.AsyncTask{}, err
+	}
+	defer rows.Close()
+	asyncTask, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTask])
+	if err != nil {
+		return false, models.AsyncTask{}, err
+	}
+	if len(asyncTask) == 0 {
+		return false, models.AsyncTask{}, nil
+	}
+	return true, asyncTask[0], nil
+
+}
+
+func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE async_tasks SET updated_at = $1 ,meta_data = $2 WHERE name = $3 AND tenant_name=$4`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_async_task_by_task_and_tenant_name", query)
+	if err != nil {
+		return err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt, metaData, task, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func RemoveAsyncTask(task, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM async_tasks WHERE name = $1 AND tenant_name=$2`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task_by_name_and_tenant_name", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, task, tenantName)
+	if err != nil {
+		return err
+	}
 	return nil
 }
