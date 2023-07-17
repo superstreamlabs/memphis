@@ -170,9 +170,11 @@ const StationOverviewHeader = () => {
                         <p>
                             <b>Retention:</b> {retentionValue}
                         </p>
-                        <p>
-                            <b>Replicas:</b> {isCloud() ? replicasConvertor(3, false) : replicasConvertor(stationState?.stationMetaData?.replicas, false)}
-                        </p>
+                        {!isCloud() && (
+                            <p>
+                                <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
+                            </p>
+                        )}
                         <div className="storage-section">
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
