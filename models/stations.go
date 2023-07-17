@@ -105,6 +105,12 @@ type ExtendedStation struct {
 	TenantName                  string      `json:"tenant_name"`
 }
 
+type ActiveProducersConsumersDetails struct {
+	ID                   int `json:"id"`
+	ActiveProducersCount int `json:"active_producers_count"`
+	ActiveConsumersCount int `json:"active_consumers_count"`
+}
+
 type ExtendedStationDetails struct {
 	Station        Station     `json:"station"`
 	TotalMessages  int         `json:"total_messages"`

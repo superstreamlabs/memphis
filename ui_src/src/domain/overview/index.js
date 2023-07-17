@@ -214,12 +214,12 @@ function OverView() {
                                         <div className="hostname">
                                             <p>Account ID : </p>
                                             <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                            <Copy width="12" text={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
+                                            <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                         </div>
                                         <div className="hostname">
                                             <p>Broker Hostname : </p>
                                             <span>{host}</span>
-                                            <Copy width="12" text={host} />
+                                            <Copy width="12" data={host} />
                                         </div>
                                     </div>
                                 )}
@@ -291,7 +291,7 @@ function OverView() {
                 open={open}
                 isLoading={creatingProsessd}
             >
-                <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
         </div>
     );

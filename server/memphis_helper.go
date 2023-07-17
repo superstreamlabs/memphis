@@ -1437,7 +1437,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		if err != nil {
 			return err
 		}
-		err = s.RemoveStream(DEFAULT_SYSTEM_ACCOUNT, stationName.Intern())
+		err = s.RemoveStream(DEFAULT_GLOBAL_ACCOUNT, stationName.Intern())
 		if err != nil {
 			return err
 		}

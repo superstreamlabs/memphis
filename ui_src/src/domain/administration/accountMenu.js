@@ -37,27 +37,18 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                     <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
                     Integrations
                 </div>
+                <div className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('cluster_configuration')}>
+                    <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
+                    Environment configuration
+                </div>
                 {!isCloud() && (
                     <>
-                        <div
-                            className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'}
-                            onClick={() => setMenuItem('cluster_configuration')}
-                        >
-                            <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
-                            Environment configuration
-                        </div>
                         <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
                             <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
                             System information
                             {!state.isLatest && <div className="update-available">Update available</div>}
                         </div>
                     </>
-                )}
-                {isCloud() && (
-                    <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
-                        <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
-                        Usage Report
-                    </div>
                 )}
             </div>
         </>

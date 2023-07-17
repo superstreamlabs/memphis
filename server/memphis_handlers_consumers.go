@@ -228,7 +228,8 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 		shouldSendAnalytics, _ := shouldSendAnalytics()
 		if shouldSendAnalytics {
-			analyticsParams := map[string]interface{}{"consumer-name": newConsumer.Name}
+			ip := serv.getIp()
+			analyticsParams := map[string]interface{}{"consumer-name": newConsumer.Name, "ip": ip}
 			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-consumer-sdk")
 		}
 	}
