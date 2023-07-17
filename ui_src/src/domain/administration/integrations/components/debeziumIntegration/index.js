@@ -11,16 +11,13 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useEffect, useState } from 'react';
-import { ZoomInRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import grafanaps from '../../../../../assets/images/grafanaps.png';
 import Button from '../../../../../components/button';
 import Loader from '../../../../../components/loader';
-import Modal from '../../../../../components/modal';
 import Copy from '../../../../../components/copy';
 import pathDomains from '../../../../../router';
 
@@ -31,7 +28,6 @@ const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow 
 const DebeziumIntegration = ({ close }) => {
     const debeziumConfiguration = INTEGRATION_LIST['Debezium and Postgres'];
     const [currentStep, setCurrentStep] = useState(0);
-    const [showModal, setShowModal] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const history = useHistory();
 
@@ -56,9 +52,6 @@ const DebeziumIntegration = ({ close }) => {
             setImagesLoaded(true);
         });
     }, []);
-    const handleToggleModal = () => {
-        setShowModal(!showModal);
-    };
 
     const createNewUser = () => {
         history.push(`${pathDomains.users}`);
@@ -157,22 +150,6 @@ CMD ./run.sh`}
                         </div>
                     </div>
                 );
-            case 2:
-                return (
-                    <div className="steps-content">
-                        <h3>
-                            <a href="https://grafana.com/grafana/dashboards/18050-memphis-dev/" target="_blank">
-                                Import
-                            </a>{' '}
-                            Memphis dashboard using Memphis dashboard ID: 18050
-                        </h3>
-
-                        <div className="img" onClick={handleToggleModal}>
-                            <img src={grafanaps} alt="grafanaps" width={360} />
-                            <ZoomInRounded style={{ color: '#ffffff', right: '45px' }} />
-                        </div>
-                    </div>
-                );
             default:
                 break;
         }
@@ -240,11 +217,6 @@ CMD ./run.sh`}
                             />
                         </div>
                     </div>
-                    {showModal && (
-                        <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
-                            <img width={'100%'} src={grafanaps} alt="zoomable" />
-                        </Modal>
-                    )}
                 </>
             )}
         </dynamic-integration>
