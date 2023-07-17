@@ -334,6 +334,7 @@ const S3Integration = ({ close, value }) => {
                                 </div>
                                 <div className="input-field">
                                     <p>Use Path Style</p>
+                                    <span className="desc">The URL path contains the s3 bucket name.</span>
                                     <Form.Item
                                         name="s3_path_style"
                                         rules={[
