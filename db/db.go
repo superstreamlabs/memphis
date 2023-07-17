@@ -918,7 +918,9 @@ func GetAuditLogsByStation(name string, tenantName string) ([]models.AuditLog, e
 	}
 	defer conn.Release()
 	query := `SELECT * FROM audit_logs AS a
-		WHERE a.station_name = $1 AND a.tenant_name = $2`
+		WHERE a.station_name = $1 AND a.tenant_name = $2
+		ORDER BY a.created_at DESC
+		LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
@@ -1270,6 +1272,7 @@ func GetAllStationsWithNoHA3() ([]models.Station, error) {
 	return stations, nil
 }
 
+// TODO: check if need to remove
 func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -1412,6 +1415,71 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 		return []models.ExtendedStation{}, err
 	}
 	stations := getFilteredExtendedStations(stationsMap)
+	return stations, nil
+}
+
+func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLight, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ExtendedStationLight{}, err
+	}
+	defer conn.Release()
+
+	query := `
+	SELECT s.*,
+	(EXISTS (SELECT 1 FROM producers WHERE station_id = s.id AND is_active = true) OR EXISTS (SELECT 1 FROM consumers WHERE station_id = s.id AND is_active = true)) AS is_active
+	FROM stations AS s
+	WHERE s.is_deleted = false AND s.tenant_name = $1
+	ORDER BY s.updated_at DESC
+	LIMIT 5000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_stations_details_for_main_overview", query)
+	if err != nil {
+		return []models.ExtendedStationLight{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.ExtendedStationLight{}, err
+	}
+	if err == pgx.ErrNoRows {
+		return []models.ExtendedStationLight{}, nil
+	}
+	defer rows.Close()
+	stations := []models.ExtendedStationLight{}
+	for rows.Next() {
+		var stationRes models.ExtendedStationLight
+		if err := rows.Scan(
+			&stationRes.ID,
+			&stationRes.Name,
+			&stationRes.RetentionType,
+			&stationRes.RetentionValue,
+			&stationRes.StorageType,
+			&stationRes.Replicas,
+			&stationRes.CreatedBy,
+			&stationRes.CreatedByUsername,
+			&stationRes.CreatedAt,
+			&stationRes.UpdatedAt,
+			&stationRes.IsDeleted,
+			&stationRes.SchemaName,
+			&stationRes.SchemaVersionNumber,
+			&stationRes.IdempotencyWindow,
+			&stationRes.IsNative,
+			&stationRes.DlsConfigurationPoison,
+			&stationRes.DlsConfigurationSchemaverse,
+			&stationRes.TieredStorageEnabled,
+			&stationRes.TenantName,
+			&stationRes.Activity,
+		); err != nil {
+			return []models.ExtendedStationLight{}, err
+		}
+		stationRes.TenantName = tenantName
+		stations = append(stations, stationRes)
+	}
+	if err := rows.Err(); err != nil {
+		return []models.ExtendedStationLight{}, err
+	}
 	return stations, nil
 }
 
@@ -2334,7 +2402,8 @@ func GetAllProducersByStationID(stationId int) ([]models.ExtendedProducer, error
 			FROM producers AS p
 			LEFT JOIN stations AS s ON s.id = p.station_id
 			WHERE p.station_id = $1
-			ORDER BY p.name, p.is_active DESC, p.updated_at DESC;`
+			ORDER BY p.name, p.is_active DESC, p.updated_at DESC
+			LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_by_station_id", query)
 	if err != nil {
 		return []models.ExtendedProducer{}, err
@@ -2700,7 +2769,8 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
-				WHERE c.station_id = $1 ORDER BY c.name, c.consumers_group, c.updated_at DESC`
+				WHERE c.station_id = $1 ORDER BY c.name, c.consumers_group, c.updated_at DESC
+				LIMIT 5000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_consumers_by_station", query)
 	if err != nil {
 		return []models.ExtendedConsumer{}, err
@@ -4761,7 +4831,7 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	if err != nil {
 		return []models.Tag{}, err
 	}
-	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `)`
+	query := `SELECT * FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `) LIMIT 1000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id"+uid.String(), query)
 	if err != nil {
 		return []models.Tag{}, err
@@ -5482,39 +5552,36 @@ func GetTotalDlsMessages(tenantName string) (uint64, error) {
 	return count, nil
 }
 
-func GetStationIdsFromDlsMsgs(tenantName string) ([]int, error) {
+func GetStationIdsFromDlsMsgs(tenantName string) (map[int]string, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
+	stationIds := map[int]string{}
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []int{}, err
+		return stationIds, err
 	}
 	defer conn.Release()
 	query := `SELECT DISTINCT station_id FROM dls_messages WHERE tenant_name=$1`
 	stmt, err := conn.Conn().Prepare(ctx, "get_station_ids_in_dls_messages", query)
 	if err != nil {
-		return []int{}, err
+		return stationIds, err
 	}
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
-		return []int{}, err
+		return stationIds, err
 	}
 	defer rows.Close()
 
-	var stationIds []int
 	for rows.Next() {
 		var stationId int
 		err := rows.Scan(&stationId)
 		if err != nil {
-			return []int{}, err
+			return stationIds, err
 		}
-		stationIds = append(stationIds, stationId)
-	}
-	if len(stationIds) == 0 {
-		return []int{}, nil
+		stationIds[stationId] = ""
 	}
 	return stationIds, nil
 }
