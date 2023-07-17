@@ -1105,6 +1105,7 @@ func SetCors(router *gin.Engine) {
 }
 
 func (th TenantHandler) CreateTenant(c *gin.Context) {
+	// use the func changeDlsRetention(DEFAULT_DLS_RETENTION_HOURS, tenantName) when creating a new tenant
 	c.IndentedJSON(404, gin.H{})
 }
 

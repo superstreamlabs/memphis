@@ -20,8 +20,8 @@ import (
 
 type ConfigurationsHandler struct{ S *Server }
 
-func changeDlsRetention(dlsRetention int) error {
-	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), serv.MemphisGlobalAccountString())
+func changeDlsRetention(dlsRetention int, tenantName string) error {
+	err := db.UpsertConfiguration("dls_retention", strconv.Itoa(dlsRetention), tenantName)
 	if err != nil {
 		return err
 	}
