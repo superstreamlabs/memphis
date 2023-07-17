@@ -714,13 +714,13 @@ func (o *mqttInactiveThresholdReload) Apply(s *Server) {
 // setting.
 type dlsRetentionHoursOption struct {
 	noopOption
-	newValue int
+	newValue map[string]int
 }
 
 // Apply the setting by updating the server info and each client.
 func (o *dlsRetentionHoursOption) Apply(server *Server) {
 	// no need to update anything since it happens on the edit cluster configuration endpoint
-	server.Noticef("Reloaded: dls_retention_hours = %d", o.newValue)
+	server.Noticef("Reloaded: dls_retention_hours = %v", o.newValue)
 }
 
 // logsRetentionDaysOption implements the option interface for the `logs_retention_days`
@@ -859,7 +859,7 @@ func (s *Server) Reload() error {
 		configFile = "temp.conf"
 	}
 	// ** added by memphis
-	
+
 	newOpts, err := ProcessConfigFile(configFile)
 	if err != nil {
 		// TODO: Dump previous good config to a .bak file?
@@ -1041,7 +1041,7 @@ func imposeOrder(value interface{}) error {
 		sort.Strings(value.AllowedOrigins)
 	case string, bool, uint8, int, int32, int64, time.Duration, float64, nil, LeafNodeOpts, ClusterOpts, *tls.Config, PinnedCertSet,
 		*URLAccResolver, *MemAccResolver, *DirAccResolver, *CacheDirAccResolver, Authentication, MQTTOpts, jwt.TagList,
-		*OCSPConfig, map[string]string, JSLimitOpts, StoreCipher:
+		*OCSPConfig, map[string]string, JSLimitOpts, StoreCipher, map[string]int:
 		// explicitly skipped types
 	default:
 		// this will fail during unit tests
@@ -1443,7 +1443,7 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 		case "logsretentiondays":
 			diffOpts = append(diffOpts, &logsRetentionDaysOption{newValue: newValue.(int)})
 		case "dlsretentionhours":
-			diffOpts = append(diffOpts, &dlsRetentionHoursOption{newValue: newValue.(int)})
+			diffOpts = append(diffOpts, &dlsRetentionHoursOption{newValue: newValue.(map[string]int)})
 		case "tieredstorageuploadintervalsec":
 			diffOpts = append(diffOpts, &tStorageuploadIntervalSecOption{newValue: newValue.(int)})
 		case "uihost":
