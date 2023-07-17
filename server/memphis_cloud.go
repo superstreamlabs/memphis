@@ -970,8 +970,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
-		err := changeDlsRetention(body.DlsRetention)
+	if ch.S.opts.DlsRetentionHours[user.TenantName] != body.DlsRetention {
+		err := changeDlsRetention(body.DlsRetention, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1055,7 +1055,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          ch.S.opts.LogsRetentionDays,
 		"broker_host":             ch.S.opts.BrokerHost,
 		"ui_host":                 ch.S.opts.UiHost,
@@ -1066,14 +1066,20 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 }
 
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetClusterConfig at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analyticsParams := make(map[string]interface{})
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          ch.S.opts.LogsRetentionDays,
 		"broker_host":             ch.S.opts.BrokerHost,
 		"ui_host":                 ch.S.opts.UiHost,
@@ -1099,6 +1105,7 @@ func SetCors(router *gin.Engine) {
 }
 
 func (th TenantHandler) CreateTenant(c *gin.Context) {
+	// use the func changeDlsRetention(DEFAULT_DLS_RETENTION_HOURS, tenantName) when creating a new tenant
 	c.IndentedJSON(404, gin.H{})
 }
 
@@ -1195,6 +1202,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -1694,6 +1704,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 

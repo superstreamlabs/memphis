@@ -500,10 +500,12 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 func (s *Server) RemoveOldDlsMsgs() {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
-		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
-		err := db.DeleteOldDlsMessageByRetention(configurationTime)
-		if err != nil {
-			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+		for tenantName, rt := range s.opts.DlsRetentionHours {
+			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
+			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
+			if err != nil {
+				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+			}
 		}
 	}
 }

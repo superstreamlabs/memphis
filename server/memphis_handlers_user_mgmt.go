@@ -420,6 +420,9 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"dls_retention":           serv.opts.DlsRetentionHours[newUser.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
