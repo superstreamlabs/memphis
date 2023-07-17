@@ -1,6 +1,6 @@
 <svg width="33" height="33" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<rect width="33" height="33" rx="2.57812" fill="url(#pattern0)"/>
-<rect width="33" height="33" rx="2.57812" fill="#202020"/>
+<rect width="33" height="33" rx="8" fill="url(#pattern0)"/>
+<rect width="33" height="33" rx="8" fill="#202020"/>
 <rect x="6.04224" y="10.2759" width="20.8743" height="12.4469" rx="2.83027" fill="url(#paint0_linear_2636_23532)"/>
 <circle cx="8.19591" cy="8.19591" r="8.19591" transform="matrix(0.899246 0.437442 -0.899246 0.437442 16.4794 13.6589)" fill="#6557FF"/>
 <circle cx="8.2086" cy="8.2086" r="8.2086" transform="matrix(0.899246 0.437442 -0.899246 0.437442 16.4794 9.31836)" fill="url(#paint1_linear_2636_23532)"/>
