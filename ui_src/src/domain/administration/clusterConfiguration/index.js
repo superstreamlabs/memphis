@@ -114,7 +114,7 @@ function ClusterConfiguration() {
             {!isLoading && (
                 <>
                     <div className="configuration-body">
-                        {!isCloud() ? (
+                        {isCloud() ? (
                             <SliderRow
                                 title="MAX MESSAGE SIZE"
                                 desc="Maximum  message size (payload + headers) in megabytes"
