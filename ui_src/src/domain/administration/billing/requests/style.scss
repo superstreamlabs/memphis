@@ -1,13 +1,9 @@
 .requests-container {
+    position: relative;
     .loader-container {
         position: absolute;
         height: 100%;
         width: 100%;
-        .gif-wrapper {
-            position: relative;
-            height: 100%;
-            width: 100%;
-        }
         .memphis-gif {
             position: absolute;
         }
