@@ -134,7 +134,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
                             {
                                 message:
                                     userType === 'management' && isCloud() ? 'Please enter a valid email address!' : 'Username has to include only letters/numbers and .',
-                                pattern: userType === 'management' && isCloud() ? /^[^\s@]+@[^\s@]+\.[^\s@]+$/ : /^[a-zA-Z0-9_.]*$/
+                                pattern: userType === 'management' && isCloud() ? /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/ : /^[a-zA-Z0-9_.]*$/
                             }
                         ]}
                     >

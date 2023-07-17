@@ -34,6 +34,7 @@ const (
 	memphisWS_Subj_AllStationsData      = "get_all_stations_data"
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
+	memphisWS_Subj_GetSystemMessages    = "get_system_messages"
 	ws_updates_interval_sec             = 5
 )
 
@@ -237,6 +238,10 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	case memphisWS_Subj_AllSchemasData:
 		return func(string) (any, error) {
 			return h.Schemas.GetAllSchemasDetails(tenantName)
+		}, nil
+	case memphisWS_Subj_GetSystemMessages:
+		return func(string) (any, error) {
+			return h.userMgmt.GetRelevantSystemMessages()
 		}, nil
 	default:
 		return nil, errors.New("invalid subject")

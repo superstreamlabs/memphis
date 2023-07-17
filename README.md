@@ -9,7 +9,7 @@
 
   <h4>
 
-**[Memphis](https://memphis.dev)** is an intelligent, frictionless message broker.<br>Made to enable developers to build real-time and streaming features fast.
+**[Memphis](https://memphis.dev)** is an intelligent, frictionless message broker.<br>Made to enable developers to build real-time and streaming apps fast.
 
   </h4>
   
@@ -134,6 +134,38 @@ Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer
 Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666
 ```
+
+## SDKs supported features
+                    
+Feature | Go | Python | JS | .NET | Java | Rust 
+------------- | ------------- | ------------- | ------------- | ------------- | ------------- | -------------
+Connection | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Disconnection | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Create a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Destroy a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Retention | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Retention values | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Storage types | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Create a new schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Enforce a schema Protobuf | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :construction: (WIP)
+Enforce a schema GraphQL | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Detach a schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Add headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Async produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Message ID | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | ? | :white_check_mark:
+Destroy a producer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | Partial | :white_check_mark:
+Consume | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Context to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | Not Applicable
+Ack a message | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Fetch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
+Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Get Headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Get message sequence number | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Destroying a Consumer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
+Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :x:
 
 ## 👉 Use-cases
 - Async task management

@@ -276,6 +276,9 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 				err = fmt.Errorf("%s: incorrect region", oe.Error())
 			}
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "failed to parse endpoint") || strings.Contains(err.Error(), "no such host") {
+			err = errors.New("invalid bucket name or region")
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
 		}

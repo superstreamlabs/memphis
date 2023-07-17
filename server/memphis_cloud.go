@@ -65,6 +65,8 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
+type SystemMessage struct{}
+
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
 
@@ -1885,4 +1887,32 @@ func getStationReplicas(replicas int) int {
 
 func getDefaultReplicas() int {
 	return 1
+}
+
+func updateSystemLiveness() {
+	stationsHandler := StationsHandler{S: serv}
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	producersCount, err := db.CountAllActiveProudcers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	consumersCount, err := db.CountAllActiveConsumers()
+	if err != nil {
+		serv.Warnf("updateSystemLiveness: %v", err.Error())
+		return
+	}
+
+	analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
+	analytics.SendEvent("", "", analyticsParams, "system-is-up")
+}
+
+func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
+	return []SystemMessage{}, nil
 }

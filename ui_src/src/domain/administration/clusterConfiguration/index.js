@@ -51,10 +51,12 @@ function ClusterConfiguration() {
     const getConfigurationValue = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_CONFIGURATION);
-            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
-            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
-            localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
-            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
+            if (!isCloud()) {
+                localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
+                localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
+                localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
+                localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
+            }
             setOldValues(data);
             setFormFields(data);
             setIsLoading(false);
@@ -67,11 +69,12 @@ function ClusterConfiguration() {
     const updateConfiguration = async () => {
         try {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
-            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
-            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
-            localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
-            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, formFields.tiered_storage_time_sec);
-
+            if (!isCloud()) {
+                localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
+                localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
+                localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
+                localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, formFields.tiered_storage_time_sec);
+            }
             setIsChanged(false);
             setOldValues(data);
             message.success({
@@ -111,7 +114,7 @@ function ClusterConfiguration() {
             {!isLoading && (
                 <>
                     <div className="configuration-body">
-                        {!isCloud && (
+                        {isCloud() ? (
                             <SliderRow
                                 title="MAX MESSAGE SIZE"
                                 desc="Maximum  message size (payload + headers) in megabytes"
@@ -122,39 +125,48 @@ function ClusterConfiguration() {
                                 unit={'mb'}
                                 onChanges={(e) => handleChange('max_msg_size_mb', e)}
                             />
-                        )}
-                        <SliderRow
-                            title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
-                            desc="Amount of hours to retain dead lettered messages in a DLS"
-                            value={formFields?.dls_retention}
-                            img={DeadLetterInHours}
-                            min={1}
-                            max={30}
-                            unit={'h'}
-                            onChanges={(e) => handleChange('dls_retention', e)}
-                        />
-                        {!isCloud && (
-                            <SliderRow
-                                title="LOGS RETENTION IN DAYS"
-                                desc="Amount of days to retain system logs"
-                                img={LogsRetentionInDays}
-                                value={formFields?.logs_retention}
-                                min={1}
-                                max={100}
-                                unit={'d'}
-                                onChanges={(e) => handleChange('logs_retention', e)}
-                            />
-                        )}
-                        {!isCloud && (
-                            <TieredInputRow
-                                title="TIERED STORAGE UPLOAD INTERVAL"
-                                desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
-                                img={TieredStorageInterval}
-                                value={formFields?.tiered_storage_time_sec}
-                                onChanges={(e, err) => {
-                                    handleChange('tiered_storage_time_sec', e, err);
-                                }}
-                            />
+                        ) : (
+                            <>
+                                <SliderRow
+                                    title="DEAD LETTERED MESSAGES RETENTION IN HOURS"
+                                    desc="Amount of hours to retain dead lettered messages in a DLS"
+                                    value={formFields?.dls_retention}
+                                    img={DeadLetterInHours}
+                                    min={1}
+                                    max={30}
+                                    unit={'h'}
+                                    onChanges={(e) => handleChange('dls_retention', e)}
+                                />
+                                <SliderRow
+                                    title="MAX MESSAGE SIZE"
+                                    desc="Maximum  message size (payload + headers) in megabytes"
+                                    value={formFields?.max_msg_size_mb}
+                                    img={DeadLetterInHours}
+                                    min={1}
+                                    max={12}
+                                    unit={'mb'}
+                                    onChanges={(e) => handleChange('max_msg_size_mb', e)}
+                                />
+                                <SliderRow
+                                    title="LOGS RETENTION IN DAYS"
+                                    desc="Amount of days to retain system logs"
+                                    img={LogsRetentionInDays}
+                                    value={formFields?.logs_retention}
+                                    min={1}
+                                    max={100}
+                                    unit={'d'}
+                                    onChanges={(e) => handleChange('logs_retention', e)}
+                                />
+                                <TieredInputRow
+                                    title="TIERED STORAGE UPLOAD INTERVAL"
+                                    desc="(if configured) The interval which the broker will migrate a batch of messages to the second storage tier"
+                                    img={TieredStorageInterval}
+                                    value={formFields?.tiered_storage_time_sec}
+                                    onChanges={(e, err) => {
+                                        handleChange('tiered_storage_time_sec', e, err);
+                                    }}
+                                />
+                            </>
                         )}
                         {localStorage.getItem(LOCAL_STORAGE_ENV) !== 'docker' && !isCloud() && (
                             <>

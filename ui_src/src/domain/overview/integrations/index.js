@@ -40,10 +40,6 @@ const Integrations = () => {
                         <img className="img-icon" src={s3Logo} alt="s3" />
                         <label className="integration-name">S3 Bucket</label>
                     </div>
-                    <div className="integration-item">
-                        <img className="img-icon" src={pagerDutyIcon} alt="pagerduty" />
-                        <label className="integration-name">PagerDuty</label>
-                    </div>
                 </div>
             </div>
         </div>
