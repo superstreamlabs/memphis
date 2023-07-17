@@ -14,7 +14,7 @@ import './style.scss';
 
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import pagerDutyIcon from '../../../../src/assets/images/pagerDutyIcon.svg';
+import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
 import slackLogo from '../../../../src/assets/images/slackLogo.svg';
 import s3Logo from '../../../../src/assets/images/s3Logo.svg';
 import pathDomains from '../../../router';
@@ -39,6 +39,10 @@ const Integrations = () => {
                     <div className="integration-item">
                         <img className="img-icon" src={s3Logo} alt="s3" />
                         <label className="integration-name">S3 Bucket</label>
+                    </div>
+                    <div className="integration-item">
+                        <img className="img-icon" src={debeziumIcon} alt="debezium" />
+                        <label className="integration-name">Debezium and Postgres</label>
                     </div>
                 </div>
             </div>

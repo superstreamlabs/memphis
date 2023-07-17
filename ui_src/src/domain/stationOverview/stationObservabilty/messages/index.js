@@ -149,23 +149,42 @@ const Messages = () => {
         }
     };
 
+    // const handleResend = async () => { // TODO: Ready for resend all
+    //     // setResendProcced(true);
+    //     try {
+    //         await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
+    //         // setTimeout(() => {
+    //         //     setResendProcced(false);
+    //         //     message.success({
+    //         //         key: 'memphisSuccessMessage',
+    //         //         content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
+    //         //         duration: 5,
+    //         //         style: { cursor: 'pointer' },
+    //         //         onClick: () => message.destroy('memphisSuccessMessage')
+    //         //     });
+    //         //     setIsCheck([]);
+    //         // }, 1500);
+    //     } catch (error) {
+    //         // setResendProcced(false);
+    //     }
+    // };
     const handleResend = async () => {
-        // setResendProcced(true);
+        setResendProcced(true);
         try {
             await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
-            // setTimeout(() => {
-            //     setResendProcced(false);
-            //     message.success({
-            //         key: 'memphisSuccessMessage',
-            //         content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
-            //         duration: 5,
-            //         style: { cursor: 'pointer' },
-            //         onClick: () => message.destroy('memphisSuccessMessage')
-            //     });
-            //     setIsCheck([]);
-            // }, 1500);
+            setTimeout(() => {
+                setResendProcced(false);
+                message.success({
+                    key: 'memphisSuccessMessage',
+                    content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
+                setIsCheck([]);
+            }, 1500);
         } catch (error) {
-            // setResendProcced(false);
+            setResendProcced(false);
         }
     };
 
@@ -270,13 +289,14 @@ const Messages = () => {
                         <Button
                             width="80px"
                             height="32px"
-                            placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
+                            // placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
+                            placeholder={isCheck.length === 0 ? 'Resend' : `Resend (${isCheck.length})`}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="12px"
                             fontWeight="600"
-                            disabled={!stationState?.stationMetaData?.is_native}
+                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
                             tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
                             isLoading={resendProcced}
                             onClick={() => handleResend()}
