@@ -1537,6 +1537,62 @@ func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation
 	return stations, nil
 }
 
+func GetAllStationsWithActiveProducersConsumersPerTenant(tenantName string) ([]models.ActiveProducersConsumersDetails, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ActiveProducersConsumersDetails{}, err
+	}
+	defer conn.Release()
+	query := `
+	SELECT s.id,
+			   COUNT(DISTINCT CASE WHEN p.is_active THEN p.id END) FILTER (WHERE p.is_active = true) AS active_producers_count,
+			   COUNT(DISTINCT CASE WHEN c.is_active THEN c.id END) FILTER (WHERE c.is_active = true) AS active_consumers_count
+		FROM stations AS s
+		LEFT JOIN producers AS p ON s.id = p.station_id AND p.is_active = true
+		LEFT JOIN consumers AS c ON s.id = c.station_id AND c.is_active = true
+		WHERE s.is_deleted = false AND s.tenant_name = $1
+	GROUP BY s.id;
+`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_producers_consumers_of_station", query)
+	if err != nil {
+		return []models.ActiveProducersConsumersDetails{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.ActiveProducersConsumersDetails{}, err
+	}
+	if err == pgx.ErrNoRows {
+		return []models.ActiveProducersConsumersDetails{}, nil
+	}
+	defer rows.Close()
+	stations := []models.ActiveProducersConsumersDetails{}
+	for rows.Next() {
+		var stationId int
+		var activeProducersCount int
+		var activeConsumersCount int
+		if err := rows.Scan(
+			&stationId,
+			&activeProducersCount,
+			&activeConsumersCount,
+		); err != nil {
+			return []models.ActiveProducersConsumersDetails{}, err
+		}
+		station := models.ActiveProducersConsumersDetails{
+			ID:                   stationId,
+			ActiveProducersCount: activeProducersCount,
+			ActiveConsumersCount: activeConsumersCount,
+		}
+		stations = append(stations, station)
+	}
+	if err := rows.Err(); err != nil {
+		return []models.ActiveProducersConsumersDetails{}, err
+	}
+	return stations, nil
+}
+
 func GetAllStations() ([]models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

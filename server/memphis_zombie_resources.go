@@ -13,10 +13,8 @@ package server
 
 import (
 	"encoding/json"
-	"memphis/analytics"
 	"memphis/db"
 	"memphis/models"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -43,30 +41,6 @@ func (srv *Server) removeStaleStations() {
 			}
 		}(srv, s)
 	}
-}
-
-func updateSystemLiveness() {
-	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
-
-	producersCount, err := db.CountAllActiveProudcers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
-
-	consumersCount, err := db.CountAllActiveConsumers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
-
-	analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
-	analytics.SendEvent("", "", analyticsParams, "system-is-up")
 }
 
 func aggregateClientConnections(s *Server) (map[string]string, error) {

@@ -36,7 +36,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
-       sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${gitBranch}-${test_suffix} ."
+       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
@@ -91,7 +91,7 @@ node {
       	dir ('memphis-k8s'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
           sh """
-	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,teston='cp' --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
+	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
           """
       	}
     }
@@ -127,10 +127,7 @@ node {
 
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
-      if (env.BRANCH_NAME ==~ /(master)/) { //NEW TAG
-	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
-      }
-      else{
+      if (env.BRANCH_NAME ==~ /(latest)/) {
 	if(versionTag.contains('stable')) {
 	  sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName}:stable --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
 	}
@@ -182,10 +179,13 @@ node {
         }
 	      
    	stage('Create staging user') {
-   	  sh """
-   	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
-   	    mem user add -u staging -p memphis
-   	  """
+   	  withCredentials([string(credentialsId: 'staging_pass', variable: 'staging_pass')]) {
+   	    sh '''
+     	    mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
+     	    mem user add -u staging -p $staging_pass
+    	    /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+    	  '''
+   	  }
    	}
 	      
     	stage('Tests - remove port-forwarding') {

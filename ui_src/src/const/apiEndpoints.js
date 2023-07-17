@@ -80,7 +80,7 @@ export const ApiEndpoints = {
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',
-    UPDATE_INTEGRATIONL: '/integrations/updateIntegration',
+    UPDATE_INTEGRATION: '/integrations/updateIntegration',
     GET_INTEGRATION_DETAILS: '/integrations/getIntegrationDetails',
     GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
