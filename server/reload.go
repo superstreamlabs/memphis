@@ -720,7 +720,7 @@ type dlsRetentionHoursOption struct {
 // Apply the setting by updating the server info and each client.
 func (o *dlsRetentionHoursOption) Apply(server *Server) {
 	// no need to update anything since it happens on the edit cluster configuration endpoint
-	server.Noticef("Reloaded: dls_retention_hours = %d", o.newValue)
+	server.Noticef("Reloaded: dls_retention_hours = %v", o.newValue)
 }
 
 // logsRetentionDaysOption implements the option interface for the `logs_retention_days`
