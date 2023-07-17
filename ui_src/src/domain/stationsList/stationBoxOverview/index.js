@@ -74,7 +74,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
-                            <label className="data-labels attached">Enforced Schema</label>
+                            <label className="data-labels attached">Enforced schema</label>
                             <OverflowTip
                                 className="data-info"
                                 text={station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}

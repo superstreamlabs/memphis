@@ -75,11 +75,11 @@ const AuthService = (function () {
     };
 
     const logout = () => {
-        const isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
-        localStorage.clear();
-        if (isSkipGetStarted === 'true') {
-            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
-        }
+        Object.keys(localStorage).forEach((key) => {
+            if (key !== 'persistedNotifications' && key !== LOCAL_STORAGE_SKIP_GET_STARTED) {
+                localStorage.removeItem(key);
+            }
+        });
         isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
     };
 
