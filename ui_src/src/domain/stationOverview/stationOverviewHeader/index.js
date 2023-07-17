@@ -41,6 +41,7 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
+import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConsts';
 
 const StationOverviewHeader = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -179,9 +180,14 @@ const StationOverviewHeader = () => {
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
-                            <p>
+                            <div>
                                 <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
-                            </p>
+                                {stationState?.stationMetaData?.tiered_storage_enabled && (
+                                    <TooltipComponent text={`Iterate every ${localStorage.getItem(TIERED_STORAGE_UPLOAD_INTERVAL)} seconds.`} minWidth="35px">
+                                        <InfoOutlined />
+                                    </TooltipComponent>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

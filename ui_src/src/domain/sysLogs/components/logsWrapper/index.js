@@ -26,6 +26,7 @@ import { Context } from '../../../../hooks/store';
 import { Sleep } from '../../../../utils/sleep';
 import LogPayload from '../logPayload';
 import LogContent from '../logContent';
+import { LOGS_RETENTION_IN_DAYS } from '../../../../const/localStorageConsts';
 
 let sub;
 
@@ -230,8 +231,13 @@ const LogsWrapper = () => {
         <div className="logs-wrapper">
             <logs is="3xd">
                 <list-header is="3xd">
-                    <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
-                    <Filter filterComponent="syslogs" height="34px" applyFilter={(e) => handleFilter(e)} />
+                    <div className="header-title-wrapper">
+                        <p className="header-title">Latest logs {logs?.length > 0 && `(${logs?.length})`}</p>
+                        <Filter filterComponent="syslogs" height="34px" applyFilter={(e) => handleFilter(e)} />
+                    </div>
+                    <div className="header-subtitle">
+                        <p>Logs will be retained for {localStorage.getItem(LOGS_RETENTION_IN_DAYS)} days</p>
+                    </div>
                 </list-header>
                 {!loader && logs?.length > 0 && (
                     <Virtuoso

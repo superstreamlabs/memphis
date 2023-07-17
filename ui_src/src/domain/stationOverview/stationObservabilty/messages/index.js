@@ -38,6 +38,8 @@ import { StationStoreContext } from '../..';
 import pathDomains from '../../../../router';
 import MessageDetails from '../components/messageDetails';
 import { Virtuoso } from 'react-virtuoso';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
+import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -213,7 +215,12 @@ const Messages = () => {
         return (
             <div className={isDls ? 'list-wrapper dls-list' : 'list-wrapper msg-list'}>
                 <div className="coulmns-table">
-                    <p className="left-coulmn">Messages</p>
+                    <div className="left-coulmn-wrapper">
+                        <p className="left-coulmn">Messages</p>
+                        <TooltipComponent text={`DLS retention is ${localStorage.getItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS)} hours.`} minWidth="35px">
+                            <InfoOutlined />
+                        </TooltipComponent>
+                    </div>
                     <p className="right-coulmn">Information</p>
                 </div>
                 <div className="list">

@@ -34,7 +34,10 @@ import {
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_REST_GW_HOST,
     LOCAL_STORAGE_UI_HOST,
-    LOCAL_STORAGE_TIERED_STORAGE_TIME
+    LOCAL_STORAGE_TIERED_STORAGE_TIME,
+    DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
+    TIERED_STORAGE_UPLOAD_INTERVAL,
+    LOGS_RETENTION_IN_DAYS
 } from '../../../const/localStorageConsts';
 import Loader from '../../../components/loader';
 
@@ -48,15 +51,21 @@ function ClusterConfiguration() {
         getConfigurationValue();
     }, []);
 
+    const updateLocalStorage = (data) => {
+        localStorage.setItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS, data.dls_retention);
+        localStorage.setItem(LOGS_RETENTION_IN_DAYS, data.logs_retention);
+        localStorage.setItem(TIERED_STORAGE_UPLOAD_INTERVAL, data.tiered_storage_time_sec);
+        if (!isCloud()) {
+            localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
+            localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
+            localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
+            localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
+        }
+    };
     const getConfigurationValue = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_CLUSTER_CONFIGURATION);
-            if (!isCloud()) {
-                localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, data.broker_host);
-                localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, data.rest_gw_host);
-                localStorage.setItem(LOCAL_STORAGE_UI_HOST, data.ui_host);
-                localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, data.tiered_storage_time_sec);
-            }
+            updateLocalStorage(data);
             setOldValues(data);
             setFormFields(data);
             setIsLoading(false);
@@ -69,12 +78,7 @@ function ClusterConfiguration() {
     const updateConfiguration = async () => {
         try {
             const data = await httpRequest('PUT', ApiEndpoints.EDIT_CLUSTER_CONFIGURATION, { ...formFields });
-            if (!isCloud()) {
-                localStorage.setItem(LOCAL_STORAGE_BROKER_HOST, formFields.broker_host);
-                localStorage.setItem(LOCAL_STORAGE_REST_GW_HOST, formFields.rest_gw_host);
-                localStorage.setItem(LOCAL_STORAGE_UI_HOST, formFields.ui_host);
-                localStorage.setItem(LOCAL_STORAGE_TIERED_STORAGE_TIME, formFields.tiered_storage_time_sec);
-            }
+            updateLocalStorage(data);
             setIsChanged(false);
             setOldValues(data);
             message.success({
