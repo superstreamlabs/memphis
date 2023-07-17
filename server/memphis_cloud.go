@@ -1202,6 +1202,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -1701,6 +1704,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
