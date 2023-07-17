@@ -475,13 +475,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == station.ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[station.ID]
 			tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
@@ -547,6 +541,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 	}
 }
 
+// TODO: check if need to remove
 func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
 	var stations []models.ExtendedStation
 	totalMessages := uint64(0)
@@ -595,13 +590,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == stations[i].ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
 			if shouldGetTags {
 				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 				if err != nil {
@@ -659,6 +648,84 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	}
 }
 
+func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string) ([]models.ExtendedStationLight, uint64, uint64, error) {
+	var stations []models.ExtendedStationLight
+	totalMessages := uint64(0)
+	if tenantName == "" {
+		tenantName = serv.MemphisGlobalAccountString()
+	}
+	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
+	if err != nil {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+	}
+
+	stations, err = db.GetAllStationsDetailsLight(tenantName)
+	if err != nil {
+		return stations, totalMessages, totalDlsMessages, err
+	}
+	if len(stations) == 0 {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, nil
+	} else {
+		stationTotalMsgs := make(map[string]int)
+		tagsHandler := TagsHandler{S: sh.S}
+		acc, err := sh.S.lookupAccount(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		accName := acc.Name
+		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
+				stationTotalMsgs[streamName] = int(info.State.Msgs)
+			}
+		}
+		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+
+		var extStations []models.ExtendedStationLight
+		for i := 0; i < len(stations); i++ {
+			fullStationName, err := StationNameFromStr(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
+			if shouldExtend {
+				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
+				if err != nil {
+					return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+				}
+				stations[i].Tags = tags
+
+				if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+					stations[i].TieredStorageEnabled = false
+				} else {
+					_, ok = tenantInetgrations["s3"].(models.Integration)
+					if !ok {
+						stations[i].TieredStorageEnabled = false
+					} else if stations[i].TieredStorageEnabled {
+						stations[i].TieredStorageEnabled = true
+					} else {
+						stations[i].TieredStorageEnabled = false
+					}
+				}
+			}
+
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
+			stations[i].HasDlsMsgs = hasDlsMsgs
+
+			extStations = append(extStations, stations[i])
+		}
+		return extStations, totalMessages, totalDlsMessages, nil
+	}
+}
+
 func (sh StationsHandler) GetStations(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -691,7 +758,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
+	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllStations at GetAllStationsDetails: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
