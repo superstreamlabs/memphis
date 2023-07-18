@@ -1065,13 +1065,13 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":                  ch.S.opts.DlsRetentionHours[user.TenantName],
-		"logs_retention":                 ch.S.opts.LogsRetentionDays,
-		"broker_host":                    ch.S.opts.BrokerHost,
-		"ui_host":                        ch.S.opts.UiHost,
-		"rest_gw_host":                   ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec":        ch.S.opts.TieredStorageUploadIntervalSec,
-		"max_msg_size_mb":                ch.S.opts.MaxPayload / 1024 / 1024,
+		"dls_retention":                  body.DlsRetention,
+		"logs_retention":                 body.LogsRetention,
+		"broker_host":                    brokerHost,
+		"ui_host":                        uiHost,
+		"rest_gw_host":                   restGWHost,
+		"tiered_storage_time_sec":        body.TSTimeSec,
+		"max_msg_size_mb":                int32(body.MaxMsgSizeMb),
 		"gc_producer_consumer_retention": body.GCProducersConsumersRetention,
 	})
 }
@@ -1947,4 +1947,8 @@ func updateSystemLiveness() {
 
 func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
 	return []SystemMessage{}, nil
+}
+
+func (s *Server) SetDlsRetentionForExistTenants() error {
+	return nil
 }
