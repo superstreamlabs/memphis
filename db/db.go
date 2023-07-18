@@ -3151,11 +3151,11 @@ func GetActiveConsumersByName(names []string, tenantName string) ([]models.Light
 	}
 	defer conn.Release()
 	query := `
-		SELECT c.name, s.name  
+		SELECT c.name, s.name, COUNT(*)
 		FROM consumers AS c
 		LEFT JOIN stations AS s ON s.id = c.station_id
 		WHERE c.tenant_name = $1 AND c.name = ANY($2) AND c.is_active = true
-`
+		GROUP BY c.name, s.name, c.station_id;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_consumers_by_name", query)
 	if err != nil {
 		return []models.LightConsumer{}, err
