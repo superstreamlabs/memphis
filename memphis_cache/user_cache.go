@@ -96,7 +96,7 @@ func DeleteUser(tenantName string, users []string) error {
 		err := UCache.Cache.Delete(fmt.Sprint("%v:%v", user, tenantName))
 		if err == bigcache.ErrEntryNotFound {
 			return nil
-		} else {
+		} else if err != nil {
 			return err
 		}
 	}
