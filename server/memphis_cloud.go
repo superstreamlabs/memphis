@@ -1407,7 +1407,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	SendUserDeleteCacheUpdate([]string{user.Username}, user.TenantName)
+	SendUserDeleteCacheUpdate([]string{body.Username}, user.TenantName)
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
