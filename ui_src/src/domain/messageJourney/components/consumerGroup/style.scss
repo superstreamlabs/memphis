@@ -80,9 +80,8 @@
                     font-size: 14px;
                     padding: 3px 16px;
                     align-items: center;
-                    background-color: #FFFFFF !important;
-                    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
-                    border-radius: 4px;
+                    margin-bottom: 5px;
+                    height: 30px;
                 }
                 .odd{
                     display: flex;
@@ -92,8 +91,9 @@
                     padding: 3px 16px;
                     align-items: center;
                     background-color: #F9F9FA !important;
-                    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
                     border-radius: 4px;
+                    margin-bottom: 5px;
+                    height: 30px;
                 }
         }
     }
