@@ -539,7 +539,7 @@ func (s *Server) RemoveOldDlsMsgs() {
 func (s *Server) RemoveOldProducersAndConsumers() {
 	ticker := time.NewTicker(15 * time.Minute)
 	for range ticker.C {
-		timeInterval := time.Now().Add(time.Duration(time.Hour * -2))
+		timeInterval := time.Now().Add(time.Duration(time.Hour * -time.Duration(s.opts.GCProducersConsumersRetention)))
 		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
 		if err != nil {
 			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())

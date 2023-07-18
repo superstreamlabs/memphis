@@ -1227,6 +1227,9 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		case "max_msg_size_mb":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.MaxPayload = int32(v * 1024 * 1024)
+		case "gc_producer_consumer_retention":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.GCProducersConsumersRetention = v
 		}
 	}
 

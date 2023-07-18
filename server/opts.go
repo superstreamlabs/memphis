@@ -292,6 +292,7 @@ type Options struct {
 	LogsRetentionDays              int            `json:"-"`
 	TieredStorageUploadIntervalSec int            `json:"-"`
 	DlsRetentionHours              map[string]int `json:"-"`
+	GCProducersConsumersRetention  int            `json:"-"`
 	UiHost                         string         `json:"-"`
 	RestGwHost                     string         `json:"-"`
 	BrokerHost                     string         `json:"-"`
