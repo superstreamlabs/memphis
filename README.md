@@ -164,8 +164,8 @@ Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :
 Get Headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
 Get message sequence number | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Destroying a Consumer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
-Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :x:
+Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :white_check_mark:
 
 ## 👉 Use-cases
 - Async task management
