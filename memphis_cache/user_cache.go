@@ -94,7 +94,9 @@ func SetUser(user models.User) error {
 func DeleteUser(tenantName string, users []string) error {
 	for _, user := range users {
 		err := UCache.Cache.Delete(fmt.Sprint("%v:%v", user, tenantName))
-		if err != nil {
+		if err == bigcache.ErrEntryNotFound {
+			return nil
+		} else if err != nil {
 			return err
 		}
 	}
