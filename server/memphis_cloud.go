@@ -980,6 +980,14 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			return
 		}
 	}
+	if ch.S.opts.GCProducersConsumersRetention != body.GCProducersConsumersRetention {
+		err := changeGCProducersConsumersRetention(body.DlsRetention, user.TenantName) //change to gc
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeGCProducersConsumersRetention: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
 	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
@@ -1057,13 +1065,14 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+		"dls_retention":                  ch.S.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":                 ch.S.opts.LogsRetentionDays,
+		"broker_host":                    ch.S.opts.BrokerHost,
+		"ui_host":                        ch.S.opts.UiHost,
+		"rest_gw_host":                   ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec":        ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":                ch.S.opts.MaxPayload / 1024 / 1024,
+		"gc_producer_consumer_retention": body.GCProducersConsumersRetention,
 	})
 }
 
@@ -1081,13 +1090,14 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+		"dls_retention":                  ch.S.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":                 ch.S.opts.LogsRetentionDays,
+		"broker_host":                    ch.S.opts.BrokerHost,
+		"ui_host":                        ch.S.opts.UiHost,
+		"rest_gw_host":                   ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec":        ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":                ch.S.opts.MaxPayload / 1024 / 1024,
+		"gc_producer_consumer_retention": ch.S.opts.GCProducersConsumersRetention,
 	})
 }
 

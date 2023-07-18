@@ -717,10 +717,20 @@ type dlsRetentionHoursOption struct {
 	newValue map[string]int
 }
 
+type GCProducersConsumersRetentionOption struct {
+	noopOption
+	newValue int
+}
+
 // Apply the setting by updating the server info and each client.
 func (o *dlsRetentionHoursOption) Apply(server *Server) {
 	// no need to update anything since it happens on the edit cluster configuration endpoint
 	server.Noticef("Reloaded: dls_retention_hours = %v", o.newValue)
+}
+
+func (o *GCProducersConsumersRetentionOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: gc_producer_consumer_retention = %d", o.newValue)
 }
 
 // logsRetentionDaysOption implements the option interface for the `logs_retention_days`
@@ -1452,6 +1462,9 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 			diffOpts = append(diffOpts, &brokerHostOption{newValue: newValue.(string)})
 		case "restgwhost":
 			diffOpts = append(diffOpts, &restGwOption{newValue: newValue.(string)})
+		case "gcproducerconsumerretention":
+			diffOpts = append(diffOpts, &GCProducersConsumersRetentionOption{newValue: newValue.(int)})
+
 		default:
 			// TODO(ik): Implement String() on those options to have a nice print.
 			// %v is difficult to figure what's what, %+v print private fields and
