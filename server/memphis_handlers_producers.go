@@ -131,7 +131,8 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := map[string]interface{}{"producer-name": newProducer.Name}
+		ip := serv.getIp()
+		analyticsParams := map[string]interface{}{"producer-name": newProducer.Name, "ip": ip}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-producer-sdk")
 		if strings.HasPrefix(newProducer.Name, "rest_gateway") {
 			analyticsParams = map[string]interface{}{}
