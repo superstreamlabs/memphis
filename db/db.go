@@ -1272,7 +1272,6 @@ func GetAllStationsWithNoHA3() ([]models.Station, error) {
 	return stations, nil
 }
 
-// TODO: check if need to remove
 func GetAllStationsDetailsPerTenant(tenantName string) ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

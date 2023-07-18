@@ -79,7 +79,7 @@ type GetStationResponseSchema struct {
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 }
-// TODO: check if need to remove
+
 type ExtendedStation struct {
 	ID                          int         `json:"id"`
 	Name                        string      `json:"name"`
