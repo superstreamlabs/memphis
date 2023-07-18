@@ -38,7 +38,8 @@ import {
     LOCAL_STORAGE_WELCOME_MESSAGE,
     DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
     LOGS_RETENTION_IN_DAYS,
-    TIERED_STORAGE_UPLOAD_INTERVAL
+    TIERED_STORAGE_UPLOAD_INTERVAL,
+    USER_IMAGE
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 import { isCloud } from './valueConvertor';
@@ -74,18 +75,20 @@ const AuthService = (function () {
         localStorage.setItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS, userData.dls_retention);
         localStorage.setItem(LOGS_RETENTION_IN_DAYS, userData.logs_retention);
         localStorage.setItem(TIERED_STORAGE_UPLOAD_INTERVAL, userData.tiered_storage_time_sec);
-
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }
     };
-
-    const logout = () => {
+    const clearLocalStorage = () => {
         Object.keys(localStorage).forEach((key) => {
-            if (key !== 'persistedNotifications' && key !== LOCAL_STORAGE_SKIP_GET_STARTED) {
+            if (key !== 'persistedNotifications' && key !== LOCAL_STORAGE_SKIP_GET_STARTED && key !== USER_IMAGE) {
                 localStorage.removeItem(key);
             }
         });
+    };
+
+    const logout = () => {
+        clearLocalStorage();
         isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
     };
 
@@ -101,7 +104,8 @@ const AuthService = (function () {
     return {
         saveToLocalStorage,
         logout,
-        isValidToken
+        isValidToken,
+        clearLocalStorage
     };
 })();
 export default AuthService;

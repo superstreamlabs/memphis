@@ -26,7 +26,8 @@ import {
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
-    LOCAL_STORAGE_WS_PORT
+    LOCAL_STORAGE_WS_PORT,
+    USER_IMAGE
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
@@ -84,6 +85,7 @@ const App = withRouter((props) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
             if (data) {
+                localStorage.setItem(USER_IMAGE, data.user_image);
                 AuthService.saveToLocalStorage(data);
                 try {
                     const ws_port = data.ws_port;

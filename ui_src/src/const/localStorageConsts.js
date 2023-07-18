@@ -39,3 +39,4 @@ export const LOCAL_STORAGE_ENV = 'env';
 export const DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS = 'dls_retention';
 export const LOGS_RETENTION_IN_DAYS = 'logs_retention';
 export const TIERED_STORAGE_UPLOAD_INTERVAL = 'tiered_storage_time_sec';
+export const USER_IMAGE = 'user_image';

@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE, USER_IMAGE } from '../../const/localStorageConsts';
 import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { isCloud } from '../../services/valueConvertor';
@@ -35,6 +35,12 @@ function Profile() {
     const [open, modalFlip] = useState(false);
     const [checkboxdeleteAccount, setCheckboxdeleteAccount] = useState(false);
     const [delateLoader, setDelateLoader] = useState(false);
+    const [imageUrl, setImageUrl] = useState(localStorage.getItem(USER_IMAGE));
+
+    useEffect(() => {
+        const storedImageUrl = localStorage.getItem(USER_IMAGE);
+        setImageUrl(storedImageUrl);
+    }, []);
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'profile' });
@@ -75,14 +81,29 @@ function Profile() {
                 <div className="avatar-section">
                     <p className="title">Avatar</p>
                     <div className="avatar-images">
-                        {localStorage.getItem('profile_pic') && (
+                        {localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' && (
                             <div className={'avatar-img selected'}>
-                                <img src={localStorage.getItem('profile_pic')} width={35} height={35} alt="avater" />
+                                <img className="avatar-image" src={imageUrl} width={35} height={35} alt="avater" />
                             </div>
                         )}
                         {Array.from(Array(8).keys()).map((item, index) => {
                             return (
-                                <div key={index} className={avatar === item + 1 ? 'avatar-img selected' : 'avatar-img'} onClick={() => editAvatar(item + 1)}>
+                                <div
+                                    key={index}
+                                    // className={
+                                    //     (localStorage.getItem(USER_IMAGE) === 'undefined' || !localStorage.getItem(USER_IMAGE)) && avatar === item + 1
+                                    //         ? 'avatar-img selected'
+                                    //         : 'avatar-img'
+                                    // }
+                                    className={
+                                        localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined'
+                                            ? 'avatar-img avatar-disable'
+                                            : avatar === item + 1
+                                            ? 'avatar-img selected'
+                                            : 'avatar-img'
+                                    }
+                                    onClick={() => (localStorage.getItem(USER_IMAGE) === 'undefined' || !localStorage.getItem(USER_IMAGE)) && editAvatar(item + 1)}
+                                >
                                     <img src={require(`../../assets/images/bots/avatar${item + 1}.svg`)} alt="avater" />
                                 </div>
                             );
