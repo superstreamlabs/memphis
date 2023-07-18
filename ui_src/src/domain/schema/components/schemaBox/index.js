@@ -57,6 +57,12 @@ function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
             setSchema({ ...schema });
         } catch (error) {}
     };
+
+    const updateTags = async (tags) => {
+        schema.tags = tags;
+        setSchema({ ...schema });
+    };
+
     return (
         <>
             <div>
@@ -95,6 +101,7 @@ function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
                             entityType="schema"
                             entityName={schema.name}
                             handleDelete={(tag) => removeTag(tag, schema.name)}
+                            handleTagsUpdate={(tags) => updateTags(tags)}
                         />
                     </tags>
                     <date is="x3d" onClick={() => handleDrawer(true)}>
