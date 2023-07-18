@@ -91,7 +91,7 @@ node {
       	dir ('memphis-k8s'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
           sh """
-	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
+	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,memphis.image=${repoUrlPrefix}/${imageName}-${gitBranch} --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
           """
       	}
     }
