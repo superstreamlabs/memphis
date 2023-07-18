@@ -1462,7 +1462,7 @@ func (s *Server) diffOptions(newOpts *Options) ([]option, error) {
 			diffOpts = append(diffOpts, &brokerHostOption{newValue: newValue.(string)})
 		case "restgwhost":
 			diffOpts = append(diffOpts, &restGwOption{newValue: newValue.(string)})
-		case "gcproducerconsumerretention":
+		case "gcproducersconsumersretention":
 			diffOpts = append(diffOpts, &GCProducersConsumersRetentionOption{newValue: newValue.(int)})
 
 		default:

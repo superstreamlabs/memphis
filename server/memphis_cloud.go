@@ -981,7 +981,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 		}
 	}
 	if ch.S.opts.GCProducersConsumersRetention != body.GCProducersConsumersRetention {
-		err := changeGCProducersConsumersRetention(body.DlsRetention, user.TenantName) //change to gc
+		err := changeGCProducersConsumersRetention(body.GCProducersConsumersRetention, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeGCProducersConsumersRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
