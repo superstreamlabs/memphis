@@ -100,7 +100,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if created {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if created && shouldSendAnalytics {
 		time.AfterFunc(5*time.Second, func() {
 			var deviceIdValue string
 			installationType := "stand-alone-k8s"
@@ -1844,7 +1845,7 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
-	if configuration.ENV == "staging" {
+	if configuration.ENV == "staging" || configuration.ENV == "dev" {
 		return false, nil
 	}
 	return true, nil
