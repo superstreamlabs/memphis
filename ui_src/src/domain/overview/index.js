@@ -23,7 +23,8 @@ import {
     LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
     LOCAL_STORAGE_ENV,
-    LOCAL_STORAGE_ACCOUNT_ID
+    LOCAL_STORAGE_ACCOUNT_ID,
+    USER_IMAGE
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
@@ -191,11 +192,11 @@ function OverView() {
                         <div className="header-welcome">
                             <div className="bot-wrapper">
                                 <img
-                                    className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl}
+                                    className="avatar-image"
+                                    src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : botUrl}
                                     referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    height={localStorage.getItem('profile_pic') ? 60 : 40}
+                                    width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
+                                    height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     alt="avatar"
                                 ></img>
                             </div>

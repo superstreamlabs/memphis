@@ -64,7 +64,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
             <Panel
                 showArrow={false}
                 collapsible={collapsible || data?.length === 0 || (data !== undefined && Object?.keys(data)?.length === 0) ? 'disabled' : null}
-                className={header === 'Payload' ? 'payload-header' : ''}
+                className={header === 'Payload' ? 'payload-header' : consumerList ? 'consumer-list-header' : ''}
                 header={
                     <TooltipComponent text={tooltip}>
                         <div className="collapse-header">
@@ -84,14 +84,14 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                 key="1"
             >
                 {consumerList &&
-                            data?.length > 0 &&
-                            data?.map((row,index) => {
-                                return (
-                                    <div className="collapse-child-with-count" key={index}>
-                                            <ConsumerWithStatus name={row.name} count={row.count} is_active={row.is_active}></ConsumerWithStatus>
-                                    </div>
-                                );
-                })}
+                    data?.length > 0 &&
+                    data?.map((row, index) => {
+                        return (
+                            <div className="collapse-child-with-count" key={index}>
+                                <ConsumerWithStatus name={row.name} count={row.count} is_active={row.is_active}></ConsumerWithStatus>
+                            </div>
+                        );
+                    })}
                 {!consumerList && message ? (
                     <div className="message">
                         {header === 'Headers' && drawHeaders(data)}
@@ -119,9 +119,10 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                     </div>
                 ) : (
                     <>
-                        {!consumerList && !status &&
+                        {!consumerList &&
+                            !status &&
                             data?.length > 0 &&
-                            data?.map((row,index) => {
+                            data?.map((row, index) => {
                                 return (
                                     <content is="x3d" key={index}>
                                         <p>{row.name}</p>
@@ -131,7 +132,7 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                             })}
                         {status &&
                             data?.details?.length > 0 &&
-                            data?.details?.map((row,index) => {
+                            data?.details?.map((row, index) => {
                                 return (
                                     <content is="x3d" key={index}>
                                         <p>{row.name}</p>
