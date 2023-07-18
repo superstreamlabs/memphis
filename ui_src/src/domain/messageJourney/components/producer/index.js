@@ -19,20 +19,12 @@ const Producer = ({ data }) => {
     const prod = data ? (
         <div className="poison-producer">
             <header is="x3d">
-                <p>Producer</p>
+                <div>
+                <span className='header-title'>Producer: </span>
+                <span className='header-name'>{data.name}</span>
+                </div>
                 <StatusIndication is_active={data?.is_active} is_deleted={data?.is_deleted} />
             </header>
-            <div className="content-wrapper">
-                {data?.details?.length > 0 &&
-                    data?.details?.map((row, index) => {
-                        return (
-                            <content is="x3d" key={index}>
-                                <p>{row.name}</p>
-                                <span>{row.value}</span>
-                            </content>
-                        );
-                    })}
-            </div>
         </div>
     ) : null;
 

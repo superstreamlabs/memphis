@@ -23,6 +23,7 @@ import (
 	"math"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
@@ -58,7 +59,7 @@ type MainOverviewData struct {
 	TotalMessages     uint64                            `json:"total_messages"`
 	TotalDlsMessages  uint64                            `json:"total_dls_messages"`
 	SystemComponents  []models.SystemComponents         `json:"system_components"`
-	Stations          []models.ExtendedStation          `json:"stations"`
+	Stations          []models.ExtendedStationLight     `json:"stations"`
 	K8sEnv            bool                              `json:"k8s_env"`
 	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
 	MetricsEnabled    bool                              `json:"metrics_enabled"`
@@ -1347,6 +1348,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	err = memphis_cache.SetUser(newUser)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
@@ -1400,6 +1406,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
+
+	SendUserDeleteCacheUpdate([]string{user.Username}, user.TenantName)
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
@@ -1550,7 +1558,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 	wg.Add(4)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1905,7 +1913,7 @@ func getDefaultReplicas() int {
 
 func updateSystemLiveness() {
 	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
 	if err != nil {
 		serv.Warnf("updateSystemLiveness: %v", err.Error())
 		return

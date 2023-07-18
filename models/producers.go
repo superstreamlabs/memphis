@@ -16,36 +16,31 @@ import (
 )
 
 type Producer struct {
-	ID                int       `json:"id"`
-	Name              string    `json:"name"`
-	StationId         int       `json:"station_id"`
-	Type              string    `json:"type"`
-	ConnectionId      string    `json:"connection_id"`
-	CreatedBy         int       `json:"created_by"`
-	CreatedByUsername string    `json:"created_by_username"`
-	IsActive          bool      `json:"is_active"`
-	CreatedAt         time.Time `json:"created_at"`
-	IsDeleted         bool      `json:"is_deleted"`
-	TenantName        string    `json:"tenant_name"`
+	ID           int       `json:"id"`
+	Name         string    `json:"name"`
+	StationId    int       `json:"station_id"`
+	Type         string    `json:"type"`
+	ConnectionId string    `json:"connection_id"`
+	IsActive     bool      `json:"is_active"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	TenantName   string    `json:"tenant_name"`
 }
 
 type ExtendedProducer struct {
-	ID                int       `json:"id"`
-	Name              string    `json:"name"`
-	Type              string    `json:"type,omitempty"`
-	ConnectionId      string    `json:"connection_id,omitempty"`
-	CreatedBy         int       `json:"created_by,omitempty"`
-	CreatedByUsername string    `json:"created_by_username"`
-	CreatedAt         time.Time `json:"created_at"`
-	StationName       string    `json:"station_name"`
-	IsActive          bool      `json:"is_active"`
-	IsDeleted         bool      `json:"is_deleted"`
-	ClientAddress     string    `json:"client_address"`
+	ID           int       `json:"id"`
+	Name         string    `json:"name"`
+	Type         string    `json:"type,omitempty"`
+	ConnectionId string    `json:"connection_id,omitempty"`
+	UpdatedAt    time.Time `json:"created_at"`
+	StationName  string    `json:"station_name"`
+	IsActive     bool      `json:"is_active"`
+	Count        int       `json:"count"`
 }
 
 type LightProducer struct {
-	Name              string    `json:"name"`
-	StationName       string    `json:"station_name"`
+	Name        string `json:"name"`
+	StationName string `json:"station_name"`
+	Count       int    `json:"count"`
 }
 
 type GetAllProducersByStationSchema struct {

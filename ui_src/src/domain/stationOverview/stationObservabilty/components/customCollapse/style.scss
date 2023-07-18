@@ -104,4 +104,13 @@
             }
         }
     }
+    .collapse-child-with-count{
+        display: flex;
+        justify-content: space-between;
+        color: #84818A;
+        font-size: 12px;
+        padding: 12px;
+        border-bottom: 1px solid #F1F1F1;
+        align-items: center;
+    }
 }

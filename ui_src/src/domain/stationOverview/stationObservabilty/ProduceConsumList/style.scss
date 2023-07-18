@@ -147,6 +147,16 @@
                 font-size: 16px;
             }
         }
+
+        .consumer-producer-number {
+            background: #DFDFDF;
+            max-width: 30px;
+            display: center;
+            justify-content: center;
+            border-radius: 20px;
+            font-family: 'InterSemiBold';
+            padding: 0 10px;
+        }
     }
 }
 .unsupported-placeholder{
