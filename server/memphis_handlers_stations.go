@@ -1224,6 +1224,38 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (sh StationsHandler) ResendUnackedMsgs(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+	size := int64(0)
+	for _, cgName := range dlsMsg.PoisonedCgs {
+		headersJson := map[string]string{}
+		for key, value := range dlsMsg.MessageDetails.Headers {
+			headersJson[key] = value
+		}
+		headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+		headersJson["$memphis_pm_cg_name"] = cgName
+
+		headers, err := json.Marshal(headersJson)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsgs at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+
+		data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsgs at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = sh.S.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsgs at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+			return cgName, err
+		}
+		size += int64(dlsMsg.MessageDetails.Size)
+	}
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
+	return "", nil
+}
+
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1242,6 +1274,8 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		go func() {
 			createdAt := time.Now()
 			var offset int
+			var minId int
+			var maxId int
 			stationName := strings.ToLower(body.StationName)
 			exist, _, err := db.GetStationByName(stationName, user.TenantName)
 			if err != nil {
@@ -1260,24 +1294,29 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			// check if in the station has dls msgs before the update resend button
 			err = db.UpdateResendDisabledInStation(true, stationName, user.TenantName)
 			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 			task, err := db.UpsertAsyncTask("resend_all_dls_msgs", sh.S.opts.ServerName, createdAt, user.TenantName)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpsertAsyncTask: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
 			exist, t, err := db.GetAsyncTask(task.Name, user.TenantName)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-
-			var minId int
-			var maxId int
+			if !exist {
+				errMsg := fmt.Sprintf("Task %v does not exist", t)
+				serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %s", user.TenantName, user.Username, errMsg)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+				return
+			}
 
 			value, _ := t.Data.(map[string]interface{})
 			empty := len(value) == 0
@@ -1287,21 +1326,28 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				minId = int(data) - 1
 				_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(user.TenantName, createdAt)
 				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", user.TenantName, user.Username, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
 			} else {
 				_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(user.TenantName, createdAt)
 				// -1 in order to prevent skipping  the first element
-				minId -= 1
 				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", user.TenantName, user.Username, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 					return
 				}
+				minId -= 1
 			}
 
 			for {
 				_, dlsMsgs, err := db.GetDlsMsgsBatch(user.TenantName, minId, maxId)
 				if err != nil {
-					return
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetDlsMsgsBatch: %v", user.TenantName, user.Username, err.Error())
+					continue
+					// c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					// return
 				}
 
 				for _, dlsMsg := range dlsMsgs {
@@ -1311,60 +1357,52 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 					}
 					err = db.UpdateAsyncTask(task.Name, user.TenantName, time.Now(), data)
 					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateAsyncTask: %v", user.TenantName, user.Username, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+						return
+					}
+					_, err = sh.ResendUnackedMsgs(dlsMsg, user, stationName)
+					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsgs: %v", user.TenantName, user.Username, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 						return
 					}
 
-					size := int64(0)
-					for _, cgName := range dlsMsg.PoisonedCgs {
-						headersJson := map[string]string{}
-						for key, value := range dlsMsg.MessageDetails.Headers {
-							headersJson[key] = value
-						}
-						headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-						headersJson["$memphis_pm_cg_name"] = cgName
-
-						headers, err := json.Marshal(headersJson)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at json.Marshal: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-							c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-							return
-						}
-
-						data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at DecodeString: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-							c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-							return
-						}
-						err = sh.S.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-							c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-							return
-						}
-						size += int64(dlsMsg.MessageDetails.Size)
-					}
-					IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
 				}
 				minId = offset
 				if len(dlsMsgs) == 0 || offset == maxId {
 					err = db.UpdateResendDisabledInStation(false, stationName, user.TenantName)
 					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 						return
 					}
 
 					err = db.RemoveAsyncTask(task.Name, user.TenantName)
 					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at RemoveAsyncTask: %v", user.TenantName, user.Username, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+						return
+					}
+
+					systemMessage := SystemMessage{
+						MessageType:    "Info",
+						MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s", user.Username, user.TenantName),
+					}
+
+					err = serv.sendSystemMessageOnWS(user, systemMessage)
+					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 						return
 					}
 					break
 				}
 			}
-			//send msg to socket
 		}()
 	} else {
 		stationName := strings.ToLower(body.StationName)
-		exist, station, err := db.GetStationByName(stationName, user.TenantName)
+		exist, _, err := db.GetStationByName(stationName, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1385,37 +1423,13 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			size := int64(0)
-			for _, cgName := range dlsMsg.PoisonedCgs {
-				headersJson := map[string]string{}
-				for key, value := range dlsMsg.MessageDetails.Headers {
-					headersJson[key] = value
-				}
-				headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-				headersJson["$memphis_pm_cg_name"] = cgName
-
-				headers, err := json.Marshal(headersJson)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at json.Marshal: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-
-				data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at DecodeString: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-				err = sh.S.ResendPoisonMessage(station.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-				size += int64(dlsMsg.MessageDetails.Size)
+			cgName, err := sh.ResendUnackedMsgs(dlsMsg, user, stationName)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendUnackedMsgs at ResendUnackedMsgs: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
 			}
-			IncrementEventCounter(station.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
+
 		}
 	}
 	shouldSendAnalytics, _ := shouldSendAnalytics()

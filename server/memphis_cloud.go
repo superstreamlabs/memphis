@@ -65,7 +65,14 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
-type SystemMessage struct{}
+type SystemMessage struct {
+	Id             string    `json:"id"`
+	MessageType    string    `firestore:"message_type" json:"message_type"`
+	MessagePayload string    `firestore:"message_payload" json:"message_payload"`
+	StartTime      time.Time `firestore:"start_time" json:"start_time"`
+	EndTime        time.Time `firestore:"end_time" json:"end_time"`
+	UiPage         string    `firestore:"ui_page" json:"ui_page"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
