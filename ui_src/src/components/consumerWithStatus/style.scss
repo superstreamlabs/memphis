@@ -3,18 +3,19 @@
     margin-top: 0;
     margin-bottom: 0;
     align-items: center;
+    width: 75%;
     align-content: space-between;
     font-family: 'InterSemiBold';
     font-size: 12px;
-    .consumer-number-title{
-        background: #DFDFDF;
-        font-size: 12px;
-        min-width: 15px;
-        display: flex;
-        justify-content: center;
-        border-radius: 20px;
-        font-family: 'Inter';
-        margin-left: 10px;
-        padding: 0 10px;
-    }
+}
+.consumer-number-title{
+    background: #DFDFDF;
+    font-size: 12px;
+    color: black;
+    min-width: 15px;
+    display: flex;
+    justify-content: center;
+    border-radius: 20px;
+    font-family: 'Inter';
+    padding: 0 8px;
 }

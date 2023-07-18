@@ -72,19 +72,29 @@
             overflow: auto;
             display: flex;
             flex-direction: column;
-            gap: 8px;
             background: #FFFFFF;
-            .consumer{
-                border: 1px solid #EFEFEF;
-                border-radius: 8px;
-                display: flex;
-                box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
-                justify-content: space-between;
-                color: rgba(0, 0, 0, 0.85);
-                font-size: 14px;
-                padding: 12px 16px;
-                align-items: center;
-            }
+                .even{
+                    display: flex;
+                    justify-content: space-between;
+                    color: rgba(0, 0, 0, 0.85);
+                    font-size: 14px;
+                    padding: 3px 16px;
+                    align-items: center;
+                    background-color: #FFFFFF !important;
+                    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
+                    border-radius: 4px;
+                }
+                .odd{
+                    display: flex;
+                    justify-content: space-between;
+                    color: rgba(0, 0, 0, 0.85);
+                    font-size: 14px;
+                    padding: 3px 16px;
+                    align-items: center;
+                    background-color: #F9F9FA !important;
+                    box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
+                    border-radius: 4px;
+                }
         }
     }
 }

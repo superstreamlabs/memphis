@@ -105,12 +105,12 @@
         }
     }
     .collapse-child-with-count{
-        border: none;
         display: flex;
         justify-content: space-between;
-        color: rgba(0, 0, 0, 0.85);
-        font-size: 14px;
-        padding: 12px 16px;
+        color: #84818A;
+        font-size: 12px;
+        padding: 12px;
+        border-bottom: 1px solid #F1F1F1;
         align-items: center;
     }
 }

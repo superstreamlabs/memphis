@@ -39,7 +39,7 @@ const ConsumerGroup = ({ header, details, cgMembers }) => {
                 <div className="consumers">
                 {cgMembers?.map((row, index) => {
                             return (
-                                <div className="consumer" key={index}>
+                                <div className={index % 2 === 0 ? 'even' : 'odd'} key={index}>
                                     <ConsumerWithStatus name={row.name} is_active={row.is_active} count={row.count}></ConsumerWithStatus> 
                                 </div>
                             );

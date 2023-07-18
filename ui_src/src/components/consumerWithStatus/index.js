@@ -18,8 +18,8 @@ const ConsumerWithStatus = ({ name, count, is_active }) => {
         <>
             <span className="title-with-count">
             {name}
-            {count > 1 && <span className="consumer-number-title">{count}</span>}
             </span>   
+            {count > 1 && <span className="consumer-number-title">{count}</span>}
             <status is="x3d">
                 <StatusIndication is_active={is_active} is_deleted={false} />
             </status>

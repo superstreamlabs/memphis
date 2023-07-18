@@ -22,7 +22,6 @@ import { messageParser } from '../../../../../services/valueConvertor';
 import SegmentButton from '../../../../../components/segmentButton';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 import { LOCAL_STORAGE_MSG_PARSER } from '../../../../../const/localStorageConsts';
-import StatusIndication from '../../../../../components/indication';
 import ConsumerWithStatus from '../../../../../components/consumerWithStatus';
 
 const { Panel } = Collapse;
@@ -90,10 +89,10 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 return (
                                     <div className="collapse-child-with-count" key={index}>
                                             <ConsumerWithStatus name={row.name} count={row.count} is_active={row.is_active}></ConsumerWithStatus>
-                                        </div>
+                                    </div>
                                 );
-                            })}
-                    {!consumerList && message ? (
+                })}
+                {!consumerList && message ? (
                     <div className="message">
                         {header === 'Headers' && drawHeaders(data)}
                         {header === 'Payload' && (
