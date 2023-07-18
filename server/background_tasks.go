@@ -84,7 +84,7 @@ func (s *Server) ListenForCacheUpdates() error {
 				if cache_req.Operation == "delete" {
 					err = memphis_cache.DeleteUser(cache_req.TenantName, cache_req.Usernames)
 					if err != nil {
-						s.Errorf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
+						s.Warnf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
 						return
 					}
 				}
