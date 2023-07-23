@@ -6164,3 +6164,28 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 
 	return nil
 }
+
+func DeleteConfByTenantName(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM configurations
+	WHERE tenant_name=$1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_conf_by_tenant_name", query)
+	if err != nil {
+		return err
+	}
+	tenantName = strings.ToLower(tenantName)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
