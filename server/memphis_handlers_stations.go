@@ -1304,7 +1304,7 @@ func (sh StationsHandler) ResendUnackedMsgs(dlsMsg models.DlsMessage, user model
 		}
 		err = sh.S.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
 		if err != nil {
-			err = fmt.Errorf("Failed ResendUnackedMsgs at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+			err = fmt.Errorf("Failed ResendUnackedMsgs at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 		size += int64(dlsMsg.MessageDetails.Size)
