@@ -129,7 +129,7 @@ func runMemphis(s *server.Server) {
 	// fmt.Println("InitializeFirestore success")
 
 	s.InitializeMemphisHandlers()
-	// fmt.Println("InitializeMemphisHandlers success")
+	fmt.Println("InitializeMemphisHandlers success")
 
 	err = server.InitializeIntegrations()
 	if err != nil {
