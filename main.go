@@ -114,13 +114,13 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}
-	// fmt.Println("InitializeUserCache success")
+	fmt.Println("InitializeUserCache success")
 
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-	// fmt.Println("InitializeEventCounter success")
+	fmt.Println("InitializeEventCounter success")
 
 	err = s.InitializeFirestore()
 	if err != nil {
