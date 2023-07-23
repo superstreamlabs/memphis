@@ -41,7 +41,6 @@
             gap: 10px;
             .station-actions {
                 display: flex;
-                width: 35px;
                 height: 100%;
                 align-items: center;
                 .action {
@@ -73,10 +72,11 @@
         grid-template-columns: 20% 55% 20%;
         .main-details {
             font-size: 12px;
-            padding-left: 15px;
+            padding: 0 15px;
             background: #ffffff;
             border-radius: 8px;
             height: 100%;
+            width: 100%;
             display: flex;
             justify-content: space-between;
             .left-side {
@@ -85,15 +85,28 @@
                 justify-content: space-evenly;
                 margin: 5px 0px;
                 min-width: 102px;
+                width: 100%;
                 b {
                     font-family: 'InterSemiBold';
                 }
                 .storage-section{
                     display: flex;
-                    gap: 15px;
+                    justify-content: space-between;
+                    align-items:center;
+                    div{
+                        display: flex;
+                        align-items: center;
+                    }
                     span{
                         position: relative;
                         top: 1px;
+                    }
+                    svg {
+                        cursor: pointer;
+                        color: #737373;
+                        width: 11px;
+                        margin-left: 5px;
+                        height: 100%;
                     }
                 }
             }

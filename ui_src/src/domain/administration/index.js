@@ -45,13 +45,11 @@ function Administration({ step }) {
                     break;
                 }
             case 'cluster_configuration':
-                if (!isCloud()) {
-                    if (window.location.href.split('/cluster_configuration').length > 1) {
-                        return <ClusterConfiguration />;
-                    } else {
-                        history.replace(`${pathDomains.administration}/cluster_configuration`);
-                        break;
-                    }
+                if (window.location.href.split('/cluster_configuration').length > 1) {
+                    return <ClusterConfiguration />;
+                } else {
+                    history.replace(`${pathDomains.administration}/cluster_configuration`);
+                    break;
                 }
             case 'version_upgrade':
                 if (!isCloud()) {
@@ -84,7 +82,7 @@ function Administration({ step }) {
         <div className="setting-container">
             <div className="menu-container">
                 <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
-                {/* {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />} */}
+                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />}
             </div>
 
             <div className="setting-items">{getComponent()}</div>

@@ -13,6 +13,8 @@
 import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
 import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
+import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
+
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
@@ -21,12 +23,14 @@ import elasticBanner from '../assets/images/elasticBanner.webp';
 import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
 import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
+import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.webp';
 import datadogIcon from '../assets/images/datadogIcon.svg';
 import grafanaIcon from '../assets/images/grafanaIcon.svg';
+import debeziumIcon from '../assets/images/debeziumIcon.svg';
 import elasticIcon from '../assets/images/elasticIcon.svg';
 import slackLogo from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
@@ -51,6 +55,10 @@ export const CATEGORY_LIST = {
     Storage: {
         name: 'Storage',
         color: ColorPalette[4]
+    },
+    CDC: {
+        name: 'CDC',
+        color: ColorPalette[11]
     }
 };
 
@@ -239,7 +247,8 @@ export const INTEGRATION_LIST = {
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <img src={s3Logo} alt="s3Logo" />,
-        description: 'S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.',
+        description:
+            'S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
         header: (
@@ -254,7 +263,10 @@ export const INTEGRATION_LIST = {
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3 compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.</span>
+                <span className="content">
+                    S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3
+                    compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.
+                </span>
             </div>
         )
     },
@@ -338,6 +350,44 @@ export const INTEGRATION_LIST = {
             {
                 title: 'Step 2: Import Memphis dashboard',
                 key: 2
+            }
+        ]
+    },
+    'Debezium and Postgres': {
+        name: 'Debezium and Postgres',
+        by: 'memphis',
+        banner: <img className="banner" src={debeziumBanner} alt="debeziumBanner" />,
+        insideBanner: <img className="insideBanner" src={debeziumBannerPopup} alt="debeziumBannerPopup" />,
+        icon: <img src={debeziumIcon} alt="debeziumIcon" />,
+        description:
+            'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
+        category: CATEGORY_LIST['CDC'],
+        header: (
+            <div className="header-left-side">
+                <img src={debeziumIcon} alt="debeziumIcon" />
+                <div className="details">
+                    <p>Debezium and Postgres</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily
+                    integrated with Memphis.dev for collecting CDC events from various databases.
+                </span>
+            </div>
+        ),
+        steps: [
+            {
+                title: 'Step 0: Create an application-type Memphis user for Debezium',
+                key: 0
+            },
+            {
+                title: 'Step 1: Setup Debezium',
+                key: 1
             }
         ]
     },

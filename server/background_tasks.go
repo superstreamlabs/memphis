@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"sync"
 
@@ -32,6 +33,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
+const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -59,6 +61,35 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) ListenForCacheUpdates() error {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, CACHE_UDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var cache_req models.CacheUpdateRequest
+			err := json.Unmarshal(msg, &cache_req)
+			if err != nil {
+				s.Errorf("ListenForUserCacheDeletion at Unmarshal could not delete from cache, error: %v", err)
+				return
+			}
+
+			switch cache_req.CacheType {
+			case "user":
+				if cache_req.Operation == "delete" {
+					err = memphis_cache.DeleteUser(cache_req.TenantName, cache_req.Usernames)
+					if err != nil {
+						s.Errorf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
+						return
+					}
+				}
+			}
+
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -257,6 +288,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
+	err = s.ListenForCacheUpdates()
+	if err != nil {
+		return errors.New("Failed to subscribing for cache updates" + err.Error())
+	}
+
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
@@ -264,6 +300,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
+	go s.RemoveOldProducersAndConsumers()
 
 	return nil
 }
@@ -471,19 +508,8 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 				return
 			}
 
-			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-
-			if !exist {
-				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
-				return
-			}
-
 			message.Message.TimeSent = time.Now()
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
+			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 			if err != nil {
 				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
 				return
@@ -500,10 +526,59 @@ func (s *Server) ListenForSchemaverseDlsEvents() error {
 func (s *Server) RemoveOldDlsMsgs() {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
-		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
-		err := db.DeleteOldDlsMessageByRetention(configurationTime)
-		if err != nil {
-			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+		for tenantName, rt := range s.opts.DlsRetentionHours {
+			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
+			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
+			if err != nil {
+				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+			}
 		}
+	}
+}
+
+func (s *Server) RemoveOldProducersAndConsumers() {
+	ticker := time.NewTicker(15 * time.Minute)
+	for range ticker.C {
+		timeInterval := time.Now().Add(time.Duration(time.Hour * -time.Duration(s.opts.GCProducersConsumersRetentionHours)))
+		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
+		if err != nil {
+			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
+		}
+
+		var CGsList []string
+		for _, cg := range deletedCGs {
+			CGsList = append(CGsList, cg.CGName)
+		}
+
+		remainingCG, err := db.GetAllDeletedConsumersFromList(CGsList)
+		if err != nil {
+			serv.Errorf("RemoveOldProducersAndConsumers at GetAllDeletedConsumersFromList: %v", err.Error())
+		}
+
+		CGmap := make(map[string]string)
+		for _, name := range remainingCG {
+			CGmap[name] = "."
+		}
+
+		for _, cg := range deletedCGs {
+			if _, ok := CGmap[cg.CGName]; !ok {
+				stationName, err := StationNameFromStr(cg.StationName)
+				if err == nil {
+					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName)
+					if err != nil {
+						serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
+					}
+
+					err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
+					if err != nil {
+						serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
+					}
+				} else {
+					serv.Errorf("RemoveOldProducersAndConsumers at StationNameFromStr: %v", err.Error())
+				}
+
+			}
+		}
+
 	}
 }

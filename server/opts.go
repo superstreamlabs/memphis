@@ -286,15 +286,16 @@ type Options struct {
 	LameDuckGracePeriod   time.Duration     `json:"-"`
 
 	// memphis options
-	UiPort                         int    `json:"-"`
-	RestGwPort                     int    `json:"-"`
-	K8sNamespace                   string `json:"-"`
-	LogsRetentionDays              int    `json:"-"`
-	TieredStorageUploadIntervalSec int    `json:"-"`
-	DlsRetentionHours              int    `json:"-"`
-	UiHost                         string `json:"-"`
-	RestGwHost                     string `json:"-"`
-	BrokerHost                     string `json:"-"`
+	UiPort                             int            `json:"-"`
+	RestGwPort                         int            `json:"-"`
+	K8sNamespace                       string         `json:"-"`
+	LogsRetentionDays                  int            `json:"-"`
+	TieredStorageUploadIntervalSec     int            `json:"-"`
+	DlsRetentionHours                  map[string]int `json:"-"`
+	GCProducersConsumersRetentionHours int            `json:"-"`
+	UiHost                             string         `json:"-"`
+	RestGwHost                         string         `json:"-"`
+	BrokerHost                         string         `json:"-"`
 
 	// MaxTracedMsgLen is the maximum printable length for traced messages.
 	MaxTracedMsgLen int `json:"-"`
@@ -1441,7 +1442,16 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 			*errors = append(*errors, &configErr{tk, "error dls_retention_hours config: has to be positive and not more than 30"})
 			return
 		}
-		o.DlsRetentionHours = value
+		o.DlsRetentionHours = make(map[string]int)
+		o.DlsRetentionHours[conf.MemphisGlobalAccountName] = value
+	case "gc_producer_consumer_retention_hours":
+		value := int(v.(int64))
+		if value < 1 || value > 48 {
+			*errors = append(*errors, &configErr{tk, "error gc_producer_consumer_retention_hours config: has to be positive and not more than 48"})
+			return
+		}
+		o.GCProducersConsumersRetentionHours = value
+
 	case "ui_host":
 		value := v.(string)
 		if value == _EMPTY_ {
@@ -4744,11 +4754,16 @@ func setBaselineOptions(opts *Options) {
 	if opts.LogsRetentionDays == 0 {
 		opts.LogsRetentionDays = 7
 	}
+	if opts.GCProducersConsumersRetentionHours == 0 {
+		opts.GCProducersConsumersRetentionHours = 2
+	}
 	if opts.TieredStorageUploadIntervalSec == 0 {
 		opts.TieredStorageUploadIntervalSec = DEFAULT_TIERED_STORAGE_UPLOAD_INTERVAL_SEC
 	}
-	if opts.DlsRetentionHours == 0 {
-		opts.DlsRetentionHours = DEFAULT_DLS_RETENTION_HOURS
+	for tenant, value := range opts.DlsRetentionHours {
+		if value == 0 {
+			opts.DlsRetentionHours[tenant] = DEFAULT_DLS_RETENTION_HOURS
+		}
 	}
 	if opts.BrokerHost == _EMPTY_ {
 		if configuration.DOCKER_ENV != "" || configuration.LOCAL_CLUSTER_ENV {

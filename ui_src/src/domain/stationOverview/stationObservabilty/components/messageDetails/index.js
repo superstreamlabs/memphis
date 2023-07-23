@@ -9,6 +9,7 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
+import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -25,6 +26,7 @@ import Button from '../../../../../components/button';
 import { StationStoreContext } from '../../..';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
+import StatusIndication from '../../../../../components/indication';
 
 const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const url = window.location.href;
@@ -158,13 +160,13 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 {messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
                                 )}
-                                <CustomCollapse
-                                    collapsible={!stationState?.stationMetaData?.is_native}
-                                    tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
-                                    header="Producer"
-                                    status={true}
-                                    data={messageDetails?.producer}
-                                />
+                                <div className='info-box' >
+                                    <div>
+                                        <span className='title'>Producer </span>
+                                        <span className='content'>{messageDetails?.producer?.details[0].value}</span>
+                                    </div>
+                                        <StatusIndication is_active={messageDetails?.producer.is_active} />
+                                </div>
 
                                 {!isFailedSchemaMessage && (
                                     <MultiCollapse

@@ -1211,7 +1211,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		switch conf.Key {
 		case "dls_retention":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.DlsRetentionHours = v
+			opts.DlsRetentionHours[conf.TenantName] = v
 		case "logs_retention":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.LogsRetentionDays = v
@@ -1227,6 +1227,9 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		case "max_msg_size_mb":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.MaxPayload = int32(v * 1024 * 1024)
+		case "gc_producer_consumer_retention_hours":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.GCProducersConsumersRetentionHours = v
 		}
 	}
 
@@ -1437,7 +1440,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		if err != nil {
 			return err
 		}
-		err = s.RemoveStream(DEFAULT_SYSTEM_ACCOUNT, stationName.Intern())
+		err = s.RemoveStream(DEFAULT_GLOBAL_ACCOUNT, stationName.Intern())
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,13 @@
 .requests-container {
+    position: relative;
+    .loader-container {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        .memphis-gif {
+            position: absolute;
+        }
+    }
     height: 100%;
     .requests-value {
         font-family: 'InterBold';
@@ -263,11 +272,10 @@
                     margin-right: 20px;
                     border-radius: 8px 0 0 8px;
                 }
-                .yellow{
+                .yellow {
                     background-color: #ffecc7;
-
                 }
-                .green{
+                .green {
                     background-color: #cef3dd;
                 }
                 .circle-img {

@@ -26,11 +26,7 @@ function PrivateRoute(props) {
         return <Route {...rest} render={() => Component} />;
     } else {
         if (isCloud()) {
-            const isSkipGetStarted = localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED);
-            localStorage.clear();
-            if (isSkipGetStarted === 'true') {
-                localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, isSkipGetStarted);
-            }
+            AuthService.clearLocalStorage();
             window.location.replace(CLOUD_URL);
         } else {
             return <Redirect to={{ pathname: pathDomains.login, state: { referer: props.location } }} />;
