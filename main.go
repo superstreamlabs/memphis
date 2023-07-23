@@ -120,41 +120,41 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-	fmt.Println("InitializeEventCounter success")
+	// fmt.Println("InitializeEventCounter success")
 
 	err = s.InitializeFirestore()
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
-	fmt.Println("InitializeFirestore success")
+	// fmt.Println("InitializeFirestore success")
 
 	s.InitializeMemphisHandlers()
-	fmt.Println("InitializeMemphisHandlers success")
+	// fmt.Println("InitializeMemphisHandlers success")
 
 	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
-	fmt.Println("InitializeIntegrations success")
+	// fmt.Println("InitializeIntegrations success")
 
 	err = s.SetDlsRetentionForExistTenants()
 	if err != nil {
 		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
 	}
-	fmt.Println("SetDlsRetentionForExistTenants success")
+	// fmt.Println("SetDlsRetentionForExistTenants success")
 
 	err = s.Force3ReplicationsForExistingStations()
 	if err != nil {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
-	fmt.Println("Force3ReplicationsForExistingStations success")
+	// fmt.Println("Force3ReplicationsForExistingStations success")
 
 	go func() {
 		s.CreateInternalJetStreamResources()
-		fmt.Println("CreateInternalJetStreamResources success")
+		// fmt.Println("CreateInternalJetStreamResources success")
 		go http_server.InitializeHttpServer(s)
 		err = s.StartBackgroundTasks()
-		fmt.Println("StartBackgroundTasks success")
+		// fmt.Println("StartBackgroundTasks success")
 		if err != nil {
 			s.Errorf("Background task failed: " + err.Error())
 			os.Exit(1)
