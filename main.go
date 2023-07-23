@@ -120,16 +120,16 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-	fmt.Println("InitializeEventCounter success")
+	// fmt.Println("InitializeEventCounter success")
 
 	err = s.InitializeFirestore()
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
-	fmt.Println("InitializeFirestore success")
+	// fmt.Println("InitializeFirestore success")
 
 	s.InitializeMemphisHandlers()
-	fmt.Println("InitializeMemphisHandlers success")
+	// fmt.Println("InitializeMemphisHandlers success")
 
 	err = server.InitializeIntegrations()
 	if err != nil {
