@@ -16,7 +16,7 @@ import (
 	"fmt"
 
 	"memphis/conf"
-	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 
 	"strings"
@@ -143,7 +143,7 @@ func Authenticate(c *gin.Context) {
 			user.TenantName = strings.ToLower(user.TenantName)
 		}
 
-		exists, _, err := db.GetUserByUsername(username, user.TenantName)
+		exists, _, err := memphis_cache.GetUser(username, user.TenantName)
 		if err != nil {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return

@@ -1265,7 +1265,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
-	exist, _, err := db.GetUserByUsername(username, user.TenantName)
+	exist, _, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1409,7 +1409,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
-	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
+	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1641,7 +1641,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := db.GetUserByUsername(username, user.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
