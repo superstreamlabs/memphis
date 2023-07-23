@@ -722,15 +722,15 @@ type GCProducersConsumersRetentionHoursOption struct {
 	newValue int
 }
 
+func (o *GCProducersConsumersRetentionHoursOption) Apply(server *Server) {
+	// no need to update anything since it happens on the edit cluster configuration endpoint
+	server.Noticef("Reloaded: gc_producer_consumer_retention_hours = %d", o.newValue)
+}
+
 // Apply the setting by updating the server info and each client.
 func (o *dlsRetentionHoursOption) Apply(server *Server) {
 	// no need to update anything since it happens on the edit cluster configuration endpoint
 	server.Noticef("Reloaded: dls_retention_hours = %v", o.newValue)
-}
-
-func (o *GCProducersConsumersRetentionHoursOption) Apply(server *Server) {
-	// no need to update anything since it happens on the edit cluster configuration endpoint
-	server.Noticef("Reloaded: gc_producer_consumer_retention_hours = %d", o.newValue)
 }
 
 // logsRetentionDaysOption implements the option interface for the `logs_retention_days`
