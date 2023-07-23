@@ -928,7 +928,7 @@ func getDbStorageSize() (float64, float64, error) {
 }
 
 func getUnixStorageSize() (float64, error) {
-	out, err := exec.Command("df", "-h", "/").Output()
+	out, err := exec.Command("df", "-g", "/").Output()
 	if err != nil {
 		return 0, err
 	}
