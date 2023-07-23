@@ -102,7 +102,7 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
-	// fmt.Println("InitializeAnalytics success")
+	fmt.Println("InitializeAnalytics success")
 
 	err = server.TenantSeqInitialize()
 	if err != nil {
@@ -114,7 +114,7 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}
-	fmt.Println("InitializeUserCache success")
+	// fmt.Println("InitializeUserCache success")
 
 	err = s.InitializeEventCounter()
 	if err != nil {
