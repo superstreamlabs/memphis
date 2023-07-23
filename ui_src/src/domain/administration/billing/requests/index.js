@@ -35,6 +35,7 @@ function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');
     const [isLoading, setIsLoading] = useState(true);
+    const [totalDiscount, setTotalDiscount] = useState(0);
     const [displayMonth, setDisplayMonth] = useState();
 
     const getBillingDetails = async (date) => {
@@ -42,6 +43,7 @@ function Requests() {
             const month = date.getMonth();
             const year = date.getFullYear();
             const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month + 1}&year=${year}`);
+            setTotalDiscount(data?.total_free_tier_discount + data?.discount);
             setUsageData(data);
             setIsLoading(false);
         } catch (err) {
@@ -200,7 +202,7 @@ function Requests() {
                         <p className="item">
                             Discount <label className="discount-badge">private-beta</label>
                         </p>
-                        <p className="ammount">${usageData?.total_free_tier_discount?.toLocaleString('en-US') + usageData?.discount?.toLocaleString('en-US')}</p>
+                        <p className="ammount">${totalDiscount?.toLocaleString('en-US')}</p>
                     </span>
                     <Divider />
                     <span className="billing-item">
