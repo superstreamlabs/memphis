@@ -1486,6 +1486,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
 			&stationRes.Activity,
+			&stationRes.ResendDisabled,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
 		}
