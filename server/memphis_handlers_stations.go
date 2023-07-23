@@ -217,8 +217,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if exist {
-		errMsg := fmt.Sprintf("Station %v already exists", stationName.Ext())
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
