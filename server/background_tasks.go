@@ -507,3 +507,28 @@ func (s *Server) RemoveOldDlsMsgs() {
 		}
 	}
 }
+
+func (s *Server) RemoveOldAsyncTask() error {
+	_, asyncTasks, err := db.GetAsyncTaskByName("resend_all_dls_msgs")
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+
+	for _, asyncTask := range asyncTasks {
+		sub := now.Sub(asyncTask.UpdatedAt)
+		if sub >= 20*time.Minute {
+			err = db.UpdateResendDisabledInStation(false, asyncTask.StationId)
+			if err != nil {
+				serv.Errorf("RemoveOldAsyncTask: failed to update resend disabled in station: %v, %v", asyncTask.StationId, err.Error())
+				continue
+			}
+			err = db.RemoveAsyncTask(asyncTask.Name, asyncTask.TenantName)
+			if err != nil {
+				serv.Errorf("RemoveOldAsyncTask: failed to remove async task: %v, %v", asyncTask.Name, err.Error())
+				continue
+			}
+		}
+	}
+	return nil
+}

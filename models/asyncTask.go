@@ -10,6 +10,7 @@ type AsyncTask struct {
 	UpdatedAt     time.Time   `json:"updated_at"`
 	Data          interface{} `json:"data"`
 	TenantName    string      `json:"tenantName"`
+	StationId     int         `json:"station_id"`
 }
 
 type MetaData struct {

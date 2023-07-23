@@ -505,7 +505,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
             updated_at TIMESTAMPTZ NOT NULL,
             meta_data JSON NOT NULL DEFAULT '{}',
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
-			UNIQUE(name, tenant_name)
+			station_id INT,
+			UNIQUE(name, tenant_name, station_id)
         );`
 
 	db := MetadataDbClient.Client
@@ -2018,7 +2019,7 @@ func UpdateStationsWithNoHA3() error {
 	}
 	return nil
 }
-func UpdateResendDisabledInStation(resendDisabled bool, stationName, tenantName string) error {
+func UpdateResendDisabledInStation(resendDisabled bool, stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2026,12 +2027,12 @@ func UpdateResendDisabledInStation(resendDisabled bool, stationName, tenantName 
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations SET resend_disabled = $1 WHERE name = $2 AND tenant_name = $3`
+	query := `UPDATE stations SET resend_disabled = $1 WHERE id = $2`
 	stmt, err := conn.Conn().Prepare(ctx, "update_resend_disabled_in_station", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationName, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationId)
 	if err != nil {
 		return err
 	}
@@ -6198,7 +6199,7 @@ func ReliveConectionResources(connectionId string, isActive bool) error {
 }
 
 // Async tasks functions
-func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string) (models.AsyncTask, error) {
+func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string, stationId int) (models.AsyncTask, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6208,7 +6209,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name) VALUES($1, $2, $3, $4, $5) ON CONFLICT (name, tenant_name) DO NOTHING`
+	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (name, tenant_name, station_id) DO NOTHING`
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_async_task", query)
 	if err != nil {
 		return models.AsyncTask{}, err
@@ -6216,7 +6217,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 
 	updatedAt := time.Now()
 	var asyncTaskId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName, stationId)
 	if err != nil {
 		return models.AsyncTask{}, err
 	}
@@ -6288,6 +6289,37 @@ func GetAsyncTask(task, tenantName string) (bool, models.AsyncTask, error) {
 	}
 	return true, asyncTask[0], nil
 
+}
+
+func GetAsyncTaskByName(task string) (bool, []models.AsyncTask, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT * FROM async_tasks WHERE name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_async_task_by_name", query)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	defer rows.Close()
+	asyncTask, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTask])
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	if len(asyncTask) == 0 {
+		return false, []models.AsyncTask{}, nil
+	}
+	return true, asyncTask, nil
 }
 
 func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}) error {

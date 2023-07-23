@@ -1277,7 +1277,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			var minId int
 			var maxId int
 			stationName := strings.ToLower(body.StationName)
-			exist, _, err := db.GetStationByName(stationName, user.TenantName)
+			exist, station, err := db.GetStationByName(stationName, user.TenantName)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1292,13 +1292,13 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			}
 
 			// check if in the station has dls msgs before the update resend button
-			err = db.UpdateResendDisabledInStation(true, stationName, user.TenantName)
+			err = db.UpdateResendDisabledInStation(true, station.ID)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			task, err := db.UpsertAsyncTask("resend_all_dls_msgs", sh.S.opts.ServerName, createdAt, user.TenantName)
+			task, err := db.UpsertAsyncTask("resend_all_dls_msgs", sh.S.opts.ServerName, createdAt, user.TenantName, station.ID)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpsertAsyncTask: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1371,7 +1371,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				}
 				minId = offset
 				if len(dlsMsgs) == 0 || offset == maxId {
-					err = db.UpdateResendDisabledInStation(false, stationName, user.TenantName)
+					err = db.UpdateResendDisabledInStation(false, station.ID)
 					if err != nil {
 						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
 						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
