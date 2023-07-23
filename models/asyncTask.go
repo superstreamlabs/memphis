@@ -9,7 +9,7 @@ type AsyncTask struct {
 	CreatedAt     time.Time   `json:"created_at"`
 	UpdatedAt     time.Time   `json:"updated_at"`
 	Data          interface{} `json:"data"`
-	TenantName    string      `json:"tenantName"`
+	TenantName    string      `json:"tenant_name"`
 	StationId     int         `json:"station_id"`
 }
 

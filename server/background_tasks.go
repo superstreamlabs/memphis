@@ -627,9 +627,10 @@ func (s *Server) CheckAsyncTasksExists() {
 		}
 
 		if !exist {
-			errMsg := fmt.Sprintf("Station %v does not exist", station.Name)
+			stationIdStr := strconv.Itoa(asyncTask.StationId)
+			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
 			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExists at GetStationByName: %s", asyncTask.TenantName, errMsg)
-			return
+			continue
 		}
 
 		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
@@ -680,8 +681,6 @@ func (s *Server) ResendAll(stationName string, stationId int, tenantName string,
 		empty := len(value) == 0
 		if !empty {
 			data := value["offset"].(float64)
-			// -1 in order to prevent skipping the first element
-			// minId = int(data) - 1
 			minId = int(data)
 			_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
 			if err != nil {
@@ -690,7 +689,6 @@ func (s *Server) ResendAll(stationName string, stationId int, tenantName string,
 			}
 		} else {
 			_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
-			fmt.Println("min", minId, "max", maxId, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", tenantName, username, err.Error())
 				return
@@ -708,7 +706,6 @@ func (s *Server) ResendAll(stationName string, stationId int, tenantName string,
 
 			for _, dlsMsg := range dlsMsgs {
 				offset = dlsMsg.ID
-				fmt.Println("offset", offset, stationId)
 				data := models.MetaData{
 					Offset: offset,
 				}
@@ -740,11 +737,10 @@ func (s *Server) ResendAll(stationName string, stationId int, tenantName string,
 					return
 				}
 
-				fmt.Println("finish", stationId)
-
+				stationIdStr := strconv.Itoa(stationId)
 				systemMessage := SystemMessage{
 					MessageType:    "Info",
-					MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s", username, tenantName),
+					MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s in station: %s", username, tenantName, stationIdStr),
 				}
 
 				err = serv.sendSystemMessageOnWS(user, systemMessage)
