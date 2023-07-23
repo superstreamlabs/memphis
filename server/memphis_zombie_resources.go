@@ -13,6 +13,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -113,6 +114,7 @@ func killFunc(s *Server) {
 
 func (s *Server) KillZombieResources() {
 	if s.JetStreamIsClustered() {
+		fmt.Println("KillZombieResources success")
 		count := 0
 		for range time.Tick(time.Second * 20) {
 			if s.JetStreamIsLeader() {

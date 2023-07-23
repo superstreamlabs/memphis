@@ -102,48 +102,59 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
+	fmt.Println("InitializeAnalytics success")
 
 	err = server.TenantSeqInitialize()
 	if err != nil {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
+	fmt.Println("TenantSeqInitialize success")
 
 	err = memphis_cache.InitializeUserCache(s.Errorf)
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}
+	fmt.Println("InitializeUserCache success")
 
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
+	fmt.Println("InitializeEventCounter success")
 
 	err = s.InitializeFirestore()
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
+	fmt.Println("InitializeFirestore success")
 
 	s.InitializeMemphisHandlers()
+	fmt.Println("InitializeMemphisHandlers success")
 
 	err = server.InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
+	fmt.Println("InitializeIntegrations success")
 
 	err = s.SetDlsRetentionForExistTenants()
 	if err != nil {
 		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
 	}
+	fmt.Println("SetDlsRetentionForExistTenants success")
 
 	err = s.Force3ReplicationsForExistingStations()
 	if err != nil {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
+	fmt.Println("Force3ReplicationsForExistingStations success")
 
 	go func() {
 		s.CreateInternalJetStreamResources()
+		fmt.Println("CreateInternalJetStreamResources success")
 		go http_server.InitializeHttpServer(s)
 		err = s.StartBackgroundTasks()
+		fmt.Println("StartBackgroundTasks success")
 		if err != nil {
 			s.Errorf("Background task failed: " + err.Error())
 			os.Exit(1)
@@ -166,6 +177,7 @@ func runMemphis(s *server.Server) {
 			f, _ := os.Stat(folderName)
 			if f != nil {
 				err = s.MoveResourcesFromOldToNewDefaultAcc()
+				fmt.Println("MoveResourcesFromOldToNewDefaultAcc success")
 				if err != nil {
 					s.Errorf("Data from global account to memphis account failed: %s", err.Error())
 				}
@@ -209,6 +221,7 @@ func main() {
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
+	fmt.Println("InitializeMetadataStorage success")
 
 	// Configure the options from the flags/config file
 	opts, err := server.ConfigureOptions(fs, os.Args[1:],
@@ -221,20 +234,23 @@ func main() {
 		fmt.Fprintf(os.Stderr, "%s: configuration file %s is valid\n", exe, opts.ConfigFile)
 		os.Exit(0)
 	}
+	fmt.Println("ConfigureOptions success")
 
 	// Create the server with appropriate options.
 	s, err := server.NewServer(opts)
 	if err != nil {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
+	fmt.Println("NewServer success")
 
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
-
+	fmt.Println("ConfigureLogger success")
 	// Start things up. Block here until done.
 	if err := server.Run(s); err != nil {
 		server.PrintAndDie(err.Error())
 	}
+	fmt.Println("server.Run success")
 
 	// Adjust MAXPROCS if running under linux/cgroups quotas.
 	undo, err := maxprocs.Set(maxprocs.Logger(s.Debugf))
@@ -244,10 +260,13 @@ func main() {
 		defer undo()
 		// Reset these from the snapshots from init for monitor.go
 		server.SnapshotMonitorInfo()
+		fmt.Println("SnapshotMonitorInfo success")
 	}
+	fmt.Println("maxprocs.Set success")
 	s.Noticef("Established connection with the meta-data storage")
 
 	runMemphis(s)
+	fmt.Println("runMemphis success")
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
