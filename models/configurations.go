@@ -12,13 +12,14 @@
 package models
 
 type EditClusterConfigSchema struct {
-	DlsRetention  int    `json:"dls_retention" binding:"required"`
-	LogsRetention int    `json:"logs_retention" binding:"required"`
-	BrokerHost    string `json:"broker_host"`
-	UiHost        string `json:"ui_host"`
-	RestGWHost    string `json:"rest_gw_host"`
-	TSTimeSec     int    `json:"tiered_storage_time_sec"`
-	MaxMsgSizeMb  int    `json:"max_msg_size_mb"`
+	DlsRetention                       int    `json:"dls_retention" binding:"required"`
+	LogsRetention                      int    `json:"logs_retention" binding:"required"`
+	BrokerHost                         string `json:"broker_host"`
+	UiHost                             string `json:"ui_host"`
+	RestGWHost                         string `json:"rest_gw_host"`
+	TSTimeSec                          int    `json:"tiered_storage_time_sec"`
+	MaxMsgSizeMb                       int    `json:"max_msg_size_mb"`
+	GCProducersConsumersRetentionHours int    `json:"gc_producer_consumer_retention_hours"`
 }
 
 type GlobalConfigurationsUpdate struct {
