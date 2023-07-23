@@ -35,9 +35,7 @@ function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');
     const [isLoading, setIsLoading] = useState(true);
-    const [totalPrice, setTotalPrice] = useState(0);
     const [totalDiscount, setTotalDiscount] = useState(0);
-
     const [displayMonth, setDisplayMonth] = useState();
 
     const getBillingDetails = async (date) => {
@@ -45,11 +43,6 @@ function Requests() {
             const month = date.getMonth();
             const year = date.getFullYear();
             const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month + 1}&year=${year}`);
-            setTotalPrice(
-                data?.total_price_before_discount - (data?.total_free_tier_discount + data?.discount) >= 0
-                    ? data?.total_price_before_discount - (data?.total_free_tier_discount + data?.discount)
-                    : 0
-            );
             setTotalDiscount(data?.total_free_tier_discount + data?.discount);
             setUsageData(data);
             setIsLoading(false);
@@ -196,7 +189,7 @@ function Requests() {
                             <p className="next-billing">{displayMonth && genetrateSentence()}</p>
                         </span>
                         <span className="price-val-star">
-                            <label className="requests-value">${totalPrice?.toLocaleString('en-US')}</label>
+                            <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
                             <p className="pricing-disclaimer">*</p>
                         </span>
                     </div>
@@ -214,7 +207,7 @@ function Requests() {
                     <Divider />
                     <span className="billing-item">
                         <p className="item">Total price</p>
-                        <p className="ammount">${totalPrice?.toLocaleString('en-US')}</p>
+                        <p className="ammount">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</p>
                     </span>
                     <span className="billing-item">
                         <p className="pricing-disclaimer">*Please note that the pricing is not final</p>
