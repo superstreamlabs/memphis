@@ -34,5 +34,5 @@ func InitializeHttpServer(s *server.Server) {
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)
 	httpServer.Run(fmt.Sprintf("0.0.0.0:%v", s.Opts().UiPort))
-	fmt.Println("InitializeHttpServer success")
+	// fmt.Println("InitializeHttpServer success")
 }
