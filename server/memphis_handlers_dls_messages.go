@@ -104,7 +104,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 
 	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]handleNewUnackedMsg atStorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
 	}
 	if dlsMsgId == 0 { // nothing to do

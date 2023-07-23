@@ -133,6 +133,7 @@ func (s *Server) KillZombieResources() {
 			s.RemoveOldStations()
 		}
 		killFunc(s)
+		s.RemoveOldAsyncTasks()
 
 		if firstIteration || count == 1*60 { // once in 1 hour
 			updateSystemLiveness()

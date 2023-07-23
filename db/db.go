@@ -1959,7 +1959,7 @@ func UpdateStationsWithNoHA3() error {
 	}
 	return nil
 }
-func UpdateResendDisabledInStation(resendDisabled bool, stationId int) error {
+func UpdateResendDisabledInStation(resendDisabled bool, stationId int, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1967,12 +1967,12 @@ func UpdateResendDisabledInStation(resendDisabled bool, stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE stations SET resend_disabled = $1 WHERE id = $2`
+	query := `UPDATE stations SET resend_disabled = $1 WHERE id = $2 AND tenant_name = $3`
 	stmt, err := conn.Conn().Prepare(ctx, "update_resend_disabled_in_station", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationId)
+	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationId, tenantName)
 	if err != nil {
 		return err
 	}
@@ -5249,7 +5249,6 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 }
 
 func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
-
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5646,7 +5645,7 @@ func DeleteDlsMsgsByTenant(tenantName string) error {
 
 }
 
-func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time) (bool, []models.DlsMsgResendAll, int, int, error) {
+func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time, stationId int) (bool, []models.DlsMsgResendAll, int, int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5658,7 +5657,7 @@ func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time) (bool
 		WITH limited_rows AS (
 		SELECT *
 		FROM dls_messages
-		WHERE tenant_name = $1 AND updated_at <= $2 AND message_type = 'poison'
+		WHERE tenant_name = $1 AND updated_at <= $2 AND message_type = 'poison' AND station_id = $3
 		)
 		SELECT *,
 		(SELECT MIN(id) FROM limited_rows) AS min_id,
@@ -5671,7 +5670,7 @@ func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time) (bool
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, createdAt)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, createdAt, stationId)
 	if err != nil {
 		return false, []models.DlsMsgResendAll{}, -1, -1, err
 	}
@@ -5687,7 +5686,7 @@ func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time) (bool
 	return true, dlsMsgs, dlsMsgs[0].MinId, dlsMsgs[0].MaxId, nil
 }
 
-func GetDlsMsgsBatch(tenantName string, min, max int) (bool, []models.DlsMessage, error) {
+func GetDlsMsgsBatch(tenantName string, min, max, stationId int) (bool, []models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5698,7 +5697,7 @@ func GetDlsMsgsBatch(tenantName string, min, max int) (bool, []models.DlsMessage
 	query := `
 		SELECT *
 		FROM dls_messages
-		WHERE tenant_name = $1 AND message_type = 'poison' AND id  > $2 AND id <= $3 LIMIT 10
+		WHERE tenant_name = $1 AND message_type = 'poison' AND station_id = $2 AND id > $3 AND id <= $4 ORDER BY id ASC LIMIT 10
 		`
 	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msgs_batch_between_min_max_id", query)
 	if err != nil {
@@ -5707,7 +5706,7 @@ func GetDlsMsgsBatch(tenantName string, min, max int) (bool, []models.DlsMessage
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, min, max)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, stationId, min, max)
 	if err != nil {
 		return false, []models.DlsMessage{}, err
 	}
@@ -6399,6 +6398,37 @@ func GetAsyncTaskByName(task string) (bool, []models.AsyncTask, error) {
 	return true, asyncTask, nil
 }
 
+func GetAsyncTaskByNameAndBrokerName(task, brokerName string) (bool, []models.AsyncTask, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT * FROM async_tasks WHERE name = $1 AND broker_in_charge = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "get_async_task_by_name_and_broker_name", query)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task, brokerName)
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	defer rows.Close()
+	asyncTask, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTask])
+	if err != nil {
+		return false, []models.AsyncTask{}, err
+	}
+	if len(asyncTask) == 0 {
+		return false, []models.AsyncTask{}, nil
+	}
+	return true, asyncTask, nil
+}
+
 func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}, stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -6407,7 +6437,7 @@ func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData inte
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE async_tasks SET updated_at = $1 ,meta_data = $2 WHERE name = $3 AND tenant_name=$4 AND station_id = $4`
+	query := `UPDATE async_tasks SET updated_at = $1 ,meta_data = $2 WHERE name = $3 AND tenant_name=$4 AND station_id = $5`
 	stmt, err := conn.Conn().Prepare(ctx, "edit_async_task_by_task_and_tenant_name_and_station_id", query)
 	if err != nil {
 		return err

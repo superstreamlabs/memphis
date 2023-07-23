@@ -1281,7 +1281,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (sh StationsHandler) ResendUnackedMsgs(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+func (s *Server) ResendUnackedMsgs(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
 	size := int64(0)
 	for _, cgName := range dlsMsg.PoisonedCgs {
 		headersJson := map[string]string{}
@@ -1302,7 +1302,7 @@ func (sh StationsHandler) ResendUnackedMsgs(dlsMsg models.DlsMessage, user model
 			err = fmt.Errorf("Failed ResendUnackedMsgs at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
-		err = sh.S.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
 		if err != nil {
 			err = fmt.Errorf("Failed ResendUnackedMsgs at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
@@ -1327,136 +1327,23 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
+	stationName := strings.ToLower(body.StationName)
+	exist, station, err := db.GetStationByName(stationName, user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if !exist {
+		errMsg := fmt.Sprintf("Station %v does not exist", stationName)
+		serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %s", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
 	if len(body.PoisonMessageIds) == 0 {
-		go func() {
-			createdAt := time.Now()
-			var offset int
-			var minId int
-			var maxId int
-			stationName := strings.ToLower(body.StationName)
-			exist, station, err := db.GetStationByName(stationName, user.TenantName)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
-			if !exist {
-				errMsg := fmt.Sprintf("Station %v does not exist", stationName)
-				serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %s", user.TenantName, user.Username, errMsg)
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-				return
-			}
-
-			// check if in the station has dls msgs before the update resend button
-			err = db.UpdateResendDisabledInStation(true, station.ID)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			task, err := db.UpsertAsyncTask("resend_all_dls_msgs", sh.S.opts.ServerName, createdAt, user.TenantName, station.ID)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpsertAsyncTask: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
-			exist, t, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, user.TenantName, station.ID)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %v", user.TenantName, user.Username, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			if !exist {
-				errMsg := fmt.Sprintf("Task %v does not exist", t)
-				serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %s", user.TenantName, user.Username, errMsg)
-				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-				return
-			}
-
-			value, _ := t.Data.(map[string]interface{})
-			empty := len(value) == 0
-			if !empty {
-				data := value["offset"].(float64)
-				// -1 in order to prevent skipping  the first element
-				minId = int(data) - 1
-				_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(user.TenantName, createdAt)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", user.TenantName, user.Username, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-			} else {
-				_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(user.TenantName, createdAt)
-				// -1 in order to prevent skipping  the first element
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", user.TenantName, user.Username, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-				minId -= 1
-			}
-
-			for {
-				_, dlsMsgs, err := db.GetDlsMsgsBatch(user.TenantName, minId, maxId)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetDlsMsgsBatch: %v", user.TenantName, user.Username, err.Error())
-					continue
-					// c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					// return
-				}
-
-				for _, dlsMsg := range dlsMsgs {
-					offset = dlsMsg.ID
-					data := models.MetaData{
-						Offset: offset,
-					}
-					err = db.UpdateAsyncTask(task.Name, user.TenantName, time.Now(), data, dlsMsg.StationId)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateAsyncTask: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-					_, err = sh.ResendUnackedMsgs(dlsMsg, user, stationName)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsgs: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-
-				}
-				minId = offset
-				if len(dlsMsgs) == 0 || offset == maxId {
-					err = db.UpdateResendDisabledInStation(false, station.ID)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-
-					err = db.RemoveAsyncTask(task.Name, user.TenantName, station.ID)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at RemoveAsyncTask: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-
-					systemMessage := SystemMessage{
-						MessageType:    "Info",
-						MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s", user.Username, user.TenantName),
-					}
-
-					err = serv.sendSystemMessageOnWS(user, systemMessage)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-					break
-				}
-			}
-		}()
+		sh.S.ResendAll(stationName, station.ID, user.TenantName, user)
 	} else {
 		stationName := strings.ToLower(body.StationName)
 		exist, _, err := db.GetStationByName(stationName, user.TenantName)
@@ -1480,7 +1367,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			cgName, err := sh.ResendUnackedMsgs(dlsMsg, user, stationName)
+			cgName, err := sh.S.ResendUnackedMsgs(dlsMsg, user, stationName)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendUnackedMsgs at ResendUnackedMsgs: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

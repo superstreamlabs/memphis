@@ -583,17 +583,18 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 	}
 }
 
-func (s *Server) RemoveOldAsyncTask() error {
+func (s *Server) RemoveOldAsyncTasks() {
 	_, asyncTasks, err := db.GetAsyncTaskByName("resend_all_dls_msgs")
 	if err != nil {
-		return err
+		serv.Errorf("RemoveOldAsyncTask: failed to get async task resend all dls messages: %v", err.Error())
+		return
 	}
 	now := time.Now()
 
 	for _, asyncTask := range asyncTasks {
 		sub := now.Sub(asyncTask.UpdatedAt)
 		if sub >= 20*time.Minute {
-			err = db.UpdateResendDisabledInStation(false, asyncTask.StationId)
+			err = db.UpdateResendDisabledInStation(false, asyncTask.StationId, asyncTask.TenantName)
 			if err != nil {
 				serv.Errorf("RemoveOldAsyncTask: failed to update resend disabled in station: %v, %v", asyncTask.StationId, err.Error())
 				continue
@@ -605,5 +606,154 @@ func (s *Server) RemoveOldAsyncTask() error {
 			}
 		}
 	}
-	return nil
+}
+
+func (s *Server) CheckAsyncTasksExists() {
+	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
+	if err != nil {
+		serv.Errorf("CheckAsyncTasksExists: failed to get async task resend all dls messages: %v", err.Error())
+		return
+	}
+
+	if !exist {
+		return
+	}
+
+	for _, asyncTask := range asyncTasks {
+		exist, station, err := db.GetStationById(asyncTask.StationId, asyncTask.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v]CheckAsyncTasksExists at GetStationByName: %v", asyncTask.TenantName, err.Error())
+			return
+		}
+
+		if !exist {
+			errMsg := fmt.Sprintf("Station %v does not exist", station.Name)
+			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExists at GetStationByName: %s", asyncTask.TenantName, errMsg)
+			return
+		}
+
+		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExists could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
+			return
+		}
+		if !exist {
+			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExists user does not exist", asyncTask.TenantName, user.Username)
+			return
+		}
+
+		s.ResendAll(station.Name, station.ID, station.TenantName, user)
+	}
+}
+
+func (s *Server) ResendAll(stationName string, stationId int, tenantName string, user models.User) {
+	go func() {
+		createdAt := time.Now()
+		var offset int
+		var minId int
+		var maxId int
+		username := user.Username
+		// check if in the station has dls msgs before the update resend button
+		err := db.UpdateResendDisabledInStation(true, stationId, tenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", tenantName, username, err.Error())
+			return
+		}
+		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpsertAsyncTask: %v", tenantName, username, err.Error())
+			return
+		}
+
+		exist, t, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, tenantName, stationId)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %v", tenantName, username, err.Error())
+			return
+		}
+		if !exist {
+			errMsg := fmt.Sprintf("Task %v does not exist", t)
+			serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %s", tenantName, username, errMsg)
+			return
+		}
+
+		value, _ := t.Data.(map[string]interface{})
+		empty := len(value) == 0
+		if !empty {
+			data := value["offset"].(float64)
+			// -1 in order to prevent skipping the first element
+			// minId = int(data) - 1
+			minId = int(data)
+			_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", tenantName, username, err.Error())
+				return
+			}
+		} else {
+			_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
+			fmt.Println("min", minId, "max", maxId, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", tenantName, username, err.Error())
+				return
+			}
+			// -1 in order to prevent skipping  the first element
+			minId -= 1
+		}
+
+		for {
+			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetDlsMsgsBatch: %v", tenantName, username, err.Error())
+				continue
+			}
+
+			for _, dlsMsg := range dlsMsgs {
+				offset = dlsMsg.ID
+				fmt.Println("offset", offset, stationId)
+				data := models.MetaData{
+					Offset: offset,
+				}
+
+				_, err = serv.ResendUnackedMsgs(dlsMsg, user, stationName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsgs: %v", tenantName, username, err.Error())
+					return
+				}
+
+				err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, dlsMsg.StationId)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateAsyncTask: %v", tenantName, username, err.Error())
+					return
+				}
+
+			}
+			minId = offset
+			if len(dlsMsgs) == 0 || offset == maxId {
+				err = db.UpdateResendDisabledInStation(false, stationId, tenantName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateResendDisabledInStation: %v", tenantName, username, err.Error())
+					return
+				}
+
+				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at RemoveAsyncTask: %v", tenantName, username, err.Error())
+					return
+				}
+
+				fmt.Println("finish", stationId)
+
+				systemMessage := SystemMessage{
+					MessageType:    "Info",
+					MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s", username, tenantName),
+				}
+
+				err = serv.sendSystemMessageOnWS(user, systemMessage)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at sendSystemMessageOnWS: %v", tenantName, username, err.Error())
+					return
+				}
+				break
+			}
+		}
+	}()
 }

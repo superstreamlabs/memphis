@@ -140,10 +140,7 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
 
-	err = s.RemoveOldAsyncTask()
-	if err != nil {
-		s.Errorf("Failed remove async task: " + err.Error())
-	}
+	s.CheckAsyncTasksExists()
 
 	go func() {
 		s.CreateInternalJetStreamResources()
