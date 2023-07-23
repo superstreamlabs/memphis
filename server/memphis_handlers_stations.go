@@ -1305,7 +1305,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				return
 			}
 
-			exist, t, err := db.GetAsyncTask(task.Name, user.TenantName)
+			exist, t, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, user.TenantName, station.ID)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetAsyncTask: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1355,7 +1355,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 					data := models.MetaData{
 						Offset: offset,
 					}
-					err = db.UpdateAsyncTask(task.Name, user.TenantName, time.Now(), data)
+					err = db.UpdateAsyncTask(task.Name, user.TenantName, time.Now(), data, dlsMsg.StationId)
 					if err != nil {
 						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at UpdateAsyncTask: %v", user.TenantName, user.Username, err.Error())
 						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1378,7 +1378,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 						return
 					}
 
-					err = db.RemoveAsyncTask(task.Name, user.TenantName)
+					err = db.RemoveAsyncTask(task.Name, user.TenantName, station.ID)
 					if err != nil {
 						serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at RemoveAsyncTask: %v", user.TenantName, user.Username, err.Error())
 						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

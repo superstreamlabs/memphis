@@ -523,7 +523,7 @@ func (s *Server) RemoveOldAsyncTask() error {
 				serv.Errorf("RemoveOldAsyncTask: failed to update resend disabled in station: %v, %v", asyncTask.StationId, err.Error())
 				continue
 			}
-			err = db.RemoveAsyncTask(asyncTask.Name, asyncTask.TenantName)
+			err = db.RemoveAsyncTask(asyncTask.Name, asyncTask.TenantName, asyncTask.StationId)
 			if err != nil {
 				serv.Errorf("RemoveOldAsyncTask: failed to remove async task: %v, %v", asyncTask.Name, err.Error())
 				continue

@@ -324,7 +324,6 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		PRIMARY KEY (id),
-		resend_disabled BOOL NOT NULL DEFAULT false,
 		CONSTRAINT fk_connection_id
 			FOREIGN KEY(connection_id)
 			REFERENCES connections(id),
@@ -375,6 +374,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		dls_configuration_schemaverse BOOL NOT NULL DEFAULT true,
 		tiered_storage_enabled BOOL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		resend_disabled BOOL NOT NULL DEFAULT false,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -505,7 +505,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
             updated_at TIMESTAMPTZ NOT NULL,
             meta_data JSON NOT NULL DEFAULT '{}',
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
-			station_id INT,
+			station_id INT NOT NULL,
 			UNIQUE(name, tenant_name, station_id)
         );`
 
@@ -6256,7 +6256,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 	return asyncTask, nil
 }
 
-func GetAsyncTask(task, tenantName string) (bool, models.AsyncTask, error) {
+func GetAsyncTaskByTenantNameAndStationId(task, tenantName string, stationId int) (bool, models.AsyncTask, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6266,8 +6266,8 @@ func GetAsyncTask(task, tenantName string) (bool, models.AsyncTask, error) {
 	}
 	defer conn.Release()
 
-	query := `SELECT * FROM async_tasks WHERE name = $1 AND tenant_name = $2 LIMIT 1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_async_task", query)
+	query := `SELECT * FROM async_tasks WHERE name = $1 AND tenant_name = $2 AND station_id = $3 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_async_task_by_tenant_name_and_station_id", query)
 	if err != nil {
 		return false, models.AsyncTask{}, err
 	}
@@ -6275,7 +6275,7 @@ func GetAsyncTask(task, tenantName string) (bool, models.AsyncTask, error) {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, task, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, task, tenantName, stationId)
 	if err != nil {
 		return false, models.AsyncTask{}, err
 	}
@@ -6322,7 +6322,7 @@ func GetAsyncTaskByName(task string) (bool, []models.AsyncTask, error) {
 	return true, asyncTask, nil
 }
 
-func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}) error {
+func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}, stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -6330,22 +6330,22 @@ func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData inte
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE async_tasks SET updated_at = $1 ,meta_data = $2 WHERE name = $3 AND tenant_name=$4`
-	stmt, err := conn.Conn().Prepare(ctx, "edit_async_task_by_task_and_tenant_name", query)
+	query := `UPDATE async_tasks SET updated_at = $1 ,meta_data = $2 WHERE name = $3 AND tenant_name=$4 AND station_id = $4`
+	stmt, err := conn.Conn().Prepare(ctx, "edit_async_task_by_task_and_tenant_name_and_station_id", query)
 	if err != nil {
 		return err
 	}
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt, metaData, task, tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt, metaData, task, tenantName, stationId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func RemoveAsyncTask(task, tenantName string) error {
+func RemoveAsyncTask(task, tenantName string, stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -6353,12 +6353,12 @@ func RemoveAsyncTask(task, tenantName string) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM async_tasks WHERE name = $1 AND tenant_name=$2`
-	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task_by_name_and_tenant_name", query)
+	query := `DELETE FROM async_tasks WHERE name = $1 AND tenant_name=$2 AND station_id = $3`
+	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task_by_name_and_tenant_name_and_station_id", query)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, task, tenantName)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, task, tenantName, stationId)
 	if err != nil {
 		return err
 	}
