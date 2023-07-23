@@ -135,7 +135,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = db.DeleteConsumersByStationID(station.ID)
+	err = db.DeleteAllConsumersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
@@ -470,13 +470,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == station.ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[station.ID]
 			tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
@@ -542,6 +536,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 	}
 }
 
+// TODO: check if need to remove
 func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
 	var stations []models.ExtendedStation
 	totalMessages := uint64(0)
@@ -590,13 +585,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == stations[i].ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
 			if shouldGetTags {
 				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 				if err != nil {
@@ -654,6 +643,84 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	}
 }
 
+func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string) ([]models.ExtendedStationLight, uint64, uint64, error) {
+	var stations []models.ExtendedStationLight
+	totalMessages := uint64(0)
+	if tenantName == "" {
+		tenantName = serv.MemphisGlobalAccountString()
+	}
+	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
+	if err != nil {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+	}
+
+	stations, err = db.GetAllStationsDetailsLight(tenantName)
+	if err != nil {
+		return stations, totalMessages, totalDlsMessages, err
+	}
+	if len(stations) == 0 {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, nil
+	} else {
+		stationTotalMsgs := make(map[string]int)
+		tagsHandler := TagsHandler{S: sh.S}
+		acc, err := sh.S.lookupAccount(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		accName := acc.Name
+		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
+				stationTotalMsgs[streamName] = int(info.State.Msgs)
+			}
+		}
+		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+
+		var extStations []models.ExtendedStationLight
+		for i := 0; i < len(stations); i++ {
+			fullStationName, err := StationNameFromStr(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
+			if shouldExtend {
+				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
+				if err != nil {
+					return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+				}
+				stations[i].Tags = tags
+
+				if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+					stations[i].TieredStorageEnabled = false
+				} else {
+					_, ok = tenantInetgrations["s3"].(models.Integration)
+					if !ok {
+						stations[i].TieredStorageEnabled = false
+					} else if stations[i].TieredStorageEnabled {
+						stations[i].TieredStorageEnabled = true
+					} else {
+						stations[i].TieredStorageEnabled = false
+					}
+				}
+			}
+
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
+			stations[i].HasDlsMsgs = hasDlsMsgs
+
+			extStations = append(extStations, stations[i])
+		}
+		return extStations, totalMessages, totalDlsMessages, nil
+	}
+}
+
 func (sh StationsHandler) GetStations(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
@@ -686,7 +753,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
+	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllStations at GetAllStationsDetails: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1153,21 +1220,11 @@ func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string,
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
-	deletedCount := 0
 	for _, member := range members {
 		if member.IsActive {
 			return true, false
 		}
-
-		if member.IsDeleted {
-			deletedCount++
-		}
 	}
-
-	if len(members) == deletedCount {
-		return false, true
-	}
-
 	return false, false
 }
 
@@ -1521,11 +1578,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
-			Producer: models.ProducerDetails{
-				Name:          "",
-				ClientAddress: "",
-				IsActive:      false,
-				IsDeleted:     false,
+			Producer: models.ProducerDetailsResp{
+				Name:     "",
+				IsActive: false,
 			},
 			PoisonedCgs: []models.PoisonedCg{},
 		}
@@ -1565,13 +1620,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(station.TenantName, stationName, cg.CgName)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
@@ -1593,25 +1647,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
-
-	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	isActive := false
+	exist, producer, err := db.GetProducerByStationIDAndConnectionId(producedByHeader, station.ID, connectionId)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetProducerByStationIDAndUsername: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
-		serv.Warnf("[tenant: %v][user: %v]GetMessageDetails: %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	_, conn, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConnectionByID: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	if exist {
+		isActive = producer.IsActive
 	}
 
 	msg := models.MessageResponse{
@@ -1622,14 +1666,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
-		Producer: models.ProducerDetails{
-			Name:              producedByHeader,
-			ConnectionId:      connectionId,
-			ClientAddress:     conn.ClientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+		Producer: models.ProducerDetailsResp{
+			Name:     producedByHeader,
+			IsActive: isActive,
 		},
 		PoisonedCgs: poisonedCgs,
 	}

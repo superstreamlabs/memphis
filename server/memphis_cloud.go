@@ -23,6 +23,7 @@ import (
 	"math"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"memphis/utils"
 	"net/http"
@@ -58,7 +59,7 @@ type MainOverviewData struct {
 	TotalMessages     uint64                            `json:"total_messages"`
 	TotalDlsMessages  uint64                            `json:"total_dls_messages"`
 	SystemComponents  []models.SystemComponents         `json:"system_components"`
-	Stations          []models.ExtendedStation          `json:"stations"`
+	Stations          []models.ExtendedStationLight     `json:"stations"`
 	K8sEnv            bool                              `json:"k8s_env"`
 	BrokersThroughput []models.BrokerThroughputResponse `json:"brokers_throughput"`
 	MetricsEnabled    bool                              `json:"metrics_enabled"`
@@ -107,7 +108,8 @@ func CreateRootUserOnFirstSystemLoad() error {
 		return err
 	}
 
-	if created {
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if created && shouldSendAnalytics {
 		time.AfterFunc(5*time.Second, func() {
 			var deviceIdValue string
 			installationType := "stand-alone-k8s"
@@ -977,8 +979,8 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	if !ok {
 		return
 	}
-	if ch.S.opts.DlsRetentionHours != body.DlsRetention {
-		err := changeDlsRetention(body.DlsRetention)
+	if ch.S.opts.DlsRetentionHours[user.TenantName] != body.DlsRetention {
+		err := changeDlsRetention(body.DlsRetention, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeDlsRetention: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1062,25 +1064,31 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+		"dls_retention":           body.DlsRetention,
+		"logs_retention":          body.LogsRetention,
+		"broker_host":             brokerHost,
+		"ui_host":                 uiHost,
+		"rest_gw_host":            restGWHost,
+		"tiered_storage_time_sec": body.TSTimeSec,
+		"max_msg_size_mb":         int32(body.MaxMsgSizeMb),
 	})
 }
 
 func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetClusterConfig at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
 		analyticsParams := make(map[string]interface{})
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours,
+		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
 		"logs_retention":          ch.S.opts.LogsRetentionDays,
 		"broker_host":             ch.S.opts.BrokerHost,
 		"ui_host":                 ch.S.opts.UiHost,
@@ -1106,6 +1114,7 @@ func SetCors(router *gin.Engine) {
 }
 
 func (th TenantHandler) CreateTenant(c *gin.Context) {
+	// use the func changeDlsRetention(DEFAULT_DLS_RETENTION_HOURS, tenantName) when creating a new tenant
 	c.IndentedJSON(404, gin.H{})
 }
 
@@ -1202,6 +1211,9 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -1343,6 +1355,11 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		return
 	}
 
+	err = memphis_cache.SetUser(newUser)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]AddUser at writing to the user cache error: %v", user.TenantName, user.Username, err)
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
@@ -1396,6 +1413,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "You can not remove your own user"})
 		return
 	}
+
+	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
 	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
 	if err != nil {
@@ -1546,7 +1565,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 	wg.Add(4)
 	go func() {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, tenantName)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1701,6 +1720,9 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		"connection_token":        configuration.CONNECTION_TOKEN,
 		"account_id":              tenant.ID,
 		"internal_ws_pass":        decryptedUserPassword,
+		"dls_retention":           serv.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -1838,7 +1860,7 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 }
 
 func shouldSendAnalytics() (bool, error) {
-	if configuration.ENV == "staging" {
+	if configuration.ENV == "staging" || configuration.ENV == "dev" {
 		return false, nil
 	}
 	return true, nil
@@ -1898,7 +1920,7 @@ func getDefaultReplicas() int {
 
 func updateSystemLiveness() {
 	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetails(false, "")
+	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
 	if err != nil {
 		serv.Warnf("updateSystemLiveness: %v", err.Error())
 		return
@@ -1922,4 +1944,8 @@ func updateSystemLiveness() {
 
 func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {
 	return []SystemMessage{}, nil
+}
+
+func (s *Server) SetDlsRetentionForExistTenants() error {
+	return nil
 }

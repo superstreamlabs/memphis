@@ -257,20 +257,7 @@ const MessageJourney = () => {
                 producer: {
                     is_active: data.producer?.is_active,
                     is_deleted: data.producer?.is_deleted,
-                    details: [
-                        {
-                            name: 'Name',
-                            value: data.producer?.name
-                        },
-                        {
-                            name: 'User',
-                            value: data.producer?.created_by_username
-                        },
-                        {
-                            name: 'IP',
-                            value: data.producer?.client_address
-                        }
-                    ]
+                    name: data.producer?.name,
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,

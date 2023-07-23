@@ -1,7 +1,11 @@
-<div align="center">
-  
-  ![Banner- Memphis dev streaming ](https://github.com/memphisdev/memphis/assets/70286779/746f4cf4-0d71-45ba-9177-73718aea58f0)
 
+<div align="center">
+ 
+![Hackathon banner](https://github.com/memphisdev/memphis/assets/107035359/6ff3c175-15c7-4ef2-b08e-da57443f946b)
+
+We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/> 
+**For more information & Sign up click [here](https://www.hackathon.memphis.dev/)!**
+<hr/> 
 
 </div>
 
@@ -59,7 +63,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Key Features [v1.0.3](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.3-latest)
+## ✨ Key Features [v1.1.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.1.1-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -164,8 +168,8 @@ Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :
 Get Headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
 Get message sequence number | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Destroying a Consumer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
-Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :x:
+Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :white_check_mark:
 
 ## 👉 Use-cases
 - Async task management

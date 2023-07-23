@@ -23,7 +23,8 @@ import {
     LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
     LOCAL_STORAGE_ENV,
-    LOCAL_STORAGE_ACCOUNT_ID
+    LOCAL_STORAGE_ACCOUNT_ID,
+    USER_IMAGE
 } from '../../const/localStorageConsts';
 import stationImg from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
@@ -191,11 +192,11 @@ function OverView() {
                         <div className="header-welcome">
                             <div className="bot-wrapper">
                                 <img
-                                    className="sandboxUserImg"
-                                    src={localStorage.getItem('profile_pic') || botUrl}
+                                    className="avatar-image"
+                                    src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : botUrl}
                                     referrerPolicy="no-referrer"
-                                    width={localStorage.getItem('profile_pic') ? 60 : 40}
-                                    height={localStorage.getItem('profile_pic') ? 60 : 40}
+                                    width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
+                                    height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     alt="avatar"
                                 ></img>
                             </div>
@@ -214,12 +215,12 @@ function OverView() {
                                         <div className="hostname">
                                             <p>Account ID : </p>
                                             <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
-                                            <Copy width="12" text={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
+                                            <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                         </div>
                                         <div className="hostname">
                                             <p>Broker Hostname : </p>
                                             <span>{host}</span>
-                                            <Copy width="12" text={host} />
+                                            <Copy width="12" data={host} />
                                         </div>
                                     </div>
                                 )}
@@ -291,7 +292,7 @@ function OverView() {
                 open={open}
                 isLoading={creatingProsessd}
             >
-                <CreateStationForm createStationFormRef={createStationRef} handleClick={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
         </div>
     );

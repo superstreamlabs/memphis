@@ -24,6 +24,7 @@ import Tag from '../../../../../components/tag';
 import DataDogIntegration from '../dataDogIntegration';
 import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
+import DebeziumIntegration from '../debeziumIntegration';
 
 const IntegrationItem = ({ value }) => {
     const [state] = useContext(Context);
@@ -82,6 +83,15 @@ const IntegrationItem = ({ value }) => {
                         }}
                     />
                 );
+            case 'Debezium and Postgres':
+                return (
+                    <DebeziumIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
+                    />
+                );
+
             case `Elasticsearch observability`:
                 return (
                     <ElasticIntegration

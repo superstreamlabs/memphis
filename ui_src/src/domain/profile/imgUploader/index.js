@@ -46,6 +46,7 @@ function ImgUploader() {
         customRequest: (file) => uploadLogo(file),
         fileList
     };
+
     const uploadLogo = async ({ file, onSuccess, onError }) => {
         let dataImg = new FormData();
         dataImg.append('file', file);

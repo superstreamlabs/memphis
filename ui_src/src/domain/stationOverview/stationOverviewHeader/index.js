@@ -19,7 +19,6 @@ import { MinusOutlined } from '@ant-design/icons';
 
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
-import purgeWrapperIcon from '../../../assets/images/purgeWrapperIcon.svg';
 import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
 import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
@@ -42,14 +41,13 @@ import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
-import PurgeStationModal from '../stationObservabilty/components/purgeStationModal';
+import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConsts';
 
 const StationOverviewHeader = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
-    const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [retentionValue, setRetentionValue] = useState('');
     const [detachLoader, setDetachLoader] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
@@ -154,26 +152,17 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
-                    <div className="purge-button">
-                        <Button
-                            width="70px"
-                            height="30px"
-                            placeholder="Purge"
-                            colorType="red"
-                            radiusType="semi-round"
-                            border="gray"
-                            backgroundColorType="none"
-                            fontSize="12px"
-                            fontFamily="InterMedium"
-                            disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
-                            onClick={() => modalPurgeFlip(true)}
-                        />
-                    </div>
-                    <div className="station-actions" onClick={() => modalDeleteFlip(true)}>
-                        <div className="action">
-                            <img src={deleteIcon} alt="redirectIcon" />
-                        </div>
-                    </div>
+                    <Button
+                        width="100px"
+                        height="32px"
+                        placeholder="Delete station"
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontWeight="600"
+                        onClick={() => modalDeleteFlip(true)}
+                    />
                 </div>
             </div>
             <div className="details">
@@ -182,16 +171,23 @@ const StationOverviewHeader = () => {
                         <p>
                             <b>Retention:</b> {retentionValue}
                         </p>
-                        <p>
-                            <b>Replicas:</b> {isCloud() ? replicasConvertor(3, false) : replicasConvertor(stationState?.stationMetaData?.replicas, false)}
-                        </p>
+                        {!isCloud() && (
+                            <p>
+                                <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
+                            </p>
+                        )}
                         <div className="storage-section">
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
-                            <p>
+                            <div>
                                 <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
-                            </p>
+                                {stationState?.stationMetaData?.tiered_storage_enabled && (
+                                    <TooltipComponent text={`Iterate every ${localStorage.getItem(TIERED_STORAGE_UPLOAD_INTERVAL)} seconds.`} minWidth="35px">
+                                        <InfoOutlined />
+                                    </TooltipComponent>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -421,23 +417,6 @@ const StationOverviewHeader = () => {
                         textToConfirm="detach"
                         handleDeleteSelected={handleStopUseSchema}
                         loader={detachLoader}
-                    />
-                </Modal>
-                <Modal
-                    header={<img src={purgeWrapperIcon} alt="deleteWrapperIcon" />}
-                    width="460px"
-                    height="320px"
-                    displayButtons={false}
-                    clickOutside={() => modalPurgeFlip(false)}
-                    open={modalPurgeIsOpen}
-                >
-                    <PurgeStationModal
-                        title="Purge"
-                        desc="This action will clean the station from messages."
-                        stationName={stationState?.stationMetaData?.name}
-                        cancel={() => modalPurgeFlip(false)}
-                        msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
-                        dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
                     />
                 </Modal>
             </div>

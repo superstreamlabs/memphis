@@ -1211,7 +1211,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		switch conf.Key {
 		case "dls_retention":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.DlsRetentionHours = v
+			opts.DlsRetentionHours[conf.TenantName] = v
 		case "logs_retention":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.LogsRetentionDays = v

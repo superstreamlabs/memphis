@@ -23,10 +23,10 @@ type Message struct {
 }
 
 type MessageResponse struct {
-	MessageSeq  int             `json:"message_seq"`
-	Producer    ProducerDetails `json:"producer"`
-	PoisonedCgs []PoisonedCg    `json:"poisoned_cgs"`
-	Message     MessagePayload  `json:"message"`
+	MessageSeq  int                 `json:"message_seq"`
+	Producer    ProducerDetailsResp `json:"producer"`
+	PoisonedCgs []PoisonedCg        `json:"poisoned_cgs"`
+	Message     MessagePayload      `json:"message"`
 }
 
 type MessageDetails struct {
@@ -105,6 +105,32 @@ type ExtendedStation struct {
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
 	ResendDisabled              bool        `json:"resend_disabled"`
+}
+
+type ExtendedStationLight struct {
+	ID                          int         `json:"id"`
+	Name                        string      `json:"name"`
+	RetentionType               string      `json:"retention_type,omitempty"`
+	RetentionValue              int         `json:"retention_value,omitempty"`
+	StorageType                 string      `json:"storage_type,omitempty"`
+	Replicas                    int         `json:"replicas,omitempty"`
+	CreatedBy                   int         `json:"created_by,omitempty"`
+	CreatedByUsername           string      `json:"created_by_username"`
+	CreatedAt                   time.Time   `json:"created_at"`
+	UpdatedAt                   time.Time   `json:"updated_at,omitempty"`
+	IsDeleted                   bool        `json:"is_deleted,omitempty"`
+	TotalMessages               int         `json:"total_messages"`
+	SchemaName                  string      `json:"schema_name,omitempty"`
+	SchemaVersionNumber         int         `json:"schema_vesrion_number,omitempty"`
+	Tags                        []CreateTag `json:"tags,omitempty"`
+	IdempotencyWindow           int64       `json:"idempotency_window_in_ms,omitempty"`
+	IsNative                    bool        `json:"is_native"`
+	DlsConfigurationPoison      bool        `json:"dls_configuration_poison,omitempty"`
+	DlsConfigurationSchemaverse bool        `json:"dls_configuration_schemaverse,omitempty"`
+	HasDlsMsgs                  bool        `json:"has_dls_messages"`
+	Activity                    bool        `json:"activity"`
+	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
+	TenantName                  string      `json:"tenant_name"`
 }
 
 type ActiveProducersConsumersDetails struct {
