@@ -126,7 +126,7 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
-	// fmt.Println("InitializeFirestore success")
+	fmt.Println("InitializeFirestore success")
 
 	s.InitializeMemphisHandlers()
 	fmt.Println("InitializeMemphisHandlers success")
