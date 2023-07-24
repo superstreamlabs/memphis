@@ -142,6 +142,16 @@ function ClusterConfiguration() {
                                     onChanges={(e) => handleChange('dls_retention', e)}
                                 />
                                 <SliderRow
+                                    title="DISCONNECTED PRODUCERS AND CONSUMERS RETENTION"
+                                    desc="Amount of hours to retain inactive producerd and consumers"
+                                    value={formFields?.gc_producer_consumer_retention_hours}
+                                    img={DeadLetterInHours}
+                                    min={1}
+                                    max={48}
+                                    unit={'h'}
+                                    onChanges={(e) => handleChange('gc_producer_consumer_retention_hours', e)}
+                                />
+                                <SliderRow
                                     title="MAX MESSAGE SIZE"
                                     desc="Maximum  message size (payload + headers) in megabytes"
                                     value={formFields?.max_msg_size_mb}

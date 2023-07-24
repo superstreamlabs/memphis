@@ -35,6 +35,7 @@ function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');
     const [isLoading, setIsLoading] = useState(true);
+    const [totalDiscount, setTotalDiscount] = useState(0);
     const [displayMonth, setDisplayMonth] = useState();
 
     const getBillingDetails = async (date) => {
@@ -42,6 +43,7 @@ function Requests() {
             const month = date.getMonth();
             const year = date.getFullYear();
             const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month + 1}&year=${year}`);
+            setTotalDiscount(data?.total_free_tier_discount + data?.discount);
             setUsageData(data);
             setIsLoading(false);
         } catch (err) {
@@ -123,7 +125,7 @@ function Requests() {
                                 <img src={RequestsIn} alt="data in" />
                                 <span className="requests-data">
                                     <label className="requests-title-in">Data in</label>
-                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in_events))?.toLocaleString('en-US')}Gb</label>
+                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in))?.toLocaleString('en-US')}Gb</label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -149,9 +151,7 @@ function Requests() {
                                 <img src={RequestsOut} alt="data out" />
                                 <span className="requests-data">
                                     <label className="requests-title-out">Data out</label>
-                                    <label className="data-gb">
-                                        {usageData && formatNumber(convertBytesToGb(usageData?.data_out_events))?.toLocaleString('en-US')}Gb
-                                    </label>
+                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_out))?.toLocaleString('en-US')}Gb</label>
                                 </span>
                             </div>
                             <div className="total-messages">
@@ -177,7 +177,7 @@ function Requests() {
                             <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
                         </span>
                         <span>
-                            <label className="cloud-provider-label">Region: </label> <img src={getRegionImage()} alt="region" />
+                            <label className="cloud-provider-label">Region: </label> <img src={getRegionImage(usageData?.region)} alt="region" />
                             <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
                         </span>
                     </div>
@@ -199,14 +199,10 @@ function Requests() {
                         <p className="ammount">${usageData?.total_price_before_discount?.toLocaleString('en-US')}</p>
                     </span>
                     <span className="billing-item">
-                        <p className="item">Free tier discount</p>
-                        <p className="ammount">${usageData?.total_free_tier_discount?.toLocaleString('en-US')}</p>
-                    </span>
-                    <span className="billing-item">
                         <p className="item">
                             Discount <label className="discount-badge">private-beta</label>
                         </p>
-                        <p className="ammount">${usageData?.discount?.toLocaleString('en-US')}</p>
+                        <p className="ammount">${totalDiscount?.toLocaleString('en-US')}</p>
                     </span>
                     <Divider />
                     <span className="billing-item">

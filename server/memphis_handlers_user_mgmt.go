@@ -162,6 +162,11 @@ func removeTenantResources(tenantName string, user models.User) error {
 
 	SendUserDeleteCacheUpdate(users_list, tenantName)
 
+	err = db.DeleteConfByTenantName(tenantName)
+	if err != nil {
+		return err
+	}
+
 	err = db.RemoveTenant(tenantName)
 	if err != nil {
 		return err

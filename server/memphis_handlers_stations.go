@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"memphis/utils"
 	"regexp"
@@ -216,8 +217,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if exist {
-		errMsg := fmt.Sprintf("Station %v already exists", stationName.Ext())
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
@@ -321,14 +320,14 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	exist, user, err := db.GetUserByUsername(username, csr.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName)
 	if err != nil {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -1151,9 +1150,9 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at GetUserByUsername: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -1739,9 +1738,9 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	message := fmt.Sprintf("Schema %v has been attached to station %v by user %v", schemaName, stationName.Ext(), asr.Username)
 	serv.Noticef("[tenant: %v][user: %v]: %v", asr.TenantName, asr.Username, message)
-	_, user, err := db.GetUserByUsername(asr.Username, asr.TenantName)
+	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at GetUserByUsername: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at memphis_cache.GetUser: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
