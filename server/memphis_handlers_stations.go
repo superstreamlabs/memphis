@@ -525,6 +525,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				SchemaName:           station.SchemaName,
 				IsNative:             station.IsNative,
 				TieredStorageEnabled: station.TieredStorageEnabled,
+				ResendDisabled:       station.ResendDisabled,
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
@@ -628,13 +629,14 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			}
 
 			stationRes := models.ExtendedStation{
-				ID:            stations[i].ID,
-				Name:          stations[i].Name,
-				CreatedAt:     stations[i].CreatedAt,
-				TotalMessages: stations[i].TotalMessages,
-				HasDlsMsgs:    stations[i].HasDlsMsgs,
-				Activity:      stations[i].Activity,
-				IsNative:      stations[i].IsNative,
+				ID:             stations[i].ID,
+				Name:           stations[i].Name,
+				CreatedAt:      stations[i].CreatedAt,
+				TotalMessages:  stations[i].TotalMessages,
+				HasDlsMsgs:     stations[i].HasDlsMsgs,
+				Activity:       stations[i].Activity,
+				IsNative:       stations[i].IsNative,
+				ResendDisabled: stations[i].ResendDisabled,
 			}
 
 			extStations = append(extStations, stationRes)

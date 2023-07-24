@@ -608,10 +608,10 @@ func (s *Server) RemoveOldAsyncTasks() {
 	}
 }
 
-func (s *Server) CheckAsyncTasksExists() {
+func (s *Server) CheckAsyncTasksExistsToCompleted() {
 	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
 	if err != nil {
-		serv.Errorf("CheckAsyncTasksExists: failed to get async task resend all dls messages: %v", err.Error())
+		serv.Errorf("CheckAsyncTasksExistsToCompleted: failed to get async task resend all dls messages: %v", err.Error())
 		return
 	}
 
@@ -622,24 +622,24 @@ func (s *Server) CheckAsyncTasksExists() {
 	for _, asyncTask := range asyncTasks {
 		exist, station, err := db.GetStationById(asyncTask.StationId, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant: %v]CheckAsyncTasksExists at GetStationByName: %v", asyncTask.TenantName, err.Error())
+			serv.Errorf("[tenant: %v]CheckAsyncTasksExistsToCompleted at GetStationByName: %v", asyncTask.TenantName, err.Error())
 			return
 		}
 
 		if !exist {
 			stationIdStr := strconv.Itoa(asyncTask.StationId)
 			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
-			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExists at GetStationByName: %s", asyncTask.TenantName, errMsg)
+			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExistsToCompleted at GetStationByName: %s", asyncTask.TenantName, errMsg)
 			continue
 		}
 
 		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExists could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
+			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExistsToCompleted could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
 			return
 		}
 		if !exist {
-			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExists user does not exist", asyncTask.TenantName, user.Username)
+			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExistsToCompleted user does not exist", asyncTask.TenantName, user.Username)
 			return
 		}
 
@@ -682,15 +682,15 @@ func (s *Server) ResendAll(stationName string, stationId int, tenantName string,
 		if !empty {
 			data := value["offset"].(float64)
 			minId = int(data)
-			_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
+			_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", tenantName, username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByUpdatedAt: %v", tenantName, username, err.Error())
 				return
 			}
 		} else {
-			_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByCreatedAt(tenantName, createdAt, stationId)
+			_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByCreatedAt: %v", tenantName, username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetMinMaxIdDlsMsgsByUpdatedAt: %v", tenantName, username, err.Error())
 				return
 			}
 			// -1 in order to prevent skipping  the first element

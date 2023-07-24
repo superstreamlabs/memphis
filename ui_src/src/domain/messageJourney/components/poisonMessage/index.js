@@ -43,9 +43,7 @@ const PoisonMessage = ({ messageId, details, message, headers, processing, retur
         setResendProcess(true);
         processing(true);
         try {
-            // await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId], station_name: stationName });
-            // *** test for resend all ***
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [], station_name: stationName });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId], station_name: stationName });
             setTimeout(() => {
                 setResendProcess(false);
                 processing(false);

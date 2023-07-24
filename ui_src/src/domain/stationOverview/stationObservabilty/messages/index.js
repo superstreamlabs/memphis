@@ -173,9 +173,7 @@ const Messages = () => {
     const handleResend = async () => {
         setResendProcced(true);
         try {
-            // await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
-            // for test
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [], station_name: stationName });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
             setTimeout(() => {
                 setResendProcced(false);
                 message.success({

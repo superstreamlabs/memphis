@@ -5645,7 +5645,7 @@ func DeleteDlsMsgsByTenant(tenantName string) error {
 
 }
 
-func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time, stationId int) (bool, []models.DlsMsgResendAll, int, int, error) {
+func GetMinMaxIdDlsMsgsByUpdatedAt(tenantName string, createdAt time.Time, stationId int) (bool, []models.DlsMsgResendAll, int, int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5663,7 +5663,7 @@ func GetMinMaxIdDlsMsgsByCreatedAt(tenantName string, createdAt time.Time, stati
 		(SELECT MIN(id) FROM limited_rows) AS min_id,
 		(SELECT MAX(id) FROM limited_rows) AS max_id
 		FROM limited_rows;`
-	stmt, err := conn.Conn().Prepare(ctx, "get_min_max_id_dls_msgs_by_created_at", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_min_max_id_dls_msgs_by_updated_at", query)
 	if err != nil {
 		return false, []models.DlsMsgResendAll{}, -1, -1, err
 	}
