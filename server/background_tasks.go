@@ -584,7 +584,7 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 }
 
 func (s *Server) RemoveOldAsyncTasks() {
-	_, asyncTasks, err := db.GetAsyncTaskByName("resend_all_dls_msgs")
+	_, asyncTasks, err := db.GetAsyncTasksByName("resend_all_dls_msgs")
 	if err != nil {
 		serv.Errorf("RemoveOldAsyncTask: failed to get async task resend_all_dls_msgs: %v", err.Error())
 		return
@@ -695,7 +695,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
 				return
 			}
-			// -1 in order to prevent skipping  the first element
+			// -1 in order to prevent skipping the first element
 			minId -= 1
 		}
 

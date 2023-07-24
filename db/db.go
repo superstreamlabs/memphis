@@ -6392,7 +6392,7 @@ func GetAsyncTaskByTenantNameAndStationId(task, tenantName string, stationId int
 	return true, asyncTask[0], nil
 }
 
-func GetAsyncTaskByName(task string) (bool, []models.AsyncTask, error) {
+func GetAsyncTasksByName(task string) (bool, []models.AsyncTask, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6403,7 +6403,7 @@ func GetAsyncTaskByName(task string) (bool, []models.AsyncTask, error) {
 	defer conn.Release()
 
 	query := `SELECT * FROM async_tasks WHERE name = $1`
-	stmt, err := conn.Conn().Prepare(ctx, "get_async_task_by_name", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_async_tasks_by_name", query)
 	if err != nil {
 		return false, []models.AsyncTask{}, err
 	}
