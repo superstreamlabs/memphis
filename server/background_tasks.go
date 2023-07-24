@@ -33,6 +33,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
+const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
 var LastReadThroughputMap map[string]models.Throughput
@@ -283,16 +284,12 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
 
-	err = s.ListenForSchemaverseDlsEvents()
-	if err != nil {
-		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
-	}
-
 	err = s.ListenForCacheUpdates()
 	if err != nil {
 		return errors.New("Failed to subscribing for cache updates" + err.Error())
 	}
 
+	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
@@ -483,44 +480,70 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 	}
 }
 
-func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
-		go func(msg []byte) {
-			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
-			if err != nil {
-				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
-				return
-			}
-			var message models.SchemaVerseDlsMessageSdk
-			err = json.Unmarshal([]byte(stringMessage), &message)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-
-			exist, station, err := db.GetStationByName(message.StationName, tenantName)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-			if !exist {
-				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
-				return
-			}
-
-			message.Message.TimeSent = time.Now()
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-		}(copyBytes(msg))
-	})
-	if err != nil {
-		return err
+func (s *Server) ConsumeSchemaverseDlsMessages() {
+	type schemaverseDlsMsg struct {
+		Msg          []byte
+		ReplySubject string
 	}
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if DLS_SCHEMAVERSE_CONSUMER_CREATED && DLS_SCHEMAVERSE_STREAM_CREATED {
+			resp := make(chan schemaverseDlsMsg)
+			replySubj := SCHEMAVERSE_DLS_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
-	return nil
+			// subscribe to schemavers dls messages
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != "" {
+						message := schemaverseDlsMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to schemavers dls messages: %v", err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, dlsSchemaverseStream, SCHEMAVERSE_DLS_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]schemaverseDlsMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+					break
+				}
+				select {
+				case SchemaDlsMsg := <-resp:
+					msgs = append(msgs, SchemaDlsMsg)
+					if len(msgs) == amount {
+						stop = true
+					}
+				case <-timeout.C:
+					stop = true
+				}
+			}
+			for _, message := range msgs {
+				msg := message.Msg
+				s.handleSchemaverseDlsMessages(msg)
+				if err == nil {
+					// send ack
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))
+				}
+			}
+		} else {
+			time.Sleep(2 * time.Second)
+		}
+	}
 }
 
 func (s *Server) RemoveOldDlsMsgs() {
