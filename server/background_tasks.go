@@ -586,7 +586,7 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 func (s *Server) RemoveOldAsyncTasks() {
 	_, asyncTasks, err := db.GetAsyncTasksByName("resend_all_dls_msgs")
 	if err != nil {
-		serv.Errorf("RemoveOldAsyncTask: failed to get async task resend_all_dls_msgs: %v", err.Error())
+		serv.Errorf("RemoveOldAsyncTasks: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
 		return
 	}
 	now := time.Now()
@@ -597,12 +597,12 @@ func (s *Server) RemoveOldAsyncTasks() {
 		if sub >= 20*time.Minute {
 			err = db.UpdateResendDisabledInStation(false, asyncTask.StationId, asyncTask.TenantName)
 			if err != nil {
-				serv.Errorf("RemoveOldAsyncTask: failed to update resend disabled in station: %v, %v", stationIdStr, err.Error())
+				serv.Errorf("RemoveOldAsyncTasks: failed to update resend disabled in station: %v, %v", stationIdStr, err.Error())
 				continue
 			}
 			err = db.RemoveAsyncTask(asyncTask.Name, asyncTask.TenantName, asyncTask.StationId)
 			if err != nil {
-				serv.Errorf("RemoveOldAsyncTask: failed to remove async task: %v, %v", asyncTask.Name, err.Error())
+				serv.Errorf("RemoveOldAsyncTasks: failed to remove async task: %v, %v", asyncTask.Name, err.Error())
 				continue
 			}
 		}
