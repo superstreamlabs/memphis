@@ -24,6 +24,7 @@ import (
 	"memphis/memphis_cache"
 	"memphis/server"
 	"strings"
+	"time"
 
 	"os"
 
@@ -102,6 +103,7 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
+	time.Sleep(500 * time.Millisecond)
 	// fmt.Println("InitializeAnalytics success")
 
 	err = server.TenantSeqInitialize()

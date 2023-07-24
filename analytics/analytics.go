@@ -105,7 +105,6 @@ func InitializeAnalytics(memphisV, customDeploymentId string) error {
 			memphisConnection.CreateStation("users-traces", memphis.Replicas(3), memphis.TieredStorageEnabled(true), memphis.RetentionTypeOpt(memphis.MaxMessageAgeSeconds), memphis.RetentionVal(14400))
 		}
 	})
-	time.Sleep(100 * time.Millisecond)
 	return nil
 }
 
