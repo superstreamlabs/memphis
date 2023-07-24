@@ -102,7 +102,7 @@ func runMemphis(s *server.Server) {
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
-	fmt.Println("InitializeAnalytics success")
+	// fmt.Println("InitializeAnalytics success")
 
 	err = server.TenantSeqInitialize()
 	if err != nil {
