@@ -1345,7 +1345,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	}
 
 	if len(body.PoisonMessageIds) == 0 {
-		sh.S.ResendAll(stationName, station.ID, user.TenantName, user)
+		sh.S.ResendAllDlsMsgs(stationName, station.ID, user.TenantName, user)
 	} else {
 		stationName := strings.ToLower(body.StationName)
 		exist, _, err := db.GetStationByName(stationName, user.TenantName)
