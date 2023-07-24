@@ -609,10 +609,10 @@ func (s *Server) RemoveOldAsyncTasks() {
 	}
 }
 
-func (s *Server) CheckAsyncTasksExistsToCompleted() {
+func (s *Server) CheckAsyncTasksExistsToComplete() {
 	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
 	if err != nil {
-		serv.Errorf("CheckAsyncTasksExistsToCompleted: failed to get async task resend_all_dls_msgs: %v", err.Error())
+		serv.Errorf("CheckAsyncTasksExistsToComplete: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
 		return
 	}
 
@@ -623,25 +623,25 @@ func (s *Server) CheckAsyncTasksExistsToCompleted() {
 	for _, asyncTask := range asyncTasks {
 		exist, station, err := db.GetStationById(asyncTask.StationId, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant: %v]CheckAsyncTasksExistsToCompleted at GetStationById: %v", asyncTask.TenantName, err.Error())
+			serv.Errorf("[tenant: %v]CheckAsyncTasksExistsToComplete at GetStationById: %v", asyncTask.TenantName, err.Error())
 			return
 		}
 
 		if !exist {
 			stationIdStr := strconv.Itoa(asyncTask.StationId)
 			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
-			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExistsToCompleted at GetStationById: %s", asyncTask.TenantName, errMsg)
+			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExistsToComplete at GetStationById: %s", asyncTask.TenantName, errMsg)
 			continue
 		}
 
 		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExistsToCompleted could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
-			return
+			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExistsToComplete could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
+			continue
 		}
 		if !exist {
-			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExistsToCompleted user does not exist", asyncTask.TenantName, user.Username)
-			return
+			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExistsToComplete user does not exist", asyncTask.TenantName, user.Username)
+			continue
 		}
 
 		s.ResendAllDlsMsgs(station.Name, station.ID, station.TenantName, user)
@@ -668,18 +668,18 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			return
 		}
 
-		exist, t, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, tenantName, stationId)
+		exist, asyncTask, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, tenantName, stationId)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetAsyncTaskByTenantNameAndStationId: %v", tenantName, username, stationIdStr, err.Error())
 			return
 		}
 		if !exist {
-			errMsg := fmt.Sprintf("Task %v does not exist", t)
+			errMsg := fmt.Sprintf("Task %v does not exist", asyncTask)
 			serv.Warnf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetAsyncTaskByTenantNameAndStationId: %s", tenantName, username, stationIdStr, errMsg)
 			return
 		}
 
-		value, _ := t.Data.(map[string]interface{})
+		value, _ := asyncTask.Data.(map[string]interface{})
 		empty := len(value) == 0
 		if !empty {
 			data := value["offset"].(float64)

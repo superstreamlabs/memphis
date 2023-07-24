@@ -1346,21 +1346,6 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if len(body.PoisonMessageIds) == 0 {
 		sh.S.ResendAllDlsMsgs(stationName, station.ID, user.TenantName, user)
 	} else {
-		stationName := strings.ToLower(body.StationName)
-		exist, _, err := db.GetStationByName(stationName, user.TenantName)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-
-		if !exist {
-			errMsg := fmt.Sprintf("Station %v does not exist", stationName)
-			serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at GetStationByName: %s", user.TenantName, user.Username, errMsg)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-			return
-		}
-
 		for _, id := range body.PoisonMessageIds {
 			_, dlsMsg, err := db.GetDlsMessageById(id)
 			if err != nil {
