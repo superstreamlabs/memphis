@@ -6255,7 +6255,7 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 	}
 	rows.Close()
 
-	query = `DELETE FROM dls_messages WHERE poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
+	query = `DELETE FROM dls_messages WHERE message_type = 'poison' AND poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
 	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
 	if err != nil {
 		return err
