@@ -165,7 +165,7 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 		o.UsePathStyle = pathStyle
 	})
 
-	statusCode, err := testS3Integration(svc, bucketName)
+	statusCode, err := testS3Integration(svc, bucketName, url)
 	if err != nil {
 		return statusCode, map[string]string{}, err
 	}
@@ -243,11 +243,12 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 	return s3Integration, nil
 }
 
-func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
+func testS3Integration(svc *s3.Client, bucketName, urlEndpointResolver string) (int, error) {
 	_, err := svc.HeadBucket(context.Background(), &s3.HeadBucketInput{
 		Bucket: aws.String(bucketName),
 	})
 	var statusCode int
+	customUrlEndpointErr := fmt.Sprintf("lookup %s.bucket.: no such host", bucketName)
 	if err != nil {
 		if strings.Contains(err.Error(), "Forbidden") {
 			err = errors.New("invalid access key or secret key")
@@ -276,8 +277,14 @@ func testS3Integration(svc *s3.Client, bucketName string) (int, error) {
 				err = fmt.Errorf("%s: incorrect region", oe.Error())
 			}
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), customUrlEndpointErr) {
+			err = fmt.Errorf("No such host: endpoint url %s is incorrect", urlEndpointResolver)
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "failed to parse endpoint") || strings.Contains(err.Error(), "no such host") {
 			err = errors.New("invalid bucket name or region")
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "HeadBucket, exceeded maximum number of attempts") {
+			err = fmt.Errorf("The endpoint url %s is incorrect", urlEndpointResolver)
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else {
 			statusCode = 500
