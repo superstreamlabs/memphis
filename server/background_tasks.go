@@ -701,7 +701,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
-				return
+				continue
 			}
 			minId = offset
 			if len(dlsMsgs) == 0 || offset == maxId {
