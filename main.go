@@ -24,7 +24,6 @@ import (
 	"memphis/memphis_cache"
 	"memphis/server"
 	"strings"
-	"time"
 
 	"os"
 
@@ -266,9 +265,7 @@ func main() {
 	}
 	// fmt.Println("maxprocs.Set success")
 	s.Noticef("Established connection with the meta-data storage")
-	time.Sleep(1 * time.Second)
 	runMemphis(s)
-	time.Sleep(1 * time.Second)
 	// fmt.Println("runMemphis success")
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
