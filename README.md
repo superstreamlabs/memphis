@@ -28,7 +28,7 @@ We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/>
 </div>
  
  <p align="center">
-  <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+  <a href="https://memphis.dev/pricing/">Cloud - </a><a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p>
 
 <p align="center">
@@ -40,9 +40,10 @@ We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/>
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
-Memphis.dev is more than a broker. It's a new streaming stack.
-It accelerates the development of real-time applications that require high throughput, low latency, small footprint, and multiple protocols, with minimum platform operations, and all the observability you can think of.
-Highly resilient, distributed architecture, cloud-native, and run on any Kubernetes, on any cloud without zookeeper, bookeeper, or JVM.
+Memphis.dev is more than a broker. It's a new streaming stack.<br><br>
+It accelerates the development of real-time applications that require<br>
+high throughput, low latency, small footprint, and multiple protocols,<br>with minimum platform operations, and all the observability you can think of.<br><br>
+Highly resilient, distributed architecture, cloud-native, and run on any Kubernetes,<br>on any cloud without zookeeper, bookeeper, or JVM.
 
 ## 🫣 A world without Memphis
 When your application requires a message broker or a queue,<br>
