@@ -583,20 +583,20 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 	}
 }
 
-func (s *Server) notifyErrResendAll(user models.User, errorMsg string, stationId int, tenantName string) {
+func (s *Server) handlResendAllFailure(user models.User, stationId int, tenantName string) {
 	stationIdStr := strconv.Itoa(stationId)
 	systemMessage := SystemMessage{
 		MessageType:    "Error",
-		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has not been completed successfully: %s", stationIdStr, user.Username, errorMsg),
+		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationIdStr, user.Username),
 	}
 	err := serv.sendSystemMessageOnWS(user, systemMessage)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v][station: %v]notifyErrResendAll at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
+		serv.Errorf("[tenant: %v][user: %v][station: %v]handlResendAllFailure at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
 		return
 	}
 	err = db.UpdateResendDisabledInStations(false, []int{stationId})
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v][station: %v]notifyErrResendAll at UpdateResendDisabledInStations: %v", tenantName, user.Username, stationIdStr, err.Error())
+		serv.Errorf("[tenant: %v][user: %v][station: %v]handlResendAllFailure at UpdateResendDisabledInStations: %v", tenantName, user.Username, stationIdStr, err.Error())
 		return
 	}
 }
@@ -675,7 +675,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			}
 			err := serv.sendSystemMessageOnWS(user, systemMessage)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]notifyErrResendAll at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
 				return
 			}
 			return
@@ -683,7 +683,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpsertAsyncTask : %v", tenantName, username, stationIdStr, err.Error())
-			s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+			s.handlResendAllFailure(user, stationId, tenantName)
 			return
 		}
 
@@ -695,14 +695,14 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			_, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
-				s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+				s.handlResendAllFailure(user, stationId, tenantName)
 				return
 			}
 		} else {
 			minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
-				s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+				s.handlResendAllFailure(user, stationId, tenantName)
 				return
 			}
 			// -1 in order to prevent skipping the first element
@@ -713,7 +713,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetDlsMsgsBatch: %v", tenantName, username, stationIdStr, err.Error())
-				s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+				s.handlResendAllFailure(user, stationId, tenantName)
 				return
 			}
 
@@ -740,14 +740,14 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				err = db.UpdateResendDisabledInStations(false, []int{stationId})
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
-					s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+					s.handlResendAllFailure(user, stationId, tenantName)
 					return
 				}
 
 				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at RemoveAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
-					s.notifyErrResendAll(user, err.Error(), stationId, tenantName)
+					s.handlResendAllFailure(user, stationId, tenantName)
 					return
 				}
 

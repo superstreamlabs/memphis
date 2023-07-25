@@ -6466,7 +6466,7 @@ func RemoveAsyncTask(task, tenantName string, stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM async_tasks WHERE name = $2 AND tenant_name=$2 AND station_id = $3`
+	query := `DELETE FROM async_tasks WHERE name = $1 AND tenant_name=$2 AND station_id = $3`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task_by_name_and_tenant_name_and_station_id", query)
 	if err != nil {
 		return err
