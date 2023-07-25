@@ -77,7 +77,6 @@ type DlsMessage struct {
 }
 
 type DlsMsgResendAll struct {
-	ID    int `json:"id"`
 	MinId int `json:"min_id"`
 	MaxId int `json:"max_id"`
 }

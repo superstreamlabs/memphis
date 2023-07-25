@@ -5665,12 +5665,12 @@ func DeleteDlsMsgsByTenant(tenantName string) error {
 
 }
 
-func GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName string, updatedAt time.Time, stationId int) (bool, []models.DlsMsgResendAll, int, int, error) {
+func GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName string, updatedAt time.Time, stationId int) (int, int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, []models.DlsMsgResendAll{}, -1, -1, err
+		return -1, -1, err
 	}
 	defer conn.Release()
 	query := `
@@ -5679,31 +5679,31 @@ func GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName string, updatedAt time.Time, st
 		FROM dls_messages
 		WHERE tenant_name = $1 AND updated_at <= $2 AND message_type = 'poison' AND station_id = $3
 		)
-		SELECT id,
+		SELECT
 		(SELECT MIN(id) FROM limited_rows) AS min_id,
 		(SELECT MAX(id) FROM limited_rows) AS max_id
 		FROM limited_rows;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_min_max_id_dls_msgs_by_updated_at", query)
 	if err != nil {
-		return false, []models.DlsMsgResendAll{}, -1, -1, err
+		return -1, -1, err
 	}
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, updatedAt, stationId)
 	if err != nil {
-		return false, []models.DlsMsgResendAll{}, -1, -1, err
+		return -1, -1, err
 	}
 	defer rows.Close()
 
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMsgResendAll])
-	if err != nil {
-		return false, []models.DlsMsgResendAll{}, -1, -1, err
+	var minId, maxId int
+	if rows.Next() {
+		err := rows.Scan(&minId, &maxId)
+		if err != nil {
+			return -1, -1, err
+		}
 	}
-	if len(dlsMsgs) == 0 {
-		return false, []models.DlsMsgResendAll{}, -1, -1, nil
-	}
-	return true, dlsMsgs, dlsMsgs[0].MinId, dlsMsgs[0].MaxId, nil
+	return minId, maxId, nil
 }
 
 func GetDlsMsgsBatch(tenantName string, min, max, stationId int) (bool, []models.DlsMessage, error) {
