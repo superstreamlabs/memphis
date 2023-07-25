@@ -409,3 +409,27 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 
 	return response, nil
 }
+
+func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMessage) error {
+	subscriptions := serv.memphis.ws.subscriptions
+	if f, ok := subscriptions.Load(memphisWS_TemplSubj_Publish); ok {
+		if _, ok := f.tenants[user.TenantName]; ok {
+			replySubj := fmt.Sprintf("%s.%s.%s", memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages, serv.opts.ServerName)
+
+			acc, err := serv.lookupAccount(user.TenantName)
+			if err != nil {
+				err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
+				return err
+			}
+
+			updateRaw, err := json.Marshal(systemMessage)
+			if err != nil {
+				err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
+				return err
+			}
+			serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
+		}
+	}
+
+	return nil
+}

@@ -304,11 +304,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-	// TODO: remove if not needed
-	// username := c.memphisInfo.username
-	// if username == "" {
-	// 	username = csr.Username
-	// }
 
 	if shouldCreateStream {
 		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
@@ -529,6 +524,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				SchemaName:           station.SchemaName,
 				IsNative:             station.IsNative,
 				TieredStorageEnabled: station.TieredStorageEnabled,
+				ResendDisabled:       station.ResendDisabled,
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
@@ -632,13 +628,14 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			}
 
 			stationRes := models.ExtendedStation{
-				ID:            stations[i].ID,
-				Name:          stations[i].Name,
-				CreatedAt:     stations[i].CreatedAt,
-				TotalMessages: stations[i].TotalMessages,
-				HasDlsMsgs:    stations[i].HasDlsMsgs,
-				Activity:      stations[i].Activity,
-				IsNative:      stations[i].IsNative,
+				ID:             stations[i].ID,
+				Name:           stations[i].Name,
+				CreatedAt:      stations[i].CreatedAt,
+				TotalMessages:  stations[i].TotalMessages,
+				HasDlsMsgs:     stations[i].HasDlsMsgs,
+				Activity:       stations[i].Activity,
+				IsNative:       stations[i].IsNative,
+				ResendDisabled: stations[i].ResendDisabled,
 			}
 
 			extStations = append(extStations, stationRes)
@@ -1285,6 +1282,38 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+	size := int64(0)
+	for _, cgName := range dlsMsg.PoisonedCgs {
+		headersJson := map[string]string{}
+		for key, value := range dlsMsg.MessageDetails.Headers {
+			headersJson[key] = value
+		}
+		headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+		headersJson["$memphis_pm_cg_name"] = cgName
+
+		headers, err := json.Marshal(headersJson)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+
+		data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		size += int64(dlsMsg.MessageDetails.Size)
+	}
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
+	return "", nil
+}
+
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1314,46 +1343,25 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	for _, id := range body.PoisonMessageIds {
-		_, dlsMsg, err := db.GetDlsMessageById(id)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		size := int64(0)
-		for _, cgName := range dlsMsg.PoisonedCgs {
-			headersJson := map[string]string{}
-			for key, value := range dlsMsg.MessageDetails.Headers {
-				headersJson[key] = value
-			}
-			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-			headersJson["$memphis_pm_cg_name"] = cgName
-
-			headers, err := json.Marshal(headersJson)
+	if len(body.PoisonMessageIds) == 0 {
+		sh.S.ResendAllDlsMsgs(stationName, station.ID, user.TenantName, user)
+	} else {
+		for _, id := range body.PoisonMessageIds {
+			_, dlsMsg, err := db.GetDlsMessageById(id)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at json.Marshal: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			cgName, err := sh.S.ResendUnackedMsg(dlsMsg, user, stationName)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsg: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
-			data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at DecodeString: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			err = sh.S.ResendPoisonMessage(station.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			size += int64(dlsMsg.MessageDetails.Size)
 		}
-		IncrementEventCounter(station.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
 	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
