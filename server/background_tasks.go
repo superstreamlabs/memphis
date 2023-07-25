@@ -584,38 +584,29 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 }
 
 func (s *Server) RemoveOldAsyncTasks() {
-	_, asyncTasks, err := db.GetAsyncTasksByName("resend_all_dls_msgs")
+	stationIds, err := db.RemoveAllAsyncTasks()
 	if err != nil {
 		serv.Errorf("RemoveOldAsyncTasks: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
 		return
 	}
-	now := time.Now()
 
-	for _, asyncTask := range asyncTasks {
-		stationIdStr := strconv.Itoa(asyncTask.StationId)
-		sub := now.Sub(asyncTask.UpdatedAt)
-		if sub >= 20*time.Minute {
-			err = db.UpdateResendDisabledInStation(false, asyncTask.StationId, asyncTask.TenantName)
-			if err != nil {
-				serv.Errorf("RemoveOldAsyncTasks: failed to update resend disabled in station: %v, %v", stationIdStr, err.Error())
-				continue
-			}
-			err = db.RemoveAsyncTask(asyncTask.Name, asyncTask.TenantName, asyncTask.StationId)
-			if err != nil {
-				serv.Errorf("RemoveOldAsyncTasks: failed to remove async task: %v, %v", asyncTask.Name, err.Error())
-				continue
-			}
-		}
-	}
-}
-
-func (s *Server) CheckAsyncTasksExistsToComplete() {
-	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
-	if err != nil {
-		serv.Errorf("CheckAsyncTasksExistsToComplete: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
+	if len(stationIds) == 0 {
 		return
 	}
 
+	err = db.UpdateResendDisabledInStations(false, stationIds)
+	if err != nil {
+		serv.Errorf("RemoveOldAsyncTasks: failed to update resend disabled in station: %v", err.Error())
+		return
+	}
+}
+
+func (s *Server) CompleteRelevantStuckAsyncTasks() {
+	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
+	if err != nil {
+		serv.Errorf("CompleteRelevantStuckAsyncTasks: failed to get async tasks resend_all_dls_msgs: %v", err.Error())
+		return
+	}
 	if !exist {
 		return
 	}
@@ -623,24 +614,23 @@ func (s *Server) CheckAsyncTasksExistsToComplete() {
 	for _, asyncTask := range asyncTasks {
 		exist, station, err := db.GetStationById(asyncTask.StationId, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant: %v]CheckAsyncTasksExistsToComplete at GetStationById: %v", asyncTask.TenantName, err.Error())
+			serv.Errorf("[tenant: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, err.Error())
 			return
 		}
-
 		if !exist {
 			stationIdStr := strconv.Itoa(asyncTask.StationId)
 			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
-			serv.Warnf("[tenant: %v][user: %v]CheckAsyncTasksExistsToComplete at GetStationById: %s", asyncTask.TenantName, errMsg)
+			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %s", asyncTask.TenantName, errMsg)
 			continue
 		}
 
 		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
 		if err != nil {
-			serv.Errorf("[tenant:%v][user: %v] CheckAsyncTasksExistsToComplete could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
+			serv.Errorf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
 			continue
 		}
 		if !exist {
-			serv.Warnf("[tenant:%v][user: %v] CheckAsyncTasksExistsToComplete user does not exist", asyncTask.TenantName, user.Username)
+			serv.Warnf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks user does not exist", asyncTask.TenantName, user.Username)
 			continue
 		}
 
@@ -668,31 +658,20 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			return
 		}
 
-		exist, asyncTask, err := db.GetAsyncTaskByTenantNameAndStationId(task.Name, tenantName, stationId)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetAsyncTaskByTenantNameAndStationId: %v", tenantName, username, stationIdStr, err.Error())
-			return
-		}
-		if !exist {
-			errMsg := fmt.Sprintf("Task %v does not exist", asyncTask)
-			serv.Warnf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetAsyncTaskByTenantNameAndStationId: %s", tenantName, username, stationIdStr, errMsg)
-			return
-		}
-
-		value, _ := asyncTask.Data.(map[string]interface{})
+		value, _ := task.Data.(map[string]interface{})
 		empty := len(value) == 0
 		if !empty {
 			data := value["offset"].(float64)
 			minId = int(data)
-			_, _, _, maxId, err = db.GetMinMaxIdDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			_, _, _, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
 				return
 			}
 		} else {
-			_, _, minId, maxId, err = db.GetMinMaxIdDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			_, _, minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
 				return
 			}
 			// -1 in order to prevent skipping the first element
@@ -703,27 +682,26 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetDlsMsgsBatch: %v", tenantName, username, stationIdStr, err.Error())
-				continue
+				return
 			}
 
+			data := models.MetaData{}
 			for _, dlsMsg := range dlsMsgs {
 				offset = dlsMsg.ID
-				data := models.MetaData{
+				data = models.MetaData{
 					Offset: offset,
 				}
-
 				_, err = serv.ResendUnackedMsgs(dlsMsg, user, stationName)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at ResendUnackedMsgs: %v", tenantName, username, stationIdStr, err.Error())
 					continue
 				}
 
-				err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, dlsMsg.StationId)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
-					continue
-				}
-
+			}
+			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
+				return
 			}
 			minId = offset
 			if len(dlsMsgs) == 0 || offset == maxId {
@@ -741,7 +719,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 
 				systemMessage := SystemMessage{
 					MessageType:    "Info",
-					MessagePayload: fmt.Sprintf("The unacked messages were successfully resent by user: %s in tenant: %s in station: %s", username, tenantName, stationIdStr),
+					MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has been completed successfully", stationIdStr, username),
 				}
 
 				err = serv.sendSystemMessageOnWS(user, systemMessage)
