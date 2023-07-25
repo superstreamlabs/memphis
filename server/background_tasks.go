@@ -729,16 +729,16 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			}
 			minId = offset
 			if len(dlsMsgs) == 0 || offset == maxId {
-				err = db.UpdateResendDisabledInStations(false, []int{stationId})
+				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at RemoveAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
 					s.handleResendAllFailure(user, stationId, tenantName)
 					return
 				}
 
-				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
+				err = db.UpdateResendDisabledInStations(false, []int{stationId})
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at RemoveAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
 					s.handleResendAllFailure(user, stationId, tenantName)
 					return
 				}
