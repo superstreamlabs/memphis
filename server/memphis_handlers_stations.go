@@ -1294,18 +1294,18 @@ func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, st
 
 		headers, err := json.Marshal(headersJson)
 		if err != nil {
-			err = fmt.Errorf("Failed ResendUnackedMsgs at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
+			err = fmt.Errorf("Failed ResendUnackedMsg at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 
 		data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
 		if err != nil {
-			err = fmt.Errorf("Failed ResendUnackedMsgs at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
+			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
 		if err != nil {
-			err = fmt.Errorf("Failed ResendUnackedMsgs at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
 			return cgName, err
 		}
 		size += int64(dlsMsg.MessageDetails.Size)
@@ -1355,7 +1355,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 			}
 			cgName, err := sh.S.ResendUnackedMsg(dlsMsg, user, stationName)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendUnackedMsgs at ResendUnackedMsgs: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsg: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}

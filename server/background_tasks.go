@@ -725,7 +725,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				}
 				_, err = serv.ResendUnackedMsg(dlsMsg, user, stationName)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at ResendUnackedMsgs: %v", tenantName, username, stationIdStr, err.Error())
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at ResendUnackedMsg: %v", tenantName, username, stationIdStr, err.Error())
 					continue
 				}
 
