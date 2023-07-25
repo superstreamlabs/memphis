@@ -433,7 +433,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	if !DLS_SCHEMAVERSE_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsSchemaverseStream,
-			Subjects:     []string{SCHEMAVERSE_DLS_SUBJ},
+			Subjects:     []string{SCHEMAVERS_DLS_INNER_SUBJ},
 			Retention:    WorkQueuePolicy,
 			MaxAge:       time.Hour * 24,
 			MaxConsumers: -1,

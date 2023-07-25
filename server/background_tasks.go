@@ -33,6 +33,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
+const SCHEMAVERS_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
@@ -179,6 +180,19 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
+func (s *Server) ListenForSchemaverseDlsEvents() error {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), SCHEMAVERS_DLS_INNER_SUBJ, msg)
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(s.MemphisGlobalAccountString(), PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
@@ -272,6 +286,11 @@ func (s *Server) StartBackgroundTasks() error {
 	err = s.ListenForNotificationEvents()
 	if err != nil {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
+	}
+
+	err = s.ListenForSchemaverseDlsEvents()
+	if err != nil {
+		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
 	}
 
 	err = s.ListenForPoisonMsgAcks()
