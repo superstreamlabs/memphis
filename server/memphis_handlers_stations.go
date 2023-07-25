@@ -1282,7 +1282,7 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) ResendUnackedMsgs(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
 	size := int64(0)
 	for _, cgName := range dlsMsg.PoisonedCgs {
 		headersJson := map[string]string{}
@@ -1353,7 +1353,7 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-			cgName, err := sh.S.ResendUnackedMsgs(dlsMsg, user, stationName)
+			cgName, err := sh.S.ResendUnackedMsg(dlsMsg, user, stationName)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]ResendUnackedMsgs at ResendUnackedMsgs: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

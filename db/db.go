@@ -1959,25 +1959,6 @@ func UpdateStationsWithNoHA3() error {
 	}
 	return nil
 }
-func UpdateResendDisabledInStation(resendDisabled bool, stationId int, tenantName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-	query := `UPDATE stations SET resend_disabled = $1 WHERE id = $2 AND tenant_name = $3`
-	stmt, err := conn.Conn().Prepare(ctx, "update_resend_disabled_in_station", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, resendDisabled, stationId, tenantName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func UpdateResendDisabledInStations(resendDisabled bool, stationId []int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
@@ -6485,7 +6466,7 @@ func RemoveAsyncTask(task, tenantName string, stationId int) error {
 		return err
 	}
 	defer conn.Release()
-	query := `DELETE FROM async_tasks WHERE name = $1 AND tenant_name=$2 AND station_id = $3`
+	query := `DELETE FROM async_tasks WHERE name = $2 AND tenant_name=$2 AND station_id = $3`
 	stmt, err := conn.Conn().Prepare(ctx, "remove_async_task_by_name_and_tenant_name_and_station_id", query)
 	if err != nil {
 		return err
@@ -6497,8 +6478,7 @@ func RemoveAsyncTask(task, tenantName string, stationId int) error {
 	return nil
 }
 
-func RemoveAllAsyncTasks() ([]int, error) {
-	duration := 20 * time.Minute
+func RemoveAllAsyncTasks(duration time.Duration) ([]int, error) {
 	sub := time.Now().Add(-duration)
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
