@@ -66,7 +66,14 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
-type SystemMessage struct{}
+type SystemMessage struct {
+	Id             string    `json:"id"`
+	MessageType    string    `firestore:"message_type" json:"message_type"`
+	MessagePayload string    `firestore:"message_payload" json:"message_payload"`
+	StartTime      time.Time `firestore:"start_time" json:"start_time"`
+	EndTime        time.Time `firestore:"end_time" json:"end_time"`
+	UiPage         string    `firestore:"ui_page" json:"ui_page"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -980,6 +987,14 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 			return
 		}
 	}
+	if ch.S.opts.GCProducersConsumersRetentionHours != body.GCProducersConsumersRetentionHours {
+		err := changeGCProducersConsumersRetentionHours(body.GCProducersConsumersRetentionHours, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]EditConfigurations at changeGCProducersConsumersRetentionHours: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
 	if ch.S.opts.LogsRetentionDays != body.LogsRetention {
 		err := changeLogsRetention(body.LogsRetention)
 		if err != nil {
@@ -1057,13 +1072,14 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           body.DlsRetention,
-		"logs_retention":          body.LogsRetention,
-		"broker_host":             brokerHost,
-		"ui_host":                 uiHost,
-		"rest_gw_host":            restGWHost,
-		"tiered_storage_time_sec": body.TSTimeSec,
-		"max_msg_size_mb":         int32(body.MaxMsgSizeMb),
+		"dls_retention":                        body.DlsRetention,
+		"logs_retention":                       body.LogsRetention,
+		"broker_host":                          brokerHost,
+		"ui_host":                              uiHost,
+		"rest_gw_host":                         restGWHost,
+		"tiered_storage_time_sec":              body.TSTimeSec,
+		"max_msg_size_mb":                      int32(body.MaxMsgSizeMb),
+		"gc_producer_consumer_retention_hours": body.GCProducersConsumersRetentionHours,
 	})
 }
 
@@ -1081,13 +1097,14 @@ func (ch ConfigurationsHandler) GetClusterConfig(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-cluster-config-page")
 	}
 	c.IndentedJSON(200, gin.H{
-		"dls_retention":           ch.S.opts.DlsRetentionHours[user.TenantName],
-		"logs_retention":          ch.S.opts.LogsRetentionDays,
-		"broker_host":             ch.S.opts.BrokerHost,
-		"ui_host":                 ch.S.opts.UiHost,
-		"rest_gw_host":            ch.S.opts.RestGwHost,
-		"tiered_storage_time_sec": ch.S.opts.TieredStorageUploadIntervalSec,
-		"max_msg_size_mb":         ch.S.opts.MaxPayload / 1024 / 1024,
+		"dls_retention":                        ch.S.opts.DlsRetentionHours[user.TenantName],
+		"logs_retention":                       ch.S.opts.LogsRetentionDays,
+		"broker_host":                          ch.S.opts.BrokerHost,
+		"ui_host":                              ch.S.opts.UiHost,
+		"rest_gw_host":                         ch.S.opts.RestGwHost,
+		"tiered_storage_time_sec":              ch.S.opts.TieredStorageUploadIntervalSec,
+		"max_msg_size_mb":                      ch.S.opts.MaxPayload / 1024 / 1024,
+		"gc_producer_consumer_retention_hours": ch.S.opts.GCProducersConsumersRetentionHours,
 	})
 }
 
@@ -1265,7 +1282,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
-	exist, _, err := db.GetUserByUsername(username, user.TenantName)
+	exist, _, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1409,7 +1426,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
-	exist, userToRemove, err := db.GetUserByUsername(username, user.TenantName)
+	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1641,7 +1658,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := db.GetUserByUsername(username, user.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, user.TenantName)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

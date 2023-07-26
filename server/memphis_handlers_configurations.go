@@ -28,6 +28,14 @@ func changeDlsRetention(dlsRetention int, tenantName string) error {
 	return nil
 }
 
+func changeGCProducersConsumersRetentionHours(retention int, tenantName string) error {
+	err := db.UpsertConfiguration("gc_producer_consumer_retention_hours", strconv.Itoa(retention), tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func changeLogsRetention(logsRetention int) error {
 	err := db.UpsertConfiguration("logs_retention", strconv.Itoa(logsRetention), serv.MemphisGlobalAccountString())
 	if err != nil {

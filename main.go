@@ -150,6 +150,8 @@ func runMemphis(s *server.Server) {
 	}
 	// fmt.Println("Force3ReplicationsForExistingStations success")
 
+	s.CompleteRelevantStuckAsyncTasks()
+
 	go func() {
 		s.CreateInternalJetStreamResources()
 		// fmt.Println("CreateInternalJetStreamResources success")

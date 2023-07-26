@@ -59,6 +59,7 @@ type Station struct {
 	DlsConfigurationSchemaverse bool      `json:"dls_configuration_schemaverse,omitempty"`
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 	TenantName                  string    `json:"tenant_name"`
+	ResendDisabled              bool      `json:"resend_disabled"`
 }
 
 type GetStationResponseSchema struct {
@@ -103,6 +104,7 @@ type ExtendedStation struct {
 	Consumers                   []Consumer  `json:"consumers,omitempty"`
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
+	ResendDisabled              bool        `json:"resend_disabled"`
 }
 
 type ExtendedStationLight struct {
@@ -129,6 +131,7 @@ type ExtendedStationLight struct {
 	Activity                    bool        `json:"activity"`
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
+	ResendDisabled              bool        `json:"resend_disabled"`
 }
 
 type ActiveProducersConsumersDetails struct {
