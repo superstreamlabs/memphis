@@ -154,7 +154,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var tenantName string
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createStationDirect at getTenantNameAndMessage: %v", tenantName, err.Error())
+		s.Errorf("createStationDirect at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {

@@ -33,7 +33,7 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
-const SCHEMAVERS_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
+const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
@@ -155,7 +155,7 @@ func (s *Server) ListenForNotificationEvents() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
+				s.Errorf("ListenForNotificationEvents at getTenantNameAndMessage: %v", err.Error())
 				return
 			}
 			var notification models.Notification
@@ -183,7 +183,7 @@ func (s *Server) ListenForNotificationEvents() error {
 func (s *Server) ListenForSchemaverseDlsEvents() error {
 	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), SCHEMAVERS_DLS_INNER_SUBJ, msg)
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), SCHEMAVERSE_DLS_INNER_SUBJ, msg)
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -198,7 +198,7 @@ func (s *Server) ListenForPoisonMsgAcks() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
+				s.Errorf("ListenForPoisonMsgAcks at getTenantNameAndMessage: %v", err.Error())
 				return
 			}
 			var msgToAck models.PmAckMsg
@@ -553,7 +553,7 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 			}
 			for _, message := range msgs {
 				msg := message.Msg
-				s.handleSchemaverseDlsMessages(msg)
+				s.handleSchemaverseDlsMsg(msg)
 				if err == nil {
 					// send ack
 					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))

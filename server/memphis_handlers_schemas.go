@@ -839,7 +839,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	var tenantName string
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", tenantName, err.Error())
+		s.Errorf("createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", err.Error())
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}

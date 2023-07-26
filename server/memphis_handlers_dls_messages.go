@@ -122,33 +122,33 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	return nil
 }
 
-func (s *Server) handleSchemaverseDlsMessages(msg []byte) {
+func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 	tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]handleSchemaverseDlsMessages: %v", tenantName, err.Error())
+		s.Errorf("handleSchemaverseDlsMsg at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 	var message models.SchemaVerseDlsMessageSdk
 	err = json.Unmarshal([]byte(stringMessage), &message)
 	if err != nil {
-		serv.Errorf("[tenant: %v]handleSchemaverseDlsMessages: %v", tenantName, err.Error())
+		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
 		return
 	}
 
 	exist, station, err := db.GetStationByName(message.StationName, tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]handleSchemaverseDlsMessages: %v", tenantName, err.Error())
+		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v]handleSchemaverseDlsMessages: station %v couldn't been found", tenantName, message.StationName)
+		serv.Warnf("[tenant: %v]handleSchemaverseDlsMsg: station %v couldn't been found", tenantName, message.StationName)
 		return
 	}
 
 	message.Message.TimeSent = time.Now()
 	_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]handleSchemaverseDlsMessages: %v", tenantName, err.Error())
+		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
 		return
 	}
 }
