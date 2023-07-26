@@ -79,7 +79,7 @@ func validateGraphqlSchemaContent(schemaContent string) error {
 func validateAvroSchemaContent(schemaContent string) error {
 	_, err := avro.Parse(schemaContent)
 	if err != nil {
-		return err
+		return fmt.Errorf("your Avro file is invalid: %v", err.Error())
 	}
 	return nil
 }

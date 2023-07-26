@@ -75,7 +75,7 @@ const schemaTypes = [
     {
         id: 4,
         value: 'Avro',
-        label: 'Avro (New)',
+        label: 'Avro',
         description: (
             <span>
                 The popular. Apache Avro™ is the leading serialization format for record data, and first choice for streaming data pipelines. It offers excellent schema
