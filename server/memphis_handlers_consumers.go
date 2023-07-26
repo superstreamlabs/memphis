@@ -242,7 +242,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("createConsumerDirect: %v", err.Error())
+		s.Errorf("createConsumerDirect at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 

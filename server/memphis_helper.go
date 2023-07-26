@@ -52,6 +52,7 @@ const (
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
 	dlsUnackedStream       = "$memphis_dls_unacked"
+	dlsSchemaverseStream   = "$memphis_dls_schemaverse"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -121,14 +122,16 @@ const (
 
 // errors
 var (
-	ErrBadHeader                    = errors.New("could not decode header")
-	TIERED_STORAGE_CONSUMER_CREATED bool
-	TIERED_STORAGE_STREAM_CREATED   bool
-	DLS_UNACKED_CONSUMER_CREATED    bool
-	DLS_UNACKED_STREAM_CREATED      bool
-	SYSLOGS_STREAM_CREATED          bool
-	THROUGHPUT_STREAM_CREATED       bool
-	THROUGHPUT_LEGACY_STREAM_EXIST  bool
+	ErrBadHeader                     = errors.New("could not decode header")
+	TIERED_STORAGE_CONSUMER_CREATED  bool
+	TIERED_STORAGE_STREAM_CREATED    bool
+	DLS_UNACKED_CONSUMER_CREATED     bool
+	DLS_UNACKED_STREAM_CREATED       bool
+	DLS_SCHEMAVERSE_STREAM_CREATED   bool
+	DLS_SCHEMAVERSE_CONSUMER_CREATED bool
+	SYSLOGS_STREAM_CREATED           bool
+	THROUGHPUT_STREAM_CREATED        bool
+	THROUGHPUT_LEGACY_STREAM_EXIST   bool
 )
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
@@ -424,6 +427,43 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		DLS_UNACKED_CONSUMER_CREATED = true
+	}
+
+	// create schemaverse dls stream
+	if !DLS_SCHEMAVERSE_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsSchemaverseStream,
+			Subjects:     []string{SCHEMAVERSE_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_SCHEMAVERSE_STREAM_CREATED = true
+	}
+
+	// create schemaverse dls consumer
+	if !DLS_SCHEMAVERSE_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       SCHEMAVERSE_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsSchemaverseStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 	}
 
 	// delete the old version throughput stream

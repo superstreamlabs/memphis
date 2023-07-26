@@ -1301,6 +1301,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			THROUGHPUT_STREAM_CREATED = true
 		case throughputStreamName:
 			THROUGHPUT_LEGACY_STREAM_EXIST = true
+		case dlsSchemaverseStream:
+			DLS_SCHEMAVERSE_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 
@@ -1329,6 +1331,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			TIERED_STORAGE_CONSUMER_CREATED = true
 		case dlsUnackedStream:
 			DLS_UNACKED_CONSUMER_CREATED = true
+		case dlsSchemaverseStream:
+			DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 		}
 		// added by Memphis ***
 
