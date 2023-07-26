@@ -1485,8 +1485,8 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.DlsConfigurationSchemaverse,
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
-			&stationRes.Activity,
 			&stationRes.ResendDisabled,
+			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
 		}
