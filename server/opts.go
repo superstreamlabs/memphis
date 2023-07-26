@@ -1446,8 +1446,8 @@ func (o *Options) processConfigFileLine(k string, v interface{}, errors *[]error
 		o.DlsRetentionHours[conf.MemphisGlobalAccountName] = value
 	case "gc_producer_consumer_retention_hours":
 		value := int(v.(int64))
-		if value < 1 || value > 48 {
-			*errors = append(*errors, &configErr{tk, "error gc_producer_consumer_retention_hours config: has to be positive and not more than 48"})
+		if value < 1 || value > 168 {
+			*errors = append(*errors, &configErr{tk, "error gc_producer_consumer_retention_hours config: has to be positive and not more than 168"})
 			return
 		}
 		o.GCProducersConsumersRetentionHours = value
