@@ -129,10 +129,10 @@ func (s *Server) KillZombieResources() {
 	firstIteration := true
 	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
-		if firstIteration {
-			s.removeStaleStations()
-			s.RemoveOldStations()
-		}
+		// if firstIteration {
+		// 	s.removeStaleStations()
+		// 	s.RemoveOldStations()
+		// }
 		killFunc(s)
 
 		if firstIteration || count == 1*60 { // once in 1 hour
