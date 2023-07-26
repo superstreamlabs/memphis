@@ -430,13 +430,14 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 		return err
 	}
 
+	updateRaw, err := json.Marshal(systemMessage)
+	if err != nil {
+		err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
+		return err
+	}
+
 	for _, serverName := range serverNames {
 		replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages+"."+serverName)
-		updateRaw, err := json.Marshal(systemMessage)
-		if err != nil {
-			err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
-			return err
-		}
 		serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
 	}
 
