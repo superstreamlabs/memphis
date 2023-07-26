@@ -411,24 +411,34 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 }
 
 func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMessage) error {
-	subscriptions := serv.memphis.ws.subscriptions
-	if f, ok := subscriptions.Load(memphisWS_TemplSubj_Publish); ok {
-		if _, ok := f.tenants[user.TenantName]; ok {
-			replySubj := fmt.Sprintf("%s.%s.%s", memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages, serv.opts.ServerName)
+	v, err := serv.Varz(nil)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
+		return err
+	}
+	var serverNames []string
+	if len(v.Cluster.URLs) == 0 {
+		serverNames = append(serverNames, "memphis-0")
+	}
+	for i := range v.Cluster.URLs {
+		serverNames = append(serverNames, "memphis-"+strconv.Itoa(i))
+	}
 
-			acc, err := serv.lookupAccount(user.TenantName)
-			if err != nil {
-				err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
-				return err
-			}
+	acc, err := serv.lookupAccount(user.TenantName)
+	if err != nil {
+		err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
+		return err
+	}
 
-			updateRaw, err := json.Marshal(systemMessage)
-			if err != nil {
-				err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
-				return err
-			}
-			serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
-		}
+	updateRaw, err := json.Marshal(systemMessage)
+	if err != nil {
+		err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
+		return err
+	}
+
+	for _, serverName := range serverNames {
+		replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages+"."+serverName)
+		serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
 	}
 
 	return nil
