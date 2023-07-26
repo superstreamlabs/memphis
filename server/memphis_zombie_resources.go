@@ -129,7 +129,7 @@ func (s *Server) KillZombieResources() {
 	firstIteration := true
 	for range time.Tick(time.Minute * 1) {
 		s.Debugf("Killing Zombie resources iteration")
-		// if firstIteration {
+		// if firstIteration && count == 1 { // after 1 minute
 		// 	s.removeStaleStations()
 		// 	s.RemoveOldStations()
 		// }
