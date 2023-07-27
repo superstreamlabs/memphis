@@ -169,10 +169,19 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
-	shouldCreateStream bool) {
+	shouldCreateStream bool, numberOfPartitions int) {
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
+
+	if numberOfPartitions > 30 || numberOfPartitions < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", numberOfPartitions, csr.StationName)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
