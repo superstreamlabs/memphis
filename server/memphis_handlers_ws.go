@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -433,7 +433,12 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 	}
 
 	if systemMessage.Id == "" {
-		systemMessage.Id = uuid.New().String()
+		uid, err := uuid.NewV4()
+		if err != nil {
+			err = fmt.Errorf("sendSystemMessageOnWS at uuid.NewV4: %v", err.Error())
+			return err
+		}
+		systemMessage.Id = uid.String()
 	}
 	systemMessages := []SystemMessage{}
 	systemMessages = append(systemMessages, systemMessage)
