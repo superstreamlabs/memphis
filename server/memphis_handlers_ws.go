@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -428,6 +430,10 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 	if err != nil {
 		err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
 		return err
+	}
+
+	if systemMessage.Id == "" {
+		systemMessage.Id = uuid.New().String()
 	}
 	systemMessages := []SystemMessage{}
 	systemMessages = append(systemMessages, systemMessage)
