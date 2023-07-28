@@ -2266,7 +2266,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				}
 
 				systemMessage := SystemMessage{
-					MessageType:    "Info",
+					MessageType:    "info",
 					MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has been completed successfully", stationIdStr, username),
 				}
 
