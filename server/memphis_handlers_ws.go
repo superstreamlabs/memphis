@@ -429,8 +429,9 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 		err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
 		return err
 	}
-
-	updateRaw, err := json.Marshal(systemMessage)
+	systemMessages := []SystemMessage{}
+	systemMessages = append(systemMessages, systemMessage)
+	updateRaw, err := json.Marshal(systemMessages)
 	if err != nil {
 		err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
 		return err
