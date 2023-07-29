@@ -2348,7 +2348,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	var producerId int
 	updatedAt := time.Now()
 	isActive := true
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName)
 	if err != nil {
 		return models.Producer{}, err

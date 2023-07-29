@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -430,7 +432,17 @@ func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMes
 		return err
 	}
 
-	updateRaw, err := json.Marshal(systemMessage)
+	if systemMessage.Id == "" {
+		uid, err := uuid.NewV4()
+		if err != nil {
+			err = fmt.Errorf("sendSystemMessageOnWS at uuid.NewV4: %v", err.Error())
+			return err
+		}
+		systemMessage.Id = uid.String()
+	}
+	systemMessages := []SystemMessage{}
+	systemMessages = append(systemMessages, systemMessage)
+	updateRaw, err := json.Marshal(systemMessages)
 	if err != nil {
 		err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
 		return err

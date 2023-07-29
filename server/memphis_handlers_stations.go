@@ -438,6 +438,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
+		ResendDisabled:       station.ResendDisabled,
 	}
 
 	c.IndentedJSON(200, stationResponse)
@@ -958,6 +959,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
@@ -977,6 +979,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	}
 }
@@ -2263,7 +2266,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				}
 
 				systemMessage := SystemMessage{
-					MessageType:    "Info",
+					MessageType:    "info",
 					MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has been completed successfully", stationIdStr, username),
 				}
 
