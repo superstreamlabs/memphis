@@ -97,7 +97,7 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server, clientListenReady chan struct{}) {
+func runMemphis(s *server.Server, clientListenReady *chan struct{}) {
 	err := analytics.InitializeAnalytics(s.MemphisVersion(), s.GetCustomDeploymentId())
 	if err != nil {
 		s.Errorf("Failed initializing analytics: " + err.Error())
@@ -196,7 +196,7 @@ func runMemphis(s *server.Server, clientListenReady chan struct{}) {
 			env = "K8S"
 		}
 		// Wait for clients.
-		s.AcceptLoop(clientListenReady)
+		s.AcceptLoop(*clientListenReady)
 		s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
 	}()
 }

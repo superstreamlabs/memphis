@@ -1663,7 +1663,7 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
-func (s *Server) Start() chan struct{} {
+func (s *Server) Start() *chan struct{} {
 	s.Noticef("Starting Memphis{dev} broker")
 
 	gc := gitCommit
@@ -1933,7 +1933,7 @@ func (s *Server) Start() chan struct{} {
 	// if !opts.DontListen {
 	// 	s.AcceptLoop(clientListenReady)
 	// }
-	return clientListenReady
+	return &clientListenReady
 }
 
 // Shutdown will shutdown the server instance by kicking out the AcceptLoop
