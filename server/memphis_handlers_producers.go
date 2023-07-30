@@ -161,7 +161,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("createProducerDirect: %v", err.Error())
+		s.Errorf("createProducerDirect at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 
@@ -267,7 +267,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	var dpr destroyProducerRequestV1
 	tenantName, destoryMessage, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("destroyProducerDirect: %v", err.Error())
+		s.Errorf("destroyProducerDirect at getTenantNameAndMessage: %v", err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}

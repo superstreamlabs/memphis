@@ -76,6 +76,11 @@ type DlsMessage struct {
 	ProducerName    string         `json:"producer_name"`
 }
 
+type DlsMsgResendAll struct {
+	MinId int `json:"min_id"`
+	MaxId int `json:"max_id"`
+}
+
 type DlsMessageResponse struct {
 	ID              int                 `json:"id"`
 	StationName     string              `json:"station_name"`

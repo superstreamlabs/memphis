@@ -66,7 +66,14 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
-type SystemMessage struct{}
+type SystemMessage struct {
+	Id             string    `json:"id"`
+	MessageType    string    `firestore:"message_type" json:"message_type"`
+	MessagePayload string    `firestore:"message_payload" json:"message_payload"`
+	StartTime      time.Time `firestore:"start_time" json:"start_time"`
+	EndTime        time.Time `firestore:"end_time" json:"end_time"`
+	UiPage         string    `firestore:"ui_page" json:"ui_page"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -1950,5 +1957,24 @@ func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) 
 }
 
 func (s *Server) SetDlsRetentionForExistTenants() error {
+	return nil
+}
+
+func validateRetentionType(retentionType string) error {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
+		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
+	}
+
+	return nil
+}
+
+func getRetentionPolicy(retentionType string) RetentionPolicy {
+	return LimitsPolicy
+}
+
+func validateRetentionPolicy(policy RetentionPolicy) error {
+	if policy != LimitsPolicy {
+		return errors.New("the only supported retention type is limits")
+	}
 	return nil
 }

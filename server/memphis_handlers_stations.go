@@ -83,14 +83,6 @@ func StationNameFromStreamName(streamName string) StationName {
 	return StationName{internal: intern, external: extern}
 }
 
-func validateRetentionType(retentionType string) error {
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
-
-	return nil
-}
-
 func validateStorageType(storageType string) error {
 	if storageType != "file" && storageType != "memory" {
 		return errors.New("storage type can be one of the following file/memory")
@@ -154,7 +146,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var tenantName string
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createStationDirect at getTenantNameAndMessage: %v", tenantName, err.Error())
+		s.Errorf("createStationDirect at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {
@@ -304,11 +296,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-	// TODO: remove if not needed
-	// username := c.memphisInfo.username
-	// if username == "" {
-	// 	username = csr.Username
-	// }
 
 	if shouldCreateStream {
 		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
@@ -443,6 +430,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
+		ResendDisabled:       station.ResendDisabled,
 	}
 
 	c.IndentedJSON(200, stationResponse)
@@ -529,6 +517,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				SchemaName:           station.SchemaName,
 				IsNative:             station.IsNative,
 				TieredStorageEnabled: station.TieredStorageEnabled,
+				ResendDisabled:       station.ResendDisabled,
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
@@ -632,13 +621,14 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			}
 
 			stationRes := models.ExtendedStation{
-				ID:            stations[i].ID,
-				Name:          stations[i].Name,
-				CreatedAt:     stations[i].CreatedAt,
-				TotalMessages: stations[i].TotalMessages,
-				HasDlsMsgs:    stations[i].HasDlsMsgs,
-				Activity:      stations[i].Activity,
-				IsNative:      stations[i].IsNative,
+				ID:             stations[i].ID,
+				Name:           stations[i].Name,
+				CreatedAt:      stations[i].CreatedAt,
+				TotalMessages:  stations[i].TotalMessages,
+				HasDlsMsgs:     stations[i].HasDlsMsgs,
+				Activity:       stations[i].Activity,
+				IsNative:       stations[i].IsNative,
+				ResendDisabled: stations[i].ResendDisabled,
 			}
 
 			extStations = append(extStations, stationRes)
@@ -961,6 +951,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
@@ -980,6 +971,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	}
 }
@@ -1285,6 +1277,38 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+	size := int64(0)
+	for _, cgName := range dlsMsg.PoisonedCgs {
+		headersJson := map[string]string{}
+		for key, value := range dlsMsg.MessageDetails.Headers {
+			headersJson[key] = value
+		}
+		headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+		headersJson["$memphis_pm_cg_name"] = cgName
+
+		headers, err := json.Marshal(headersJson)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+
+		data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		size += int64(dlsMsg.MessageDetails.Size)
+	}
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
+	return "", nil
+}
+
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1314,46 +1338,25 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	for _, id := range body.PoisonMessageIds {
-		_, dlsMsg, err := db.GetDlsMessageById(id)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		size := int64(0)
-		for _, cgName := range dlsMsg.PoisonedCgs {
-			headersJson := map[string]string{}
-			for key, value := range dlsMsg.MessageDetails.Headers {
-				headersJson[key] = value
-			}
-			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-			headersJson["$memphis_pm_cg_name"] = cgName
-
-			headers, err := json.Marshal(headersJson)
+	if len(body.PoisonMessageIds) == 0 {
+		sh.S.ResendAllDlsMsgs(stationName, station.ID, user.TenantName, user)
+	} else {
+		for _, id := range body.PoisonMessageIds {
+			_, dlsMsg, err := db.GetDlsMessageById(id)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at json.Marshal: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			cgName, err := sh.S.ResendUnackedMsg(dlsMsg, user, stationName)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsg: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
-			data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at DecodeString: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			err = sh.S.ResendPoisonMessage(station.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			size += int64(dlsMsg.MessageDetails.Size)
 		}
-		IncrementEventCounter(station.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
 	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
@@ -2164,6 +2167,126 @@ func (s *Server) RemoveOldStations() {
 	err = db.RemoveDeletedStations()
 	if err != nil {
 		s.Warnf("RemoveOldStations: at RemoveDeletedStations: %v", err.Error())
+		return
+	}
+}
+
+func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName string, user models.User) {
+	go func() {
+		createdAt := time.Now()
+		var offset int
+		var minId int
+		var maxId int
+		username := user.Username
+		stationIdStr := strconv.Itoa(stationId)
+
+		err := db.UpdateResendDisabledInStations(true, []int{stationId})
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName)
+			return
+		}
+		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpsertAsyncTask : %v", tenantName, username, stationIdStr, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName)
+			return
+		}
+
+		value, _ := task.Data.(map[string]interface{})
+		empty := len(value) == 0
+		if !empty {
+			data := value["offset"].(float64)
+			minId = int(data)
+			_, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName)
+				return
+			}
+		} else {
+			minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName)
+				return
+			}
+			// -1 in order to prevent skipping the first element
+			minId -= 1
+		}
+
+		for {
+			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetDlsMsgsBatch: %v", tenantName, username, stationIdStr, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName)
+				return
+			}
+
+			data := models.MetaData{}
+			for _, dlsMsg := range dlsMsgs {
+				offset = dlsMsg.ID
+				data = models.MetaData{
+					Offset: offset,
+				}
+				_, err = serv.ResendUnackedMsg(dlsMsg, user, stationName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at ResendUnackedMsg: %v", tenantName, username, stationIdStr, err.Error())
+					continue
+				}
+
+			}
+			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
+				continue
+			}
+			minId = offset
+			if len(dlsMsgs) == 0 || offset == maxId {
+				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at RemoveAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName)
+					return
+				}
+
+				err = db.UpdateResendDisabledInStations(false, []int{stationId})
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName)
+					return
+				}
+
+				systemMessage := SystemMessage{
+					MessageType:    "info",
+					MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has been completed successfully", stationIdStr, username),
+				}
+
+				err = serv.sendSystemMessageOnWS(user, systemMessage)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at sendSystemMessageOnWS: %v", tenantName, username, stationIdStr, err.Error())
+					return
+				}
+				break
+			}
+		}
+	}()
+}
+
+func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName string) {
+	stationIdStr := strconv.Itoa(stationId)
+	systemMessage := SystemMessage{
+		MessageType:    "Error",
+		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationIdStr, user.Username),
+	}
+	err := serv.sendSystemMessageOnWS(user, systemMessage)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v][station: %v]handleResendAllFailure at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
+		return
+	}
+	err = db.UpdateResendDisabledInStations(false, []int{stationId})
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v][station: %v]handleResendAllFailure at UpdateResendDisabledInStations: %v", tenantName, user.Username, stationIdStr, err.Error())
 		return
 	}
 }
