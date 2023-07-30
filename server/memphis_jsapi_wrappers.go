@@ -85,7 +85,10 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			} else if cfg.MaxMsgs > 0 {
 				retentionType = "messages"
 				retentionValue = int(cfg.MaxMsgs)
+			} else if cfg.Retention == WorkQueuePolicy {
+				retentionType = "ack_based"
 			}
+
 			username := c.opts.Username
 			if username == "" {
 				username = strings.Split(c.getRawAuthUser(), "::")[0]
@@ -166,8 +169,9 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, _ *A
 		return
 	}
 
-	if cfg.Retention != LimitsPolicy {
-		resp.Error = NewJSStreamCreateError(errors.New("the only supported retention type is limits"))
+	err = validateRetentionPolicy(cfg.Retention)
+	if err != nil {
+		resp.Error = NewJSStreamCreateError(err)
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}

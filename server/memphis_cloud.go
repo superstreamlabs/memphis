@@ -1959,3 +1959,22 @@ func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) 
 func (s *Server) SetDlsRetentionForExistTenants() error {
 	return nil
 }
+
+func validateRetentionType(retentionType string) error {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
+		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
+	}
+
+	return nil
+}
+
+func getRetentionPolicy(retentionType string) RetentionPolicy {
+	return LimitsPolicy
+}
+
+func validateRetentionPolicy(policy RetentionPolicy) error {
+	if policy != LimitsPolicy {
+		return errors.New("the only supported retention type is limits")
+	}
+	return nil
+}
