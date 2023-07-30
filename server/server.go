@@ -1663,7 +1663,7 @@ func (s *Server) fetchAccount(name string) (*Account, error) {
 
 // Start up the server, this will block.
 // Start via a Go routine if needed.
-func (s *Server) Start() {
+func (s *Server) Start() chan struct{} {
 	s.Noticef("Starting Memphis{dev} broker")
 
 	gc := gitCommit
@@ -1747,7 +1747,7 @@ func (s *Server) Start() {
 	if opts.PidFile != _EMPTY_ {
 		if err := s.logPid(); err != nil {
 			s.Fatalf("Could not write pidfile: %v", err)
-			return
+			return nil
 		}
 	}
 
@@ -1755,7 +1755,7 @@ func (s *Server) Start() {
 	if sa := opts.SystemAccount; sa != _EMPTY_ {
 		if err := s.SetSystemAccount(sa); err != nil {
 			s.Fatalf("Can't set system account: %v", err)
-			return
+			return nil
 		}
 	} else if !opts.NoSystemAccount {
 		// We will create a default system account here.
@@ -1766,14 +1766,14 @@ func (s *Server) Start() {
 	// server to be able to monitor during startup.
 	if err := s.StartMonitoring(); err != nil {
 		s.Fatalf("Can't start monitoring: %v", err)
-		return
+		return nil
 	}
 
 	// Start up resolver machinery.
 	if ar := s.AccountResolver(); ar != nil {
 		if err := ar.Start(s); err != nil {
 			s.Fatalf("Could not start resolver: %v", err)
-			return
+			return nil
 		}
 		// In operator mode, when the account resolver depends on an external system and
 		// the system account is the bootstrapping account, start fetching it.
@@ -1826,7 +1826,7 @@ func (s *Server) Start() {
 		}
 		if err := s.EnableJetStream(cfg); err != nil {
 			s.Fatalf("Can't start JetStream: %v", err)
-			return
+			return nil
 		}
 	} else {
 		// Check to see if any configured accounts have JetStream enabled.
@@ -1929,10 +1929,11 @@ func (s *Server) Start() {
 	// We've finished starting up.
 	close(s.startupComplete)
 
-	// Wait for clients.
-	if !opts.DontListen {
-		s.AcceptLoop(clientListenReady)
-	}
+	// // Wait for clients.
+	// if !opts.DontListen {
+	// 	s.AcceptLoop(clientListenReady)
+	// }
+	return clientListenReady
 }
 
 // Shutdown will shutdown the server instance by kicking out the AcceptLoop
