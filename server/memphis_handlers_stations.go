@@ -83,14 +83,6 @@ func StationNameFromStreamName(streamName string) StationName {
 	return StationName{internal: intern, external: extern}
 }
 
-func validateRetentionType(retentionType string) error {
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
-
-	return nil
-}
-
 func validateStorageType(storageType string) error {
 	if storageType != "file" && storageType != "memory" {
 		return errors.New("storage type can be one of the following file/memory")

@@ -203,6 +203,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 	}
 
 	maxAge := GetStationMaxAge(retentionType, retentionValue)
+	retentionPolicy := getRetentionPolicy(retentionType)
 
 	var storage StorageType
 	if storageType == "memory" {
@@ -224,7 +225,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		memphisAddStream(tenantName, &StreamConfig{
 			Name:                 sn.Intern(),
 			Subjects:             []string{sn.Intern() + ".>"},
-			Retention:            LimitsPolicy,
+			Retention:            retentionPolicy,
 			MaxConsumers:         -1,
 			MaxMsgs:              int64(maxMsgs),
 			MaxBytes:             int64(maxBytes),
