@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"memphis/db"
 	"memphis/memphis_cache"
-	"strconv"
 	"time"
 )
 
@@ -36,9 +35,8 @@ func (s *Server) CompleteRelevantStuckAsyncTasks() {
 			return
 		}
 		if !exist {
-			stationIdStr := strconv.Itoa(asyncTask.StationId)
-			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
-			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %s", asyncTask.TenantName, errMsg)
+			errMsg := fmt.Sprintf("Station %v does not exist", station.Name)
+			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, station.CreatedByUsername, errMsg)
 			continue
 		}
 
