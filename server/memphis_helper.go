@@ -230,15 +230,9 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 
 	return s.
 		memphisAddStream(tenantName, &StreamConfig{
-<<<<<<< HEAD
 			Name:                 internName,
 			Subjects:             []string{internName + ".>"},
-			Retention:            LimitsPolicy,
-=======
-			Name:                 sn.Intern(),
-			Subjects:             []string{sn.Intern() + ".>"},
 			Retention:            retentionPolicy,
->>>>>>> origin/master
 			MaxConsumers:         -1,
 			MaxMsgs:              int64(maxMsgs),
 			MaxBytes:             int64(maxBytes),

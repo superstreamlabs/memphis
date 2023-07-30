@@ -134,6 +134,7 @@ type ExtendedStationLight struct {
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
 	ResendDisabled              bool        `json:"resend_disabled"`
+	PartitionNumber             int         `json:"partition_number"`
 }
 
 type ActiveProducersConsumersDetails struct {
