@@ -21,9 +21,7 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
-	"memphis/memphis_cache"
 	"memphis/server"
-	"strings"
 
 	"os"
 
@@ -97,108 +95,108 @@ func usage() {
 	os.Exit(0)
 }
 
-func runMemphis(s *server.Server) {
-	err := analytics.InitializeAnalytics(s.MemphisVersion(), s.GetCustomDeploymentId())
-	if err != nil {
-		s.Errorf("Failed initializing analytics: " + err.Error())
-	}
+// func runMemphis(s *server.Server) {
+// 	err := analytics.InitializeAnalytics(s.MemphisVersion(), s.GetCustomDeploymentId())
+// 	if err != nil {
+// 		s.Errorf("Failed initializing analytics: " + err.Error())
+// 	}
 
-	err = server.TenantSeqInitialize()
-	if err != nil {
-		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
-	}
+// 	err = server.TenantSeqInitialize()
+// 	if err != nil {
+// 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
+// 	}
 
-	err = memphis_cache.InitializeUserCache(s.Errorf)
-	if err != nil {
-		s.Errorf("Failed to initialize user cache %v", err.Error())
-	}
+// 	err = memphis_cache.InitializeUserCache(s.Errorf)
+// 	if err != nil {
+// 		s.Errorf("Failed to initialize user cache %v", err.Error())
+// 	}
 
-	err = s.InitializeEventCounter()
-	if err != nil {
-		s.Errorf("Failed initializing event counter: " + err.Error())
-	}
+// 	err = s.InitializeEventCounter()
+// 	if err != nil {
+// 		s.Errorf("Failed initializing event counter: " + err.Error())
+// 	}
 
-	err = s.InitializeFirestore()
-	if err != nil {
-		s.Errorf("Failed initializing firestore: " + err.Error())
-	}
+// 	err = s.InitializeFirestore()
+// 	if err != nil {
+// 		s.Errorf("Failed initializing firestore: " + err.Error())
+// 	}
 
-	s.InitializeMemphisHandlers()
+// 	s.InitializeMemphisHandlers()
 
-	err = server.InitializeIntegrations()
-	if err != nil {
-		s.Errorf("Failed initializing integrations: " + err.Error())
-	}
+// 	err = server.InitializeIntegrations()
+// 	if err != nil {
+// 		s.Errorf("Failed initializing integrations: " + err.Error())
+// 	}
 
-	err = s.SetDlsRetentionForExistTenants()
-	if err != nil {
-		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
-	}
+// 	err = s.SetDlsRetentionForExistTenants()
+// 	if err != nil {
+// 		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
+// 	}
 
-	err = s.Force3ReplicationsForExistingStations()
-	if err != nil {
-		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
-	}
+// 	err = s.Force3ReplicationsForExistingStations()
+// 	if err != nil {
+// 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
+// 	}
 
-	s.CompleteRelevantStuckAsyncTasks()
+// 	s.CompleteRelevantStuckAsyncTasks()
 
-	go func() {
-		s.CreateInternalJetStreamResources()
-		go http_server.InitializeHttpServer(s)
-		err = s.StartBackgroundTasks()
-		if err != nil {
-			s.Errorf("Background task failed: " + err.Error())
-			os.Exit(1)
-		}
+// 	go func() {
+// 		s.CreateInternalJetStreamResources()
+// 		// go http_server.InitializeHttpServer(s)
+// 		err = s.StartBackgroundTasks()
+// 		if err != nil {
+// 			s.Errorf("Background task failed: " + err.Error())
+// 			os.Exit(1)
+// 		}
 
-		// run only on the leader
-		go s.KillZombieResources()
+// 		// run only on the leader
+// 		go s.KillZombieResources()
 
-		isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
+// 		isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
 
-		if isUserPassBased {
-			// For backward compatibility data from old account to memphis default account
-			storeDir := s.Opts().StoreDir
-			if storeDir == "" {
-				storeDir = os.TempDir()
-				storeDir = strings.TrimSuffix(storeDir, "/")
-			}
+// 		if isUserPassBased {
+// 			// For backward compatibility data from old account to memphis default account
+// 			storeDir := s.Opts().StoreDir
+// 			if storeDir == "" {
+// 				storeDir = os.TempDir()
+// 				storeDir = strings.TrimSuffix(storeDir, "/")
+// 			}
 
-			folderName := fmt.Sprintf("%s%s%s", storeDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
-			f, _ := os.Stat(folderName)
-			if f != nil {
-				err = s.MoveResourcesFromOldToNewDefaultAcc()
-				if err != nil {
-					s.Errorf("Data from global account to memphis account failed: %s", err.Error())
-				}
-			}
-		}
+// 			folderName := fmt.Sprintf("%s%s%s", storeDir, "/jetstream/", server.DEFAULT_GLOBAL_ACCOUNT)
+// 			f, _ := os.Stat(folderName)
+// 			if f != nil {
+// 				err = s.MoveResourcesFromOldToNewDefaultAcc()
+// 				if err != nil {
+// 					s.Errorf("Data from global account to memphis account failed: %s", err.Error())
+// 				}
+// 			}
+// 		}
 
-		var env string
-		var message string
-		if os.Getenv("DOCKER_ENV") != "" {
-			env = "Docker"
-			if isUserPassBased {
-				message = "\n**********\n\nDashboard/CLI: http://localhost:" + fmt.Sprint(s.Opts().UiPort) + "\nBroker: localhost:" + fmt.Sprint(s.Opts().Port) + " (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI/SDK root password - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
-			} else {
-				message = "\n**********\n\nDashboard/CLI: http://localhost:" + fmt.Sprint(s.Opts().UiPort) + "\nBroker: localhost:" + fmt.Sprint(s.Opts().Port) + " (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
-			}
-			s.Noticef(message)
-		} else if os.Getenv("LOCAL_CLUSTER_ENV") != "" {
-			env = "Local cluster"
-			if isUserPassBased {
-				message = "\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI/SDK root password - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
-			} else {
-				message = "\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
-			}
-			s.Noticef(message)
-		} else {
-			env = "K8S"
-		}
+// 		var env string
+// 		var message string
+// 		if os.Getenv("DOCKER_ENV") != "" {
+// 			env = "Docker"
+// 			if isUserPassBased {
+// 				message = "\n**********\n\nDashboard/CLI: http://localhost:" + fmt.Sprint(s.Opts().UiPort) + "\nBroker: localhost:" + fmt.Sprint(s.Opts().Port) + " (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI/SDK root password - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
+// 			} else {
+// 				message = "\n**********\n\nDashboard/CLI: http://localhost:" + fmt.Sprint(s.Opts().UiPort) + "\nBroker: localhost:" + fmt.Sprint(s.Opts().Port) + " (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
+// 			}
+// 			s.Noticef(message)
+// 		} else if os.Getenv("LOCAL_CLUSTER_ENV") != "" {
+// 			env = "Local cluster"
+// 			if isUserPassBased {
+// 				message = "\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI/SDK root password - memphis\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
+// 			} else {
+// 				message = "\n**********\n\nDashboard/CLI: http://localhost:9000/9001/9002\nBroker: localhost:6666/6667/6668 (client connections)\nREST gateway: localhost:" + fmt.Sprint(s.Opts().RestGwPort) + " (Data and management via HTTP)\nUI/CLI/SDK root username - root\nUI/CLI root password - memphis\nSDK connection token - " + s.Opts().Authorization + "\n\nDocs: https://docs.memphis.dev/memphis/getting-started/2-hello-world  \n\n**********"
+// 			}
+// 			s.Noticef(message)
+// 		} else {
+// 			env = "K8S"
+// 		}
 
-		s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
-	}()
-}
+// 		s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
+// 	}()
+// }
 
 func main() {
 	exe := "nats-server"
@@ -233,6 +231,8 @@ func main() {
 	// Configure the logger based on the flags
 	s.ConfigureLogger()
 
+	s.Noticef("Established connection with the meta-data storage")
+
 	// Start things up. Block here until done.
 	if err := server.Run(s); err != nil {
 		server.PrintAndDie(err.Error())
@@ -247,9 +247,8 @@ func main() {
 		// Reset these from the snapshots from init for monitor.go
 		server.SnapshotMonitorInfo()
 	}
-	s.Noticef("Established connection with the meta-data storage")
-
-	runMemphis(s)
+	go http_server.InitializeHttpServer(s)
+	// runMemphis(s)
 	defer db.CloseMetadataDb(metadataDb, s)
 	defer analytics.Close()
 	s.WaitForShutdown()
