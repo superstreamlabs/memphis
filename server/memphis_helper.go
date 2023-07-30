@@ -187,7 +187,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
+func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, partition_number int) error {
 	var maxMsgs int
 	if retentionType == "messages" && retentionValue > 0 {
 		maxMsgs = retentionValue
@@ -220,10 +220,17 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
 	}
 
+	var internName string
+	if partition_number > 0 {
+		internName = fmt.Sprintf("%v$%v", sn.Intern(), partition_number)
+	} else {
+		internName = sn.Intern()
+	}
+
 	return s.
 		memphisAddStream(tenantName, &StreamConfig{
-			Name:                 sn.Intern(),
-			Subjects:             []string{sn.Intern() + ".>"},
+			Name:                 internName,
+			Subjects:             []string{internName + ".>"},
 			Retention:            LimitsPolicy,
 			MaxConsumers:         -1,
 			MaxMsgs:              int64(maxMsgs),
@@ -1476,7 +1483,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 			return err
 		}
 		stationsMap[station.ID] = station
-		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled, 0)
 		if err != nil {
 			return err
 		}

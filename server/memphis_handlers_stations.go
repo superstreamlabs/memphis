@@ -118,9 +118,19 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 	}
 
 	if shouldDeleteStream {
-		err = s.RemoveStream(station.TenantName, stationName.Intern())
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			return err
+		if station.PartitionsNumber == 1 {
+			err = s.RemoveStream(station.TenantName, stationName.Intern())
+			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+				return err
+			}
+		} else {
+			for p := 1; p <= station.PartitionsNumber; p++ {
+				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), p)
+				err = s.RemoveStream(station.TenantName, streamName)
+				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+					return err
+				}
+			}
 		}
 	}
 
@@ -169,17 +179,21 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 func (s *Server) createStationDirectIntern(c *client,
 	reply string,
 	csr *createStationRequest,
-	shouldCreateStream bool, numberOfPartitions int) {
+	shouldCreateStream bool) {
 	isNative := shouldCreateStream
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
+	numberOfPartitions := csr.PartitionNumber
 	if numberOfPartitions > 30 || numberOfPartitions < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", numberOfPartitions, csr.StationName)
+		errMsg := fmt.Errorf("cannot create station with %v partitions (max:30 min:1): Station %v", numberOfPartitions, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
 		return
+	}
+	if numberOfPartitions == 1 {
+		numberOfPartitions = 0
 	}
 
 	stationName, err := StationNameFromStr(csr.StationName)
@@ -315,17 +329,34 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if shouldCreateStream {
-		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
-		if err != nil {
-			if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
-				serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
-				respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+		if numberOfPartitions == 0 {
+			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, numberOfPartitions)
+			if err != nil {
+				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
+					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
+					respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+					return
+				}
+
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 				return
 			}
+		} else {
+			for p := 1; p <= numberOfPartitions; p++ {
+				err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p)
+				if err != nil {
+					if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
+						serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
+						respondWithErr(s.MemphisGlobalAccountString(), s, reply, errors.New("station can not be created, probably since replicas count is larger than the cluster size"))
+						return
+					}
 
-			serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
-			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
-			return
+					serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+					respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+					return
+				}
+			}
 		}
 	}
 
@@ -341,7 +372,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName)
+	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, csr.PartitionNumber)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -788,6 +819,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	numberOfPartitions := body.PartitionNumber
+	if numberOfPartitions > 30 || numberOfPartitions < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", numberOfPartitions, body.Name)
+		serv.Errorf("[tenant: %v][user:%v]createStationDirect %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if numberOfPartitions == 1 {
+		numberOfPartitions = 0
+	}
+
 	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]CreateStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
@@ -890,7 +932,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, body.PartitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -905,17 +947,34 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled)
-	if err != nil {
-		if IsNatsErr(err, JSInsufficientResourcesErr) {
-			serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+	if numberOfPartitions == 0 {
+		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, numberOfPartitions)
+		if err != nil {
+			if IsNatsErr(err, JSInsufficientResourcesErr) {
+				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+				return
+			}
+
+			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
+	} else {
+		for p := 1; p <= numberOfPartitions; p++ {
+			err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p)
+			if err != nil {
+				if IsNatsErr(err, JSInsufficientResourcesErr) {
+					serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
+					c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station can not be created, probably since replicas count is larger than the cluster size"})
+					return
+				}
 
-		serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+				serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateStream: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		}
 	}
 
 	if len(body.Tags) > 0 {

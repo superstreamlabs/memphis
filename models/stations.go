@@ -60,6 +60,7 @@ type Station struct {
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 	TenantName                  string    `json:"tenant_name"`
 	ResendDisabled              bool      `json:"resend_disabled"`
+	PartitionsNumber            int       `json:"partitions_number"`
 }
 
 type GetStationResponseSchema struct {
@@ -164,6 +165,7 @@ type CreateStationSchema struct {
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
+	PartitionNumber      int              `json:"partition_number"`
 }
 
 type DlsConfiguration struct {

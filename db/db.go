@@ -341,6 +341,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER NOT NULL DEFAULT 1;
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -370,6 +371,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tiered_storage_enabled BOOL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		resend_disabled BOOL NOT NULL DEFAULT false,
+		partitions INTEGER NOT NULL DEFAULT 1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -1156,7 +1158,8 @@ func InsertNewStation(
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool,
-	tenantName string) (models.Station, int64, error) {
+	tenantName string,
+	partitionsNumber int) (models.Station, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1184,9 +1187,10 @@ func InsertNewStation(
 		dls_configuration_poison, 
 		dls_configuration_schemaverse,
 		tiered_storage_enabled,
-		tenant_name
+		tenant_name,
+		partitions
 		) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_station", query)
 	if err != nil {
@@ -1201,7 +1205,7 @@ func InsertNewStation(
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName)
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsNumber)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1253,6 +1257,7 @@ func InsertNewStation(
 		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
 		TieredStorageEnabled:        tieredStorageEnabled,
 		TenantName:                  tenantName,
+		PartitionsNumber:            partitionsNumber,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
