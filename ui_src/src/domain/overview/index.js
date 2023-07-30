@@ -249,7 +249,7 @@ function OverView() {
                     <div className="overview-components">
                         <div className="left-side">
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
-                            <Throughput />
+                            {/* <Throughput /> */}
                         </div>
                         {isCloud() ? (
                             <div className="right-side cloud">
