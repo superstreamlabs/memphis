@@ -747,8 +747,8 @@ func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq ui
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(tenantName string, stationName StationName) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(tenantName, stationName.Intern())
+func (s *Server) GetTotalMessagesInStation(tenantName string, streamName string) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(tenantName, streamName)
 	if err != nil {
 		return 0, err
 	}
@@ -797,12 +797,31 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, err
 	}
 
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
-	if err != nil || streamInfo.State.Bytes == 0 {
+	var msgBytes uint64
+	var msgCount uint64
+	if station.PartitionsNumber == 1 {
+		streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
+		if err != nil || streamInfo.State.Bytes == 0 {
+			return 0, err
+		}
+		msgBytes = streamInfo.State.Bytes
+		msgCount = streamInfo.State.Msgs
+	} else {
+		for p := 1; p <= station.PartitionsNumber; p++ {
+			streamInfo, err := s.memphisStreamInfo(station.TenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
+			if err != nil {
+				return 0, err
+			}
+			msgBytes = msgBytes + streamInfo.State.Bytes
+			msgCount = msgCount + streamInfo.State.Msgs
+		}
+	}
+
+	if err != nil || msgBytes == 0 {
 		return 0, err
 	}
 
-	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
+	return int64(msgBytes / msgCount), nil
 }
 
 func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error) {

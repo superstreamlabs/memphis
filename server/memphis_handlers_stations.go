@@ -1247,13 +1247,28 @@ func (s *Server) removeStationDirectIntern(c *client,
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
-func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string) (int, error) {
+func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string, partitionNumber int) (int, error) {
 	stationName, err := StationNameFromStr(stationNameExt)
 	if err != nil {
 		return 0, err
 	}
-	totalMessages, err := sh.S.GetTotalMessagesInStation(tenantName, stationName)
-	return totalMessages, err
+
+	totalMessages := 0
+	if partitionNumber == 1 {
+		totalMessages, err = sh.S.GetTotalMessagesInStation(tenantName, stationName.Intern())
+		return totalMessages, err
+	} else {
+		for p := 1; p <= partitionNumber; p++ {
+			streamMessages, err := sh.S.GetTotalMessagesInStation(tenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
+			if err != nil {
+				return totalMessages, err
+			}
+
+			totalMessages = totalMessages + streamMessages
+		}
+		return totalMessages, nil
+	}
+
 }
 
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
