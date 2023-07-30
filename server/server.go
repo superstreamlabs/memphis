@@ -2116,11 +2116,11 @@ func (s *Server) WaitForShutdown() {
 func (s *Server) AcceptLoop(clr chan struct{}) {
 	// If we were to exit before the listener is setup properly,
 	// make sure we close the channel.
-	defer func() {
-		if clr != nil {
-			close(clr)
-		}
-	}()
+	// defer func() {
+	// 	if clr != nil {
+	// 		close(clr)
+	// 	}
+	// }()
 
 	// Snapshot server options.
 	opts := s.getOpts()
@@ -2140,8 +2140,8 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 		s.Fatalf("Error listening on port: %s, %q", hp, e)
 		return
 	}
-	s.Noticef("Listening for client connections on %s",
-		net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
+	// s.Noticef("Listening for client connections on %s",
+	// 	net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
 
 	// Alert of TLS enabled.
 	if opts.TLSConfig != nil {
@@ -2168,17 +2168,17 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	s.clientConnectURLs = s.getClientConnectURLs()
 	s.listener = l
 
-	go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
-		func(_ error) bool {
-			if s.isLameDuckMode() {
-				// Signal that we are not accepting new clients
-				s.ldmCh <- true
-				// Now wait for the Shutdown...
-				<-s.quitCh
-				return true
-			}
-			return false
-		})
+	// go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
+	// 	func(_ error) bool {
+	// 		if s.isLameDuckMode() {
+	// 			// Signal that we are not accepting new clients
+	// 			s.ldmCh <- true
+	// 			// Now wait for the Shutdown...
+	// 			<-s.quitCh
+	// 			return true
+	// 		}
+	// 		return false
+	// 	})
 	s.mu.Unlock()
 
 	// Let the caller know that we are ready
@@ -3776,4 +3776,23 @@ func (s *Server) changeRateLimitLogInterval(d time.Duration) {
 	case s.rateLimitLoggingCh <- d:
 	default:
 	}
+}
+
+func (s *Server) AcceptClientConnections() {
+	s.mu.Lock()
+	go s.acceptConnections(s.listener, "Client", func(conn net.Conn) { s.createClient(conn) },
+		func(_ error) bool {
+			if s.isLameDuckMode() {
+				// Signal that we are not accepting new clients
+				s.ldmCh <- true
+				// Now wait for the Shutdown...
+				<-s.quitCh
+				return true
+			}
+			return false
+		})
+	s.mu.Unlock()
+	opts := s.getOpts()
+	s.Noticef("Listening for client connections on %s",
+		net.JoinHostPort(opts.Host, strconv.Itoa(s.listener.Addr().(*net.TCPAddr).Port)))
 }
