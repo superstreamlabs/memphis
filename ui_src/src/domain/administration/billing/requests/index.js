@@ -149,6 +149,9 @@ function Requests() {
                                     </span>
                                 </div>
                             </div>
+                            <span className="cloud-provider">
+                                <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
+                            </span>
                         </div>
                         <div className="data-out">
                             <div className="requests-total">
@@ -174,16 +177,11 @@ function Requests() {
                                     </span>
                                 </div>
                             </div>
+                            <span className="cloud-provider">
+                                <label className="cloud-provider-label">Region: </label> <img src={getRegionImage(usageData?.region)} alt="region" />
+                                <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
+                            </span>
                         </div>
-                    </div>
-                    <div className="cloud-provider">
-                        <span>
-                            <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
-                        </span>
-                        <span>
-                            <label className="cloud-provider-label">Region: </label> <img src={getRegionImage(usageData?.region)} alt="region" />
-                            <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
-                        </span>
                     </div>
                 </div>
                 <div className="total-payment">

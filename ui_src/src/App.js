@@ -236,7 +236,7 @@ const App = withRouter((props) => {
             }
         };
 
-        isCloud() && subscribeToNotifications();
+        subscribeToNotifications();
 
         return () => {
             if (sub) {
