@@ -80,6 +80,7 @@ type GetStationResponseSchema struct {
 	IsNative             bool             `json:"is_native"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
+	ResendDisabled       bool             `json:"resend_disabled"`
 }
 
 type ExtendedStation struct {

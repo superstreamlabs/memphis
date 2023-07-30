@@ -339,6 +339,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'stations' AND table_schema = 'public'
 		) THEN
+		ALTER TYPE enum_retention_type ADD VALUE 'ack_based';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER NOT NULL DEFAULT 1;
@@ -2353,7 +2354,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	var producerId int
 	updatedAt := time.Now()
 	isActive := true
-	tenantName = strings.ToLower(tenantName)
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName)
 	if err != nil {
 		return models.Producer{}, err
