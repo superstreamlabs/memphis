@@ -2116,11 +2116,11 @@ func (s *Server) WaitForShutdown() {
 func (s *Server) AcceptLoop(clr chan struct{}) {
 	// If we were to exit before the listener is setup properly,
 	// make sure we close the channel.
-	// defer func() {
-	// 	if clr != nil {
-	// 		close(clr)
-	// 	}
-	// }()
+	defer func() {
+		if clr != nil {
+			close(clr)
+		}
+	}()
 
 	// Snapshot server options.
 	opts := s.getOpts()

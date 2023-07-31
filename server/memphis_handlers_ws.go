@@ -114,11 +114,13 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") && !strings.Contains(err.Error(), "alphanumeric") {
 							s.Errorf("[tenant: %v]memphisWSLoop at filler: %v", tenant, err.Error())
 						}
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 					updateRaw, err := json.Marshal(update)
 					if err != nil {
 						s.Errorf("[tenant: %v]memphisWSLoop at json.Marshal: %v", tenant, err.Error())
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 
