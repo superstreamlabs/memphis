@@ -26,6 +26,7 @@ import (
 	"math/rand"
 	"memphis/db"
 	"memphis/logger"
+	"memphis/memphis_cache"
 	"net"
 	"net/http"
 	"regexp"
@@ -1873,13 +1874,13 @@ func (s *Server) Start() {
 	if opts.Gateway.Port != 0 {
 		s.startGateways()
 	}
-
+	s.runMemphis()
 	// Start websocket server if needed. Do this before starting the routes, and
 	// leaf node because we want to resolve the gateway host:port so that this
 	// information can be sent to other routes.
-	// if opts.Websocket.Port != 0 {
-		// s.startWebsocketServer()
-	// }
+	if opts.Websocket.Port != 0 {
+		s.StartWebsocketServer()
+	}
 
 	// Start up listen if we want to accept leaf node connections.
 	if opts.LeafNode.Port != 0 {
@@ -3795,4 +3796,56 @@ func (s *Server) AcceptClientConnections() {
 	opts := s.getOpts()
 	s.Noticef("Listening for client connections on %s",
 		net.JoinHostPort(opts.Host, strconv.Itoa(s.listener.Addr().(*net.TCPAddr).Port)))
+}
+
+func (s *Server) runMemphis() {
+	err := TenantSeqInitialize()
+	if err != nil {
+		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
+	}
+
+	err = memphis_cache.InitializeUserCache(s.Errorf)
+	if err != nil {
+		s.Errorf("Failed to initialize user cache %v", err.Error())
+	}
+
+	err = s.InitializeEventCounter()
+	if err != nil {
+		s.Errorf("Failed initializing event counter: " + err.Error())
+	}
+
+	err = s.InitializeFirestore()
+	if err != nil {
+		s.Errorf("Failed initializing firestore: " + err.Error())
+	}
+
+	s.InitializeMemphisHandlers()
+
+	err = InitializeIntegrations()
+	if err != nil {
+		s.Errorf("Failed initializing integrations: " + err.Error())
+	}
+
+	err = s.SetDlsRetentionForExistTenants()
+	if err != nil {
+		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
+	}
+
+	err = s.Force3ReplicationsForExistingStations()
+	if err != nil {
+		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
+	}
+
+	s.CompleteRelevantStuckAsyncTasks()
+
+	go func() {
+		s.CreateInternalJetStreamResources()
+		err = s.StartBackgroundTasks()
+		if err != nil {
+			s.Errorf("Background task failed: " + err.Error())
+			os.Exit(1)
+		}
+		// run only on the leader
+		go s.KillZombieResources()
+	}()
 }

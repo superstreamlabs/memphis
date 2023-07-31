@@ -21,7 +21,6 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
-	"memphis/memphis_cache"
 	"memphis/server"
 	"strings"
 
@@ -103,56 +102,7 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
-	err = server.TenantSeqInitialize()
-	if err != nil {
-		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
-	}
-
-	err = memphis_cache.InitializeUserCache(s.Errorf)
-	if err != nil {
-		s.Errorf("Failed to initialize user cache %v", err.Error())
-	}
-
-	err = s.InitializeEventCounter()
-	if err != nil {
-		s.Errorf("Failed initializing event counter: " + err.Error())
-	}
-
-	err = s.InitializeFirestore()
-	if err != nil {
-		s.Errorf("Failed initializing firestore: " + err.Error())
-	}
-
-	s.InitializeMemphisHandlers()
-
-	err = server.InitializeIntegrations()
-	if err != nil {
-		s.Errorf("Failed initializing integrations: " + err.Error())
-	}
-
-	err = s.SetDlsRetentionForExistTenants()
-	if err != nil {
-		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
-	}
-
-	err = s.Force3ReplicationsForExistingStations()
-	if err != nil {
-		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
-	}
-
-	s.CompleteRelevantStuckAsyncTasks()
-
-	// go func() {
-	// s.CreateInternalJetStreamResources()
 	go http_server.InitializeHttpServer(s)
-	err = s.StartBackgroundTasks()
-	if err != nil {
-		s.Errorf("Background task failed: " + err.Error())
-		os.Exit(1)
-	}
-
-	// run only on the leader
-	go s.KillZombieResources()
 
 	isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
 
@@ -195,10 +145,7 @@ func runMemphis(s *server.Server) {
 	} else {
 		env = "K8S"
 	}
-	s.AcceptClientConnections()
-	s.StartWebsocketServer()
 	s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
-	// }()
 }
 
 func main() {
