@@ -20,6 +20,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gofrs/uuid"
 )
 
 const (
@@ -408,4 +410,48 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 	}
 
 	return response, nil
+}
+
+func (s *Server) sendSystemMessageOnWS(user models.User, systemMessage SystemMessage) error {
+	v, err := serv.Varz(nil)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]sendSystemMessageOnWS: %v", user.TenantName, user.Username, err.Error())
+		return err
+	}
+	var serverNames []string
+	if len(v.Cluster.URLs) == 0 {
+		serverNames = append(serverNames, "memphis-0")
+	}
+	for i := range v.Cluster.URLs {
+		serverNames = append(serverNames, "memphis-"+strconv.Itoa(i))
+	}
+
+	acc, err := serv.lookupAccount(user.TenantName)
+	if err != nil {
+		err = fmt.Errorf("sendSystemMessageOnWS at lookupAccount: %v", err.Error())
+		return err
+	}
+
+	if systemMessage.Id == "" {
+		uid, err := uuid.NewV4()
+		if err != nil {
+			err = fmt.Errorf("sendSystemMessageOnWS at uuid.NewV4: %v", err.Error())
+			return err
+		}
+		systemMessage.Id = uid.String()
+	}
+	systemMessages := []SystemMessage{}
+	systemMessages = append(systemMessages, systemMessage)
+	updateRaw, err := json.Marshal(systemMessages)
+	if err != nil {
+		err = fmt.Errorf("sendSystemMessageOnWS at json.Marshal: %v", err.Error())
+		return err
+	}
+
+	for _, serverName := range serverNames {
+		replySubj := fmt.Sprintf(memphisWS_TemplSubj_Publish, memphisWS_Subj_GetSystemMessages+"."+serverName)
+		serv.sendInternalAccountMsgWithEcho(acc, replySubj, updateRaw)
+	}
+
+	return nil
 }

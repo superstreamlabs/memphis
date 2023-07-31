@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"sync"
 
@@ -32,6 +33,9 @@ const PM_RESEND_ACK_SUBJ = "$memphis_pm_acks"
 const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
+const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
+const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
+const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -59,6 +63,35 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) ListenForCacheUpdates() error {
+	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, CACHE_UDATES_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			var cache_req models.CacheUpdateRequest
+			err := json.Unmarshal(msg, &cache_req)
+			if err != nil {
+				s.Errorf("ListenForUserCacheDeletion at Unmarshal could not delete from cache, error: %v", err)
+				return
+			}
+
+			switch cache_req.CacheType {
+			case "user":
+				if cache_req.Operation == "delete" {
+					err = memphis_cache.DeleteUser(cache_req.TenantName, cache_req.Usernames)
+					if err != nil {
+						s.Errorf("ListenForUserCacheDeletion at DeleteUser could not delete from cache, error: %v", err)
+						return
+					}
+				}
+			}
+
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -122,7 +155,7 @@ func (s *Server) ListenForNotificationEvents() error {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
+				s.Errorf("ListenForNotificationEvents at getTenantNameAndMessage: %v", err.Error())
 				return
 			}
 			var notification models.Notification
@@ -147,12 +180,25 @@ func (s *Server) ListenForNotificationEvents() error {
 	return nil
 }
 
+func (s *Server) ListenForSchemaverseDlsEvents() error {
+	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
+		go func(msg []byte) {
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), SCHEMAVERSE_DLS_INNER_SUBJ, msg)
+		}(copyBytes(msg))
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Server) ListenForPoisonMsgAcks() error {
 	err := s.queueSubscribe(s.MemphisGlobalAccountString(), PM_RESEND_ACK_SUBJ, PM_RESEND_ACK_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			tenantName, message, err := s.getTenantNameAndMessage(msg)
 			if err != nil {
-				s.Errorf("[tenant: %v]ListenForPoisonMsgAcks: %v", tenantName, err.Error())
+				s.Errorf("ListenForPoisonMsgAcks at getTenantNameAndMessage: %v", err.Error())
 				return
 			}
 			var msgToAck models.PmAckMsg
@@ -242,6 +288,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for schema validation updates: " + err.Error())
 	}
 
+	err = s.ListenForSchemaverseDlsEvents()
+	if err != nil {
+		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
+	}
+
 	err = s.ListenForPoisonMsgAcks()
 	if err != nil {
 		return errors.New("Failed subscribing for poison message acks: " + err.Error())
@@ -252,11 +303,12 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed subscribing for configurations update: " + err.Error())
 	}
 
-	err = s.ListenForSchemaverseDlsEvents()
+	err = s.ListenForCacheUpdates()
 	if err != nil {
-		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
+		return errors.New("Failed to subscribing for cache updates" + err.Error())
 	}
 
+	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
@@ -264,6 +316,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.InitializeThroughputSampling()
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
+	go s.RemoveOldProducersAndConsumers()
 
 	return nil
 }
@@ -446,64 +499,128 @@ func (s *Server) ConsumeTieredStorageMsgs() {
 	}
 }
 
-func (s *Server) ListenForSchemaverseDlsEvents() error {
-	err := s.queueSubscribe(s.MemphisGlobalAccountString(), SCHEMAVERSE_DLS_SUBJ, SCHEMAVERSE_DLS_SUBJ+"_group", func(_ *client, subject, reply string, msg []byte) {
-		go func(msg []byte) {
-			tenantName, stringMessage, err := s.getTenantNameAndMessage(msg)
-			if err != nil {
-				s.Errorf("[tenant: %v]ListenForNotificationEvents: %v", tenantName, err.Error())
-				return
-			}
-			var message models.SchemaVerseDlsMessageSdk
-			err = json.Unmarshal([]byte(stringMessage), &message)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-
-			exist, station, err := db.GetStationByName(message.StationName, tenantName)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-			if !exist {
-				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: station %v couldn't been found", tenantName, message.StationName)
-				return
-			}
-
-			exist, p, err := db.GetProducerByNameAndConnectionID(message.Producer.Name, message.Producer.ConnectionId)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-
-			if !exist {
-				serv.Warnf("[tenant: %v]ListenForSchemaverseDlsEvents: producer %v couldn't been found", tenantName, p.Name)
-				return
-			}
-
-			message.Message.TimeSent = time.Now()
-			_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, p.ID, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
-			if err != nil {
-				serv.Errorf("[tenant: %v]ListenForSchemaverseDlsEvents: %v", tenantName, err.Error())
-				return
-			}
-		}(copyBytes(msg))
-	})
-	if err != nil {
-		return err
+func (s *Server) ConsumeSchemaverseDlsMessages() {
+	type schemaverseDlsMsg struct {
+		Msg          []byte
+		ReplySubject string
 	}
+	amount := 1000
+	req := []byte(strconv.FormatUint(uint64(amount), 10))
+	for {
+		if DLS_SCHEMAVERSE_CONSUMER_CREATED && DLS_SCHEMAVERSE_STREAM_CREATED {
+			resp := make(chan schemaverseDlsMsg)
+			replySubj := SCHEMAVERSE_DLS_CONSUMER + "_reply_" + s.memphis.nuid.Next()
 
-	return nil
+			// subscribe to schemavers dls messages
+			sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubj, replySubj+"_sid", func(_ *client, subject, reply string, msg []byte) {
+				go func(subject, reply string, msg []byte) {
+					// Ignore 409 Exceeded MaxWaiting cases
+					if reply != "" {
+						message := schemaverseDlsMsg{
+							Msg:          msg,
+							ReplySubject: reply,
+						}
+						resp <- message
+					}
+				}(subject, reply, copyBytes(msg))
+			})
+			if err != nil {
+				s.Errorf("Failed to subscribe to schemavers dls messages: %v", err.Error())
+				continue
+			}
+
+			// send JS API request to get more messages
+			subject := fmt.Sprintf(JSApiRequestNextT, dlsSchemaverseStream, SCHEMAVERSE_DLS_CONSUMER)
+			s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubj, nil, req, true)
+
+			timeout := time.NewTimer(5 * time.Second)
+			msgs := make([]schemaverseDlsMsg, 0)
+			stop := false
+			for {
+				if stop {
+					s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+					break
+				}
+				select {
+				case SchemaDlsMsg := <-resp:
+					msgs = append(msgs, SchemaDlsMsg)
+					if len(msgs) == amount {
+						stop = true
+					}
+				case <-timeout.C:
+					stop = true
+				}
+			}
+			for _, message := range msgs {
+				msg := message.Msg
+				s.handleSchemaverseDlsMsg(msg)
+				if err == nil {
+					// send ack
+					s.sendInternalAccountMsgWithEcho(s.MemphisGlobalAccount(), message.ReplySubject, []byte(_EMPTY_))
+				}
+			}
+		} else {
+			time.Sleep(2 * time.Second)
+		}
+	}
 }
 
 func (s *Server) RemoveOldDlsMsgs() {
 	ticker := time.NewTicker(2 * time.Minute)
 	for range ticker.C {
-		configurationTime := time.Now().Add(time.Hour * time.Duration(-s.opts.DlsRetentionHours))
-		err := db.DeleteOldDlsMessageByRetention(configurationTime)
-		if err != nil {
-			serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+		for tenantName, rt := range s.opts.DlsRetentionHours {
+			configurationTime := time.Now().Add(time.Hour * time.Duration(-rt))
+			err := db.DeleteOldDlsMessageByRetention(configurationTime, tenantName)
+			if err != nil {
+				serv.Errorf("RemoveOldDlsMsgs: %v", err.Error())
+			}
 		}
+	}
+}
+
+func (s *Server) RemoveOldProducersAndConsumers() {
+	ticker := time.NewTicker(15 * time.Minute)
+	for range ticker.C {
+		timeInterval := time.Now().Add(time.Duration(time.Hour * -time.Duration(s.opts.GCProducersConsumersRetentionHours)))
+		deletedCGs, err := db.DeleteOldProducersAndConsumers(timeInterval)
+		if err != nil {
+			serv.Errorf("RemoveOldProducersAndConsumers at DeleteOldProducersAndConsumers : %v", err.Error())
+		}
+
+		var CGsList []string
+		for _, cg := range deletedCGs {
+			CGsList = append(CGsList, cg.CGName)
+		}
+
+		remainingCG, err := db.GetAllDeletedConsumersFromList(CGsList)
+		if err != nil {
+			serv.Errorf("RemoveOldProducersAndConsumers at GetAllDeletedConsumersFromList: %v", err.Error())
+		}
+
+		CGmap := make(map[string]string)
+		for _, name := range remainingCG {
+			CGmap[name] = "."
+		}
+
+		for _, cg := range deletedCGs {
+			if _, ok := CGmap[cg.CGName]; !ok {
+				stationName, err := StationNameFromStr(cg.StationName)
+				if err == nil {
+					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName)
+					if err != nil {
+						serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
+					}
+
+					err = db.RemovePoisonedCg(cg.StationId, cg.CGName)
+					if err != nil {
+						serv.Errorf("RemoveOldProducersAndConsumers at RemovePoisonedCg: %v", err.Error())
+					}
+				} else {
+					serv.Errorf("RemoveOldProducersAndConsumers at StationNameFromStr: %v", err.Error())
+				}
+
+			}
+		}
+
 	}
 }

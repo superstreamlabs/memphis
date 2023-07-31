@@ -13,6 +13,7 @@ package server
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"memphis/analytics"
@@ -95,21 +96,6 @@ func updateDeletedUserResources(user models.User) error {
 		return err
 	}
 
-	err = db.UpdateConnectionsOfDeletedUser(user.ID, tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.UpdateProducersOfDeletedUser(user.ID)
-	if err != nil {
-		return err
-	}
-
-	err = db.UpdateConsumersOfDeletedUser(user.ID)
-	if err != nil {
-		return err
-	}
-
 	err = db.UpdateSchemasOfDeletedUser(user.ID, tenantName)
 	if err != nil {
 		return err
@@ -135,11 +121,6 @@ func removeTenantResources(tenantName string, user models.User) error {
 	}
 
 	err = db.RemoveConsumersByTenant(tenantName)
-	if err != nil {
-		return err
-	}
-
-	err = db.RemoveConnectionsByTenant(tenantName)
 	if err != nil {
 		return err
 	}
@@ -174,7 +155,14 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.DeleteUsersByTenant(tenantName)
+	users_list, err := db.DeleteUsersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	SendUserDeleteCacheUpdate(users_list, tenantName)
+
+	err = db.DeleteConfByTenantName(tenantName)
 	if err != nil {
 		return err
 	}
@@ -420,6 +408,9 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"dls_retention":           serv.opts.DlsRetentionHours[newUser.TenantName],
+		"logs_retention":          serv.opts.LogsRetentionDays,
+		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
 	})
 }
 
@@ -765,6 +756,28 @@ func (umh UserMgmtHandler) GetFilterDetails(c *gin.Context) {
 		c.IndentedJSON(200, gin.H{})
 		return
 	}
+}
+
+func SendUserDeleteCacheUpdate(usernames []string, tenantName string) {
+	deleteRequest := models.CacheUpdateRequest{
+		CacheType:  "user",
+		Operation:  "delete",
+		Usernames:  usernames,
+		TenantName: tenantName,
+	}
+
+	msg, err := json.Marshal(deleteRequest)
+	if err != nil {
+		serv.Errorf("[tenant: %v] user cache at SendUserCacheUpdates json.Marshal: %v", tenantName, err.Error())
+		return
+	}
+
+	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CACHE_UDATES_SUBJ, _EMPTY_, nil, msg, true)
+	if err != nil {
+		serv.Errorf("[tenant: %v]user cache at SendUserCacheUpdates: error sending internal msg : %v", tenantName, err.Error())
+		return
+	}
+
 }
 
 func validateUsername(username string) error {

@@ -18,7 +18,7 @@ import { Divider, Popover } from 'antd';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
+import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME, USER_IMAGE } from '../../const/localStorageConsts';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import schemaIconActive from '../../assets/images/schemaIconActive.svg';
@@ -134,8 +134,8 @@ function SideBar() {
             <div className="item-wrap-header">
                 <span className="img-section">
                     <img
-                        className={`sandboxUserImg ${state.route === 'profile' && 'sandboxUserImgSelected'}`}
-                        src={localStorage.getItem('profile_pic') || avatarUrl} // profile_pic is available only in sandbox env
+                        className={'avatar-image'}
+                        src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
                         referrerPolicy="no-referrer"
                         width="30"
                         alt="avatar"
@@ -206,7 +206,15 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img src={Logo} width="45" className="logoimg" alt="logo" onClick={() => history.push(pathDomains.overview)} />
+                <img
+                    src={isCloud() ? state?.companyLogo || Logo : Logo}
+                    width="45"
+                    height="45"
+                    className="logoimg"
+                    alt="logo"
+                    onClick={() => history.push(pathDomains.overview)}
+                />
+
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('overview')}
@@ -343,10 +351,10 @@ function SideBar() {
                     <div className="sub-icon-wrapper" onClick={() => setPopoverOpenSetting(true)}>
                         <img
                             className={`sandboxUserImg ${(state.route === 'profile' || state.route === 'administration') && 'sandboxUserImgSelected'}`}
-                            src={localStorage.getItem('profile_pic') || avatarUrl}
+                            src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : avatarUrl}
                             referrerPolicy="no-referrer"
-                            width={localStorage.getItem('profile_pic') ? 35 : 25}
-                            height={localStorage.getItem('profile_pic') ? 35 : 25}
+                            width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
+                            height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
                             alt="avatar"
                         ></img>
                     </div>

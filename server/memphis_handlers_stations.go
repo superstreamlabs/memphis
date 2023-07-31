@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"memphis/analytics"
 	"memphis/db"
+	"memphis/memphis_cache"
 	"memphis/models"
 	"memphis/utils"
 	"regexp"
@@ -82,14 +83,6 @@ func StationNameFromStreamName(streamName string) StationName {
 	return StationName{internal: intern, external: extern}
 }
 
-func validateRetentionType(retentionType string) error {
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
-
-	return nil
-}
-
 func validateStorageType(storageType string) error {
 	if storageType != "file" && storageType != "memory" {
 		return errors.New("storage type can be one of the following file/memory")
@@ -135,7 +128,7 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
-	err = db.DeleteConsumersByStationID(station.ID)
+	err = db.DeleteAllConsumersByStationID(station.ID)
 	if err != nil {
 		return err
 	}
@@ -153,7 +146,7 @@ func (s *Server) createStationDirect(c *client, reply string, msg []byte) {
 	var tenantName string
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createStationDirect at getTenantNameAndMessage: %v", tenantName, err.Error())
+		s.Errorf("createStationDirect at getTenantNameAndMessage: %v", err.Error())
 		return
 	}
 	if err := json.Unmarshal([]byte(message), &csr); err != nil {
@@ -216,8 +209,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if exist {
-		errMsg := fmt.Sprintf("Station %v already exists", stationName.Ext())
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
@@ -263,7 +254,13 @@ func (s *Server) createStationDirectIntern(c *client,
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
-		retentionValue = csr.RetentionValue
+
+		if csr.RetentionValue <= 0 {
+			retentionType = "message_age_sec"
+			retentionValue = 604800 // 1 week
+		} else {
+			retentionValue = csr.RetentionValue
+		}
 	} else {
 		retentionType = "message_age_sec"
 		retentionValue = 604800 // 1 week
@@ -305,11 +302,6 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
-	// TODO: remove if not needed
-	// username := c.memphisInfo.username
-	// if username == "" {
-	// 	username = csr.Username
-	// }
 
 	if shouldCreateStream {
 		err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled)
@@ -326,14 +318,14 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	exist, user, err := db.GetUserByUsername(username, csr.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
 	if err != nil {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 	if !exist {
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect at GetUserByUsername: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: user %v is not exists", csr.TenantName, csr.Username, csr.Username)
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -444,6 +436,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		DlsConfiguration:     models.DlsConfiguration{Poison: station.DlsConfigurationPoison, Schemaverse: station.DlsConfigurationSchemaverse},
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
+		ResendDisabled:       station.ResendDisabled,
 	}
 
 	c.IndentedJSON(200, stationResponse)
@@ -475,13 +468,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		}
 		tagsHandler := TagsHandler{S: sh.S}
 		for _, station := range stations {
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == station.ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[station.ID]
 			tags, err := tagsHandler.GetTagsByEntityWithID("station", station.ID)
 			if err != nil {
 				return []models.ExtendedStationDetails{}, err
@@ -536,6 +523,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				SchemaName:           station.SchemaName,
 				IsNative:             station.IsNative,
 				TieredStorageEnabled: station.TieredStorageEnabled,
+				ResendDisabled:       station.ResendDisabled,
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
@@ -547,6 +535,7 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 	}
 }
 
+// TODO: check if need to remove
 func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
 	var stations []models.ExtendedStation
 	totalMessages := uint64(0)
@@ -595,13 +584,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			if err != nil {
 				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
 			}
-			hasDlsMsgs := false
-			for _, stationId := range stationIdsDlsMsgs {
-				if stationId == stations[i].ID {
-					hasDlsMsgs = true
-				}
-			}
-
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
 			if shouldGetTags {
 				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
 				if err != nil {
@@ -644,16 +627,95 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 			}
 
 			stationRes := models.ExtendedStation{
-				ID:            stations[i].ID,
-				Name:          stations[i].Name,
-				CreatedAt:     stations[i].CreatedAt,
-				TotalMessages: stations[i].TotalMessages,
-				HasDlsMsgs:    stations[i].HasDlsMsgs,
-				Activity:      stations[i].Activity,
-				IsNative:      stations[i].IsNative,
+				ID:             stations[i].ID,
+				Name:           stations[i].Name,
+				CreatedAt:      stations[i].CreatedAt,
+				TotalMessages:  stations[i].TotalMessages,
+				HasDlsMsgs:     stations[i].HasDlsMsgs,
+				Activity:       stations[i].Activity,
+				IsNative:       stations[i].IsNative,
+				ResendDisabled: stations[i].ResendDisabled,
 			}
 
 			extStations = append(extStations, stationRes)
+		}
+		return extStations, totalMessages, totalDlsMessages, nil
+	}
+}
+
+func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string) ([]models.ExtendedStationLight, uint64, uint64, error) {
+	var stations []models.ExtendedStationLight
+	totalMessages := uint64(0)
+	if tenantName == "" {
+		tenantName = serv.MemphisGlobalAccountString()
+	}
+	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
+	if err != nil {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+	}
+
+	stations, err = db.GetAllStationsDetailsLight(tenantName)
+	if err != nil {
+		return stations, totalMessages, totalDlsMessages, err
+	}
+	if len(stations) == 0 {
+		return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, nil
+	} else {
+		stationTotalMsgs := make(map[string]int)
+		tagsHandler := TagsHandler{S: sh.S}
+		acc, err := sh.S.lookupAccount(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		accName := acc.Name
+		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
+				stationTotalMsgs[streamName] = int(info.State.Msgs)
+			}
+		}
+		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
+		if err != nil {
+			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		}
+
+		var extStations []models.ExtendedStationLight
+		for i := 0; i < len(stations); i++ {
+			fullStationName, err := StationNameFromStr(stations[i].Name)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
+			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
+			if shouldExtend {
+				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
+				if err != nil {
+					return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+				}
+				stations[i].Tags = tags
+
+				if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+					stations[i].TieredStorageEnabled = false
+				} else {
+					_, ok = tenantInetgrations["s3"].(models.Integration)
+					if !ok {
+						stations[i].TieredStorageEnabled = false
+					} else if stations[i].TieredStorageEnabled {
+						stations[i].TieredStorageEnabled = true
+					} else {
+						stations[i].TieredStorageEnabled = false
+					}
+				}
+			}
+
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
+			stations[i].HasDlsMsgs = hasDlsMsgs
+
+			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
 	}
@@ -691,7 +753,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	stations, _, _, err := sh.GetAllStationsDetails(true, user.TenantName)
+	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllStations at GetAllStationsDetails: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -767,13 +829,18 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	var retentionType string
-	if body.RetentionType != "" && body.RetentionValue > 0 {
+	if body.RetentionType != "" {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionType: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
+		}
+
+		if body.RetentionValue <= 0 {
+			retentionType = "message_age_sec"
+			body.RetentionValue = 604800 // 1 week
 		}
 	} else {
 		retentionType = "message_age_sec"
@@ -895,6 +962,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	} else {
 		c.IndentedJSON(200, gin.H{
@@ -914,6 +982,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
 			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
 			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+			"resend_disabled":               newStation.ResendDisabled,
 		})
 	}
 }
@@ -1087,9 +1156,9 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := db.GetUserByUsername(dsr.Username, dsr.TenantName)
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at GetUserByUsername: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -1158,21 +1227,11 @@ func (sh StationsHandler) GetLeaderAndFollowers(station models.Station) (string,
 }
 
 func getCgStatus(members []models.CgMember) (bool, bool) {
-	deletedCount := 0
 	for _, member := range members {
 		if member.IsActive {
 			return true, false
 		}
-
-		if member.IsDeleted {
-			deletedCount++
-		}
 	}
-
-	if len(members) == deletedCount {
-		return false, true
-	}
-
 	return false, false
 }
 
@@ -1229,6 +1288,38 @@ func (sh StationsHandler) DropDlsMessages(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
+func (s *Server) ResendUnackedMsg(dlsMsg models.DlsMessage, user models.User, stationName string) (string, error) {
+	size := int64(0)
+	for _, cgName := range dlsMsg.PoisonedCgs {
+		headersJson := map[string]string{}
+		for key, value := range dlsMsg.MessageDetails.Headers {
+			headersJson[key] = value
+		}
+		headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
+		headersJson["$memphis_pm_cg_name"] = cgName
+
+		headers, err := json.Marshal(headersJson)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at json.Marshal: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+
+		data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at DecodeString: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		err = s.ResendPoisonMessage(user.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
+		if err != nil {
+			err = fmt.Errorf("Failed ResendUnackedMsg at ResendPoisonMessage: Poisoned consumer group: %v: %v", cgName, err.Error())
+			return cgName, err
+		}
+		size += int64(dlsMsg.MessageDetails.Size)
+	}
+	IncrementEventCounter(user.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
+	return "", nil
+}
+
 func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	var body models.ResendPoisonMessagesSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -1258,46 +1349,25 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
-	for _, id := range body.PoisonMessageIds {
-		_, dlsMsg, err := db.GetDlsMessageById(id)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
-		}
-		size := int64(0)
-		for _, cgName := range dlsMsg.PoisonedCgs {
-			headersJson := map[string]string{}
-			for key, value := range dlsMsg.MessageDetails.Headers {
-				headersJson[key] = value
-			}
-			headersJson["$memphis_pm_id"] = strconv.Itoa(dlsMsg.ID)
-			headersJson["$memphis_pm_cg_name"] = cgName
-
-			headers, err := json.Marshal(headersJson)
+	if len(body.PoisonMessageIds) == 0 {
+		sh.S.ResendAllDlsMsgs(stationName, station.ID, user.TenantName, user)
+	} else {
+		for _, id := range body.PoisonMessageIds {
+			_, dlsMsg, err := db.GetDlsMessageById(id)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at json.Marshal: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at db.GetDlsMessageById: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			cgName, err := sh.S.ResendUnackedMsg(dlsMsg, user, stationName)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendUnackedMsg: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
 
-			data, err := hex.DecodeString(dlsMsg.MessageDetails.Data)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at DecodeString: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			err = sh.S.ResendPoisonMessage(station.TenantName, "$memphis_dls_"+replaceDelimiters(stationName)+"_"+replaceDelimiters(cgName), []byte(data), headers)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]ResendPoisonMessages at ResendPoisonMessage: Poisoned consumer group: %v: %v", user.TenantName, user.Username, cgName, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			size += int64(dlsMsg.MessageDetails.Size)
 		}
-		IncrementEventCounter(station.TenantName, "dls-resend", size, int64(len(dlsMsg.PoisonedCgs)), "", []byte{}, []byte{})
 	}
-
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := make(map[string]interface{})
@@ -1387,11 +1457,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Data:     string(sm.Data),
 				Headers:  headersJson,
 			},
-			Producer: models.ProducerDetails{
-				Name:          "",
-				ClientAddress: "",
-				IsActive:      false,
-				IsDeleted:     false,
+			Producer: models.ProducerDetailsResp{
+				Name:     "",
+				IsActive: false,
 			},
 			PoisonedCgs: []models.PoisonedCg{},
 		}
@@ -1431,13 +1499,12 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := sh.S.GetCgInfo(station.TenantName, stationName, cg.CgName)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
-
 			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
@@ -1459,25 +1526,15 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
 		})
 	}
-
-	exist, producer, err := db.GetProducerByStationIDAndUsername(producedByHeader, station.ID, connectionId)
+	isActive := false
+	exist, producer, err := db.GetProducerByStationIDAndConnectionId(producedByHeader, station.ID, connectionId)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetProducerByStationIDAndUsername: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if !exist {
-		errMsg := "Some parts of the message data are missing, probably the message/the station have been deleted"
-		serv.Warnf("[tenant: %v][user: %v]GetMessageDetails: %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	_, conn, err := db.GetConnectionByID(connectionId)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConnectionByID: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+	if exist {
+		isActive = producer.IsActive
 	}
 
 	msg := models.MessageResponse{
@@ -1488,14 +1545,9 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			Data:     hex.EncodeToString(sm.Data),
 			Headers:  headersJson,
 		},
-		Producer: models.ProducerDetails{
-			Name:              producedByHeader,
-			ConnectionId:      connectionId,
-			ClientAddress:     conn.ClientAddress,
-			CreatedBy:         producer.CreatedBy,
-			CreatedByUsername: producer.CreatedByUsername,
-			IsActive:          producer.IsActive,
-			IsDeleted:         producer.IsDeleted,
+		Producer: models.ProducerDetailsResp{
+			Name:     producedByHeader,
+			IsActive: isActive,
 		},
 		PoisonedCgs: poisonedCgs,
 	}
@@ -1677,9 +1729,9 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	message := fmt.Sprintf("Schema %v has been attached to station %v by user %v", schemaName, stationName.Ext(), asr.Username)
 	serv.Noticef("[tenant: %v][user: %v]: %v", asr.TenantName, asr.Username, message)
-	_, user, err := db.GetUserByUsername(asr.Username, asr.TenantName)
+	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName, false)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at GetUserByUsername: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at memphis_cache.GetUser: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
@@ -2126,6 +2178,124 @@ func (s *Server) RemoveOldStations() {
 	err = db.RemoveDeletedStations()
 	if err != nil {
 		s.Warnf("RemoveOldStations: at RemoveDeletedStations: %v", err.Error())
+		return
+	}
+}
+
+func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName string, user models.User) {
+	go func() {
+		createdAt := time.Now()
+		var offset int
+		var minId int
+		var maxId int
+		username := user.Username
+
+		err := db.UpdateResendDisabledInStations(true, []int{stationId})
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName, stationName)
+			return
+		}
+		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpsertAsyncTask at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName, stationName)
+			return
+		}
+
+		value, _ := task.Data.(map[string]interface{})
+		empty := len(value) == 0
+		if !empty {
+			data := value["offset"].(float64)
+			minId = int(data)
+			_, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				return
+			}
+		} else {
+			minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				return
+			}
+			// -1 in order to prevent skipping the first element
+			minId -= 1
+		}
+
+		for {
+			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetDlsMsgsBatch at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
+				return
+			}
+
+			data := models.MetaData{}
+			for _, dlsMsg := range dlsMsgs {
+				offset = dlsMsg.ID
+				data = models.MetaData{
+					Offset: offset,
+				}
+				_, err = serv.ResendUnackedMsg(dlsMsg, user, stationName)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at ResendUnackedMsg at station %v : %v", tenantName, username, stationName, err.Error())
+					continue
+				}
+
+			}
+			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
+				continue
+			}
+			minId = offset
+			if len(dlsMsgs) == 0 || offset == maxId {
+				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at RemoveAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName, stationName)
+					return
+				}
+
+				err = db.UpdateResendDisabledInStations(false, []int{stationId})
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName, stationName)
+					return
+				}
+
+				systemMessage := SystemMessage{
+					MessageType:    "info",
+					MessagePayload: fmt.Sprintf("Resend all unacked messages operation at station %s, triggered by user %s has been completed successfully", stationName, username),
+				}
+
+				err = serv.sendSystemMessageOnWS(user, systemMessage)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at sendSystemMessageOnWS at station %v : %v", tenantName, username, stationName, err.Error())
+					return
+				}
+				break
+			}
+		}
+	}()
+}
+
+func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName, stationName string) {
+	systemMessage := SystemMessage{
+		MessageType:    "Error",
+		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationName, user.Username),
+	}
+	err := serv.sendSystemMessageOnWS(user, systemMessage)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at sendSystemMessageOnWS at station %v :  %v", tenantName, user.Username, stationName, err.Error())
+		return
+	}
+	err = db.UpdateResendDisabledInStations(false, []int{stationId})
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at UpdateResendDisabledInStations at station %v : %v", tenantName, user.Username, stationName, err.Error())
 		return
 	}
 }

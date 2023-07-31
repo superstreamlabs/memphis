@@ -14,9 +14,11 @@ import './App.scss';
 
 import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { JSONCodec, StringCodec, connect } from 'nats.ws';
 import { useMediaQuery } from 'react-responsive';
-import { connect } from 'nats.ws';
-import { message } from 'antd';
+import { useHistory } from 'react-router-dom';
+import { message, notification } from 'antd';
+import { Redirect } from 'react-router-dom';
 
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
@@ -24,27 +26,32 @@ import {
     LOCAL_STORAGE_CONNECTION_TOKEN,
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
-    LOCAL_STORAGE_WS_PORT
+    LOCAL_STORAGE_WS_PORT,
+    USER_IMAGE
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
+import infoNotificationIcon from './assets/images/infoNotificationIcon.svg';
+import successIcon from './assets/images/successIcon.svg';
+import close from './assets/images/closeNotification.svg';
 import StationOverview from './domain/stationOverview';
+import errorIcon from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
-import { isCloud } from './services/valueConvertor';
 import Administration from './domain/administration';
+import { ApiEndpoints } from './const/apiEndpoints';
+import { isCloud } from './services/valueConvertor';
+import warnIcon from './assets/images/warnIcon.svg';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SchemaManagment from './domain/schema';
-import { useHistory } from 'react-router-dom';
-import { Redirect } from 'react-router-dom';
 import PrivateRoute from './PrivateRoute';
+import AuthService from './services/auth';
 import Overview from './domain/overview';
+import Loader from './components/loader';
 import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
-import { ApiEndpoints } from './const/apiEndpoints';
-import AuthService from './services/auth';
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -65,14 +72,20 @@ const App = withRouter((props) => {
     const firebase_id_token = urlParams.get('firebase_id_token');
     const firebase_organization_id = urlParams.get('firebase_organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+    const [persistedNotifications, setPersistedNotifications] = useState(() => {
+        const storedNotifications = JSON.parse(localStorage.getItem('persistedNotifications'));
+        return storedNotifications || [];
+    });
+    const [displayedNotifications, setDisplayedNotifications] = useState([]);
 
-    const ref = useRef();
-    ref.current = cloudLogedIn;
+    const stateRef = useRef([]);
+    stateRef.current = [cloudLogedIn, persistedNotifications];
 
     const handleLoginWithToken = async () => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
             if (data) {
+                localStorage.setItem(USER_IMAGE, data.user_image);
                 AuthService.saveToLocalStorage(data);
                 try {
                     const ws_port = data.ws_port;
@@ -133,7 +146,7 @@ const App = withRouter((props) => {
     }, [isMobile]);
 
     const handleRefresh = useCallback(async (firstTime) => {
-        if (window.location.pathname === pathDomains.login || (firebase_id_token !== null && !ref.current)) {
+        if (window.location.pathname === pathDomains.login || (firebase_id_token !== null && !stateRef.current[0])) {
             return;
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
@@ -189,8 +202,115 @@ const App = withRouter((props) => {
         };
     }, [handleRefresh, setAuthCheck]);
 
+    useEffect(() => {
+        const sc = StringCodec();
+        const jc = JSONCodec();
+        let sub;
+        const subscribeToNotifications = async () => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_system_messages`, sc.encode('SUB'));
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.get_system_messages.${brokerName}`);
+                    listenForUpdates();
+                }
+            } catch (err) {
+                console.error('Error subscribing to overview data:', err);
+            }
+        };
+
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        const uniqueNewNotifications = data.filter((newNotification) => {
+                            return !stateRef.current[1].some((existingNotification) => existingNotification.id === newNotification.id);
+                        });
+                        setPersistedNotifications((prevPersistedNotifications) => [...prevPersistedNotifications, ...uniqueNewNotifications]);
+                        localStorage.setItem('persistedNotifications', JSON.stringify([...stateRef.current[1], ...uniqueNewNotifications]));
+                    }
+                }
+            } catch (err) {
+                console.error('Error receiving overview data updates:', err);
+            }
+        };
+
+        subscribeToNotifications();
+
+        return () => {
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from overview data:', err);
+                }
+            }
+        };
+    }, [state.socket]);
+
+    const notificationHandler = (id, type, message, duration) => {
+        const defaultAntdField = {
+            className: 'notification-wrapper',
+            closeIcon: <img src={close} alt="close" />,
+            message: 'System Message',
+            onClose: () => {
+                const updatedNotifications = stateRef.current[1].map((n) => (n.id === id ? { ...n, read: true } : n));
+                setPersistedNotifications(updatedNotifications);
+                localStorage.setItem('persistedNotifications', JSON.stringify(updatedNotifications));
+            }
+        };
+        switch (type) {
+            case 'info':
+                notification.info({
+                    ...defaultAntdField,
+                    icon: <img src={infoNotificationIcon} alt="info" />,
+                    description: message,
+                    duration: duration
+                });
+                break;
+            case 'warning':
+                notification.warning({
+                    ...defaultAntdField,
+
+                    icon: <img src={warnIcon} alt="warn" />,
+                    description: message,
+                    duration: duration
+                });
+                break;
+            case 'error':
+                notification.error({
+                    ...defaultAntdField,
+                    icon: <img src={errorIcon} alt="error" />,
+                    description: message,
+                    duration: duration
+                });
+                break;
+            case 'success':
+                notification.success({
+                    ...defaultAntdField,
+                    icon: <img src={successIcon} alt="success" />,
+                    description: message,
+                    duration: duration
+                });
+                break;
+            default:
+                break;
+        }
+    };
+
+    useEffect(() => {
+        stateRef.current[1].forEach((notification) => {
+            if (!displayedNotifications.includes(notification.id) && !notification.read) {
+                notificationHandler(notification.id, notification.message_type, notification.message_payload, 0);
+                setDisplayedNotifications((prevDisplayedNotifications) => [...prevDisplayedNotifications, notification.id]);
+            }
+        });
+    }, [stateRef.current[1]]);
+
     return (
         <div className="app-container">
+            {!cloudLogedIn && <Loader />}
             <div>
                 {' '}
                 {!authCheck &&
@@ -460,6 +580,11 @@ const App = withRouter((props) => {
                                 exact
                                 path={`${pathDomains.administration}/integrations`}
                                 component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.administration}/cluster_configuration`}
+                                component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
                             />
                             <PrivateRoute
                                 exact

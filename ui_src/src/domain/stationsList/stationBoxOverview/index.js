@@ -74,7 +74,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     </div>
                     <div className="middle-section">
                         <div className="station-created">
-                            <label className="data-labels attached">Enforced Schema</label>
+                            <label className="data-labels attached">Enforced schema</label>
                             <OverflowTip
                                 className="data-info"
                                 text={station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
@@ -123,13 +123,15 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
 
                             <p className="data-info">{station?.station?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}</p>
                         </div>
-                        <div className="station-meta">
-                            <div className="header">
-                                <img src={replicasIcon} alt="replicas" />
-                                <label className="data-labels replicas">Replicas</label>
+                        {!isCloud() && (
+                            <div className="station-meta">
+                                <div className="header">
+                                    <img src={replicasIcon} alt="replicas" />
+                                    <label className="data-labels replicas">Replicas</label>
+                                </div>
+                                <p className="data-info">{replicasConvertor(station?.station?.replicas, false)}</p>
                             </div>
-                            <p className="data-info">{isCloud() ? replicasConvertor(3, false) : replicasConvertor(station?.station?.replicas, false)}</p>
-                        </div>
+                        )}
                         <div className="station-meta">
                             <div className="header">
                                 <img src={totalMsgIcon} alt="total messages" />

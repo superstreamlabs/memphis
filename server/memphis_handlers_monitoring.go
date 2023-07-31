@@ -666,6 +666,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"total_dls_messages":            totalDlsAmount,
 			"tiered_storage_enabled":        station.TieredStorageEnabled,
 			"created_by_username":           station.CreatedByUsername,
+			"resend_disabled":               station.ResendDisabled,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -694,6 +695,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"total_dls_messages":            totalDlsAmount,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
+				"resend_disabled":               station.ResendDisabled,
 			}
 		} else {
 			response = gin.H{
@@ -719,6 +721,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"total_dls_messages":            totalDlsAmount,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
+				"resend_disabled":               station.ResendDisabled,
 			}
 		}
 	}
@@ -928,7 +931,7 @@ func getDbStorageSize() (float64, float64, error) {
 }
 
 func getUnixStorageSize() (float64, error) {
-	out, err := exec.Command("df", "-h", "/").Output()
+	out, err := exec.Command("df", "-g", "/").Output()
 	if err != nil {
 		return 0, err
 	}

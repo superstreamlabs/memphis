@@ -35,12 +35,12 @@ const Schemaverse = () => {
                     </div>
                     <div className="total-data sum">
                         <span>
-                            <p className="total-measure">Total Schemas</p>
+                            <p className="total-measure">Total schemas</p>
                             <p className="total-value">{state?.monitor_data?.schemas_details?.total_schemas}</p>
                         </span>
                         <Divider type="vertical" />
                         <span>
-                            <p className="total-measure">Enforced Schemas</p>
+                            <p className="total-measure">Enforced schemas</p>
                             <p className="total-value">{state?.monitor_data?.schemas_details?.enforced_schemas}</p>
                         </span>
                     </div>
@@ -59,7 +59,7 @@ const Schemaverse = () => {
                     <img src={noSchemasFound} alt="no data found" />
                     <p>No schemas yet!</p>
                     <label>Schemas are made to increase data quality and help architects achieve data governance. </label>
-                    <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
+                    <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/create`)}>
                         + Create a schema
                     </label>
                 </div>

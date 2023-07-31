@@ -21,6 +21,7 @@ import (
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/http_server"
+	"memphis/memphis_cache"
 	"memphis/server"
 	"strings"
 
@@ -107,6 +108,11 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
 
+	err = memphis_cache.InitializeUserCache(s.Errorf)
+	if err != nil {
+		s.Errorf("Failed to initialize user cache %v", err.Error())
+	}
+
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
@@ -124,10 +130,17 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
 
+	err = s.SetDlsRetentionForExistTenants()
+	if err != nil {
+		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
+	}
+
 	err = s.Force3ReplicationsForExistingStations()
 	if err != nil {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
+
+	s.CompleteRelevantStuckAsyncTasks()
 
 	go func() {
 		s.CreateInternalJetStreamResources()

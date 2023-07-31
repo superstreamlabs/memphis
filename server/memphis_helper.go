@@ -52,6 +52,7 @@ const (
 	syslogsSysSubject      = "intern.sys"
 	dlsStreamName          = "$memphis-%s-dls"
 	dlsUnackedStream       = "$memphis_dls_unacked"
+	dlsSchemaverseStream   = "$memphis_dls_schemaverse"
 	tieredStorageStream    = "$memphis_tiered_storage"
 	throughputStreamName   = "$memphis-throughput"
 	throughputStreamNameV1 = "$memphis-throughput-v1"
@@ -121,14 +122,16 @@ const (
 
 // errors
 var (
-	ErrBadHeader                    = errors.New("could not decode header")
-	TIERED_STORAGE_CONSUMER_CREATED bool
-	TIERED_STORAGE_STREAM_CREATED   bool
-	DLS_UNACKED_CONSUMER_CREATED    bool
-	DLS_UNACKED_STREAM_CREATED      bool
-	SYSLOGS_STREAM_CREATED          bool
-	THROUGHPUT_STREAM_CREATED       bool
-	THROUGHPUT_LEGACY_STREAM_EXIST  bool
+	ErrBadHeader                     = errors.New("could not decode header")
+	TIERED_STORAGE_CONSUMER_CREATED  bool
+	TIERED_STORAGE_STREAM_CREATED    bool
+	DLS_UNACKED_CONSUMER_CREATED     bool
+	DLS_UNACKED_STREAM_CREATED       bool
+	DLS_SCHEMAVERSE_STREAM_CREATED   bool
+	DLS_SCHEMAVERSE_CONSUMER_CREATED bool
+	SYSLOGS_STREAM_CREATED           bool
+	THROUGHPUT_STREAM_CREATED        bool
+	THROUGHPUT_LEGACY_STREAM_EXIST   bool
 )
 
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
@@ -200,6 +203,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 	}
 
 	maxAge := GetStationMaxAge(retentionType, retentionValue)
+	retentionPolicy := getRetentionPolicy(retentionType)
 
 	var storage StorageType
 	if storageType == "memory" {
@@ -221,7 +225,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		memphisAddStream(tenantName, &StreamConfig{
 			Name:                 sn.Intern(),
 			Subjects:             []string{sn.Intern() + ".>"},
-			Retention:            LimitsPolicy,
+			Retention:            retentionPolicy,
 			MaxConsumers:         -1,
 			MaxMsgs:              int64(maxMsgs),
 			MaxBytes:             int64(maxBytes),
@@ -426,6 +430,43 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		DLS_UNACKED_CONSUMER_CREATED = true
 	}
 
+	// create schemaverse dls stream
+	if !DLS_SCHEMAVERSE_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsSchemaverseStream,
+			Subjects:     []string{SCHEMAVERSE_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_SCHEMAVERSE_STREAM_CREATED = true
+	}
+
+	// create schemaverse dls consumer
+	if !DLS_SCHEMAVERSE_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       SCHEMAVERSE_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsSchemaverseStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
+	}
+
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
@@ -570,11 +611,11 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 		}
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = lastMessages
-	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
-		deliveryPolicy = DeliverAll
 	} else if consumer.StartConsumeFromSeq > 1 {
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = consumer.StartConsumeFromSeq
+	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
+		deliveryPolicy = DeliverAll
 	}
 
 	consumerConfig := &ConsumerConfig{
@@ -1211,7 +1252,7 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		switch conf.Key {
 		case "dls_retention":
 			v, _ := strconv.Atoi(conf.Value)
-			opts.DlsRetentionHours = v
+			opts.DlsRetentionHours[conf.TenantName] = v
 		case "logs_retention":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.LogsRetentionDays = v
@@ -1227,6 +1268,9 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		case "max_msg_size_mb":
 			v, _ := strconv.Atoi(conf.Value)
 			opts.MaxPayload = int32(v * 1024 * 1024)
+		case "gc_producer_consumer_retention_hours":
+			v, _ := strconv.Atoi(conf.Value)
+			opts.GCProducersConsumersRetentionHours = v
 		}
 	}
 
@@ -1437,7 +1481,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 		if err != nil {
 			return err
 		}
-		err = s.RemoveStream(DEFAULT_SYSTEM_ACCOUNT, stationName.Intern())
+		err = s.RemoveStream(DEFAULT_GLOBAL_ACCOUNT, stationName.Intern())
 		if err != nil {
 			return err
 		}

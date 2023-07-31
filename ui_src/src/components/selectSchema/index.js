@@ -28,7 +28,6 @@ const { Option } = Select;
 
 const SelectSchema = ({ options, onChange, value, placeholder }) => {
     const history = useHistory();
-    const [state, dispatch] = useContext(Context);
 
     const handleChange = (e) => {
         onChange(e);

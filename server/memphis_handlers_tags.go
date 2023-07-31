@@ -226,7 +226,7 @@ func (th TagsHandler) RemoveTag(c *gin.Context) {
 		message = fmt.Sprintf("Tag %v has been deleted from schema %v by user name %v", name, schema.Name, user.Username)
 
 	// case "user":
-	// 	exist, user, err := db.GetUserByUsername(body.EntityName)
+	// 	exist, user, err := memphis_cache.GetUser(body.EntityName)
 	// 	if err != nil {
 	// 		serv.Errorf("RemoveTag: Tag " + body.Name + ": " + err.Error())
 	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -334,7 +334,7 @@ func (th TagsHandler) UpdateTagsForEntity(c *gin.Context) {
 		schemaName = schema.Name
 
 	// case "user":
-	// 	exist, user, err := db.GetUserByUsername(body.EntityName)
+	// 	exist, user, err := memphis_cache.GetUser(body.EntityName)
 	// 	if err != nil {
 	// 		serv.Errorf("UpdateTagsForEntity: User " + body.EntityName + ": " + err.Error())
 	// 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

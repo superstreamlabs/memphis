@@ -30,8 +30,6 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	utils.InitializeValidations()
 	InitializeUserMgmtRoutes(mainRouter)
 	InitializeStationsRoutes(mainRouter, handlers)
-	InitializeProducersRoutes(mainRouter, handlers)
-	InitializeConsumersRoutes(mainRouter, handlers)
 	InitializeMonitoringRoutes(mainRouter, handlers)
 	InitializeTagsRoutes(mainRouter, handlers)
 	InitializeSchemasRoutes(mainRouter, handlers)

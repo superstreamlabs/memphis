@@ -1,7 +1,11 @@
-<div align="center">
-  
-  ![Banner- Memphis dev streaming ](https://github.com/memphisdev/memphis/assets/70286779/746f4cf4-0d71-45ba-9177-73718aea58f0)
 
+<div align="center">
+ 
+![Hackathon banner](https://github.com/memphisdev/memphis/assets/107035359/6ff3c175-15c7-4ef2-b08e-da57443f946b)
+
+We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/> 
+**For more information & Sign up click [here](https://www.hackathon.memphis.dev/)!**
+<hr/> 
 
 </div>
 
@@ -24,7 +28,7 @@
 </div>
  
  <p align="center">
-  <a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+  <a href="https://memphis.dev/pricing/">Cloud - </a><a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
 </p>
 
 <p align="center">
@@ -36,9 +40,10 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
-Memphis enables building modern queue-based applications that require
-large volumes of streamed and enriched data, modern protocols, zero ops, up to x9 faster development,
-up to x46 fewer costs, and significantly lower dev time for data-oriented developers and data engineers.
+Memphis.dev is more than a broker. It's a new streaming stack.<br><br>
+It accelerates the development of real-time applications that require<br>
+high throughput, low latency, small footprint, and multiple protocols,<br>with minimum platform operations, and all the observability you can think of.<br><br>
+Highly resilient, distributed architecture, cloud-native, and run on any Kubernetes,<br>on any cloud without zookeeper, bookeeper, or JVM.
 
 ## 🫣 A world without Memphis
 When your application requires a message broker or a queue,<br>
@@ -59,7 +64,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Key Features [v1.0.3](https://docs.memphis.dev/memphis/release-notes/releases/v1.0.3-latest)
+## ✨ Key Features [v1.1.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.1.1-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -141,31 +146,31 @@ Feature | Go | Python | JS | .NET | Java | Rust
 ------------- | ------------- | ------------- | ------------- | ------------- | ------------- | -------------
 Connection | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Disconnection | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
-Create a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Destroy a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Retention | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Retention values | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Storage types | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Create a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Destroy a station | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Retention | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Retention values | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Storage types | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
 Create a new schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Enforce a schema Protobuf | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :construction: (WIP)
 Enforce a schema GraphQL | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Detach a schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Add headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Async produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Message ID | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | ? | :x:
-Destroy a producer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | Partial | :x:
+Produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Add headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Async produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Message ID | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | ? | :white_check_mark:
+Destroy a producer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | Partial | :white_check_mark:
 Consume | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
-Conte:x:t to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
+Context to message handler | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | Not Applicable
 Ack a message | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Fetch | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Get Headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Get message sequence number | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Destroying a Consumer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x:
-Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :x:
+Message delay | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Get Headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Get message sequence number | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Destroying a Consumer | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
+Check if broker is connected | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
+Consumer prefetch | :white_check_mark: | :x: | :x: | :white_check_mark: | :x: | :white_check_mark:
 
 ## 👉 Use-cases
 - Async task management

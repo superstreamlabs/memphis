@@ -176,26 +176,26 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     break;
             }
             setActualPods(replicas);
-        } catch (error) { }
+        } catch (error) {}
     };
 
     const getAllSchemas = async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             setSchemas(data);
-        } catch (error) { }
+        } catch (error) {}
     };
 
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=s3`);
             setIntegrateValue(data);
-        } catch (error) { }
+        } catch (error) {}
     };
 
     const createStation = async (bodyRequest) => {
         try {
-            getStarted && setLoading(true);
+            setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
                 if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
@@ -203,7 +203,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             }
         } catch (error) {
         } finally {
-            getStarted && setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -287,7 +287,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {!isCloud() &&
+                {!isCloud() && (
                     <div className="replicas-container">
                         <TitleComponent
                             headerTitle="Replicas"
@@ -313,7 +313,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             </Form.Item>
                         </div>
                     </div>
-                }
+                )}
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>

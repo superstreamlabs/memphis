@@ -21,6 +21,8 @@ import RequestsGray from '../../../assets/images/setting/requestsGray.svg';
 function BillingMenu({ selectedMenuItem, setMenuItem }) {
     return (
         <div className="side-menu">
+            <p className="header">Billing</p>
+            <p className="sub-header">View your monthly usage</p>
             <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
                 <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
                 Usage Report

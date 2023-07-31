@@ -51,7 +51,7 @@ const OverflowTip = ({ color, center, width, maxWidth, cursor, textAlign, textCo
     const [hoverStatus, setHover] = useState(false);
 
     return (
-        <Tooltip className={className} title={text} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
+        <Tooltip className={className} title={text || ""} interactive disableHoverListener={!hoverStatus} classes={classes} arrow>
             <div
                 ref={textElementRef}
                 style={{

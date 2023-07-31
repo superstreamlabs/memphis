@@ -36,7 +36,7 @@ node {
     }
 
     stage('Build and push docker image to Docker Hub') {
-       sh "docker buildx build --push -t ${repoUrlPrefix}/${imageName}-${gitBranch}-${test_suffix} ."
+       sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
     }
 
     stage('Tests - Install/upgrade Memphis cli') {
@@ -91,7 +91,7 @@ node {
       	dir ('memphis-k8s'){
        	  git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
           sh """
-	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,teston='cp' --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
+	    helm install memphis-tests memphis --set memphis.extraEnvironmentVars.enabled=true,memphis.image=${repoUrlPrefix}/${imageName}-${gitBranch} --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis-$unique_id --wait
           """
       	}
     }
@@ -127,10 +127,7 @@ node {
 
     stage('Build and push image to Docker Hub') {
       sh "docker buildx use builder"
-      if (env.BRANCH_NAME ==~ /(master)/) { //NEW TAG
-	sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}-${gitBranch} --platform linux/amd64,linux/arm64 ."
-      }
-      else{
+      if (env.BRANCH_NAME ==~ /(latest)/) {
 	if(versionTag.contains('stable')) {
 	  sh "docker buildx build --push --tag ${repoUrlPrefix}/${imageName}:${versionTag} --tag ${repoUrlPrefix}/${imageName}:stable --tag ${repoUrlPrefix}/${imageName} --platform linux/amd64,linux/arm64 ."	
 	}
@@ -155,7 +152,8 @@ node {
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
 	    sh """
-              helm install my-memphis memphis --set memphis.extraEnvironmentVars.enabled=true,global.cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis --wait
+              aws s3 cp s3://memphis-jenkins-backup-bucket/memphis-staging-oss.yaml .
+              helm install my-memphis memphis --set global.cluster.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" -f ./memphis-staging-oss.yaml --create-namespace --namespace memphis --wait
 	    """
 	  }
           sh "rm -rf memphis-k8s"
