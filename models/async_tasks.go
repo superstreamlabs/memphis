@@ -13,6 +13,12 @@ type AsyncTask struct {
 	StationId     int         `json:"station_id"`
 }
 
+type AsyncTaskRes struct {
+	ID        int       `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type MetaData struct {
 	Offset int `json:"offset"`
 }

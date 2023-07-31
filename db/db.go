@@ -6438,6 +6438,38 @@ func GetAsyncTaskByNameAndBrokerName(task, brokerName string) (bool, []models.As
 	return true, asyncTask, nil
 }
 
+func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT id, name, created_at FROM async_tasks where tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_async_tasks", query)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer rows.Close()
+
+	asyncTasks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTaskRes])
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	if len(asyncTasks) == 0 {
+		return []models.AsyncTaskRes{}, nil
+	}
+	return asyncTasks, nil
+}
+
 func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}, stationId int) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

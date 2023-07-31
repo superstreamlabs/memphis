@@ -37,6 +37,7 @@ const (
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 	memphisWS_Subj_GetSystemMessages    = "get_system_messages"
+	memphisWS_subj_GetAsyncTasks        = "get_async_tasks"
 	ws_updates_interval_sec             = 5
 )
 
@@ -186,7 +187,6 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 
 		broName := brokerName{s.opts.ServerName}
 		serverName, err := json.Marshal(broName)
-
 		if err != nil {
 			s.Errorf("[tenant: %v]memphis websocket at json.Marshal: %v", tenantName, err.Error())
 			return
@@ -244,6 +244,10 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	case memphisWS_Subj_GetSystemMessages:
 		return func(string) (any, error) {
 			return h.userMgmt.GetRelevantSystemMessages()
+		}, nil
+	case memphisWS_subj_GetAsyncTasks:
+		return func(string) (any, error) {
+			return h.AsyncTasks.GetAllAsyncTasks(tenantName)
 		}, nil
 	default:
 		return nil, errors.New("invalid subject")
