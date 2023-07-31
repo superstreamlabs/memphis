@@ -18,7 +18,7 @@ import { message } from 'antd';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
-import { messageParser, msToUnits } from '../../../../services/valueConvertor';
+import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
 import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -372,20 +372,22 @@ const Messages = () => {
                             />
                         ]}
                     ></DetailBox>
-                    <DetailBox
-                        img={leaderImg}
-                        title={'Leader'}
-                        desc={
-                            <span>
-                                The current leader of this station.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                    Learn more
-                                </a>
-                            </span>
-                        }
-                        data={[stationState?.stationSocketData?.leader]}
-                    />
-                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                    {!isCloud() && (
+                        <DetailBox
+                            img={leaderImg}
+                            title={'Leader'}
+                            desc={
+                                <span>
+                                    The current leader of this station.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                            data={[stationState?.stationSocketData?.leader]}
+                        />
+                    )}
+                    {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && (
                         <DetailBox
                             img={followersImg}
                             title={'Followers'}
