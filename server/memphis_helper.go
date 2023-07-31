@@ -799,7 +799,7 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 
 	var msgBytes uint64
 	var msgCount uint64
-	if station.PartitionsNumber == 1 {
+	if len(station.PartitionsList) == 0 {
 		streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
 		if err != nil || streamInfo.State.Bytes == 0 {
 			return 0, err
@@ -807,7 +807,7 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		msgBytes = streamInfo.State.Bytes
 		msgCount = streamInfo.State.Msgs
 	} else {
-		for p := 1; p <= station.PartitionsNumber; p++ {
+		for _, p := range station.PartitionsList {
 			streamInfo, err := s.memphisStreamInfo(station.TenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
 			if err != nil {
 				return 0, err

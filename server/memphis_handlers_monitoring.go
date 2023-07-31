@@ -525,7 +525,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name, station.PartitionsNumber)
+	totalMessages, err := stationsHandler.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)

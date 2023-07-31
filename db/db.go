@@ -342,7 +342,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TYPE enum_retention_type ADD VALUE 'ack_based';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
-		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER NOT NULL DEFAULT 1;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -372,7 +372,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tiered_storage_enabled BOOL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		resend_disabled BOOL NOT NULL DEFAULT false,
-		partitions INTEGER NOT NULL DEFAULT 1,
+		partitions INTEGER[],
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -1160,7 +1160,7 @@ func InsertNewStation(
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool,
 	tenantName string,
-	partitionsNumber int) (models.Station, int64, error) {
+	partitionsList []int) (models.Station, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1206,7 +1206,7 @@ func InsertNewStation(
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsNumber)
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsList)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1258,7 +1258,7 @@ func InsertNewStation(
 		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
 		TieredStorageEnabled:        tieredStorageEnabled,
 		TenantName:                  tenantName,
-		PartitionsNumber:            partitionsNumber,
+		PartitionsList:              partitionsList,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1492,7 +1492,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
 			&stationRes.ResendDisabled,
-			&stationRes.PartitionNumber,
+			&stationRes.PartitionsList,
 			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err

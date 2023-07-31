@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"memphis/server"
+
 	"github.com/nats-io/nats.go"
 )
 
@@ -405,11 +406,11 @@ func TestAccountSubjectMapping(t *testing.T) {
 	// verify hashing is deterministic by checking it produces the same exact result twice
 	for i := 0; i < numMessages; i++ {
 		subject := <-subjectsReceived
-		partitionNumber, err := strconv.Atoi(strings.Split(subject, ".")[3])
+		PartitionsNumber, err := strconv.Atoi(strings.Split(subject, ".")[3])
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if partitionsReceived[i] != partitionNumber {
+		if partitionsReceived[i] != PartitionsNumber {
 			t.Fatalf("Error: same id mapped to two different partitions")
 		}
 	}
@@ -487,11 +488,11 @@ func TestAccountImportSubjectMapping(t *testing.T) {
 	// verify hashing is deterministic by checking it produces the same exact result twice
 	for i := 0; i < numMessages; i++ {
 		subject := <-subjectsReceived
-		partitionNumber, err := strconv.Atoi(strings.Split(subject, ".")[3])
+		PartitionsNumber, err := strconv.Atoi(strings.Split(subject, ".")[3])
 		if err != nil {
 			t.Fatalf("Unexpected error: %v", err)
 		}
-		if partitionsReceived[i] != partitionNumber {
+		if partitionsReceived[i] != PartitionsNumber {
 			t.Fatalf("Error: same id mapped to two different partitions")
 		}
 	}

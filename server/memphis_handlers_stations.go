@@ -110,13 +110,13 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 	}
 
 	if shouldDeleteStream {
-		if station.PartitionsNumber == 1 {
+		if len(station.PartitionsList) == 0 {
 			err = s.RemoveStream(station.TenantName, stationName.Intern())
 			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 				return err
 			}
 		} else {
-			for p := 1; p <= station.PartitionsNumber; p++ {
+			for _, p := range station.PartitionsList {
 				streamName := fmt.Sprintf("%v$%v", stationName.Intern(), p)
 				err = s.RemoveStream(station.TenantName, streamName)
 				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
@@ -176,17 +176,14 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
-	numberOfPartitions := csr.PartitionNumber
-	if numberOfPartitions > 30 || numberOfPartitions < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:30 min:1): Station %v", numberOfPartitions, csr.StationName)
+	if csr.PartitionsNumber > 30 || csr.PartitionsNumber < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v partitions (max:30 min:1): Station %v", csr.PartitionsNumber, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
 		return
 	}
-	if numberOfPartitions == 1 {
-		numberOfPartitions = 0
-	}
+	partitionsList := make([]int, 0)
 
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
@@ -321,8 +318,8 @@ func (s *Server) createStationDirectIntern(c *client,
 	}
 
 	if shouldCreateStream {
-		if numberOfPartitions == 0 {
-			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, numberOfPartitions)
+		if csr.PartitionsNumber == 1 {
+			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, 0)
 			if err != nil {
 				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
@@ -335,7 +332,7 @@ func (s *Server) createStationDirectIntern(c *client,
 				return
 			}
 		} else {
-			for p := 1; p <= numberOfPartitions; p++ {
+			for p := 1; p <= csr.PartitionsNumber; p++ {
 				err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p)
 				if err != nil {
 					if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
@@ -348,6 +345,7 @@ func (s *Server) createStationDirectIntern(c *client,
 					respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 					return
 				}
+				partitionsList = append(partitionsList, p)
 			}
 		}
 	}
@@ -364,7 +362,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, csr.PartitionNumber)
+	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -812,16 +810,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	numberOfPartitions := body.PartitionNumber
-	if numberOfPartitions > 30 || numberOfPartitions < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", numberOfPartitions, body.Name)
-		serv.Errorf("[tenant: %v][user:%v]createStationDirect %v", user.TenantName, user.Username, errMsg)
+	if body.PartitionsNumber > 30 || body.PartitionsNumber < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", body.PartitionsNumber, body.Name)
+		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	if numberOfPartitions == 1 {
-		numberOfPartitions = 0
-	}
+	partitionsList := make([]int, 0)
 
 	stationName, err := StationNameFromStr(body.Name)
 	if err != nil {
@@ -925,23 +920,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		body.IdempotencyWindow = 100 // minimum is 100 millis
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, body.PartitionNumber)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	//rowsUpdated == 0 means that the row already exists
-	if rowsUpdated == 0 {
-		errMsg := fmt.Sprintf("Station %v already exists", newStation.Name)
-		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
-		return
-	}
-
-	if numberOfPartitions == 0 {
-		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, numberOfPartitions)
+	if body.PartitionsNumber == 1 {
+		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, 0)
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
 				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
@@ -954,7 +934,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 	} else {
-		for p := 1; p <= numberOfPartitions; p++ {
+		for p := 1; p <= body.PartitionsNumber; p++ {
 			err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p)
 			if err != nil {
 				if IsNatsErr(err, JSInsufficientResourcesErr) {
@@ -967,7 +947,23 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
 			}
+			partitionsList = append(partitionsList, p)
 		}
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	//rowsUpdated == 0 means that the row already exists
+	if rowsUpdated == 0 {
+		errMsg := fmt.Sprintf("Station %v already exists", newStation.Name)
+		serv.Warnf("[tenant: %v][user: %v]CreateStation: %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
 	}
 
 	if len(body.Tags) > 0 {
@@ -1247,18 +1243,18 @@ func (s *Server) removeStationDirectIntern(c *client,
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, nil)
 }
 
-func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string, partitionNumber int) (int, error) {
+func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string, partitionsList []int) (int, error) {
 	stationName, err := StationNameFromStr(stationNameExt)
 	if err != nil {
 		return 0, err
 	}
 
 	totalMessages := 0
-	if partitionNumber == 1 {
+	if len(partitionsList) == 0 {
 		totalMessages, err = sh.S.GetTotalMessagesInStation(tenantName, stationName.Intern())
 		return totalMessages, err
 	} else {
-		for p := 1; p <= partitionNumber; p++ {
+		for _, p := range partitionsList {
 			streamMessages, err := sh.S.GetTotalMessagesInStation(tenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
 			if err != nil {
 				return totalMessages, err

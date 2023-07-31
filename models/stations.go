@@ -60,7 +60,7 @@ type Station struct {
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 	TenantName                  string    `json:"tenant_name"`
 	ResendDisabled              bool      `json:"resend_disabled"`
-	PartitionsNumber            int       `json:"partitions_number"`
+	PartitionsList              []int     `json:"partitions_list"`
 }
 
 type GetStationResponseSchema struct {
@@ -134,7 +134,7 @@ type ExtendedStationLight struct {
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
 	ResendDisabled              bool        `json:"resend_disabled"`
-	PartitionNumber             int         `json:"partition_number"`
+	PartitionsList              []int       `json:"partitions_list"`
 }
 
 type ActiveProducersConsumersDetails struct {
@@ -167,7 +167,7 @@ type CreateStationSchema struct {
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
-	PartitionNumber      int              `json:"partition_number"`
+	PartitionsNumber     int              `json:"partitions_number"`
 }
 
 type DlsConfiguration struct {
