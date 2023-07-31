@@ -145,6 +145,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
             replicas: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
+            //partitions: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -287,18 +288,49 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {!isCloud() && (
+                <div className="replicas-partition-container">
+                    {!isCloud() && (
+                        <div className="replicas-container">
+                            <TitleComponent
+                                headerTitle="Replicas"
+                                typeTitle="sub-header"
+                                headerDescription="Amount of mirrors per message."
+                                learnMore={true}
+                                link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                            />
+                            <div>
+                                <Form.Item
+                                    name="replicas"
+                                    initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                    style={{ height: '50px' }}
+                                >
+                                    <SelectComponent
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        radiusType="semi-round"
+                                        height="40px"
+                                        popupClassName="select-options"
+                                        options={actualPods}
+                                        value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                        onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                        disabled={!allowEdit}
+                                    />
+                                </Form.Item>
+                            </div>
+                        </div>
+                    )}
                     <div className="replicas-container">
                         <TitleComponent
-                            headerTitle="Replicas"
+                            headerTitle="Partitions"
                             typeTitle="sub-header"
-                            headerDescription="Amount of mirrors per message."
-                            learnMore={true}
-                            link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                            headerDescription="Amount of partitions per station."
+                            learnMore={false}
+                            // link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
                         />
                         <div>
-                            <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
-                                <SelectComponent
+                            <Form.Item name="partitions" initialValue={1} style={{ height: '50px' }}>
+                                {/* <SelectComponent
                                     colorType="black"
                                     backgroundColorType="none"
                                     borderColorType="gray"
@@ -309,11 +341,12 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
                                     onChange={(e) => getStarted && updateFormState('replicas', e)}
                                     disabled={!allowEdit}
-                                />
+                                /> */}
+                                <InputNumberComponent min={1} max={isCloud() ? 30 : 30} onChange={(e) => getStarted && updateFormState('partitions', e)} />
                             </Form.Item>
                         </div>
                     </div>
-                )}
+                </div>
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
