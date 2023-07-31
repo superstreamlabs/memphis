@@ -40,7 +40,7 @@ func (s *Server) CompleteRelevantStuckAsyncTasks() {
 			continue
 		}
 
-		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
+		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName, false)
 		if err != nil {
 			serv.Errorf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
 			continue

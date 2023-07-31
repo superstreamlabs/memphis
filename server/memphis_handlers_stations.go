@@ -312,7 +312,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	exist, user, err := memphis_cache.GetUser(username, csr.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -1145,7 +1145,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName)
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -1718,7 +1718,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	message := fmt.Sprintf("Schema %v has been attached to station %v by user %v", schemaName, stationName.Ext(), asr.Username)
 	serv.Noticef("[tenant: %v][user: %v]: %v", asr.TenantName, asr.Username, message)
-	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName)
+	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at memphis_cache.GetUser: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
