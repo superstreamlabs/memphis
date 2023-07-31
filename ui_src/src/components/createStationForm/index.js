@@ -161,14 +161,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
             let replicas = [];
-            switch (data?.available_replicas) {
-                case 1:
+            switch (true) {
+                case data?.available_replicas >= 1 && data?.available_replicas < 3:
                     replicas = ['No HA (1)'];
                     break;
-                case 3:
+                case data?.available_replicas >= 3 && data?.available_replicas < 5:
                     replicas = ['No HA (1)', 'HA (3)'];
                     break;
-                case 5:
+                case data?.available_replicas >= 5:
                     replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
                     break;
                 default:
