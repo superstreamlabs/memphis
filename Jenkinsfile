@@ -152,7 +152,8 @@ node {
 	  dir ('memphis-k8s'){
        	    git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: gitBranch
 	    sh """
-              helm install my-memphis memphis --set memphis.extraEnvironmentVars.enabled=true,global.cluster.enabled="true",exporter.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" --set-json 'memphis.extraEnvironmentVars.vars=[{"name":"ENV","value":"staging"}]' --create-namespace --namespace memphis --wait
+              aws s3 cp s3://memphis-jenkins-backup-bucket/memphis-staging-oss.yaml .
+              helm install my-memphis memphis --set global.cluster.enabled="true",websocket.tls.cert="tls.crt",websocket.tls.key="tls.key",websocket.tls.secret.name="ws-tls-certs" -f ./memphis-staging-oss.yaml --create-namespace --namespace memphis --wait
 	    """
 	  }
           sh "rm -rf memphis-k8s"
