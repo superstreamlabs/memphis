@@ -353,9 +353,11 @@ const Messages = () => {
                     >
                         <DlsConfig />
                     </DetailBox>
-                    <DetailBox img={purge} title={'Purge'}>
-                        <div className="purge-container">
-                            <label>Clean station from messages.</label>
+                    <DetailBox
+                        img={purge}
+                        title={'Purge'}
+                        desc="Clean station from messages."
+                        data={[
                             <Button
                                 width="80px"
                                 height="32px"
@@ -368,8 +370,8 @@ const Messages = () => {
                                 disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
                                 onClick={() => modalPurgeFlip(true)}
                             />
-                        </div>
-                    </DetailBox>
+                        ]}
+                    ></DetailBox>
                     <DetailBox
                         img={leaderImg}
                         title={'Leader'}
