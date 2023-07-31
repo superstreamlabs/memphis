@@ -1372,7 +1372,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-add-user")
 	}
 
@@ -1469,7 +1471,9 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-user")
 	}
 
