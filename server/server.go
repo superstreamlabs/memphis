@@ -2169,17 +2169,17 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	s.clientConnectURLs = s.getClientConnectURLs()
 	s.listener = l
 
-	// go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
-	// 	func(_ error) bool {
-	// 		if s.isLameDuckMode() {
-	// 			// Signal that we are not accepting new clients
-	// 			s.ldmCh <- true
-	// 			// Now wait for the Shutdown...
-	// 			<-s.quitCh
-	// 			return true
-	// 		}
-	// 		return false
-	// 	})
+	go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
+		func(_ error) bool {
+			if s.isLameDuckMode() {
+				// Signal that we are not accepting new clients
+				s.ldmCh <- true
+				// Now wait for the Shutdown...
+				<-s.quitCh
+				return true
+			}
+			return false
+		})
 	s.mu.Unlock()
 
 	// Let the caller know that we are ready
