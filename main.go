@@ -140,6 +140,8 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
 
+	s.CompleteRelevantStuckAsyncTasks()
+
 	go func() {
 		s.CreateInternalJetStreamResources()
 		go http_server.InitializeHttpServer(s)

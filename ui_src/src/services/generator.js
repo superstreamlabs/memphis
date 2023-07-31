@@ -15,7 +15,8 @@ export const generator = () => {
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numeric = '0123456789';
     const specialChars = '!?-@#$%';
-    const length = 10;
+    const minLength = 10;
+    const maxLength = 20;
 
     let password = '';
 
@@ -29,7 +30,10 @@ export const generator = () => {
     const hasNumeric = /(?=.*\d)/;
     const hasSpecialChars = /(?=.*[!?\-@#$%^&*])/;
 
-    while (!hasUppercase.test(password) || !hasLowercase.test(password) || !hasNumeric.test(password) || !hasSpecialChars.test(password) || password.length < length) {
+    while (
+        (!hasUppercase.test(password) || !hasLowercase.test(password) || !hasNumeric.test(password) || !hasSpecialChars.test(password) || password.length < minLength) &&
+        password.length < maxLength
+    ) {
         const charSetIndex = Math.floor(Math.random() * 4);
         let randomChar;
 

@@ -66,7 +66,14 @@ type MainOverviewData struct {
 	DelayedCgs        []models.DelayedCgResp            `json:"delayed_cgs"`
 }
 
-type SystemMessage struct{}
+type SystemMessage struct {
+	Id             string    `json:"id"`
+	MessageType    string    `firestore:"message_type" json:"message_type"`
+	MessagePayload string    `firestore:"message_payload" json:"message_payload"`
+	StartTime      time.Time `firestore:"start_time" json:"start_time"`
+	EndTime        time.Time `firestore:"end_time" json:"end_time"`
+	UiPage         string    `firestore:"ui_page" json:"ui_page"`
+}
 
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
@@ -1275,7 +1282,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
-	exist, _, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, _, err := memphis_cache.GetUser(username, user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1365,7 +1372,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-add-user")
 	}
 
@@ -1419,7 +1428,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
-	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1462,7 +1471,9 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-user")
 	}
 
@@ -1651,7 +1662,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, user.TenantName, true)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1950,5 +1961,24 @@ func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) 
 }
 
 func (s *Server) SetDlsRetentionForExistTenants() error {
+	return nil
+}
+
+func validateRetentionType(retentionType string) error {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
+		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
+	}
+
+	return nil
+}
+
+func getRetentionPolicy(retentionType string) RetentionPolicy {
+	return LimitsPolicy
+}
+
+func validateRetentionPolicy(policy RetentionPolicy) error {
+	if policy != LimitsPolicy {
+		return errors.New("the only supported retention type is limits")
+	}
 	return nil
 }

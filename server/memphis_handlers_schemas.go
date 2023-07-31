@@ -839,7 +839,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 	var tenantName string
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
-		s.Errorf("[tenant: %v]createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", tenantName, err.Error())
+		s.Errorf("createSchemaDirect at getTenantNameAndMessage- failed creating Schema: %v", err.Error())
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
@@ -910,7 +910,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 }
 
 func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaReq CreateSchemaReq) error {
-	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName)
+	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName, false)
 	if err != nil {
 		s.Errorf("[tenant: %v]updateSchemaVersion at memphis_cache.GetUser: Schema %v: %v", tenantName, newSchemaReq.Name, err.Error())
 		return err
@@ -964,7 +964,7 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string) error {
 	schemaVersionNumber := 1
 
-	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName)
+	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName, false)
 	if err != nil {
 		s.Errorf("[tenant: %v]createNewSchema at memphis_cache.GetUser: %v", tenantName, err.Error())
 		return err

@@ -196,7 +196,7 @@ const GenerateTokenModal = ({ host, close }) => {
                                 backgroundColorType={'purple'}
                                 fontSize="14px"
                                 fontWeight="bold"
-                                disabled={formFields.connection_token === ''}
+                                disabled={!userToken}
                                 isLoading={generateLoading}
                                 onClick={close}
                             />
