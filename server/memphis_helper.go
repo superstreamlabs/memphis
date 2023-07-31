@@ -134,6 +134,8 @@ var (
 	THROUGHPUT_LEGACY_STREAM_EXIST   bool
 )
 
+type Messages []models.MessageDetails
+
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
 		go func(msg []byte) {
@@ -875,7 +877,44 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
+
+	if len(station.PartitionsList) == 0 {
+		return s.GetMessagesFromPartition(station, stationName.Intern(), messagesToFetch)
+	} else {
+		var messages Messages
+		for _, p := range station.PartitionsList {
+			partitionMessages, err := s.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", stationName.Intern(), p), messagesToFetch)
+			if err != nil {
+				return []models.MessageDetails{}, err
+			}
+			messages = append(messages, partitionMessages...)
+		}
+
+		if len(messages) == 0 {
+			return []models.MessageDetails{}, nil
+		} else if len(messages) <= 1000 {
+			return messages, nil
+		} else {
+			sort.Sort(messages)
+			return messages[:1000], nil
+		}
+	}
+}
+
+func (msgs Messages) Len() int {
+	return len(msgs)
+}
+
+func (msgs Messages) Less(i, j int) bool {
+	return msgs[i].TimeSent.Before(msgs[j].TimeSent)
+}
+
+func (msgs Messages) Swap(i, j int) {
+	msgs[i], msgs[j] = msgs[j], msgs[i]
+}
+
+func (s *Server) GetMessagesFromPartition(station models.Station, stream_name string, messagesToFetch int) ([]models.MessageDetails, error) {
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, stream_name)
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -889,13 +928,13 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	filterSubj := stationName.Intern() + ".final"
+	filterSubj := stream_name + ".final"
 	if !station.IsNative {
 		filterSubj = ""
 	}
 
 	msgs, err := s.memphisGetMsgs(station.TenantName, filterSubj,
-		stationName.Intern(),
+		stream_name,
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
