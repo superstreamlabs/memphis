@@ -1090,10 +1090,12 @@ func (s *Server) StartWebsocketServer() {
 	if port == 0 {
 		o.Port = hl.Addr().(*net.TCPAddr).Port
 	}
+	// s.mu.Unlock()
 	s.Noticef("Listening for websocket clients on %s://%s:%d", proto, o.Host, o.Port)
 	if proto == wsSchemePrefix {
 		s.Warnf("Websocket not configured with TLS. DO NOT USE IN PRODUCTION!")
 	}
+	// s.mu.Lock()
 
 	s.websocket.tls = proto == "wss"
 	s.websocket.connectURLs, err = s.getConnectURLs(o.Advertise, o.Host, o.Port)

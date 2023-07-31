@@ -143,7 +143,7 @@ func runMemphis(s *server.Server) {
 	s.CompleteRelevantStuckAsyncTasks()
 
 	// go func() {
-	s.CreateInternalJetStreamResources()
+	// s.CreateInternalJetStreamResources()
 	go http_server.InitializeHttpServer(s)
 	err = s.StartBackgroundTasks()
 	if err != nil {
