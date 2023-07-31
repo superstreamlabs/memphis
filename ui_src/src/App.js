@@ -32,6 +32,7 @@ import {
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import infoNotificationIcon from './assets/images/infoNotificationIcon.svg';
+import redirectIcon from './assets/images/redirectIcon.svg';
 import successIcon from './assets/images/successIcon.svg';
 import close from './assets/images/closeNotification.svg';
 import StationOverview from './domain/stationOverview';
@@ -77,6 +78,7 @@ const App = withRouter((props) => {
         return storedNotifications || [];
     });
     const [displayedNotifications, setDisplayedNotifications] = useState([]);
+    const [systemMessage, setSystemMessage] = useState([]);
 
     const stateRef = useRef([]);
     stateRef.current = [cloudLogedIn, persistedNotifications];
@@ -227,6 +229,10 @@ const App = withRouter((props) => {
                         const uniqueNewNotifications = data.filter((newNotification) => {
                             return !stateRef.current[1].some((existingNotification) => existingNotification.id === newNotification.id);
                         });
+                        const systemMeesage = data.filter((sys) => {
+                            return sys.message_type === 'system';
+                        });
+                        setSystemMessage(systemMeesage);
                         setPersistedNotifications((prevPersistedNotifications) => [...prevPersistedNotifications, ...uniqueNewNotifications]);
                         localStorage.setItem('persistedNotifications', JSON.stringify([...stateRef.current[1], ...uniqueNewNotifications]));
                     }
@@ -236,7 +242,7 @@ const App = withRouter((props) => {
             }
         };
 
-        isCloud() && subscribeToNotifications();
+        subscribeToNotifications();
 
         return () => {
             if (sub) {
@@ -308,9 +314,31 @@ const App = withRouter((props) => {
         });
     }, [stateRef.current[1]]);
 
+    const displaySystemMessage = () => {
+        return (
+            <div className={`system-notification ${systemMessage?.length > 0 ? 'show-notification' : 'hide-notification'}`}>
+                <div className="notification-wrapper">
+                    {systemMessage[0]?.badge && (
+                        <div className="notification-badge">
+                            <span>{systemMessage[0]?.badge}</span>
+                        </div>
+                    )}
+                    <p>{systemMessage[0]?.message_payload}</p>
+                    {systemMessage[0]?.link_url && (
+                        <a className="a-link" href={systemMessage[0]?.link_url} target="_blank" rel="noreferrer">
+                            {systemMessage[0]?.link_content}
+                            <img src={redirectIcon} alt="redirectIcon" />
+                        </a>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="app-container">
             {!cloudLogedIn && <Loader />}
+            {systemMessage?.length > 0 && displaySystemMessage()}
             <div>
                 {' '}
                 {!authCheck &&
