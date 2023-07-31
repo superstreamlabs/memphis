@@ -196,6 +196,7 @@ func runMemphis(s *server.Server) {
 		env = "K8S"
 	}
 	s.AcceptClientConnections()
+	s.StartWebsocketServer()
 	s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
 	// }()
 }

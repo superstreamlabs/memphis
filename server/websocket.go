@@ -1042,7 +1042,7 @@ func (s *Server) wsConfigAuth(opts *WebsocketOpts) {
 	ws.authOverride = opts.Username != _EMPTY_ || opts.Token != _EMPTY_ || opts.NoAuthUser != _EMPTY_
 }
 
-func (s *Server) startWebsocketServer() {
+func (s *Server) StartWebsocketServer() {
 	sopts := s.getOpts()
 	o := &sopts.Websocket
 
