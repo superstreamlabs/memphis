@@ -476,7 +476,12 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 		for _, info := range allStreamInfo {
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
-				stationTotalMsgs[streamName] = int(info.State.Msgs)
+				if strings.Contains(streamName, "$") {
+					stationNameAndPartition := strings.Split(streamName, "$")
+					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Msgs)
+				} else {
+					stationTotalMsgs[streamName] = int(info.State.Msgs)
+				}
 			}
 		}
 		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
@@ -541,6 +546,8 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				IsNative:             station.IsNative,
 				TieredStorageEnabled: station.TieredStorageEnabled,
 				ResendDisabled:       station.ResendDisabled,
+				PartitionsList:       station.PartitionsList,
+				Version:              station.Version,
 			}
 
 			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
@@ -693,7 +700,12 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
 				totalMessages += info.State.Msgs
-				stationTotalMsgs[streamName] = int(info.State.Msgs)
+				if strings.Contains(streamName, "$") {
+					stationNameAndPartition := strings.Split(streamName, "$")
+					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Msgs)
+				} else {
+					stationTotalMsgs[streamName] = int(info.State.Msgs)
+				}
 			}
 		}
 		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)

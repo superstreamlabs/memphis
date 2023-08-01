@@ -879,11 +879,11 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	}
 
 	if len(station.PartitionsList) == 0 {
-		return s.GetMessagesFromPartition(station, stationName.Intern(), messagesToFetch)
+		return s.GetMessagesFromPartition(station, stationName.Intern(), messagesToFetch, 0)
 	} else {
 		var messages Messages
 		for _, p := range station.PartitionsList {
-			partitionMessages, err := s.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", stationName.Intern(), p), messagesToFetch)
+			partitionMessages, err := s.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", stationName.Intern(), p), messagesToFetch, p)
 			if err != nil {
 				return []models.MessageDetails{}, err
 			}
@@ -913,7 +913,7 @@ func (msgs Messages) Swap(i, j int) {
 	msgs[i], msgs[j] = msgs[j], msgs[i]
 }
 
-func (s *Server) GetMessagesFromPartition(station models.Station, stream_name string, messagesToFetch int) ([]models.MessageDetails, error) {
+func (s *Server) GetMessagesFromPartition(station models.Station, stream_name string, messagesToFetch int, partition int) ([]models.MessageDetails, error) {
 	streamInfo, err := s.memphisStreamInfo(station.TenantName, stream_name)
 	if err != nil {
 		return []models.MessageDetails{}, err
@@ -992,6 +992,7 @@ func (s *Server) GetMessagesFromPartition(station models.Station, stream_name st
 			messageDetails.ProducedBy = producedByHeader
 			messageDetails.ConnectionId = connectionIdHeader
 			messageDetails.Headers = headersJson
+			messageDetails.Partition = partition
 		}
 
 		messages = append(messages, messageDetails)

@@ -37,6 +37,7 @@ type MessageDetails struct {
 	ConnectionId string            `json:"connection_id" `
 	Size         int               `json:"size"`
 	Headers      map[string]string `json:"headers"`
+	Partition    int               `json:"partition"`
 }
 
 type Station struct {
@@ -136,6 +137,7 @@ type ExtendedStationLight struct {
 	TenantName                  string      `json:"tenant_name"`
 	ResendDisabled              bool        `json:"resend_disabled"`
 	PartitionsList              []int       `json:"partitions_list"`
+	Version                     int         `json"version"`
 }
 
 type ActiveProducersConsumersDetails struct {
