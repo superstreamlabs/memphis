@@ -263,36 +263,41 @@ func (s *Server) WaitForLeaderElection() {
 		}
 	}
 }
-
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
 
+	successCh := make(chan error)
+
 	if ready { // stand alone
-		err := tryCreateInternalJetStreamResources(s, retentionDur, false)
+		go tryCreateInternalJetStreamResources(s, retentionDur, successCh, false)
+		err := <-successCh
 		if err != nil {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: %v", err.Error())
 		}
 	} else {
 		s.WaitForLeaderElection()
 		if s.JetStreamIsLeader() {
-			timeout := time.After(1 * time.Minute)
 			for !ready { // wait for cluster to be ready if we are in cluster mode
-				err := tryCreateInternalJetStreamResources(s, retentionDur, true)
-				if err != nil {
-					s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
-				} else {
-					ready = true
-				}
-				time.Sleep(1 * time.Second)
+				timeout := time.NewTimer(1 * time.Minute)
+				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
 				select {
-				case <-timeout:
-					if !ready {
-						s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+				case <-timeout.C:
+					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+					err := <-successCh
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
+						continue
 					}
 					ready = true
-				default:
-					// continue the loop until ready or timeout
+				case err := <-successCh:
+					if err != nil {
+						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
+						<-timeout.C
+						continue
+					}
+					timeout.Stop()
+					ready = true
 				}
 			}
 		}
@@ -305,7 +310,7 @@ func (s *Server) CreateInternalJetStreamResources() {
 	s.popFallbackLogs()
 }
 
-func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, isCluster bool) error {
+func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, successCh chan error, isCluster bool) {
 	replicas := 1
 	if isCluster {
 		replicas = 3
@@ -313,12 +318,12 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	v, err := s.Varz(nil)
 	if err != nil {
-		return err
+		successCh <- err
+		return
 	}
 
 	// system logs stream
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
-		fmt.Println("creating stream: memphis_syslogs")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
@@ -331,10 +336,13 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 		})
 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			return err
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
 		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-			return err
+			successCh <- err
+			return
 		}
 		SYSLOGS_STREAM_CREATED = true
 	}
@@ -342,7 +350,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
-		fmt.Println("creating stream: memphis_tiered_storage")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
@@ -355,10 +362,13 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Duplicates:   idempotencyWindow,
 		})
 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			return err
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
 		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-			return err
+			successCh <- err
+			return
 		}
 		TIERED_STORAGE_STREAM_CREATED = true
 	}
@@ -376,14 +386,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		}
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
 		if err != nil {
-			return err
+			successCh <- err
+			return
 		}
 		TIERED_STORAGE_CONSUMER_CREATED = true
 	}
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
-		fmt.Println("creating stream: memphis_dls_unacked")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
@@ -395,7 +405,8 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 		})
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-			return err
+			successCh <- err
+			return
 		}
 		DLS_UNACKED_STREAM_CREATED = true
 	}
@@ -412,14 +423,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		}
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsUnackedStream, &cc)
 		if err != nil {
-			return err
+			successCh <- err
+			return
 		}
 		DLS_UNACKED_CONSUMER_CREATED = true
 	}
 
 	// create schemaverse dls stream
 	if !DLS_SCHEMAVERSE_STREAM_CREATED {
-		fmt.Println("creating stream: memphis_dls_schemaverse")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsSchemaverseStream,
 			Subjects:     []string{SCHEMAVERSE_DLS_INNER_SUBJ},
@@ -430,11 +441,9 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Storage:      FileStorage,
 			Replicas:     replicas,
 		})
-		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			return err
-		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-			return err
+			successCh <- err
+			return
 		}
 		DLS_SCHEMAVERSE_STREAM_CREATED = true
 	}
@@ -451,14 +460,14 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		}
 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsSchemaverseStream, &cc)
 		if err != nil {
-			return err
+			successCh <- err
+			return
 		}
 		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 	}
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
-		fmt.Println("deleting legacy stream: memphis-throughput-v1")
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
@@ -467,7 +476,6 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
-		fmt.Println("creating stream: memphis-throughput-v1")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
@@ -481,16 +489,242 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			Replicas:     replicas,
 			NoAck:        false,
 		})
-		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
-			return err
-		}
 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
-			return err
+			successCh <- err
+			return
 		}
 		TIERED_STORAGE_STREAM_CREATED = true
 	}
-	return nil
+	successCh <- nil
 }
+
+// func (s *Server) CreateInternalJetStreamResources() {
+// 	ready := !s.JetStreamIsClustered()
+// 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
+
+// 	if ready { // stand alone
+// 		err := tryCreateInternalJetStreamResources(s, retentionDur, false)
+// 		if err != nil {
+// 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: %v", err.Error())
+// 		}
+// 	} else {
+// 		s.WaitForLeaderElection()
+// 		if s.JetStreamIsLeader() {
+// 			timeout := time.After(1 * time.Minute)
+// 			for !ready { // wait for cluster to be ready if we are in cluster mode
+// 				err := tryCreateInternalJetStreamResources(s, retentionDur, true)
+// 				if err != nil {
+// 					s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
+// 				} else {
+// 					ready = true
+// 				}
+// 				time.Sleep(1 * time.Second)
+// 				select {
+// 				case <-timeout:
+// 					if !ready {
+// 						s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+// 					}
+// 					ready = true
+// 				default:
+// 					// continue the loop until ready or timeout
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	if s.memphis.activateSysLogsPubFunc == nil {
+// 		s.Fatalf("internal error: sys logs publish activation func is not initialized")
+// 	}
+// 	s.memphis.activateSysLogsPubFunc()
+// 	s.popFallbackLogs()
+// }
+
+// func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, isCluster bool) error {
+// 	replicas := 1
+// 	if isCluster {
+// 		replicas = 3
+// 	}
+
+// 	v, err := s.Varz(nil)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// system logs stream
+// 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
+// 		fmt.Println("creating stream: memphis_syslogs")
+// 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+// 			Name:         syslogsStreamName,
+// 			Subjects:     []string{syslogsStreamName + ".>"},
+// 			Retention:    LimitsPolicy,
+// 			MaxAge:       retentionDur,
+// 			MaxBytes:     v.JetStream.Config.MaxStore / 3, // tops third of the available storage
+// 			MaxConsumers: -1,
+// 			Discard:      DiscardOld,
+// 			Storage:      FileStorage,
+// 			Replicas:     replicas,
+// 		})
+// 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+// 			return err
+// 		}
+// 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 			return err
+// 		}
+// 		SYSLOGS_STREAM_CREATED = true
+// 	}
+
+// 	idempotencyWindow := time.Duration(1 * time.Minute)
+// 	// tiered storage stream
+// 	if !TIERED_STORAGE_STREAM_CREATED {
+// 		fmt.Println("creating stream: memphis_tiered_storage")
+// 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+// 			Name:         tieredStorageStream,
+// 			Subjects:     []string{tieredStorageStream + ".>"},
+// 			Retention:    WorkQueuePolicy,
+// 			MaxAge:       time.Hour * 24,
+// 			MaxConsumers: -1,
+// 			Discard:      DiscardOld,
+// 			Storage:      FileStorage,
+// 			Replicas:     replicas,
+// 			Duplicates:   idempotencyWindow,
+// 		})
+// 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+// 			return err
+// 		}
+// 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 			return err
+// 		}
+// 		TIERED_STORAGE_STREAM_CREATED = true
+// 	}
+
+// 	// create tiered storage consumer
+// 	if !TIERED_STORAGE_CONSUMER_CREATED {
+// 		cc := ConsumerConfig{
+// 			DeliverPolicy: DeliverAll,
+// 			AckPolicy:     AckExplicit,
+// 			Durable:       TIERED_STORAGE_CONSUMER,
+// 			FilterSubject: tieredStorageStream + ".>",
+// 			AckWait:       time.Duration(2) * time.Duration(s.opts.TieredStorageUploadIntervalSec) * time.Second,
+// 			MaxAckPending: -1,
+// 			MaxDeliver:    10,
+// 		}
+// 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), tieredStorageStream, &cc)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		TIERED_STORAGE_CONSUMER_CREATED = true
+// 	}
+
+// 	// dls unacked messages stream
+// 	if !DLS_UNACKED_STREAM_CREATED {
+// 		fmt.Println("creating stream: memphis_dls_unacked")
+// 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+// 			Name:         dlsUnackedStream,
+// 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
+// 			Retention:    WorkQueuePolicy,
+// 			MaxAge:       time.Hour * 24,
+// 			MaxConsumers: -1,
+// 			Discard:      DiscardOld,
+// 			Storage:      FileStorage,
+// 			Replicas:     replicas,
+// 		})
+// 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 			return err
+// 		}
+// 		DLS_UNACKED_STREAM_CREATED = true
+// 	}
+
+// 	// create dls unacked consumer
+// 	if !DLS_UNACKED_CONSUMER_CREATED {
+// 		cc := ConsumerConfig{
+// 			DeliverPolicy: DeliverAll,
+// 			AckPolicy:     AckExplicit,
+// 			Durable:       DLS_UNACKED_CONSUMER,
+// 			AckWait:       time.Duration(80) * time.Second,
+// 			MaxAckPending: -1,
+// 			MaxDeliver:    10,
+// 		}
+// 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsUnackedStream, &cc)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		DLS_UNACKED_CONSUMER_CREATED = true
+// 	}
+
+// 	// create schemaverse dls stream
+// 	if !DLS_SCHEMAVERSE_STREAM_CREATED {
+// 		fmt.Println("creating stream: memphis_dls_schemaverse")
+// 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+// 			Name:         dlsSchemaverseStream,
+// 			Subjects:     []string{SCHEMAVERSE_DLS_INNER_SUBJ},
+// 			Retention:    WorkQueuePolicy,
+// 			MaxAge:       time.Hour * 24,
+// 			MaxConsumers: -1,
+// 			Discard:      DiscardOld,
+// 			Storage:      FileStorage,
+// 			Replicas:     replicas,
+// 		})
+// 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+// 			return err
+// 		}
+// 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 			return err
+// 		}
+// 		DLS_SCHEMAVERSE_STREAM_CREATED = true
+// 	}
+
+// 	// create schemaverse dls consumer
+// 	if !DLS_SCHEMAVERSE_CONSUMER_CREATED {
+// 		cc := ConsumerConfig{
+// 			DeliverPolicy: DeliverAll,
+// 			AckPolicy:     AckExplicit,
+// 			Durable:       SCHEMAVERSE_DLS_CONSUMER,
+// 			AckWait:       time.Duration(80) * time.Second,
+// 			MaxAckPending: -1,
+// 			MaxDeliver:    10,
+// 		}
+// 		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsSchemaverseStream, &cc)
+// 		if err != nil {
+// 			return err
+// 		}
+// 		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
+// 	}
+
+// 	// delete the old version throughput stream
+// 	if THROUGHPUT_LEGACY_STREAM_EXIST {
+// 		fmt.Println("deleting legacy stream: memphis-throughput-v1")
+// 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
+// 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+// 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
+// 		}
+// 	}
+
+// 	// throughput kv
+// 	if !THROUGHPUT_STREAM_CREATED {
+// 		fmt.Println("creating stream: memphis-throughput-v1")
+// 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+// 			Name:         (throughputStreamNameV1),
+// 			Subjects:     []string{throughputStreamNameV1 + ".>"},
+// 			Retention:    LimitsPolicy,
+// 			MaxConsumers: -1,
+// 			MaxMsgs:      int64(-1),
+// 			MaxBytes:     int64(-1),
+// 			Discard:      DiscardOld,
+// 			MaxMsgsPer:   ws_updates_interval_sec,
+// 			Storage:      FileStorage,
+// 			Replicas:     replicas,
+// 			NoAck:        false,
+// 		})
+// 		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+// 			return err
+// 		}
+// 		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+// 			return err
+// 		}
+// 		TIERED_STORAGE_STREAM_CREATED = true
+// 	}
+// 	return nil
+// }
 
 func (s *Server) popFallbackLogs() {
 	select {
