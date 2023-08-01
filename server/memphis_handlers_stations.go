@@ -454,6 +454,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		TieredStorageEnabled: station.TieredStorageEnabled,
 		Tags:                 tags,
 		ResendDisabled:       station.ResendDisabled,
+		PartitionsList:       station.PartitionsList,
+		PartitionsNumber:     len(station.PartitionsList),
 	}
 
 	c.IndentedJSON(200, stationResponse)

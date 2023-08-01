@@ -54,6 +54,7 @@ type SystemComponentsStatus struct {
 
 type GetStationOverviewDataSchema struct {
 	StationName string `form:"station_name" json:"station_name"  binding:"required"`
+	Partition   int    `json:"partition"`
 }
 
 type SystemLogsRequest struct {

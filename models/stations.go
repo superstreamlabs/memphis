@@ -83,6 +83,8 @@ type GetStationResponseSchema struct {
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 	ResendDisabled       bool             `json:"resend_disabled"`
+	PartitionsList       []int            `json:"partitions_list"`
+	PartitionsNumber     int              `json:"partitions_number"`
 }
 
 type ExtendedStation struct {
