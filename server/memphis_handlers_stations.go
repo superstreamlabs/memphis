@@ -2185,7 +2185,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			s.handleResendAllFailure(user, stationId, tenantName, stationName)
 			return
 		}
-		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
+		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId, user.Username)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpsertAsyncTask at station %v : %v", tenantName, username, stationName, err.Error())
 			s.handleResendAllFailure(user, stationId, tenantName, stationName)
