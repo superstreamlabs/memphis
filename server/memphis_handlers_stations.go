@@ -255,7 +255,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			return
 		}
 
-		if csr.RetentionValue <= 0 {
+		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			retentionValue = 604800 // 1 week
 		} else {
@@ -838,7 +838,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		if body.RetentionValue <= 0 {
+		if body.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			body.RetentionValue = 604800 // 1 week
 		}
