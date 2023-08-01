@@ -331,8 +331,12 @@ const Messages = () => {
             {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
-                    <p>No messages yet</p>
-                    <span className="des">Create your 1st producer and start producing data</span>
+                    <p>No messages</p>
+                    <span className="des">
+                        {stationState?.stationSocketData?.connected_producers.length > 0 || stationState?.stationSocketData?.disconnected_producers.length > 0
+                            ? 'Start / Continue producing data'
+                            : 'Create your 1st producer and start producing data'}
+                    </span>
                 </div>
             )}
             {tabValue === tabs[1] &&
