@@ -229,7 +229,7 @@ function Users() {
             key: 'owner',
             dataIndex: 'owner',
             render: (owner) => (
-                <div className="full-name">
+                <div className="owner">
                     <p>{owner || '-'}</p>
                 </div>
             )

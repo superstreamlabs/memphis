@@ -51,11 +51,11 @@ const retanionOptions = [
         label: 'Messages'
     },
     {
-        id: 3,
+        id: 4,
         value: 'ack_based',
         disabled: isCloud() ? false : true,
         label: 'Ack based',
-        tooltip: (
+        tooltip: isCloud() ? null : (
             <div>
                 <span>
                     Available for
@@ -456,7 +456,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
-                            {retentionType === 'message_age_sec' && (
+                            {retentionType === retanionOptions[0].value && (
                                 <div className="time-value">
                                     <div className="days-section">
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
@@ -515,7 +515,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     </div>
                                 </div>
                             )}
-                            {retentionType === 'bytes' && (
+                            {retentionType === retanionOptions[1].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
                                         <Input
@@ -536,7 +536,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <p>bytes</p>
                                 </div>
                             )}
-                            {retentionType === 'messages' && (
+                            {retentionType === retanionOptions[2].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
                                         <Input
@@ -555,6 +555,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         />
                                     </Form.Item>
                                     <p>messages</p>
+                                </div>
+                            )}
+                            {retentionType === retanionOptions[3].value && (
+                                <div className="ackbased-type">
+                                    <p>Messages have a default retention of 2 weeks until acknowledged, with auto-deletion if no active consumer.</p>
                                 </div>
                             )}
                         </div>
