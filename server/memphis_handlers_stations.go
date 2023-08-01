@@ -254,7 +254,13 @@ func (s *Server) createStationDirectIntern(c *client,
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
-		retentionValue = csr.RetentionValue
+
+		if csr.RetentionValue <= 0 {
+			retentionType = "message_age_sec"
+			retentionValue = 604800 // 1 week
+		} else {
+			retentionValue = csr.RetentionValue
+		}
 	} else {
 		retentionType = "message_age_sec"
 		retentionValue = 604800 // 1 week
@@ -823,13 +829,18 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	var retentionType string
-	if body.RetentionType != "" && body.RetentionValue > 0 {
+	if body.RetentionType != "" {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionType: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
+		}
+
+		if body.RetentionValue <= 0 {
+			retentionType = "message_age_sec"
+			body.RetentionValue = 604800 // 1 week
 		}
 	} else {
 		retentionType = "message_age_sec"
