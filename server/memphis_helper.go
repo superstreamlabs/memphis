@@ -257,6 +257,7 @@ func (s *Server) WaitForLeaderElection() {
 		}
 
 		if ci.Leader != "" {
+			fmt.Println("leader: " + ci.Leader)
 			break
 		} else {
 			time.Sleep(100 * time.Millisecond)
