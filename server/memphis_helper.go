@@ -276,10 +276,14 @@ func (s *Server) CreateInternalJetStreamResources() {
 			s.Errorf("CreateInternalJetStreamResources: system streams creation failed: %v", err.Error())
 		}
 	} else {
+		fmt.Println("before WaitForLeaderElection")
 		s.WaitForLeaderElection()
+		fmt.Println("after WaitForLeaderElection")
 		if s.JetStreamIsLeader() {
+			fmt.Println("Leader")
 			for !ready { // wait for cluster to be ready if we are in cluster mode
 				timeout := time.NewTimer(1 * time.Minute)
+				fmt.Println("before tryCreateInternalJetStreamResources")
 				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
 				select {
 				case <-timeout.C:
@@ -297,6 +301,7 @@ func (s *Server) CreateInternalJetStreamResources() {
 						continue
 					}
 					timeout.Stop()
+					fmt.Println("after tryCreateInternalJetStreamResources")
 					ready = true
 				}
 			}

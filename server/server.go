@@ -3843,7 +3843,9 @@ func (s *Server) runMemphis() {
 	}
 	s.CompleteRelevantStuckAsyncTasks()
 	// go func() {
+	fmt.Println("before CreateInternalJetStreamResources")
 	s.CreateInternalJetStreamResources()
+	fmt.Println("after CreateInternalJetStreamResources")
 	opts := s.getOpts()
 	s.InitializeMemphisHandlers()
 	if !opts.DontListen {
