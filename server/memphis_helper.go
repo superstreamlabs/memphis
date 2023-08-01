@@ -318,6 +318,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// system logs stream
 	if shouldPersistSysLogs() && !SYSLOGS_STREAM_CREATED {
+		fmt.Println("creating stream: memphis_syslogs")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         syslogsStreamName,
 			Subjects:     []string{syslogsStreamName + ".>"},
@@ -341,6 +342,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	idempotencyWindow := time.Duration(1 * time.Minute)
 	// tiered storage stream
 	if !TIERED_STORAGE_STREAM_CREATED {
+		fmt.Println("creating stream: memphis_tiered_storage")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         tieredStorageStream,
 			Subjects:     []string{tieredStorageStream + ".>"},
@@ -381,6 +383,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// dls unacked messages stream
 	if !DLS_UNACKED_STREAM_CREATED {
+		fmt.Println("creating stream: memphis_dls_unacked")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsUnackedStream,
 			Subjects:     []string{JSAdvisoryConsumerMaxDeliveryExceedPre + ".>"},
@@ -416,6 +419,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// create schemaverse dls stream
 	if !DLS_SCHEMAVERSE_STREAM_CREATED {
+		fmt.Println("creating stream: memphis_dls_schemaverse")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsSchemaverseStream,
 			Subjects:     []string{SCHEMAVERSE_DLS_INNER_SUBJ},
@@ -454,6 +458,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
+		fmt.Println("deleting legacy stream: memphis-throughput-v1")
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
 		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 			s.Errorf("Failed deleting old internal throughput stream - %s", err.Error())
@@ -462,6 +467,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 
 	// throughput kv
 	if !THROUGHPUT_STREAM_CREATED {
+		fmt.Println("creating stream: memphis-throughput-v1")
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         (throughputStreamNameV1),
 			Subjects:     []string{throughputStreamNameV1 + ".>"},
