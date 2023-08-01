@@ -12,39 +12,13 @@
 package routes
 
 import (
-	"memphis/middlewares"
 	"memphis/server"
-	ui "memphis/ui_static_files"
-	"memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	server.SetCors(router)
-	mainRouter := router.Group("/api")
-	mainRouter.Use(middlewares.Authenticate)
-
-	utils.InitializeValidations()
-	InitializeUserMgmtRoutes(mainRouter)
-	InitializeStationsRoutes(mainRouter, handlers)
-	InitializeMonitoringRoutes(mainRouter, handlers)
-	InitializeTagsRoutes(mainRouter, handlers)
-	InitializeSchemasRoutes(mainRouter, handlers)
-	InitializeIntegrationsRoutes(mainRouter, handlers)
-	InitializeConfigurationsRoutes(mainRouter, handlers)
-	server.InitializeTenantsRoutes(mainRouter, handlers)
-	server.InitializeBillingRoutes(mainRouter, handlers)
-	InitializeAsyncTasksRoutes(mainRouter, handlers)
-	ui.InitializeUIRoutes(router)
-
-	mainRouter.GET("/status", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Ok",
-		})
-	})
-
-	return router
+func InitializeAsyncTasksRoutes(router *gin.RouterGroup, h *server.Handlers) {
+	asyncTasksHandler := h.AsyncTasks
+	asyncTasksRoutes := router.Group("/asyncTasks")
+	asyncTasksRoutes.GET("/getAsyncTasks", asyncTasksHandler.GetAsyncTasks)
 }
