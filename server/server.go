@@ -1874,7 +1874,6 @@ func (s *Server) Start() {
 	if opts.Gateway.Port != 0 {
 		s.startGateways()
 	}
-	s.runMemphis()
 	// Start websocket server if needed. Do this before starting the routes, and
 	// leaf node because we want to resolve the gateway host:port so that this
 	// information can be sent to other routes.
@@ -1934,6 +1933,7 @@ func (s *Server) Start() {
 	if !opts.DontListen {
 		s.AcceptLoop(clientListenReady)
 	}
+	s.runMemphis()
 }
 
 // Shutdown will shutdown the server instance by kicking out the AcceptLoop
@@ -2168,18 +2168,18 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	// Keep track of client connect URLs. We may need them later.
 	s.clientConnectURLs = s.getClientConnectURLs()
 	s.listener = l
-
-	go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
-		func(_ error) bool {
-			if s.isLameDuckMode() {
-				// Signal that we are not accepting new clients
-				s.ldmCh <- true
-				// Now wait for the Shutdown...
-				<-s.quitCh
-				return true
-			}
-			return false
-		})
+	//** moved to AcceptClientAndWSConnections by memphis **//
+	// go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
+	// 	func(_ error) bool {
+	// 		if s.isLameDuckMode() {
+	// 			// Signal that we are not accepting new clients
+	// 			s.ldmCh <- true
+	// 			// Now wait for the Shutdown...
+	// 			<-s.quitCh
+	// 			return true
+	// 		}
+	// 		return false
+	// 	})
 	s.mu.Unlock()
 
 	// Let the caller know that we are ready
@@ -3779,7 +3779,7 @@ func (s *Server) changeRateLimitLogInterval(d time.Duration) {
 	}
 }
 
-func (s *Server) AcceptClientConnections() {
+func (s *Server) AcceptClientAndWSConnections() {
 	s.mu.Lock()
 	go s.acceptConnections(s.listener, "Client", func(conn net.Conn) { s.createClient(conn) },
 		func(_ error) bool {
@@ -3792,6 +3792,19 @@ func (s *Server) AcceptClientConnections() {
 			}
 			return false
 		})
+	go func() {
+		if err := s.websocket.server.Serve(s.websocket.listener); err != http.ErrServerClosed {
+			s.Fatalf("websocket listener error: %v", err)
+		}
+		if s.isLameDuckMode() {
+			// Signal that we are not accepting new clients
+			s.ldmCh <- true
+			// Now wait for the Shutdown...
+			<-s.quitCh
+			return
+		}
+		s.done <- true
+	}()
 	s.mu.Unlock()
 	opts := s.getOpts()
 	s.Noticef("Listening for client connections on %s",
@@ -3803,49 +3816,45 @@ func (s *Server) runMemphis() {
 	if err != nil {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
 	}
-
 	err = memphis_cache.InitializeUserCache(s.Errorf)
 	if err != nil {
 		s.Errorf("Failed to initialize user cache %v", err.Error())
 	}
-
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-
 	err = s.InitializeFirestore()
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
 
-	s.InitializeMemphisHandlers()
-
 	err = InitializeIntegrations()
 	if err != nil {
 		s.Errorf("Failed initializing integrations: " + err.Error())
 	}
-
 	err = s.SetDlsRetentionForExistTenants()
 	if err != nil {
 		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
 	}
-
 	err = s.Force3ReplicationsForExistingStations()
 	if err != nil {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
-
 	s.CompleteRelevantStuckAsyncTasks()
-
-	go func() {
-		s.CreateInternalJetStreamResources()
-		err = s.StartBackgroundTasks()
-		if err != nil {
-			s.Errorf("Background task failed: " + err.Error())
-			os.Exit(1)
-		}
-		// run only on the leader
-		go s.KillZombieResources()
-	}()
+	// go func() {
+	s.CreateInternalJetStreamResources()
+	opts := s.getOpts()
+	s.InitializeMemphisHandlers()
+	if !opts.DontListen {
+		s.AcceptClientAndWSConnections()
+	}
+	err = s.StartBackgroundTasks()
+	if err != nil {
+		s.Errorf("Background task failed: " + err.Error())
+		os.Exit(1)
+	}
+	// run only on the leader
+	go s.KillZombieResources()
+	// }()
 }

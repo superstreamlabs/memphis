@@ -1090,12 +1090,10 @@ func (s *Server) StartWebsocketServer() {
 	if port == 0 {
 		o.Port = hl.Addr().(*net.TCPAddr).Port
 	}
-	// s.mu.Unlock()
 	s.Noticef("Listening for websocket clients on %s://%s:%d", proto, o.Host, o.Port)
 	if proto == wsSchemePrefix {
 		s.Warnf("Websocket not configured with TLS. DO NOT USE IN PRODUCTION!")
 	}
-	// s.mu.Lock()
 
 	s.websocket.tls = proto == "wss"
 	s.websocket.connectURLs, err = s.getConnectURLs(o.Advertise, o.Host, o.Port)
@@ -1138,19 +1136,20 @@ func (s *Server) StartWebsocketServer() {
 	}
 	s.websocket.server = hs
 	s.websocket.listener = hl
-	go func() {
-		if err := hs.Serve(hl); err != http.ErrServerClosed {
-			s.Fatalf("websocket listener error: %v", err)
-		}
-		if s.isLameDuckMode() {
-			// Signal that we are not accepting new clients
-			s.ldmCh <- true
-			// Now wait for the Shutdown...
-			<-s.quitCh
-			return
-		}
-		s.done <- true
-	}()
+	//** moved to AcceptClientAndWSConnections by memphis **//
+	// go func() {
+	// 	if err := hs.Serve(hl); err != http.ErrServerClosed {
+	// 		s.Fatalf("websocket listener error: %v", err)
+	// 	}
+	// 	if s.isLameDuckMode() {
+	// 		// Signal that we are not accepting new clients
+	// 		s.ldmCh <- true
+	// 		// Now wait for the Shutdown...
+	// 		<-s.quitCh
+	// 		return
+	// 	}
+	// 	s.done <- true
+	// }()
 	s.mu.Unlock()
 }
 
