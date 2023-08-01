@@ -36,4 +36,5 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.POST("/dropDlsMessages", stationsHandler.DropDlsMessages)
 	stationsRoutes.DELETE("/purgeStation", stationsHandler.PurgeStation)
 	stationsRoutes.DELETE("/removeMessages", stationsHandler.RemoveMessages)
+	server.AddStationCloudRoutes(stationsRoutes, stationsHandler)
 }

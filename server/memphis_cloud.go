@@ -84,6 +84,9 @@ func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
 func AddUsrMgmtCloudRoutes(userMgmtRoutes *gin.RouterGroup, userMgmtHandler UserMgmtHandler) {
 }
 
+func AddStationCloudRoutes(stationsRoutes *gin.RouterGroup, stationsHandler StationsHandler) {
+}
+
 func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
