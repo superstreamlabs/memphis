@@ -61,6 +61,7 @@ type Station struct {
 	TenantName                  string    `json:"tenant_name"`
 	ResendDisabled              bool      `json:"resend_disabled"`
 	PartitionsList              []int     `json:"partitions_list"`
+	Version                     int       `json:"version"`
 }
 
 type GetStationResponseSchema struct {
