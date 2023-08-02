@@ -1934,7 +1934,7 @@ func (s *Server) Start() {
 		s.AcceptLoop(clientListenReady)
 	}
 	//** added by memphis
-	s.runMemphis()
+	s.initializeMemphis()
 	// added by memphis **
 }
 
@@ -3830,7 +3830,7 @@ func (s *Server) AcceptWSConnections() {
 	s.Noticef("Listening for websocket clients on %s://%s:%d", proto, o.Host, o.Port)
 }
 
-func (s *Server) runMemphis() {
+func (s *Server) initializeMemphis() {
 	err := TenantSeqInitialize()
 	if err != nil {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
