@@ -38,6 +38,7 @@ type Handlers struct {
 	Tenants        TenantHandler
 	Billing        BillingHandler
 	userMgmt       UserMgmtHandler
+	AsyncTasks     AsyncTasksHandler
 }
 
 var serv *Server

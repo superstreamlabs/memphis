@@ -67,6 +67,9 @@ const StationOverviewHeader = () => {
             case 'messages':
                 setRetentionValue(`${stationState?.stationMetaData?.retention_value?.toLocaleString()} messages`);
                 break;
+            case 'ack_based':
+                setRetentionValue('Ack based');
+                break;
             default:
                 break;
         }

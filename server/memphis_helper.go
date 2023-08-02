@@ -610,11 +610,11 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 		}
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = lastMessages
-	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
-		deliveryPolicy = DeliverAll
 	} else if consumer.StartConsumeFromSeq > 1 {
 		deliveryPolicy = DeliverByStartSequence
 		optStartSeq = consumer.StartConsumeFromSeq
+	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
+		deliveryPolicy = DeliverAll
 	}
 
 	consumerConfig := &ConsumerConfig{
