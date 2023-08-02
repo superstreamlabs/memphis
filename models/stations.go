@@ -217,11 +217,12 @@ type GetPoisonMessageJourneySchema struct {
 }
 
 type GetMessageDetailsSchema struct {
-	IsDls       bool   `form:"is_dls" json:"is_dls"`
-	DlsType     string `form:"dls_type" json:"dls_type"`
-	MessageId   int    `form:"message_id" json:"message_id"`
-	MessageSeq  int    `form:"message_seq" json:"message_seq"`
-	StationName string `form:"station_name" json:"station_name" binding:"required"`
+	IsDls           bool   `form:"is_dls" json:"is_dls"`
+	DlsType         string `form:"dls_type" json:"dls_type"`
+	MessageId       int    `form:"message_id" json:"message_id"`
+	MessageSeq      int    `form:"message_seq" json:"message_seq"`
+	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+	PartitionNumber int    `form:"partition_number" json:"partition_number" binding:"required"`
 }
 
 type UseSchema struct {

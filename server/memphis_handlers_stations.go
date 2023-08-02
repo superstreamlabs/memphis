@@ -1251,13 +1251,42 @@ func (sh StationsHandler) GetTotalMessages(tenantName, stationNameExt string, pa
 
 }
 
+func (sh StationsHandler) GetTotalPartitionMessages(tenantName, stationNameExt string, partitionNumber int) (int, error) {
+	stationName, err := StationNameFromStr(stationNameExt)
+	if err != nil {
+		return 0, err
+	}
+
+	totalMessages, err := sh.S.GetTotalMessagesInStation(tenantName, fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber))
+	if err != nil {
+		return 0, err
+	}
+
+	return totalMessages, nil
+
+}
+
 func (sh StationsHandler) GetAvgMsgSize(station models.Station) (int64, error) {
 	avgMsgSize, err := sh.S.GetAvgMsgSizeInStation(station)
 	return avgMsgSize, err
 }
 
+func (sh StationsHandler) GetPartitionAvgMsgSize(tenantName, streamName string) (int64, error) {
+	avgPartitionMsgSize, err := sh.S.GetAvgMsgSizeInPartition(tenantName, streamName)
+	return avgPartitionMsgSize, err
+}
+
 func (sh StationsHandler) GetMessages(station models.Station, messagesToFetch int) ([]models.MessageDetails, error) {
 	messages, err := sh.S.GetMessages(station, messagesToFetch)
+	if err != nil {
+		return messages, err
+	}
+
+	return messages, nil
+}
+
+func (sh StationsHandler) GetMessagesFromPartition(station models.Station, streamName string, messagesToFetch int, partition int) ([]models.MessageDetails, error) {
+	messages, err := sh.S.GetMessagesFromPartition(station, streamName, messagesToFetch, partition)
 	if err != nil {
 		return messages, err
 	}
@@ -1478,7 +1507,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		return
 	}
 
-	sm, err := sh.S.GetMessage(station.TenantName, stationName, uint64(body.MessageSeq))
+	sm, err := sh.S.GetMessage(station.TenantName, stationName, uint64(body.MessageSeq), body.PartitionNumber)
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "The message was not found since it had probably already been deleted"})

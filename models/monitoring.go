@@ -53,8 +53,8 @@ type SystemComponentsStatus struct {
 }
 
 type GetStationOverviewDataSchema struct {
-	StationName string `form:"station_name" json:"station_name"  binding:"required"`
-	Partition   int    `json:"partition"`
+	StationName     string `form:"station_name" json:"station_name"  binding:"required"`
+	PartitionNumber int    `form:"partition_number" json:"partition_number"  binding:"required"`
 }
 
 type SystemLogsRequest struct {

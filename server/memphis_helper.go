@@ -826,6 +826,20 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 	return int64(msgBytes / msgCount), nil
 }
 
+func (s *Server) GetAvgMsgSizeInPartition(tenantName, streamName string) (int64, error) {
+	var msgBytes uint64
+	var msgCount uint64
+
+	streamInfo, err := s.memphisStreamInfo(tenantName, streamName)
+	if err != nil || streamInfo.State.Bytes == 0 {
+		return 0, err
+	}
+	msgBytes = streamInfo.State.Bytes
+	msgCount = streamInfo.State.Msgs
+
+	return int64(msgBytes / msgCount), nil
+}
+
 func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error) {
 	requestSubject := JSApiStreamList
 	streams := make([]*StreamInfo, 0)
@@ -913,8 +927,8 @@ func (msgs Messages) Swap(i, j int) {
 	msgs[i], msgs[j] = msgs[j], msgs[i]
 }
 
-func (s *Server) GetMessagesFromPartition(station models.Station, stream_name string, messagesToFetch int, partition int) ([]models.MessageDetails, error) {
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stream_name)
+func (s *Server) GetMessagesFromPartition(station models.Station, streamName string, messagesToFetch int, partition int) ([]models.MessageDetails, error) {
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, streamName)
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -928,13 +942,13 @@ func (s *Server) GetMessagesFromPartition(station models.Station, stream_name st
 		messagesToFetch = int(totalMessages)
 	}
 
-	filterSubj := stream_name + ".final"
+	filterSubj := streamName + ".final"
 	if !station.IsNative {
 		filterSubj = ""
 	}
 
 	msgs, err := s.memphisGetMsgs(station.TenantName, filterSubj,
-		stream_name,
+		streamName,
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
@@ -1113,8 +1127,15 @@ cleanup:
 	return msgs, nil
 }
 
-func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64) (*StoredMsg, error) {
-	return s.memphisGetMessage(tenantName, stationName.Intern(), msgSeq)
+func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64, paritionNumber int) (*StoredMsg, error) {
+	var streamName string
+	if paritionNumber != 0 {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), paritionNumber)
+	} else {
+		streamName = stationName.Intern()
+	}
+
+	return s.memphisGetMessage(tenantName, streamName, msgSeq)
 }
 
 func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
