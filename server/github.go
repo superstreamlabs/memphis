@@ -60,15 +60,15 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		stringMap := GetKeysAsStringMap(keys)
-		cloneKeys := copyMaps(stringMap)
+		stringMapKeys := GetKeysAsStringMap(keys)
+		cloneKeys := copyMaps(stringMapKeys)
 		encryptedValue, err := EncryptAES([]byte(keys["token"].(string)))
 		if err != nil {
 			return models.Integration{}, err
 		}
 		cloneKeys["token"] = encryptedValue
-		destMap := copyStringMapToInterfaceMap(cloneKeys)
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "github", destMap, properties)
+		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "github", interfaceMapKeys, properties)
 		if insertErr != nil {
 			if strings.Contains(insertErr.Error(), "already exists") {
 				return models.Integration{}, errors.New("github integration already exists")
@@ -159,9 +159,9 @@ func updateGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		return models.Integration{}, fmt.Errorf("integration does not exist")
 	}
 
-	stringMap := GetKeysAsStringMap(keys)
-	cloneKeys := copyMaps(stringMap)
-	encryptedValue, err := EncryptAES([]byte(stringMap["token"]))
+	stringMapKeys := GetKeysAsStringMap(keys)
+	cloneKeys := copyMaps(stringMapKeys)
+	encryptedValue, err := EncryptAES([]byte(stringMapKeys["token"]))
 	if err != nil {
 		return models.Integration{}, err
 	}

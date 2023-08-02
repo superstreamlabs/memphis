@@ -193,26 +193,16 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 		if err != nil {
 			return slackIntegration, err
 		}
-		stringMap := GetKeysAsStringMap(keys)
-		// stringMap := make(map[string]string)
+		stringMapKeys := GetKeysAsStringMap(keys)
 
-		// for k, v := range keys {
-		// 	stringValue := fmt.Sprintf("%v", v)
-		// 	stringMap[k] = stringValue
-		// }
-
-		cloneKeys := copyMaps(stringMap)
+		cloneKeys := copyMaps(stringMapKeys)
 		encryptedValue, err := EncryptAES([]byte(keys["auth_token"].(string)))
 		if err != nil {
 			return models.Integration{}, err
 		}
 		cloneKeys["auth_token"] = encryptedValue
-		// destMap := make(map[string]interface{})
-		// for k, v := range cloneKeys {
-		// 	destMap[k] = v
-		// }
-		destMap := copyStringMapToInterfaceMap(cloneKeys)
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "slack", destMap, properties)
+		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "slack", interfaceMapKeys, properties)
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
@@ -265,26 +255,15 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		return slackIntegration, err
 	}
 	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", "", "", "", "")
-	// stringMap := make(map[string]string)
-
-	// for k, v := range keys {
-	// 	stringValue := fmt.Sprintf("%v", v)
-	// 	stringMap[k] = stringValue
-	// }
-	stringMap := GetKeysAsStringMap(keys)
-	cloneKeys := copyMaps(stringMap)
+	stringMapKeys := GetKeysAsStringMap(keys)
+	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(authToken))
 	if err != nil {
 		return models.Integration{}, err
 	}
 	cloneKeys["auth_token"] = encryptedValue
-	// destMap := make(map[string]interface{})
-	// for k, v := range cloneKeys {
-	// 	destMap[k] = v
-	// }
-
-	destMap := copyStringMapToInterfaceMap(cloneKeys)
-	slackIntegration, err = db.UpdateIntegration(tenantName, "slack", destMap, properties)
+	interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+	slackIntegration, err = db.UpdateIntegration(tenantName, "slack", interfaceMapKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}

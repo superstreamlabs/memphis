@@ -177,15 +177,15 @@ func createS3Integration(tenantName string, keys map[string]interface{}, propert
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		stringMap := GetKeysAsStringMap(keys)
-		cloneKeys := copyMaps(stringMap)
+		stringMapKeys := GetKeysAsStringMap(keys)
+		cloneKeys := copyMaps(stringMapKeys)
 		encryptedValue, err := EncryptAES([]byte(keys["secret_key"].(string)))
 		if err != nil {
 			return models.Integration{}, err
 		}
 		cloneKeys["secret_key"] = encryptedValue
-		destMap := copyStringMapToInterfaceMap(cloneKeys)
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "s3", destMap, properties)
+		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "s3", interfaceMapKeys, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
@@ -212,15 +212,15 @@ func createS3Integration(tenantName string, keys map[string]interface{}, propert
 }
 
 func updateS3Integration(tenantName string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
-	stringMap := GetKeysAsStringMap(keys)
-	cloneKeys := copyMaps(stringMap)
+	stringMapKeys := GetKeysAsStringMap(keys)
+	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(keys["secret_key"].(string)))
 	if err != nil {
 		return models.Integration{}, err
 	}
 	cloneKeys["secret_key"] = encryptedValue
-	destMap := copyStringMapToInterfaceMap(cloneKeys)
-	s3Integration, err := db.UpdateIntegration(tenantName, "s3", destMap, properties)
+	interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+	s3Integration, err := db.UpdateIntegration(tenantName, "s3", interfaceMapKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}
