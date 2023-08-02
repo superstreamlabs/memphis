@@ -39,41 +39,41 @@ type TieredStorageMsg struct {
 	TenantName  string `json:"tenant_name"`
 }
 
-func cacheDetailsS3(keys map[string]string, properties map[string]bool, tenantName string) {
+func cacheDetailsS3(keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	s3Integration := models.Integration{}
-	s3Integration.Keys = make(map[string]string)
+	s3Integration.Keys = make(map[string]interface{})
 	s3Integration.Properties = make(map[string]bool)
 	if keys == nil {
 		deleteIntegrationFromTenant(tenantName, "s3", IntegrationsConcurrentCache)
 		return
 	}
 
-	s3Integration.Keys["access_key"] = keys["access_key"]
-	s3Integration.Keys["secret_key"] = keys["secret_key"]
-	s3Integration.Keys["bucket_name"] = keys["bucket_name"]
-	s3Integration.Keys["region"] = keys["region"]
-	s3Integration.Keys["url"] = keys["url"]
-	s3Integration.Keys["s3_path_style"] = keys["s3_path_style"]
+	s3Integration.Keys["access_key"] = keys["access_key"].(string)
+	s3Integration.Keys["secret_key"] = keys["secret_key"].(string)
+	s3Integration.Keys["bucket_name"] = keys["bucket_name"].(string)
+	s3Integration.Keys["region"] = keys["region"].(string)
+	s3Integration.Keys["url"] = keys["url"].(string)
+	s3Integration.Keys["s3_path_style"] = keys["s3_path_style"].(string)
 	s3Integration.Name = "s3"
 	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 		IntegrationsConcurrentCache.Add(tenantName, map[string]interface{}{"s3": s3Integration})
 	} else {
 		err := addIntegrationToTenant(tenantName, "s3", IntegrationsConcurrentCache, s3Integration)
 		if err != nil {
-			serv.Errorf("cacheDetailsSlack: %s ", err.Error())
+			serv.Errorf("cacheDetailsS3: %s ", err.Error())
 			return
 		}
 	}
 }
 
-func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys map[string]string) (models.Integration, int, error) {
+func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
 	statusCode, _, err := it.handleS3Integration(tenantName, keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"], keys["url"], keys["s3_path_style"])
-	s3Integration, err := createS3Integration(tenantName, keys, properties)
+	keysMap, properties := createIntegrationsKeysAndProperties("s3", "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), "", "", "", "")
+	s3Integration, err := createS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		if strings.Contains(err.Error(), "already exists") {
 			return models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
@@ -90,8 +90,8 @@ func (it IntegrationsHandler) handleUpdateS3Integration(tenantName string, body 
 		return models.Integration{}, statusCode, err
 	}
 	integrationType := strings.ToLower(body.Name)
-	keys, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"], keys["secret_key"], keys["bucket_name"], keys["region"], keys["url"], keys["s3_path_style"])
-	s3Integration, err := updateS3Integration(tenantName, keys, properties)
+	keysMap, properties := createIntegrationsKeysAndProperties(integrationType, "", "", false, false, false, keys["access_key"].(string), keys["secret_key"].(string), keys["bucket_name"].(string), keys["region"].(string), keys["url"].(string), keys["s3_path_style"].(string), "", "", "", "")
+	s3Integration, err := updateS3Integration(tenantName, keysMap, properties)
 	if err != nil {
 		return s3Integration, 500, err
 	}
@@ -114,76 +114,78 @@ func getS3EndpointResolver(region, url string) aws.EndpointResolverWithOptionsFu
 	})
 }
 
-func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[string]string) (int, map[string]string, error) {
+func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[string]interface{}) (int, map[string]interface{}, error) {
 	accessKey := keys["access_key"]
 	secretKey := keys["secret_key"]
 	region := keys["region"]
 	bucketName := keys["bucket_name"]
-	pathStyle, _ := strconv.ParseBool(keys["s3_path_style"])
+	pathStyle, _ := strconv.ParseBool(keys["s3_path_style"].(string))
 	url := keys["url"]
 
 	if keys["secret_key"] == "" {
 		exist, integrationFromDb, err := db.GetIntegration("s3", tenantName)
 		if err != nil {
-			return 500, map[string]string{}, err
+			return 500, map[string]interface{}{}, err
 		}
 		if !exist {
-			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("secret key is invalid")
+			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("secret key is invalid")
 		}
 		if value, ok := integrationFromDb.Keys["secret_key"]; ok {
 			key := getAESKey()
-			decryptedValue, err := DecryptAES(key, value)
+			decryptedValue, err := DecryptAES(key, value.(string))
 			if err != nil {
-				return 500, map[string]string{}, err
+				return 500, map[string]interface{}{}, err
 			}
 			integrationFromDb.Keys["secret_key"] = decryptedValue
 		}
-		secretKey = integrationFromDb.Keys["secret_key"]
+		secretKey = integrationFromDb.Keys["secret_key"].(string)
 		keys["secret_key"] = secretKey
 	}
 
-	provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
+	provider := credentials.NewStaticCredentialsProvider(accessKey.(string), secretKey.(string), "")
 	_, err := provider.Retrieve(context.Background())
 	if err != nil {
 		if strings.Contains(err.Error(), "static credentials are empty") {
-			return SHOWABLE_ERROR_STATUS_CODE, map[string]string{}, errors.New("credentials are empty")
+			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("credentials are empty")
 		} else {
-			return 500, map[string]string{}, err
+			return 500, map[string]interface{}{}, err
 		}
 	}
 
 	cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithCredentialsProvider(provider),
-		awsconfig.WithRegion(region),
-		awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region, url)),
+		awsconfig.WithRegion(region.(string)),
+		awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region.(string), url.(string))),
 	)
 	if err != nil {
-		return 500, map[string]string{}, err
+		return 500, map[string]interface{}{}, err
 	}
 
 	svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
 		o.UsePathStyle = pathStyle
 	})
 
-	statusCode, err := testS3Integration(svc, bucketName, url)
+	statusCode, err := testS3Integration(svc, bucketName.(string), url.(string))
 	if err != nil {
-		return statusCode, map[string]string{}, err
+		return statusCode, map[string]interface{}{}, err
 	}
 	return statusCode, keys, nil
 }
 
-func createS3Integration(tenantName string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func createS3Integration(tenantName string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
 	exist, s3Integration, err := db.GetIntegration("s3", tenantName)
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		cloneKeys := copyMaps(keys)
-		encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+		stringMap := GetKeysAsStringMap(keys)
+		cloneKeys := copyMaps(stringMap)
+		encryptedValue, err := EncryptAES([]byte(keys["secret_key"].(string)))
 		if err != nil {
 			return models.Integration{}, err
 		}
 		cloneKeys["secret_key"] = encryptedValue
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "s3", cloneKeys, properties)
+		destMap := copyStringMapToInterfaceMap(cloneKeys)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "s3", destMap, properties)
 		if insertErr != nil {
 			return models.Integration{}, insertErr
 		}
@@ -202,21 +204,23 @@ func createS3Integration(tenantName string, keys map[string]string, properties m
 		if err != nil {
 			return models.Integration{}, err
 		}
-		s3Integration.Keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
+		s3Integration.Keys["secret_key"] = hideIntegrationSecretKey(keys["secret_key"].(string))
 		return s3Integration, nil
 	}
 	return models.Integration{}, errors.New("s3 integration already exists")
 
 }
 
-func updateS3Integration(tenantName string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
-	cloneKeys := copyMaps(keys)
-	encryptedValue, err := EncryptAES([]byte(keys["secret_key"]))
+func updateS3Integration(tenantName string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
+	stringMap := GetKeysAsStringMap(keys)
+	cloneKeys := copyMaps(stringMap)
+	encryptedValue, err := EncryptAES([]byte(keys["secret_key"].(string)))
 	if err != nil {
 		return models.Integration{}, err
 	}
 	cloneKeys["secret_key"] = encryptedValue
-	s3Integration, err := db.UpdateIntegration(tenantName, "s3", cloneKeys, properties)
+	destMap := copyStringMapToInterfaceMap(cloneKeys)
+	s3Integration, err := db.UpdateIntegration(tenantName, "s3", destMap, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -237,7 +241,7 @@ func updateS3Integration(tenantName string, keys map[string]string, properties m
 		return s3Integration, err
 	}
 
-	keys["secret_key"] = hideS3SecretKey(keys["secret_key"])
+	keys["secret_key"] = hideIntegrationSecretKey(keys["secret_key"].(string))
 	s3Integration.Keys = keys
 	s3Integration.Properties = properties
 	return s3Integration, nil
@@ -334,16 +338,6 @@ func testS3Integration(svc *s3.Client, bucketName, urlEndpointResolver string) (
 	return 0, nil
 }
 
-func hideS3SecretKey(secretKey string) string {
-	if secretKey != "" {
-		lastCharsSecretKey := secretKey[len(secretKey)-4:]
-		secretKey = "****" + lastCharsSecretKey
-		return secretKey
-	}
-	return secretKey
-
-}
-
 type Msg struct {
 	Payload string            `json:"payload"`
 	Headers map[string]string `json:"headers"`
@@ -360,14 +354,14 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			}
 		}
 		provider := credentials.NewStaticCredentialsProvider(
-			credentialsMap.Keys["access_key"],
-			credentialsMap.Keys["secret_key"],
+			credentialsMap.Keys["access_key"].(string),
+			credentialsMap.Keys["secret_key"].(string),
 			"",
 		)
 
 		region := credentialsMap.Keys["region"]
 		url := credentialsMap.Keys["url"]
-		pathStyle, _ := strconv.ParseBool(credentialsMap.Keys["s3_path_style"])
+		pathStyle, _ := strconv.ParseBool(credentialsMap.Keys["s3_path_style"].(string))
 
 		_, err := provider.Retrieve(context.Background())
 		if err != nil {
@@ -376,8 +370,8 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 		}
 		cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
 			awsconfig.WithCredentialsProvider(provider),
-			awsconfig.WithRegion(credentialsMap.Keys["region"]),
-			awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region, url)),
+			awsconfig.WithRegion(credentialsMap.Keys["region"].(string)),
+			awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region.(string), url.(string))),
 		)
 		svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
 			o.UsePathStyle = pathStyle
@@ -426,7 +420,7 @@ func (s *Server) uploadToS3Storage(tenantName string, tenant map[string][]Stored
 			return err
 		}
 		_, err = uploader.Upload(context.Background(), &s3.PutObjectInput{
-			Bucket: aws.String(credentialsMap.Keys["bucket_name"]),
+			Bucket: aws.String(credentialsMap.Keys["bucket_name"].(string)),
 			Key:    aws.String(objectName),
 			Body:   &buf,
 		})

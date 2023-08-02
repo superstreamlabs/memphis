@@ -13,6 +13,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"memphis/db"
 )
 
@@ -49,13 +50,13 @@ func InitializeConnections() error {
 	}
 	for _, integration := range integrations {
 		if value, ok := integration.Keys["secret_key"]; ok {
-			decryptedValue, err := DecryptAES(key, value)
+			decryptedValue, err := DecryptAES(key, value.(string))
 			if err != nil {
 				return err
 			}
 			integration.Keys["secret_key"] = decryptedValue
 		} else if value, ok := integration.Keys["auth_token"]; ok {
-			decryptedValue, err := DecryptAES(key, value)
+			decryptedValue, err := DecryptAES(key, value.(string))
 			if err != nil {
 				return err
 			}
@@ -66,13 +67,14 @@ func InitializeConnections() error {
 	return nil
 }
 
-func CacheDetails(integrationType string, keys map[string]string, properties map[string]bool, tenantName string) {
+func CacheDetails(integrationType string, keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	switch integrationType {
 	case "slack":
 		cacheDetailsSlack(keys, properties, tenantName)
 	case "s3":
 		cacheDetailsS3(keys, properties, tenantName)
-
+	case "github":
+		cacheDetailsGithub(keys, properties, tenantName)
 	}
 }
 
@@ -109,18 +111,18 @@ func encryptUnencryptedKeysByIntegrationType(integrationType, keyTitle string, t
 	needToEncrypt := false
 	key := getAESKey()
 	if value, ok := integration.Keys["secret_key"]; ok {
-		_, err := DecryptAES(key, value)
+		_, err := DecryptAES(key, value.(string))
 		if err != nil {
 			needToEncrypt = true
 		}
 	} else if value, ok := integration.Keys["auth_token"]; ok {
-		_, err := DecryptAES(key, value)
+		_, err := DecryptAES(key, value.(string))
 		if err != nil {
 			needToEncrypt = true
 		}
 	}
 	if needToEncrypt {
-		encryptedValue, err := EncryptAES([]byte(integration.Keys[keyTitle]))
+		encryptedValue, err := EncryptAES([]byte(integration.Keys[keyTitle].(string)))
 		if err != nil {
 			return err
 		}
@@ -175,4 +177,32 @@ func deleteIntegrationFromTenant(tenantName string, integrationType string, inte
 		delete(i, integrationType)
 		integrations.m[tenantName] = i
 	}
+}
+
+func hideIntegrationSecretKey(secretKey string) string {
+	if secretKey != "" {
+		lastCharsSecretKey := secretKey[len(secretKey)-4:]
+		secretKey = "****" + lastCharsSecretKey
+		return secretKey
+	}
+	return secretKey
+}
+
+func copyStringMapToInterfaceMap(srcMap map[string]string) map[string]interface{} {
+	destMap := make(map[string]interface{})
+
+	for k, v := range srcMap {
+		destMap[k] = v
+	}
+	return destMap
+}
+
+func GetKeysAsStringMap(keys map[string]interface{}) map[string]string {
+	stringMap := make(map[string]string)
+
+	for k, v := range keys {
+		stringValue := fmt.Sprintf("%v", v)
+		stringMap[k] = stringValue
+	}
+	return stringMap
 }

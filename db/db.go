@@ -3880,7 +3880,7 @@ func DeleteIntegration(name string, tenantName string) error {
 	return nil
 }
 
-func InsertNewIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func InsertNewIntegration(tenantName string, name string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
@@ -3944,7 +3944,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]string
 	return newIntegration, nil
 }
 
-func UpdateIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func UpdateIntegration(tenantName string, name string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}

@@ -12,9 +12,11 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -22,6 +24,8 @@ import (
 	"memphis/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/go-github/v53/github"
+	"golang.org/x/oauth2"
 )
 
 const sendNotificationType = "send_notification"
@@ -85,6 +89,20 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			return
 		}
 		integration = s3Integration
+	case "github":
+		githubIntegration, errorCode, err := it.handleCreateGithubIntegration(user.TenantName, body.Keys)
+		if err != nil {
+			if errorCode == 500 {
+				serv.Errorf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration code 500: %v", user.TenantName, user.Username, err.Error())
+				message = "Server error"
+			} else {
+				serv.Warnf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
+				message = err.Error()
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
+			return
+		}
+		integration = githubIntegration
 	default:
 		serv.Warnf("[tenant: %v][user: %v]CreateIntegration: Unsupported integration type - %v", user.TenantName, user.Username, integrationType)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
@@ -155,6 +173,20 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			return
 		}
 		integration = s3Integration
+	case "github":
+		githubIntegration, errorCode, err := it.handleUpdateGithubIntegration(user.TenantName, body)
+		if err != nil {
+			if errorCode == 500 {
+				serv.Errorf("[tenant: %v]UpdateGithubIntegration at handleUpdateGithubIntegration code 500: %v", user.TenantName, err.Error())
+				message = "Server error"
+			} else {
+				serv.Warnf("[tenant: %v]UpdateGithubIntegration at handleUpdateGithubIntegration: %v", user.TenantName, err.Error())
+				message = err.Error()
+			}
+			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
+			return
+		}
+		integration = githubIntegration
 
 	default:
 		serv.Warnf("[tenant: %v]UpdateIntegration: Unsupported integration type - %v", user.TenantName, body.Name)
@@ -165,8 +197,8 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	c.IndentedJSON(200, integration)
 }
 
-func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle string) (map[string]string, map[string]bool) {
-	keys := make(map[string]string)
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle, token, repo, branch, repoType string) (map[string]interface{}, map[string]bool) {
+	keys := make(map[string]interface{})
 	properties := make(map[string]bool)
 	switch integrationType {
 	case "slack":
@@ -182,6 +214,9 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 		keys["s3_path_style"] = forceS3PathStyle
 		keys["region"] = region
 		keys["url"] = url
+	case "github":
+		keys["token"] = token
+		keys["connected_repos"] = []githubIntegrationDetails{{Repository: repo, Branch: branch, Type: repoType}}
 	}
 
 	return keys, properties
@@ -226,10 +261,96 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 
 	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
-		lastCharsSecretKey := integration.Keys["secret_key"][len(integration.Keys["secret_key"])-4:]
+		lastCharsSecretKey := integration.Keys["secret_key"].(string)[len(integration.Keys["secret_key"].(string))-4:]
 		integration.Keys["secret_key"] = "****" + lastCharsSecretKey
 	}
-	c.IndentedJSON(200, integration)
+
+	if integration.Name == "github" {
+		key := getAESKey()
+		decryptedValue, err := DecryptAES(key, integration.Keys["token"].(string))
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+
+		ctx := context.Background()
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: decryptedValue},
+		)
+		tc := oauth2.NewClient(ctx, ts)
+		client := github.NewClient(tc)
+
+		opt := &github.RepositoryListOptions{
+			ListOptions: github.ListOptions{PerPage: 100},
+		}
+
+		branchesMap := make(map[string][]string)
+
+		for {
+			repos, resp, err := client.Repositories.List(ctx, "", opt)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			for _, repo := range repos {
+				branchInfoList := []string{}
+
+				owner := repo.GetOwner().GetLogin()
+				repoName := repo.GetName()
+
+				branches, _, err := client.Repositories.ListBranches(ctx, owner, repoName, nil)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+
+				daysThreshold := 365
+				for _, branch := range branches {
+					commit, _, err := client.Repositories.GetCommit(ctx, owner, *repo.Name, *branch.Name, nil)
+					if err != nil {
+						serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+						return
+					}
+
+					if commit.Commit.Committer.Date.AddDate(0, 0, daysThreshold).After(time.Now()) {
+						isRepoConnected := false
+						for _, repoIntegrartion := range integration.Keys["connected_repos"].([]interface{}) {
+							if repoIntegrartion.(map[string]interface{})["repository"] == repo.GetName() {
+								isRepoConnected = true
+								if repoIntegrartion.(map[string]interface{})["branch"] == *branch.Name {
+									continue
+								} else {
+									branchInfoList = append(branchInfoList, *branch.Name)
+								}
+							}
+						}
+						if !isRepoConnected {
+							branchInfoList = append(branchInfoList, *branch.Name)
+						}
+					}
+				}
+				if len(branchInfoList) > 0 {
+					branchesMap[repoName] = branchInfoList
+				}
+			}
+
+			// Check if there are more pages
+			if resp.NextPage == 0 {
+				break
+			}
+
+			// Set the next page option to fetch the next page of results
+			opt.Page = resp.NextPage
+
+		}
+		integration.Keys["token"] = hideIntegrationSecretKey(integration.Keys["token"].(string))
+		c.IndentedJSON(200, gin.H{"integaraion": integration, "repos": branchesMap})
+	}
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
@@ -253,7 +374,7 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
 		}
 		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
-			lastCharsSecretKey := integrations[i].Keys["secret_key"][len(integrations[i].Keys["secret_key"])-4:]
+			lastCharsSecretKey := integrations[i].Keys["secret_key"].(string)[len(integrations[i].Keys["secret_key"].(string))-4:]
 			integrations[i].Keys["secret_key"] = "****" + lastCharsSecretKey
 		}
 	}
