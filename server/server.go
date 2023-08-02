@@ -1933,7 +1933,9 @@ func (s *Server) Start() {
 	if !opts.DontListen {
 		s.AcceptLoop(clientListenReady)
 	}
+	//** added by memphis
 	s.runMemphis()
+	// added by memphis **
 }
 
 // Shutdown will shutdown the server instance by kicking out the AcceptLoop
@@ -2141,9 +2143,10 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 		s.Fatalf("Error listening on port: %s, %q", hp, e)
 		return
 	}
+	//** moved to AcceptClientConnections by memphis
 	// s.Noticef("Listening for client connections on %s",
 	// 	net.JoinHostPort(opts.Host, strconv.Itoa(l.Addr().(*net.TCPAddr).Port)))
-
+	// moved to AcceptClientConnections by memphis **
 	// Alert of TLS enabled.
 	if opts.TLSConfig != nil {
 		s.Noticef("TLS required for client connections")
@@ -2168,7 +2171,7 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	// Keep track of client connect URLs. We may need them later.
 	s.clientConnectURLs = s.getClientConnectURLs()
 	s.listener = l
-	//** moved to AcceptClientAndWSConnections by memphis **//
+	//** moved to AcceptClientConnections by memphis
 	// go s.acceptConnections(l, "Client", func(conn net.Conn) { s.createClient(conn) },
 	// 	func(_ error) bool {
 	// 		if s.isLameDuckMode() {
@@ -2180,6 +2183,7 @@ func (s *Server) AcceptLoop(clr chan struct{}) {
 	// 		}
 	// 		return false
 	// 	})
+	// moved to AcceptClientConnections by memphis **
 	s.mu.Unlock()
 
 	// Let the caller know that we are ready
@@ -3779,6 +3783,7 @@ func (s *Server) changeRateLimitLogInterval(d time.Duration) {
 	}
 }
 
+//** added by memphis
 func (s *Server) AcceptClientConnections() {
 	s.mu.Lock()
 	go s.acceptConnections(s.listener, "Client", func(conn net.Conn) { s.createClient(conn) },
@@ -3856,15 +3861,12 @@ func (s *Server) runMemphis() {
 		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
 	}
 	s.CompleteRelevantStuckAsyncTasks()
-	// go func() {
 	opts := s.getOpts()
 	s.InitializeMemphisHandlers()
 	if !opts.DontListen {
 		s.AcceptClientConnections()
 	}
-	fmt.Println("before CreateInternalJetStreamResources")
 	s.CreateInternalJetStreamResources()
-	fmt.Println("after CreateInternalJetStreamResources")
 	err = s.StartBackgroundTasks()
 	if err != nil {
 		s.Errorf("Background task failed: " + err.Error())
@@ -3873,5 +3875,6 @@ func (s *Server) runMemphis() {
 	s.AcceptWSConnections()
 	// run only on the leader
 	go s.KillZombieResources()
-	// }()
 }
+
+// added by memphis **

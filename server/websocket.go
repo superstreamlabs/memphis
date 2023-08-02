@@ -1090,7 +1090,9 @@ func (s *Server) StartWebsocketServer() {
 	if port == 0 {
 		o.Port = hl.Addr().(*net.TCPAddr).Port
 	}
+	//** moved to AcceptWSConnections by memphis 
 	// s.Noticef("Listening for websocket clients on %s://%s:%d", proto, o.Host, o.Port)
+	//moved to AcceptWSConnections by memphis **
 	if proto == wsSchemePrefix {
 		s.Warnf("Websocket not configured with TLS. DO NOT USE IN PRODUCTION!")
 	}
@@ -1136,7 +1138,7 @@ func (s *Server) StartWebsocketServer() {
 	}
 	s.websocket.server = hs
 	s.websocket.listener = hl
-	//** moved to AcceptClientAndWSConnections by memphis **//
+	//** moved to AcceptWSConnections by memphis 
 	// go func() {
 	// 	if err := hs.Serve(hl); err != http.ErrServerClosed {
 	// 		s.Fatalf("websocket listener error: %v", err)
@@ -1150,6 +1152,7 @@ func (s *Server) StartWebsocketServer() {
 	// 	}
 	// 	s.done <- true
 	// }()
+	// moved to AcceptWSConnections by memphis **
 	s.mu.Unlock()
 }
 
