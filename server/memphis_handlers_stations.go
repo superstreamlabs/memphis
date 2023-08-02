@@ -176,8 +176,8 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
-	if csr.PartitionsNumber > 30 || csr.PartitionsNumber < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:30 min:1): Station %v", csr.PartitionsNumber, csr.StationName)
+	if csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station %v", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
@@ -809,8 +809,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	if body.PartitionsNumber > 30 || body.PartitionsNumber < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v replicas (max:30 min:1): Station %v", body.PartitionsNumber, body.Name)
+	if body.PartitionsNumber > MAX_PARTITIONS || body.PartitionsNumber < 1 {
+		errMsg := fmt.Errorf("cannot create station with %v replicas (max:%v min:1): Station %v", body.PartitionsNumber, MAX_PARTITIONS, body.Name)
 		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
