@@ -12,11 +12,9 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -24,8 +22,6 @@ import (
 	"memphis/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/v53/github"
-	"golang.org/x/oauth2"
 )
 
 const sendNotificationType = "send_notification"
@@ -266,91 +262,18 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 
 	if integration.Name == "github" {
-		key := getAESKey()
-		decryptedValue, err := DecryptAES(key, integration.Keys["token"].(string))
+		integration, branchesMap, err := getGithubIntegrationDetails(integration, body, user)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getGithubIntegrationDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
 
-		ctx := context.Background()
-		ts := oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: decryptedValue},
-		)
-		tc := oauth2.NewClient(ctx, ts)
-		client := github.NewClient(tc)
-
-		opt := &github.RepositoryListOptions{
-			ListOptions: github.ListOptions{PerPage: 100},
-		}
-
-		branchesMap := make(map[string][]string)
-
-		for {
-			repos, resp, err := client.Repositories.List(ctx, "", opt)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
-			for _, repo := range repos {
-				branchInfoList := []string{}
-
-				owner := repo.GetOwner().GetLogin()
-				repoName := repo.GetName()
-
-				branches, _, err := client.Repositories.ListBranches(ctx, owner, repoName, nil)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-					return
-				}
-
-				daysThreshold := 365
-				for _, branch := range branches {
-					commit, _, err := client.Repositories.GetCommit(ctx, owner, *repo.Name, *branch.Name, nil)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
-					}
-
-					if commit.Commit.Committer.Date.AddDate(0, 0, daysThreshold).After(time.Now()) {
-						isRepoConnected := false
-						for _, repoIntegrartion := range integration.Keys["connected_repos"].([]interface{}) {
-							if repoIntegrartion.(map[string]interface{})["repository"] == repo.GetName() {
-								isRepoConnected = true
-								if repoIntegrartion.(map[string]interface{})["branch"] == *branch.Name {
-									continue
-								} else {
-									branchInfoList = append(branchInfoList, *branch.Name)
-								}
-							}
-						}
-						if !isRepoConnected {
-							branchInfoList = append(branchInfoList, *branch.Name)
-						}
-					}
-				}
-				if len(branchInfoList) > 0 {
-					branchesMap[repoName] = branchInfoList
-				}
-			}
-
-			// Check if there are more pages
-			if resp.NextPage == 0 {
-				break
-			}
-
-			// Set the next page option to fetch the next page of results
-			opt.Page = resp.NextPage
-
-		}
-		integration.Keys["token"] = hideIntegrationSecretKey(integration.Keys["token"].(string))
 		c.IndentedJSON(200, gin.H{"integaraion": integration, "repos": branchesMap})
+		return
 	}
+	c.IndentedJSON(200, integration)
+
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
@@ -374,8 +297,10 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 			integrations[i].Keys["auth_token"] = "xoxb-****"
 		}
 		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
-			lastCharsSecretKey := integrations[i].Keys["secret_key"].(string)[len(integrations[i].Keys["secret_key"].(string))-4:]
-			integrations[i].Keys["secret_key"] = "****" + lastCharsSecretKey
+			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
+		}
+		if integrations[i].Name == "github" && integrations[i].Keys["token"] != "" {
+			integrations[i].Keys["token"] = hideIntegrationSecretKey(integrations[i].Keys["token"].(string))
 		}
 	}
 

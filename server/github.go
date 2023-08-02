@@ -12,12 +12,17 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"strings"
+	"time"
+
+	"github.com/google/go-github/github"
+	"golang.org/x/oauth2"
 )
 
 type githubIntegrationDetails struct {
@@ -154,11 +159,6 @@ func updateGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		return models.Integration{}, fmt.Errorf("integration does not exist")
 	}
 
-	// stringMap := make(map[string]string)
-	// for k, v := range keys {
-	// 	stringValue := fmt.Sprintf("%v", v)
-	// 	stringMap[k] = stringValue
-	// }
 	stringMap := GetKeysAsStringMap(keys)
 	cloneKeys := copyMaps(stringMap)
 	encryptedValue, err := EncryptAES([]byte(stringMap["token"]))
@@ -166,11 +166,6 @@ func updateGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		return models.Integration{}, err
 	}
 	cloneKeys["token"] = encryptedValue
-	// destMap := make(map[string]interface{})
-	// for k, v := range cloneKeys {
-	// 	destMap[k] = v
-	// }
-	// destMap := copyStringMapToInterfaceMap(cloneKeys)
 
 	updateIntegration := map[string]interface{}{}
 	githubDetails := githubIntegrationDetails{
@@ -216,4 +211,87 @@ func updateGithubIntegration(tenantName string, keys map[string]interface{}, pro
 
 	githubIntegration.Keys["token"] = hideIntegrationSecretKey(githubIntegration.Keys["token"].(string))
 	return githubIntegration, nil
+}
+
+func getGithubIntegrationDetails(integration models.Integration, body models.GetIntegrationDetailsSchema, user models.User) (models.Integration, map[string][]string, error) {
+	key := getAESKey()
+	decryptedValue, err := DecryptAES(key, integration.Keys["token"].(string))
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at DecryptAES: Integration %v: %v", body.Name, err.Error())
+	}
+
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: decryptedValue},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	client := github.NewClient(tc)
+
+	opt := &github.RepositoryListOptions{
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+
+	branchesMap := make(map[string][]string)
+
+	for {
+		repos, resp, err := client.Repositories.List(ctx, "", opt)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", body.Name, err.Error())
+		}
+
+		for _, repo := range repos {
+			branchInfoList := []string{}
+
+			owner := repo.GetOwner().GetLogin()
+			repoName := repo.GetName()
+
+			branches, _, err := client.Repositories.ListBranches(ctx, owner, repoName, nil)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+				return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", body.Name, err.Error())
+			}
+
+			daysThreshold := 365
+			for _, branch := range branches {
+				commit, _, err := client.Repositories.GetCommit(ctx, owner, *repo.Name, *branch.Name)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+					return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", body.Name, err.Error())
+				}
+
+				if commit.Commit.Committer.Date.AddDate(0, 0, daysThreshold).After(time.Now()) {
+					isRepoConnected := false
+					for _, repoIntegrartion := range integration.Keys["connected_repos"].([]interface{}) {
+						if repoIntegrartion.(map[string]interface{})["repository"] == repo.GetName() {
+							isRepoConnected = true
+							if repoIntegrartion.(map[string]interface{})["branch"] == *branch.Name {
+								continue
+							} else {
+								branchInfoList = append(branchInfoList, *branch.Name)
+							}
+						}
+					}
+					if !isRepoConnected {
+						branchInfoList = append(branchInfoList, *branch.Name)
+					}
+				}
+			}
+			if len(branchInfoList) > 0 {
+				branchesMap[repoName] = branchInfoList
+			}
+		}
+
+		// Check if there are more pages
+		if resp.NextPage == 0 {
+			break
+		}
+
+		// Set the next page option to fetch the next page of results
+		opt.Page = resp.NextPage
+
+	}
+	integration.Keys["token"] = hideIntegrationSecretKey(integration.Keys["token"].(string))
+	return integration, branchesMap, nil
 }
