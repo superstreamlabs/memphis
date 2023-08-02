@@ -263,6 +263,7 @@ func (s *Server) WaitForLeaderElection() {
 		}
 	}
 }
+
 func (s *Server) CreateInternalJetStreamResources() {
 	ready := !s.JetStreamIsClustered()
 	retentionDur := time.Duration(s.opts.LogsRetentionDays) * time.Hour * 24
