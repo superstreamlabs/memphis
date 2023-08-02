@@ -1,0 +1,77 @@
+.ant-popover {
+    padding-top: 0;
+}
+
+.ant-popover-inner {
+    border-radius: 8px;
+}
+// .async-partitions-container {
+//     max-height: 300px;
+//     overflow-y: auto;
+// }
+.async-number {
+    font-family: 'InterSemiBold';
+    color: #2e2c34;
+    background-color: #ffc633;
+    padding: 3px 5px;
+    border-radius: 50%;
+}
+.ant-btn {
+    &:focus {
+        box-shadow: none;
+    }
+}
+.async-btn {
+    display: flex;
+    // justify-content: space-between;
+    align-items: center;
+
+    img {
+        padding: 0px 10px;
+    }
+}
+.async-title {
+    color: #737373;
+    margin-right: 5px;
+    span {
+        display: flex;
+        justify-content: space-between;
+        p {
+            margin-bottom: 0;
+            padding: 10px;
+            font-size: 16px;
+            font-family: 'InterSemiBold';
+            color: #2e2c34;
+        }
+    }
+
+    .ant-divider {
+        margin: 0;
+    }
+}
+.task-item {
+    cursor: pointer;
+    width: 200px;
+    height: 40px;
+    vertical-align: middle;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    img {
+        padding-left: 15px;
+        padding-right: 10px;
+    }
+}
+// .el:last-child {
+//     border-radius: 0px 0px 8px 8px;
+// }
+// .el:hover {
+//     background-color: #f5f5f5;
+// }
+
+// .filter-partition-container {
+//     display: flex;
+//     justify-content: space-between;
+//     width: 160px;
+
+// }
