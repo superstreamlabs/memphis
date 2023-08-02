@@ -23,6 +23,8 @@ import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
 import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
 import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
+import PartitionsFilter from '../../../components/partitionsFilter';
+
 import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
@@ -152,6 +154,7 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
+                    <PartitionsFilter height="34px" partitions_number={2} />
                     <Button
                         width="100px"
                         height="32px"
@@ -171,11 +174,15 @@ const StationOverviewHeader = () => {
                         <p>
                             <b>Retention:</b> {retentionValue}
                         </p>
-                        {!isCloud() && (
-                            <p>
-                                <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
-                            </p>
-                        )}
+                        <div className="storage-section">
+                            {!isCloud() && (
+                                <p>
+                                    <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
+                                </p>
+                            )}
+                            {stationState?.stationMetaData?.partitions_number && <b>Number of partitions:</b>}
+                            {stationState?.stationMetaData?.partitions_number}
+                        </div>
                         <div className="storage-section">
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}

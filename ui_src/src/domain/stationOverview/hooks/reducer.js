@@ -18,6 +18,11 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationMetaData: action.payload
             };
+        // case 'SET_STATION_PARTITION':
+        //     return {
+        //         ...stationState,
+        //         stationParition: action.payload
+        //     };
         case 'SET_SOCKET_DATA':
             return {
                 ...stationState,
@@ -57,6 +62,11 @@ const Reducer = (stationState, action) => {
             return {
                 ...stationState,
                 selectedRowId: action.payload
+            };
+        case 'SET_SELECTED_ROW_PARTITION':
+            return {
+                ...stationState,
+                selectedRowPartition: action.payload
             };
         case 'SET_SCHEMA_TYPE':
             return {

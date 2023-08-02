@@ -38,11 +38,12 @@
             padding: 15px 0 15px 15px;
             width: 100%;
             display: grid;
-            grid-template-columns: 25% 20% 20% 13% 15%;
-            gap:5px;
+            // grid-template-columns: 25% 20% 20% 13% 15%;
+            grid-template-columns: 20% 15% 15% 15% 13% 15%;
+            gap: 5px;
             justify-content: space-between;
             color: #737373;
-            .title-center{
+            .title-center {
                 justify-content: center;
             }
             span {
@@ -64,8 +65,9 @@
             padding: 0 0 5px 15px;
             .stations-row {
                 display: grid;
-                grid-template-columns: 25% 20% 20% 13% 15%;
-                gap:5px;
+                // grid-template-columns: 25% 20% 20% 13% 15%;
+                grid-template-columns: 20% 15% 15% 15% 13% 15%;
+                gap: 5px;
                 color: #1d1d1d;
                 justify-content: space-between;
                 width: 100%;
@@ -91,7 +93,7 @@
                     padding-left: 20px;
                 }
             }
-            .even{
+            .even {
                 background-color: #f8f8f8;
                 border-radius: 5px;
             }
@@ -114,7 +116,7 @@
         .centered {
             display: flex;
             justify-content: center;
-            text-align:center;
+            text-align: center;
             .staion-link {
                 cursor: pointer;
                 width: 120px;
@@ -139,8 +141,8 @@
                 opacity: 0.8;
             }
         }
-        .lottie{
-            svg{
+        .lottie {
+            svg {
                 width: 90px !important;
             }
         }

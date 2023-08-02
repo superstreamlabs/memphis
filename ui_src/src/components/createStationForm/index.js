@@ -152,7 +152,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             dls_configuration: {
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
-            }
+            },
+            partitions_number: formFields.partitions_number
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -329,7 +330,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             // link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
                         />
                         <div>
-                            <Form.Item name="partitions" initialValue={1} style={{ height: '50px' }}>
+                            <Form.Item name="partitions_number" initialValue={1} style={{ height: '50px' }}>
                                 {/* <SelectComponent
                                     colorType="black"
                                     backgroundColorType="none"
@@ -342,7 +343,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     onChange={(e) => getStarted && updateFormState('replicas', e)}
                                     disabled={!allowEdit}
                                 /> */}
-                                <InputNumberComponent min={1} max={isCloud() ? 30 : 30} onChange={(e) => getStarted && updateFormState('partitions', e)} />
+                                <InputNumberComponent min={1} max={isCloud() ? 30 : 30} onChange={(e) => getStarted && updateFormState('partitions_number', e)} />
                             </Form.Item>
                         </div>
                     </div>

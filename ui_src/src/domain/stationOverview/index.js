@@ -65,7 +65,7 @@ const StationOverview = () => {
 
     const getStationDetails = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${2}}`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
@@ -81,6 +81,7 @@ const StationOverview = () => {
     useEffect(() => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: 0 });
         getStaionMetaData();
         getStationDetails();
     }, []);

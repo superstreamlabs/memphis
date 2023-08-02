@@ -43,6 +43,7 @@ import { Virtuoso } from 'react-virtuoso';
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [selectedRowPartition, setSelectedRowPartition] = useState(null);
     const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
@@ -58,10 +59,12 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const onSelectedRow = (id) => {
+    const onSelectedRow = (id, partition) => {
         setUserScrolled(false);
         setSelectedRowIndex(id);
+        setSelectedRowPartition(partition);
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: partition });
     };
 
     const handleCheckedClick = (e) => {
@@ -79,6 +82,7 @@ const Messages = () => {
 
     const handleChangeMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
         setSelectedRowIndex(null);
         setIsCheck([]);
 
@@ -97,6 +101,7 @@ const Messages = () => {
 
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
         setSelectedRowIndex(null);
         setSubTabValue(newValue);
         setIsCheck([]);
@@ -135,6 +140,7 @@ const Messages = () => {
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
             }, 1500);
@@ -183,11 +189,17 @@ const Messages = () => {
 
     const listGenerator = (index, message) => {
         const id = tabValue === tabs[1] ? message?.id : message?.message_seq;
+        const partition = tabValue === tabs[1] ? null : message?.partition;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
                 <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
-                <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
-                    {selectedRowIndex === id && <div className="hr-selected"></div>}
+                <div
+                    className={selectedRowIndex === id && selectedRowPartition === partition ? 'row-message selected' : 'row-message'}
+                    key={id}
+                    id={id}
+                    onClick={() => onSelectedRow(id, partition)}
+                >
+                    {selectedRowIndex === id && selectedRowPartition === partition && <div className="hr-selected"></div>}
                     <span className="preview-message">
                         {tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}
                     </span>

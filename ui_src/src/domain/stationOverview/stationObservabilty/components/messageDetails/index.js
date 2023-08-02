@@ -45,20 +45,22 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     }, [messageDetails]);
 
     useEffect(() => {
-        if (stationState?.selectedRowId && !loadMessageData) {
-            getMessageDetails(stationState?.selectedRowId);
+        if (stationState?.selectedRowId && stationState?.selectedRowPartition && !loadMessageData) {
+            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition);
         }
-    }, [stationState?.selectedRowId]);
+    }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
-    const getMessageDetails = async (selectedRow) => {
+    const getMessageDetails = async (selectedRow, selectedPartition) => {
         setMessageDetails({});
         setLoadMessageData(true);
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${isFailedSchemaMessage ? 'schema' : 'poison'}&station_name=${stationName}&is_dls=${isDls}&message_id=${
-                    isDls ? parseInt(selectedRow) : -1
-                }&message_seq=${isDls ? -1 : selectedRow}`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
+                    isFailedSchemaMessage ? 'schema' : 'poison'
+                }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
+                    isDls ? -1 : selectedRow
+                }`
             );
             arrangeData(data);
         } catch (error) {
@@ -160,12 +162,12 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 {messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
                                 )}
-                                <div className='info-box' >
+                                <div className="info-box">
                                     <div>
-                                        <span className='title'>Producer </span>
-                                        <span className='content'>{messageDetails?.producer?.details[0].value}</span>
+                                        <span className="title">Producer </span>
+                                        <span className="content">{messageDetails?.producer?.details[0].value}</span>
                                     </div>
-                                        <StatusIndication is_active={messageDetails?.producer.is_active} />
+                                    <StatusIndication is_active={messageDetails?.producer.is_active} />
                                 </div>
 
                                 {!isFailedSchemaMessage && (
