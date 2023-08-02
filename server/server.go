@@ -3779,7 +3779,7 @@ func (s *Server) changeRateLimitLogInterval(d time.Duration) {
 	}
 }
 
-func (s *Server) AcceptClientAndWSConnections() {
+func (s *Server) AcceptClientConnections() {
 	s.mu.Lock()
 	go s.acceptConnections(s.listener, "Client", func(conn net.Conn) { s.createClient(conn) },
 		func(_ error) bool {
@@ -3792,6 +3792,14 @@ func (s *Server) AcceptClientAndWSConnections() {
 			}
 			return false
 		})
+	s.mu.Unlock()
+	opts := s.getOpts()
+	s.Noticef("Listening for client connections on %s",
+		net.JoinHostPort(opts.Host, strconv.Itoa(s.listener.Addr().(*net.TCPAddr).Port)))
+}
+
+func (s *Server) AcceptWSConnections() {
+	s.mu.Lock()
 	go func() {
 		if err := s.websocket.server.Serve(s.websocket.listener); err != http.ErrServerClosed {
 			s.Fatalf("websocket listener error: %v", err)
@@ -3807,8 +3815,14 @@ func (s *Server) AcceptClientAndWSConnections() {
 	}()
 	s.mu.Unlock()
 	opts := s.getOpts()
-	s.Noticef("Listening for client connections on %s",
-		net.JoinHostPort(opts.Host, strconv.Itoa(s.listener.Addr().(*net.TCPAddr).Port)))
+	o := &opts.Websocket
+	var proto string
+	if o.TLSConfig != nil {
+		proto = wsSchemePrefixTLS
+	} else {
+		proto = wsSchemePrefix
+	}
+	s.Noticef("Listening for websocket clients on %s://%s:%d", proto, o.Host, o.Port)
 }
 
 func (s *Server) runMemphis() {
@@ -3843,19 +3857,20 @@ func (s *Server) runMemphis() {
 	}
 	s.CompleteRelevantStuckAsyncTasks()
 	// go func() {
-	fmt.Println("before CreateInternalJetStreamResources")
-	s.CreateInternalJetStreamResources()
-	fmt.Println("after CreateInternalJetStreamResources")
 	opts := s.getOpts()
 	s.InitializeMemphisHandlers()
 	if !opts.DontListen {
-		s.AcceptClientAndWSConnections()
+		s.AcceptClientConnections()
 	}
+	fmt.Println("before CreateInternalJetStreamResources")
+	s.CreateInternalJetStreamResources()
+	fmt.Println("after CreateInternalJetStreamResources")
 	err = s.StartBackgroundTasks()
 	if err != nil {
 		s.Errorf("Background task failed: " + err.Error())
 		os.Exit(1)
 	}
+	s.AcceptWSConnections()
 	// run only on the leader
 	go s.KillZombieResources()
 	// }()
