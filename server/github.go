@@ -19,7 +19,6 @@ import (
 	"memphis/db"
 	"memphis/models"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
@@ -213,12 +212,12 @@ func updateGithubIntegration(tenantName string, keys map[string]interface{}, pro
 	return githubIntegration, nil
 }
 
-func getGithubIntegrationDetails(integration models.Integration, body models.GetIntegrationDetailsSchema, user models.User) (models.Integration, map[string][]string, error) {
+func getGithubClient(token string, user models.User) (*github.Client, error) {
 	key := getAESKey()
-	decryptedValue, err := DecryptAES(key, integration.Keys["token"].(string))
+	decryptedValue, err := DecryptAES(key, token)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at DecryptAES: Integration %v: %v", body.Name, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
+		return &github.Client{}, fmt.Errorf("GetIntegrationDetails at DecryptAES: Integration %v: %v", "github", err.Error())
 	}
 
 	ctx := context.Background()
@@ -227,60 +226,34 @@ func getGithubIntegrationDetails(integration models.Integration, body models.Get
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	client := github.NewClient(tc)
+	return client, nil
+}
 
+func getSourceCodeRepositories(integration models.Integration, body models.GetIntegrationDetailsSchema, user models.User) (models.Integration, map[string]string, error) {
+	ctx := context.Background()
 	opt := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
-	branchesMap := make(map[string][]string)
+	client, err := getGithubClient(integration.Keys["token"].(string), user)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]getSourceCodeRepositories at getGithubClient: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		return models.Integration{}, map[string]string{}, fmt.Errorf("getSourceCodeRepositories at getGithubClient: Integration %v: %v", body.Name, err.Error())
+	}
+	branchesMap := make(map[string]string)
 
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-			return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.List: Integration %v: %v", body.Name, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]getSourceCodeRepositories at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			return models.Integration{}, map[string]string{}, fmt.Errorf("getSourceCodeRepositories at db.client.Repositories.List: Integration %v: %v", body.Name, err.Error())
 		}
 
 		for _, repo := range repos {
-			branchInfoList := []string{}
-
 			owner := repo.GetOwner().GetLogin()
 			repoName := repo.GetName()
+			branchesMap[repoName] = owner
 
-			branches, _, err := client.Repositories.ListBranches(ctx, owner, repoName, nil)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-				return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.ListBranches: Integration %v: %v", body.Name, err.Error())
-			}
-
-			daysThreshold := 365
-			for _, branch := range branches {
-				commit, _, err := client.Repositories.GetCommit(ctx, owner, *repo.Name, *branch.Name)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-					return models.Integration{}, map[string][]string{}, fmt.Errorf("GetIntegrationDetails at db.client.Repositories.GetCommit: Integration %v: %v", body.Name, err.Error())
-				}
-
-				if commit.Commit.Committer.Date.AddDate(0, 0, daysThreshold).After(time.Now()) {
-					isRepoConnected := false
-					for _, repoIntegrartion := range integration.Keys["connected_repos"].([]interface{}) {
-						if repoIntegrartion.(map[string]interface{})["repository"] == repo.GetName() {
-							isRepoConnected = true
-							if repoIntegrartion.(map[string]interface{})["branch"] == *branch.Name {
-								continue
-							} else {
-								branchInfoList = append(branchInfoList, *branch.Name)
-							}
-						}
-					}
-					if !isRepoConnected {
-						branchInfoList = append(branchInfoList, *branch.Name)
-					}
-				}
-			}
-			if len(branchInfoList) > 0 {
-				branchesMap[repoName] = branchInfoList
-			}
 		}
 
 		// Check if there are more pages

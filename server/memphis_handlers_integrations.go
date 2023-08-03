@@ -12,9 +12,11 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
+	// "time"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -262,7 +264,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 
 	if integration.Name == "github" {
-		integration, branchesMap, err := getGithubIntegrationDetails(integration, body, user)
+		integration, branchesMap, err := getSourceCodeRepositories(integration, body, user)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getGithubIntegrationDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -274,6 +276,87 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 	c.IndentedJSON(200, integration)
 
+}
+
+func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
+	var body models.GetSourceCodeBranchesSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetSourecCodeBranches at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, _, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	exist, integration, err := db.GetIntegration("github", user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at db.GetIntegration: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	} else if !exist {
+		c.IndentedJSON(200, nil)
+		return
+	}
+
+	owner := strings.ToLower(body.Owner)
+	repoName := strings.ToLower(body.Name)
+	branchesMap := make(map[string][]string)
+
+	// if integration.Name == "github" {
+	client, err := getGithubClient(integration.Keys["token"].(string), user)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getGithubClient: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		return
+	}
+	branches, _, err := client.Repositories.ListBranches(context.Background(), owner, repoName, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "Not Found") {
+			serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.IndentedJSON(200, gin.H{"integaraion": integration, "branches": branchesMap})
+			return
+		}
+		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	branchInfoList := []string{}
+	for _, branch := range branches {
+		isRepoConnected := false
+		for _, repoIntegrartion := range integration.Keys["connected_repos"].([]interface{}) {
+			if repoIntegrartion.(map[string]interface{})["repository"] == repoName {
+				isRepoConnected = true
+				if repoIntegrartion.(map[string]interface{})["branch"] == *branch.Name {
+					continue
+				} else {
+					branchInfoList = append(branchInfoList, *branch.Name)
+				}
+			}
+		}
+		if !isRepoConnected {
+			branchInfoList = append(branchInfoList, *branch.Name)
+		}
+	}
+	if len(branchInfoList) > 0 {
+		branchesMap[repoName] = branchInfoList
+	}
+
+	integration.Keys["token"] = hideIntegrationSecretKey(integration.Keys["token"].(string))
+	c.IndentedJSON(200, gin.H{"integaraion": integration, "branches": branchesMap})
 }
 
 func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
