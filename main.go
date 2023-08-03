@@ -102,8 +102,6 @@ func runMemphis(s *server.Server) {
 		s.Errorf("Failed initializing analytics: " + err.Error())
 	}
 
-	go http_server.InitializeHttpServer(s)
-
 	isUserPassBased := os.Getenv("USER_PASS_BASED_AUTH") == "true"
 
 	if isUserPassBased {
@@ -123,6 +121,8 @@ func runMemphis(s *server.Server) {
 			}
 		}
 	}
+
+	go http_server.InitializeHttpServer(s)
 
 	var env string
 	var message string

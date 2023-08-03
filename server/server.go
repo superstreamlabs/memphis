@@ -1878,7 +1878,7 @@ func (s *Server) Start() {
 	// leaf node because we want to resolve the gateway host:port so that this
 	// information can be sent to other routes.
 	if opts.Websocket.Port != 0 {
-		s.StartWebsocketServer()
+		s.startWebsocketServer()
 	}
 
 	// Start up listen if we want to accept leaf node connections.
