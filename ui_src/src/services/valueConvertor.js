@@ -353,16 +353,10 @@ export const replicasConvertor = (value, stringToNumber) => {
                 return 1;
         }
     } else {
-        switch (value) {
-            case 1:
-                return 'No HA (1)';
-            case 3:
-                return 'HA (3)';
-            case 5:
-                return 'Super HA (5)';
-            default:
-                return 'No HA (1)';
-        }
+        if (value >= 1 && value < 3) return 'No HA (1)';
+        else if (value >= 3 && value < 5) return 'HA (3)';
+        else if (value >= 5) return 'Super HA (5)';
+        else return 'No HA (1)';
     }
 };
 
