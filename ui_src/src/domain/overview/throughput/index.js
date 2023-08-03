@@ -131,7 +131,6 @@ function Throughput() {
     }, [throughputType, selectedComponent]);
 
     const getSelectComponentList = () => {
-        console.log(state?.monitor_data?.brokers_throughput);
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
