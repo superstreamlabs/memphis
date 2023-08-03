@@ -196,7 +196,7 @@ function SchemaList({ createNew }) {
                 {!isLoading && state.schemaList?.length > 0 && state.schemaFilteredList?.length === 0 && (
                     <div className="no-schema-to-display">
                         <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
-                        <p className="title">No schemas yet</p>
+                        <p className="title">No schemas found</p>
                         <p className="sub-title">Please try to search again</p>
                     </div>
                 )}
