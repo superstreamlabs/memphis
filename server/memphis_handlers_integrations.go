@@ -16,7 +16,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	// "time"
 
 	"memphis/analytics"
 	"memphis/db"
@@ -91,7 +90,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		githubIntegration, errorCode, err := it.handleCreateGithubIntegration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
 				serv.Warnf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
@@ -259,8 +258,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 	}
 
 	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
-		lastCharsSecretKey := integration.Keys["secret_key"].(string)[len(integration.Keys["secret_key"].(string))-4:]
-		integration.Keys["secret_key"] = "****" + lastCharsSecretKey
+		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
 	if integration.Name == "github" {
@@ -275,11 +273,10 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		return
 	}
 	c.IndentedJSON(200, integration)
-
 }
 
 func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
-	var body models.GetSourceCodeBranchesSchema
+	var body GetSourceCodeBranchesSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -316,7 +313,6 @@ func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 	repoName := strings.ToLower(body.Name)
 	branchesMap := make(map[string][]string)
 
-	// if integration.Name == "github" {
 	client, err := getGithubClient(integration.Keys["token"].(string), user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getGithubClient: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())

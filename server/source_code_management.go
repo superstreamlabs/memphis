@@ -30,6 +30,11 @@ type githubIntegrationDetails struct {
 	Type       string `json:"type"`
 }
 
+type GetSourceCodeBranchesSchema struct {
+	Name  string `form:"name" json:"name" binding:"required"`
+	Owner string `form:"owner" json:"owner" binding:"required"`
+}
+
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	githubIntegration := models.Integration{}
 	githubIntegration.Keys = make(map[string]interface{})
@@ -71,7 +76,6 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		if insertErr != nil {
 			if strings.Contains(insertErr.Error(), "already exists") {
 				return models.Integration{}, errors.New("github integration already exists")
-
 			} else {
 				return models.Integration{}, insertErr
 			}
@@ -113,7 +117,6 @@ func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, k
 
 func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys map[string]interface{}) (int, map[string]interface{}, error) {
 	statusCode := 500
-
 	if keys["token"] == "" {
 		exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
 		if err != nil {
@@ -132,7 +135,6 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 			integrationFromDb.Keys["token"] = decryptedValue
 		}
 		keys["token"] = integrationFromDb.Keys["token"]
-
 	}
 	return statusCode, keys, nil
 }
@@ -253,17 +255,14 @@ func getSourceCodeRepositories(integration models.Integration, body models.GetIn
 			owner := repo.GetOwner().GetLogin()
 			repoName := repo.GetName()
 			branchesMap[repoName] = owner
-
 		}
 
 		// Check if there are more pages
 		if resp.NextPage == 0 {
 			break
 		}
-
 		// Set the next page option to fetch the next page of results
 		opt.Page = resp.NextPage
-
 	}
 	integration.Keys["token"] = hideIntegrationSecretKey(integration.Keys["token"].(string))
 	return integration, branchesMap, nil

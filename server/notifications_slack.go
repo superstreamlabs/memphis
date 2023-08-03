@@ -194,7 +194,6 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 			return slackIntegration, err
 		}
 		stringMapKeys := GetKeysAsStringMap(keys)
-
 		cloneKeys := copyMaps(stringMapKeys)
 		encryptedValue, err := EncryptAES([]byte(keys["auth_token"].(string)))
 		if err != nil {

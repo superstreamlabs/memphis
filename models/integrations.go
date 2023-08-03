@@ -63,8 +63,3 @@ type Notification struct {
 type RequestIntegrationSchema struct {
 	RequestContent string `json:"request_content"`
 }
-
-type GetSourceCodeBranchesSchema struct {
-	Name  string `form:"name" json:"name" binding:"required"`
-	Owner string `form:"owner" json:"owner" binding:"required"`
-}
