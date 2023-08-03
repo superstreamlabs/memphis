@@ -210,7 +210,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 		partitionNumber, err := strconv.Atoi(partitionNumberStr)
 		if err != nil {
 			return nil, errors.New("invalid partition number")
-		} 
+		}
 
 		stationName := strings.Join(splitedResp[1:len(splitedResp)-1], ".")
 		if stationName == _EMPTY_ {
@@ -307,13 +307,14 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		if err != nil {
 			return map[string]any{}, err
 		}
-		avgMsgSize, err = h.Stations.GetPartitionAvgMsgSize(station, fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber))
+		avgMsgSize, err = h.Stations.GetPartitionAvgMsgSize(station.TenantName, fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber))
 		if err != nil {
 			return map[string]any{}, err
 		}
-		messages, err = h.Stations.GetMessagesFromPartition(station,fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber), messagesToFetch, partitionNumber)
+		messages, err = h.Stations.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber), messagesToFetch, partitionNumber)
 		if err != nil {
 			return map[string]any{}, err
+		}
 	}
 
 	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
