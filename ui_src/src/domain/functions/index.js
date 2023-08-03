@@ -10,17 +10,21 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-const pathDomains = {
-    login: '/login',
-    signup: '/signup',
-    overview: '/overview',
-    stations: '/stations',
-    functions: '/functions',
-    users: '/users',
-    schemaverse: '/schemaverse',
-    administration: '/administration',
-    profile: '/profile',
-    sysLogs: '/logs'
-};
+import './style.scss';
 
-export default pathDomains;
+import React, { useEffect, useContext } from 'react';
+
+import { Context } from '../../hooks/store';
+import FunctionList from './components/functionList';
+
+function Functions() {
+    const [state, dispatch] = useContext(Context);
+
+    useEffect(() => {
+        dispatch({ type: 'SET_ROUTE', payload: 'functions' });
+    }, []);
+
+    return <FunctionList />;
+}
+
+export default Functions;

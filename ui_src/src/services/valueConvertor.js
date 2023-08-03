@@ -88,10 +88,12 @@ export const convertSecondsToDate = (seconds) => {
     return result;
 };
 
-export const parsingDate = (date, withSeconds = false) => {
+export const parsingDate = (date, withSeconds = false, withTime = true) => {
     if (date) {
         var second = withSeconds ? 'numeric' : undefined;
-        var options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: second };
+        var time = withTime ? 'numeric' : undefined;
+
+        var options = { year: 'numeric', month: 'short', day: 'numeric', hour: time, minute: time, second: second };
         return new Date(date).toLocaleDateString([], options);
     } else {
         return '';

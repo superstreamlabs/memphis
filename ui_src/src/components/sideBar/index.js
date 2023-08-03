@@ -249,7 +249,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                {/* <div
+                <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
@@ -261,7 +261,7 @@ function SideBar() {
                         <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
                     )}
                     <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div> */}
+                </div>
 
                 <div
                     className="item-wrapper"
@@ -310,13 +310,6 @@ function SideBar() {
                         <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                     </div>
                 )}
-                <div className="item-wrapper">
-                    <div className="icon not-available">
-                        <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
-                    </div>
-                    <p className="not-available">Functions</p>
-                    <p className="coming-soon">Soon</p>
-                </div>
             </div>
             <div className="bottom-icons">
                 <div
