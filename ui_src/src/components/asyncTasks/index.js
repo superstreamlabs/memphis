@@ -12,29 +12,89 @@
 
 import './style.scss';
 
-import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { Divider, Popover } from 'antd';
-
-import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-import searchIcon from '../../assets/images/searchIcon.svg';
+import { parsingDate } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import asyncIcon from '../../assets/images/asyncIcon.svg';
 import taskIcon from '../../assets/images/task.svg';
-
 import { httpRequest } from '../../services/http';
-import Reducer from '../../domain/stationOverview/hooks/reducer';
 import Button from '../button';
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
+import { Context } from '../../hooks/store';
 
-const AsyncTasks = ({ height }) => {
-    // const [stationState, stationDispatch] = useReducer(Reducer);
+const AsyncTasks = ({ height, overView }) => {
+    const [state, dispatch] = useContext(Context);
     const [isOpen, setIsOpen] = useState(false);
-    // const [selectedPartition, setSelectedPartition] = useState(0);
+    const [showMore, setShowMore] = useState(false);
+    const [asyncTasks, setAsyncTasks] = useState([]);
 
-    const handleApply = (i) => {
-        // setSelectedPartition(i);
-        setIsOpen(false);
+    useEffect(() => {
+        getAsyncTasks();
+    }, []);
+
+    useEffect(() => {
+        let sub;
+        let jc;
+        let sc;
+
+        const subscribeAndListen = async (subName, pubName, dataHandler) => {
+            jc = JSONCodec();
+            sc = StringCodec();
+
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.${subName}`, sc.encode('SUB'));
+
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.${pubName}.${brokerName}`);
+                }
+            } catch (err) {
+                console.error(`Error subscribing to ${subName} data:`, err);
+                return;
+            }
+
+            setTimeout(async () => {
+                if (sub) {
+                    try {
+                        for await (const msg of sub) {
+                            let data = jc.decode(msg.data);
+                            dataHandler(data);
+                        }
+                    } catch (err) {
+                        console.error(`Error receiving ${subName} data updates:`, err);
+                    }
+                }
+            }, 1000);
+        };
+
+        (async () => {
+            try {
+                await subscribeAndListen('get_async_tasks', 'get_async_tasks', (data) => {
+                    setAsyncTasks(data);
+                });
+            } catch (err) {
+                console.error('Error subscribing and listening to get_all_stations_data:', err);
+            }
+        })();
+
+        return () => {
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from filters data:', err);
+                }
+            }
+        };
+    }, [state.socket]);
+
+    const getAsyncTasks = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ASYNC_TASKS);
+            data?.async_tasks?.length > 0 && setAsyncTasks(data.async_tasks);
+        } catch (error) {}
     };
 
     const handleOpenChange = () => {
@@ -42,29 +102,31 @@ const AsyncTasks = ({ height }) => {
     };
 
     const getItems = () => {
-        //     let elements = [];
-        //     for (let i = 0; i <= partitions_number; i++) {
-        //         elements.push(
-        //             <div className="el" key={i} onClick={() => handleApply(i)}>
-        //                 <span>
-        //                     <img src={partitionIcon} alt="PartitionIcon" /> {i == 0 ? 'All' : `Partition ${i}`}
-        //                 </span>
-        //             </div>
-        //         );
-        //     }
-        //     return elements;
         return (
             <div>
-                <div className="task-item" key={1} onClick={() => handleApply(1)}>
-                    <span>
-                        <img src={taskIcon} alt="taskIcon" /> Task
-                    </span>
-                </div>
-                <div className="task-item" key={2} onClick={() => handleApply(2)}>
-                    <span>
-                        <img src={taskIcon} alt="taskIcon" /> Task
-                    </span>{' '}
-                </div>
+                {asyncTasks.map((task, index) => {
+                    return (
+                        ((!showMore && index < 3) || showMore) && (
+                            <div>
+                                <div className="task-item" key={index}>
+                                    <div>
+                                        <img src={taskIcon} alt="taskIcon" />
+                                    </div>
+                                    <div>
+                                        <p className="task-title">
+                                            {overView && `${task?.station_name} | `}
+                                            {task?.name}
+                                        </p>
+                                        <label className="created">
+                                            Created by <b>{task?.created_by}</b> at {parsingDate(task?.created_at)}
+                                        </label>
+                                    </div>
+                                </div>
+                                <Divider />
+                            </div>
+                        )
+                    );
+                })}
             </div>
         );
     };
@@ -73,44 +135,48 @@ const AsyncTasks = ({ height }) => {
             <div>
                 <div className="async-title">
                     <span>
-                        <p>Async task</p>
-                        {/* <p className="async-number">15</p> */}
+                        <p>Async tasks</p>
+                        <label className="async-number">{asyncTasks.length}</label>
                     </span>
                     <Divider />
                 </div>
-                <div className="filter-partitions-container">{getItems()}</div>
+                <div className="tasks-container">{getItems()}</div>
+                {asyncTasks.length > 3 && (
+                    <div className="show-more-less-tasks" onClick={() => setShowMore(!showMore)}>
+                        <label> {!showMore ? 'Show more' : 'Show less'}</label>
+                    </div>
+                )}
             </div>
         );
     };
 
     return (
-        <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
-            <Button
-                className="modal-btn"
-                width="200px"
-                height={height}
-                placeholder={
-                    <div className="async-btn">
-                        <img src={asyncIcon} alt="AsyncIcon" />
-                        <div>
-                            <label className="async-title">Async tasks </label>
-                            <label className="async-number">15</label>
-
-                            {/* {selectedPartition == 0 ? `All` : `Partition ${selectedPartition}`} */}
+        asyncTasks?.length > 0 && (
+            <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
+                <Button
+                    className="modal-btn"
+                    width="200px"
+                    height={height}
+                    placeholder={
+                        <div className="async-btn">
+                            <img src={asyncIcon} alt="AsyncIcon" />
+                            <div>
+                                <label className="async-title">Async tasks </label>
+                                <label className="async-number">{asyncTasks.length}</label>
+                            </div>
+                            <img src={CollapseArrow} alt="CollapseArrow" />
                         </div>
-                        <img src={CollapseArrow} alt="CollapseArrow" />
-                    </div>
-                }
-                colorType="black"
-                radiusType="circle"
-                backgroundColorType="white"
-                fontSize="14px"
-                fontWeight="bold"
-                boxShadowStyle="float"
-                onClick={() => {}}
-                disabled={false}
-            />
-        </Popover>
+                    }
+                    colorType="black"
+                    radiusType="circle"
+                    backgroundColorType="white"
+                    fontSize="14px"
+                    fontWeight="bold"
+                    boxShadowStyle="float"
+                    onClick={() => {}}
+                />
+            </Popover>
+        )
     );
 };
 export default AsyncTasks;

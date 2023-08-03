@@ -41,6 +41,7 @@ import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
+import AsyncTasks from '../../components/asyncTasks';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
@@ -226,7 +227,8 @@ function OverView() {
                                 )}
                             </div>
                         </div>
-                        <div>
+                        <div className="btn-section">
+                            <AsyncTasks height={'32px'} overView />
                             <Button
                                 className="modal-btn"
                                 width="160px"
