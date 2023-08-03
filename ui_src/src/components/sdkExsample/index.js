@@ -32,13 +32,12 @@ import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
 import Copy from '../copy';
-import { isCloud } from '../../services/valueConvertor';
 
 loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const selectProtocolOption = isCloud() ? ['SDK (TCP)'] : ['SDK (TCP)', 'REST (HTTP)'];
+const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -110,7 +109,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, '');
                 const regexPatterntDotNet = `options\.AccountId = ${accountId};`;
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatterntDotNet, '');
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet , '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet, '');
             }
             setCodeExample(codeEx);
         }

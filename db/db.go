@@ -222,11 +222,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS name;
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS schemas_name_tenant_name_key;
 		ALTER TABLE schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
+		ALTER TYPE enum_type ADD VALUE 'avro';
 		END IF;
 	END $$;`
 
 	schemasTable := `
-	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
+	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf', 'avro');
 	CREATE TABLE IF NOT EXISTS schemas(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
@@ -339,7 +340,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'stations' AND table_schema = 'public'
 		) THEN
-		ALTER TYPE enum_retention_type ADD VALUE 'ack_based';
+		ALTER TYPE enum_retention_type ADD VALUE IF NOT EXISTS 'ack_based';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
@@ -533,13 +534,23 @@ func createTables(MetadataDbClient MetadataStorage) error {
             meta_data JSON NOT NULL DEFAULT '{}',
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 			station_id INT NOT NULL,
+			created_by VARCHAR NOT NULL,
 			UNIQUE(name, tenant_name, station_id)
         );`
+
+	alterAsyncTasks := `DO $$
+	BEGIN
+		IF EXISTS (
+			SELECT 1 FROM information_schema.tables WHERE table_name = 'async_tasks' AND table_schema = 'public'
+		) THEN
+		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS created_by VARCHAR NOT NULL;
+		END IF;
+	END $$;`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -6317,7 +6328,7 @@ func DeleteConfByTenantName(tenantName string) error {
 }
 
 // Async tasks functions
-func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string, stationId int) (models.AsyncTask, error) {
+func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string, stationId int, username string) (models.AsyncTask, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6327,7 +6338,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (name, tenant_name, station_id) DO NOTHING RETURNING *`
+	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id, created_by) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (name, tenant_name, station_id) DO NOTHING RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_async_task", query)
 	if err != nil {
 		return models.AsyncTask{}, err
@@ -6335,7 +6346,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 
 	updatedAt := createdAt
 	var asyncTask models.AsyncTask
-	err = conn.Conn().QueryRow(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName, stationId).Scan(
+	err = conn.Conn().QueryRow(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName, stationId, username).Scan(
 		&asyncTask.ID,
 		&asyncTask.Name,
 		&asyncTask.BrokrInCharge,
@@ -6344,6 +6355,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 		&asyncTask.Data,
 		&asyncTask.TenantName,
 		&asyncTask.StationId,
+		&asyncTask.CreatedBy,
 	)
 
 	if err != nil {
@@ -6367,7 +6379,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 				return models.AsyncTask{}, err
 			}
 
-			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId).Scan(
+			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId, username).Scan(
 				&asyncTask.ID,
 				&asyncTask.Name,
 				&asyncTask.BrokrInCharge,
@@ -6376,6 +6388,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 				&asyncTask.Data,
 				&asyncTask.TenantName,
 				&asyncTask.StationId,
+				&asyncTask.CreatedBy,
 			)
 			if err != nil {
 				return models.AsyncTask{}, err
@@ -6448,6 +6461,42 @@ func GetAsyncTaskByNameAndBrokerName(task, brokerName string) (bool, []models.As
 		return false, []models.AsyncTask{}, nil
 	}
 	return true, asyncTask, nil
+}
+
+func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name
+	FROM async_tasks AS a
+	LEFT JOIN stations AS s ON a.station_id = s.id
+	WHERE a.tenant_name = $1
+	ORDER BY a.created_at DESC;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_async_tasks", query)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer rows.Close()
+
+	asyncTasks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTaskRes])
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	if len(asyncTasks) == 0 {
+		return []models.AsyncTaskRes{}, nil
+	}
+	return asyncTasks, nil
 }
 
 func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}, stationId int) error {

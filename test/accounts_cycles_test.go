@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"memphis/server"
-
 	"github.com/nats-io/nats.go"
 )
 

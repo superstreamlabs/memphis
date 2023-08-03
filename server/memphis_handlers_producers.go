@@ -58,7 +58,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err
 	}
 
-	exist, user, err := memphis_cache.GetUser(username, tenantName)
+	exist, user, err := memphis_cache.GetUser(username, tenantName, false)
 	if err != nil {
 		serv.Errorf("createProducerDirectCommon at GetUser: Producer %v at station %v: %v", pName, pStationName.external, err.Error())
 		return false, false, err
@@ -326,7 +326,7 @@ func (s *Server) destroyProducerDirect(c *client, reply string, msg []byte) {
 	if username == "" {
 		username = dpr.Username
 	}
-	_, user, err := memphis_cache.GetUser(username, dpr.TenantName)
+	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirect at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
@@ -388,7 +388,7 @@ func (s *Server) destroyProducerDirectV0(c *client, reply string, dpr destroyPro
 	if username == "" {
 		username = dpr.Username
 	}
-	_, user, err := memphis_cache.GetUser(username, dpr.TenantName)
+	_, user, err := memphis_cache.GetUser(username, dpr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]destroyProducerDirectV0 at GetUserByUsername: Producer %v at station %v: %v", dpr.TenantName, dpr.Username, name, dpr.StationName, err.Error())
 	}
