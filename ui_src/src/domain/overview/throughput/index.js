@@ -131,6 +131,7 @@ function Throughput() {
     }, [throughputType, selectedComponent]);
 
     const getSelectComponentList = () => {
+        console.log(state?.monitor_data?.brokers_throughput);
         const components = state?.monitor_data?.brokers_throughput
             ?.map((element) => {
                 return { name: element.name };
@@ -138,15 +139,7 @@ function Throughput() {
             .sort(function (a, b) {
                 if (a.name === 'total') return -1;
                 if (b.name === 'total') return 1;
-                let nameA = a.name.toUpperCase();
-                let nameB = b.name.toUpperCase();
-                if (nameA < nameB) {
-                    return -1;
-                }
-                if (nameA > nameB) {
-                    return 1;
-                }
-                return 0;
+                return a.name.split('-')[1] - b.name.split('-')[1];
             });
         setSelectOptions(components);
     };

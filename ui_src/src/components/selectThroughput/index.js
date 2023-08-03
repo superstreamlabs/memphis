@@ -37,20 +37,16 @@ const selectThroughput = ({ options, onChange, value }) => {
                 popupClassName="select-throughput-options"
                 listHeight={210}
             >
-                {options
-                    ?.sort((a, b) => {
-                        return a.name.split('-')[1] - b.name.split('-')[1];
-                    })
-                    ?.map((component) => {
-                        return (
-                            <Option key={component?.name} value={component?.name}>
-                                <div className="throughput-details">
-                                    <img src={ComponentIcon} alt="ComponentIcon" height="18px" />
-                                    <p className="throughput-name">{component?.name}</p>
-                                </div>
-                            </Option>
-                        );
-                    })}
+                {options?.map((component) => {
+                    return (
+                        <Option key={component?.name} value={component?.name}>
+                            <div className="throughput-details">
+                                <img src={ComponentIcon} alt="ComponentIcon" height="18px" />
+                                <p className="throughput-name">{component?.name}</p>
+                            </div>
+                        </Option>
+                    );
+                })}
             </Select>
         </div>
     );
