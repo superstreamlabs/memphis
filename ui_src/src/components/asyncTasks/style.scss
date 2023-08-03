@@ -20,17 +20,30 @@
     padding: 2px 8px;
     border-radius: 50%;
 }
-.ant-btn {
-    &:focus {
-        box-shadow: none;
-    }
-}
-.async-btn {
+
+.async-btn-container {
+    border-radius: 50px;
+    color: rgb(29, 29, 29);
+    background-color: rgb(255, 255, 255);
+    width: 200px;
+    height: 32px;
+    border-color: rgb(255, 255, 255);
+    font-size: 14px;
+    font-weight: bold;
+    font-family: Inter;
+    opacity: 1;
+    box-shadow: rgba(0, 0, 0, 0.21) 0px 1px 2px 0px;
+    line-height: 14px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    .async-btn {
+        display: flex;
+        align-items: center;
 
-    img {
-        padding: 0px 10px;
+        img {
+            padding: 0px 10px;
+        }
     }
 }
 .async-title {

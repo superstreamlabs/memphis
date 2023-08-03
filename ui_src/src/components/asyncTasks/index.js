@@ -153,28 +153,16 @@ const AsyncTasks = ({ height, overView }) => {
     return (
         asyncTasks?.length > 0 && (
             <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
-                <Button
-                    className="modal-btn"
-                    width="200px"
-                    height={height}
-                    placeholder={
-                        <div className="async-btn">
-                            <img src={asyncIcon} alt="AsyncIcon" />
-                            <div>
-                                <label className="async-title">Async tasks </label>
-                                <label className="async-number">{asyncTasks.length}</label>
-                            </div>
-                            <img src={CollapseArrow} alt="CollapseArrow" />
+                <div className="async-btn-container">
+                    <div className="async-btn">
+                        <img src={asyncIcon} alt="AsyncIcon" />
+                        <div>
+                            <label className="async-title">Async tasks </label>
+                            <label className="async-number">{asyncTasks.length}</label>
                         </div>
-                    }
-                    colorType="black"
-                    radiusType="circle"
-                    backgroundColorType="white"
-                    fontSize="14px"
-                    fontWeight="bold"
-                    boxShadowStyle="float"
-                    onClick={() => {}}
-                />
+                        <img src={CollapseArrow} alt="CollapseArrow" />
+                    </div>
+                </div>
             </Popover>
         )
     );
