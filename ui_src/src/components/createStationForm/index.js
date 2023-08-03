@@ -161,20 +161,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
             let replicas = [];
-            switch (true) {
-                case data?.available_replicas >= 1 && data?.available_replicas < 3:
-                    replicas = ['No HA (1)'];
-                    break;
-                case data?.available_replicas >= 3 && data?.available_replicas < 5:
-                    replicas = ['No HA (1)', 'HA (3)'];
-                    break;
-                case data?.available_replicas >= 5:
-                    replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
-                    break;
-                default:
-                    replicas = ['No HA (1)'];
-                    break;
-            }
+            if (data?.available_replicas >= 1 && data?.available_replicas < 3) replicas = ['No HA (1)'];
+            else if (data?.available_replicas >= 3 && data?.available_replicas < 5) replicas = ['No HA (1)', 'HA (3)'];
+            else if (data?.available_replicas >= 5) replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
+            else replicas = ['No HA (1)'];
+
             setActualPods(replicas);
         } catch (error) {}
     };
