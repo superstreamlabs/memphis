@@ -43,7 +43,7 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string) (bool, bool, error) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string) (bool, bool, error, models.Station) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 
 	shouldSendNotifications := shouldSendNotification(user.TenantName, SchemaVAlert)
-	return shouldSendNotifications, station.DlsConfigurationSchemaverse, nil
+	return shouldSendNotifications, station.DlsConfigurationSchemaverse, nil, station
 }
 
 func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProducerRequestV0, tenantName string) {
@@ -150,7 +150,7 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
-	_, _, err = s.createProducerDirectCommon(c, cpr.Name,
+	_, _, err, _ = s.createProducerDirectCommon(c, cpr.Name,
 		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 }
@@ -183,7 +183,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	clusterSendNotification, schemaVerseToDls, err := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
+	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
 	if err != nil {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
@@ -202,6 +202,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+	resp.PartitionsUpdate = models.PartitionsUpdate{PartitionsList: station.PartitionsList}
 	resp.SchemaUpdate = *schemaUpdate
 	respondWithResp(s.MemphisGlobalAccountString(), s, reply, &resp)
 }

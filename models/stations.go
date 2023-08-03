@@ -249,3 +249,7 @@ type StationOverviewSchemaDetails struct {
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
 }
+
+type PartitionsUpdate struct {
+	PartitionsList []int `json:"partitions_list"`
+}

@@ -69,6 +69,7 @@ type createConsumerResponse struct {
 
 type createProducerResponse struct {
 	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
+	PartitionsUpdate        models.PartitionsUpdate         `json:"partitions_update"`
 	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
 	ClusterSendNotification bool                            `json:"send_notification"`
 	Err                     string                          `json:"error"`
