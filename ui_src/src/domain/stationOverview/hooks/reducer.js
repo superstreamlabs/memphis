@@ -18,11 +18,11 @@ const Reducer = (stationState, action) => {
                 ...stationState,
                 stationMetaData: action.payload
             };
-        // case 'SET_STATION_PARTITION':
-        //     return {
-        //         ...stationState,
-        //         stationParition: action.payload
-        //     };
+        case 'SET_STATION_PARTITION':
+            return {
+                ...stationState,
+                stationPartition: action.payload
+            };
         case 'SET_SOCKET_DATA':
             return {
                 ...stationState,

@@ -21,17 +21,18 @@ import searchIcon from '../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import partitionIcon from '../../assets/images/partitionIcon.svg';
 import { httpRequest } from '../../services/http';
-import Reducer from '../../domain/stationOverview/hooks/reducer';
 import Button from '../button';
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
+import { StationStoreContext } from '../../domain/stationOverview';
 
 const PartitionsFilter = ({ partitions_number, height }) => {
-    const [stationState, stationDispatch] = useReducer(Reducer);
+    const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedPartition, setSelectedPartition] = useState(0);
 
     const handleApply = (i) => {
         setSelectedPartition(i);
+        console.log(i);
         stationDispatch({ type: 'SET_STATION_PARTITION', payload: i });
         setIsOpen(false);
     };
@@ -46,7 +47,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
             elements.push(
                 <div className="el" key={i} onClick={() => handleApply(i)}>
                     <span>
-                        <img src={partitionIcon} alt="PartitionIcon" /> {i == 0 ? 'All' : `Partition ${i}`}
+                        <img src={partitionIcon} alt="PartitionIcon" /> {i == 0 ? 'All partitions' : `Partition ${i}`}
                     </span>
                 </div>
             );
@@ -77,7 +78,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
                     <div className="filter-partition-container">
                         <div>
                             <label className="filter-title">Filter: </label>
-                            {selectedPartition == 0 ? `All` : `Partition ${selectedPartition}`}
+                            {selectedPartition == 0 ? `All partitions` : `Partition ${selectedPartition}`}
                         </div>
                         <img src={CollapseArrow} alt="CollapseArrow" />
                     </div>

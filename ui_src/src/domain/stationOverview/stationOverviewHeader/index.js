@@ -154,7 +154,11 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
-                    <PartitionsFilter height="34px" partitions_number={2} />
+                    {stationState?.stationMetaData?.partitions_number ? (
+                        <PartitionsFilter height="34px" partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
+                    ) : (
+                        ''
+                    )}
                     <Button
                         width="100px"
                         height="32px"
@@ -180,21 +184,23 @@ const StationOverviewHeader = () => {
                                     <b>Replicas:</b> {replicasConvertor(stationState?.stationMetaData?.replicas, false)}
                                 </p>
                             )}
-                            {stationState?.stationMetaData?.partitions_number && <b>Number of partitions:</b>}
-                            {stationState?.stationMetaData?.partitions_number}
+                            <p>
+                                {stationState?.stationMetaData?.partitions_number && <b>Partitions: </b>}
+                                {stationState?.stationMetaData?.partitions_number}
+                            </p>
                         </div>
                         <div className="storage-section">
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
-                            <div>
+                            <p>
                                 <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
                                 {stationState?.stationMetaData?.tiered_storage_enabled && (
                                     <TooltipComponent text={`Iterate every ${localStorage.getItem(TIERED_STORAGE_UPLOAD_INTERVAL)} seconds.`} minWidth="35px">
                                         <InfoOutlined />
                                     </TooltipComponent>
                                 )}
-                            </div>
+                            </p>
                         </div>
                     </div>
                 </div>
