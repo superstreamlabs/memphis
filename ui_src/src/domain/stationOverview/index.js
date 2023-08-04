@@ -66,7 +66,7 @@ const StationOverview = () => {
 
     const getStationDetails = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${0}'}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition}`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
@@ -94,10 +94,10 @@ const StationOverview = () => {
         const subscribeAndListen = async () => {
             try {
                 (async () => {
-                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}.${0}`, sc.encode('SUB'));
+                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}.${3}`, sc.encode('SUB'));
                     if (rawBrokerName) {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${0}.${brokerName}`);
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition}.${brokerName}`);
                         listenForUpdates();
                     }
                 })();
