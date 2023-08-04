@@ -83,7 +83,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		githubIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegration{
 			Name:       "github",
-			Keys:       keys,
+			Keys:       interfaceMapKeys,
 			Properties: properties,
 			TenantName: tenantName,
 		}
@@ -110,6 +110,9 @@ func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, k
 	keys, properties := createIntegrationsKeysAndProperties("github", "", "", false, false, false, "", "", "", "", "", "", keys["token"].(string), "", "", "", "")
 	githubIntegration, err := createGithubIntegration(tenantName, keys, properties)
 	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			return models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
+		}
 		return models.Integration{}, 500, err
 	}
 	return githubIntegration, statusCode, nil
@@ -126,14 +129,14 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
 		}
-		if value, ok := integrationFromDb.Keys["token"]; ok {
-			key := getAESKey()
-			decryptedValue, err := DecryptAES(key, value.(string))
-			if err != nil {
-				return 500, map[string]interface{}{}, err
-			}
-			integrationFromDb.Keys["token"] = decryptedValue
-		}
+		// if value, ok := integrationFromDb.Keys["token"]; ok {
+		// 	key := getAESKey()
+		// 	decryptedValue, err := DecryptAES(key, value.(string))
+		// 	if err != nil {
+		// 		return 500, map[string]interface{}{}, err
+		// 	}
+		// 	integrationFromDb.Keys["token"] = decryptedValue
+		// }
 		keys["token"] = integrationFromDb.Keys["token"]
 	}
 	return statusCode, keys, nil
