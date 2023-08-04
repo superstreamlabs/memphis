@@ -20,6 +20,7 @@ import (
 var IntegrationsConcurrentCache *concurrentMap[map[string]interface{}]
 var NotificationFunctionsMap map[string]interface{}
 var StorageFunctionsMap map[string]interface{}
+var SourceCodeManagementFunctionsMap map[string]map[string]interface{}
 
 const PoisonMAlert = "poison_message_alert"
 const SchemaVAlert = "schema_validation_fail_alert"
@@ -29,8 +30,12 @@ func InitializeIntegrations() error {
 	IntegrationsConcurrentCache = NewConcurrentMap[map[string]interface{}]()
 	NotificationFunctionsMap = make(map[string]interface{})
 	StorageFunctionsMap = make(map[string]interface{})
+	SourceCodeManagementFunctionsMap = make(map[string]map[string]interface{})
 	NotificationFunctionsMap["slack"] = sendMessageToSlackChannel
 	StorageFunctionsMap["s3"] = serv.uploadToS3Storage
+	SourceCodeManagementFunctionsMap["github"] = make(map[string]interface{})
+	SourceCodeManagementFunctionsMap["github"]["get_all_repos"] = serv.getGithubRepositories
+	SourceCodeManagementFunctionsMap["github"]["get_all_branches"] = serv.getGithubBranches
 
 	err := InitializeConnections()
 	if err != nil {
