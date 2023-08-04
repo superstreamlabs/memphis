@@ -12,16 +12,9 @@
 
 import './style.scss';
 
-import React, { createContext, useContext, useEffect, useReducer, useState } from 'react';
-import { StringCodec, JSONCodec } from 'nats.ws';
+import React, { useContext, useState } from 'react';
 import { Divider, Popover } from 'antd';
-
-import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-import searchIcon from '../../assets/images/searchIcon.svg';
-import { ApiEndpoints } from '../../const/apiEndpoints';
 import partitionIcon from '../../assets/images/partitionIcon.svg';
-import { httpRequest } from '../../services/http';
-import Button from '../button';
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import { StationStoreContext } from '../../domain/stationOverview';
 
@@ -32,7 +25,6 @@ const PartitionsFilter = ({ partitions_number, height }) => {
 
     const handleApply = (i) => {
         setSelectedPartition(i);
-        console.log(i);
         stationDispatch({ type: 'SET_STATION_PARTITION', payload: i });
         setIsOpen(false);
     };
@@ -45,7 +37,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
         let elements = [];
         for (let i = 0; i <= partitions_number; i++) {
             elements.push(
-                <div className="el" key={i} onClick={() => handleApply(i)}>
+                <div className="partition-item" key={i} onClick={() => handleApply(i)}>
                     <span>
                         <img src={partitionIcon} alt="PartitionIcon" /> {i == 0 ? 'All partitions' : `Partition ${i}`}
                     </span>
@@ -70,27 +62,15 @@ const PartitionsFilter = ({ partitions_number, height }) => {
 
     return (
         <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
-            <Button
-                className="modal-btn"
-                width="200px"
-                height={height}
-                placeholder={
-                    <div className="filter-partition-container">
-                        <div>
-                            <label className="filter-title">Filter: </label>
-                            {selectedPartition == 0 ? `All partitions` : `Partition ${selectedPartition}`}
-                        </div>
-                        <img src={CollapseArrow} alt="CollapseArrow" />
+            <div className="filter-partition-btn">
+                <div className="filter-partition-container">
+                    <div>
+                        <label className="filter-title">Filter: </label>
+                        {selectedPartition == 0 ? `All partitions` : `Partition ${selectedPartition}`}
                     </div>
-                }
-                colorType="black"
-                radiusType="circle"
-                backgroundColorType="white"
-                fontSize="14px"
-                fontWeight="bold"
-                boxShadowStyle="float"
-                onClick={() => {}}
-            />
+                    <img src={CollapseArrow} alt="CollapseArrow" />
+                </div>
+            </div>
         </Popover>
     );
 };

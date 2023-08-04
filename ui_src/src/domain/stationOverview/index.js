@@ -64,11 +64,6 @@ const StationOverview = () => {
         }
     };
 
-    useEffect(() => {
-        console.log(stationState?.stationPartition);
-        (stationState?.stationPartition || stationState?.stationPartition == 0) && getStationDetails() && console.log('in');
-    }, [stationState?.stationPartition]);
-
     const getStationDetails = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${0}'}`);

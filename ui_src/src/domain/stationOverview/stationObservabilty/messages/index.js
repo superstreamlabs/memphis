@@ -192,7 +192,13 @@ const Messages = () => {
         const partition = tabValue === tabs[1] ? null : message?.partition;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
+                <CheckboxComponent
+                    className="check-box-message"
+                    checked={isCheck?.includes(partition ? `${id}_${partition}` : id)}
+                    id={partition ? `${id}_${partition}` : id}
+                    onChange={handleCheckedClick}
+                    name={partition ? `${id}_${partition}` : id}
+                />
                 <div
                     className={selectedRowIndex === id && selectedRowPartition === partition ? 'row-message selected' : 'row-message'}
                     key={id}
@@ -340,7 +346,7 @@ const Messages = () => {
             {tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
 
-            {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
+            {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages yet</p>

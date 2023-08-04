@@ -11,7 +11,6 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
@@ -145,7 +144,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             retention_value: retentionValue,
             storage_type: formFields.storage_type,
             replicas: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
-            //partitions: isCloud() ? replicasConvertor(3, true) : replicasConvertor(formFields.replicas, true),
             schema_name: formFields.schemaValue,
             tiered_storage_enabled: formFields.tiered_storage_enabled,
             idempotency_window_in_ms: idempotencyValue,
@@ -330,20 +328,18 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             // link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
                         />
                         <div>
-                            <Form.Item name="partitions_number" initialValue={1} style={{ height: '50px' }}>
-                                {/* <SelectComponent
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    radiusType="semi-round"
-                                    height="40px"
-                                    popupClassName="select-options"
-                                    options={actualPods}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                    onChange={(e) => getStarted && updateFormState('replicas', e)}
+                            <Form.Item
+                                name="partitions_number"
+                                initialValue={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                style={{ height: '50px' }}
+                            >
+                                <InputNumberComponent
+                                    min={1}
+                                    max={isCloud() ? 30 : 5}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                    onChange={(e) => getStarted && updateFormState('partitions_number', e)}
                                     disabled={!allowEdit}
-                                /> */}
-                                <InputNumberComponent min={1} max={isCloud() ? 30 : 30} onChange={(e) => getStarted && updateFormState('partitions_number', e)} />
+                                />
                             </Form.Item>
                         </div>
                     </div>
