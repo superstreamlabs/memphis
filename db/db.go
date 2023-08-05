@@ -4350,7 +4350,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1`
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -4382,7 +4382,7 @@ func CountAllUsers() (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM users`
+	query := `SELECT COUNT(*) FROM users WHERE username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_total_users", query)
 	if err != nil {
 		return 0, err
@@ -4404,7 +4404,7 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE type=ANY($1) AND tenant_name=$2`
+	query := `SELECT * FROM users WHERE type=ANY($1) AND tenant_name=$2 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4437,7 +4437,7 @@ func GetAllUsersByTenantName(tenantName string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE tenant_name=$1`
+	query := `SELECT * FROM users WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4468,7 +4468,7 @@ func GetAllUsersByType(userType []string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE type=ANY($1)`
+	query := `SELECT * FROM users WHERE type=ANY($1) AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4578,7 +4578,9 @@ func DeleteUsersByTenant(tenantName string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		users_list = append(users_list, usermame)
+		if !strings.HasPrefix(usermame, "$") { // skip memphis internal users
+			users_list = append(users_list, usermame)
+		}
 	}
 
 	return users_list, err
@@ -4619,8 +4621,8 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	SELECT DISTINCT u.username
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
-	WHERE s.tenant_name=$1
-	`
+	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4655,8 +4657,8 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	SELECT DISTINCT u.username
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
-	WHERE s.tenant_name=$1
-	`
+	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -6565,4 +6567,97 @@ func RemoveAllAsyncTasks(duration time.Duration) ([]int, error) {
 		}
 	}
 	return stationIds, nil
+}
+
+func CreateUserIfNotExist(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position, owner, description string) (models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO users ( 
+		username,
+		password,
+		type,
+		already_logged_in,
+		created_at,
+		avatar_id,
+		full_name, 
+		subscription,
+		skip_get_started,
+		tenant_name,
+		pending,
+		team, 
+		position,
+		owner,
+		description) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
+	ON CONFLICT (username, tenant_name) DO NOTHING
+	RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
+	if err != nil {
+		return models.User{}, err
+	}
+	createdAt := time.Now()
+	skipGetStarted := false
+	alreadyLoggedIn := false
+
+	var userId int
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position, owner, description)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.User{}, errors.New("User " + username + " already exists")
+				} else {
+					return models.User{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.User{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.User{}, err
+		}
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	newUser := models.User{
+		ID:              userId,
+		Username:        username,
+		Password:        hashedPassword,
+		FullName:        fullName,
+		Subscribtion:    subscription,
+		UserType:        userType,
+		CreatedAt:       createdAt,
+		AlreadyLoggedIn: alreadyLoggedIn,
+		AvatarId:        avatarId,
+		TenantName:      tenantName,
+		Pending:         pending,
+		Team:            team,
+		Position:        position,
+		Owner:           owner,
+		Description:     description,
+	}
+	return newUser, nil
 }

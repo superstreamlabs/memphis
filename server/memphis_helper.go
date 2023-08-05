@@ -1398,7 +1398,8 @@ func getAccountsAndUsersString() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
+		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
+		usrsList := []UserConfig{{User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
 			for _, usr := range usrMap {
 				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
