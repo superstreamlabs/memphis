@@ -714,8 +714,9 @@ func (s *Server) RemoveStream(tenantName, streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) PurgeStream(tenantName, streamName string) error {
-	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
+func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int) error {
+	streamAndPartition := fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
 	var resp JSApiStreamPurgeResponse
 	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
@@ -735,8 +736,14 @@ func (s *Server) MemphisVersion() string {
 	return string(data)
 }
 
-func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64) error {
-	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
+func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64, partitionNumber int) error {
+	var streamName string
+	if partitionNumber == -1 {
+		streamName = stationName.Intern()
+	} else {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber)
+	}
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, streamName)
 
 	var resp JSApiMsgDeleteResponse
 	req := JSApiMsgDeleteRequest{Seq: msgSeq}
@@ -1129,7 +1136,7 @@ cleanup:
 
 func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64, paritionNumber int) (*StoredMsg, error) {
 	var streamName string
-	if paritionNumber != 0 {
+	if paritionNumber != -1 {
 		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), paritionNumber)
 	} else {
 		streamName = stationName.Intern()

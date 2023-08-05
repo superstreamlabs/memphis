@@ -199,8 +199,13 @@ type PurgeStationSchema struct {
 }
 
 type RemoveMessagesSchema struct {
-	StationName string   `json:"station_name" binding:"required"`
-	MessageSeqs []uint64 `json:"message_seqs" binding:"required"`
+	StationName string            `json:"station_name" binding:"required"`
+	Messages    []MessageToDelete `json:"messages" binding:"required"`
+}
+
+type MessageToDelete struct {
+	MessageSeqs     uint64 `json:"message_seq" binding:"required"`
+	PartitionNumber int    `json:"partition_number" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {
