@@ -9,17 +9,22 @@ import (
 	"github.com/google/go-github/github"
 )
 
+type githubRepoDetails struct {
+	Repository string `json:"repository"`
+	Branch     string `json:"branch"`
+	Type       string `json:"type"`
+	Owner      string `json:"owner"`
+}
+
 func (s *Server) getGithubRepositories(integration models.Integration, body interface{}, user models.User) (models.Integration, interface{}, error) {
 	ctx := context.Background()
 	opt := &github.RepositoryListOptions{
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
-	integrationName := body.(models.GetIntegrationDetailsSchema).Name
-
+	integrationName := strings.ToLower(body.(models.GetIntegrationDetailsSchema).Name)
 	client, err := getGithubClient(integration.Keys["token"].(string), user)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]getGithubRepositories at getGithubClient: Integration %v: %v", user.TenantName, user.Username, integrationName, err.Error())
 		return models.Integration{}, map[string]string{}, fmt.Errorf("getGithubRepositories at getGithubClient: Integration %v: %v", integrationName, err.Error())
 	}
 	branchesMap := make(map[string]string)
@@ -27,7 +32,6 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]getGithubRepositories at db.client.Repositories.List: Integration %v: %v", user.TenantName, user.Username, integrationName, err.Error())
 			return models.Integration{}, map[string]string{}, fmt.Errorf("getGithubRepositories at db.client.Repositories.List: Integration %v: %v", integrationName, err.Error())
 		}
 
@@ -62,26 +66,22 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 
 func (s *Server) getGithubBranches(integration models.Integration, body interface{}, user models.User) (models.Integration, interface{}, error) {
 	branchesMap := make(map[string][]string)
-
-	owner := body.(GetSourceCodeBranchesSchema).Owner
-	repoName := body.(GetSourceCodeBranchesSchema).Name
+	owner := strings.ToLower(body.(GetSourceCodeBranchesSchema).Owner)
+	repoName := body.(GetSourceCodeBranchesSchema).RepoName
 
 	token := integration.Keys["token"].(string)
 	connectedRepos := integration.Keys["connected_repos"].([]interface{})
 
 	client, err := getGithubClient(token, user)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]getGithubBranches at getGithubClient: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, map[string][]string{}, err
+		return models.Integration{}, map[string][]string{}, fmt.Errorf("getGithubBranches at getGithubClient: Integration %v: %v", "github", err.Error())
 	}
 	branches, _, err := client.Repositories.ListBranches(context.Background(), owner, repoName, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "Not Found") {
-			serv.Errorf("[tenant: %v][user: %v]getGithubBranches at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, "github", "the repository does not exist")
-			return models.Integration{}, map[string][]string{}, fmt.Errorf("the repository does not exist")
+			return models.Integration{}, map[string][]string{}, fmt.Errorf("getGithubBranches at db.client.Repositories.ListBranches: Integration %v: %v", "github", "the repository does not exist")
 		}
-		serv.Errorf("[tenant: %v][user: %v]getGithubBranches at db.client.Repositories.ListBranches: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, map[string][]string{}, err
+		return models.Integration{}, map[string][]string{}, fmt.Errorf("getGithubBranches at db.client.Repositories.ListBranches: Integration %v: %v", "github", err.Error())
 	}
 
 	// in case when connectedRepos holds multiple branches of the same repo
@@ -101,6 +101,9 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 
 	branchInfoList := []string{}
 	for _, branch := range branches {
+		if len(branchesPerRepo) == 0 {
+			branchInfoList = append(branchInfoList, *branch.Name)
+		}
 		for repo, branches := range branchesPerRepo {
 			if repo == repoName {
 				isBranchExists := containsElement(branches, *branch.Name)
@@ -117,7 +120,6 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 
 	stringMapKeys := GetKeysAsStringMap(integration.Keys)
 	cloneKeys := copyMaps(stringMapKeys)
-	fmt.Print(cloneKeys)
 	interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
 	interfaceMapKeys["connected_repos"] = integration.Keys["connected_repos"]
 	interfaceMapKeys["token"] = hideIntegrationSecretKey(interfaceMapKeys["token"].(string))

@@ -145,10 +145,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration(user.TenantName, "slack", body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration code 500: %v", user.TenantName, err.Error())
+				serv.Errorf("[tenant:%v][user: %v]UpdateSlackIntegration at handleUpdateSlackIntegration code 500: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant:%v]UpdateSlackIntegration at handleUpdateSlackIntegration: %v", user.TenantName, err.Error())
+				serv.Warnf("[tenant:%v][user: %v]UpdateSlackIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -159,10 +159,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		s3Integration, errorCode, err := it.handleUpdateS3Integration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration code 500: %v", user.TenantName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]UpdateS3Integration at handleUpdateS3Integration code 500: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v]UpdateS3Integration at handleUpdateS3Integration: %v", user.TenantName, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]UpdateS3Integration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -173,10 +173,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		githubIntegration, errorCode, err := it.handleUpdateGithubIntegration(user, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v]UpdateGithubIntegration at handleUpdateGithubIntegration code 500: %v", user.TenantName, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]UpdateGithubIntegration at handleUpdateGithubIntegration code 500: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v]UpdateGithubIntegration at handleUpdateGithubIntegration: %v", user.TenantName, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]UpdateGithubIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -212,9 +212,9 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 		keys["url"] = url
 	case "github":
 		keys["token"] = token
-		keys["connected_repos"] = []githubIntegrationDetails{}
+		keys["connected_repos"] = []githubRepoDetails{}
 		if repo != "" {
-			keys["connected_repos"] = []githubIntegrationDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: owner}}
+			keys["connected_repos"] = []githubRepoDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: owner}}
 		}
 	}
 
@@ -284,33 +284,21 @@ func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 	}
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetSourecCodeBranches at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	exist, _, err := db.GetTenantByName(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
+		serv.Errorf("GetSourecCodeBranches at getUserDetailsFromMiddleware: Integration %v: %v", body.RepoName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	owner := strings.ToLower(body.Owner)
-	repoName := strings.ToLower(body.Name)
+	repoName := body.RepoName
 	integration, branches, err := getSourceCodeDetails(owner, repoName, user.TenantName, user, body, "get_all_branches")
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
-			serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
-		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

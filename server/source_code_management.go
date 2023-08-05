@@ -24,16 +24,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type githubIntegrationDetails struct {
-	Repository string `json:"repository"`
-	Branch     string `json:"branch"`
-	Type       string `json:"type"`
-	Owner      string `json:"owner"`
-}
-
 type GetSourceCodeBranchesSchema struct {
-	Name  string `form:"name" json:"name" binding:"required"`
-	Owner string `form:"owner" json:"owner" binding:"required"`
+	RepoName string `form:"repo_name" json:"repo_name" binding:"required"`
+	Owner    string `form:"owner" json:"owner" binding:"required"`
 }
 
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
@@ -97,7 +90,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		if err != nil {
 			return models.Integration{}, err
 		}
-		githubIntegration.Keys["token"] = hideIntegrationSecretKey(keys["token"].(string))
+		githubIntegration.Keys["token"] = hideIntegrationSecretKey(cloneKeys["token"])
 		return githubIntegration, nil
 	}
 	return models.Integration{}, errors.New("github integration already exists")
@@ -131,14 +124,6 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
 		}
-		// if value, ok := integrationFromDb.Keys["token"]; ok {
-		// 	key := getAESKey()
-		// 	decryptedValue, err := DecryptAES(key, value.(string))
-		// 	if err != nil {
-		// 		return 500, map[string]interface{}{}, err
-		// 	}
-		// 	integrationFromDb.Keys["token"] = decryptedValue
-		// }
 		keys["token"] = integrationFromDb.Keys["token"]
 	}
 	return statusCode, keys, nil
@@ -165,24 +150,21 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	githubIntegrationFromCache := integration["github"].(models.Integration)
 	client, err := getGithubClient(githubIntegrationFromCache.Keys["token"].(string), user)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at getGithubClient: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, err
+		return models.Integration{}, fmt.Errorf("updateGithubIntegration at getGithubClient: Integration %v: %v", "github", err.Error())
 	}
 
 	owner, ok := keys["owner"].(string)
 	if !ok {
 		userr, _, err := client.Users.Get(context.Background(), "")
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at client.Users.Get: error getting authenticated user: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-			return models.Integration{}, fmt.Errorf("repository does not exist: %v", err)
+			return models.Integration{}, fmt.Errorf("updateGithubIntegration at client.Users.Get : failed getting authenticated user: %v", err.Error())
 		}
 		owner = userr.GetLogin()
 	}
 
 	_, _, err = client.Repositories.Get(context.Background(), owner, keys["repo"].(string))
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at Repositories.Get: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, err
+		return models.Integration{}, fmt.Errorf("updateGithubIntegration at Repositories.Get: Integration %v: repository does not exist %v", "github", err.Error())
 	}
 
 	stringMapKeys := GetKeysAsStringMap(keys)
@@ -194,7 +176,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	cloneKeys["token"] = encryptedValue
 
 	updateIntegration := map[string]interface{}{}
-	githubDetails := githubIntegrationDetails{
+	githubDetails := githubRepoDetails{
 		Repository: keys["repo"].(string),
 		Branch:     keys["branch"].(string),
 		Type:       keys["type"].(string),
@@ -204,20 +186,15 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	updateIntegration["token"] = githubIntegrationFromCache.Keys["token"]
 	if repos, ok := githubIntegrationFromCache.Keys["connected_repos"].([]interface{}); ok {
 		if len(repos) > 0 {
-			updateIntegration["connected_repos"] = keys["connected_repos"]
-			repos = append(repos, githubDetails)
-			updateIntegration["connected_repos"] = repos
+			updateIntegration["connected_repos"] = append(repos, githubDetails)
 		} else {
-			newd := []githubIntegrationDetails{}
-			newd = append(newd, githubDetails)
-			updateIntegration["connected_repos"] = newd
+			updateIntegration["connected_repos"] = []githubRepoDetails{githubDetails}
 		}
 	}
 
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at UpdateIntegration: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, err
+		return models.Integration{}, fmt.Errorf("updateGithubIntegration at UpdateIntegration: Integration %v: %v", "github", err.Error())
 	}
 
 	integrationToUpdate := models.CreateIntegration{
@@ -229,13 +206,11 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at json.Marshal: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, err
+		return models.Integration{}, fmt.Errorf("updateGithubIntegration at json.Marshal: Integration %v: %v", "github", err.Error())
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]updateGithubIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return models.Integration{}, err
+		return models.Integration{}, fmt.Errorf("[updateGithubIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", "github", err.Error())
 	}
 
 	githubIntegration.Keys["token"] = hideIntegrationSecretKey(githubIntegration.Keys["token"].(string))
@@ -246,8 +221,7 @@ func getGithubClient(token string, user models.User) (*github.Client, error) {
 	key := getAESKey()
 	decryptedValue, err := DecryptAES(key, token)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at DecryptAES: Integration %v: %v", user.TenantName, user.Username, "github", err.Error())
-		return &github.Client{}, fmt.Errorf("GetIntegrationDetails at DecryptAES: Integration %v: %v", "github", err.Error())
+		return &github.Client{}, fmt.Errorf("getGithubClient at DecryptAES: Integration %v: %v", "github", err.Error())
 	}
 
 	ctx := context.Background()
@@ -260,6 +234,8 @@ func getGithubClient(token string, user models.User) (*github.Client, error) {
 }
 
 func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
+	integrationRes := models.Integration{}
+	var allRepos interface{}
 	for k, sourceCodeActions := range SourceCodeManagementFunctionsMap {
 		switch k {
 		case "github":
@@ -291,5 +267,5 @@ func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getA
 			return models.Integration{}, map[string]string{}, errors.New("failed get source branches : unsupported integration")
 		}
 	}
-	return models.Integration{}, map[string]string{}, nil
+	return integrationRes, allRepos, nil
 }

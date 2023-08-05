@@ -287,7 +287,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		Update: svfAlert,
 	}
 	serv.SendUpdateToClients(update)
-	keys["auth_token"] = hideSlackAuthToken(keys["auth_token"].(string))
+	keys["auth_token"] = hideSlackAuthToken(cloneKeys["auth_token"])
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
 	return models.Integration{}, nil
