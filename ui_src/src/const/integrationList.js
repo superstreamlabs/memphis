@@ -270,6 +270,30 @@ export const INTEGRATION_LIST = {
             </div>
         )
     },
+    GitHub: {
+        name: 'GitHub',
+        by: 'memphis',
+        banner: <img className="banner" src={slackBanner} alt="gitHubBanner" />,
+        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={slackLogo} alt="gitHubLogo" />,
+        description: 'Connect your GitHub account to Memphis',
+        category: CATEGORY_LIST['All'],
+        header: (
+            <div className="header-left-side">
+                <img src={slackLogo} alt="gitHubLogo" />
+                <div className="details">
+                    <p>GitHub</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">Get content</span>
+            </div>
+        )
+    },
     Elasticsearch: {
         name: 'Elasticsearch observability',
         by: 'memphis',

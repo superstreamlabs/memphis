@@ -1,0 +1,41 @@
+.repos-container {
+    // height: 100px;
+    width: 100%;
+    // background-color: aquamarine;
+    border: 1px solid #d6d6d6;
+    border-radius: 8px;
+    .repos-header {
+        height: 40px;
+        width: 100%;
+        background-color: #d9d9d9;
+        border-radius: 8px 8px 0px 0px;
+        display: grid;
+        grid-template-columns: 30% 30% 30% 10%;
+        align-items: center;
+        color: #737373;
+    }
+
+    .repos-body {
+        .ant-form-item {
+            margin-bottom: 0px !important;
+        }
+        width: 100%;
+        .repos-item {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 30% 30% 30% 10%;
+            align-items: center;
+            position: relative;
+            .select-repo-span {
+                width: 100%;
+                display: flex;
+                position: relative;
+                padding-left: 10px;
+            }
+        }
+    }
+}
+.connect-bth-gh {
+    display: flex;
+    justify-content: space-between;
+}

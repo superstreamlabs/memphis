@@ -79,6 +79,7 @@ export const ApiEndpoints = {
     GET_ALL_INTEGRATION: '/integrations/getAllIntegrations',
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
     REQUEST_INTEGRATION: '/integrations/requestIntegration',
+    GET_SOURCE_CODE_BRANCHES: '/integrations/getSourceCodeBranches',
 
     //Configuration
     GET_CLUSTER_CONFIGURATION: '/configurations/getClusterConfig',

@@ -25,6 +25,7 @@ import DataDogIntegration from '../dataDogIntegration';
 import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
+import GitHubIntegration from '../gitHubIntegration';
 
 const IntegrationItem = ({ value }) => {
     const [state] = useContext(Context);
@@ -50,6 +51,16 @@ const IntegrationItem = ({ value }) => {
             case 'Slack':
                 return (
                     <SlackIntegration
+                        close={(data) => {
+                            modalFlip(false);
+                            setIntegrateValue(data);
+                        }}
+                        value={ref.current}
+                    />
+                );
+            case 'GitHub':
+                return (
+                    <GitHubIntegration
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);
