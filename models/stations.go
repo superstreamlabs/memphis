@@ -193,9 +193,10 @@ type DropDlsMessagesSchema struct {
 }
 
 type PurgeStationSchema struct {
-	StationName  string `json:"station_name" binding:"required"`
-	PurgeDls     bool   `json:"purge_dls"`
-	PurgeStation bool   `json:"purge_station"`
+	StationName    string `json:"station_name" binding:"required"`
+	PurgeDls       bool   `json:"purge_dls"`
+	PurgeStation   bool   `json:"purge_station"`
+	PartitionsList []int  `json:"partitions_list"`
 }
 
 type RemoveMessagesSchema struct {

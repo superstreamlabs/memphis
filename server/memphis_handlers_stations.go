@@ -2147,12 +2147,30 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeStation {
-		for _, p := range station.PartitionsList {
-			err = sh.S.PurgeStream(station.TenantName, stationName.Intern(), p)
+		if len(station.PartitionsList) == 0 && body.PartitionsList[0] == -1 {
+			err = sh.S.PurgeStream(station.TenantName, stationName.Intern(), -1)
 			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
 				serv.Errorf("[tenant: %v][user: %v]PurgeStation: %v", user.TenantName, user.Username, err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 				return
+			}
+		} else if body.PartitionsList[0] == -1 {
+			for _, p := range station.PartitionsList {
+				err = sh.S.PurgeStream(station.TenantName, stationName.Intern(), p)
+				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+					serv.Errorf("[tenant: %v][user: %v]PurgeStation: %v", user.TenantName, user.Username, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			}
+		} else {
+			for _, p := range body.PartitionsList {
+				err = sh.S.PurgeStream(station.TenantName, stationName.Intern(), p)
+				if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+					serv.Errorf("[tenant: %v][user: %v]PurgeStation: %v", user.TenantName, user.Username, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
 			}
 		}
 	}

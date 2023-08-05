@@ -715,7 +715,12 @@ func (s *Server) RemoveStream(tenantName, streamName string) error {
 }
 
 func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int) error {
-	streamAndPartition := fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	var streamAndPartition string
+	if partitionNumber == -1 {
+		streamAndPartition = streamName
+	} else {
+		streamAndPartition = fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	}
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
 	var resp JSApiStreamPurgeResponse
