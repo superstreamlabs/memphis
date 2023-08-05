@@ -47,6 +47,7 @@ func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool,
 
 	githubIntegration.Keys = keys
 	githubIntegration.Name = "github"
+	githubIntegration.TenantName = tenantName
 
 	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 		IntegrationsConcurrentCache.Add(tenantName, map[string]interface{}{"github": githubIntegration})
@@ -72,6 +73,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		}
 		cloneKeys["token"] = encryptedValue
 		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+		interfaceMapKeys["connected_repos"] = keys["connected_repos"]
 		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "github", interfaceMapKeys, properties)
 		if insertErr != nil {
 			if strings.Contains(insertErr.Error(), "already exists") {
@@ -205,11 +207,11 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 			updateIntegration["connected_repos"] = keys["connected_repos"]
 			repos = append(repos, githubDetails)
 			updateIntegration["connected_repos"] = repos
+		} else {
+			newd := []githubIntegrationDetails{}
+			newd = append(newd, githubDetails)
+			updateIntegration["connected_repos"] = newd
 		}
-	} else {
-		newd := []githubIntegrationDetails{}
-		newd = append(newd, githubDetails)
-		updateIntegration["connected_repos"] = newd
 	}
 
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
@@ -262,29 +264,31 @@ func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getA
 		switch k {
 		case "github":
 			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
-				continue
+				return models.Integration{}, map[string]string{}, errors.New("failed get source branches : github integration does not exist")
 			} else {
-				for a, f := range sourceCodeActions {
-					switch a {
-					case actionType:
-						var schema interface{}
-						if actionType == "get_all_repos" {
-							schema = getAllReposSchema.(models.GetIntegrationDetailsSchema)
-						} else {
-							schema = getAllReposSchema.(GetSourceCodeBranchesSchema)
+				if githubIntegration, ok := tenantIntegrations["github"].(models.Integration); ok {
+					for a, f := range sourceCodeActions {
+						switch a {
+						case actionType:
+							var schema interface{}
+							if actionType == "get_all_repos" {
+								schema = getAllReposSchema.(models.GetIntegrationDetailsSchema)
+							} else {
+								schema = getAllReposSchema.(GetSourceCodeBranchesSchema)
+							}
+							integrationRes, allRepos, err := f.(func(models.Integration, interface{}, models.User) (models.Integration, interface{}, error))(githubIntegration,
+								schema, user)
+							if err != nil {
+								return models.Integration{}, map[string]string{}, err
+							}
+							return integrationRes, allRepos, nil
 						}
-						integrationRes, allRepos, err := f.(func(models.Integration, interface{}, models.User) (models.Integration, interface{}, error))(tenantIntegrations[k].(models.Integration),
-							schema, user)
-						if err != nil {
-							return models.Integration{}, map[string]string{}, err
-						}
-						return integrationRes, allRepos, nil
 
 					}
 				}
 			}
-			// default:
-			// return errors.New("failed uploading to tiered storage : unsupported integration")
+		default:
+			return models.Integration{}, map[string]string{}, errors.New("failed get source branches : unsupported integration")
 		}
 	}
 	return models.Integration{}, map[string]string{}, nil

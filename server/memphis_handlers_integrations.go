@@ -212,7 +212,10 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 		keys["url"] = url
 	case "github":
 		keys["token"] = token
-		keys["connected_repos"] = []githubIntegrationDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: owner}}
+		keys["connected_repos"] = []githubIntegrationDetails{}
+		if repo != "" {
+			keys["connected_repos"] = []githubIntegrationDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: owner}}
+		}
 	}
 
 	return keys, properties
@@ -260,9 +263,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
-	// if integration.Name == "github" {
 	integration, branchesMap, err := getSourceCodeDetails("", "", user.TenantName, user, body, "get_all_repos")
-	// integration, branchesMap, err := serv.getSourceCodeRepositories(integration, body, user)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -304,7 +305,7 @@ func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 	repoName := strings.ToLower(body.Name)
 	integration, branches, err := getSourceCodeDetails(owner, repoName, user.TenantName, user, body, "get_all_branches")
 	if err != nil {
-		if strings.Contains(err.Error(), "the repository does not exist") {
+		if strings.Contains(err.Error(), "does not exist") {
 			serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
