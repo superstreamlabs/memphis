@@ -58,16 +58,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 	if err != nil {
 		return models.Integration{}, err
 	} else if !exist {
-		stringMapKeys := GetKeysAsStringMap(keys)
-		cloneKeys := copyMaps(stringMapKeys)
-		encryptedValue, err := EncryptAES([]byte(keys["token"].(string)))
-		if err != nil {
-			return models.Integration{}, err
-		}
-		cloneKeys["token"] = encryptedValue
-		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
-		interfaceMapKeys["connected_repos"] = keys["connected_repos"]
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "github", interfaceMapKeys, properties)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "github", keys, properties)
 		if insertErr != nil {
 			if strings.Contains(insertErr.Error(), "already exists") {
 				return models.Integration{}, errors.New("github integration already exists")
@@ -78,7 +69,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		githubIntegration = integrationRes
 		integrationToUpdate := models.CreateIntegration{
 			Name:       "github",
-			Keys:       interfaceMapKeys,
+			Keys:       keys,
 			Properties: properties,
 			TenantName: tenantName,
 		}
@@ -90,7 +81,7 @@ func createGithubIntegration(tenantName string, keys map[string]interface{}, pro
 		if err != nil {
 			return models.Integration{}, err
 		}
-		githubIntegration.Keys["token"] = hideIntegrationSecretKey(cloneKeys["token"])
+		githubIntegration.Keys["token"] = hideIntegrationSecretKey(keys["token"].(string))
 		return githubIntegration, nil
 	}
 	return models.Integration{}, errors.New("github integration already exists")
@@ -125,6 +116,12 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
 		}
 		keys["token"] = integrationFromDb.Keys["token"]
+	} else {
+		encryptedValue, err := EncryptAES([]byte(keys["token"].(string)))
+		if err != nil {
+			return 500, map[string]interface{}{}, err
+		}
+		keys["token"] = encryptedValue
 	}
 	return statusCode, keys, nil
 }
@@ -136,18 +133,24 @@ func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, bo
 	}
 	githubIntegration, err := updateGithubIntegration(user, keys, map[string]bool{})
 	if err != nil {
+		if strings.Contains(err.Error(), "does not exist") {
+			return githubIntegration, SHOWABLE_ERROR_STATUS_CODE, err
+		}
 		return githubIntegration, 500, err
 	}
 	return githubIntegration, statusCode, nil
 }
 
 func updateGithubIntegration(user models.User, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
-	integration, ok := IntegrationsConcurrentCache.Load(user.TenantName)
-	if !ok {
-		return models.Integration{}, fmt.Errorf("Integration does not exist")
+	var githubIntegrationFromCache models.Integration
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
+		if githubIntegrationFromCache, ok = tenantInetgrations["github"].(models.Integration); !ok {
+			return models.Integration{}, fmt.Errorf("github integration does not exist")
+		}
+	} else if !ok {
+		return models.Integration{}, fmt.Errorf("github integration does not exist")
 	}
 
-	githubIntegrationFromCache := integration["github"].(models.Integration)
 	client, err := getGithubClient(githubIntegrationFromCache.Keys["token"].(string), user)
 	if err != nil {
 		return models.Integration{}, fmt.Errorf("updateGithubIntegration at getGithubClient: Integration %v: %v", "github", err.Error())
@@ -166,14 +169,6 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	if err != nil {
 		return models.Integration{}, fmt.Errorf("updateGithubIntegration at Repositories.Get: Integration %v: repository does not exist %v", "github", err.Error())
 	}
-
-	stringMapKeys := GetKeysAsStringMap(keys)
-	cloneKeys := copyMaps(stringMapKeys)
-	encryptedValue, err := EncryptAES([]byte(stringMapKeys["token"]))
-	if err != nil {
-		return models.Integration{}, err
-	}
-	cloneKeys["token"] = encryptedValue
 
 	updateIntegration := map[string]interface{}{}
 	githubDetails := githubRepoDetails{
@@ -240,7 +235,7 @@ func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getA
 		switch k {
 		case "github":
 			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
-				return models.Integration{}, map[string]string{}, errors.New("failed get source branches : github integration does not exist")
+				return models.Integration{}, map[string]string{}, fmt.Errorf("failed get source code %s branches: github integration does not exist", k)
 			} else {
 				if githubIntegration, ok := tenantIntegrations["github"].(models.Integration); ok {
 					for a, f := range sourceCodeActions {
@@ -249,7 +244,7 @@ func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getA
 							var schema interface{}
 							if actionType == "get_all_repos" {
 								schema = getAllReposSchema.(models.GetIntegrationDetailsSchema)
-							} else {
+							} else if actionType == "get_all_branches" {
 								schema = getAllReposSchema.(GetSourceCodeBranchesSchema)
 							}
 							integrationRes, allRepos, err := f.(func(models.Integration, interface{}, models.User) (models.Integration, interface{}, error))(githubIntegration,
@@ -261,6 +256,8 @@ func getSourceCodeDetails(owner, repo, tenantName string, user models.User, getA
 						}
 
 					}
+				} else if !ok {
+					return models.Integration{}, map[string]string{}, fmt.Errorf("failed get source code %s branches: github integration does not exist", k)
 				}
 			}
 		default:
