@@ -275,7 +275,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			return
 		}
 
-		if csr.RetentionValue <= 0 {
+		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			retentionValue = 604800 // 1 week
 		} else {
@@ -883,7 +883,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		if body.RetentionValue <= 0 {
+		if body.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			body.RetentionValue = 604800 // 1 week
 		}
@@ -2058,17 +2058,6 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
-func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-pushed-tierd-storage-button")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	var body models.UpdateDlsConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -2158,11 +2147,13 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeStation {
-		err = sh.S.PurgeStream(station.TenantName, stationName.Intern())
-		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
-			serv.Errorf("[tenant: %v][user: %v]PurgeStation: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+		for _, p := range station.PartitionsList {
+			err = sh.S.PurgeStream(station.TenantName, stationName.Intern(), p)
+			if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+				serv.Errorf("[tenant: %v][user: %v]PurgeStation: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
 		}
 	}
 
@@ -2217,8 +2208,8 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 		return
 	}
 
-	for _, msg := range body.MessageSeqs {
-		err = sh.S.RemoveMsg(station.TenantName, stationName, msg)
+	for _, msg := range body.Messages {
+		err = sh.S.RemoveMsg(station.TenantName, stationName, msg.MessageSeqs, msg.PartitionNumber)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
 				continue
@@ -2251,7 +2242,6 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 		return beforeSuffix, tenantId, nil
 	}
 	return username, -1, nil
-
 }
 
 func (s *Server) RemoveOldStations() {

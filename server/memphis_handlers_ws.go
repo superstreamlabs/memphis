@@ -295,7 +295,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 	var avgMsgSize int64
 	messages := make([]models.MessageDetails, 0)
 	messagesToFetch := 1000
-	if partitionNumber == 0 {
+	if partitionNumber == -1 {
 		totalMessages, err = h.Stations.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
 		if err != nil {
 			return map[string]any{}, err

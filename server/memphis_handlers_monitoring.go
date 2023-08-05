@@ -527,7 +527,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	var totalMessages int
-	if body.PartitionNumber == 0 {
+	if body.PartitionNumber == -1 {
 		totalMessages, err = stationsHandler.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) {
@@ -555,7 +555,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	var avgMsgSize int64
-	if body.PartitionNumber == 0 {
+	if body.PartitionNumber == -1 {
 		avgMsgSize, err = stationsHandler.GetAvgMsgSize(station)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) {
@@ -583,7 +583,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 
 	messagesToFetch := 1000
 	messages := make([]models.MessageDetails, 0)
-	if body.PartitionNumber == 0 {
+	if body.PartitionNumber == -1 {
 		messages, err = stationsHandler.GetMessages(station, messagesToFetch)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) {

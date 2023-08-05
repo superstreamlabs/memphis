@@ -39,25 +39,25 @@
                     display: flex;
                     align-self: center;
                     flex-direction: column;
-                    .username{
-                        text-transform: capitalize
+                    .username {
+                        text-transform: capitalize;
                     }
-                    .org-details{
+                    .org-details {
                         display: flex;
                         gap: 5px;
-                        .hostname{
+                        .hostname {
                             border-radius: 32px;
-                            border: 0.8px solid #E2DFFF;
-                            background: #F1F0FF;
+                            border: 0.8px solid #e2dfff;
+                            background: #f1f0ff;
                             display: flex;
                             width: fit-content;
                             padding: 0px 10px;
                             gap: 2px;
                             font-family: 'InterMedium';
-                            p{
+                            p {
                                 font-size: 12px;
                             }
-                            span{
+                            span {
                                 color: var(--purple);
                                 font-size: 12px;
                                 margin-right: 5px;
@@ -65,6 +65,11 @@
                         }
                     }
                 }
+            }
+
+            .btn-section {
+                display: flex;
+                gap: 10px;
             }
 
             .dynamic-sentences {

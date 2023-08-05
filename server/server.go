@@ -3783,7 +3783,7 @@ func (s *Server) changeRateLimitLogInterval(d time.Duration) {
 	}
 }
 
-//** added by memphis
+// ** added by memphis
 func (s *Server) AcceptClientConnections() {
 	s.mu.Lock()
 	go s.acceptConnections(s.listener, "Client", func(conn net.Conn) { s.createClient(conn) },
@@ -3856,21 +3856,25 @@ func (s *Server) initializeMemphis() {
 	if err != nil {
 		s.Errorf("failed setting existing tenants with dls retention opts: %v", err.Error())
 	}
-	err = s.Force3ReplicationsForExistingStations()
-	if err != nil {
-		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
-	}
 	s.CompleteRelevantStuckAsyncTasks()
-	opts := s.getOpts()
 	s.InitializeMemphisHandlers()
+	opts := s.getOpts()
 	if !opts.DontListen {
 		s.AcceptClientConnections()
 	}
 	s.CreateInternalJetStreamResources()
+	err = s.Force3ReplicationsForExistingStations()
+	if err != nil {
+		s.Errorf("Failed force 3 replications for existing stations: " + err.Error())
+	}
 	err = s.StartBackgroundTasks()
 	if err != nil {
 		s.Errorf("Background task failed: " + err.Error())
 		os.Exit(1)
+	}
+	err = CreateInternalApplicationUserForExistTenants() // for old tenants without internal application user
+	if err != nil {
+		s.Errorf("failed creating internal application user for exist tenants: %v", err.Error())
 	}
 	s.AcceptWSConnections()
 	// run only on the leader
