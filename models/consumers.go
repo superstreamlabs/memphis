@@ -29,6 +29,7 @@ type Consumer struct {
 	StartConsumeFromSeq uint64    `json:"start_consume_from_seq"`
 	LastMessages        int64     `json:"last_messages"`
 	TenantName          string    `json:"tenant_name"`
+	PartitionsList      []int     `json:"partitions_list"`
 }
 
 type ExtendedConsumer struct {
@@ -102,8 +103,9 @@ type DelayedCgResp struct {
 }
 
 type LightCG struct {
-	CGName      string `json:"cg_name"`
-	StationName string `json:"station_name"`
-	StationId   int    `json:"station_id"`
-	TenantName  string `json:"tenant_name"`
+	CGName         string `json:"cg_name"`
+	StationName    string `json:"station_name"`
+	StationId      int    `json:"station_id"`
+	TenantName     string `json:"tenant_name"`
+	PartitionsList []int  `json:"partitions_list"`
 }

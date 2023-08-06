@@ -292,6 +292,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
 			CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 			CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -320,6 +321,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		partitions INTEGER[],
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -2684,7 +2686,7 @@ func InsertNewConsumer(name string,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
 	lastMessages int64,
-	tenantName string) (bool, models.Consumer, int64, error) {
+	tenantName string, partitionsList []int) (bool, models.Consumer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2706,8 +2708,9 @@ func InsertNewConsumer(name string,
 		start_consume_from_seq,
 		last_msgs,
 		type,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+		tenant_name, 
+		partitions_list,) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
@@ -2720,7 +2723,7 @@ func InsertNewConsumer(name string,
 	isActive := true
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName)
+		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -6186,7 +6189,7 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 
 	var queries []string
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
+	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions_list FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
