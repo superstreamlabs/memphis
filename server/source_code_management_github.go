@@ -151,7 +151,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 
 	client, err := getGithubClient(githubIntegrationFromCache.Keys["token"].(string))
 	if err != nil {
-		return models.Integration{}, fmt.Errorf("updateGithubIntegration at getGithubClient: %v", err.Error())
+		return models.Integration{}, err
 	}
 
 	updateIntegration := map[string]interface{}{}
@@ -162,7 +162,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		if !ok {
 			userDetails, _, err := client.Users.Get(context.Background(), "")
 			if err != nil {
-				return models.Integration{}, fmt.Errorf("updateGithubIntegration at client.Users.Get : failed getting authenticated user: %v", err.Error())
+				return models.Integration{}, err
 			}
 			repoOwner = userDetails.GetLogin()
 		}
@@ -188,7 +188,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
-		return models.Integration{}, fmt.Errorf("updateGithubIntegration at UpdateIntegration: Integration %v: %v", "github", err.Error())
+		return models.Integration{}, err
 	}
 
 	integrationToUpdate := models.CreateIntegration{
@@ -200,11 +200,11 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
-		return models.Integration{}, fmt.Errorf("updateGithubIntegration at json.Marshal: Integration %v: %v", "github", err.Error())
+		return models.Integration{}, err
 	}
 	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), INTEGRATIONS_UPDATES_SUBJ, _EMPTY_, nil, msg, true)
 	if err != nil {
-		return models.Integration{}, fmt.Errorf("[updateGithubIntegration at sendInternalAccountMsgWithReply: Integration %v: %v", "github", err.Error())
+		return models.Integration{}, err
 	}
 
 	githubIntegration.Keys["token"] = hideIntegrationSecretKey(githubIntegration.Keys["token"].(string))
