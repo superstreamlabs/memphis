@@ -337,10 +337,11 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 
 	branchInfoList := []string{}
 	for _, branch := range branches {
+		isRepoExists := false
 		if len(branchesPerRepo) == 0 {
+			isRepoExists = true
 			branchInfoList = append(branchInfoList, *branch.Name)
 		}
-		isRepoExists := false
 		for repo, branches := range branchesPerRepo {
 			if repo == repoName {
 				isRepoExists = true
