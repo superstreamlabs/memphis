@@ -2238,7 +2238,7 @@ func (sh StationsHandler) RemoveMessages(c *gin.Context) {
 	}
 
 	for _, msg := range body.Messages {
-		err = sh.S.RemoveMsg(station.TenantName, stationName, msg.MessageSeqs, msg.PartitionNumber)
+		err = sh.S.RemoveMsg(station.TenantName, stationName, msg.MessageSeq, msg.PartitionNumber)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) || IsNatsErr(err, JSStreamMsgDeleteFailedF) {
 				continue

@@ -46,7 +46,7 @@ import (
 
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
-const MAX_PARTITIONS = 5
+const MAX_PARTITIONS = 10000
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
