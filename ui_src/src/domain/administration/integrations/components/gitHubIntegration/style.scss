@@ -14,7 +14,7 @@
         background-color: rgba(217, 217, 217, 0.3);
         border-radius: 8px 8px 0px 0px;
         display: grid;
-        grid-template-columns: 30% 30% 30% 10%;
+        grid-template-columns: 5% 40% 40% 15%;
         align-items: center;
         color: #737373;
     }
@@ -24,10 +24,11 @@
             margin-bottom: 0px !important;
         }
         width: 100%;
+
         .repos-item {
             width: 100%;
             display: grid;
-            grid-template-columns: 30% 30% 30% 10%;
+            grid-template-columns: 5% 40% 40% 15%;
             align-items: center;
             position: relative;
             margin: 10px 0px;
@@ -37,6 +38,9 @@
                 position: relative;
                 padding-left: 10px;
             }
+        }
+        .repos-item > img:first-child {
+            margin-left: 8px;
         }
     }
 }

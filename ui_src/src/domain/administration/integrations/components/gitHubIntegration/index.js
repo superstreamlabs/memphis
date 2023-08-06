@@ -40,12 +40,12 @@ const GitHubIntegration = ({ close, value }) => {
     const [state, dispatch] = useContext(Context);
     const [formFields, setFormFields] = useState({
         name: 'github',
-        ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
         keys: {
-            type: 'functions',
-            token: ''
+            token: '',
+            connected_repos: []
         }
     });
+
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -78,6 +78,13 @@ const GitHubIntegration = ({ close, value }) => {
         });
     }, []);
 
+    const updateKeysConnectedRepos = (repos, index) => {
+        let updatedValue = { ...formFields.keys };
+        if (index && index < updatedValue.connected_repos?.length) updatedValue.connected_repos[index] = repos;
+        else if (index && index === updatedValue.connected_repos?.length) updatedValue.connected_repos.push(repos);
+        setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
+    };
+
     const updateKeysState = (field, value) => {
         let updatedValue = { ...formFields.keys };
         updatedValue[field] = value;
@@ -98,12 +105,11 @@ const GitHubIntegration = ({ close, value }) => {
         });
     };
 
-    const updateIntegration = async (withToken = true) => {
-        let newFormFields = { ...formFields };
+    const updateIntegration = async () => {
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, { ...newFormFields });
+            const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, formFields);
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
-            // closeModal(data);
+            closeModal(data);
         } catch (err) {
             setLoadingSubmit(false);
         }
@@ -111,7 +117,7 @@ const GitHubIntegration = ({ close, value }) => {
 
     const createIntegration = async () => {
         try {
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, { ...formFields });
+            const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, formFields);
             dispatch({ type: 'ADD_INTEGRATION', payload: data });
             getIntegration();
         } catch (err) {
@@ -122,28 +128,17 @@ const GitHubIntegration = ({ close, value }) => {
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-            // console.log(data);
-            setRepos(data?.repos);
-            // setConnectedRepos(data?.integration?.keys?.connected_repos);
-        } catch (error) {}
-    };
-
-    useEffect(() => {
-        console.log(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
-        formFields?.keys?.repo_name && formFields?.keys?.repo_owner && getSourceCodeBranches(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
-    }, [formFields?.keys?.repo_name]);
-
-    const updateRepo = (repo) => {
-        let updatedValue = { ...formFields.keys };
-        updatedValue = { ...updatedValue, ...{ repo_name: repo, repo_owner: repos[repo] } };
-        setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
-    };
-
-    const getSourceCodeBranches = async (repo, repo_owner) => {
-        try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&repo_owner=${repo_owner}`);
-            console.log(data);
-            setBranches(data?.branches[formFields?.keys?.repo_name]);
+            if (data) {
+                setFormFields(data?.integaraion);
+                setRepos(data?.repos);
+            } else
+                setFormFields({
+                    name: 'github',
+                    keys: {
+                        token: '',
+                        connected_repos: []
+                    }
+                });
         } catch (error) {}
     };
 
@@ -222,7 +217,6 @@ const GitHubIntegration = ({ close, value }) => {
                                         // isLoading={loadingSubmit}
                                         // disabled={isValue && !creationForm.isFieldsTouched()}
                                         onClick={createIntegration}
-                                        // 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
                                     />
                                 </span>
                                 <span className="desc">The secret key associated with the access key.</span>
@@ -237,7 +231,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     initialValue={formFields?.keys?.token}
                                 >
                                     <Input
-                                        placeholder="****"
+                                        placeholder="ghp_****"
                                         type="text"
                                         radiusType="semi-round"
                                         colorType="black"
@@ -251,80 +245,39 @@ const GitHubIntegration = ({ close, value }) => {
                                     />
                                 </Form.Item>
                             </div>
-                            <p className="title">Repos</p>
-                            <span className="desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
-                            <div className="repos-container">
-                                <div className="repos-header">
-                                    <label>Repo Name</label>
-                                    <label>Branch</label>
-                                    <label>Type</label>
-                                    <label>BTN</label>
-                                </div>
-                                <div className="repos-body">
-                                    {state.integrationsList[0]?.keys?.connected_repos?.map((repo, index) => {
-                                        return <IntegrationItem index={index} repo={repo} reposList={repos} />;
-                                    })}
-                                    <div className="repos-item">
-                                        <Form.Item className="button-container">
-                                            <span className="select-repo-span">
-                                                {/* <img src={githubBranchIcon} alt="githubBranchIcon" /> */}
-                                                <SelectComponent
-                                                    colorType="black"
-                                                    backgroundColorType="none"
-                                                    radiusType="semi-round"
-                                                    borderColorType="gray"
-                                                    height="32px"
-                                                    width={'180px'}
-                                                    popupClassName="select-options"
-                                                    options={Object?.keys(repos) || []}
-                                                    placeholder={'Select a repo'}
-                                                    value={formFields?.keys?.repo_name || ''}
-                                                    onChange={(e) => {
-                                                        updateRepo(e);
-                                                    }}
-                                                />
-                                            </span>
-                                        </Form.Item>
-
-                                        <Form.Item className="button-container">
-                                            <SelectComponent
-                                                colorType="black"
-                                                backgroundColorType="none"
-                                                radiusType="semi-round"
-                                                borderColorType="gray"
-                                                height="32px"
-                                                width={'180px'}
-                                                popupClassName="select-options"
-                                                options={branches || []}
-                                                // value={selectedBranch || ''}
-                                                placeholder={'Select a branch'}
-                                                // value={selectedRepo || Object.keys(repos)[0]}
-                                                onChange={(e) => updateKeysState('branch', e)}
-                                                // onChange={(e) => setSelectedBranch(e)}
+                            {formFields?.name && (
+                                <div>
+                                    <p className="title">Repos</p>
+                                    <span className="desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+                                    <div className="repos-container">
+                                        <div className="repos-header">
+                                            <label></label>
+                                            <label>Repo Name</label>
+                                            <label>Branch</label>
+                                            <label>Type</label>
+                                        </div>
+                                        <div className="repos-body">
+                                            {formFields?.keys?.connected_repos?.map((repo, index) => {
+                                                return (
+                                                    <IntegrationItem
+                                                        key={index}
+                                                        index={index}
+                                                        repo={repo}
+                                                        reposList={repos || []}
+                                                        updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
+                                                    />
+                                                );
+                                            })}
+                                            <IntegrationItem
+                                                index={formFields?.keys?.connected_repos?.length}
+                                                repo={''}
+                                                reposList={repos || []}
+                                                updateIntegrationList={(updatedFields, i) => console.log(updatedFields, i)}
                                             />
-                                        </Form.Item>
-                                        <Form.Item className="button-container">
-                                            <SelectComponent
-                                                colorType="black"
-                                                backgroundColorType="none"
-                                                borderColorType="none"
-                                                radiusType="semi-round"
-                                                // backgroundColorType="none"
-                                                // radiusType="semi-round"
-                                                height="32px"
-                                                width={'180px'}
-                                                popupClassName="select-options"
-                                                options={['functions']}
-                                                value={'functions'}
-                                                placeholder={'Select type'}
-                                                // value={selectedRepo || Object.keys(repos)[0]}
-                                                onChange={(e) => updateKeysState('functions', e)}
-                                            />
-                                        </Form.Item>
-                                        <label onClick={updateIntegration}>btn</label>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
@@ -339,6 +292,19 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontSize="14px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => close(value)}
+                                />
+                                <Button
+                                    width="80%"
+                                    height="45px"
+                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    isLoading={loadingSubmit}
+                                    // disabled={isValue && !creationForm.isFieldsTouched()}
+                                    onClick={updateIntegration}
                                 />
                             </div>
                         </Form.Item>

@@ -30,144 +30,41 @@ import SelectComponent from '../../../../../components/select';
 import { URL } from '../../../../../config';
 import Loader from '../../../../../components/loader';
 
-const IntegrationItem = ({ index, repo, reposList }) => {
+const IntegrationItem = ({ index, repo, reposList, updateIntegrationList }) => {
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
+    const [isEditting, setIsEditting] = useState(false);
     const [formFields, setFormFields] = useState({
         type: 'functions'
     });
-    const [repos, setRepos] = useState([]);
     const [branches, setBranches] = useState([]);
 
     useEffect(() => {
-        // getIntegration();
-        // console.log(reposList);
-        // console.log(repo);
+        setFormFields({ repo_name: repo.repository, repo_owner: repo.owner, branch: repo.branch, type: 'functions' });
     }, []);
 
-    // useEffect(() => {
-    //     const images = [];
-    //     images.push(INTEGRATION_LIST['GitHub'].banner.props.src);
-    //     images.push(INTEGRATION_LIST['GitHub'].insideBanner.props.src);
-    //     images.push(INTEGRATION_LIST['GitHub'].icon.props.src);
-    //     const promises = [];
-
-    //     images.forEach((imageUrl) => {
-    //         const image = new Image();
-    //         promises.push(
-    //             new Promise((resolve) => {
-    //                 image.onload = resolve;
-    //             })
-    //         );
-    //         image.src = imageUrl;
-    //     });
-
-    //     Promise.all(promises).then(() => {
-    //         setImagesLoaded(true);
-    //     });
-    // }, []);
-
-    // const updateKeysState = (field, value) => {
-    //     let updatedValue = { ...formFields.keys };
-    //     updatedValue[field] = value;
-    //     setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
-    // };
-
-    // const closeModal = (data, disconnect = false) => {
-    //     setTimeout(() => {
-    //         disconnect ? setLoadingDisconnect(false) : setLoadingSubmit(false);
-    //     }, 1000);
-    //     close(data);
-    //     message.success({
-    //         key: 'memphisSuccessMessage',
-    //         content: disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully',
-    //         duration: 5,
-    //         style: { cursor: 'pointer' },
-    //         onClick: () => message.destroy('memphisSuccessMessage')
-    //     });
-    // };
-
-    // const updateIntegration = async (withToken = true) => {
-    //     let newFormFields = { ...formFields };
-    //     try {
-    //         const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, { ...newFormFields });
-    //         dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
-    //         // closeModal(data);
-    //     } catch (err) {
-    //         setLoadingSubmit(false);
-    //     }
-    // };
-
-    // const createIntegration = async () => {
-    //     try {
-    //         const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, { ...formFields });
-    //         dispatch({ type: 'ADD_INTEGRATION', payload: data });
-    //         getIntegration();
-    //     } catch (err) {
-    //         setLoadingSubmit(false);
-    //     }
-    // };
-
-    // const getIntegration = async () => {
-    //     try {
-    //         const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-    //         // console.log(data);
-    //         setRepos(data?.repos);
-    //         // setConnectedRepos(data?.integration?.keys?.connected_repos);
-    //     } catch (error) {}
-    // };
-
-    // useEffect(() => {
-    //     console.log(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
-    //     formFields?.keys?.repo_name && formFields?.keys?.repo_owner && getSourceCodeBranches(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
-    // }, [formFields?.keys?.repo_name]);
-
-    // const updateRepo = (repo) => {
-    //     let updatedValue = { ...formFields.keys };
-    //     updatedValue = { ...updatedValue, ...{ repo_name: repo, repo_owner: repos[repo] } };
-    //     setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
-    // };
-
-    // const getSourceCodeBranches = async (repo, repo_owner) => {
-    //     try {
-    //         const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&repo_owner=${repo_owner}`);
-    //         console.log(data);
-    //         setBranches(data?.branches[formFields?.keys?.repo_name]);
-    //     } catch (error) {}
-    // };
-
-    // const disconnect = async () => {
-    //     setLoadingDisconnect(true);
-    //     try {
-    //         await httpRequest('DELETE', ApiEndpoints.DISCONNECT_INTEGRATION, {
-    //             name: formFields.name
-    //         });
-    //         dispatch({ type: 'REMOVE_INTEGRATION', payload: formFields.name });
-
-    //         closeModal({}, true);
-    //     } catch (err) {
-    //         setLoadingDisconnect(false);
-    //     }
-    // };
     useEffect(() => {
-        console.log(formFields);
-    }, [formFields]);
+        isEditting && updateIntegrationList(formFields, index);
+    }, [formFields.branch]);
 
     useEffect(() => {
         formFields?.repo_name && formFields?.repo_owner && getSourceCodeBranches(formFields?.repo_name, formFields?.repo_owner);
     }, [formFields?.repo_name]);
 
     const updateRepo = (repo) => {
+        setIsEditting(true);
         setFormFields((formFields) => ({ ...formFields, ...{ repo_name: repo, repo_owner: reposList[repo], branch: '' } }));
     };
 
     const updateBranch = (branch) => {
-        setFormFields((formFields) => ({ ...formFields, ...{ branch: branch } }));
+        isEditting && setFormFields((formFields) => ({ ...formFields, ...{ branch: branch } }));
+        setIsEditting(true);
     };
 
     const getSourceCodeBranches = async (repo, repo_owner) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&repo_owner=${repo_owner}`);
+            updateBranch(data?.branches[repo][0]);
             setBranches(data?.branches[repo]);
         } catch (error) {}
     };
@@ -175,24 +72,22 @@ const IntegrationItem = ({ index, repo, reposList }) => {
     return (
         <div>
             <div className="repos-item" repo={repo}>
+                <img src={githubBranchIcon} alt="githubBranchIcon" />
                 <Form.Item className="button-container">
-                    <span className="select-repo-span">
-                        {/* <img src={githubBranchIcon} alt="githubBranchIcon" /> */}
-                        <SelectComponent
-                            colorType="black"
-                            backgroundColorType="none"
-                            radiusType="semi-round"
-                            borderColorType="gray"
-                            height="32px"
-                            width={'180px'}
-                            popupClassName="select-options"
-                            value={formFields?.repo_name || repo.repository}
-                            onChange={(e) => {
-                                updateRepo(e);
-                            }}
-                            options={Object?.keys(reposList)}
-                        />
-                    </span>
+                    <SelectComponent
+                        colorType="black"
+                        backgroundColorType="none"
+                        radiusType="semi-round"
+                        borderColorType="gray"
+                        height="32px"
+                        width={'90%'}
+                        popupClassName="select-options"
+                        value={formFields?.repo_name}
+                        onChange={(e) => {
+                            updateRepo(e);
+                        }}
+                        options={Object?.keys(reposList)}
+                    />
                 </Form.Item>
 
                 <Form.Item className="button-container">
@@ -202,8 +97,8 @@ const IntegrationItem = ({ index, repo, reposList }) => {
                         radiusType="semi-round"
                         borderColorType="gray"
                         height="32px"
-                        width={'180px'}
-                        value={formFields?.branch || repo.branch}
+                        width={'90%'}
+                        value={formFields?.branch || branches[0]}
                         options={branches}
                         popupClassName="select-options"
                         onChange={(e) => {
@@ -211,19 +106,6 @@ const IntegrationItem = ({ index, repo, reposList }) => {
                         }}
                     />
                 </Form.Item>
-                <Form.Item className="button-container">
-                    <SelectComponent
-                        colorType="black"
-                        backgroundColorType="none"
-                        radiusType="semi-round"
-                        borderColorType="none"
-                        height="32px"
-                        width={'180px'}
-                        value={'functions'}
-                        disabled
-                    />
-                </Form.Item>
-                {/* <label onClick={updateIntegration}>btn</label> */}
             </div>
             <Divider />
         </div>
