@@ -21,11 +21,11 @@ import { StationStoreContext } from '../../domain/stationOverview';
 const PartitionsFilter = ({ partitions_number, height }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isOpen, setIsOpen] = useState(false);
-    const [selectedPartition, setSelectedPartition] = useState(0);
+    const [selectedPartition, setSelectedPartition] = useState(-1);
 
     const handleApply = (i) => {
-        setSelectedPartition(i);
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: i });
+        setSelectedPartition(i === 0 ? -1 : i);
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: i === 0 ? -1 : i });
         setIsOpen(false);
     };
 
@@ -66,7 +66,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
                 <div className="filter-partition-container">
                     <div>
                         <label className="filter-title">Filter: </label>
-                        {selectedPartition == 0 ? `All partitions` : `Partition ${selectedPartition}`}
+                        {selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}
                     </div>
                     <img src={CollapseArrow} alt="CollapseArrow" />
                 </div>

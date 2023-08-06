@@ -46,10 +46,14 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
         try {
             let purgeDataPayload = purgeData;
             purgeDataPayload['station_name'] = stationName;
+            purgeDataPayload['partitions_list'] = [stationState?.stationPartition];
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
             stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
             let data = stationState?.stationSocketData;
-            if (purgeDataPayload['purge_station']) data['total_messages'] = 0;
+            if (purgeDataPayload['purge_station']) {
+                data['total_messages'] = 0;
+                data['messages'] = [];
+            }
             if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
         } catch (error) {
@@ -66,7 +70,7 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
             setLoader(false);
             setPurgeData({});
         }
-    }, [stationState?.stationSocketData]);
+    }, [stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages]);
 
     return (
         <div className="delete-modal-wrapper">

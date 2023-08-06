@@ -29,7 +29,7 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 const initializeState = {
     stationMetaData: { is_native: true },
     stationSocketData: {},
-    stationPartition: 0
+    stationPartition: -1
 };
 
 const StationOverview = () => {
@@ -66,7 +66,10 @@ const StationOverview = () => {
 
     const getStationDetails = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=${stationState?.stationPartition || -1}`
+            );
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
@@ -78,11 +81,14 @@ const StationOverview = () => {
             }
         }
     };
+    useEffect(() => {
+        getStationDetails();
+    }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages]);
 
     useEffect(() => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: 0 });
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
         getStaionMetaData();
         getStationDetails();
     }, []);

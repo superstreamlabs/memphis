@@ -112,11 +112,14 @@ const Messages = () => {
         let messages;
         try {
             if (tabValue === tabs[0]) {
-                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
+                const message_seqs = isCheck.map((item) => {
+                    return { message_seq: Number(item.split('_')[0]), partition_number: Number(item.split('_')[1]) };
+                });
+                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, messages: message_seqs });
                 messages = stationState?.stationSocketData?.messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
-                        return item.message_seq !== messageId;
+                        return `${item.message_seq}_${item.partition}` !== messageId;
                     });
                 });
             } else {
