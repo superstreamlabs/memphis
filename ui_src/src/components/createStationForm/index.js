@@ -628,6 +628,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         radiusType="circle"
                                                         backgroundColorType="purple"
                                                         fontSize="12px"
+                                                        htmlType="button"
                                                         fontWeight="bold"
                                                         boxShadowStyle="none"
                                                         disabled={!allowEdit}
