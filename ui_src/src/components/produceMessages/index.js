@@ -56,7 +56,7 @@ const ProduceMessages = ({ stationName, cancel }) => {
     };
 
     const handleEditorChange = (newValue) => {
-        if (newValue.length <= 100) {
+        if (newValue.length <= isCloud() ? 200 : 60) {
             setMessageExample(newValue);
         }
     };
@@ -90,7 +90,7 @@ const ProduceMessages = ({ stationName, cancel }) => {
 
     const onFinish = async () => {
         const formFields = await creationForm.validateFields();
-        if (formFields.message_headers) convertArrayToObject(formFields.message_headers);
+        if (formFields.message_headers) formFields.message_headers = convertArrayToObject(formFields.message_headers);
         if (formFields.partition_number === 'all') formFields.partition_number = -1;
         const bodyRequest = { ...formFields, message_payload: messageExample, station_name: stationName };
         try {

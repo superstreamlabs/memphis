@@ -470,8 +470,9 @@ export const generateJSONWithMaxLength = (maxLength) => {
 
     let result = generateValue(0, 3);
     result = JSON.stringify(result, null, 2);
-    if (result?.length > 100) {
+    if (result?.length > maxLength) {
         result = generateValue(0, 3);
+        result = JSON.stringify(result, null, 2);
     }
     return result;
 };
