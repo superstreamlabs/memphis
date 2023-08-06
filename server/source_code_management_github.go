@@ -155,10 +155,10 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	}
 
 	updateIntegration := map[string]interface{}{}
-	updateIntegration["token"] = githubIntegrationFromCache.Keys["token"]
+	updateIntegration["token"] = keys["token"].(string)
 	for _, key := range keys["connected_repos"].([]interface{}) {
-		keyObj := key.(map[string]interface{})
-		repoOwner, ok := keyObj["repo_owner"].(string)
+		connectedRepoDetails := key.(map[string]interface{})
+		repoOwner, ok := connectedRepoDetails["repo_owner"].(string)
 		if !ok {
 			userDetails, _, err := client.Users.Get(context.Background(), "")
 			if err != nil {
@@ -166,16 +166,16 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 			}
 			repoOwner = userDetails.GetLogin()
 		}
-		_, _, err = client.Repositories.Get(context.Background(), repoOwner, keyObj["repo_name"].(string))
+		_, _, err = client.Repositories.Get(context.Background(), repoOwner, connectedRepoDetails["repo_name"].(string))
 		if err != nil {
 			return models.Integration{}, fmt.Errorf("repository not found")
 		}
 
 		githubDetails := githubRepoDetails{
-			Repository: keyObj["repo_name"].(string),
-			Branch:     keyObj["branch"].(string),
-			Type:       keyObj["type"].(string),
-			RepoOwner:  keyObj["repo_owner"].(string),
+			Repository: connectedRepoDetails["repo_name"].(string),
+			Branch:     connectedRepoDetails["branch"].(string),
+			Type:       connectedRepoDetails["type"].(string),
+			RepoOwner:  connectedRepoDetails["repo_owner"].(string),
 		}
 
 		if connectedRepositories, ok := updateIntegration["connected_repos"].([]githubRepoDetails); !ok {
@@ -306,12 +306,24 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 	if err != nil {
 		return models.Integration{}, map[string][]string{}, err
 	}
-	branches, _, err := client.Repositories.ListBranches(context.Background(), repoOwner, repoName, nil)
-	if err != nil {
-		if strings.Contains(err.Error(), "Not Found") {
-			return models.Integration{}, map[string][]string{}, fmt.Errorf("The repository does not exist %s ", repoName)
+
+	opts := &github.ListOptions{PerPage: 100}
+	var branches []*github.Branch
+	var resp *github.Response
+	for {
+		branches, resp, err = client.Repositories.ListBranches(context.Background(), repoOwner, repoName, opts)
+		if err != nil {
+			if strings.Contains(err.Error(), "Not Found") {
+				return models.Integration{}, map[string][]string{}, fmt.Errorf("The repository does not exist %s ", repoName)
+			}
+			return models.Integration{}, map[string][]string{}, err
 		}
-		return models.Integration{}, map[string][]string{}, err
+
+		if resp.NextPage == 0 {
+			// No more pages
+			break
+		}
+		opts.Page = resp.NextPage
 	}
 
 	// in case when connectedRepos holds multiple branches of the same repo
