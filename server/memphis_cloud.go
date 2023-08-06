@@ -1912,8 +1912,8 @@ func validateAmountOfMessagesToProduce(amount int) error {
 }
 
 func validatePayloadLength(payload string) error {
-	if len(payload) > 50 {
-		return errors.New("max message payload length is 50 characters")
+	if len(payload) > 100 {
+		return errors.New("max message payload length is 100 characters")
 	}
 
 	return nil
@@ -1999,6 +1999,9 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 }
 
 func validateRetentionType(retentionType string) error {
+	if retentionType == "ack_based"{
+		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
+	}
 	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
 		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
 	}
