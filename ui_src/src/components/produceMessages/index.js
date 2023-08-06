@@ -40,7 +40,7 @@ const partitons = ['all'];
 const ProduceMessages = ({ stationName, cancel }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const history = useHistory();
-    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 200 : 60));
+    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 120 : 60));
     const [loading, setLoading] = useState(false);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({});
@@ -52,11 +52,11 @@ const ProduceMessages = ({ stationName, cancel }) => {
     };
 
     const generateMessage = () => {
-        setMessageExample(generateJSONWithMaxLength(isCloud() ? 200 : 60));
+        setMessageExample(generateJSONWithMaxLength(isCloud() ? 120 : 60));
     };
 
     const handleEditorChange = (newValue) => {
-        if (newValue.length <= isCloud() ? 200 : 60) {
+        if (isCloud() || (!isCloud() && newValue.length <= 100)) {
             setMessageExample(newValue);
         }
     };
