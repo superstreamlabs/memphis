@@ -61,10 +61,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]CreateSlackIntegration at handleCreateSlackIntegration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateSlackIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -75,10 +75,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		s3Integration, errorCode, err := it.handleCreateS3Integration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]CreateS3Integration at handleCreateS3Integration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateS3Integration at handleCreateS3Integration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -89,10 +89,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		githubIntegration, errorCode, err := it.handleCreateGithubIntegration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateGithubIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -145,10 +145,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration(user.TenantName, "slack", body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant:%v][user: %v]UpdateSlackIntegration at handleUpdateSlackIntegration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant:%v][user: %v]UpdateSlackIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -159,10 +159,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		s3Integration, errorCode, err := it.handleUpdateS3Integration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]UpdateS3Integration at handleUpdateS3Integration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]UpdateS3Integration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -173,10 +173,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		githubIntegration, errorCode, err := it.handleUpdateGithubIntegration(user, body)
 		if err != nil {
 			if errorCode == 500 {
-				serv.Errorf("[tenant: %v][user: %v]UpdateGithubIntegration at handleUpdateGithubIntegration code 500: %v", user.TenantName, user.Username, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]UpdateGithubIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
+				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -193,7 +193,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	c.IndentedJSON(200, integration)
 }
 
-func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle, token, repo, branch, repoType, owner string) (map[string]interface{}, map[string]bool) {
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle, token, repo, branch, repoType, repoOwner string) (map[string]interface{}, map[string]bool) {
 	keys := make(map[string]interface{})
 	properties := make(map[string]bool)
 	switch integrationType {
@@ -213,8 +213,8 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 	case "github":
 		keys["token"] = token
 		keys["connected_repos"] = []githubRepoDetails{}
-		if repo != "" {
-			keys["connected_repos"] = []githubRepoDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: owner}}
+		if repoOwner != "" {
+			keys["connected_repos"] = []githubRepoDetails{{Repository: repo, Branch: branch, Type: repoType, Owner: repoOwner}}
 		}
 	}
 
@@ -263,7 +263,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
-	integration, branchesMap, err := getSourceCodeDetails("", "", user.TenantName, user, body, "get_all_repos")
+	integration, branchesMap, err := getSourceCodeDetails(user.TenantName, body, "get_all_repos")
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -289,9 +289,7 @@ func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 		return
 	}
 
-	owner := strings.ToLower(body.Owner)
-	repoName := body.RepoName
-	integration, branches, err := getSourceCodeDetails(owner, repoName, user.TenantName, user, body, "get_all_branches")
+	integration, branches, err := getSourceCodeDetails(user.TenantName, body, "get_all_branches")
 	if err != nil {
 		if strings.Contains(err.Error(), "does not exist") {
 			serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
