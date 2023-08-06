@@ -193,17 +193,6 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 						} else {
 							updateIntegration["connected_repos"] = []interface{}{githubDetails}
 						}
-						for _, connectRepo := range updateIntegration["connected_repos"].([]interface{}) {
-							connectRepository := connectRepo.(githubRepoDetails)
-							fmt.Println(connectRepo)
-							repoDetails := map[string]interface{}{
-								"repository": connectRepository.Repository,
-								"branch":     connectRepository.Branch,
-								"type":       connectRepository.Type,
-								"repo_name":  connectRepository.RepoOwner,
-							}
-							connectedRepos = append(connectedRepos, repoDetails)
-						}
 					}
 				}
 			}
@@ -220,6 +209,9 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 
 	}
 
+	if _, ok := updateIntegration["connected_repos"].([]interface{}); !ok {
+		updateIntegration["connected_repos"] = connectedRepos
+	}
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
 		return models.Integration{}, fmt.Errorf("updateGithubIntegration at UpdateIntegration: Integration %v: %v", "github", err.Error())
