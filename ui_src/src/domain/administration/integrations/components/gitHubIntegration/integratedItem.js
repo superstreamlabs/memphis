@@ -203,8 +203,9 @@ const IntegrationItem = ({ index, repo, reposList }) => {
                         borderColorType="gray"
                         height="32px"
                         width={'180px'}
-                        value={repo.branch}
+                        value={formFields?.branch || repo.branch}
                         options={branches}
+                        popupClassName="select-options"
                         onChange={(e) => {
                             updateBranch(e);
                         }}
