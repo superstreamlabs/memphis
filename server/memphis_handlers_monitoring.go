@@ -531,7 +531,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		totalMessages, err = stationsHandler.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
+				serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetTotalMessages: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
@@ -543,7 +543,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		totalMessages, err = stationsHandler.GetTotalPartitionMessages(station.TenantName, station.Name, body.PartitionNumber)
 		if err != nil {
 			if IsNatsErr(err, JSStreamNotFoundErr) {
-				serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetAuditLogsByStation: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
+				serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetTotalPartitionMessages: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Station " + body.StationName + " does not exist"})
 			} else {
 				serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
