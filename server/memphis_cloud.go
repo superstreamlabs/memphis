@@ -2087,10 +2087,11 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 		return
 	}
 
-	if body.MsgHdrs != nil {
-		body.MsgHdrs["$memphis_producedBy"] = "UI"
-		body.MsgHdrs["$memphis_connectionId"] = "UI"
+	if body.MsgHdrs == nil {
+		body.MsgHdrs = make(map[string]string)
 	}
+	body.MsgHdrs["$memphis_producedBy"] = "UI"
+	body.MsgHdrs["$memphis_connectionId"] = "UI"
 	// if shouldRoundRobin {
 	// 	partition := (i % len(station.Partitions)) + 1
 	// 	subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), partition)
