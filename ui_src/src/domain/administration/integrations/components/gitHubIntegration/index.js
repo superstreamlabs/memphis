@@ -126,6 +126,7 @@ const GitHubIntegration = ({ close, value }) => {
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
+            console.log(data);
             setRepos(data?.repos);
             // setConnectedRepos(data?.integration?.keys?.connected_repos);
         } catch (error) {}
@@ -143,6 +144,7 @@ const GitHubIntegration = ({ close, value }) => {
     };
 
     const getSourceCodeBranches = async (repo, owner) => {
+        console.log('in');
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&owner=${owner}`);
             console.log(data);
@@ -264,7 +266,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     <label>BTN</label>
                                 </div>
                                 <div className="repos-body">
-                                    {state.integrationsList[0].keys?.connected_repos?.map((repo, index) => {
+                                    {state.integrationsList[0]?.keys?.connected_repos?.map((repo, index) => {
                                         return (
                                             <div className="repos-item" key={index}>
                                                 <Form.Item className="button-container">
@@ -326,7 +328,7 @@ const GitHubIntegration = ({ close, value }) => {
                                                     popupClassName="select-options"
                                                     options={Object?.keys(repos) || []}
                                                     placeholder={'Select a repo'}
-                                                    value={formFields?.keys?.repo_name}
+                                                    value={formFields?.keys?.repo_name || ''}
                                                     onChange={(e) => {
                                                         updateRepo(e);
                                                     }}
