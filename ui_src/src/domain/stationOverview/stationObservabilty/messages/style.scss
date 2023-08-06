@@ -145,7 +145,7 @@
                         margin-left: 3px !important;
                     }
                     .preview-message {
-                        width: 114px;
+                        min-width: 114px;
                         overflow: hidden;
                         text-overflow: ellipsis;
                         white-space: nowrap;

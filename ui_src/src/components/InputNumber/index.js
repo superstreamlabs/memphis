@@ -18,14 +18,14 @@ import React from 'react';
 import ArrowDropDownRounded from '@material-ui/icons/ArrowDropDownRounded';
 import ArrowDropUpRounded from '@material-ui/icons/ArrowDropUpRounded';
 
-const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled }) => {
+const InputNumberComponent = ({ min, max, onChange, value, placeholder, disabled, bordered = false }) => {
     const handleChange = (e) => {
         onChange(e);
     };
 
     return (
         <InputNumber
-            bordered={false}
+            bordered={bordered}
             min={min}
             max={max}
             keyboard={true}

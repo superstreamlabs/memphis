@@ -253,6 +253,22 @@ const Messages = () => {
         );
     };
 
+    const getDescriptin = () => {
+        if (stationState?.stationSocketData?.connected_producers?.length > 0 || stationState?.stationSocketData?.disconnected_producers?.length > 0) {
+            if (
+                stationState?.stationMetaData?.retention_type === 'ack_based' &&
+                stationState?.stationSocketData?.disconnected_cgs?.length === 0 &&
+                stationState?.stationSocketData?.connected_cgs?.length === 0
+            ) {
+                return 'When retention is ack-based, messages will be auto-deleted if no consumers are connected to the station';
+            } else {
+                return 'Start / Continue producing data.';
+            }
+        } else {
+            return 'Create your 1st producer and start producing data.';
+        }
+    };
+
     return (
         <div className="messages-container">
             <div className="header">
@@ -332,11 +348,7 @@ const Messages = () => {
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages</p>
-                    <span className="des">
-                        {stationState?.stationSocketData?.connected_producers.length > 0 || stationState?.stationSocketData?.disconnected_producers.length > 0
-                            ? 'Start / Continue producing data'
-                            : 'Create your 1st producer and start producing data'}
-                    </span>
+                    <span className="des">{getDescriptin()}</span>
                 </div>
             )}
             {tabValue === tabs[1] &&

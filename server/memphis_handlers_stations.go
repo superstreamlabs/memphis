@@ -255,7 +255,7 @@ func (s *Server) createStationDirectIntern(c *client,
 			return
 		}
 
-		if csr.RetentionValue <= 0 {
+		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			retentionValue = 604800 // 1 week
 		} else {
@@ -838,7 +838,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 			return
 		}
 
-		if body.RetentionValue <= 0 {
+		if body.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
 			body.RetentionValue = 604800 // 1 week
 		}
@@ -1966,17 +1966,6 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
-func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-pushed-tierd-storage-button")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	var body models.UpdateDlsConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -2159,7 +2148,6 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 		return beforeSuffix, tenantId, nil
 	}
 	return username, -1, nil
-
 }
 
 func (s *Server) RemoveOldStations() {

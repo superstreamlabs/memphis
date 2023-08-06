@@ -51,11 +51,11 @@ const retanionOptions = [
         label: 'Messages'
     },
     {
-        id: 3,
+        id: 4,
         value: 'ack_based',
         disabled: isCloud() ? false : true,
         label: 'Ack based',
-        tooltip: (
+        tooltip: isCloud() ? null : (
             <div>
                 <span>
                     Available for
@@ -178,20 +178,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
             let replicas = [];
-            switch (data?.available_replicas) {
-                case 1:
-                    replicas = ['No HA (1)'];
-                    break;
-                case 3:
-                    replicas = ['No HA (1)', 'HA (3)'];
-                    break;
-                case 5:
-                    replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
-                    break;
-                default:
-                    replicas = ['No HA (1)'];
-                    break;
-            }
+            if (data?.available_replicas >= 1 && data?.available_replicas < 3) replicas = ['No HA (1)'];
+            else if (data?.available_replicas >= 3 && data?.available_replicas < 5) replicas = ['No HA (1)', 'HA (3)'];
+            else if (data?.available_replicas >= 5) replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
+            else replicas = ['No HA (1)'];
+
             setActualPods(replicas);
         } catch (error) {}
     };
@@ -456,7 +447,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
-                            {retentionType === 'message_age_sec' && (
+                            {retentionType === retanionOptions[0].value && (
                                 <div className="time-value">
                                     <div className="days-section">
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
@@ -515,7 +506,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     </div>
                                 </div>
                             )}
-                            {retentionType === 'bytes' && (
+                            {retentionType === retanionOptions[1].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
                                         <Input
@@ -536,7 +527,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <p>bytes</p>
                                 </div>
                             )}
-                            {retentionType === 'messages' && (
+                            {retentionType === retanionOptions[2].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
                                         <Input
@@ -555,6 +546,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         />
                                     </Form.Item>
                                     <p>messages</p>
+                                </div>
+                            )}
+                            {retentionType === retanionOptions[3].value && (
+                                <div className="ackbased-type">
+                                    <p>Messages have a default retention of 2 weeks until acknowledged, with auto-deletion if no active consumer.</p>
                                 </div>
                             )}
                         </div>
@@ -632,6 +628,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         radiusType="circle"
                                                         backgroundColorType="purple"
                                                         fontSize="12px"
+                                                        htmlType="button"
                                                         fontWeight="bold"
                                                         boxShadowStyle="none"
                                                         disabled={!allowEdit}
