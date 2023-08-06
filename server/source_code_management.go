@@ -18,8 +18,8 @@ import (
 )
 
 type GetSourceCodeBranchesSchema struct {
-	RepoName string `form:"repo_name" json:"repo_name" binding:"required"`
-	Owner    string `form:"owner" json:"owner" binding:"required"`
+	RepoName  string `form:"repo_name" json:"repo_name" binding:"required"`
+	RepoOwner string `form:"repo_owner" json:"repo_owner" binding:"required"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {

@@ -17,7 +17,7 @@ type githubRepoDetails struct {
 	Repository string `json:"repository"`
 	Branch     string `json:"branch"`
 	Type       string `json:"type"`
-	Owner      string `json:"owner"`
+	RepoOwner  string `json:"repo_owner"`
 }
 
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
@@ -154,7 +154,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		return models.Integration{}, fmt.Errorf("updateGithubIntegration at getGithubClient: %v", err.Error())
 	}
 
-	repoOwner, ok := keys["owner"].(string)
+	repoOwner, ok := keys["repo_owner"].(string)
 	if !ok {
 		userDetails, _, err := client.Users.Get(context.Background(), "")
 		if err != nil {
@@ -173,7 +173,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		Repository: keys["repo_name"].(string),
 		Branch:     keys["branch"].(string),
 		Type:       keys["type"].(string),
-		Owner:      keys["owner"].(string),
+		RepoOwner:  keys["repo_owner"].(string),
 	}
 
 	connectedRepos := githubIntegrationFromCache.Keys["connected_repos"].([]interface{})
@@ -312,7 +312,7 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 
 func (s *Server) getGithubBranches(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {
 	branchesMap := make(map[string][]string)
-	repoOwner := strings.ToLower(body.(GetSourceCodeBranchesSchema).Owner)
+	repoOwner := strings.ToLower(body.(GetSourceCodeBranchesSchema).RepoOwner)
 	repoName := body.(GetSourceCodeBranchesSchema).RepoName
 
 	token := integration.Keys["token"].(string)
