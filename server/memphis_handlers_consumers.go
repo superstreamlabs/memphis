@@ -348,28 +348,29 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	var deletedCgs []models.Cg
 
 	for _, cg := range m {
+		for _, p := range station.PartitionsList { // check with shay
+			cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name, p)
+			if err != nil {
+				continue // ignoring cases where the consumer exist in memphis but not in nats
+			}
 
-		cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
-		if err != nil {
-			continue // ignoring cases where the consumer exist in memphis but not in nats
-		}
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
+			if err != nil {
+				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
+			}
 
-		totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
-		if err != nil {
-			return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
-		}
+			cg.InProcessMessages += cgInfo.NumAckPending
+			cg.UnprocessedMessages += int(cgInfo.NumPending)
+			cg.PoisonMessages += totalPoisonMsgs
 
-		cg.InProcessMessages = cgInfo.NumAckPending
-		cg.UnprocessedMessages = int(cgInfo.NumPending)
-		cg.PoisonMessages = totalPoisonMsgs
-
-		if len(cg.ConnectedConsumers) > 0 {
-			cg.IsActive = true
-			connectedCgs = append(connectedCgs, *cg)
-		} else if len(cg.DisconnectedConsumers) > 0 {
-			disconnectedCgs = append(disconnectedCgs, *cg)
-		} else {
-			deletedCgs = append(deletedCgs, *cg)
+			if len(cg.ConnectedConsumers) > 0 {
+				cg.IsActive = true
+				connectedCgs = append(connectedCgs, *cg)
+			} else if len(cg.DisconnectedConsumers) > 0 {
+				disconnectedCgs = append(disconnectedCgs, *cg)
+			} else {
+				deletedCgs = append(deletedCgs, *cg)
+			}
 		}
 	}
 

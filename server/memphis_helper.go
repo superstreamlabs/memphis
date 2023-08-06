@@ -684,9 +684,17 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string) (*ConsumerInfo, error) {
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionNumber int) (*ConsumerInfo, error) {
 	cgName = replaceDelimiters(cgName)
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
+
+	var streamName string
+	if partitionNumber == -1 {
+		streamName = stationName.Intern()
+	} else {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber)
+	}
+
+	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, streamName, cgName)
 
 	var resp JSApiConsumerInfoResponse
 	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
@@ -715,7 +723,12 @@ func (s *Server) RemoveStream(tenantName, streamName string) error {
 }
 
 func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int) error {
-	streamAndPartition := fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	var streamAndPartition string
+	if partitionNumber == -1 {
+		streamAndPartition = streamName
+	} else {
+		streamAndPartition = fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	}
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
 	var resp JSApiStreamPurgeResponse

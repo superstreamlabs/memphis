@@ -211,7 +211,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 
 		partitionNumber, err := strconv.Atoi(partitionNumberStr)
 		if err != nil {
-			return nil, errors.New("invalid partition number")
+			return nil, fmt.Errorf("invalid partition number - %v", partitionNumberStr)
 		}
 
 		stationName := strings.Join(splitedResp[1:len(splitedResp)-1], ".")
@@ -323,7 +323,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}

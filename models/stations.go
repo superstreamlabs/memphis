@@ -193,9 +193,10 @@ type DropDlsMessagesSchema struct {
 }
 
 type PurgeStationSchema struct {
-	StationName  string `json:"station_name" binding:"required"`
-	PurgeDls     bool   `json:"purge_dls"`
-	PurgeStation bool   `json:"purge_station"`
+	StationName    string `json:"station_name" binding:"required"`
+	PurgeDls       bool   `json:"purge_dls"`
+	PurgeStation   bool   `json:"purge_station"`
+	PartitionsList []int  `json:"partitions_list"`
 }
 
 type RemoveMessagesSchema struct {
@@ -204,7 +205,7 @@ type RemoveMessagesSchema struct {
 }
 
 type MessageToDelete struct {
-	MessageSeqs     uint64 `json:"message_seq" binding:"required"`
+	MessageSeq      uint64 `json:"message_seq" binding:"required"`
 	PartitionNumber int    `json:"partition_number" binding:"required"`
 }
 
