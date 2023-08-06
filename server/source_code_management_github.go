@@ -314,7 +314,7 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 		branches, resp, err = client.Repositories.ListBranches(context.Background(), repoOwner, repoName, opts)
 		if err != nil {
 			if strings.Contains(err.Error(), "Not Found") {
-				return models.Integration{}, map[string][]string{}, fmt.Errorf("The repository does not exist %s ", repoName)
+				return models.Integration{}, map[string][]string{}, fmt.Errorf("The repository %s does not exist", repoName)
 			}
 			return models.Integration{}, map[string][]string{}, err
 		}
