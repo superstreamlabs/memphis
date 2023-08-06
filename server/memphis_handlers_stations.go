@@ -1572,7 +1572,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
 	if station.IsNative {
-		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence))
+		poisonedCgs, err = GetPoisonedCgsByMessage(station, int(sm.Sequence), body.PartitionNumber)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetPoisonedCgsByMessage: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1580,7 +1580,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 
 		for i, cg := range poisonedCgs {
-			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName)
+			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName, body.PartitionNumber)
 			if err != nil {
 				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2176,11 +2176,22 @@ func (sh StationsHandler) PurgeStation(c *gin.Context) {
 	}
 
 	if body.PurgeDls {
-		err := db.PurgeDlsMsgsFromStation(station.ID)
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]PurgeStation dls at PurgeDlsMsgsFromStation: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-			return
+		if body.PartitionsList[0] == -1 {
+			err := db.PurgeDlsMsgsFromStation(station.ID)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]PurgeStation dls at PurgeDlsMsgsFromStation: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+		} else {
+			for _, p := range body.PartitionsList {
+				err := db.PurgeDlsMsgsFromPartition(station.ID, p)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]PurgeStation dls at PurgeDlsMsgsFromStation: %v", user.TenantName, user.Username, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			}
 		}
 	}
 

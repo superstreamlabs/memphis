@@ -684,9 +684,17 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string) (*ConsumerInfo, error) {
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionNumber int) (*ConsumerInfo, error) {
 	cgName = replaceDelimiters(cgName)
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
+
+	var streamName string
+	if partitionNumber == -1 {
+		streamName = stationName.Intern()
+	} else {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber)
+	}
+
+	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, streamName, cgName)
 
 	var resp JSApiConsumerInfoResponse
 	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)

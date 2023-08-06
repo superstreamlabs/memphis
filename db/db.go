@@ -481,6 +481,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -512,6 +513,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		validation_error VARCHAR DEFAULT '',
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
+		partition_number INTEGER NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -5145,7 +5147,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string) (models.DlsMessage, error) {
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string, partitionNumber int) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5163,8 +5165,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 			message_type,
 			validation_error,
 			tenant_name,
-			producer_name) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			producer_name,
+			partition_number) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id`
 
 	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
@@ -5175,7 +5178,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName, producerName)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName, producerName, partitionNumber)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -5206,8 +5209,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 			Data:     messageDetails.Data,
 			Headers:  messageDetails.Headers,
 		},
-		UpdatedAt:  updatedAt,
-		TenantName: tenantName,
+		UpdatedAt:       updatedAt,
+		TenantName:      tenantName,
+		PartitionNumber: partitionNumber,
 	}
 
 	if err := rows.Err(); err != nil {
@@ -5230,7 +5234,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 	return deadLetterPayload, nil
 }
 
-func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq, partitionNumber int) (bool, models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5240,14 +5244,14 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	}
 	defer connection.Release()
 
-	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND partition_number = $3 LIMIT 1`
 
 	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
 	if err != nil {
 		return false, models.DlsMessage{}, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, partitionNumber)
 	if err != nil {
 		return false, models.DlsMessage{}, err
 	}
@@ -5264,7 +5268,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5301,12 +5305,12 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 	}
 	checkRows.Close()
 
-	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 LIMIT 1 FOR UPDATE`
+	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 AND partition_number = $4 LIMIT 1 FOR UPDATE`
 	stmt, err = tx.Prepare(ctx, "handle_insert_dls_message", query)
 	if err != nil {
 		return 0, err
 	}
-	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName)
+	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName, partitionNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -5328,7 +5332,8 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			updated_at,
 			message_type,
 			validation_error,
-			tenant_name
+			tenant_name,
+			partition_number
 			) 
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id`
@@ -5341,7 +5346,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName, partitionNumber)
 		if err != nil {
 			return 0, err
 		}
@@ -5496,6 +5501,28 @@ func PurgeDlsMsgsFromStation(station_id int) error {
 	return nil
 }
 
+func PurgeDlsMsgsFromPartition(station_id, partitionNumber int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromPartition: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where station_id=$1 AND partition_number = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "purge_dls_messages", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, station_id, partitionNumber)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromPartition: " + err.Error())
+	}
+	return nil
+}
+
 func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -5534,6 +5561,35 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
 		return []models.DlsMessage{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+}
+
+func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 1000`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
 	if err != nil {
 		return []models.DlsMessage{}, err
 	}
