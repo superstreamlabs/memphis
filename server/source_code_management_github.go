@@ -163,14 +163,14 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		repoOwner = userDetails.GetLogin()
 	}
 
-	_, _, err = client.Repositories.Get(context.Background(), repoOwner, keys["repo"].(string))
+	_, _, err = client.Repositories.Get(context.Background(), repoOwner, keys["repo_name"].(string))
 	if err != nil {
 		return models.Integration{}, fmt.Errorf("repository not found")
 	}
 
 	updateIntegration := map[string]interface{}{}
 	githubDetails := githubRepoDetails{
-		Repository: keys["repo"].(string),
+		Repository: keys["repo_name"].(string),
 		Branch:     keys["branch"].(string),
 		Type:       keys["type"].(string),
 		Owner:      keys["owner"].(string),
@@ -179,29 +179,27 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	connectedRepos := githubIntegrationFromCache.Keys["connected_repos"].([]interface{})
 	branchesPerRepo := orderBranchesPerConnectedRepos(connectedRepos)
 	updateIntegration["token"] = githubIntegrationFromCache.Keys["token"]
-	if repos, ok := githubIntegrationFromCache.Keys["connected_repos"].([]interface{}); ok {
-		if len(repos) > 0 {
-			// ignore connected_repo that already exists
-			isRepoExists := false
-			for repo, branches := range branchesPerRepo {
-				if repo == keys["repo"].(string) {
-					isRepoExists = true
-					isBranchExists := containsElement(branches, keys["branch"].(string))
-					if !isBranchExists {
-						updateIntegration["connected_repos"] = append(repos, githubDetails)
-					}
+	if len(connectedRepos) > 0 {
+		// ignore connected_repo that already exists
+		isRepoExists := false
+		for repo, branches := range branchesPerRepo {
+			if repo == keys["repo_name"].(string) {
+				isRepoExists = true
+				isBranchExists := containsElement(branches, keys["branch"].(string))
+				if !isBranchExists {
+					updateIntegration["connected_repos"] = append(connectedRepos, githubDetails)
 				}
 			}
-
-			if !isRepoExists {
-				updateIntegration["connected_repos"] = append(repos, githubDetails)
-			}
-			if _, ok = updateIntegration["connected_repos"].([]interface{}); !ok {
-				updateIntegration["connected_repos"] = repos
-			}
-		} else {
-			updateIntegration["connected_repos"] = []githubRepoDetails{githubDetails}
 		}
+
+		if !isRepoExists {
+			updateIntegration["connected_repos"] = append(connectedRepos, githubDetails)
+		}
+		if _, ok = updateIntegration["connected_repos"].([]interface{}); !ok {
+			updateIntegration["connected_repos"] = connectedRepos
+		}
+	} else {
+		updateIntegration["connected_repos"] = []githubRepoDetails{githubDetails}
 	}
 
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
