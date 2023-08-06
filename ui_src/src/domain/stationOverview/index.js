@@ -100,7 +100,10 @@ const StationOverview = () => {
         const subscribeAndListen = async () => {
             try {
                 (async () => {
-                    const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.station_overview_data.${stationName}.${3}`, sc.encode('SUB'));
+                    const rawBrokerName = await state.socket?.request(
+                        `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition}`,
+                        sc.encode('SUB')
+                    );
                     if (rawBrokerName) {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
                         sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition}.${brokerName}`);
@@ -137,7 +140,7 @@ const StationOverview = () => {
                 }
             }
         };
-    }, [state.socket]);
+    }, [stationState?.stationPartition]);
 
     return (
         <StationStoreContext.Provider value={[stationState, stationDispatch]}>
