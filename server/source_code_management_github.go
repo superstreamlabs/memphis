@@ -155,7 +155,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	}
 
 	updateIntegration := map[string]interface{}{}
-	connectedRepos := githubIntegrationFromCache.Keys["connected_repos"].([]interface{})
+	updateIntegration["token"] = githubIntegrationFromCache.Keys["token"]
 	for _, key := range keys["connected_repos"].([]interface{}) {
 		keyObj := key.(map[string]interface{})
 		repoOwner, ok := keyObj["repo_owner"].(string)
@@ -178,40 +178,14 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 			RepoOwner:  keyObj["repo_owner"].(string),
 		}
 
-		branchesPerRepo := orderBranchesPerConnectedRepos(connectedRepos)
-		updateIntegration["token"] = githubIntegrationFromCache.Keys["token"]
-		if len(connectedRepos) > 0 {
-			// ignore connected_repo that already exists
-			isRepoExists := false
-			for repo, branches := range branchesPerRepo {
-				if repo == keyObj["repo_name"].(string) {
-					isRepoExists = true
-					isBranchExists := containsElement(branches, keyObj["branch"].(string))
-					if !isBranchExists {
-						if connectedRepositories, ok := updateIntegration["connected_repos"].([]interface{}); ok {
-							updateIntegration["connected_repos"] = append(connectedRepositories, githubDetails)
-						} else {
-							updateIntegration["connected_repos"] = []interface{}{githubDetails}
-						}
-					}
-				}
-			}
-
-			if !isRepoExists {
-				updateIntegration["connected_repos"] = append(connectedRepos, githubDetails)
-			}
+		if connectedRepositories, ok := updateIntegration["connected_repos"].([]githubRepoDetails); !ok {
+			updateIntegration["connected_repos"] = []githubRepoDetails{}
+			updateIntegration["connected_repos"] = append(connectedRepositories, githubDetails)
 		} else {
-			if _, ok = updateIntegration["connected_repos"].([]githubRepoDetails); !ok {
-				updateIntegration["connected_repos"] = []githubRepoDetails{}
-			}
-			updateIntegration["connected_repos"] = append(updateIntegration["connected_repos"].([]githubRepoDetails), githubDetails)
+			updateIntegration["connected_repos"] = append(connectedRepositories, githubDetails)
 		}
-
 	}
 
-	if _, ok := updateIntegration["connected_repos"].([]interface{}); !ok {
-		updateIntegration["connected_repos"] = connectedRepos
-	}
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
 		return models.Integration{}, fmt.Errorf("updateGithubIntegration at UpdateIntegration: Integration %v: %v", "github", err.Error())
