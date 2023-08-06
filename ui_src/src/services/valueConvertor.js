@@ -418,3 +418,60 @@ export const isCloud = () => {
         return false;
     }
 };
+
+export const convertArrayToObject = (array) => {
+    if (array.length === 0) return {};
+    const obj = {};
+    for (const item of array) {
+        obj[item.key] = item.value;
+    }
+    return obj;
+};
+
+const predefinedPairs = [
+    { key: 'name', value: 'John' },
+    { key: 'age', value: '25' },
+    { key: 'email', value: 'john@example.com' },
+    { key: 'address', value: '123 Main St' },
+    { key: 'phone', value: '555-124' },
+    { key: 'city', value: 'New York' },
+    { key: 'country', value: 'USA' },
+    { key: 'occupation', value: 'Software Engineer' },
+    { key: 'interests', value: 'Sports,' },
+    { key: 'hobby', value: 'Cooking' }
+];
+
+export const generateJSONWithMaxLength = (maxLength) => {
+    function generateValue(currentLength) {
+        if (currentLength >= maxLength) {
+            return null;
+        }
+
+        const result = {};
+        let remainingLength = maxLength - currentLength;
+
+        while (remainingLength > 0) {
+            const pairIndex = Math.floor(Math.random() * predefinedPairs.length);
+            const pair = predefinedPairs[pairIndex];
+
+            if (result[pair.key] === undefined) {
+                result[pair.key] = pair.value;
+                const pairLength = JSON.stringify({ [pair.key]: pair.value }).length;
+                remainingLength -= pairLength;
+            }
+
+            if (remainingLength <= 0) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
+    let result = generateValue(0, 3);
+    result = JSON.stringify(result, null, 2);
+    if (result?.length > 100) {
+        result = generateValue(0, 3);
+    }
+    return result;
+};
