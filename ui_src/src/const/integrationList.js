@@ -14,7 +14,6 @@ import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
 import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
 import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
-
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
@@ -25,6 +24,9 @@ import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
+import githubIntegrationIcon from '../assets/images/githubIntegrationIcon.svg';
+import githubBannerPopup from '../assets/images/githubBannerPopup.webp';
+import githubBanner from '../assets/images/githubBanner.webp';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.webp';
@@ -273,14 +275,14 @@ export const INTEGRATION_LIST = {
     GitHub: {
         name: 'GitHub',
         by: 'memphis',
-        banner: <img className="banner" src={slackBanner} alt="gitHubBanner" />,
-        insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackLogo} alt="gitHubLogo" />,
+        banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
+        insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={githubIntegrationIcon} alt="gitHubIcon" />,
         description: 'Connect your GitHub account to Memphis',
         category: CATEGORY_LIST['All'],
         header: (
             <div className="header-left-side">
-                <img src={slackLogo} alt="gitHubLogo" />
+                <img src={githubIntegrationIcon} alt="gitHubLogo" />
                 <div className="details">
                     <p>GitHub</p>
                     <span>by memphis</span>

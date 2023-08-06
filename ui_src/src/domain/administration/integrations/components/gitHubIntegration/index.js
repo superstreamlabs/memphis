@@ -29,6 +29,7 @@ import Input from '../../../../../components/Input';
 import SelectComponent from '../../../../../components/select';
 import { URL } from '../../../../../config';
 import Loader from '../../../../../components/loader';
+import IntegrationItem from './integratedItem';
 
 const urlSplit = URL.split('/', 3);
 
@@ -41,7 +42,8 @@ const GitHubIntegration = ({ close, value }) => {
         name: 'github',
         ui_url: `${urlSplit[0]}//${urlSplit[2]}`,
         keys: {
-            type: 'functions'
+            type: 'functions',
+            token: ''
         }
     });
     const [loadingSubmit, setLoadingSubmit] = useState(false);
@@ -98,15 +100,10 @@ const GitHubIntegration = ({ close, value }) => {
 
     const updateIntegration = async (withToken = true) => {
         let newFormFields = { ...formFields };
-        if (!withToken) {
-            let updatedKeys = { ...formFields.keys };
-            updatedKeys['auth_token'] = '';
-            newFormFields = { ...newFormFields, keys: updatedKeys };
-        }
         try {
             const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, { ...newFormFields });
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
-            closeModal(data);
+            // closeModal(data);
         } catch (err) {
             setLoadingSubmit(false);
         }
@@ -117,7 +114,6 @@ const GitHubIntegration = ({ close, value }) => {
             const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, { ...formFields });
             dispatch({ type: 'ADD_INTEGRATION', payload: data });
             getIntegration();
-            // closeModal(data);
         } catch (err) {
             setLoadingSubmit(false);
         }
@@ -126,27 +122,26 @@ const GitHubIntegration = ({ close, value }) => {
     const getIntegration = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-            console.log(data);
+            // console.log(data);
             setRepos(data?.repos);
             // setConnectedRepos(data?.integration?.keys?.connected_repos);
         } catch (error) {}
     };
 
     useEffect(() => {
-        console.log(formFields?.keys?.repo_name, formFields?.keys?.owner);
-        formFields?.keys?.repo_name && formFields?.keys?.owner && getSourceCodeBranches(formFields?.keys?.repo_name, formFields?.keys?.owner);
+        console.log(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
+        formFields?.keys?.repo_name && formFields?.keys?.repo_owner && getSourceCodeBranches(formFields?.keys?.repo_name, formFields?.keys?.repo_owner);
     }, [formFields?.keys?.repo_name]);
 
     const updateRepo = (repo) => {
         let updatedValue = { ...formFields.keys };
-        updatedValue = { ...updatedValue, ...{ repo_name: repo, owner: repos[repo] } };
+        updatedValue = { ...updatedValue, ...{ repo_name: repo, repo_owner: repos[repo] } };
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
     };
 
-    const getSourceCodeBranches = async (repo, owner) => {
-        console.log('in');
+    const getSourceCodeBranches = async (repo, repo_owner) => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&owner=${owner}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&repo_owner=${repo_owner}`);
             console.log(data);
             setBranches(data?.branches[formFields?.keys?.repo_name]);
         } catch (error) {}
@@ -267,63 +262,18 @@ const GitHubIntegration = ({ close, value }) => {
                                 </div>
                                 <div className="repos-body">
                                     {state.integrationsList[0]?.keys?.connected_repos?.map((repo, index) => {
-                                        return (
-                                            <div className="repos-item" key={index}>
-                                                <Form.Item className="button-container">
-                                                    <span className="select-repo-span">
-                                                        <img src={githubBranchIcon} alt="githubBranchIcon" />
-                                                        <SelectComponent
-                                                            colorType="black"
-                                                            backgroundColorType="none"
-                                                            radiusType="semi-round"
-                                                            borderColorType="none"
-                                                            height="40px"
-                                                            width={'180px'}
-                                                            popupClassName="select-options"
-                                                            value={repo.repository}
-                                                            disabled={true}
-                                                        />
-                                                    </span>
-                                                </Form.Item>
-
-                                                <Form.Item className="button-container">
-                                                    <SelectComponent
-                                                        colorType="black"
-                                                        backgroundColorType="none"
-                                                        radiusType="semi-round"
-                                                        borderColorType="none"
-                                                        height="40px"
-                                                        width={'180px'}
-                                                        value={repo.branch}
-                                                        disabled
-                                                    />
-                                                </Form.Item>
-                                                <Form.Item className="button-container">
-                                                    <SelectComponent
-                                                        colorType="black"
-                                                        backgroundColorType="none"
-                                                        radiusType="semi-round"
-                                                        borderColorType="none"
-                                                        height="40px"
-                                                        width={'180px'}
-                                                        value={'functions'}
-                                                        disabled
-                                                    />
-                                                </Form.Item>
-                                                <label onClick={updateIntegration}>btn</label>
-                                            </div>
-                                        );
+                                        return <IntegrationItem index={index} repo={repo} reposList={repos} />;
                                     })}
                                     <div className="repos-item">
                                         <Form.Item className="button-container">
                                             <span className="select-repo-span">
-                                                <img src={githubBranchIcon} alt="githubBranchIcon" />
+                                                {/* <img src={githubBranchIcon} alt="githubBranchIcon" /> */}
                                                 <SelectComponent
                                                     colorType="black"
                                                     backgroundColorType="none"
                                                     radiusType="semi-round"
-                                                    borderColorType="none"
-                                                    height="40px"
+                                                    borderColorType="gray"
+                                                    height="32px"
                                                     width={'180px'}
                                                     popupClassName="select-options"
                                                     options={Object?.keys(repos) || []}
@@ -341,8 +291,8 @@ const GitHubIntegration = ({ close, value }) => {
                                                 colorType="black"
                                                 backgroundColorType="none"
                                                 radiusType="semi-round"
-                                                borderColorType="none"
-                                                height="40px"
+                                                borderColorType="gray"
+                                                height="32px"
                                                 width={'180px'}
                                                 popupClassName="select-options"
                                                 options={branches || []}
@@ -357,12 +307,11 @@ const GitHubIntegration = ({ close, value }) => {
                                             <SelectComponent
                                                 colorType="black"
                                                 backgroundColorType="none"
-                                                // borderColorType="gray"
+                                                borderColorType="none"
                                                 radiusType="semi-round"
                                                 // backgroundColorType="none"
-                                                borderColorType="none"
                                                 // radiusType="semi-round"
-                                                height="40px"
+                                                height="32px"
                                                 width={'180px'}
                                                 popupClassName="select-options"
                                                 options={['functions']}

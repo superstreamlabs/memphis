@@ -1,4 +1,7 @@
 .repos-container {
+    .ant-divider {
+        margin: 0;
+    }
     // height: 100px;
     width: 100%;
     // background-color: aquamarine;
@@ -7,7 +10,8 @@
     .repos-header {
         height: 40px;
         width: 100%;
-        background-color: #d9d9d9;
+        // background-color: #d9d9d9;
+        background-color: rgba(217, 217, 217, 0.3);
         border-radius: 8px 8px 0px 0px;
         display: grid;
         grid-template-columns: 30% 30% 30% 10%;
@@ -26,6 +30,7 @@
             grid-template-columns: 30% 30% 30% 10%;
             align-items: center;
             position: relative;
+            margin: 10px 0px;
             .select-repo-span {
                 width: 100%;
                 display: flex;
