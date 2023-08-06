@@ -4622,7 +4622,7 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4658,7 +4658,7 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
