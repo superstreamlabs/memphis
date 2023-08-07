@@ -158,11 +158,10 @@ const StationOverviewHeader = () => {
                     </span>
                 </div>
                 <div className="station-buttons">
-                    {stationState?.stationMetaData?.partitions_number ? (
-                        <PartitionsFilter height="34px" partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
-                    ) : (
-                        ''
+                    {stationState?.stationMetaData?.partitions_number > 1 && (
+                        <PartitionsFilter partitions_number={stationState?.stationMetaData?.partitions_number || 0} />
                     )}
+
                     <AsyncTasks height={'32px'} />
                     <Button
                         width="100px"

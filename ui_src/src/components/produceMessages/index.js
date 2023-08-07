@@ -120,7 +120,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
 
     const getStationDetails = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}`);
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_STATION_DATA}?station_name=${stationName}&partition_number=-1`);
             await sortData(data);
             stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
             stationDispatch({ type: 'SET_SCHEMA_TYPE', payload: data.schema.schema_type });
