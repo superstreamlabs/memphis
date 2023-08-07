@@ -16,6 +16,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"math/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -2079,9 +2080,9 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	subject := ""
 	shouldRoundRobin := false
 	if station.Version == 0 {
-	  subject = fmt.Sprintf("%s.final", stationName.Intern())
+		subject = fmt.Sprintf("%s.final", stationName.Intern())
 	} else {
-	  shouldRoundRobin = true
+		shouldRoundRobin = true
 	}
 
 	account, err := serv.lookupAccount(user.TenantName)
@@ -2097,8 +2098,9 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	body.MsgHdrs["$memphis_producedBy"] = "UI"
 	body.MsgHdrs["$memphis_connectionId"] = "UI"
 	if shouldRoundRobin {
-	  partition := (i % len(station.Partitions)) + 1
-	 	subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), partition)
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Intn(len(station.PartitionsList))
+		subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), station.PartitionsList[randomIndex])
 	}
 	serv.sendInternalAccountMsgWithHeadersWithEcho(account, subject, body.MsgPayload, body.MsgHdrs)
 
