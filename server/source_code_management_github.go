@@ -97,6 +97,9 @@ func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, k
 
 func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys map[string]interface{}) (int, map[string]interface{}, error) {
 	statusCode := 500
+	if _, ok := keys["token"]; !ok {
+		keys["token"] = ""
+	}
 	if keys["token"] == "" {
 		exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
 		if err != nil {
