@@ -64,7 +64,7 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 	branchesPerRepo := map[string][]string{}
 	for _, connectRepo := range connectedRepos {
 		var connectedBranchList []string
-		repo := connectRepo.(map[string]interface{})["repository"].(string)
+		repo := connectRepo.(map[string]interface{})["repo_name"].(string)
 		branch := connectRepo.(map[string]interface{})["branch"].(string)
 		if _, ok := branchesPerRepo[repo]; !ok {
 			connectedBranchList = append(connectedBranchList, branch)

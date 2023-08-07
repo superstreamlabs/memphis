@@ -14,10 +14,10 @@ import (
 )
 
 type githubRepoDetails struct {
-	Repository string `json:"repository"`
-	Branch     string `json:"branch"`
-	Type       string `json:"type"`
-	RepoOwner  string `json:"repo_owner"`
+	RepoName  string `json:"repo_name"`
+	Branch    string `json:"branch"`
+	Type      string `json:"type"`
+	RepoOwner string `json:"repo_owner"`
 }
 
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
@@ -175,10 +175,10 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 
 		githubDetails := githubRepoDetails{
-			Repository: connectedRepoDetails["repo_name"].(string),
-			Branch:     connectedRepoDetails["branch"].(string),
-			Type:       connectedRepoDetails["type"].(string),
-			RepoOwner:  connectedRepoDetails["repo_owner"].(string),
+			RepoName:  connectedRepoDetails["repo_name"].(string),
+			Branch:    connectedRepoDetails["branch"].(string),
+			Type:      connectedRepoDetails["type"].(string),
+			RepoOwner: connectedRepoDetails["repo_owner"].(string),
 		}
 
 		if connectedRepositories, ok := updateIntegration["connected_repos"].([]githubRepoDetails); !ok {

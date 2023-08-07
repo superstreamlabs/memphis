@@ -214,7 +214,7 @@ func createIntegrationsKeysAndProperties(integrationType, authToken string, chan
 		keys["token"] = token
 		keys["connected_repos"] = []githubRepoDetails{}
 		if repoOwner != "" {
-			keys["connected_repos"] = []githubRepoDetails{{Repository: repo, Branch: branch, Type: repoType, RepoOwner: repoOwner}}
+			keys["connected_repos"] = []githubRepoDetails{{RepoName: repo, Branch: branch, Type: repoType, RepoOwner: repoOwner}}
 		}
 	}
 
