@@ -16,11 +16,11 @@ import (
 )
 
 type Integration struct {
-	ID         int               `json:"id"`
-	Name       string            `json:"name"`
-	Keys       map[string]string `json:"keys"`
-	Properties map[string]bool   `json:"properties"`
-	TenantName string            `json:"tenant_name"`
+	ID         int                    `json:"id"`
+	Name       string                 `json:"name"`
+	Keys       map[string]interface{} `json:"keys"`
+	Properties map[string]bool        `json:"properties"`
+	TenantName string                 `json:"tenant_name"`
 }
 
 type SlackIntegration struct {
@@ -31,18 +31,18 @@ type SlackIntegration struct {
 }
 
 type CreateIntegrationSchema struct {
-	Name       string            `json:"name"`
-	Keys       map[string]string `json:"keys"`
-	Properties map[string]bool   `json:"properties"`
-	UIUrl      string            `json:"ui_url"`
+	Name       string                 `json:"name"`
+	Keys       map[string]interface{} `json:"keys"`
+	Properties map[string]bool        `json:"properties"`
+	UIUrl      string                 `json:"ui_url"`
 }
 
 type CreateIntegration struct {
-	Name       string            `json:"name"`
-	Keys       map[string]string `json:"keys"`
-	Properties map[string]bool   `json:"properties"`
-	UIUrl      string            `json:"ui_url"`
-	TenantName string            `json:"tenant_name"`
+	Name       string                 `json:"name"`
+	Keys       map[string]interface{} `json:"keys"`
+	Properties map[string]bool        `json:"properties"`
+	UIUrl      string                 `json:"ui_url"`
+	TenantName string                 `json:"tenant_name"`
 }
 
 type GetIntegrationDetailsSchema struct {
