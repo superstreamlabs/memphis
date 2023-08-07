@@ -278,7 +278,8 @@ export const INTEGRATION_LIST = {
         banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
         insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
         icon: <img src={githubIntegrationIcon} alt="gitHubIcon" />,
-        description: 'Connect your GitHub account to Memphis',
+        description:
+            'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
         category: CATEGORY_LIST['All'],
         header: (
             <div className="header-left-side">
@@ -292,7 +293,10 @@ export const INTEGRATION_LIST = {
         integrateDesc: (
             <div className="integrate-description">
                 <p>Description</p>
-                <span className="content">Get content</span>
+                <span className="content">
+                    GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
+                    and Functions source code.
+                </span>
             </div>
         )
     },
