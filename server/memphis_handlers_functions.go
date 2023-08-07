@@ -48,7 +48,7 @@ type FunctionsHandler struct{}
 func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("GetAllFunctions at GetFunctionsDetails: %v", err.Error())
+		serv.Errorf("GetAllFunctions at getUserDetailsFromMiddleware: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -61,7 +61,11 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 			return
 		} else {
 			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
-				connectedRepos, _ := fh.GetConnectedSourceCodeRepos(integration)
+				connectedRepos, err := fh.GetConnectedSourceCodeRepos(integration)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
+					continue
+				}
 				var repoContent interface{}
 				for _, connectedRepo := range connectedRepos {
 					connectedRepoRes := connectedRepo.(map[string]interface{})
@@ -70,14 +74,12 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 					repoContent, err = fh.GetContentOfSelectedRepos(repo, owner, k, integration)
 					if err != nil {
 						serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContentOfSelectedRepos: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
+						continue
 					}
 					functions, err = GetFunctionsDetails(user, k, integration, repoContent, connectedRepoRes, functions)
 					if err != nil {
 						serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
-						c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-						return
+						continue
 					}
 				}
 			}
