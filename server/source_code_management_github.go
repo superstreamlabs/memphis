@@ -101,15 +101,22 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 		keys["token"] = ""
 	}
 	if keys["token"] == "" {
-		exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
-		if err != nil {
-			return 500, map[string]interface{}{}, err
+		if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+			if githubIntegrationFromCache, ok := tenantInetgrations["github"].(models.Integration); ok {
+				keys["token"] = githubIntegrationFromCache.Keys["token"].(string)
+			}
+			if !ok || keys["token"] == "" {
+				exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
+				if err != nil {
+					return 500, map[string]interface{}{}, err
+				}
+				if !exist {
+					statusCode = SHOWABLE_ERROR_STATUS_CODE
+					return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
+				}
+				keys["token"] = integrationFromDb.Keys["token"]
+			}
 		}
-		if !exist {
-			statusCode = SHOWABLE_ERROR_STATUS_CODE
-			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
-		}
-		keys["token"] = integrationFromDb.Keys["token"]
 	} else {
 		encryptedValue, err := EncryptAES([]byte(keys["token"].(string)))
 		if err != nil {
