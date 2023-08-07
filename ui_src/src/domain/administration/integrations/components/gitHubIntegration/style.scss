@@ -42,6 +42,17 @@
         .repos-item > img:first-child {
             margin-left: 8px;
         }
+        .add-more-repos {
+            height: 40px;
+            padding-left: 10px;
+            align-items: center;
+            display: flex;
+            color: #6557ff;
+            cursor: pointer;
+            label {
+                cursor: pointer;
+            }
+        }
     }
 }
 .connect-bth-gh {

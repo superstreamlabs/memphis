@@ -50,7 +50,7 @@ const GitHubIntegration = ({ close, value }) => {
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [repos, setRepos] = useState([]);
-    const [branches, setBranches] = useState([]);
+    const [addNew, setAddNew] = useState(false);
 
     useEffect(() => {
         getIntegration();
@@ -82,10 +82,11 @@ const GitHubIntegration = ({ close, value }) => {
         if (repo.branch === '') return;
         let updatedValue = { ...formFields.keys };
         if (index && index < updatedValue.connected_repos?.length) updatedValue.connected_repos[index] = repo;
-        else if (index === 0 && index === updatedValue.connected_repos?.length) {
+        else if (index === updatedValue.connected_repos?.length) {
             updatedValue.connected_repos.push(repo);
         }
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
+        setAddNew(false);
     };
 
     const updateKeysState = (field, value) => {
@@ -273,12 +274,18 @@ const GitHubIntegration = ({ close, value }) => {
                                                     />
                                                 );
                                             })}
-                                            <IntegrationItem
-                                                index={formFields?.keys?.connected_repos?.length}
-                                                repo={''}
-                                                reposList={repos || []}
-                                                updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
-                                            />
+                                            {addNew ? (
+                                                <IntegrationItem
+                                                    index={formFields?.keys?.connected_repos?.length}
+                                                    repo={''}
+                                                    reposList={repos || []}
+                                                    updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
+                                                />
+                                            ) : (
+                                                <div className="add-more-repos" onClick={() => setAddNew(!addNew)}>
+                                                    <label>+ Add more repos</label>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

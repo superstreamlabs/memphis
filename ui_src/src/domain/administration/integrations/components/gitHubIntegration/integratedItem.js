@@ -40,8 +40,9 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList }) => {
     const [branches, setBranches] = useState([]);
 
     useEffect(() => {
-        setFormFields({ repo_name: repo.repository, repo_owner: repo.owner, branch: repo.branch, type: 'functions' });
-    }, []);
+        console.log('repo', repo);
+        setFormFields({ repo_name: repo.repo_name || repo.repository, repo_owner: repo.owner, branch: repo.branch, type: 'functions' });
+    }, [repo]);
 
     useEffect(() => {
         isEditting && updateIntegrationList(formFields, index);
