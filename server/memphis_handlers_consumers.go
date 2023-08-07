@@ -173,48 +173,36 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return []int{}, err
 	}
 
-	newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList)
+	newConsumer, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList)
 	if err != nil {
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return []int{}, err
 	}
 
-	if rowsUpdated == 1 {
-		message := "Consumer " + name + " connected"
-		serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
-		if consumerGroupExist {
-			if requestVersion == 1 {
-				if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {
-					err := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
-					serv.Warnf("createConsumerDirectCommon: %v", err.Error())
-					return []int{}, err
-				}
-				if !comparePartitionsList(consumerFromGroup.PartitionsList, newConsumer.PartitionsList) {
-					existingPartitions := ""
-					for i, pl := range consumerFromGroup.PartitionsList {
-						existingPartitions += strconv.Itoa(pl)
-						if i < len(consumerFromGroup.PartitionsList)-1 {
-							existingPartitions += ", "
-						}
-					}
-					err := errors.New("consumer already exists with different uneditable partition list: partition numbers: ")
-					serv.Warnf("createConsumerDirectCommon: %v", err.Error())
-					return []int{}, err
-				}
+	message := "Consumer " + name + " connected"
+	serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
+	if consumerGroupExist {
+		if requestVersion == 1 {
+			if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {
+				err := errors.New("consumer already exists with different uneditable configuration parameters (StartConsumeFromSequence/LastMessages)")
+				serv.Warnf("createConsumerDirectCommon: %v", err.Error())
+				return []int{}, err
 			}
+			if !comparePartitionsList(consumerFromGroup.PartitionsList, newConsumer.PartitionsList) {
+				existingPartitions := ""
+				for i, pl := range consumerFromGroup.PartitionsList {
+					existingPartitions += strconv.Itoa(pl)
+					if i < len(consumerFromGroup.PartitionsList)-1 {
+						existingPartitions += ", "
+					}
+				}
+				err := errors.New("consumer already exists with different uneditable partition list: partition numbers: ")
+				serv.Warnf("createConsumerDirectCommon: %v", err.Error())
+				return []int{}, err
+			}
+		}
 
-			if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
-				err := s.CreateConsumer(station.TenantName, newConsumer, station, station.PartitionsList)
-				if err != nil {
-					if IsNatsErr(err, JSStreamNotFoundErr) {
-						serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", user.TenantName, user.Username, consumerName, cStationName)
-					} else {
-						serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
-					}
-					return []int{}, err
-				}
-			}
-		} else {
+		if newConsumer.MaxAckTimeMs != consumerFromGroup.MaxAckTimeMs || newConsumer.MaxMsgDeliveries != consumerFromGroup.MaxMsgDeliveries {
 			err := s.CreateConsumer(station.TenantName, newConsumer, station, station.PartitionsList)
 			if err != nil {
 				if IsNatsErr(err, JSStreamNotFoundErr) {
@@ -225,27 +213,37 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				return []int{}, err
 			}
 		}
-		var auditLogs []interface{}
-		newAuditLog := models.AuditLog{
-			StationName:       stationName.Ext(),
-			Message:           message,
-			CreatedBy:         user.ID,
-			CreatedByUsername: user.Username,
-			CreatedAt:         time.Now(),
-			TenantName:        user.TenantName,
-		}
-		auditLogs = append(auditLogs, newAuditLog)
-		err = CreateAuditLogs(auditLogs)
+	} else {
+		err := s.CreateConsumer(station.TenantName, newConsumer, station, station.PartitionsList)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
+			if IsNatsErr(err, JSStreamNotFoundErr) {
+				serv.Warnf("[tenant: %v][user: %v]createConsumerDirectCommon: Consumer %v at station %v: station does not exist", user.TenantName, user.Username, consumerName, cStationName)
+			} else {
+				serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateConsumer: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
+			}
+			return []int{}, err
 		}
+	}
+	var auditLogs []interface{}
+	newAuditLog := models.AuditLog{
+		StationName:       stationName.Ext(),
+		Message:           message,
+		CreatedBy:         user.ID,
+		CreatedByUsername: user.Username,
+		CreatedAt:         time.Now(),
+		TenantName:        user.TenantName,
+	}
+	auditLogs = append(auditLogs, newAuditLog)
+	err = CreateAuditLogs(auditLogs)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at CreateAuditLogs: Consumer %v at station %v: %v", user.TenantName, user.Username, consumerName, cStationName, err.Error())
+	}
 
-		shouldSendAnalytics, _ := shouldSendAnalytics()
-		if shouldSendAnalytics {
-			ip := serv.getIp()
-			analyticsParams := map[string]interface{}{"consumer-name": newConsumer.Name, "ip": ip}
-			analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-consumer-sdk")
-		}
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		ip := serv.getIp()
+		analyticsParams := map[string]interface{}{"consumer-name": newConsumer.Name, "ip": ip}
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-consumer-sdk")
 	}
 	return station.PartitionsList, nil
 }

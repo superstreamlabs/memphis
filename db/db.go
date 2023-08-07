@@ -2699,13 +2699,13 @@ func InsertNewConsumer(name string,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
 	lastMessages int64,
-	tenantName string, partitionsList []int) (models.Consumer, int64, error) {
+	tenantName string, partitionsList []int) (models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 	defer conn.Release()
 
@@ -2728,7 +2728,7 @@ func InsertNewConsumer(name string,
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 
 	var consumerId int
@@ -2738,34 +2738,33 @@ func InsertNewConsumer(name string,
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList)
 	if err != nil {
-		return models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&consumerId)
 		if err != nil {
-			return models.Consumer{}, 0, err
+			return models.Consumer{}, err
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		return models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
-				return models.Consumer{}, 0, errors.New(pgErr.Detail)
+				return models.Consumer{}, errors.New(pgErr.Detail)
 			} else {
-				return models.Consumer{}, 0, errors.New(pgErr.Message)
+				return models.Consumer{}, errors.New(pgErr.Message)
 			}
 		} else {
-			return models.Consumer{}, 0, err
+			return models.Consumer{}, err
 		}
 	}
 
-	rowsAffected := rows.CommandTag().RowsAffected()
 	newConsumer := models.Consumer{
 		ID:                  consumerId,
 		Name:                name,
@@ -2782,7 +2781,7 @@ func InsertNewConsumer(name string,
 		TenantName:          tenantName,
 		PartitionsList:      partitionsList,
 	}
-	return newConsumer, rowsAffected, nil
+	return newConsumer, nil
 }
 
 func GetConsumers() ([]models.Consumer, error) {
