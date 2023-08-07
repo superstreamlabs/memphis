@@ -88,7 +88,6 @@ const StationOverview = () => {
     useEffect(() => {
         setisLoading(true);
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
-        stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
         getStaionMetaData();
         getStationDetails();
     }, []);

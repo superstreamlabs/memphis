@@ -58,8 +58,6 @@ const PartitionsFilter = ({ partitions_number, height }) => {
         );
     };
 
-    <div>{partitions_number}</div>;
-
     return (
         <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
             <div className="filter-partition-btn">

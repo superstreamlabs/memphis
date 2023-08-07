@@ -328,13 +328,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                     <div className="replicas-container">
-                        <TitleComponent
-                            headerTitle="Partitions"
-                            typeTitle="sub-header"
-                            headerDescription="Amount of partitions per station."
-                            learnMore={false}
-                            // link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                        />
+                        <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Amount of partitions per station." learnMore={false} />
                         <div>
                             <Form.Item
                                 name="partitions_number"

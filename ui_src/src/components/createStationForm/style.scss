@@ -157,13 +157,11 @@
             margin: 8px 5px 0px 5px;
             font-size: 14px;
             font-family: 'InterBold';
-            // line-height: 20px;
             color: var(--gray);
         }
     }
 
     .ant-input-number {
-        // width: 60px;
         width: 100%;
         height: 40px;
         border-radius: 4px;
@@ -191,11 +189,11 @@
             margin-bottom: 10px;
         }
     }
-    .ackbased-type{
+    .ackbased-type {
         height: 82px;
-        p{
+        p {
             font-size: 14px;
-            color: #A9A9A9;
+            color: #a9a9a9;
         }
     }
     .toggle-add-schema {

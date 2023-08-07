@@ -49,13 +49,13 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
             purgeDataPayload['partitions_list'] = [stationState?.stationPartition];
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
             stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
-            let data = stationState?.stationSocketData;
-            if (purgeDataPayload['purge_station']) {
-                data['total_messages'] = 0;
-                data['messages'] = [];
-            }
-            if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
-            stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+            // let data = stationState?.stationSocketData;
+            // if (purgeDataPayload['purge_station']) {
+            //     data['total_messages'] = 0;
+            //     data['messages'] = [];
+            // }
+            // if (purgeDataPayload['purge_dls']) data['total_dls_messages'] = 0;
+            // stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
         } catch (error) {
             setLoader(false);
         }
