@@ -43,7 +43,7 @@ import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import AttachStationModal from '../attachStationModal';
-const avro = require('avro-js')
+const avro = require('avro-js');
 
 loader.init();
 loader.config({ monaco });
@@ -425,7 +425,12 @@ function CreateSchema({ createNew }) {
                         </div>
                         <span>
                             Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
-                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank" rel="noreferrer">
+                            <a
+                                className="learn-more"
+                                href="https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
                                 Learn more
                             </a>
                         </span>
@@ -490,7 +495,12 @@ function CreateSchema({ createNew }) {
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
                                         Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank" rel="noreferrer">
+                                        <a
+                                            className="learn-more"
+                                            href="https://docs.memphis.dev/memphis/memphis-schemaverse/formats/produce-consume"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             Learn more
                                         </a>
                                     </p>
