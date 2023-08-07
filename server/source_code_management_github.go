@@ -143,16 +143,15 @@ func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, bo
 }
 
 func updateGithubIntegration(user models.User, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
-	var githubIntegrationFromCache models.Integration
 	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
-		if githubIntegrationFromCache, ok = tenantInetgrations["github"].(models.Integration); !ok {
+		if _, ok = tenantInetgrations["github"].(models.Integration); !ok {
 			return models.Integration{}, fmt.Errorf("github integration does not exist")
 		}
 	} else if !ok {
 		return models.Integration{}, fmt.Errorf("github integration does not exist")
 	}
 
-	client, err := getGithubClient(githubIntegrationFromCache.Keys["token"].(string))
+	client, err := getGithubClient(keys["token"].(string))
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -171,7 +170,12 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 		_, _, err = client.Repositories.Get(context.Background(), repoOwner, connectedRepoDetails["repo_name"].(string))
 		if err != nil {
-			return models.Integration{}, fmt.Errorf("repository %s not found", connectedRepoDetails["repo_name"].(string))
+			if strings.Contains(err.Error(), "Not Found") {
+				updateIntegration["connected_repos"] = []githubRepoDetails{}
+				continue
+			} else {
+				return models.Integration{}, fmt.Errorf("repository %s not found", connectedRepoDetails["repo_name"].(string))
+			}
 		}
 
 		githubDetails := githubRepoDetails{
@@ -380,3 +384,5 @@ func containsElement(arr []string, val string) bool {
 	}
 	return false
 }
+
+// func (s *Server)getContentFunctions() error
