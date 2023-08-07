@@ -78,10 +78,13 @@ const GitHubIntegration = ({ close, value }) => {
         });
     }, []);
 
-    const updateKeysConnectedRepos = (repos, index) => {
+    const updateKeysConnectedRepos = (repo, index) => {
+        if (repo.branch === '') return;
         let updatedValue = { ...formFields.keys };
-        if (index && index < updatedValue.connected_repos?.length) updatedValue.connected_repos[index] = repos;
-        else if (index && index === updatedValue.connected_repos?.length) updatedValue.connected_repos.push(repos);
+        if (index && index < updatedValue.connected_repos?.length) updatedValue.connected_repos[index] = repo;
+        else if (index === 0 && index === updatedValue.connected_repos?.length) {
+            updatedValue.connected_repos.push(repo);
+        }
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
     };
 
@@ -129,7 +132,9 @@ const GitHubIntegration = ({ close, value }) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
             if (data) {
-                setFormFields(data?.integaraion);
+                updateKeysState('connected_repos', data?.integaraion?.keys?.connected_repos || '');
+                // setFormFields((formFields) => ({ ...formFields, ...keys, connected_repos: data?.integaraion?.keys?.connected_repos || [] }));
+                // setFormFields(data?.integaraion);
                 setRepos(data?.repos);
             } else
                 setFormFields({
@@ -272,7 +277,7 @@ const GitHubIntegration = ({ close, value }) => {
                                                 index={formFields?.keys?.connected_repos?.length}
                                                 repo={''}
                                                 reposList={repos || []}
-                                                updateIntegrationList={(updatedFields, i) => console.log(updatedFields, i)}
+                                                updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
                                             />
                                         </div>
                                     </div>
