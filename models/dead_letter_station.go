@@ -61,6 +61,7 @@ type SchemaVerseDlsMessageSdk struct {
 	Producer        ProducerDetails `json:"producer"`
 	Message         MessagePayload  `json:"message"`
 	ValidationError string          `json:"validation_error"`
+	PartitionNumber int             `json:"partition_number"`
 }
 
 type DlsMessage struct {
@@ -74,6 +75,7 @@ type DlsMessage struct {
 	ValidationError string         `json:"validation_error"`
 	TenantName      string         `json:"tenant_name"`
 	ProducerName    string         `json:"producer_name"`
+	PartitionNumber int            `json:"partition_number"`
 }
 
 type DlsMsgResendAll struct {

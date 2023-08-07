@@ -37,6 +37,7 @@ type MessageDetails struct {
 	ConnectionId string            `json:"connection_id" `
 	Size         int               `json:"size"`
 	Headers      map[string]string `json:"headers"`
+	Partition    int               `json:"partition"`
 }
 
 type Station struct {
@@ -60,6 +61,8 @@ type Station struct {
 	TieredStorageEnabled        bool      `json:"tiered_storage_enabled"`
 	TenantName                  string    `json:"tenant_name"`
 	ResendDisabled              bool      `json:"resend_disabled"`
+	PartitionsList              []int     `json:"partitions_list"`
+	Version                     int       `json:"version"`
 }
 
 type GetStationResponseSchema struct {
@@ -80,6 +83,8 @@ type GetStationResponseSchema struct {
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 	ResendDisabled       bool             `json:"resend_disabled"`
+	PartitionsList       []int            `json:"partitions_list"`
+	PartitionsNumber     int              `json:"partitions_number"`
 }
 
 type ExtendedStation struct {
@@ -133,6 +138,8 @@ type ExtendedStationLight struct {
 	TieredStorageEnabled        bool        `json:"tiered_storage_enabled,omitempty"`
 	TenantName                  string      `json:"tenant_name"`
 	ResendDisabled              bool        `json:"resend_disabled"`
+	PartitionsList              []int       `json:"partitions_list"`
+	Version                     int         `json"version"`
 }
 
 type ActiveProducersConsumersDetails struct {
@@ -165,6 +172,7 @@ type CreateStationSchema struct {
 	IdempotencyWindow    int64            `json:"idempotency_window_in_ms"`
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
+	PartitionsNumber     int              `json:"partitions_number"`
 }
 
 type DlsConfiguration struct {
@@ -185,14 +193,20 @@ type DropDlsMessagesSchema struct {
 }
 
 type PurgeStationSchema struct {
-	StationName  string `json:"station_name" binding:"required"`
-	PurgeDls     bool   `json:"purge_dls"`
-	PurgeStation bool   `json:"purge_station"`
+	StationName    string `json:"station_name" binding:"required"`
+	PurgeDls       bool   `json:"purge_dls"`
+	PurgeStation   bool   `json:"purge_station"`
+	PartitionsList []int  `json:"partitions_list"`
 }
 
 type RemoveMessagesSchema struct {
-	StationName string   `json:"station_name" binding:"required"`
-	MessageSeqs []uint64 `json:"message_seqs" binding:"required"`
+	StationName string            `json:"station_name" binding:"required"`
+	Messages    []MessageToDelete `json:"messages" binding:"required"`
+}
+
+type MessageToDelete struct {
+	MessageSeq      uint64 `json:"message_seq" binding:"required"`
+	PartitionNumber int    `json:"partition_number" binding:"required"`
 }
 
 type ResendPoisonMessagesSchema struct {
@@ -209,11 +223,12 @@ type GetPoisonMessageJourneySchema struct {
 }
 
 type GetMessageDetailsSchema struct {
-	IsDls       bool   `form:"is_dls" json:"is_dls"`
-	DlsType     string `form:"dls_type" json:"dls_type"`
-	MessageId   int    `form:"message_id" json:"message_id"`
-	MessageSeq  int    `form:"message_seq" json:"message_seq"`
-	StationName string `form:"station_name" json:"station_name" binding:"required"`
+	IsDls           bool   `form:"is_dls" json:"is_dls"`
+	DlsType         string `form:"dls_type" json:"dls_type"`
+	MessageId       int    `form:"message_id" json:"message_id"`
+	MessageSeq      int    `form:"message_seq" json:"message_seq"`
+	StationName     string `form:"station_name" json:"station_name" binding:"required"`
+	PartitionNumber int    `form:"partition_number" json:"partition_number" binding:"required"`
 }
 
 type UseSchema struct {
@@ -239,4 +254,8 @@ type StationOverviewSchemaDetails struct {
 
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type PartitionsUpdate struct {
+	PartitionsList []int `json:"partitions_list"`
 }

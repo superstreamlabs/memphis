@@ -293,6 +293,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE consumers DROP CONSTRAINT IF EXISTS fk_connection_id;
 			CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 			CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -321,6 +322,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		start_consume_from_seq SERIAL NOT NULL,
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		partitions INTEGER[],
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -340,9 +342,11 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'stations' AND table_schema = 'public'
 		) THEN
-		ALTER TYPE enum_retention_type ADD VALUE 'ack_based';
+		ALTER TYPE enum_retention_type ADD VALUE IF NOT EXISTS 'ack_based';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -372,6 +376,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tiered_storage_enabled BOOL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		resend_disabled BOOL NOT NULL DEFAULT false,
+		partitions INTEGER[],
+		version INTEGER NOT NULL DEFAULT 0,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -436,6 +442,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			CREATE INDEX IF NOT EXISTS producer_name ON producers(name);
 			CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
 			CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -458,6 +465,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		updated_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		partitions INTEGER[],
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -478,6 +486,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -509,6 +518,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		validation_error VARCHAR DEFAULT '',
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
+		partition_number INTEGER NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -1168,7 +1178,9 @@ func InsertNewStation(
 	isNative bool,
 	dlsConfiguration models.DlsConfiguration,
 	tieredStorageEnabled bool,
-	tenantName string) (models.Station, int64, error) {
+	tenantName string,
+	partitionsList []int,
+	version int) (models.Station, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1196,9 +1208,11 @@ func InsertNewStation(
 		dls_configuration_poison, 
 		dls_configuration_schemaverse,
 		tiered_storage_enabled,
-		tenant_name
+		tenant_name,
+		partitions,
+		version
 		) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_station", query)
 	if err != nil {
@@ -1213,7 +1227,7 @@ func InsertNewStation(
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName)
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsList, version)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1265,6 +1279,8 @@ func InsertNewStation(
 		DlsConfigurationSchemaverse: dlsConfiguration.Schemaverse,
 		TieredStorageEnabled:        tieredStorageEnabled,
 		TenantName:                  tenantName,
+		PartitionsList:              partitionsList,
+		Version:                     version,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1498,6 +1514,8 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
 			&stationRes.ResendDisabled,
+			&stationRes.PartitionsList,
+			&stationRes.Version,
 			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
@@ -2332,7 +2350,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string) (models.Producer, error) {
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string, partitionsList []int) (models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2349,8 +2367,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 		is_active, 
 		updated_at, 
 		type,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+		tenant_name,
+		partitions) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
 	if err != nil {
@@ -2363,7 +2382,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName, partitionsList)
 	if err != nil {
 		return models.Producer{}, err
 	}
@@ -2393,13 +2412,14 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	}
 
 	newProducer := models.Producer{
-		ID:           producerId,
-		Name:         name,
-		StationId:    stationId,
-		Type:         producerType,
-		ConnectionId: connectionIdObj,
-		IsActive:     isActive,
-		UpdatedAt:    time.Now(),
+		ID:             producerId,
+		Name:           name,
+		StationId:      stationId,
+		Type:           producerType,
+		ConnectionId:   connectionIdObj,
+		IsActive:       isActive,
+		UpdatedAt:      time.Now(),
+		PartitionsList: partitionsList,
 	}
 	return newProducer, nil
 }
@@ -2683,13 +2703,13 @@ func InsertNewConsumer(name string,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
 	lastMessages int64,
-	tenantName string) (bool, models.Consumer, int64, error) {
+	tenantName string, partitionsList []int) (models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 	defer conn.Release()
 
@@ -2705,13 +2725,14 @@ func InsertNewConsumer(name string,
 		start_consume_from_seq,
 		last_msgs,
 		type,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+		tenant_name, 
+		partitions) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
 	if err != nil {
-		return false, models.Consumer{}, 0, err
+		return models.Consumer{}, err
 	}
 
 	var consumerId int
@@ -2719,48 +2740,35 @@ func InsertNewConsumer(name string,
 	isActive := true
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName)
+		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			// Handle unique constraint violation error
-			return true, models.Consumer{}, 0, nil
-		} else {
-			return false, models.Consumer{}, 0, err
-		}
+		return models.Consumer{}, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&consumerId)
 		if err != nil {
-			return false, models.Consumer{}, 0, err
+			return models.Consumer{}, err
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			// Handle unique constraint violation error
-			return true, models.Consumer{}, 0, nil
-		} else {
-			return false, models.Consumer{}, 0, err
-		}
+		return models.Consumer{}, err
 	}
 
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
-				return false, models.Consumer{}, 0, errors.New(pgErr.Detail)
+				return models.Consumer{}, errors.New(pgErr.Detail)
 			} else {
-				return false, models.Consumer{}, 0, errors.New(pgErr.Message)
+				return models.Consumer{}, errors.New(pgErr.Message)
 			}
 		} else {
-			return false, models.Consumer{}, 0, err
+			return models.Consumer{}, err
 		}
 	}
 
-	rowsAffected := rows.CommandTag().RowsAffected()
 	newConsumer := models.Consumer{
 		ID:                  consumerId,
 		Name:                name,
@@ -2775,8 +2783,9 @@ func InsertNewConsumer(name string,
 		StartConsumeFromSeq: startConsumeFromSequence,
 		LastMessages:        lastMessages,
 		TenantName:          tenantName,
+		PartitionsList:      partitionsList,
 	}
-	return false, newConsumer, rowsAffected, nil
+	return newConsumer, nil
 }
 
 func GetConsumers() ([]models.Consumer, error) {
@@ -2815,7 +2824,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions,
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
@@ -3017,6 +3026,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.is_active,
 			c.max_msg_deliveries,
 			c.max_ack_time_ms,
+			c.partitions,
 			COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 		FROM
 			consumers AS c
@@ -3880,7 +3890,7 @@ func DeleteIntegration(name string, tenantName string) error {
 	return nil
 }
 
-func InsertNewIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func InsertNewIntegration(tenantName string, name string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
@@ -3944,7 +3954,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]string
 	return newIntegration, nil
 }
 
-func UpdateIntegration(tenantName string, name string, keys map[string]string, properties map[string]bool) (models.Integration, error) {
+func UpdateIntegration(tenantName string, name string, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
@@ -4622,7 +4632,7 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4658,7 +4668,7 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -5146,7 +5156,7 @@ func GetImage(name string, tenantName string) (bool, models.Image, error) {
 }
 
 // dls Functions
-func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string) (models.DlsMessage, error) {
+func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, validationError string, tenantName string, partitionNumber int) (models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
@@ -5164,8 +5174,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 			message_type,
 			validation_error,
 			tenant_name,
-			producer_name) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			producer_name,
+			partition_number) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id`
 
 	stmt, err := connection.Conn().Prepare(ctx, "insert_dls_messages", query)
@@ -5176,7 +5187,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName, producerName)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, poisonedCgs, messageDetails, updatedAt, "schema", validationError, tenantName, producerName, partitionNumber)
 	if err != nil {
 		return models.DlsMessage{}, err
 	}
@@ -5207,8 +5218,9 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 			Data:     messageDetails.Data,
 			Headers:  messageDetails.Headers,
 		},
-		UpdatedAt:  updatedAt,
-		TenantName: tenantName,
+		UpdatedAt:       updatedAt,
+		TenantName:      tenantName,
+		PartitionNumber: partitionNumber,
 	}
 
 	if err := rows.Err(); err != nil {
@@ -5231,7 +5243,7 @@ func InsertSchemaverseDlsMsg(stationId int, messageSeq int, producerName string,
 	return deadLetterPayload, nil
 }
 
-func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMessage, error) {
+func GetMsgByStationIdAndMsgSeq(stationId, messageSeq, partitionNumber int) (bool, models.DlsMessage, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5241,14 +5253,14 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	}
 	defer connection.Release()
 
-	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 LIMIT 1`
+	query := `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND partition_number = $3 LIMIT 1`
 
 	stmt, err := connection.Conn().Prepare(ctx, "get_dls_messages_by_station_id_and_message_seq", query)
 	if err != nil {
 		return false, models.DlsMessage{}, err
 	}
 
-	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq)
+	rows, err := connection.Conn().Query(ctx, stmt.Name, stationId, messageSeq, partitionNumber)
 	if err != nil {
 		return false, models.DlsMessage{}, err
 	}
@@ -5265,7 +5277,7 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq int) (bool, models.DlsMess
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string) (int, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -5302,12 +5314,12 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 	}
 	checkRows.Close()
 
-	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 LIMIT 1 FOR UPDATE`
+	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 AND partition_number = $4 LIMIT 1 FOR UPDATE`
 	stmt, err = tx.Prepare(ctx, "handle_insert_dls_message", query)
 	if err != nil {
 		return 0, err
 	}
-	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName)
+	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName, partitionNumber)
 	if err != nil {
 		return 0, err
 	}
@@ -5329,9 +5341,10 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			updated_at,
 			message_type,
 			validation_error,
-			tenant_name
+			tenant_name,
+			partition_number
 			) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id`
 
 		stmt, err := tx.Prepare(ctx, "insert_dls_message", query)
@@ -5342,7 +5355,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		if tenantName != conf.GlobalAccount {
 			tenantName = strings.ToLower(tenantName)
 		}
-		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName)
+		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName, partitionNumber)
 		if err != nil {
 			return 0, err
 		}
@@ -5497,6 +5510,28 @@ func PurgeDlsMsgsFromStation(station_id int) error {
 	return nil
 }
 
+func PurgeDlsMsgsFromPartition(station_id, partitionNumber int) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromPartition: " + err.Error())
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM dls_messages where station_id=$1 AND partition_number = $2`
+	stmt, err := conn.Conn().Prepare(ctx, "purge_dls_messages", query)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Conn().Exec(ctx, stmt.Name, station_id, partitionNumber)
+	if err != nil {
+		return errors.New("PurgeDlsMsgsFromPartition: " + err.Error())
+	}
+	return nil
+}
+
 func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -5535,6 +5570,35 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
 		return []models.DlsMessage{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+}
+
+func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 1000`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
 	if err != nil {
 		return []models.DlsMessage{}, err
 	}
@@ -6187,7 +6251,7 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 
 	var queries []string
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
+	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {

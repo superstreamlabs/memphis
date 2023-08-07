@@ -11,7 +11,6 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
@@ -168,7 +167,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             dls_configuration: {
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
-            }
+            },
+            partitions_number: formFields.partitions_number
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -295,33 +295,57 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {!isCloud() && (
+                <div className="replicas-partition-container">
+                    {!isCloud() && (
+                        <div className="replicas-container">
+                            <TitleComponent
+                                headerTitle="Replicas"
+                                typeTitle="sub-header"
+                                headerDescription="Amount of mirrors per message."
+                                learnMore={true}
+                                link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                            />
+                            <div>
+                                <Form.Item
+                                    name="replicas"
+                                    initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                    style={{ height: '50px' }}
+                                >
+                                    <SelectComponent
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        radiusType="semi-round"
+                                        height="40px"
+                                        popupClassName="select-options"
+                                        options={actualPods}
+                                        value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                        onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                        disabled={!allowEdit}
+                                    />
+                                </Form.Item>
+                            </div>
+                        </div>
+                    )}
                     <div className="replicas-container">
-                        <TitleComponent
-                            headerTitle="Replicas"
-                            typeTitle="sub-header"
-                            headerDescription="Amount of mirrors per message."
-                            learnMore={true}
-                            link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                        />
+                        <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Amount of partitions per station." learnMore={false} />
                         <div>
-                            <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
-                                <SelectComponent
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    radiusType="semi-round"
-                                    height="40px"
-                                    popupClassName="select-options"
-                                    options={actualPods}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                    onChange={(e) => getStarted && updateFormState('replicas', e)}
+                            <Form.Item
+                                name="partitions_number"
+                                initialValue={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                style={{ height: '50px' }}
+                            >
+                                <InputNumberComponent
+                                    min={1}
+                                    max={isCloud() ? 30 : 10000}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                    onChange={(e) => getStarted && updateFormState('partitions_number', e)}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
                         </div>
                     </div>
-                )}
+                </div>
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>

@@ -46,6 +46,7 @@ import (
 
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
+const MAX_PARTITIONS = 10000
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -1999,7 +2000,7 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 }
 
 func validateRetentionType(retentionType string) error {
-	if retentionType == "ack_based"{
+	if retentionType == "ack_based" {
 		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
 	}
 	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
