@@ -724,22 +724,47 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string) (*ConsumerInfo, error) {
-	cgName = replaceDelimiters(cgName)
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
-
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionsList []int) (*ConsumerInfo, error) {
 	var resp JSApiConsumerInfoResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
-	if err != nil {
-		return nil, err
+	cgName = replaceDelimiters(cgName)
+	var cgInfo *ConsumerInfo
+	if len(partitionsList) == 0 {
+		requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
+		err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+		if err != nil {
+			return nil, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return nil, err
+		}
+		cgInfo = resp.ConsumerInfo
+	} else {
+		init := false
+		for _, pl := range partitionsList {
+			stationWithPartition := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(pl))
+			requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationWithPartition, cgName)
+			err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+			if err != nil {
+				return nil, err
+			}
+			err = resp.ToError()
+			if err != nil {
+				return nil, err
+			}
+			if !init {
+				cgInfo = resp.ConsumerInfo
+				init = true
+			} else {
+				cgInfo.NumAckPending += resp.ConsumerInfo.NumAckPending
+				cgInfo.NumRedelivered += resp.ConsumerInfo.NumRedelivered
+				cgInfo.NumWaiting += resp.ConsumerInfo.NumWaiting
+				cgInfo.NumPending += resp.ConsumerInfo.NumPending
+			}
+		}
 	}
 
-	err = resp.ToError()
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.ConsumerInfo, nil
+	return cgInfo, nil
 }
 
 func (s *Server) RemoveStream(tenantName, streamName string) error {

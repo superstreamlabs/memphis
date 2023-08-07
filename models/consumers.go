@@ -41,6 +41,7 @@ type ExtendedConsumer struct {
 	MaxAckTimeMs     int64     `json:"max_ack_time_ms"`
 	MaxMsgDeliveries int       `json:"max_msg_deliveries"`
 	StationName      string    `json:"station_name,omitempty"`
+	PartitionsList   []int     `json:"partitions_list"`
 	Count            int       `json:"count"`
 }
 
@@ -62,6 +63,7 @@ type Cg struct {
 	DisconnectedConsumers []ExtendedConsumer `json:"disconnected_consumers"`
 	DeletedConsumers      []ExtendedConsumer `json:"deleted_consumers"`
 	LastStatusChangeDate  time.Time          `json:"last_status_change_date"`
+	PartitionsList        []int              `json:"partitions_list"`
 }
 
 type GetAllConsumersByStationSchema struct {
@@ -89,6 +91,7 @@ type CgMember struct {
 	IsActive         bool   `json:"is_active"`
 	MaxMsgDeliveries int    `json:"max_msg_deliveries"`
 	MaxAckTimeMs     int64  `json:"max_ack_time_ms"`
+	PartitionsList   []int  `json:"partitions_list"`
 	Count            int    `json:"count"`
 }
 

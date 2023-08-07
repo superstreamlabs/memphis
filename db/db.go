@@ -2819,7 +2819,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name,
+	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions_list,
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
@@ -3021,6 +3021,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.is_active,
 			c.max_msg_deliveries,
 			c.max_ack_time_ms,
+			c.partitions_list,
 			COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 		FROM
 			consumers AS c

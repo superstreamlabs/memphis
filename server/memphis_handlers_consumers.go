@@ -179,7 +179,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return []int{}, err
 	}
 	if exist {
-		err := errors.New(fmt.Sprintf("Consumer %v at station %v: Consumer name has to be unique per station", consumerName, cStationName))
+		err := fmt.Errorf("Consumer %v at station %v: Consumer name has to be unique per station", consumerName, cStationName)
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon: %v", user.TenantName, err.Error())
 		return []int{}, err
 	}
@@ -337,6 +337,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 				DeletedConsumers:      []models.ExtendedConsumer{},
 				IsActive:              consumer.IsActive,
 				LastStatusChangeDate:  consumer.UpdatedAt,
+				PartitionsList:        consumer.PartitionsList,
 			}
 			m[consumer.ConsumersGroup] = cg
 		} else {
@@ -357,6 +358,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			MaxMsgDeliveries: consumer.MaxMsgDeliveries,
 			StationName:      consumer.StationName,
 			Count:            consumer.Count,
+			PartitionsList:   consumer.PartitionsList,
 		}
 
 		if consumer.IsActive {
@@ -371,8 +373,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	var deletedCgs []models.Cg
 
 	for _, cg := range m {
-
-		cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
+		cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name, cg.PartitionsList)
 		if err != nil {
 			continue // ignoring cases where the consumer exist in memphis but not in nats
 		}
