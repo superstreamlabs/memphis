@@ -277,7 +277,7 @@ const GitHubIntegration = ({ close, value }) => {
                             {isValue && (
                                 <div className="input-field">
                                     <p className="title">Repos</p>
-                                    <span className="desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span>
+                                    {/* <span className="desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span> */}
                                     <div className="repos-container">
                                         <div className="repos-header">
                                             <label></label>
