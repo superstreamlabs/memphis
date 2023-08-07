@@ -47,6 +47,10 @@ export const ApiEndpoints = {
     REMOVE_SCHEMA_FROM_STATION: '/stations/removeSchemaFromStation',
     TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
     UPDATE_DLS_CONFIGURATION: '/stations/updateDlsConfig',
+    PRODUCE: '/stations/produce',
+
+    //Async Tasks
+    GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',
 
     //Monitor
     GET_CLUSTER_INFO: '/monitoring/getClusterInfo',

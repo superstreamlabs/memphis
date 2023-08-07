@@ -51,8 +51,8 @@ const Tags = () => {
             ) : (
                 <div className="no-data">
                     <img src={noTagsFound} alt="no data found" />
-                    <p>No tags yet!</p>
-                    <label>Tags are a great way to organize your data.</label>
+                    <p>No tags yet</p>
+                    <label>Tags are a great way to identify your different assets as you grow.</label>
                     <label>Create a tag to get started.</label>
                 </div>
             )}

@@ -112,7 +112,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return []int{}, err
 	}
 
-	exist, user, err := memphis_cache.GetUser(userName, tenantName)
+	exist, user, err := memphis_cache.GetUser(userName, tenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return []int{}, err
@@ -383,9 +383,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 		}
 
-		cg.InProcessMessages = cgInfo.NumAckPending
-		cg.UnprocessedMessages = int(cgInfo.NumPending)
-		cg.PoisonMessages = totalPoisonMsgs
+		cg.InProcessMessages += cgInfo.NumAckPending
+		cg.UnprocessedMessages += int(cgInfo.NumPending)
+		cg.PoisonMessages += totalPoisonMsgs
 
 		if len(cg.ConnectedConsumers) > 0 {
 			cg.IsActive = true
@@ -624,7 +624,7 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 		if username == "" {
 			username = userName
 		}
-		_, user, err := memphis_cache.GetUser(username, consumer.TenantName)
+		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
 			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)

@@ -143,7 +143,7 @@ func Authenticate(c *gin.Context) {
 			user.TenantName = strings.ToLower(user.TenantName)
 		}
 
-		exists, _, err := memphis_cache.GetUser(username, user.TenantName)
+		exists, _, err := memphis_cache.GetUser(username, user.TenantName, false)
 		if err != nil {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return

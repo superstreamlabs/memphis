@@ -205,7 +205,7 @@ type RemoveMessagesSchema struct {
 }
 
 type MessageToDelete struct {
-	MessageSeqs     uint64 `json:"message_seq" binding:"required"`
+	MessageSeq      uint64 `json:"message_seq" binding:"required"`
 	PartitionNumber int    `json:"partition_number" binding:"required"`
 }
 
@@ -254,4 +254,8 @@ type StationOverviewSchemaDetails struct {
 
 type GetUpdatesForSchema struct {
 	StationName string `form:"station_name" json:"station_name" binding:"required"`
+}
+
+type PartitionsUpdate struct {
+	PartitionsList []int `json:"partitions_list"`
 }

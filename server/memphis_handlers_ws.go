@@ -37,6 +37,7 @@ const (
 	memphisWS_Subj_SysLogsData          = "syslogs_data"
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 	memphisWS_Subj_GetSystemMessages    = "get_system_messages"
+	memphisWS_subj_GetAsyncTasks        = "get_async_tasks"
 	ws_updates_interval_sec             = 5
 )
 
@@ -114,11 +115,13 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") && !strings.Contains(err.Error(), "alphanumeric") {
 							s.Errorf("[tenant: %v]memphisWSLoop at filler: %v", tenant, err.Error())
 						}
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 					updateRaw, err := json.Marshal(update)
 					if err != nil {
 						s.Errorf("[tenant: %v]memphisWSLoop at json.Marshal: %v", tenant, err.Error())
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 
@@ -186,7 +189,6 @@ func (s *Server) createWSRegistrationHandler(h *Handlers) simplifiedMsgHandler {
 
 		broName := brokerName{s.opts.ServerName}
 		serverName, err := json.Marshal(broName)
-
 		if err != nil {
 			s.Errorf("[tenant: %v]memphis websocket at json.Marshal: %v", tenantName, err.Error())
 			return
@@ -209,7 +211,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 
 		partitionNumber, err := strconv.Atoi(partitionNumberStr)
 		if err != nil {
-			return nil, errors.New("invalid partition number")
+			return nil, fmt.Errorf("invalid partition number - %v", partitionNumberStr)
 		}
 
 		stationName := strings.Join(splitedResp[1:len(splitedResp)-1], ".")
@@ -253,6 +255,10 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	case memphisWS_Subj_GetSystemMessages:
 		return func(string) (any, error) {
 			return h.userMgmt.GetRelevantSystemMessages()
+		}, nil
+	case memphisWS_subj_GetAsyncTasks:
+		return func(string) (any, error) {
+			return h.AsyncTasks.GetAllAsyncTasks(tenantName)
 		}, nil
 	default:
 		return nil, errors.New("invalid subject")
@@ -317,7 +323,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}

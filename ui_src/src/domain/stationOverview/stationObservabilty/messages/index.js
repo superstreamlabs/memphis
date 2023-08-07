@@ -16,30 +16,29 @@ import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
-import { messageParser, msToUnits } from '../../../../services/valueConvertor';
+import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
+import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
+import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
-import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
-import purge from '../../../../assets/images/purge.svg';
 import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
+import TooltipComponent from '../../../../components/tooltip/tooltip';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
 import PurgeStationModal from '../components/purgeStationModal';
 import CheckboxComponent from '../../../../components/checkBox';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import MessageDetails from '../components/messageDetails';
 import DetailBox from '../../../../components/detailBox';
 import DlsConfig from '../../../../components/dlsConfig';
 import { httpRequest } from '../../../../services/http';
+import purge from '../../../../assets/images/purge.svg';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
-import pathDomains from '../../../../router';
-import MessageDetails from '../components/messageDetails';
 import { Virtuoso } from 'react-virtuoso';
-import TooltipComponent from '../../../../components/tooltip/tooltip';
-import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -47,7 +46,6 @@ const Messages = () => {
     const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
-    const [indeterminate, setIndeterminate] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
@@ -76,11 +74,6 @@ const Messages = () => {
         if (checked) {
             checkedList = [...isCheck, id];
             setIsCheck(checkedList);
-        }
-        if (subTabValue === subTabs[0].name) {
-            setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.poison_messages?.length);
-        } else {
-            setIndeterminate(!!checkedList.length && checkedList.length < stationState?.stationSocketData?.schema_failed_messages?.length);
         }
     };
 
@@ -144,47 +137,41 @@ const Messages = () => {
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
-                setIndeterminate(false);
             }, 1500);
         } catch (error) {
             setIgnoreProcced(false);
         }
     };
 
-    // const handleResend = async () => { // TODO: Ready for resend all
-    //     // setResendProcced(true);
-    //     try {
-    //         await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
-    //         // setTimeout(() => {
-    //         //     setResendProcced(false);
-    //         //     message.success({
-    //         //         key: 'memphisSuccessMessage',
-    //         //         content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
-    //         //         duration: 5,
-    //         //         style: { cursor: 'pointer' },
-    //         //         onClick: () => message.destroy('memphisSuccessMessage')
-    //         //     });
-    //         //     setIsCheck([]);
-    //         // }, 1500);
-    //     } catch (error) {
-    //         // setResendProcced(false);
-    //     }
-    // };
     const handleResend = async () => {
         setResendProcced(true);
         try {
             await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: isCheck, station_name: stationName });
-            setTimeout(() => {
-                setResendProcced(false);
+            if (isCheck.length > 0) {
+                setTimeout(() => {
+                    setResendProcced(false);
+                    message.success({
+                        key: 'memphisSuccessMessage',
+                        content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
+                        duration: 5,
+                        style: { cursor: 'pointer' },
+                        onClick: () => message.destroy('memphisSuccessMessage')
+                    });
+                    setIsCheck([]);
+                }, 1500);
+            } else {
                 message.success({
                     key: 'memphisSuccessMessage',
-                    content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
-                    duration: 5,
+                    content: `All DLS messages are being resent asynchronously. We'll let you know upon completion`,
+                    duration: 3,
                     style: { cursor: 'pointer' },
                     onClick: () => message.destroy('memphisSuccessMessage')
                 });
-                setIsCheck([]);
-            }, 1500);
+                setTimeout(() => {
+                    setResendProcced(false);
+                    setIsCheck([]);
+                }, 3500);
+            }
         } catch (error) {
             setResendProcced(false);
         }
@@ -199,7 +186,6 @@ const Messages = () => {
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
                 <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
-
                 <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
                     {selectedRowIndex === id && <div className="hr-selected"></div>}
                     <span className="preview-message">
@@ -267,6 +253,22 @@ const Messages = () => {
         );
     };
 
+    const getDescriptin = () => {
+        if (stationState?.stationSocketData?.connected_producers?.length > 0 || stationState?.stationSocketData?.disconnected_producers?.length > 0) {
+            if (
+                stationState?.stationMetaData?.retention_type === 'ack_based' &&
+                stationState?.stationSocketData?.disconnected_cgs?.length === 0 &&
+                stationState?.stationSocketData?.connected_cgs?.length === 0
+            ) {
+                return 'When retention is ack-based, messages will be auto-deleted if no consumers are connected to the station';
+            } else {
+                return 'Start / Continue producing data.';
+            }
+        } else {
+            return 'Create your 1st producer and start producing data.';
+        }
+    };
+
     return (
         <div className="messages-container">
             <div className="header">
@@ -294,18 +296,17 @@ const Messages = () => {
                     )}
                     {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <Button
-                            width="80px"
+                            width="95px"
                             height="32px"
-                            // placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
-                            placeholder={isCheck.length === 0 ? 'Resend' : `Resend (${isCheck.length})`}
+                            placeholder={isCheck.length === 0 ? 'Resend all' : `Resend (${isCheck.length})`}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
                             fontSize="12px"
                             fontWeight="600"
-                            disabled={isCheck.length === 0 || !stationState?.stationMetaData?.is_native}
+                            disabled={resendProcced || stationState?.stationSocketData?.resend_disabled || !stationState?.stationMetaData?.is_native}
+                            isLoading={resendProcced && isCheck.length > 0}
                             tooltip={!stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs'}
-                            isLoading={resendProcced}
                             onClick={() => handleResend()}
                         />
                     )}
@@ -346,8 +347,8 @@ const Messages = () => {
             {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
-                    <p>No messages yet</p>
-                    <span className="des">Create your 1st producer and start producing data</span>
+                    <p>No messages</p>
+                    <span className="des">{getDescriptin()}</span>
                 </div>
             )}
             {tabValue === tabs[1] &&
@@ -368,9 +369,11 @@ const Messages = () => {
                     >
                         <DlsConfig />
                     </DetailBox>
-                    <DetailBox img={purge} title={'Purge'}>
-                        <div className="purge-container">
-                            <label>Clean station from messages.</label>
+                    <DetailBox
+                        img={purge}
+                        title={'Purge'}
+                        desc="Clean station from messages."
+                        data={[
                             <Button
                                 width="80px"
                                 height="32px"
@@ -383,22 +386,24 @@ const Messages = () => {
                                 disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
                                 onClick={() => modalPurgeFlip(true)}
                             />
-                        </div>
-                    </DetailBox>
-                    <DetailBox
-                        img={leaderImg}
-                        title={'Leader'}
-                        desc={
-                            <span>
-                                The current leader of this station.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                    Learn more
-                                </a>
-                            </span>
-                        }
-                        data={[stationState?.stationSocketData?.leader]}
-                    />
-                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                        ]}
+                    ></DetailBox>
+                    {!isCloud() && (
+                        <DetailBox
+                            img={leaderImg}
+                            title={'Leader'}
+                            desc={
+                                <span>
+                                    The current leader of this station.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                            data={[stationState?.stationSocketData?.leader]}
+                        />
+                    )}
+                    {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && (
                         <DetailBox
                             img={followersImg}
                             title={'Followers'}

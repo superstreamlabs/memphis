@@ -160,12 +160,12 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 {messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
                                 )}
-                                <div className='info-box' >
+                                <div className="info-box">
                                     <div>
-                                        <span className='title'>Producer </span>
-                                        <span className='content'>{messageDetails?.producer?.details[0].value}</span>
+                                        <span className="title">Producer name</span>
+                                        <span className="content">{messageDetails?.producer?.details[0].value}</span>
                                     </div>
-                                        <StatusIndication is_active={messageDetails?.producer.is_active} />
+                                    <StatusIndication is_active={messageDetails?.producer.is_active} />
                                 </div>
 
                                 {!isFailedSchemaMessage && (

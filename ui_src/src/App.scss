@@ -178,3 +178,88 @@ pre {
 .avatar-image{
     border-radius: 50%;
 }
+
+.system-notification{
+    position: absolute;
+    width: 100%;
+    text-align: -webkit-center;
+    .notification-wrapper{
+        opacity: 0;       
+        width: 40%;
+        height: 30px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3;
+        border-radius: 0px 0px 10px 10px;
+        border-right: 1px solid rgba(101, 87, 255, 0.09);
+        border-bottom: 1px solid rgba(101, 87, 255, 0.09);
+        border-left: 1px solid rgba(101, 87, 255, 0.09);
+        background: linear-gradient(157deg, rgba(29, 29, 29, 0.06) 0%, rgba(101, 87, 255, 0.10) 100%);
+        box-shadow: 0px 2px 2px 0px rgba(101, 87, 255, 0.10);
+        .notification-badge{
+            background: var(--purple);
+            font-size: 12px;
+            font-family: 'InterMedium';
+            color: #fff;
+            border-radius: 4px;
+            display: flex;
+            padding: 3px 7px;
+            margin-right: 10px;
+            align-items: center;
+            height: 20px;
+        }
+        p{
+            margin: 0;
+            color:rgba(74, 73, 92, 0.80);
+            font-size: 14px;
+            font-family: 'Inter';
+        }
+        a{
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+            display: flex;
+        }
+        img{
+            width: 12px;
+            margin-left: 5px;
+        }
+    }
+}
+
+.show-notification .notification-wrapper {
+    animation: slide-in 0.5s ease-out forwards;
+}
+
+.hide-notification .notification-wrapper {
+    animation: slide-out 0.5s ease-out forwards;
+  }
+  
+
+
+@keyframes slide-in {
+    0% {
+      top: -100px;
+      opacity: 0; /* Start with opacity 0 */
+    }
+    100% {
+      top: 0;
+      opacity: 1; /* End with opacity 1 */
+    }
+  }
+  
+@keyframes slide-out {
+    0% {
+        top: 0;
+        opacity: 1; /* Start with opacity 1 */
+    }
+    100% {
+        top: -100px;
+        opacity: 0; /* End with opacity 0 */
+    }
+}
+  
+  
+  
+  

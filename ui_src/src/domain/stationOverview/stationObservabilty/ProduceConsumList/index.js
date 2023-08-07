@@ -18,22 +18,23 @@ import { Virtuoso } from 'react-virtuoso';
 
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
 import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
+import playVideoIcon from '../../../../assets/images/playVideoIcon.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import unsupported from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
 import SdkExample from '../../../../components/sdkExsample';
 import CustomCollapse from '../components/customCollapse';
-import MultiCollapse from '../components/multiCollapse';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
+import ProduceMessages from '../../../../components/produceMessages';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(0);
     const [producersList, setProducersList] = useState([]);
     const [cgsList, setCgsList] = useState([]);
-    const [producerDetails, setProducerDetails] = useState([]);
+    const [openProduceMessages, setOpenProduceMessages] = useState(false);
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
@@ -49,8 +50,7 @@ const ProduceConsumList = ({ producer }) => {
     }, [stationState?.stationSocketData]);
 
     useEffect(() => {
-        arrangeData('producer', selectedRowIndex);
-        arrangeData('cgs', selectedRowIndex);
+        arrangeData(selectedRowIndex);
     }, [producersList, cgsList]);
 
     const concatFunction = (type, data) => {
@@ -87,54 +87,44 @@ const ProduceConsumList = ({ producer }) => {
         arrangeData(type, rowIndex);
     };
 
-    const arrangeData = (type, rowIndex) => {
-        if (type === 'producer') {
-            let details = [
-                {
-                    name: 'Name',
-                    value: producersList[rowIndex]?.name
-                },
-            ];
-            setProducerDetails(details);
-        } else {
-            let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
-            let consumersDetails = [];
-            concatAllConsumers.map((row, index) => {
-                let consumer = {
-                    name: row.name,
-                    count: row.count,
-                    is_active: row.is_active,
-                    is_deleted: row.is_deleted,
-                };
-                consumersDetails.push(consumer);
-            });
-            let cgDetails = {
-                details: [
-                    {
-                        name: 'Unacked messages',
-                        value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'Unprocessed messages',
-                        value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'In process message',
-                        value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
-                    },
-                    {
-                        name: 'Max ack time',
-                        value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
-                    },
-                    {
-                        name: 'Max message deliveries',
-                        value: cgsList[rowIndex]?.max_msg_deliveries
-                    }
-                ],
-                consumers: consumersDetails
+    const arrangeData = (rowIndex) => {
+        let concatAllConsumers = concatFunction('consumers', cgsList[rowIndex]);
+        let consumersDetails = [];
+        concatAllConsumers.map((row, index) => {
+            let consumer = {
+                name: row.name,
+                count: row.count,
+                is_active: row.is_active,
+                is_deleted: row.is_deleted
             };
-            setCgDetails(cgDetails);
-        }
+            consumersDetails.push(consumer);
+        });
+        let cgDetails = {
+            details: [
+                {
+                    name: 'Unacked messages',
+                    value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
+                },
+                {
+                    name: 'Unprocessed messages',
+                    value: cgsList[rowIndex]?.unprocessed_messages?.toLocaleString()
+                },
+                {
+                    name: 'In process message',
+                    value: cgsList[rowIndex]?.in_process_messages?.toLocaleString()
+                },
+                {
+                    name: 'Max ack time',
+                    value: `${cgsList[rowIndex]?.max_ack_time_ms?.toLocaleString()}ms`
+                },
+                {
+                    name: 'Max message deliveries',
+                    value: cgsList[rowIndex]?.max_msg_deliveries
+                }
+            ],
+            consumers: consumersDetails
+        };
+        setCgDetails(cgDetails);
     };
 
     const returnClassName = (index, is_deleted) => {
@@ -152,7 +142,29 @@ const ProduceConsumList = ({ producer }) => {
             <div className="pubSub-list-container">
                 {' '}
                 <div className="header">
-                    {producer && <p className="title">Producers {producersList?.length > 0 && `(${producersList?.length})`}</p>}
+                    {producer && (
+                        <>
+                            <p className="title">Producers {producersList?.length > 0 && `(${producersList?.length})`}</p>
+                            <Button
+                                className="producer-btn"
+                                width="100px"
+                                height="30px"
+                                placeholder={
+                                    <div className="producer-placeholder">
+                                        <img src={playVideoIcon} width={18} alt="playVideoIcon" />
+                                        <span>Produce</span>
+                                    </div>
+                                }
+                                colorType={'purple'}
+                                radiusType="circle"
+                                border={'gray-light'}
+                                backgroundColorType={'white'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => setOpenProduceMessages(true)}
+                            />
+                        </>
+                    )}
                     {!producer && <p className="title">Consumer groups {cgsList?.length > 0 && `(${cgsList?.length})`}</p>}
                 </div>
                 {producer && producersList?.length > 0 && (
@@ -230,7 +242,7 @@ const ProduceConsumList = ({ producer }) => {
                             )}
                         </div>
                         <div style={{ marginRight: '10px' }} id={producer ? 'producer-details' : 'consumer-details'}>
-                            {producer && producersList?.length > 0 }
+                            {producer && producersList?.length > 0}
                             {!producer && cgsList?.length > 0 && (
                                 <Space direction="vertical">
                                     <CustomCollapse header="Details" status={false} defaultOpen={true} data={cgDetails.details} />
@@ -296,6 +308,26 @@ const ProduceConsumList = ({ producer }) => {
                 displayButtons={false}
             >
                 <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={playVideoIcon} alt="stationImg" />
+                        </div>
+                        <p>Produce</p>
+                        <label>Quick message producing.</label>
+                    </div>
+                }
+                width="550px"
+                height="765px"
+                clickOutside={() => {
+                    setOpenProduceMessages(false);
+                }}
+                open={openProduceMessages}
+                displayButtons={false}
+            >
+                <ProduceMessages stationName={stationState?.stationMetaData?.name} cancel={() => setOpenProduceMessages(false)} />
             </Modal>
         </div>
     );

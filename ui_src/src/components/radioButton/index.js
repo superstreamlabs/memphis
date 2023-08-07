@@ -14,6 +14,7 @@ import './style.scss';
 
 import { Radio } from 'antd';
 import React from 'react';
+import TooltipComponent from '../tooltip/tooltip';
 
 const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height, radioStyle }) => {
     const handleChange = (e) => {
@@ -34,23 +35,42 @@ const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled,
                 disabled={disabled}
                 defaultValue={radioValue || options[0]?.value}
             >
-                {options.map((option) => (
-                    <div
-                        key={option.value}
-                        style={{ height: height }}
-                        className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
-                    >
-                        <span
-                            className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}
-                            style={{ fontFamily: fontFamily }}
+                {options.map((option) =>
+                    option.tooltip ? (
+                        <TooltipComponent key={option.value} text={option.tooltip}>
+                            <div
+                                key={option.value}
+                                style={{ height: height }}
+                                className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
+                            >
+                                <span
+                                    className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}
+                                    style={{ fontFamily: fontFamily }}
+                                >
+                                    <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                                        <p className="label-option-text"> {option.label}</p>
+                                    </Radio>
+                                </span>
+                            </div>
+                        </TooltipComponent>
+                    ) : (
+                        <div
+                            key={option.value}
+                            style={{ height: height }}
+                            className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                         >
-                            <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
-                                <p className="label-option-text"> {option.label}</p>
-                            </Radio>
-                        </span>
-                        {option.description && <span className="des">{option.description}</span>}
-                    </div>
-                ))}
+                            <span
+                                className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}
+                                style={{ fontFamily: fontFamily }}
+                            >
+                                <Radio key={option.id} value={option.value} disabled={option.disabled || false}>
+                                    <p className="label-option-text"> {option.label}</p>
+                                </Radio>
+                            </span>
+                            {option.description && <span className="des">{option.description}</span>}
+                        </div>
+                    )
+                )}
             </Radio.Group>
         </div>
     );
