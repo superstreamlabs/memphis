@@ -50,7 +50,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
         }
     }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
-    const getMessageDetails = async (selectedRow, selectedPartition) => {
+    const getMessageDetails = async (selectedRow, selectedRowPartition) => {
         setMessageDetails({});
         setLoadMessageData(true);
         try {
@@ -58,7 +58,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
                     isFailedSchemaMessage ? 'schema' : 'poison'
-                }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
+                }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
                     isDls ? -1 : selectedRow
                 }`
             );
