@@ -574,7 +574,7 @@ func getInternalConsumerName(cn string) string {
 	return replaceDelimiters(cn)
 }
 
-func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station) error {
+func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station, partitionsList []int) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
 		consumerName = consumer.ConsumersGroup
@@ -603,6 +603,10 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 		return err
 	}
 
+	if len(partitionsList) > len(station.PartitionsList) {
+		partitionsList = station.PartitionsList
+	}
+
 	var deliveryPolicy DeliverPolicy
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
@@ -626,26 +630,52 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
 		deliveryPolicy = DeliverAll
 	}
+	if len(partitionsList) == 0 {
+		consumerConfig := &ConsumerConfig{
+			Durable:       consumerName,
+			DeliverPolicy: deliveryPolicy,
+			AckPolicy:     AckExplicit,
+			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+			MaxDeliver:    MaxMsgDeliveries,
+			FilterSubject: stationName.Intern() + ".final",
+			ReplayPolicy:  ReplayInstant,
+			MaxAckPending: -1,
+			HeadersOnly:   false,
+			// RateLimit: ,// Bits per sec
+			// Heartbeat: // time.Duration,
+		}
 
-	consumerConfig := &ConsumerConfig{
-		Durable:       consumerName,
-		DeliverPolicy: deliveryPolicy,
-		AckPolicy:     AckExplicit,
-		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: stationName.Intern() + ".final",
-		ReplayPolicy:  ReplayInstant,
-		MaxAckPending: -1,
-		HeadersOnly:   false,
-		// RateLimit: ,// Bits per sec
-		// Heartbeat: // time.Duration,
-	}
+		if deliveryPolicy == DeliverByStartSequence {
+			consumerConfig.OptStartSeq = optStartSeq
+		}
+		err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
+		return err
+	} else {
+		for _, pl := range partitionsList {
+			consumerConfig := &ConsumerConfig{
+				Durable:       consumerName,
+				DeliverPolicy: deliveryPolicy,
+				AckPolicy:     AckExplicit,
+				AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+				MaxDeliver:    MaxMsgDeliveries,
+				FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
+				ReplayPolicy:  ReplayInstant,
+				MaxAckPending: -1,
+				HeadersOnly:   false,
+				// RateLimit: ,// Bits per sec
+				// Heartbeat: // time.Duration,
+			}
 
-	if deliveryPolicy == DeliverByStartSequence {
-		consumerConfig.OptStartSeq = optStartSeq
+			if deliveryPolicy == DeliverByStartSequence {
+				consumerConfig.OptStartSeq = optStartSeq
+			}
+			err = s.memphisAddConsumer(tenantName, stationName.Intern() + "$" + strconv.Itoa(pl), consumerConfig)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
-	return err
+	return nil
 }
 
 func (s *Server) memphisAddConsumer(tenantName, streamName string, cc *ConsumerConfig) error {
@@ -668,9 +698,19 @@ func (s *Server) memphisAddConsumer(tenantName, streamName string, cc *ConsumerC
 	return resp.ToError()
 }
 
-func (s *Server) RemoveConsumer(tenantName string, stationName StationName, cn string) error {
+func (s *Server) RemoveConsumer(tenantName string, stationName StationName, cn string, partitionsList []int) error {
 	cn = getInternalConsumerName(cn)
-	return s.memphisRemoveConsumer(tenantName, stationName.Intern(), cn)
+	if len(partitionsList) == 0 {
+		return s.memphisRemoveConsumer(tenantName, stationName.Intern(), cn)
+	} else {
+		for _, pl := range partitionsList {
+			err := s.memphisRemoveConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), cn)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error {
@@ -684,30 +724,47 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionNumber int) (*ConsumerInfo, error) {
-	cgName = replaceDelimiters(cgName)
-
-	var streamName string
-	if partitionNumber == -1 {
-		streamName = stationName.Intern()
-	} else {
-		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber)
-	}
-
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, streamName, cgName)
-
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionsList []int) (*ConsumerInfo, error) {
 	var resp JSApiConsumerInfoResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
-	if err != nil {
-		return nil, err
+	cgName = replaceDelimiters(cgName)
+	var cgInfo *ConsumerInfo
+	if len(partitionsList) == 0 {
+		requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
+		err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+		if err != nil {
+			return nil, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return nil, err
+		}
+		cgInfo = resp.ConsumerInfo
+	} else {
+		init := false
+		for _, pl := range partitionsList {
+			stationWithPartition := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(pl))
+			requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationWithPartition, cgName)
+			err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+			if err != nil {
+				return nil, err
+			}
+			err = resp.ToError()
+			if err != nil {
+				return nil, err
+			}
+			if !init {
+				cgInfo = resp.ConsumerInfo
+				init = true
+			} else {
+				cgInfo.NumAckPending += resp.ConsumerInfo.NumAckPending
+				cgInfo.NumRedelivered += resp.ConsumerInfo.NumRedelivered
+				cgInfo.NumWaiting += resp.ConsumerInfo.NumWaiting
+				cgInfo.NumPending += resp.ConsumerInfo.NumPending
+			}
+		}
 	}
 
-	err = resp.ToError()
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.ConsumerInfo, nil
+	return cgInfo, nil
 }
 
 func (s *Server) RemoveStream(tenantName, streamName string) error {
@@ -1600,7 +1657,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 	}
 	for _, consumer := range consumers {
 		station := stationsMap[consumer.StationId]
-		err = s.CreateConsumer(consumer.TenantName, consumer, station)
+		err = s.CreateConsumer(consumer.TenantName, consumer, station, station.PartitionsList)
 		if err != nil {
 			return err
 		}

@@ -22,7 +22,6 @@ import (
 	"memphis/models"
 	"memphis/utils"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1589,34 +1588,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
-
-		for i, cg := range poisonedCgs {
-			cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg.CgName, body.PartitionNumber)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetCgInfo: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-			cgMembers, err := GetConsumerGroupMembers(cg.CgName, station)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetConsumerGroupMembers: Message ID: %v: %v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
-				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-				return
-			}
-
-			isActive, isDeleted := getCgStatus(cgMembers)
-
-			poisonedCgs[i].MaxAckTimeMs = cgMembers[0].MaxAckTimeMs
-			poisonedCgs[i].MaxMsgDeliveries = cgMembers[0].MaxMsgDeliveries
-			poisonedCgs[i].UnprocessedMessages = int(cgInfo.NumPending)
-			poisonedCgs[i].InProcessMessages = cgInfo.NumAckPending
-			poisonedCgs[i].TotalPoisonMessages = -1
-			poisonedCgs[i].IsActive = isActive
-			poisonedCgs[i].IsDeleted = isDeleted
-		}
-		sort.Slice(poisonedCgs, func(i, j int) bool {
-			return poisonedCgs[i].CgName < poisonedCgs[j].CgName
-		})
 	}
 	isActive := false
 	exist, producer, err := db.GetProducerByStationIDAndConnectionId(producedByHeader, station.ID, connectionId)

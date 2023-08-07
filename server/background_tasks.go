@@ -606,7 +606,7 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 			if _, ok := CGmap[cg.CGName]; !ok {
 				stationName, err := StationNameFromStr(cg.StationName)
 				if err == nil {
-					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName)
+					err = s.RemoveConsumer(cg.TenantName, stationName, cg.CGName, cg.PartitionsList)
 					if err != nil {
 						serv.Errorf("RemoveOldProducersAndConsumers at RemoveConsumer: %v", err.Error())
 					}

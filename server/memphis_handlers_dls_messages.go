@@ -72,7 +72,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
 	messageSeq := message.StreamSeq
-	poisonMessageContent, err := s.memphisGetMessage(accountName, stationName.Intern(), uint64(messageSeq))
+	poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil
@@ -281,14 +281,14 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		for _, v := range pCg {
-			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v, dlsMessage.PartitionNumber)
-			if err != nil {
-				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
-				return models.DlsMessageResponse{}, err
-			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
 			if err != nil {
 				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				return models.DlsMessageResponse{}, err
+			}
+			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v, cgMembers[0].PartitionsList)
+			if err != nil {
+				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
 				return models.DlsMessageResponse{}, err
 			}
 			pc.IsActive, pc.IsDeleted = getCgStatus(cgMembers)
@@ -365,16 +365,18 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}
-		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg, partitionNumber)
-		if err != nil {
-			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
-			return []models.PoisonedCg{}, err
-		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
 		if err != nil {
 			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
 			return []models.PoisonedCg{}, err
 		}
+
+		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg, cgMembers[0].PartitionsList)
+		if err != nil {
+			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
+			return []models.PoisonedCg{}, err
+		}
+
 		poisonedCg.IsActive, poisonedCg.IsDeleted = getCgStatus(cgMembers)
 
 		poisonedCg.CgName = cg

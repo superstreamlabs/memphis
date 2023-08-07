@@ -67,6 +67,11 @@ type createConsumerResponse struct {
 	Err string `json:"error"`
 }
 
+type createConsumerResponseV1 struct {
+	Partitions []int  `json:"partitions"`
+	Err        string `json:"error"`
+}
+
 type createProducerResponse struct {
 	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
 	PartitionsUpdate        models.PartitionsUpdate         `json:"partitions_update"`
@@ -163,6 +168,10 @@ func (cpr *createProducerResponse) SetError(err error) {
 }
 
 func (ccr *createConsumerResponse) SetError(err error) {
+	ccr.Err = err.Error()
+}
+
+func (ccr *createConsumerResponseV1) SetError(err error) {
 	ccr.Err = err.Error()
 }
 
