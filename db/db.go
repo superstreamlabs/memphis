@@ -349,7 +349,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	END $$;`
 
 	stationsTable := `
-	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
+	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes', 'ack_based');
 	CREATE TYPE enum_storage_type AS ENUM ('file', 'memory');
 	CREATE TABLE IF NOT EXISTS stations(
 		id SERIAL NOT NULL,
