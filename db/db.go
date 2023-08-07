@@ -2722,7 +2722,7 @@ func InsertNewConsumer(name string,
 		last_msgs,
 		type,
 		tenant_name, 
-		partitions_list,) 
+		partitions) 
     VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
 	RETURNING id`
 
@@ -2792,6 +2792,7 @@ func InsertNewConsumer(name string,
 		StartConsumeFromSeq: startConsumeFromSequence,
 		LastMessages:        lastMessages,
 		TenantName:          tenantName,
+		PartitionsList:      partitionsList,
 	}
 	return false, newConsumer, rowsAffected, nil
 }
@@ -2832,7 +2833,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, err
 	}
 	defer conn.Release()
-	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions_list,
+	query := `SELECT DISTINCT ON (c.name, c.consumers_group) c.id, c.name, c.updated_at, c.is_active, c.consumers_group, c.max_ack_time_ms, c.max_msg_deliveries, s.name, c.partitions,
 				COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 				FROM consumers AS c
 				LEFT JOIN stations AS s ON s.id = c.station_id
@@ -3034,7 +3035,7 @@ func GetConsumerGroupMembers(cgName string, stationId int) ([]models.CgMember, e
 			c.is_active,
 			c.max_msg_deliveries,
 			c.max_ack_time_ms,
-			c.partitions_list,
+			c.partitions,
 			COUNT (CASE WHEN c.is_active THEN 1 END) OVER (PARTITION BY c.name) AS count
 		FROM
 			consumers AS c
@@ -4640,7 +4641,7 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4676,7 +4677,7 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -5352,7 +5353,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			tenant_name,
 			partition_number
 			) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id`
 
 		stmt, err := tx.Prepare(ctx, "insert_dls_message", query)
@@ -6259,7 +6260,7 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 
 	var queries []string
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions_list FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
+	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
