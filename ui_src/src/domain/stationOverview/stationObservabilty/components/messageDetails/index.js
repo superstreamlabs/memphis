@@ -46,7 +46,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
 
     useEffect(() => {
         if ((isDls && stationState?.selectedRowId && stationState?.selectedRowPartition && !loadMessageData) || (stationState?.selectedRowId && !loadMessageData)) {
-            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition);
+            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
         }
     }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
