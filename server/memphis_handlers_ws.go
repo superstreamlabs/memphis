@@ -219,7 +219,6 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 			return nil, errors.New("invalid station name")
 		}
 		return func(string) (any, error) {
-			// add partition number from the strings.join to the func
 			return memphisWSGetStationOverviewData(s, h, stationName, tenantName, partitionNumber)
 		}, nil
 

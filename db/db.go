@@ -440,6 +440,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			CREATE INDEX IF NOT EXISTS producer_name ON producers(name);
 			CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
 			CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -462,6 +463,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		is_active BOOL NOT NULL DEFAULT true,
 		updated_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		partitions INTEGER[],
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -2346,7 +2348,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string) (models.Producer, error) {
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string, partitionsList []int) (models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2363,8 +2365,9 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 		is_active, 
 		updated_at, 
 		type,
-		tenant_name) 
-    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+		tenant_name,
+		partitions) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
 	if err != nil {
@@ -2377,7 +2380,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName, partitionsList)
 	if err != nil {
 		return models.Producer{}, err
 	}
@@ -2407,13 +2410,14 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	}
 
 	newProducer := models.Producer{
-		ID:           producerId,
-		Name:         name,
-		StationId:    stationId,
-		Type:         producerType,
-		ConnectionId: connectionIdObj,
-		IsActive:     isActive,
-		UpdatedAt:    time.Now(),
+		ID:             producerId,
+		Name:           name,
+		StationId:      stationId,
+		Type:           producerType,
+		ConnectionId:   connectionIdObj,
+		IsActive:       isActive,
+		UpdatedAt:      time.Now(),
+		PartitionsList: partitionsList,
 	}
 	return newProducer, nil
 }
@@ -4636,7 +4640,7 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4672,7 +4676,7 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
 	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
-	
+
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err

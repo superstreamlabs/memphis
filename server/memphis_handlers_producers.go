@@ -106,7 +106,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
-	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName)
+	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
 		return false, false, err, models.Station{}
