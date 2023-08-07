@@ -117,6 +117,8 @@ func (s *Server) ListenForIntegrationsUpdateEvents() error {
 				CacheDetails("slack", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			case "s3":
 				CacheDetails("s3", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
+			case "github":
+				CacheDetails("github", integrationUpdate.Keys, integrationUpdate.Properties, integrationUpdate.TenantName)
 			default:
 				s.Warnf("[tenant: %v] ListenForIntegrationsUpdateEvents: %s %s", integrationUpdate.TenantName, strings.ToLower(integrationUpdate.Name), "unknown integration")
 				return

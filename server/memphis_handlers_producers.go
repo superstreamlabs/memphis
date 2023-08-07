@@ -43,7 +43,11 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
+<<<<<<< HEAD
 func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int) (bool, bool, error, models.Station) {
+=======
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string) (bool, bool, error, models.Station) {
+>>>>>>> 24ccd5ea69902d049d5c3ad3b9195026b54120c5
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
@@ -156,7 +160,11 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		return
 	}
 	_, _, err, _ = s.createProducerDirectCommon(c, cpr.Name,
+<<<<<<< HEAD
 		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0)
+=======
+		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
+>>>>>>> 24ccd5ea69902d049d5c3ad3b9195026b54120c5
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 }
 
@@ -188,7 +196,11 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
+<<<<<<< HEAD
 	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion)
+=======
+	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
+>>>>>>> 24ccd5ea69902d049d5c3ad3b9195026b54120c5
 	if err != nil {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
