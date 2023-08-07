@@ -2699,13 +2699,13 @@ func InsertNewConsumer(name string,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
 	lastMessages int64,
-	tenantName string, partitionsList []int) (bool, models.Consumer, int64, error) {
+	tenantName string, partitionsList []int) (models.Consumer, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return false, models.Consumer{}, 0, err
+		return models.Consumer{}, 0, err
 	}
 	defer conn.Release()
 
@@ -2728,7 +2728,7 @@ func InsertNewConsumer(name string,
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
 	if err != nil {
-		return false, models.Consumer{}, 0, err
+		return models.Consumer{}, 0, err
 	}
 
 	var consumerId int
@@ -2738,42 +2738,30 @@ func InsertNewConsumer(name string,
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList)
 	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			// Handle unique constraint violation error
-			return true, models.Consumer{}, 0, nil
-		} else {
-			return false, models.Consumer{}, 0, err
-		}
+		return models.Consumer{}, 0, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&consumerId)
 		if err != nil {
-			return false, models.Consumer{}, 0, err
+			return models.Consumer{}, 0, err
 		}
 	}
 
 	if err := rows.Err(); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			// Handle unique constraint violation error
-			return true, models.Consumer{}, 0, nil
-		} else {
-			return false, models.Consumer{}, 0, err
-		}
+		return models.Consumer{}, 0, err
 	}
 
 	if err := rows.Err(); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
-				return false, models.Consumer{}, 0, errors.New(pgErr.Detail)
+				return models.Consumer{}, 0, errors.New(pgErr.Detail)
 			} else {
-				return false, models.Consumer{}, 0, errors.New(pgErr.Message)
+				return models.Consumer{}, 0, errors.New(pgErr.Message)
 			}
 		} else {
-			return false, models.Consumer{}, 0, err
+			return models.Consumer{}, 0, err
 		}
 	}
 
@@ -2794,7 +2782,7 @@ func InsertNewConsumer(name string,
 		TenantName:          tenantName,
 		PartitionsList:      partitionsList,
 	}
-	return false, newConsumer, rowsAffected, nil
+	return newConsumer, rowsAffected, nil
 }
 
 func GetConsumers() ([]models.Consumer, error) {
@@ -6260,7 +6248,7 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 
 	var queries []string
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
-	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name")
+	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {

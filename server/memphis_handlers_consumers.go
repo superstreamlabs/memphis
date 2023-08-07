@@ -130,7 +130,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 	if !exist {
 		if requestVersion < 2 {
-			err := errors.New("station does not exist, upgrade sdk to create station")
+			err := errors.New("This station does not exist, a default station can not be created automatically, please upgrade your SDK version")
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
 		}
@@ -173,14 +173,9 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return []int{}, err
 	}
 
-	exist, newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList)
+	newConsumer, rowsUpdated, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList)
 	if err != nil {
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
-		return []int{}, err
-	}
-	if exist {
-		err := fmt.Errorf("Consumer %v at station %v: Consumer name has to be unique per station", consumerName, cStationName)
-		serv.Errorf("[tenant: %v]createConsumerDirectCommon: %v", user.TenantName, err.Error())
 		return []int{}, err
 	}
 
