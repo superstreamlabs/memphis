@@ -219,7 +219,7 @@ function OverView() {
                                             <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                         </div>
                                         <div className="hostname">
-                                            <p>Broker Hostname : </p>
+                                            <p>Broker hostname : </p>
                                             <span>{host}</span>
                                             <Copy width="12" data={host} />
                                         </div>
