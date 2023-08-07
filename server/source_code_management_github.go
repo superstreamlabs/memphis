@@ -392,4 +392,18 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-// func (s *Server)getContentFunctions() error
+func GetContentGithubConnectedRepos(repo, owner string, githubIntegration models.Integration) ([]*github.RepositoryContent, error) {
+	repoContent := []*github.RepositoryContent{}
+	token := githubIntegration.Keys["token"].(string)
+	client, err := getGithubClient(token)
+	if err != nil {
+		return []*github.RepositoryContent{}, err
+	}
+
+	_, repoContent, _, err = client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
+	if err != nil {
+		return []*github.RepositoryContent{}, err
+	}
+
+	return repoContent, nil
+}

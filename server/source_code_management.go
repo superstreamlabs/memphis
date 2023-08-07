@@ -15,6 +15,8 @@ import (
 	"errors"
 	"fmt"
 	"memphis/models"
+
+	"github.com/google/go-github/github"
 )
 
 type GetSourceCodeBranchesSchema struct {
@@ -75,4 +77,14 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 		}
 	}
 	return branchesPerRepo
+}
+
+func GetContentDetails(repo, owner, sourceCodeIntegrationType string, integration models.Integration) ([]*github.RepositoryContent, error) {
+	conectedReposContent := []*github.RepositoryContent{}
+	switch sourceCodeIntegrationType {
+	case "github":
+		conectedReposContent, _ = GetContentGithubConnectedRepos(repo, owner, integration)
+	}
+
+	return conectedReposContent, nil
 }
