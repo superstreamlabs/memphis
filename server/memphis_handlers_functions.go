@@ -130,7 +130,11 @@ func GetFunctionsDetails(user models.User, sourceCodeTypeIntegration string, int
 	branch := connectedRepo["branch"].(string)
 	switch sourceCodeTypeIntegration {
 	case "github":
-		client, _ := getGithubClient(integration.Keys["token"].(string))
+		client, err := getGithubClient(integration.Keys["token"].(string))
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at getGithubClient: %v", user.TenantName, user.Username, err.Error())
+			return []FunctionsResult{}, err
+		}
 		for _, directoryContent := range repoContent.([]*github.RepositoryContent) {
 			if directoryContent.GetType() == "dir" {
 				_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
