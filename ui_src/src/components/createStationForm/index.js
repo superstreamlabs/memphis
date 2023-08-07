@@ -335,7 +335,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             >
                                 <InputNumberComponent
                                     min={1}
-                                    max={isCloud() ? 30 : 5}
+                                    max={isCloud() ? 30 : 10000}
                                     value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
                                     onChange={(e) => getStarted && updateFormState('partitions_number', e)}
                                     disabled={!allowEdit}

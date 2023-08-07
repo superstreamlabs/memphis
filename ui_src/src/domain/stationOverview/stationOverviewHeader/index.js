@@ -185,8 +185,8 @@ const StationOverviewHeader = () => {
                                 </p>
                             )}
                             <p>
-                                {stationState?.stationMetaData?.partitions_number && <b>Partitions: </b>}
-                                {stationState?.stationMetaData?.partitions_number}
+                                <b>Partitions: </b>
+                                {stationState?.stationMetaData?.partitions_number === 0 ? 1 : stationState?.stationMetaData?.partitions_number}
                             </p>
                         </div>
                         <div className="storage-section">

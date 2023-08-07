@@ -101,7 +101,7 @@ const StationOverview = () => {
             try {
                 (async () => {
                     const rawBrokerName = await state.socket?.request(
-                        `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition}`,
+                        `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
                         sc.encode('SUB')
                     );
                     if (rawBrokerName) {
