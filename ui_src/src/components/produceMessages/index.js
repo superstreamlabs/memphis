@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import { FiMinusCircle, FiPlayCircle, FiPlus } from 'react-icons/fi';
+import { FiMinusCircle, FiPlus } from 'react-icons/fi';
 import React, { useContext, useEffect, useState } from 'react';
 import Editor, { loader } from '@monaco-editor/react';
 import { useHistory } from 'react-router-dom';
@@ -37,13 +37,16 @@ loader.init();
 loader.config({ monaco });
 const partitons = ['all'];
 
-const ProduceMessages = ({ stationName, cancel }) => {
+const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const history = useHistory();
     const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 120 : 60));
-    const [loading, setLoading] = useState(false);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({});
+
+    useEffect(() => {
+        produceMessagesRef.current = onFinish;
+    }, []);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -225,8 +228,8 @@ const ProduceMessages = ({ stationName, cancel }) => {
                     <Divider className="seperator" />
                     <div className="by-pass-switcher">
                         <TitleComponent headerTitle="Bypass schema enforcement" typeTitle="sub-header" headerDescription="Check this box to avoid schema validation" />
-                        <Form.Item className="form-input" name="bypass_schema" initialValue={true}>
-                            <Switcher onChange={(e) => updateFormState('bypass_schema', e)} checked={formFields.bypass_schema || true} />
+                        <Form.Item className="form-input" name="bypass_schema" initialValue={false}>
+                            <Switcher onChange={(e) => updateFormState('bypass_schema', e)} checked={formFields.bypass_schema} />
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
@@ -245,8 +248,8 @@ const ProduceMessages = ({ stationName, cancel }) => {
                             disabled={!isCloud()}
                         />
                     </Form.Item>
+                    <p className="field-title">Number of recordes</p>
                     <Form.Item className="form-input" name="amount" initialValue={1}>
-                        <p className="field-title">Number of recordes</p>
                         <InputNumberComponent
                             min={1}
                             max={isCloud() ? 100 : 1}
@@ -257,42 +260,6 @@ const ProduceMessages = ({ stationName, cancel }) => {
                         />
                     </Form.Item>
                 </div>
-                <Form.Item>
-                    <div className="buttons">
-                        <Button
-                            className="modal-btn"
-                            width="100%"
-                            height="40px"
-                            placeholder="Cancel"
-                            colorType="purple"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            htmlType="reset"
-                            onClick={() => cancel()}
-                        />
-                        <Button
-                            className="modal-btn"
-                            width="100%"
-                            height="40px"
-                            isLoading={loading}
-                            placeholder={
-                                <div className="action-button">
-                                    <FiPlayCircle />
-                                    Produce
-                                </div>
-                            }
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="14px"
-                            fontWeight="bold"
-                            onClick={() => {}}
-                        />
-                    </div>
-                </Form.Item>
             </Form>
         </div>
     );

@@ -325,7 +325,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <Modal
                     width="710px"
-                    height={'700px'}
+                    height="720px"
                     clickOutside={() => {
                         setSdkModal(false);
                     }}
