@@ -76,6 +76,16 @@ type SystemMessage struct {
 	UiPage         string    `firestore:"ui_page" json:"ui_page"`
 }
 
+type ProduceSchema struct {
+	StationName     string            `json:"station_name" binding:"required"`
+	PartitionNumber int               `json:"partition_number"`
+	MsgPayload      string            `json:"message_payload" binding:"required"`
+	MsgHdrs         map[string]string `json:"message_headers"`
+	Amount          int               `json:"amount" binding:"required"`
+	BypassSchema    bool              `json:"bypass_schema"`
+	DataFormat      string            `json:"data_format"`
+}
+
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
 
@@ -1283,7 +1293,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
-	exist, _, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, _, err := memphis_cache.GetUser(username, user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1373,7 +1383,9 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-add-user")
 	}
 
@@ -1427,7 +1439,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
-	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1470,7 +1482,9 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := make(map[string]interface{})
+		analyticsParams := map[string]interface{}{
+			"username": username,
+		}
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-remove-user")
 	}
 
@@ -1659,7 +1673,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 	sendAnalytics, _ := strconv.ParseBool(systemKey.Value)
-	exist, user, err := memphis_cache.GetUser(username, user.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, user.TenantName, true)
 	if err != nil {
 		serv.Errorf("RefreshToken: User " + username + ": " + err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1890,6 +1904,30 @@ func shouldSendAnalytics() (bool, error) {
 	// }
 }
 
+func validateAmountOfMessagesToProduce(amount int) error {
+	if amount <= 0 || amount > 1 {
+		return errors.New("amount of messages to produce has to be positive and not larger than 1")
+	}
+
+	return nil
+}
+
+func validatePayloadLength(payload string) error {
+	if len(payload) > 100 {
+		return errors.New("max message payload length is 100 characters")
+	}
+
+	return nil
+}
+
+func validatePartitionToProduce(partitionNumber int) error {
+	if partitionNumber > 0 {
+		return errors.New("you can't produce to a specific partition")
+	}
+
+	return nil
+}
+
 func TenantSeqInitialize() error {
 	err := db.SetTenantSequence(TENANT_SEQUENCE_START_ID)
 	if err != nil {
@@ -1962,6 +2000,9 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 }
 
 func validateRetentionType(retentionType string) error {
+	if retentionType == "ack_based"{
+		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
+	}
 	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
 		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
 	}
@@ -1978,4 +2019,88 @@ func validateRetentionPolicy(policy RetentionPolicy) error {
 		return errors.New("the only supported retention type is limits")
 	}
 	return nil
+}
+
+func (sh StationsHandler) Produce(c *gin.Context) {
+	var body ProduceSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("Produסce: could not get user from middleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = validateAmountOfMessagesToProduce(body.Amount)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]Produce at validateAmountOfMessagesToProduce: Station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = validatePayloadLength(body.MsgPayload)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]Produce at validatePayloadLength: Station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	err = validatePartitionToProduce(body.PartitionNumber)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]Produce at validatePartitionToProduce: Station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	stationName, err := StationNameFromStr(body.StationName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]Produce at StationNameFromStr: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName) // add station instead of _
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]Produce at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		errMsg := fmt.Sprintf("Station %v does not exist", body.StationName)
+		serv.Warnf("[tenant: %v][user: %v]Produce: %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	subject := ""
+	// shouldRoundRobin := false
+	// if station.Version == 0 {
+	subject = fmt.Sprintf("%s.final", stationName.Intern())
+	// } else {
+	// shouldRoundRobin := true
+	// }
+
+	account, err := serv.lookupAccount(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]Produce at lookupAccount: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if body.MsgHdrs == nil {
+		body.MsgHdrs = make(map[string]string)
+	}
+	body.MsgHdrs["$memphis_producedBy"] = "UI"
+	body.MsgHdrs["$memphis_connectionId"] = "UI"
+	// if shouldRoundRobin {
+	// 	partition := (i % len(station.Partitions)) + 1
+	// 	subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), partition)
+	// }
+	serv.sendInternalAccountMsgWithHeadersWithEcho(account, subject, body.MsgPayload, body.MsgHdrs)
+
+	c.IndentedJSON(200, gin.H{})
 }

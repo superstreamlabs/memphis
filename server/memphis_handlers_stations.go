@@ -274,7 +274,13 @@ func (s *Server) createStationDirectIntern(c *client,
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
 		}
-		retentionValue = csr.RetentionValue
+
+		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
+			retentionType = "message_age_sec"
+			retentionValue = 604800 // 1 week
+		} else {
+			retentionValue = csr.RetentionValue
+		}
 	} else {
 		retentionType = "message_age_sec"
 		retentionValue = 604800 // 1 week
@@ -335,7 +341,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	exist, user, err := memphis_cache.GetUser(username, csr.TenantName)
+	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -868,13 +874,18 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	var retentionType string
-	if body.RetentionType != "" && body.RetentionValue > 0 {
+	if body.RetentionType != "" {
 		retentionType = strings.ToLower(body.RetentionType)
 		err = validateRetentionType(retentionType)
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionType: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
+		}
+
+		if body.RetentionValue <= 0 && retentionType != "ack_based" {
+			retentionType = "message_age_sec"
+			body.RetentionValue = 604800 // 1 week
 		}
 	} else {
 		retentionType = "message_age_sec"
@@ -1193,7 +1204,7 @@ func (s *Server) removeStationDirectIntern(c *client,
 		return
 	}
 
-	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName)
+	_, user, err := memphis_cache.GetUser(dsr.Username, dsr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]removeStationDirectIntern at memphis_cache.GetUser: Station %v: %v", dsr.TenantName, dsr.Username, dsr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -1810,7 +1821,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 
 	message := fmt.Sprintf("Schema %v has been attached to station %v by user %v", schemaName, stationName.Ext(), asr.Username)
 	serv.Noticef("[tenant: %v][user: %v]: %v", asr.TenantName, asr.Username, message)
-	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName)
+	_, user, err := memphis_cache.GetUser(asr.Username, asr.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]useSchemaDirect at memphis_cache.GetUser: Schema %v at station %v: %v", asr.TenantName, asr.Username, asr.Name, asr.StationName, err.Error())
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
@@ -2047,17 +2058,6 @@ func (sh StationsHandler) GetUpdatesForSchemaByStation(c *gin.Context) {
 	c.IndentedJSON(200, extedndedSchemaDetails)
 }
 
-func (sh StationsHandler) TierdStorageClicked(c *gin.Context) {
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-pushed-tierd-storage-button")
-	}
-
-	c.IndentedJSON(200, gin.H{})
-}
-
 func (sh StationsHandler) UpdateDlsConfig(c *gin.Context) {
 	var body models.UpdateDlsConfigSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -2271,7 +2271,6 @@ func getUserAndTenantIdFromString(username string) (string, int, error) {
 		return beforeSuffix, tenantId, nil
 	}
 	return username, -1, nil
-
 }
 
 func (s *Server) RemoveOldStations() {
@@ -2301,18 +2300,17 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 		var minId int
 		var maxId int
 		username := user.Username
-		stationIdStr := strconv.Itoa(stationId)
 
 		err := db.UpdateResendDisabledInStations(true, []int{stationId})
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
-			s.handleResendAllFailure(user, stationId, tenantName)
+			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName, stationName)
 			return
 		}
-		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId)
+		task, err := db.UpsertAsyncTask("resend_all_dls_msgs", s.opts.ServerName, createdAt, tenantName, stationId, user.Username)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpsertAsyncTask : %v", tenantName, username, stationIdStr, err.Error())
-			s.handleResendAllFailure(user, stationId, tenantName)
+			serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpsertAsyncTask at station %v : %v", tenantName, username, stationName, err.Error())
+			s.handleResendAllFailure(user, stationId, tenantName, stationName)
 			return
 		}
 
@@ -2323,15 +2321,15 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 			minId = int(data)
 			_, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName)
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
 				return
 			}
 		} else {
 			minId, maxId, err = db.GetMinMaxIdsOfDlsMsgsByUpdatedAt(tenantName, createdAt, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt: %v", tenantName, username, stationIdStr, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName)
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetMinMaxIdsOfDlsMsgsByUpdatedAt at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
 				return
 			}
 			// -1 in order to prevent skipping the first element
@@ -2341,8 +2339,8 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 		for {
 			_, dlsMsgs, err := db.GetDlsMsgsBatch(tenantName, minId, maxId, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at GetDlsMsgsBatch: %v", tenantName, username, stationIdStr, err.Error())
-				s.handleResendAllFailure(user, stationId, tenantName)
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at GetDlsMsgsBatch at station %v : %v", tenantName, username, stationName, err.Error())
+				s.handleResendAllFailure(user, stationId, tenantName, stationName)
 				return
 			}
 
@@ -2354,40 +2352,40 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 				}
 				_, err = serv.ResendUnackedMsg(dlsMsg, user, stationName)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at ResendUnackedMsg: %v", tenantName, username, stationIdStr, err.Error())
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at ResendUnackedMsg at station %v : %v", tenantName, username, stationName, err.Error())
 					continue
 				}
 
 			}
 			err = db.UpdateAsyncTask(task.Name, tenantName, time.Now(), data, stationId)
 			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
+				serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
 				continue
 			}
 			minId = offset
 			if len(dlsMsgs) == 0 || offset == maxId {
 				err = db.RemoveAsyncTask(task.Name, tenantName, stationId)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at RemoveAsyncTask: %v", tenantName, username, stationIdStr, err.Error())
-					s.handleResendAllFailure(user, stationId, tenantName)
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at RemoveAsyncTask at station %v : %v ", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName, stationName)
 					return
 				}
 
 				err = db.UpdateResendDisabledInStations(false, []int{stationId})
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations: %v", tenantName, username, stationIdStr, err.Error())
-					s.handleResendAllFailure(user, stationId, tenantName)
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at UpdateResendDisabledInStations at station %v : %v", tenantName, username, stationName, err.Error())
+					s.handleResendAllFailure(user, stationId, tenantName, stationName)
 					return
 				}
 
 				systemMessage := SystemMessage{
 					MessageType:    "info",
-					MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has been completed successfully", stationIdStr, username),
+					MessagePayload: fmt.Sprintf("Resend all unacked messages operation at station %s, triggered by user %s has been completed successfully", stationName, username),
 				}
 
 				err = serv.sendSystemMessageOnWS(user, systemMessage)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v][station: %v]ResendAllDlsMsgs at sendSystemMessageOnWS: %v", tenantName, username, stationIdStr, err.Error())
+					serv.Errorf("[tenant: %v][user: %v]ResendAllDlsMsgs at sendSystemMessageOnWS at station %v : %v", tenantName, username, stationName, err.Error())
 					return
 				}
 				break
@@ -2396,20 +2394,19 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 	}()
 }
 
-func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName string) {
-	stationIdStr := strconv.Itoa(stationId)
+func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName, stationName string) {
 	systemMessage := SystemMessage{
 		MessageType:    "Error",
-		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationIdStr, user.Username),
+		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationName, user.Username),
 	}
 	err := serv.sendSystemMessageOnWS(user, systemMessage)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v][station: %v]handleResendAllFailure at sendSystemMessageOnWS: %v", tenantName, user.Username, stationIdStr, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at sendSystemMessageOnWS at station %v :  %v", tenantName, user.Username, stationName, err.Error())
 		return
 	}
 	err = db.UpdateResendDisabledInStations(false, []int{stationId})
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v][station: %v]handleResendAllFailure at UpdateResendDisabledInStations: %v", tenantName, user.Username, stationIdStr, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]handleResendAllFailure at UpdateResendDisabledInStations at station %v : %v", tenantName, user.Username, stationName, err.Error())
 		return
 	}
 }

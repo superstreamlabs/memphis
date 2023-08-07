@@ -111,7 +111,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, user, err := memphis_cache.GetUser(userName, tenantName)
+	exist, user, err := memphis_cache.GetUser(userName, tenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
@@ -601,7 +601,7 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 		if username == "" {
 			username = userName
 		}
-		_, user, err := memphis_cache.GetUser(username, consumer.TenantName)
+		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
 			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)

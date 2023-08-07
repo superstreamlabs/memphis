@@ -57,9 +57,9 @@ const Schemaverse = () => {
             ) : (
                 <div className="no-data">
                     <img src={noSchemasFound} alt="no data found" />
-                    <p>No schemas yet!</p>
-                    <label>Schemas are made to increase data quality and help architects achieve data governance. </label>
-                    <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/list`)}>
+                    <p>No schemas yet</p>
+                    <label>Schemas are made to force producers to produce messages in a specific structure and format.</label>
+                    <label className="link" onClick={() => history.push(`${pathDomains.schemaverse}/create`)}>
                         + Create a schema
                     </label>
                 </div>

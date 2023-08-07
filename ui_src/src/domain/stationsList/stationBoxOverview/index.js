@@ -49,6 +49,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
             case 'messages':
                 setRetentionValue(`${station?.station?.retention_value} messages`);
                 break;
+            case 'ack_based':
+                setRetentionValue('Ack based');
             default:
                 break;
         }

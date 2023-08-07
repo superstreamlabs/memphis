@@ -85,7 +85,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			} else if cfg.MaxMsgs > 0 {
 				retentionType = "messages"
 				retentionValue = int(cfg.MaxMsgs)
-			} else if cfg.Retention == WorkQueuePolicy {
+			} else if cfg.Retention == InterestPolicy {
 				retentionType = "ack_based"
 			}
 

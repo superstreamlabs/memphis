@@ -15,9 +15,14 @@ import (
 	"fmt"
 	"memphis/db"
 	"memphis/memphis_cache"
-	"strconv"
+	"memphis/models"
+	"memphis/utils"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+type AsyncTasksHandler struct{}
 
 func (s *Server) CompleteRelevantStuckAsyncTasks() {
 	exist, asyncTasks, err := db.GetAsyncTaskByNameAndBrokerName("resend_all_dls_msgs", s.opts.ServerName)
@@ -36,13 +41,12 @@ func (s *Server) CompleteRelevantStuckAsyncTasks() {
 			return
 		}
 		if !exist {
-			stationIdStr := strconv.Itoa(asyncTask.StationId)
-			errMsg := fmt.Sprintf("Station %v does not exist", stationIdStr)
-			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %s", asyncTask.TenantName, errMsg)
+			errMsg := fmt.Sprintf("Station %v does not exist", station.Name)
+			serv.Warnf("[tenant: %v][user: %v]CompleteRelevantStuckAsyncTasks at GetStationById: %v", asyncTask.TenantName, station.CreatedByUsername, errMsg)
 			continue
 		}
 
-		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName)
+		exist, user, err := memphis_cache.GetUser(station.CreatedByUsername, asyncTask.TenantName, false)
 		if err != nil {
 			serv.Errorf("[tenant:%v][user: %v] CompleteRelevantStuckAsyncTasks could not retrive user model from cache or db error: %v", asyncTask.TenantName, user.Username, err)
 			continue
@@ -73,4 +77,35 @@ func (s *Server) RemoveInactiveAsyncTasks() {
 		serv.Errorf("RemoveInactiveAsyncTasks: failed to update resend disabled in station: %v", err.Error())
 		return
 	}
+}
+
+func (ash AsyncTasksHandler) GetAsyncTasks(c *gin.Context) {
+	var body models.AsyncTask
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAsyncTasks at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	asyncTasks, err := ash.GetAllAsyncTasks(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetAsyncTasks at GetAllAsyncTasks: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.JSON(200, gin.H{"async_tasks": asyncTasks})
+}
+
+func (ash AsyncTasksHandler) GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
+	asyncTasks, err := db.GetAllAsyncTasks(tenantName)
+	if err != nil {
+		serv.Errorf("GetAllAsyncTasks at GetAllAsyncTasks:  %v", err.Error())
+		return []models.AsyncTaskRes{}, err
+	}
+	return asyncTasks, nil
 }

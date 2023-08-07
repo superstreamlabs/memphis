@@ -222,11 +222,12 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS name;
 		ALTER TABLE schemas DROP CONSTRAINT IF EXISTS schemas_name_tenant_name_key;
 		ALTER TABLE schemas ADD CONSTRAINT schemas_name_tenant_name_key UNIQUE(name, tenant_name);
+		ALTER TYPE enum_type ADD VALUE 'avro';
 		END IF;
 	END $$;`
 
 	schemasTable := `
-	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf');
+	CREATE TYPE enum_type AS ENUM ('json', 'graphql', 'protobuf', 'avro');
 	CREATE TABLE IF NOT EXISTS schemas(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL,
@@ -350,7 +351,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	END $$;`
 
 	stationsTable := `
-	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes');
+	CREATE TYPE enum_retention_type AS ENUM ('message_age_sec', 'messages', 'bytes', 'ack_based');
 	CREATE TYPE enum_storage_type AS ENUM ('file', 'memory');
 	CREATE TABLE IF NOT EXISTS stations(
 		id SERIAL NOT NULL,
@@ -535,13 +536,23 @@ func createTables(MetadataDbClient MetadataStorage) error {
             meta_data JSON NOT NULL DEFAULT '{}',
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 			station_id INT NOT NULL,
+			created_by VARCHAR NOT NULL,
 			UNIQUE(name, tenant_name, station_id)
         );`
+
+	alterAsyncTasks := `DO $$
+	BEGIN
+		IF EXISTS (
+			SELECT 1 FROM information_schema.tables WHERE table_name = 'async_tasks' AND table_schema = 'public'
+		) THEN
+		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS created_by VARCHAR NOT NULL;
+		END IF;
+	END $$;`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -4353,7 +4364,7 @@ func GetAllUsers(tenantName string) ([]models.FilteredGenericUser, error) {
 		return []models.FilteredGenericUser{}, err
 	}
 	defer conn.Release()
-	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1`
+	query := `SELECT s.id, s.username, s.type, s.created_at, s.avatar_id, s.full_name, s.pending, s.position, s.team, s.owner, s.description FROM users AS s WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users", query)
 	if err != nil {
 		return []models.FilteredGenericUser{}, err
@@ -4385,7 +4396,7 @@ func CountAllUsers() (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM users`
+	query := `SELECT COUNT(*) FROM users WHERE username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_total_users", query)
 	if err != nil {
 		return 0, err
@@ -4407,7 +4418,7 @@ func GetAllUsersByTypeAndTenantName(userType []string, tenantName string) ([]mod
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE type=ANY($1) AND tenant_name=$2`
+	query := `SELECT * FROM users WHERE type=ANY($1) AND tenant_name=$2 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4440,7 +4451,7 @@ func GetAllUsersByTenantName(tenantName string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE tenant_name=$1`
+	query := `SELECT * FROM users WHERE tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type_and_tenant_name", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4471,7 +4482,7 @@ func GetAllUsersByType(userType []string) ([]models.User, error) {
 	}
 	defer conn.Release()
 	var rows pgx.Rows
-	query := `SELECT * FROM users WHERE type=ANY($1)`
+	query := `SELECT * FROM users WHERE type=ANY($1) AND username NOT LIKE '$%'` // filter memphis internal users
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_users_by_type", query)
 	if err != nil {
 		return []models.User{}, err
@@ -4581,7 +4592,9 @@ func DeleteUsersByTenant(tenantName string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		users_list = append(users_list, usermame)
+		if !strings.HasPrefix(usermame, "$") { // skip memphis internal users
+			users_list = append(users_list, usermame)
+		}
 	}
 
 	return users_list, err
@@ -4622,8 +4635,8 @@ func GetAllActiveUsersStations(tenantName string) ([]models.FilteredUser, error)
 	SELECT DISTINCT u.username
 	FROM users AS u
 	JOIN stations AS s ON u.id = s.created_by
-	WHERE s.tenant_name=$1
-	`
+	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_stations", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -4658,8 +4671,8 @@ func GetAllActiveUsersSchemaVersions(tenantName string) ([]models.FilteredUser, 
 	SELECT DISTINCT u.username
 	FROM users AS u
 	JOIN schema_versions AS s ON u.id = s.created_by
-	WHERE s.tenant_name=$1
-	`
+	WHERE s.tenant_name=$1 AND username NOT LIKE '$%'` // filter memphis internal users
+	
 	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_users_schema_versions", query)
 	if err != nil {
 		return []models.FilteredUser{}, err
@@ -6373,7 +6386,7 @@ func DeleteConfByTenantName(tenantName string) error {
 }
 
 // Async tasks functions
-func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string, stationId int) (models.AsyncTask, error) {
+func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantName string, stationId int, username string) (models.AsyncTask, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6383,7 +6396,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id) VALUES($1, $2, $3, $4, $5, $6) ON CONFLICT (name, tenant_name, station_id) DO NOTHING RETURNING *`
+	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id, created_by) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (name, tenant_name, station_id) DO NOTHING RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_async_task", query)
 	if err != nil {
 		return models.AsyncTask{}, err
@@ -6391,7 +6404,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 
 	updatedAt := createdAt
 	var asyncTask models.AsyncTask
-	err = conn.Conn().QueryRow(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName, stationId).Scan(
+	err = conn.Conn().QueryRow(ctx, stmt.Name, task, brokerInCharge, createdAt, updatedAt, tenantName, stationId, username).Scan(
 		&asyncTask.ID,
 		&asyncTask.Name,
 		&asyncTask.BrokrInCharge,
@@ -6400,6 +6413,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 		&asyncTask.Data,
 		&asyncTask.TenantName,
 		&asyncTask.StationId,
+		&asyncTask.CreatedBy,
 	)
 
 	if err != nil {
@@ -6423,7 +6437,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 				return models.AsyncTask{}, err
 			}
 
-			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId).Scan(
+			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId, username).Scan(
 				&asyncTask.ID,
 				&asyncTask.Name,
 				&asyncTask.BrokrInCharge,
@@ -6432,6 +6446,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 				&asyncTask.Data,
 				&asyncTask.TenantName,
 				&asyncTask.StationId,
+				&asyncTask.CreatedBy,
 			)
 			if err != nil {
 				return models.AsyncTask{}, err
@@ -6504,6 +6519,42 @@ func GetAsyncTaskByNameAndBrokerName(task, brokerName string) (bool, []models.As
 		return false, []models.AsyncTask{}, nil
 	}
 	return true, asyncTask, nil
+}
+
+func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer conn.Release()
+
+	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name
+	FROM async_tasks AS a
+	LEFT JOIN stations AS s ON a.station_id = s.id
+	WHERE a.tenant_name = $1
+	ORDER BY a.created_at DESC;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_async_tasks", query)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	defer rows.Close()
+
+	asyncTasks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTaskRes])
+	if err != nil {
+		return []models.AsyncTaskRes{}, err
+	}
+	if len(asyncTasks) == 0 {
+		return []models.AsyncTaskRes{}, nil
+	}
+	return asyncTasks, nil
 }
 
 func UpdateAsyncTask(task, tenantName string, updatedAt time.Time, metaData interface{}, stationId int) error {
@@ -6584,4 +6635,97 @@ func RemoveAllAsyncTasks(duration time.Duration) ([]int, error) {
 		}
 	}
 	return stationIds, nil
+}
+
+func CreateUserIfNotExist(username string, userType string, hashedPassword string, fullName string, subscription bool, avatarId int, tenantName string, pending bool, team, position, owner, description string) (models.User, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO users ( 
+		username,
+		password,
+		type,
+		already_logged_in,
+		created_at,
+		avatar_id,
+		full_name, 
+		subscription,
+		skip_get_started,
+		tenant_name,
+		pending,
+		team, 
+		position,
+		owner,
+		description) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) 
+	ON CONFLICT (username, tenant_name) DO NOTHING
+	RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
+	if err != nil {
+		return models.User{}, err
+	}
+	createdAt := time.Now()
+	skipGetStarted := false
+	alreadyLoggedIn := false
+
+	var userId int
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, username, hashedPassword, userType, alreadyLoggedIn, createdAt, avatarId, fullName, subscription, skipGetStarted, tenantName, pending, team, position, owner, description)
+	if err != nil {
+		return models.User{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			return models.User{}, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				if strings.Contains(pgErr.Detail, "already exists") {
+					return models.User{}, errors.New("User " + username + " already exists")
+				} else {
+					return models.User{}, errors.New(pgErr.Detail)
+				}
+			} else {
+				return models.User{}, errors.New(pgErr.Message)
+			}
+		} else {
+			return models.User{}, err
+		}
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	newUser := models.User{
+		ID:              userId,
+		Username:        username,
+		Password:        hashedPassword,
+		FullName:        fullName,
+		Subscribtion:    subscription,
+		UserType:        userType,
+		CreatedAt:       createdAt,
+		AlreadyLoggedIn: alreadyLoggedIn,
+		AvatarId:        avatarId,
+		TenantName:      tenantName,
+		Pending:         pending,
+		Team:            team,
+		Position:        position,
+		Owner:           owner,
+		Description:     description,
+	}
+	return newUser, nil
 }

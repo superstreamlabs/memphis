@@ -43,6 +43,7 @@ import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import AttachStationModal from '../attachStationModal';
+const avro = require('avro-js');
 
 loader.init();
 loader.config({ monaco });
@@ -73,15 +74,14 @@ const schemaTypes = [
     },
     {
         id: 4,
-        value: 'avro',
-        label: 'Avro (Coming soon)',
+        value: 'Avro',
+        label: 'Avro',
         description: (
             <span>
                 The popular. Apache Avro™ is the leading serialization format for record data, and first choice for streaming data pipelines. It offers excellent schema
                 evolution.
             </span>
-        ),
-        disabled: true
+        )
     }
 ];
 
@@ -96,15 +96,15 @@ message Test {
 }`
     },
     Avro: {
-        language: 'avro',
+        language: 'json', // Avro stores the data definition in JSON format.
         value: `{
             "type": "record",
             "namespace": "com.example",
-            "name": "test-schema",
+            "name": "test_schema",
             "fields": [
                { "name": "username", "type": "string", "default": "-2" },
-               { "name": "age", "type": "int", "default": "none" },
-               { "name": "phone", "type": "int", "default": "NONE" },
+               { "name": "age", "type": "int" },
+               { "name": "phone", "type": "long" },
                { "name": "country", "type": "string", "default": "NONE" }
             ]
         }`
@@ -355,6 +355,17 @@ function CreateSchema({ createNew }) {
         }
     };
 
+    const validateAvroSchema = (value) => {
+        try {
+            avro.parse(value);
+            setValidateSuccess('');
+            setValidateError('');
+        } catch (error) {
+            setValidateSuccess('');
+            setValidateError('Your schema is invalid');
+        }
+    };
+
     const checkContent = (value) => {
         const { type } = formFields;
         if (value === ' ' || value === '') {
@@ -368,6 +379,8 @@ function CreateSchema({ createNew }) {
                 validateJsonSchema(value);
             } else if (type === 'GraphQL') {
                 validateGraphQlSchema(value);
+            } else if (type === 'Avro') {
+                validateAvroSchema(value);
             }
         }
     };
@@ -412,7 +425,12 @@ function CreateSchema({ createNew }) {
                         </div>
                         <span>
                             Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
-                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank" rel="noreferrer">
+                            <a
+                                className="learn-more"
+                                href="https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
                                 Learn more
                             </a>
                         </span>
@@ -477,7 +495,12 @@ function CreateSchema({ createNew }) {
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
                                         Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank" rel="noreferrer">
+                                        <a
+                                            className="learn-more"
+                                            href="https://docs.memphis.dev/memphis/memphis-schemaverse/formats/produce-consume"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             Learn more
                                         </a>
                                     </p>
@@ -536,6 +559,7 @@ function CreateSchema({ createNew }) {
                                 {formFields?.type === 'Protobuf' && schemaContentEditor}
                                 {formFields?.type === 'Json' && schemaContentEditor}
                                 {formFields?.type === 'GraphQL' && schemaContentEditor}
+                                {formFields?.type === 'Avro' && schemaContentEditor}
                             </Form.Item>
                             <div className={validateError || validateSuccess ? (validateSuccess ? 'validate-note success' : 'validate-note error') : 'validate-note'}>
                                 {validateError && <ErrorOutlineRounded />}
