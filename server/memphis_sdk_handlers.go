@@ -36,7 +36,7 @@ type createStationRequest struct {
 	Username             string                  `json:"username"`
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
 	TenantName           string                  `json:"tenant_name"`
-	PartitionsNumber     int                     `json:"partition_number"`
+	PartitionsNumber     int                     `json:"partitions_number"`
 }
 
 type destroyStationRequest struct {
