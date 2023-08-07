@@ -12,65 +12,56 @@
 
 import './style.scss';
 
-import React, { useState, useContext, useEffect } from 'react';
-import { Divider, Form, message } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Divider, Form } from 'antd';
+import { FiMinusCircle } from 'react-icons/fi';
 
-import poisionAlertIcon from '../../../../../assets/images/poisionAlertIcon.svg';
-import disconAlertIcon from '../../../../../assets/images/disconAlertIcon.svg';
-import schemaAlertIcon from '../../../../../assets/images/schemaAlertIcon.svg';
 import githubBranchIcon from '../../../../../assets/images/githubBranchIcon.svg';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
-import Switcher from '../../../../../components/switcher';
-import Button from '../../../../../components/button';
-import { Context } from '../../../../../hooks/store';
-import Input from '../../../../../components/Input';
 import SelectComponent from '../../../../../components/select';
-import { URL } from '../../../../../config';
-import Loader from '../../../../../components/loader';
 
-const IntegrationItem = ({ index, repo, reposList, updateIntegrationList }) => {
-    const [creationForm] = Form.useForm();
-    const [state, dispatch] = useContext(Context);
+const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo }) => {
     const [isEditting, setIsEditting] = useState(false);
     const [formFields, setFormFields] = useState({
-        type: 'functions'
+        type: 'functions',
+        repo_name: '',
+        repo_owner: '',
+        branch: ''
     });
     const [branches, setBranches] = useState([]);
 
     useEffect(() => {
-        getSourceCodeBranches(repo.repo_name, repo.repio_owner);
-        setFormFields({ repo_name: repo.repo_name || repo.repository, repo_owner: repo.owner, branch: repo.branch, type: 'functions' });
+        repo.repo_name && repo.repo_owner && getSourceCodeBranches(repo.repo_name, repo.repo_owner);
+        setFormFields({ repo_name: repo.repo_name, repo_owner: repo.repo_owner, branch: repo.branch, type: 'functions' });
     }, []);
 
     useEffect(() => {
-        console.log('repo', repo);
-        setFormFields({ repo_name: repo.repo_name || repo.repository, repo_owner: repo.owner, branch: repo.branch, type: 'functions' });
-    }, [repo]);
+        branches?.length > 0 && isEditting && updateBranch(branches[0]);
+    }, [branches]);
 
     useEffect(() => {
-        isEditting && updateIntegrationList(formFields, index);
+        updateIntegrationList(formFields, index);
     }, [formFields.branch]);
 
     useEffect(() => {
-        formFields?.repo_name && formFields?.repo_owner && getSourceCodeBranches(formFields?.repo_name, formFields?.repo_owner);
+        isEditting && formFields?.repo_name && formFields?.repo_owner && getSourceCodeBranches(formFields?.repo_name, formFields?.repo_owner);
     }, [formFields?.repo_name]);
 
     const updateRepo = (repo) => {
         setIsEditting(true);
+        getSourceCodeBranches(repo, reposList[repo]);
         setFormFields((formFields) => ({ ...formFields, ...{ repo_name: repo, repo_owner: reposList[repo], branch: '' } }));
     };
 
     const updateBranch = (branch) => {
-        isEditting && setFormFields((formFields) => ({ ...formFields, ...{ branch: branch } }));
         setIsEditting(true);
+        setFormFields((formFields) => ({ ...formFields, ...{ branch: branch } }));
     };
 
     const getSourceCodeBranches = async (repo, repo_owner) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_SOURCE_CODE_BRANCHES}?repo_name=${repo}&repo_owner=${repo_owner}`);
-            updateBranch(data?.branches[repo][0]);
             setBranches(data?.branches[repo]);
         } catch (error) {}
     };
@@ -104,14 +95,15 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList }) => {
                         borderColorType="gray"
                         height="32px"
                         width={'90%'}
-                        value={formFields?.branch || branches[0]}
-                        options={branches}
+                        value={formFields?.branch}
+                        options={branches || []}
                         popupClassName="select-options"
                         onChange={(e) => {
                             updateBranch(e);
                         }}
                     />
                 </Form.Item>
+                <FiMinusCircle className="remove-icon" onClick={() => removeRepo(index)} />
             </div>
             <Divider />
         </div>

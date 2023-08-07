@@ -273,7 +273,7 @@ export const INTEGRATION_LIST = {
         )
     },
     GitHub: {
-        name: 'GitHub',
+        name: 'Github',
         by: 'memphis',
         banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
         insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,

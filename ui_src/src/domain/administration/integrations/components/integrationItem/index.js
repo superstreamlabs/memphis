@@ -58,7 +58,7 @@ const IntegrationItem = ({ value }) => {
                         value={ref.current}
                     />
                 );
-            case 'GitHub':
+            case 'Github':
                 return (
                     <GitHubIntegration
                         close={(data) => {
