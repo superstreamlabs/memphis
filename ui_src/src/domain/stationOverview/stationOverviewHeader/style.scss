@@ -16,7 +16,7 @@
                 img {
                     cursor: pointer;
                 }
-             
+
                 .tags-list {
                     justify-content: space-between;
                     margin-bottom: 0px;
@@ -89,15 +89,18 @@
                 b {
                     font-family: 'InterSemiBold';
                 }
-                .storage-section{
+                p {
+                    width: 50%;
+                }
+                .storage-section {
                     display: flex;
                     justify-content: space-between;
-                    align-items:center;
-                    div{
+                    align-items: center;
+                    div {
                         display: flex;
                         align-items: center;
                     }
-                    span{
+                    span {
                         position: relative;
                         top: 1px;
                     }
@@ -198,7 +201,7 @@
                         width: 165px;
                     }
                 }
-                .schema-box{
+                .schema-box {
                     min-width: 210px;
                 }
                 .schema-header {
@@ -237,7 +240,7 @@
                 border-left: 1px solid #f3f3f3;
                 border-right: 1px solid #f3f3f3;
             }
-            .pointer .number{
+            .pointer .number {
                 cursor: pointer;
                 width: fit-content;
             }
@@ -279,7 +282,7 @@
     }
 }
 .modal-wrapper {
-    .ant-modal-body{
+    .ant-modal-body {
         padding-top: 0px !important;
     }
     .tabs-headers {

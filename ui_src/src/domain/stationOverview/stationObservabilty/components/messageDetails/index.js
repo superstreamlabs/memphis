@@ -45,20 +45,22 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     }, [messageDetails]);
 
     useEffect(() => {
-        if (stationState?.selectedRowId && !loadMessageData) {
-            getMessageDetails(stationState?.selectedRowId);
+        if ((isDls && stationState?.selectedRowId && stationState?.selectedRowPartition && !loadMessageData) || (stationState?.selectedRowId && !loadMessageData)) {
+            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
         }
-    }, [stationState?.selectedRowId]);
+    }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
-    const getMessageDetails = async (selectedRow) => {
+    const getMessageDetails = async (selectedRow, selectedRowPartition) => {
         setMessageDetails({});
         setLoadMessageData(true);
         try {
             const data = await httpRequest(
                 'GET',
-                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${isFailedSchemaMessage ? 'schema' : 'poison'}&station_name=${stationName}&is_dls=${isDls}&message_id=${
-                    isDls ? parseInt(selectedRow) : -1
-                }&message_seq=${isDls ? -1 : selectedRow}`
+                `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
+                    isFailedSchemaMessage ? 'schema' : 'poison'
+                }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
+                    isDls ? -1 : selectedRow
+                }`
             );
             arrangeData(data);
         } catch (error) {
