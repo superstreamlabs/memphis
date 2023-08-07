@@ -41,7 +41,7 @@ var (
 
 const (
 	// VERSION is the current version for the memphis.
-	VERSION = "1.1.1"
+	VERSION = "1.1.2"
 
 	DEFAULT_SERVER_NAME                        = "memphis-0"
 	DEFAULT_WS_PORT                            = 7770
@@ -141,7 +141,7 @@ const (
 	DEFAULT_LEAF_TLS_TIMEOUT = 2 * time.Second
 
 	// PROTO_SNIPPET_SIZE is the default size of proto to print on parse errors.
-	PROTO_SNIPPET_SIZE = 64 // TODO return to 32
+	PROTO_SNIPPET_SIZE = 32
 
 	// MAX_CONTROL_LINE_SNIPPET_SIZE is the default size of proto to print on max control line errors.
 	MAX_CONTROL_LINE_SNIPPET_SIZE = 128

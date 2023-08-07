@@ -164,7 +164,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 )}
                                 <div className="info-box">
                                     <div>
-                                        <span className="title">Producer </span>
+                                        <span className="title">Producer name</span>
                                         <span className="content">{messageDetails?.producer?.details[0].value}</span>
                                     </div>
                                     <StatusIndication is_active={messageDetails?.producer.is_active} />

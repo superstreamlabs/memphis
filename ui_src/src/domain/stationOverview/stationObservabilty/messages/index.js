@@ -18,7 +18,7 @@ import { message } from 'antd';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
-import { messageParser, msToUnits } from '../../../../services/valueConvertor';
+import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
 import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
@@ -274,6 +274,22 @@ const Messages = () => {
         );
     };
 
+    const getDescriptin = () => {
+        if (stationState?.stationSocketData?.connected_producers?.length > 0 || stationState?.stationSocketData?.disconnected_producers?.length > 0) {
+            if (
+                stationState?.stationMetaData?.retention_type === 'ack_based' &&
+                stationState?.stationSocketData?.disconnected_cgs?.length === 0 &&
+                stationState?.stationSocketData?.connected_cgs?.length === 0
+            ) {
+                return 'When retention is ack-based, messages will be auto-deleted if no consumers are connected to the station';
+            } else {
+                return 'Start / Continue producing data.';
+            }
+        } else {
+            return 'Create your 1st producer and start producing data.';
+        }
+    };
+
     return (
         <div className="messages-container">
             <div className="header">
@@ -352,8 +368,8 @@ const Messages = () => {
             {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
-                    <p>No messages yet</p>
-                    <span className="des">Create your 1st producer and start producing data</span>
+                    <p>No messages</p>
+                    <span className="des">{getDescriptin()}</span>
                 </div>
             )}
             {tabValue === tabs[1] &&
@@ -374,9 +390,11 @@ const Messages = () => {
                     >
                         <DlsConfig />
                     </DetailBox>
-                    <DetailBox img={purge} title={'Purge'}>
-                        <div className="purge-container">
-                            <label>Clean station from messages.</label>
+                    <DetailBox
+                        img={purge}
+                        title={'Purge'}
+                        desc="Clean station from messages."
+                        data={[
                             <Button
                                 width="80px"
                                 height="32px"
@@ -389,22 +407,24 @@ const Messages = () => {
                                 disabled={stationState?.stationSocketData?.total_dls_messages === 0 && stationState?.stationSocketData?.total_messages === 0}
                                 onClick={() => modalPurgeFlip(true)}
                             />
-                        </div>
-                    </DetailBox>
-                    <DetailBox
-                        img={leaderImg}
-                        title={'Leader'}
-                        desc={
-                            <span>
-                                The current leader of this station.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                    Learn more
-                                </a>
-                            </span>
-                        }
-                        data={[stationState?.stationSocketData?.leader]}
-                    />
-                    {stationState?.stationSocketData?.followers?.length > 0 && (
+                        ]}
+                    ></DetailBox>
+                    {!isCloud() && (
+                        <DetailBox
+                            img={leaderImg}
+                            title={'Leader'}
+                            desc={
+                                <span>
+                                    The current leader of this station.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                            data={[stationState?.stationSocketData?.leader]}
+                        />
+                    )}
+                    {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && (
                         <DetailBox
                             img={followersImg}
                             title={'Followers'}

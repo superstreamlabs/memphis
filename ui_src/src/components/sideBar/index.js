@@ -13,36 +13,40 @@
 import './style.scss';
 
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { useHistory } from 'react-router-dom';
-import { Divider, Popover } from 'antd';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
+import { useHistory, Link } from 'react-router-dom';
+import { Divider, Popover } from 'antd';
+
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME, USER_IMAGE } from '../../const/localStorageConsts';
+import integrationIconColor from '../../assets/images/integrationIconColor.svg';
+import functionsIconActive from '../../assets/images/functionsIconActive.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
+import documentIconActive from '../../assets/images/documentIconActive.svg';
+import { compareVersions, isCloud } from '../../services/valueConvertor';
+import supportIconColor from '../../assets/images/supportIconColor.svg';
 import schemaIconActive from '../../assets/images/schemaIconActive.svg';
+import integrationIcon from '../../assets/images/integrationIcon.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
+import functionsIcon from '../../assets/images/functionsIcon.svg';
+import documentIcon from '../../assets/images/documentIcon.svg';
 import overviewIcon from '../../assets/images/overviewIcon.svg';
 import stationsIcon from '../../assets/images/stationsIcon.svg';
+import supportIcon from '../../assets/images/supportIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import logsActive from '../../assets/images/logsActive.svg';
 import schemaIcon from '../../assets/images/schemaIcon.svg';
+import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
 import usersIcon from '../../assets/images/usersIcon.svg';
 import logsIcon from '../../assets/images/logsIcon.svg';
-import functionsIcon from '../../assets/images/functionsIcon.svg';
-import integrationIcon from '../../assets/images/integrationIcon.svg';
-import integrationIconColor from '../../assets/images/integrationIconColor.svg';
-import supportIcon from '../../assets/images/supportIcon.svg';
-import supportIconColor from '../../assets/images/supportIconColor.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
-import { LATEST_RELEASE_URL } from '../../config';
-import { compareVersions, isCloud } from '../../services/valueConvertor';
 import Spinner from '../spinner';
 import Support from './support';
 
@@ -245,6 +249,20 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
+                {/* <div
+                    className="item-wrapper"
+                    onMouseEnter={() => setHoveredItem('functions')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    onClick={() => history.push(pathDomains.functions)}
+                >
+                    {state.route === 'functions' ? (
+                        <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
+                    ) : (
+                        <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
+                    )}
+                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
+                </div> */}
+
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('schemaverse')}
@@ -292,15 +310,13 @@ function SideBar() {
                         <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                     </div>
                 )}
-                {isCloud() && (
-                    <div className="item-wrapper">
-                        <div className="icon not-available">
-                            <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
-                        </div>
-                        <p className="not-available">Functions</p>
-                        <p className="coming-soon">Soon</p>
+                <div className="item-wrapper">
+                    <div className="icon not-available">
+                        <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
                     </div>
-                )}
+                    <p className="not-available">Functions</p>
+                    <p className="coming-soon">Soon</p>
+                </div>
             </div>
             <div className="bottom-icons">
                 <div
@@ -332,13 +348,14 @@ function SideBar() {
                         </div>
                     </Popover>
                 )}
-
-                {/* <Link to={{ pathname: DOC_URL }} target="_blank">
-                    <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
-                        <img src={hoveredItem === 'documentation' ? documentationIconColor : documentationIcon} />
-                        <label className="icon-name">Docs</label>
-                    </div>
-                </Link> */}
+                {!isCloud() && (
+                    <Link to={{ pathname: DOC_URL }} target="_blank">
+                        <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
+                            <img src={hoveredItem === 'documentation' ? documentIconActive : documentIcon} />
+                            <label className="icon-name">Docs</label>
+                        </div>
+                    </Link>
+                )}
 
                 <Popover
                     overlayInnerStyle={overlayStyles}

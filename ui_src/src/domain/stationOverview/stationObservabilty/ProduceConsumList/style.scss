@@ -13,8 +13,7 @@
         justify-content: space-between;
         border-bottom: 1px solid #e9e9e9;
         line-height: 35px;
-        padding-left: 15px;
-        padding-bottom:5px;
+        padding: 0 15px 5px 15px;
         .title {
             font-family: 'InterSemiBold';
             font-size: 14px;
@@ -25,6 +24,13 @@
             color: var(--purple);
             font-family: 'InterSemiBold';
             font-size: 12px;
+        }
+        .producer-placeholder{
+            display: flex;
+            align-items: center;
+            img{
+                margin-right: 5px;
+            }
         }
     }
     .coulmns-table {

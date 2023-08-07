@@ -43,6 +43,8 @@ const Button = ({
     zIndex,
     border,
     alignSelf,
+    htmlType = 'submit',
+    type = 'primary',
     fontFamily = 'Inter',
     tooltip
 }) => {
@@ -69,6 +71,8 @@ const Button = ({
     const fieldProps = {
         onClick: handleClick,
         disabled,
+        htmlType: htmlType,
+        type: type,
         style: {
             borderRadius,
             color,
@@ -93,7 +97,7 @@ const Button = ({
     return (
         <div className="button-container" style={styleButtonContainer}>
             <TooltipComponent text={tooltip}>
-                <ButtonDesign {...fieldProps} type="primary" htmlType="submit" className={disabled && 'noHover'}>
+                <ButtonDesign {...fieldProps} className={disabled && 'noHover'}>
                     <span style={{ fontFamily: fontFamily }}>{placeholder}</span>
                 </ButtonDesign>
             </TooltipComponent>

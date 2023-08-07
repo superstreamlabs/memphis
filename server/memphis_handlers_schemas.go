@@ -31,6 +31,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/hamba/avro/v2"
 )
 
 type SchemasHandler struct{ S *Server }
@@ -76,6 +77,14 @@ func validateGraphqlSchemaContent(schemaContent string) error {
 	return nil
 }
 
+func validateAvroSchemaContent(schemaContent string) error {
+	_, err := avro.Parse(schemaContent)
+	if err != nil {
+		return fmt.Errorf("your Avro file is invalid: %v", err.Error())
+	}
+	return nil
+}
+
 func generateProtobufDescriptor(schemaName string, schemaVersionNum int, schemaContent string) ([]byte, error) {
 	filename := fmt.Sprintf("%v_%v.proto", schemaName, schemaVersionNum)
 	descFilename := fmt.Sprintf("%v_%v_desc", schemaName, schemaVersionNum)
@@ -114,13 +123,9 @@ func validateSchemaName(schemaName string) error {
 func validateSchemaType(schemaType string) error {
 	invalidTypeErrStr := "unsupported schema type"
 	invalidTypeErr := errors.New(invalidTypeErrStr)
-	invalidSupportTypeErrStr := "avro is not supported at this time"
-	invalidSupportTypeErr := errors.New(invalidSupportTypeErrStr)
 
-	if schemaType == "protobuf" || schemaType == "json" || schemaType == "graphql" {
+	if schemaType == "protobuf" || schemaType == "json" || schemaType == "graphql" || schemaType == "avro" {
 		return nil
-	} else if schemaType == "avro" {
-		return invalidSupportTypeErr
 	} else {
 		return invalidTypeErr
 	}
@@ -148,7 +153,10 @@ func validateSchemaContent(schemaContent, schemaType string) error {
 			return err
 		}
 	case "avro":
-		break
+		err := validateAvroSchemaContent(schemaContent)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -910,7 +918,7 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 }
 
 func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaReq CreateSchemaReq) error {
-	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName)
+	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName, false)
 	if err != nil {
 		s.Errorf("[tenant: %v]updateSchemaVersion at memphis_cache.GetUser: Schema %v: %v", tenantName, newSchemaReq.Name, err.Error())
 		return err
@@ -964,7 +972,7 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string) error {
 	schemaVersionNumber := 1
 
-	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName)
+	_, user, err := memphis_cache.GetUser(newSchemaReq.CreatedByUsername, tenantName, false)
 	if err != nil {
 		s.Errorf("[tenant: %v]createNewSchema at memphis_cache.GetUser: %v", tenantName, err.Error())
 		return err

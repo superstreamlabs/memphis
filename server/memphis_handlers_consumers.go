@@ -111,7 +111,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return err
 	}
 
-	exist, user, err := memphis_cache.GetUser(userName, tenantName)
+	exist, user, err := memphis_cache.GetUser(userName, tenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]createConsumerDirectCommon at GetUser from cache: Consumer %v at station %v : %v", tenantName, userName, consumerName, cStationName, err.Error())
 		return err
@@ -348,28 +348,29 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	var deletedCgs []models.Cg
 
 	for _, cg := range m {
+		for _, p := range station.PartitionsList { // check with shay
+			cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name, p)
+			if err != nil {
+				continue // ignoring cases where the consumer exist in memphis but not in nats
+			}
 
-		cgInfo, err := ch.S.GetCgInfo(station.TenantName, stationName, cg.Name)
-		if err != nil {
-			continue // ignoring cases where the consumer exist in memphis but not in nats
-		}
+			totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
+			if err != nil {
+				return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
+			}
 
-		totalPoisonMsgs, err := db.GetTotalPoisonMsgsPerCg(cg.Name, station.ID)
-		if err != nil {
-			return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
-		}
+			cg.InProcessMessages += cgInfo.NumAckPending
+			cg.UnprocessedMessages += int(cgInfo.NumPending)
+			cg.PoisonMessages += totalPoisonMsgs
 
-		cg.InProcessMessages = cgInfo.NumAckPending
-		cg.UnprocessedMessages = int(cgInfo.NumPending)
-		cg.PoisonMessages = totalPoisonMsgs
-
-		if len(cg.ConnectedConsumers) > 0 {
-			cg.IsActive = true
-			connectedCgs = append(connectedCgs, *cg)
-		} else if len(cg.DisconnectedConsumers) > 0 {
-			disconnectedCgs = append(disconnectedCgs, *cg)
-		} else {
-			deletedCgs = append(deletedCgs, *cg)
+			if len(cg.ConnectedConsumers) > 0 {
+				cg.IsActive = true
+				connectedCgs = append(connectedCgs, *cg)
+			} else if len(cg.DisconnectedConsumers) > 0 {
+				disconnectedCgs = append(disconnectedCgs, *cg)
+			} else {
+				deletedCgs = append(deletedCgs, *cg)
+			}
 		}
 	}
 
@@ -600,7 +601,7 @@ func (s *Server) destroyCGFromNats(c *client, reply, userName, tenantName string
 		if username == "" {
 			username = userName
 		}
-		_, user, err := memphis_cache.GetUser(username, consumer.TenantName)
+		_, user, err := memphis_cache.GetUser(username, consumer.TenantName, false)
 		if err != nil && !IsNatsErr(err, JSConsumerNotFoundErr) && !IsNatsErr(err, JSStreamNotFoundErr) {
 			errMsg := fmt.Sprintf("[tenant: %v]Consumer group %v at station %v: %v", tenantName, consumer.ConsumersGroup, station.Name, err.Error())
 			serv.Errorf("destroyCGFromNats at GetUserByUsername: " + errMsg)
