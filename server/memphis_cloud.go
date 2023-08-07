@@ -2063,7 +2063,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName) // add station instead of _
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]Produce at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2081,7 +2081,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	if station.Version == 0 {
 	  subject = fmt.Sprintf("%s.final", stationName.Intern())
 	} else {
-	  shouldRoundRobin := true
+	  shouldRoundRobin = true
 	}
 
 	account, err := serv.lookupAccount(user.TenantName)
