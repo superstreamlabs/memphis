@@ -2,4 +2,19 @@
     svg{
         color: black;
     }
+
+}
+.ant-input-number {
+    border-radius: 4px;
+    border: 1px solid var(--gray);
+}
+
+.ant-input-number-focused {
+    box-shadow: unset;
+}
+.ant-input-number-handler {
+    border-left: none;
+}
+.ant-input-number-handler-wrap {
+    opacity: 1;
 }

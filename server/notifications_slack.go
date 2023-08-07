@@ -52,7 +52,7 @@ func sendMessageToSlackChannel(integration models.SlackIntegration, title string
 	return nil
 }
 
-func cacheDetailsSlack(keys map[string]string, properties map[string]bool, tenantName string) {
+func cacheDetailsSlack(keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	var authToken, channelID string
 	var poisonMessageAlert, schemaValidationFailAlert, disconnectionEventsAlert bool
 	slackIntegration := models.SlackIntegration{}
@@ -67,12 +67,12 @@ func cacheDetailsSlack(keys map[string]string, properties map[string]bool, tenan
 		schemaValidationFailAlert = false
 		disconnectionEventsAlert = false
 	}
-	authToken, ok := keys["auth_token"]
+	authToken, ok := keys["auth_token"].(string)
 	if !ok {
 		deleteIntegrationFromTenant(tenantName, "slack", IntegrationsConcurrentCache)
 		return
 	}
-	channelID, ok = keys["channel_id"]
+	channelID, ok = keys["channel_id"].(string)
 	if !ok {
 		deleteIntegrationFromTenant(tenantName, "slack", IntegrationsConcurrentCache)
 		return
@@ -112,22 +112,22 @@ func cacheDetailsSlack(keys map[string]string, properties map[string]bool, tenan
 	}
 }
 
-func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateIntegrationSchema) (map[string]string, map[string]bool, int, error) {
+func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateIntegrationSchema) (map[string]interface{}, map[string]bool, int, error) {
 	var authToken, channelID, uiUrl string
 	var pmAlert, svfAlert, disconnectAlert bool
-	authToken, ok := body.Keys["auth_token"]
+	authToken, ok := body.Keys["auth_token"].(string)
 	if !ok {
-		return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide auth token for slack integration")
+		return map[string]interface{}{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide auth token for slack integration")
 	}
-	channelID, ok = body.Keys["channel_id"]
+	channelID, ok = body.Keys["channel_id"].(string)
 	if !ok {
 		if !ok {
-			return map[string]string{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide channel ID for slack integration")
+			return map[string]interface{}{}, map[string]bool{}, SHOWABLE_ERROR_STATUS_CODE, errors.New("must provide channel ID for slack integration")
 		}
 	}
 	uiUrl = body.UIUrl
 	if uiUrl == "" {
-		return map[string]string{}, map[string]bool{}, 500, errors.New("must provide UI url for slack integration")
+		return map[string]interface{}{}, map[string]bool{}, 500, errors.New("must provide UI url for slack integration")
 	}
 
 	pmAlert, ok = body.Properties[PoisonMAlert]
@@ -143,11 +143,11 @@ func (it IntegrationsHandler) getSlackIntegrationDetails(body models.CreateInteg
 		disconnectAlert = false
 	}
 
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "")
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", "", "", "", "", "")
 	return keys, properties, 0, nil
 }
 
-func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, body models.CreateIntegrationSchema) (map[string]string, map[string]bool, models.Integration, int, error) {
+func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, body models.CreateIntegrationSchema) (map[string]interface{}, map[string]bool, models.Integration, int, error) {
 	keys, properties, errorCode, err := it.getSlackIntegrationDetails(body)
 	if err != nil {
 		return keys, properties, models.Integration{}, errorCode, err
@@ -159,9 +159,9 @@ func (it IntegrationsHandler) handleCreateSlackIntegration(tenantName string, bo
 	if err != nil {
 		errMsg := strings.ToLower(err.Error())
 		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") || strings.Contains(errMsg, "already exists") {
-			return map[string]string{}, map[string]bool{}, models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
+			return map[string]interface{}{}, map[string]bool{}, models.Integration{}, SHOWABLE_ERROR_STATUS_CODE, err
 		} else {
-			return map[string]string{}, map[string]bool{}, models.Integration{}, 500, err
+			return map[string]interface{}{}, map[string]bool{}, models.Integration{}, 500, err
 		}
 	}
 	return keys, properties, slackIntegration, 0, nil
@@ -172,7 +172,7 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(tenantName, integrati
 	if err != nil {
 		return models.Integration{}, errorCode, err
 	}
-	slackIntegration, err := updateSlackIntegration(tenantName, keys["auth_token"], keys["channel_id"], properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
+	slackIntegration, err := updateSlackIntegration(tenantName, keys["auth_token"].(string), keys["channel_id"].(string), properties[PoisonMAlert], properties[SchemaVAlert], properties[DisconEAlert], body.UIUrl)
 	if err != nil {
 		errMsg := strings.ToLower(err.Error())
 		if strings.Contains(errMsg, "invalid auth token") || strings.Contains(errMsg, "invalid channel") {
@@ -183,23 +183,25 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(tenantName, integrati
 	}
 	return slackIntegration, 0, nil
 }
-func createSlackIntegration(tenantName string, keys map[string]string, properties map[string]bool, uiUrl string) (models.Integration, error) {
+func createSlackIntegration(tenantName string, keys map[string]interface{}, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	exist, slackIntegration, err := db.GetIntegration("slack", tenantName)
 	if err != nil {
 		return slackIntegration, err
 	} else if !exist {
-		err := testSlackIntegration(keys["auth_token"], keys["channel_id"], "Slack integration with Memphis was added successfully")
+		err := testSlackIntegration(keys["auth_token"].(string), keys["channel_id"].(string), "Slack integration with Memphis was added successfully")
 		if err != nil {
 			return slackIntegration, err
 		}
-		cloneKeys := copyMaps(keys)
-		encryptedValue, err := EncryptAES([]byte(keys["auth_token"]))
+		stringMapKeys := GetKeysAsStringMap(keys)
+		cloneKeys := copyMaps(stringMapKeys)
+		encryptedValue, err := EncryptAES([]byte(keys["auth_token"].(string)))
 		if err != nil {
 			return models.Integration{}, err
 		}
 		cloneKeys["auth_token"] = encryptedValue
-		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "slack", cloneKeys, properties)
+		interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+		integrationRes, insertErr := db.InsertNewIntegration(tenantName, "slack", interfaceMapKeys, properties)
 		if insertErr != nil {
 			return slackIntegration, insertErr
 		}
@@ -224,7 +226,7 @@ func createSlackIntegration(tenantName string, keys map[string]string, propertie
 			Update: properties[SchemaVAlert],
 		}
 		serv.SendUpdateToClients(update)
-		slackIntegration.Keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
+		slackIntegration.Keys["auth_token"] = hideSlackAuthToken(keys["auth_token"].(string))
 		return slackIntegration, nil
 	}
 	return slackIntegration, errors.New("slack integration already exists")
@@ -241,7 +243,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 			return models.Integration{}, errors.New("no auth token was provided")
 		}
 		key := getAESKey()
-		token, err := DecryptAES(key, integrationFromDb.Keys["auth_token"])
+		token, err := DecryptAES(key, integrationFromDb.Keys["auth_token"].(string))
 		if err != nil {
 			return models.Integration{}, err
 		}
@@ -251,14 +253,16 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	if err != nil {
 		return slackIntegration, err
 	}
-	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "")
-	cloneKeys := copyMaps(keys)
+	keys, properties := createIntegrationsKeysAndProperties("slack", authToken, channelID, pmAlert, svfAlert, disconnectAlert, "", "", "", "", "", "", "", "", "", "", "")
+	stringMapKeys := GetKeysAsStringMap(keys)
+	cloneKeys := copyMaps(stringMapKeys)
 	encryptedValue, err := EncryptAES([]byte(authToken))
 	if err != nil {
 		return models.Integration{}, err
 	}
 	cloneKeys["auth_token"] = encryptedValue
-	slackIntegration, err = db.UpdateIntegration(tenantName, "slack", cloneKeys, properties)
+	interfaceMapKeys := copyStringMapToInterfaceMap(cloneKeys)
+	slackIntegration, err = db.UpdateIntegration(tenantName, "slack", interfaceMapKeys, properties)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -283,7 +287,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		Update: svfAlert,
 	}
 	serv.SendUpdateToClients(update)
-	keys["auth_token"] = hideSlackAuthToken(keys["auth_token"])
+	keys["auth_token"] = hideSlackAuthToken(cloneKeys["auth_token"])
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
 	return models.Integration{}, nil
