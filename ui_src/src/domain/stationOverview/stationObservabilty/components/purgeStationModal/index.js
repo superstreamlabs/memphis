@@ -75,7 +75,7 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
             setLoader(false);
             setPurgeData({});
         }
-    }, [stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages]);
+    }, [stationState?.stationSocketData]);
 
     return (
         <div className="delete-modal-wrapper">
