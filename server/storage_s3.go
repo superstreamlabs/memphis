@@ -250,7 +250,10 @@ func testS3Integration(svc *s3.Client, bucketName, urlEndpointResolver string) (
 	var statusCode int
 	customUrlEndpointErr := fmt.Sprintf("lookup %s.bucket.: no such host", bucketName)
 	if err != nil {
-		if strings.Contains(err.Error(), "Forbidden") {
+		if strings.Contains(err.Error(), "Unauthorized") {
+			err = fmt.Errorf("the provided AWS credentials are incorrect or you do not have the necessary permissions to access the bucket %s", bucketName)
+			statusCode = SHOWABLE_ERROR_STATUS_CODE
+		} else if strings.Contains(err.Error(), "Forbidden") {
 			err = errors.New("invalid access key or secret key")
 			statusCode = SHOWABLE_ERROR_STATUS_CODE
 		} else if strings.Contains(err.Error(), "404") {

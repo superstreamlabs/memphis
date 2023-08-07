@@ -35,6 +35,7 @@ const selectThroughput = ({ options, onChange, value }) => {
                 onChange={handleChange}
                 placement="bottomRight"
                 popupClassName="select-throughput-options"
+                listHeight={210}
             >
                 {options?.map((component) => {
                     return (

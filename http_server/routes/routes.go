@@ -37,6 +37,7 @@ func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
 	InitializeConfigurationsRoutes(mainRouter, handlers)
 	server.InitializeTenantsRoutes(mainRouter, handlers)
 	server.InitializeBillingRoutes(mainRouter, handlers)
+	InitializeAsyncTasksRoutes(mainRouter, handlers)
 	ui.InitializeUIRoutes(router)
 
 	mainRouter.GET("/status", func(c *gin.Context) {

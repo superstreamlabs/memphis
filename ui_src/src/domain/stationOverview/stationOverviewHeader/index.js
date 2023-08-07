@@ -41,6 +41,7 @@ import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
 import Modal from '../../../components/modal';
 import Auditing from '../components/auditing';
+import AsyncTasks from '../../../components/asyncTasks';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConsts';
@@ -68,6 +69,9 @@ const StationOverviewHeader = () => {
                 break;
             case 'messages':
                 setRetentionValue(`${stationState?.stationMetaData?.retention_value?.toLocaleString()} messages`);
+                break;
+            case 'ack_based':
+                setRetentionValue('Ack based');
                 break;
             default:
                 break;
@@ -159,6 +163,7 @@ const StationOverviewHeader = () => {
                     ) : (
                         ''
                     )}
+                    <AsyncTasks height={'32px'} />
                     <Button
                         width="100px"
                         height="32px"
