@@ -171,7 +171,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 		_, _, err = client.Repositories.Get(context.Background(), repoOwner, connectedRepoDetails["repo_name"].(string))
 		if err != nil {
-			return models.Integration{}, fmt.Errorf("repository not found")
+			return models.Integration{}, fmt.Errorf("repository %s not found", connectedRepoDetails["repo_name"].(string))
 		}
 
 		githubDetails := githubRepoDetails{
