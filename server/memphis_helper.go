@@ -669,7 +669,7 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			if deliveryPolicy == DeliverByStartSequence {
 				consumerConfig.OptStartSeq = optStartSeq
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern() + "$" + strconv.Itoa(pl), consumerConfig)
+			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
 			if err != nil {
 				return err
 			}
@@ -1031,10 +1031,16 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 		5*time.Second,
 		true,
 	)
-	var messages []models.MessageDetails
+
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
+
+	if len(msgs) == 0 {
+		return []models.MessageDetails{}, nil
+	}
+
+	var messages []models.MessageDetails
 
 	stationIsNative := station.IsNative
 
