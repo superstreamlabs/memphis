@@ -72,7 +72,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
 	messageSeq := message.StreamSeq
-	poisonMessageContent, err := s.memphisGetMessage(accountName, stationName.Intern(), uint64(messageSeq))
+	poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil
