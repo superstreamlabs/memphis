@@ -392,7 +392,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetContentGithubConnectedRepos(repo, owner string, githubIntegration models.Integration) ([]*github.RepositoryContent, error) {
+func GetGithubContentFromConnectedRepos(repo, owner string, githubIntegration models.Integration) ([]*github.RepositoryContent, error) {
 	repoContent := []*github.RepositoryContent{}
 	token := githubIntegration.Keys["token"].(string)
 	client, err := getGithubClient(token)

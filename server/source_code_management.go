@@ -81,9 +81,13 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 
 func GetContentDetails(repo, owner, sourceCodeIntegrationType string, integration models.Integration) ([]*github.RepositoryContent, error) {
 	conectedReposContent := []*github.RepositoryContent{}
+	var err error
 	switch sourceCodeIntegrationType {
 	case "github":
-		conectedReposContent, _ = GetContentGithubConnectedRepos(repo, owner, integration)
+		conectedReposContent, err = GetGithubContentFromConnectedRepos(repo, owner, integration)
+		if err != nil {
+			return []*github.RepositoryContent{}, err
+		}
 	}
 
 	return conectedReposContent, nil
