@@ -10,8 +10,6 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import './style.scss';
-
 import React, { useState, useContext, useEffect } from 'react';
 import { Form, message } from 'antd';
 import tickCircle from '../../../../../assets/images/tickCircle.svg';
@@ -37,6 +35,7 @@ const GitHubIntegration = ({ close, value }) => {
             connected_repos: []
         }
     });
+    const [loadingCreate, setLoadingCreate] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
@@ -44,7 +43,6 @@ const GitHubIntegration = ({ close, value }) => {
     const [addNew, setAddNew] = useState(false);
 
     useEffect(() => {
-        console.log(value);
         const images = [];
         images.push(INTEGRATION_LIST['GitHub'].banner.props.src);
         images.push(INTEGRATION_LIST['GitHub'].insideBanner.props.src);
@@ -124,11 +122,13 @@ const GitHubIntegration = ({ close, value }) => {
 
     const createIntegration = async () => {
         try {
+            setLoadingCreate(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, formFields);
             dispatch({ type: 'ADD_INTEGRATION', payload: data });
             getIntegration();
+            setLoadingCreate(false);
         } catch (err) {
-            setLoadingSubmit(false);
+            setLoadingCreate(false);
         }
     };
 
@@ -191,7 +191,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     onClick={() => disconnect()}
                                 />
                             )}
-                            <Button
+                            {/* <Button
                                 width="140px"
                                 height="35px"
                                 placeholder="Integration guide"
@@ -202,7 +202,7 @@ const GitHubIntegration = ({ close, value }) => {
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-ui/integrations/notifications/slack', '_blank')}
-                            />
+                            /> */}
                         </div>
                     </div>
                     {githubConfiguration.integrateDesc}
@@ -227,8 +227,6 @@ const GitHubIntegration = ({ close, value }) => {
                                             backgroundColorType="green"
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            // isLoading={loadingSubmit}
-                                            // disabled={isValue && !creationForm.isFieldsTouched()}
                                             onClick={createIntegration}
                                         />
                                     ) : (
@@ -241,9 +239,9 @@ const GitHubIntegration = ({ close, value }) => {
                                             backgroundColorType="purple"
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            // isLoading={loadingSubmit}
-                                            // disabled={isValue && !creationForm.isFieldsTouched()}
+                                            disabled={!formFields.keys?.token}
                                             onClick={createIntegration}
+                                            isLoading={loadingCreate}
                                         />
                                     )}
                                 </span>
@@ -277,7 +275,6 @@ const GitHubIntegration = ({ close, value }) => {
                             {isValue && (
                                 <div className="input-field">
                                     <p className="title">Repos</p>
-                                    {/* <span className="desc">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</span> */}
                                     <div className="repos-container">
                                         <div className="repos-header">
                                             <label></label>
