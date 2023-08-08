@@ -23,3 +23,8 @@ type FunctionsResult struct {
 	Repository   string    `json:"repository"`
 	Branch       string    `json:"branch"`
 }
+
+type FunctionsRes struct {
+	Functions     []FunctionsResult `json:"functions"`
+	ScmIntegrated bool              `json:"scm_integrated"`
+}

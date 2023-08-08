@@ -101,8 +101,8 @@ func GetContentOfSelectedRepo(integration models.Integration, connectedRepo map[
 	return contentDetails, nil
 }
 
-func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetails) []functionDetails {
-	connectedRepos := getConnectedSourceCodeRepos(tenantName)
+func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetails) ([]functionDetails, bool) {
+	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
 	var err error
 	for k, connectedRepoPerIntegration := range connectedRepos {
 		for _, connectedRepo := range connectedRepoPerIntegration {
@@ -115,5 +115,5 @@ func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetai
 			}
 		}
 	}
-	return contentDetails
+	return contentDetails, scmIntegrated
 }

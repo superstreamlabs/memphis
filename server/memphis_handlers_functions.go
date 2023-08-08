@@ -28,14 +28,28 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 		return
 	}
 
-	contentDetails := []functionDetails{}
-	contentDetailsOfSelectedRepos := GetContentOfSelectedRepos(user.TenantName, contentDetails)
-	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
+	functionsResult, err := fh.GetFunctions(user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
 		return
 	}
-	c.JSON(200, functions)
+
+	c.JSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "functions": functionsResult.Functions})
+}
+
+func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
+	contentDetails := []functionDetails{}
+	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName, contentDetails)
+	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
+	if err != nil {
+		return models.FunctionsRes{}, err
+	}
+	allFunctions := models.FunctionsRes{
+		Functions:     functions,
+		ScmIntegrated: scmIntegrated,
+	}
+
+	return allFunctions, nil
 }
 
 func validateYamlContent(yamlMap map[string]interface{}) error {
@@ -53,13 +67,15 @@ func validateYamlContent(yamlMap map[string]interface{}) error {
 	return nil
 }
 
-func getConnectedSourceCodeRepos(tenantName string) map[string][]interface{} {
+func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, bool) {
 	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
+	scmIntegrated := false
 	selectedRepos := []interface{}{}
 	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
 		for k := range tenantIntegrations {
 			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
 				if connectedRepos, ok := integration.Keys["connected_repos"].([]interface{}); ok {
+					scmIntegrated = true
 					for _, repo := range connectedRepos {
 						repository := repo.(map[string]interface{})
 						repoType := repository["type"].(string)
@@ -77,7 +93,7 @@ func getConnectedSourceCodeRepos(tenantName string) map[string][]interface{} {
 		}
 
 	}
-	return selectedReposPerSourceCodeIntegration
+	return selectedReposPerSourceCodeIntegration, scmIntegrated
 }
 
 func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.FunctionsResult, error) {
