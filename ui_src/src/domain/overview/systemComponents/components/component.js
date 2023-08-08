@@ -73,8 +73,12 @@ const Component = ({ comp, i }) => {
                                     <Popover
                                         overlayInnerStyle={remainingPorstPopInnerStyle}
                                         placement="bottomLeft"
-                                        content={comp?.hosts?.slice(1)?.map((host) => {
-                                            return <p className="comp-plus-popover">{host}</p>;
+                                        content={comp?.hosts?.slice(1)?.map((host, i) => {
+                                            return (
+                                                <p key={i} className="comp-plus-popover">
+                                                    {host}
+                                                </p>
+                                            );
                                         })}
                                     >
                                         <div className="plus-comp">
@@ -95,9 +99,9 @@ const Component = ({ comp, i }) => {
                                 <Popover
                                     overlayInnerStyle={remainingPorstPopInnerStyle}
                                     placement="bottomLeft"
-                                    content={comp?.ports?.slice(1)?.map((port) => {
+                                    content={comp?.ports?.slice(1)?.map((port, i) => {
                                         return (
-                                            <p className="comp-plus-popover" onClick={handleIconClick}>
+                                            <p className="comp-plus-popover" key={i} onClick={handleIconClick}>
                                                 {port}
                                             </p>
                                         );

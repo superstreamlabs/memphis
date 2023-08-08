@@ -29,7 +29,7 @@ import { Form } from 'antd';
 
 import { generateName, getUnique } from '../../../../services/valueConvertor';
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
-import stationsIcon from '../../../../assets/images/stationsIcon.svg';
+import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
 import tagsIcon from '../../../../assets/images/tagsIcon.svg';
@@ -531,6 +531,7 @@ function CreateSchema({ createNew }) {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
+                                        htmlType="button"
                                         disabled={
                                             formFields?.schema_content === '' ||
                                             formFields?.schema_content?.includes('type') ||
@@ -548,6 +549,7 @@ function CreateSchema({ createNew }) {
                                     backgroundColorType="purple"
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
+                                    htmlType="button"
                                     isLoading={validateLoading}
                                     disabled={formFields?.schema_content === ''}
                                     onClick={() => handleValidateSchema()}
@@ -651,12 +653,11 @@ function CreateSchema({ createNew }) {
                 </div>
             </Modal>
 
-            {/** attach schema to station modal */}
             <Modal
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        <img src={stationsIcon} alt="stationsIcon" />
+                        <img src={stationsIconActive} alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

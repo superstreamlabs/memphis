@@ -16,6 +16,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"math/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,6 +47,7 @@ import (
 
 const shouldCreateRootUserforGlobalAcc = true
 const TENANT_SEQUENCE_START_ID = 2
+const MAX_PARTITIONS = 10000
 
 type BillingHandler struct{ S *Server }
 type TenantHandler struct{ S *Server }
@@ -1999,7 +2001,7 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 }
 
 func validateRetentionType(retentionType string) error {
-	if retentionType == "ack_based"{
+	if retentionType == "ack_based" {
 		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
 	}
 	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
@@ -2062,7 +2064,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 		return
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), user.TenantName) // add station instead of _
+	exist, station, err := db.GetStationByName(stationName.Ext(), user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]Produce at GetStationByName: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2076,12 +2078,12 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	}
 
 	subject := ""
-	// shouldRoundRobin := false
-	// if station.Version == 0 {
-	subject = fmt.Sprintf("%s.final", stationName.Intern())
-	// } else {
-	// shouldRoundRobin := true
-	// }
+	shouldRoundRobin := false
+	if station.Version == 0 {
+		subject = fmt.Sprintf("%s.final", stationName.Intern())
+	} else {
+		shouldRoundRobin = true
+	}
 
 	account, err := serv.lookupAccount(user.TenantName)
 	if err != nil {
@@ -2095,10 +2097,11 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	}
 	body.MsgHdrs["$memphis_producedBy"] = "UI"
 	body.MsgHdrs["$memphis_connectionId"] = "UI"
-	// if shouldRoundRobin {
-	// 	partition := (i % len(station.Partitions)) + 1
-	// 	subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), partition)
-	// }
+	if shouldRoundRobin {
+		rand.Seed(time.Now().UnixNano())
+		randomIndex := rand.Intn(len(station.PartitionsList))
+		subject = fmt.Sprintf("%s$%v.final", stationName.Intern(), station.PartitionsList[randomIndex])
+	}
 	serv.sendInternalAccountMsgWithHeadersWithEcho(account, subject, body.MsgPayload, body.MsgHdrs)
 
 	c.IndentedJSON(200, gin.H{})

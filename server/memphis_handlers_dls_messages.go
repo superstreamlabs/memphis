@@ -39,7 +39,21 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 
-	streamName := message.Stream
+	var streamName string
+	var partitionNumber int
+	if strings.Contains(message.Stream, "$") {
+		streamName = strings.Split(message.Stream, "$")[0]
+		partitionNumber, err = strconv.Atoi(strings.Split(message.Stream, "$")[1])
+		if err != nil {
+			serv.Errorf("handleNewUnackedMsg: Error while converting partition to int: %v", err.Error())
+			return err
+		}
+
+	} else {
+		streamName = message.Stream
+		partitionNumber = -1
+	}
+
 	accountName := message.Account
 	// backward compatibility
 	if accountName == "" {
@@ -58,7 +72,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
 	messageSeq := message.StreamSeq
-	poisonMessageContent, err := s.memphisGetMessage(accountName, stationName.Intern(), uint64(messageSeq))
+	poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
 	if err != nil {
 		if IsNatsErr(err, JSNoMessageFoundErr) {
 			return nil
@@ -103,7 +117,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName)
+	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName, partitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
@@ -146,20 +160,29 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 	}
 
 	message.Message.TimeSent = time.Now()
-	_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName)
+	_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName, message.PartitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
 		return
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
 
-	dlsMsgs, err := db.GetDlsMsgsByStationId(station.ID)
-	if err != nil {
-		return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+	var dlsMsgs []models.DlsMessage
+	var err error
+	if partitionNumber == -1 {
+		dlsMsgs, err = db.GetDlsMsgsByStationId(station.ID)
+		if err != nil {
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		}
+	} else {
+		dlsMsgs, err = db.GetDlsMsgsByStationAndPartition(station.ID, partitionNumber)
+		if err != nil {
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		}
 	}
 
 	for _, v := range dlsMsgs {
@@ -236,6 +259,7 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	dlsMsg := models.DlsMessage{
 		ID:              dlsMessage.ID,
 		StationId:       dlsMessage.StationId,
+		PartitionNumber: dlsMessage.PartitionNumber,
 		MessageSeq:      dlsMessage.MessageSeq,
 		ProducerName:    dlsMessage.ProducerName,
 		PoisonedCgs:     dlsMessage.PoisonedCgs,
@@ -257,14 +281,14 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 		pc := models.PoisonedCg{}
 		pCg := dlsMsg.PoisonedCgs
 		for _, v := range pCg {
-			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v)
-			if err != nil {
-				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
-				return models.DlsMessageResponse{}, err
-			}
 			cgMembers, err := GetConsumerGroupMembers(v, station)
 			if err != nil {
 				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
+				return models.DlsMessageResponse{}, err
+			}
+			cgInfo, err := serv.GetCgInfo(station.TenantName, sn, v, cgMembers[0].PartitionsList)
+			if err != nil {
+				serv.Errorf("[tenant: %v]GetDlsMessageDetailsById at GetCgInfo: %v", station.TenantName, err.Error())
 				return models.DlsMessageResponse{}, err
 			}
 			pc.IsActive, pc.IsDeleted = getCgStatus(cgMembers)
@@ -325,9 +349,9 @@ func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType
 	return result, nil
 }
 
-func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.PoisonedCg, error) {
+func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber int) ([]models.PoisonedCg, error) {
 	var dlsMsg models.DlsMessage
-	_, dlsMsg, err := db.GetMsgByStationIdAndMsgSeq(station.ID, messageSeq)
+	_, dlsMsg, err := db.GetMsgByStationIdAndMsgSeq(station.ID, messageSeq, partitionNumber)
 	if err != nil {
 		return []models.PoisonedCg{}, err
 	}
@@ -341,16 +365,18 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq int) ([]models.P
 		if err != nil {
 			return []models.PoisonedCg{}, err
 		}
-		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg)
-		if err != nil {
-			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
-			return []models.PoisonedCg{}, err
-		}
 		cgMembers, err := GetConsumerGroupMembers(cg, station)
 		if err != nil {
 			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetConsumerGroupMembers: %v", station.TenantName, err.Error())
 			return []models.PoisonedCg{}, err
 		}
+
+		cgInfo, err := serv.GetCgInfo(station.TenantName, stationName, cg, cgMembers[0].PartitionsList)
+		if err != nil {
+			serv.Errorf("[tenant: %v]GetPoisonedCgsByMessage at GetCgInfo: %v", station.TenantName, err.Error())
+			return []models.PoisonedCg{}, err
+		}
+
 		poisonedCg.IsActive, poisonedCg.IsDeleted = getCgStatus(cgMembers)
 
 		poisonedCg.CgName = cg

@@ -74,6 +74,7 @@ const initialState = {
         retention_value: 604800,
         storage_type: 'file',
         replicas: 'No HA (1)',
+        partitions_number: 1,
         days: 7,
         hours: 0,
         minutes: 0,

@@ -36,6 +36,7 @@ type createStationRequest struct {
 	Username             string                  `json:"username"`
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
 	TenantName           string                  `json:"tenant_name"`
+	PartitionsNumber     int                     `json:"partitions_number"`
 }
 
 type destroyStationRequest struct {
@@ -66,8 +67,14 @@ type createConsumerResponse struct {
 	Err string `json:"error"`
 }
 
+type createConsumerResponseV1 struct {
+	PartitionsUpdate models.PartitionsUpdate `json:"partitions_update"`
+	Err              string                  `json:"error"`
+}
+
 type createProducerResponse struct {
 	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
+	PartitionsUpdate        models.PartitionsUpdate         `json:"partitions_update"`
 	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
 	ClusterSendNotification bool                            `json:"send_notification"`
 	Err                     string                          `json:"error"`
@@ -161,6 +168,10 @@ func (cpr *createProducerResponse) SetError(err error) {
 }
 
 func (ccr *createConsumerResponse) SetError(err error) {
+	ccr.Err = err.Error()
+}
+
+func (ccr *createConsumerResponseV1) SetError(err error) {
 	ccr.Err = err.Error()
 }
 

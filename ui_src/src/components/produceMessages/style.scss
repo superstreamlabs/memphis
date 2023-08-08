@@ -4,7 +4,6 @@
     flex-direction: column;
     height: calc(100% - 15px);
     font-family: 'Inter';
-    margin-top: 15px;
     .header-wrapper{
         p{
             font-family: 'InterSemiBold';
@@ -144,6 +143,9 @@
     .by-pass-switcher {
         display: flex;
         justify-content: space-between;
+        .title-container{
+            margin-bottom: 0px !important;
+        }
         .switch-button {
             margin-left: 10px;
         }
@@ -157,11 +159,16 @@
     .ant-form-item{
         margin-bottom: 10px;
     }
-    .buttons{
-        width: 100%;
-        display: grid;
-        grid-template-columns: 48% 48%;
-        justify-content: space-between;
+}
+
+.produce-modal{
+ 
+    .button-container{
+        button{
+            height: 35px !important;
+            font-size: 14px;
+            width: 110px !important;
+        }
         .action-button{
             display: flex;
             gap: 5px;
@@ -172,4 +179,4 @@
             }
         }
     }
-}
+  }

@@ -14,7 +14,6 @@ import datadogBannerPopup from '../assets/images/datadogBannerPopup.webp';
 import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
 import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
-
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
@@ -25,6 +24,9 @@ import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
+import githubIntegrationIcon from '../assets/images/githubIntegrationIcon.svg';
+import githubBannerPopup from '../assets/images/githubBannerPopup.webp';
+import githubBanner from '../assets/images/githubBanner.webp';
 import newrelicIcon from '../assets/images/newrelicIcon.svg';
 import influxDBIcon from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.webp';
@@ -59,6 +61,10 @@ export const CATEGORY_LIST = {
     CDC: {
         name: 'CDC',
         color: ColorPalette[11]
+    },
+    SourceCode: {
+        name: 'Source Code',
+        color: ColorPalette[6]
     }
 };
 
@@ -266,6 +272,34 @@ export const INTEGRATION_LIST = {
                 <span className="content">
                     S3 Compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages. Examples of S3
                     compatible object storage providers are: AWS S3, Backblaze B2, Digital Ocean Spaces, or self-hosted like Minio.
+                </span>
+            </div>
+        )
+    },
+    GitHub: {
+        name: 'Github',
+        by: 'memphis',
+        banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
+        insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
+        icon: <img src={githubIntegrationIcon} alt="gitHubIcon" />,
+        description:
+            'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
+        category: CATEGORY_LIST['SourceCode'],
+        header: (
+            <div className="header-left-side">
+                <img src={githubIntegrationIcon} alt="gitHubLogo" />
+                <div className="details">
+                    <p>GitHub</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
+                    and Functions source code.
                 </span>
             </div>
         )
