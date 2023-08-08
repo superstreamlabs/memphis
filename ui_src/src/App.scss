@@ -185,7 +185,8 @@ pre {
     text-align: -webkit-center;
     .notification-wrapper{
         opacity: 0;       
-        width: 40%;
+        width: fit-content;
+        padding: 0 20px;
         height: 30px;
         position: relative;
         display: flex;
