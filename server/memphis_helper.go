@@ -669,7 +669,7 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			if deliveryPolicy == DeliverByStartSequence {
 				consumerConfig.OptStartSeq = optStartSeq
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
+			err = s.memphisAddConsumer(tenantName, stationName.Intern() + "$" + strconv.Itoa(pl), consumerConfig)
 			if err != nil {
 				return err
 			}
