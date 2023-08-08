@@ -15,11 +15,21 @@ import (
 	"errors"
 	"fmt"
 	"memphis/models"
+
+	"github.com/google/go-github/github"
 )
 
 type GetSourceCodeBranchesSchema struct {
 	RepoName  string `form:"repo_name" json:"repo_name" binding:"required"`
 	RepoOwner string `form:"repo_owner" json:"repo_owner" binding:"required"`
+}
+
+type functionDetails struct {
+	Content    *github.RepositoryContent `json:"content"`
+	Commit     *github.RepositoryCommit  `json:"commit"`
+	ContentMap map[string]interface{}    `json:"content_map"`
+	RepoName   string                    `json:"repo_name"`
+	Branch     string                    `json:"branch"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
@@ -77,12 +87,12 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 	return branchesPerRepo
 }
 
-func GetContentOfSelectedRepos(sourceCodeIntegrationType string, integration models.Integration, connectedRepo map[string]interface{}) ([]fileContentDetails, error) {
+func GetContentOfSelectedRepo(sourceCodeIntegrationType string, integration models.Integration, connectedRepo map[string]interface{}) ([]functionDetails, error) {
 	var err error
-	contentDetails := []fileContentDetails{}
+	contentDetails := []functionDetails{}
 	switch sourceCodeIntegrationType {
 	case "github":
-		contentDetails, err = GetGithubContentFromConnectedRepos(integration, connectedRepo)
+		contentDetails, err = GetGithubContentFromConnectedRepo(integration, connectedRepo)
 		if err != nil {
 			return contentDetails, err
 		}

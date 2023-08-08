@@ -22,12 +22,6 @@ type githubRepoDetails struct {
 	RepoOwner string `json:"repo_owner"`
 }
 
-type fileContentDetails struct {
-	Content    *github.RepositoryContent `json:"content"`
-	Commit     *github.RepositoryCommit  `json:"commit"`
-	ContentMap map[string]interface{}    `json:"content_map"`
-}
-
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	githubIntegration := models.Integration{}
 	githubIntegration.Keys = make(map[string]interface{})
@@ -400,7 +394,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, connectedRepo map[string]interface{}) ([]fileContentDetails, error) {
+func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, connectedRepo map[string]interface{}) ([]functionDetails, error) {
 	token := githubIntegration.Keys["token"].(string)
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
@@ -411,20 +405,20 @@ func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, co
 
 	client, err := getGithubClient(token)
 	if err != nil {
-		return []fileContentDetails{}, err
+		return []functionDetails{}, err
 	}
 
 	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
 	if err != nil {
-		return []fileContentDetails{}, err
+		return []functionDetails{}, err
 	}
 
-	filesContentArr := []fileContentDetails{}
+	functionsDetails := []functionDetails{}
 	for _, directoryContent := range repoContent {
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
 			if err != nil {
-				return []fileContentDetails{}, err
+				return []functionDetails{}, err
 			}
 
 			isValidFileYaml := false
@@ -432,17 +426,17 @@ func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, co
 				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
 					if err != nil {
-						return []fileContentDetails{}, err
+						return []functionDetails{}, err
 					}
 
 					decodedContent, err := base64.StdEncoding.DecodeString(*content.Content)
 					if err != nil {
-						return []fileContentDetails{}, err
+						return []functionDetails{}, err
 					}
 
 					err = yaml.Unmarshal(decodedContent, &contentMap)
 					if err != nil {
-						return []fileContentDetails{}, err
+						return []functionDetails{}, err
 					}
 
 					err = validateYamlContent(contentMap)
@@ -454,16 +448,18 @@ func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, co
 
 					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
 					if err != nil {
-						return []fileContentDetails{}, err
+						return []functionDetails{}, err
 					}
 
 					if isValidFileYaml {
-						fileDetails := fileContentDetails{
+						fileDetails := functionDetails{
 							Content:    content,
 							Commit:     commit,
 							ContentMap: contentMap,
+							RepoName:   repo,
+							Branch:     branch,
 						}
-						filesContentArr = append(filesContentArr, fileDetails)
+						functionsDetails = append(functionsDetails, fileDetails)
 						break
 					}
 				}
@@ -474,5 +470,5 @@ func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, co
 		}
 	}
 
-	return filesContentArr, nil
+	return functionsDetails, nil
 }

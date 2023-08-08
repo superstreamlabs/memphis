@@ -58,12 +58,12 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 			}
 			for _, connectedRepo := range connectedRepos {
 				connectedRepoRes := connectedRepo.(map[string]interface{})
-				contentDetails, err := GetContentOfSelectedRepos(integration.Name, integration, connectedRepoRes)
+				contentDetails, err := GetContentOfSelectedRepo(integration.Name, integration, connectedRepoRes)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContentOfSelectedRepos: %v", user.TenantName, user.Username, err.Error())
 					continue
 				}
-				functions, err = GetFunctionsDetails(contentDetails, integration.Name, functions, connectedRepoRes["repo_name"].(string), connectedRepoRes["branch"].(string))
+				functions, err = GetFunctionsDetails(contentDetails, integration.Name, functions)
 				if err != nil {
 					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
 					continue
@@ -102,15 +102,17 @@ func (fh FunctionsHandler) GetConnectedSourceCodeRepos(integration models.Integr
 	return selectedRepos, nil
 }
 
-func GetFunctionsDetails(contentDetails []fileContentDetails, sourceCodeTypeIntegration string, functions []FunctionsResult, repo, branch string) ([]FunctionsResult, error) {
+func GetFunctionsDetails(functionsDetails []functionDetails, sourceCodeTypeIntegration string, functions []FunctionsResult) ([]FunctionsResult, error) {
 	switch sourceCodeTypeIntegration {
 	case "github":
-		for _, fileDetails := range contentDetails {
-			contentMapContent := fileDetails.ContentMap
-			commit := fileDetails.Commit
-			fileContent := fileDetails.Content
-			tagsInterfaceSlice := contentMapContent["tags"].([]interface{})
-			tagsStrings := make([]string, len(contentMapContent["tags"].([]interface{})))
+		for _, functionDetails := range functionsDetails {
+			fucntionContentMap := functionDetails.ContentMap
+			commit := functionDetails.Commit
+			fileContent := functionDetails.Content
+			repo := functionDetails.RepoName
+			branch := functionDetails.Branch
+			tagsInterfaceSlice := fucntionContentMap["tags"].([]interface{})
+			tagsStrings := make([]string, len(fucntionContentMap["tags"].([]interface{})))
 
 			for i, v := range tagsInterfaceSlice {
 				if str, ok := v.(string); ok {
@@ -119,10 +121,10 @@ func GetFunctionsDetails(contentDetails []fileContentDetails, sourceCodeTypeInte
 			}
 
 			fileYaml := ContentYamlFile{
-				FunctionName: contentMapContent["function_name"].(string),
-				Description:  contentMapContent["description"].(string),
+				FunctionName: fucntionContentMap["function_name"].(string),
+				Description:  fucntionContentMap["description"].(string),
 				Tags:         tagsStrings,
-				Language:     contentMapContent["language"].(string),
+				Language:     fucntionContentMap["language"].(string),
 			}
 
 			functionDetails := FunctionsResult{
