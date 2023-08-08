@@ -669,7 +669,7 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			if deliveryPolicy == DeliverByStartSequence {
 				consumerConfig.OptStartSeq = optStartSeq
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern() + "$" + strconv.Itoa(pl), consumerConfig)
+			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
 			if err != nil {
 				return err
 			}
@@ -1215,18 +1215,29 @@ func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq u
 	return s.memphisGetMessage(tenantName, streamName, msgSeq)
 }
 
-func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber int) (string, []string, error) {
 	var followers []string
+	var streamInfo *StreamInfo
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", followers, err
+		return "", []string{}, err
 	}
+	if len(station.PartitionsList) > 0 {
+		if partitionNumber == -1 {
+			return "", []string{}, nil
+		}
+		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
+		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
+		if err != nil {
+			return "", []string{}, err
+		}
+	} else { // backward compatibility
+		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
+		if err != nil {
+			return "", []string{}, err
+		}
 
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
-	if err != nil {
-		return "", followers, err
 	}
-
 	for _, replica := range streamInfo.Cluster.Replicas {
 		followers = append(followers, replica.Name)
 	}

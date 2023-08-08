@@ -340,7 +340,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 	if err != nil {
 		return map[string]any{}, err
 	}
-	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+	leader, followers, err := h.Stations.GetLeaderAndFollowers(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}
