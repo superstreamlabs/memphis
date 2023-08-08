@@ -191,7 +191,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     onClick={() => disconnect()}
                                 />
                             )}
-                            {/* <Button
+                            <Button
                                 width="140px"
                                 height="35px"
                                 placeholder="Integration guide"
@@ -201,8 +201,8 @@ const GitHubIntegration = ({ close, value }) => {
                                 border="none"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-ui/integrations/notifications/slack', '_blank')}
-                            /> */}
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
+                            />
                         </div>
                     </div>
                     {githubConfiguration.integrateDesc}
