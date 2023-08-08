@@ -669,7 +669,7 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 			if deliveryPolicy == DeliverByStartSequence {
 				consumerConfig.OptStartSeq = optStartSeq
 			}
-			err = s.memphisAddConsumer(tenantName, stationName.Intern() + "$" + strconv.Itoa(pl), consumerConfig)
+			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
 			if err != nil {
 				return err
 			}
@@ -1225,7 +1225,7 @@ func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber i
 	}
 	if len(station.PartitionsList) > 0 {
 		if partitionNumber == -1 {
-			partitionNumber = 1
+			partitionNumber = station.PartitionsList[0]
 		}
 		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
