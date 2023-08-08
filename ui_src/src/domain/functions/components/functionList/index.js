@@ -147,7 +147,7 @@ function FunctionList() {
                                 className="modal-btn"
                                 width="160px"
                                 height="34px"
-                                placeholder="Integrate to Gitlab"
+                                placeholder="Start to integrate"
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"

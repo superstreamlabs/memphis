@@ -576,6 +576,32 @@ const App = withRouter((props) => {
                             />
                             <PrivateRoute
                                 exact
+                                path={`${pathDomains.functions}`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Functions />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.functions}/:name`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Functions />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
                                 path={`${pathDomains.schemaverse}/create`}
                                 component={
                                     <AppWrapper

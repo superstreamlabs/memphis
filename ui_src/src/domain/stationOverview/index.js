@@ -90,6 +90,7 @@ const StationOverview = () => {
         dispatch({ type: 'SET_ROUTE', payload: 'stations' });
         getStaionMetaData();
         getStationDetails();
+        stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
     }, []);
 
     useEffect(() => {
