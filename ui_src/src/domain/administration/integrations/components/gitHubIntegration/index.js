@@ -11,7 +11,9 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message } from 'antd';
+import { Form, message, Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
+
 import tickCircle from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
@@ -38,9 +40,11 @@ const GitHubIntegration = ({ close, value }) => {
     const [loadingCreate, setLoadingCreate] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
+    const [loadingRepos, setLoadingRepos] = useState(true);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [repos, setRepos] = useState([]);
     const [addNew, setAddNew] = useState(false);
+    const [isChanged, setIsChanged] = useState(false);
 
     useEffect(() => {
         const images = [];
@@ -64,6 +68,28 @@ const GitHubIntegration = ({ close, value }) => {
         });
         getIntegration();
     }, []);
+
+    function areEqual(arr1, arr2) {
+        if (arr1?.length !== arr2?.length) {
+            return false;
+        }
+
+        for (let i = 0; i < arr1?.length; i++) {
+            const obj1 = arr1[i];
+            const obj2 = arr2[i];
+
+            if (obj1.repo_name !== obj2.repo_name || obj1.repo_owner !== obj2.repo_owner || obj1.branch !== obj2.branch) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    useEffect(() => {
+        const results = areEqual(formFields.keys?.connected_repos, value.keys?.connected_repos);
+        setIsChanged(!results);
+    }, [formFields]);
 
     const updateKeysConnectedRepos = (repo, index) => {
         let updatedValue = { ...formFields.keys };
@@ -146,7 +172,10 @@ const GitHubIntegration = ({ close, value }) => {
                         connected_repos: []
                     }
                 });
-        } catch (error) {}
+            setLoadingRepos(false);
+        } catch (error) {
+            setLoadingRepos(false);
+        }
     };
 
     const disconnect = async () => {
@@ -162,6 +191,16 @@ const GitHubIntegration = ({ close, value }) => {
             setLoadingDisconnect(false);
         }
     };
+
+    const antIcon = (
+        <LoadingOutlined
+            style={{
+                fontSize: 24,
+                color: '#5A4FE5'
+            }}
+            spin
+        />
+    );
 
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
@@ -213,25 +252,13 @@ const GitHubIntegration = ({ close, value }) => {
                                 <span className="connect-bth-gh">
                                     <p>API Token</p>
                                     {isValue ? (
-                                        <Button
-                                            width="100px"
-                                            height="22px"
-                                            placeholder={
-                                                <span>
-                                                    <img src={tickCircle} className="connected" alt="connected" />
-                                                    &nbsp;Connected
-                                                </span>
-                                            }
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="green"
-                                            fontSize="12px"
-                                            fontFamily="InterSemiBold"
-                                            onClick={createIntegration}
-                                        />
+                                        <div className="connected-to-gh">
+                                            <img src={tickCircle} className="connected" alt="connected" />
+                                            &nbsp;Connected
+                                        </div>
                                     ) : (
                                         <Button
-                                            width="70px"
+                                            width="80px"
                                             height="22px"
                                             placeholder={'Connect'}
                                             colorType="white"
@@ -282,6 +309,11 @@ const GitHubIntegration = ({ close, value }) => {
                                             <label>BRANCH</label>
                                         </div>
                                         <div className="repos-body">
+                                            {loadingRepos && (
+                                                <div className="repos-loader">
+                                                    <Spin indicator={antIcon} />
+                                                </div>
+                                            )}
                                             {formFields?.keys?.connected_repos?.map((repo, index) => {
                                                 return (
                                                     <IntegrationItem
@@ -342,6 +374,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     onClick={updateIntegration}
+                                    disabled={!value.keys?.token || !isChanged}
                                 />
                             </div>
                         </Form.Item>
