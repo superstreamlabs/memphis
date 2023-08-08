@@ -15,11 +15,22 @@ import (
 	"errors"
 	"fmt"
 	"memphis/models"
+
+	"github.com/google/go-github/github"
 )
 
 type GetSourceCodeBranchesSchema struct {
 	RepoName  string `form:"repo_name" json:"repo_name" binding:"required"`
 	RepoOwner string `form:"repo_owner" json:"repo_owner" binding:"required"`
+}
+
+type functionDetails struct {
+	Content         *github.RepositoryContent `json:"content"`
+	Commit          *github.RepositoryCommit  `json:"commit"`
+	ContentMap      map[string]interface{}    `json:"content_map"`
+	RepoName        string                    `json:"repo_name"`
+	Branch          string                    `json:"branch"`
+	IntegrationName string                    `json:"integration_name"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
@@ -75,4 +86,63 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 		}
 	}
 	return branchesPerRepo
+}
+
+func GetContentOfSelectedRepo(integration models.Integration, connectedRepo map[string]interface{}, contentDetails []functionDetails) ([]functionDetails, error) {
+	var err error
+	switch integration.Name {
+	case "github":
+		contentDetails, err = GetGithubContentFromConnectedRepo(integration, connectedRepo, contentDetails)
+		if err != nil {
+			return contentDetails, err
+		}
+	}
+
+	return contentDetails, nil
+}
+
+func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, bool) {
+	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
+	scmIntegrated := false
+	selectedRepos := []interface{}{}
+	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+		for k := range tenantIntegrations {
+			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
+				if connectedRepos, ok := integration.Keys["connected_repos"].([]interface{}); ok {
+					scmIntegrated = true
+					for _, repo := range connectedRepos {
+						repository := repo.(map[string]interface{})
+						repoType := repository["type"].(string)
+						if repoType == "functions" {
+							selectedRepos = append(selectedRepos, repo)
+							selectedReposPerSourceCodeIntegration[k] = selectedRepos
+						}
+					}
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
+		}
+
+	}
+	return selectedReposPerSourceCodeIntegration, scmIntegrated
+}
+
+func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetails) ([]functionDetails, bool) {
+	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
+	var err error
+	for k, connectedRepoPerIntegration := range connectedRepos {
+		for _, connectedRepo := range connectedRepoPerIntegration {
+			connectedRepoRes := connectedRepo.(map[string]interface{})
+			tenantIntegrations, _ := IntegrationsConcurrentCache.Load(tenantName)
+			integration := tenantIntegrations[k].(models.Integration)
+			contentDetails, err = GetContentOfSelectedRepo(integration, connectedRepoRes, contentDetails)
+			if err != nil {
+				continue
+			}
+		}
+	}
+	return contentDetails, scmIntegrated
 }

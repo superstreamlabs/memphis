@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
 )
 
 type githubRepoDetails struct {
@@ -101,15 +103,22 @@ func (it IntegrationsHandler) handleGithubIntegration(tenantName string, keys ma
 		keys["token"] = ""
 	}
 	if keys["token"] == "" {
-		exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
-		if err != nil {
-			return 500, map[string]interface{}{}, err
+		if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+			if githubIntegrationFromCache, ok := tenantInetgrations["github"].(models.Integration); ok {
+				keys["token"] = githubIntegrationFromCache.Keys["token"].(string)
+			}
+			if !ok || keys["token"] == "" {
+				exist, integrationFromDb, err := db.GetIntegration("github", tenantName)
+				if err != nil {
+					return 500, map[string]interface{}{}, err
+				}
+				if !exist {
+					statusCode = SHOWABLE_ERROR_STATUS_CODE
+					return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
+				}
+				keys["token"] = integrationFromDb.Keys["token"]
+			}
 		}
-		if !exist {
-			statusCode = SHOWABLE_ERROR_STATUS_CODE
-			return SHOWABLE_ERROR_STATUS_CODE, map[string]interface{}{}, errors.New("github integration does not exist")
-		}
-		keys["token"] = integrationFromDb.Keys["token"]
 	} else {
 		encryptedValue, err := EncryptAES([]byte(keys["token"].(string)))
 		if err != nil {
@@ -143,16 +152,15 @@ func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, bo
 }
 
 func updateGithubIntegration(user models.User, keys map[string]interface{}, properties map[string]bool) (models.Integration, error) {
-	var githubIntegrationFromCache models.Integration
 	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
-		if githubIntegrationFromCache, ok = tenantInetgrations["github"].(models.Integration); !ok {
+		if _, ok = tenantInetgrations["github"].(models.Integration); !ok {
 			return models.Integration{}, fmt.Errorf("github integration does not exist")
 		}
 	} else if !ok {
 		return models.Integration{}, fmt.Errorf("github integration does not exist")
 	}
 
-	client, err := getGithubClient(githubIntegrationFromCache.Keys["token"].(string))
+	client, err := getGithubClient(keys["token"].(string))
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -171,7 +179,12 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 		_, _, err = client.Repositories.Get(context.Background(), repoOwner, connectedRepoDetails["repo_name"].(string))
 		if err != nil {
-			return models.Integration{}, fmt.Errorf("repository %s not found", connectedRepoDetails["repo_name"].(string))
+			if strings.Contains(err.Error(), "Not Found") {
+				updateIntegration["connected_repos"] = []githubRepoDetails{}
+				continue
+			} else {
+				return models.Integration{}, fmt.Errorf("repository %s not found", connectedRepoDetails["repo_name"].(string))
+			}
 		}
 
 		githubDetails := githubRepoDetails{
@@ -379,4 +392,83 @@ func containsElement(arr []string, val string) bool {
 		}
 	}
 	return false
+}
+
+func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
+	token := githubIntegration.Keys["token"].(string)
+	branch := connectedRepo["branch"].(string)
+	repo := connectedRepo["repo_name"].(string)
+	owner := connectedRepo["repo_owner"].(string)
+
+	client, err := getGithubClient(token)
+	if err != nil {
+		return []functionDetails{}, err
+	}
+
+	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
+	if err != nil {
+		return []functionDetails{}, err
+	}
+
+	for _, directoryContent := range repoContent {
+		if directoryContent.GetType() == "dir" {
+			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
+			if err != nil {
+				return []functionDetails{}, err
+			}
+
+			isValidFileYaml := false
+			for _, fileContent := range filesContent {
+				var content *github.RepositoryContent
+				var commit *github.RepositoryCommit
+				var contentMap map[string]interface{}
+				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
+					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
+					if err != nil {
+						return []functionDetails{}, err
+					}
+
+					decodedContent, err := base64.StdEncoding.DecodeString(*content.Content)
+					if err != nil {
+						return []functionDetails{}, err
+					}
+
+					err = yaml.Unmarshal(decodedContent, &contentMap)
+					if err != nil {
+						return []functionDetails{}, err
+					}
+
+					err = validateYamlContent(contentMap)
+					if err != nil {
+						isValidFileYaml = false
+						continue
+					}
+					isValidFileYaml = true
+
+					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
+					if err != nil {
+						return []functionDetails{}, err
+					}
+
+					if isValidFileYaml {
+						fileDetails := functionDetails{
+							Content:         content,
+							Commit:          commit,
+							ContentMap:      contentMap,
+							RepoName:        repo,
+							Branch:          branch,
+							IntegrationName: githubIntegration.Name,
+						}
+						functionsDetails = append(functionsDetails, fileDetails)
+						break
+					}
+				}
+			}
+			if !isValidFileYaml {
+				continue
+			}
+		}
+	}
+
+	return functionsDetails, nil
 }

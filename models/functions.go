@@ -9,43 +9,22 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
-package routes
+package models
 
-import (
-	"memphis/middlewares"
-	"memphis/server"
-	ui "memphis/ui_static_files"
-	"memphis/utils"
+import "time"
 
-	"github.com/gin-gonic/gin"
-)
+type FunctionsResult struct {
+	FunctionName string    `json:"function_name"`
+	Description  string    `json:"description"`
+	Tags         []string  `json:"tags"`
+	Language     string    `json:"language"`
+	LastCommit   time.Time `json:"last_commit"`
+	Link         string    `json:"link"`
+	Repository   string    `json:"repository"`
+	Branch       string    `json:"branch"`
+}
 
-func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	server.SetCors(router)
-	mainRouter := router.Group("/api")
-	mainRouter.Use(middlewares.Authenticate)
-
-	utils.InitializeValidations()
-	InitializeUserMgmtRoutes(mainRouter)
-	InitializeStationsRoutes(mainRouter, handlers)
-	InitializeMonitoringRoutes(mainRouter, handlers)
-	InitializeTagsRoutes(mainRouter, handlers)
-	InitializeSchemasRoutes(mainRouter, handlers)
-	InitializeIntegrationsRoutes(mainRouter, handlers)
-	InitializeConfigurationsRoutes(mainRouter, handlers)
-	server.InitializeTenantsRoutes(mainRouter, handlers)
-	server.InitializeBillingRoutes(mainRouter, handlers)
-	InitializeAsyncTasksRoutes(mainRouter, handlers)
-	InitializeFunctionsRoutes(mainRouter, handlers)
-	ui.InitializeUIRoutes(router)
-
-	mainRouter.GET("/status", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Ok",
-		})
-	})
-
-	return router
+type FunctionsRes struct {
+	Functions     []FunctionsResult `json:"functions"`
+	ScmIntegrated bool              `json:"scm_integrated"`
 }
