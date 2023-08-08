@@ -40,9 +40,11 @@ const GitHubIntegration = ({ close, value }) => {
     const [loadingCreate, setLoadingCreate] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
+    const [loadingRepos, setLoadingRepos] = useState(true);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [repos, setRepos] = useState([]);
     const [addNew, setAddNew] = useState(false);
+    const [isChanged, setIsChanged] = useState(false);
 
     useEffect(() => {
         const images = [];
@@ -66,6 +68,28 @@ const GitHubIntegration = ({ close, value }) => {
         });
         getIntegration();
     }, []);
+
+    function areEqual(arr1, arr2) {
+        if (arr1?.length !== arr2?.length) {
+            return false;
+        }
+
+        for (let i = 0; i < arr1?.length; i++) {
+            const obj1 = arr1[i];
+            const obj2 = arr2[i];
+
+            if (obj1.repo_name !== obj2.repo_name || obj1.repo_owner !== obj2.repo_owner || obj1.branch !== obj2.branch) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    useEffect(() => {
+        const results = areEqual(formFields.keys?.connected_repos, value.keys?.connected_repos);
+        setIsChanged(!results);
+    }, [formFields]);
 
     const updateKeysConnectedRepos = (repo, index) => {
         let updatedValue = { ...formFields.keys };
@@ -148,7 +172,10 @@ const GitHubIntegration = ({ close, value }) => {
                         connected_repos: []
                     }
                 });
-        } catch (error) {}
+            setLoadingRepos(false);
+        } catch (error) {
+            setLoadingRepos(false);
+        }
     };
 
     const disconnect = async () => {
@@ -282,7 +309,7 @@ const GitHubIntegration = ({ close, value }) => {
                                             <label>BRANCH</label>
                                         </div>
                                         <div className="repos-body">
-                                            {(!formFields?.keys?.connected_repos?.length || formFields?.keys?.connected_repos?.length === 0) && (
+                                            {loadingRepos && (
                                                 <div className="repos-loader">
                                                     <Spin indicator={antIcon} />
                                                 </div>
@@ -347,6 +374,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     onClick={updateIntegration}
+                                    disabled={!value.keys?.token || !isChanged}
                                 />
                             </div>
                         </Form.Item>
