@@ -1306,12 +1306,7 @@ func (sh StationsHandler) GetMessagesFromPartition(station models.Station, strea
 
 func (sh StationsHandler) GetLeaderAndFollowers(station models.Station, partitionNumber int) (string, []string, error) {
 	if sh.S.JetStreamIsClustered() {
-		leader, followers, err := sh.S.GetLeaderAndFollowers(station, partitionNumber)
-		if err != nil {
-			return "", []string{}, err
-		}
-
-		return leader, followers, nil
+		return sh.S.GetLeaderAndFollowers(station, partitionNumber)
 	} else {
 		return "memphis-0", []string{}, nil
 	}

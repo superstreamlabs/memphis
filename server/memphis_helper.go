@@ -1218,33 +1218,31 @@ func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq u
 func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber int) (string, []string, error) {
 	var followers []string
 	var streamInfo *StreamInfo
-	var leader string
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", followers, err
+		return "", []string{}, err
 	}
 	if len(station.PartitionsList) > 0 {
 		if partitionNumber == -1 {
-			partitionNumber = station.PartitionsList[0]
+			return "", []string{}, nil
 		}
 		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
 		if err != nil {
-			return "", followers, err
+			return "", []string{}, err
 		}
 	} else { // backward compatibility
 		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
 		if err != nil {
-			return "", followers, err
+			return "", []string{}, err
 		}
 
 	}
 	for _, replica := range streamInfo.Cluster.Replicas {
 		followers = append(followers, replica.Name)
 	}
-	leader = streamInfo.Cluster.Leader
 
-	return leader, followers, nil
+	return streamInfo.Cluster.Leader, followers, nil
 }
 
 func (s *Server) memphisGetMessage(tenantName, streamName string, msgSeq uint64) (*StoredMsg, error) {
