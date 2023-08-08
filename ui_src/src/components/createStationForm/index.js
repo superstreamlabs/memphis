@@ -15,7 +15,7 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, replicasConvertor } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, partitionsValidator, replicasConvertor } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -168,7 +168,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
             },
-            partitions_number: formFields.partitions_number
+            partitions_number: Number(formFields.partitions_number)
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -333,13 +333,30 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <Form.Item
                                 name="partitions_number"
                                 initialValue={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                rules={[
+                                    {
+                                        validator: (_, value) => {
+                                            return new Promise((resolve, reject) => {
+                                                let validation = partitionsValidator(Number(value));
+                                                if (validation === '') return resolve();
+                                                else return reject(partitionsValidator(Number(value)));
+                                            });
+                                        }
+                                    }
+                                ]}
                                 style={{ height: '50px' }}
                             >
-                                <InputNumberComponent
-                                    min={1}
-                                    max={isCloud() ? 30 : 10000}
+                                <Input
+                                    placeholder="Type"
+                                    type="number"
+                                    radiusType="semi-round"
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    height="40px"
+                                    onBlur={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
+                                    onChange={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
                                     value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
-                                    onChange={(e) => getStarted && updateFormState('partitions_number', e)}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>

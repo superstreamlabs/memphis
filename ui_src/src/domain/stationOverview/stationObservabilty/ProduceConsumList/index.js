@@ -12,9 +12,10 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Space } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
+import { FiPlayCircle } from 'react-icons/fi';
 
 import waitingProducer from '../../../../assets/images/waitingProducer.svg';
 import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
@@ -38,6 +39,8 @@ const ProduceConsumList = ({ producer }) => {
     const [cgDetails, setCgDetails] = useState([]);
     const [openCreateProducer, setOpenCreateProducer] = useState(false);
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
+    const produceMessagesRef = useRef(null);
+    const [produceloading, setProduceLoading] = useState(false);
 
     useEffect(() => {
         if (producer) {
@@ -295,12 +298,12 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal width="710px" height="700px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
+            <Modal width="710px" height="720px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
                 <SdkExample withHeader={true} showTabs={false} consumer={true} stationName={stationState?.stationMetaData?.name} />
             </Modal>
             <Modal
                 width="710px"
-                height="700px"
+                height="720px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
                 }}
@@ -319,15 +322,31 @@ const ProduceConsumList = ({ producer }) => {
                         <label>Quick message producing.</label>
                     </div>
                 }
+                className={'modal-wrapper produce-modal'}
                 width="550px"
-                height="765px"
+                height="70vh"
                 clickOutside={() => {
                     setOpenProduceMessages(false);
                 }}
                 open={openProduceMessages}
-                displayButtons={false}
+                displayButtons={true}
+                rBtnText={
+                    <div className="action-button">
+                        <FiPlayCircle />
+                        Produce
+                    </div>
+                }
+                rBtnClick={() => produceMessagesRef.current()}
+                lBtnClick={() => setOpenProduceMessages(false)}
+                lBtnText={'Cancel'}
+                isLoading={produceloading}
             >
-                <ProduceMessages stationName={stationState?.stationMetaData?.name} cancel={() => setOpenProduceMessages(false)} />
+                <ProduceMessages
+                    stationName={stationState?.stationMetaData?.name}
+                    setLoading={(e) => setProduceLoading(e)}
+                    produceMessagesRef={produceMessagesRef}
+                    cancel={() => setOpenProduceMessages(false)}
+                />
             </Modal>
         </div>
     );

@@ -18,7 +18,7 @@ import partitionIcon from '../../assets/images/partitionIcon.svg';
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import { StationStoreContext } from '../../domain/stationOverview';
 
-const PartitionsFilter = ({ partitions_number, height }) => {
+const PartitionsFilter = ({ partitions_number }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isOpen, setIsOpen] = useState(false);
     const [selectedPartition, setSelectedPartition] = useState(-1);
@@ -47,15 +47,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
         return elements;
     };
     const getContent = () => {
-        return (
-            <div>
-                <div className="filter-partitions-title">
-                    <p>Filter</p>
-                    <Divider />
-                </div>
-                <div className="filter-partitions-container">{getItems()}</div>
-            </div>
-        );
+        return <div className="filter-partitions-container">{getItems()}</div>;
     };
 
     return (
@@ -63,7 +55,7 @@ const PartitionsFilter = ({ partitions_number, height }) => {
             <div className="filter-partition-btn">
                 <div className="filter-partition-container">
                     <div>
-                        <label className="filter-title">Filter: </label>
+                        <img src={partitionIcon} alt="PartitionIcon" className="partition-icon" />
                         {selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}
                     </div>
                     <img src={CollapseArrow} alt="CollapseArrow" />
