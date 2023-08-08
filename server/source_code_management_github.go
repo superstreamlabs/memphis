@@ -202,6 +202,10 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 	}
 
+	if len(keys["connected_repos"].([]interface{})) == 0 {
+		updateIntegration["connected_repos"] = []githubRepoDetails{}
+	}
+
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
 		return models.Integration{}, err
@@ -425,17 +429,17 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
 					if err != nil {
-						return []functionDetails{}, err
+						continue
 					}
 
 					decodedContent, err := base64.StdEncoding.DecodeString(*content.Content)
 					if err != nil {
-						return []functionDetails{}, err
+						continue
 					}
 
 					err = yaml.Unmarshal(decodedContent, &contentMap)
 					if err != nil {
-						return []functionDetails{}, err
+						continue
 					}
 
 					err = validateYamlContent(contentMap)
@@ -447,7 +451,7 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 
 					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
 					if err != nil {
-						return []functionDetails{}, err
+						continue
 					}
 
 					if isValidFileYaml {

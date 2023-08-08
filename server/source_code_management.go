@@ -130,7 +130,8 @@ func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, b
 	return selectedReposPerSourceCodeIntegration, scmIntegrated
 }
 
-func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetails) ([]functionDetails, bool) {
+func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool) {
+	contentDetails := []functionDetails{}
 	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
 	var err error
 	for k, connectedRepoPerIntegration := range connectedRepos {
