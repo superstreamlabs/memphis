@@ -38,8 +38,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
-	contentDetails := []functionDetails{}
-	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName, contentDetails)
+	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName)
 	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
 	if err != nil {
 		return models.FunctionsRes{}, err
