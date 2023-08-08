@@ -115,11 +115,13 @@ func memphisWSLoop(s *Server, subs *concurrentMap[memphisWSReqTenantsToFiller], 
 						if !IsNatsErr(err, JSStreamNotFoundErr) && !strings.Contains(err.Error(), "not exist") && !strings.Contains(err.Error(), "alphanumeric") {
 							s.Errorf("[tenant: %v]memphisWSLoop at filler: %v", tenant, err.Error())
 						}
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 					updateRaw, err := json.Marshal(update)
 					if err != nil {
 						s.Errorf("[tenant: %v]memphisWSLoop at json.Marshal: %v", tenant, err.Error())
+						deleteTenantFromSub(tenant, subs, k)
 						continue
 					}
 
@@ -204,12 +206,20 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 		}, nil
 
 	case memphisWS_Subj_StationOverviewData:
-		stationName := strings.Join(strings.Split(subj, ".")[1:], ".")
+		splitedResp := strings.Split(subj, ".")
+		partitionNumberStr := splitedResp[len(splitedResp)-1]
+
+		partitionNumber, err := strconv.Atoi(partitionNumberStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid partition number - %v", partitionNumberStr)
+		}
+
+		stationName := strings.Join(splitedResp[1:len(splitedResp)-1], ".")
 		if stationName == _EMPTY_ {
 			return nil, errors.New("invalid station name")
 		}
 		return func(string) (any, error) {
-			return memphisWSGetStationOverviewData(s, h, stationName, tenantName)
+			return memphisWSGetStationOverviewData(s, h, stationName, tenantName, partitionNumber)
 		}, nil
 
 	case memphisWS_Subj_PoisonMsgJourneyData:
@@ -254,7 +264,7 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	}
 }
 
-func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string, tenantName string) (map[string]any, error) {
+func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string, tenantName string, partitionNumber int) (map[string]any, error) {
 	sn, err := StationNameFromStr(stationName)
 	if err != nil {
 		return map[string]any{}, err
@@ -279,22 +289,40 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 	if err != nil {
 		return map[string]any{}, err
 	}
-	totalMessages, err := h.Stations.GetTotalMessages(station.TenantName, station.Name)
-	if err != nil {
-		return map[string]any{}, err
-	}
-	avgMsgSize, err := h.Stations.GetAvgMsgSize(station)
-	if err != nil {
-		return map[string]any{}, err
-	}
 
+	var totalMessages int
+	var avgMsgSize int64
+	messages := make([]models.MessageDetails, 0)
 	messagesToFetch := 1000
-	messages, err := h.Stations.GetMessages(station, messagesToFetch)
-	if err != nil {
-		return map[string]any{}, err
+	if partitionNumber == -1 {
+		totalMessages, err = h.Stations.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
+		if err != nil {
+			return map[string]any{}, err
+		}
+		avgMsgSize, err = h.Stations.GetAvgMsgSize(station)
+		if err != nil {
+			return map[string]any{}, err
+		}
+		messages, err = h.Stations.GetMessages(station, messagesToFetch)
+		if err != nil {
+			return map[string]any{}, err
+		}
+	} else {
+		totalMessages, err = h.Stations.GetTotalPartitionMessages(station.TenantName, station.Name, partitionNumber)
+		if err != nil {
+			return map[string]any{}, err
+		}
+		avgMsgSize, err = h.Stations.GetPartitionAvgMsgSize(station.TenantName, fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber))
+		if err != nil {
+			return map[string]any{}, err
+		}
+		messages, err = h.Stations.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", sn.Intern(), partitionNumber), messagesToFetch, partitionNumber)
+		if err != nil {
+			return map[string]any{}, err
+		}
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station)
+	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -312,7 +340,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 	if err != nil {
 		return map[string]any{}, err
 	}
-	leader, followers, err := h.Stations.GetLeaderAndFollowers(station)
+	leader, followers, err := h.Stations.GetLeaderAndFollowers(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}

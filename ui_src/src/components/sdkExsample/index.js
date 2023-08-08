@@ -27,18 +27,18 @@ import {
 } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
 import noCodeExample from '../../assets/images/noCodeExample.svg';
+import codeIcon from '../../assets/images/codeIcon.svg';
 import refresh from '../../assets/images/refresh.svg';
 import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
 import Copy from '../copy';
-import { isCloud } from '../../services/valueConvertor';
 
 loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const selectProtocolOption = isCloud() ? ['SDK (TCP)'] : ['SDK (TCP)', 'REST (HTTP)'];
+const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
@@ -110,7 +110,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatternPython, '');
                 const regexPatterntDotNet = `options\.AccountId = ${accountId};`;
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatterntDotNet, '');
-                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet , '');
+                codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet, '');
             }
             setCodeExample(codeEx);
         }
@@ -185,9 +185,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     return (
         <div className="code-example-details-container sdk-example">
             {withHeader && (
-                <div className="header-wrapper">
-                    <p>Code examples</p>
-                    <span>Some code snippets that will help you get started with Memphis</span>
+                <div className="modal-header">
+                    <div className="header-img-container">
+                        <img className="headerImage" src={codeIcon} alt="codeIcon" />
+                    </div>
+                    <p>Code examplesn</p>
+                    <label>Some code snippets that will help you get started with Memphis</label>
                 </div>
             )}
             <div className="select-lan">

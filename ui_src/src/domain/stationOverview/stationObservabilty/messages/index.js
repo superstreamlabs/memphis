@@ -43,6 +43,7 @@ import { Virtuoso } from 'react-virtuoso';
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
+    const [selectedRowPartition, setSelectedRowPartition] = useState(null);
     const [modalPurgeIsOpen, modalPurgeFlip] = useState(false);
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
@@ -58,10 +59,12 @@ const Messages = () => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
-    const onSelectedRow = (id) => {
+    const onSelectedRow = (id, partition) => {
         setUserScrolled(false);
         setSelectedRowIndex(id);
+        setSelectedRowPartition(partition);
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: partition });
     };
 
     const handleCheckedClick = (e) => {
@@ -79,6 +82,7 @@ const Messages = () => {
 
     const handleChangeMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
         setSelectedRowIndex(null);
         setIsCheck([]);
 
@@ -97,6 +101,7 @@ const Messages = () => {
 
     const handleChangeSubMenuItem = (newValue) => {
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+        stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
         setSelectedRowIndex(null);
         setSubTabValue(newValue);
         setIsCheck([]);
@@ -107,11 +112,14 @@ const Messages = () => {
         let messages;
         try {
             if (tabValue === tabs[0]) {
-                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, message_seqs: isCheck });
+                const message_seqs = isCheck.map((item) => {
+                    return { message_seq: Number(item.split('_')[0]), partition_number: Number(item.split('_')[1]) };
+                });
+                await httpRequest('DELETE', `${ApiEndpoints.REMOVE_MESSAGES}`, { station_name: stationName, messages: message_seqs });
                 messages = stationState?.stationSocketData?.messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
-                        return item.message_seq !== messageId;
+                        return `${item.message_seq}_${item.partition}` !== messageId;
                     });
                 });
             } else {
@@ -135,6 +143,7 @@ const Messages = () => {
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+                stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: null });
                 setSelectedRowIndex(null);
                 setIsCheck([]);
             }, 1500);
@@ -183,11 +192,23 @@ const Messages = () => {
 
     const listGenerator = (index, message) => {
         const id = tabValue === tabs[1] ? message?.id : message?.message_seq;
+        const partition = tabValue === tabs[1] ? null : message?.partition;
         return (
             <div className={index % 2 === 0 ? 'even' : 'odd'}>
-                <CheckboxComponent className="check-box-message" checked={isCheck?.includes(id)} id={id} onChange={handleCheckedClick} name={id} />
-                <div className={selectedRowIndex === id ? 'row-message selected' : 'row-message'} key={id} id={id} onClick={() => onSelectedRow(id)}>
-                    {selectedRowIndex === id && <div className="hr-selected"></div>}
+                <CheckboxComponent
+                    className="check-box-message"
+                    checked={isCheck?.includes(partition ? `${id}_${partition}` : id)}
+                    id={partition ? `${id}_${partition}` : id}
+                    onChange={handleCheckedClick}
+                    name={partition ? `${id}_${partition}` : id}
+                />
+                <div
+                    className={selectedRowIndex === id && selectedRowPartition === partition ? 'row-message selected' : 'row-message'}
+                    key={id}
+                    id={id}
+                    onClick={() => onSelectedRow(id, partition)}
+                >
+                    {selectedRowIndex === id && selectedRowPartition === partition && <div className="hr-selected"></div>}
                     <span className="preview-message">
                         {tabValue === tabs[1] ? messageParser('string', message?.message?.data) : messageParser('string', message?.data)}
                     </span>
@@ -251,6 +272,22 @@ const Messages = () => {
                 </div>
             )
         );
+    };
+
+    const getDescriptin = () => {
+        if (stationState?.stationSocketData?.connected_producers?.length > 0 || stationState?.stationSocketData?.disconnected_producers?.length > 0) {
+            if (
+                stationState?.stationMetaData?.retention_type === 'ack_based' &&
+                stationState?.stationSocketData?.disconnected_cgs?.length === 0 &&
+                stationState?.stationSocketData?.connected_cgs?.length === 0
+            ) {
+                return 'When retention is ack-based, messages will be auto-deleted if no consumers are connected to the station';
+            } else {
+                return 'Start / Continue producing data.';
+            }
+        } else {
+            return 'Create your 1st producer and start producing data.';
+        }
     };
 
     return (
@@ -328,15 +365,11 @@ const Messages = () => {
             {tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
             {tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0 && listGeneratorWrapper()}
 
-            {tabValue === tabs[0] && stationState?.stationSocketData?.messages === null && (
+            {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <p>No messages</p>
-                    <span className="des">
-                        {stationState?.stationSocketData?.connected_producers.length > 0 || stationState?.stationSocketData?.disconnected_producers.length > 0
-                            ? 'Start / Continue producing data'
-                            : 'Create your 1st producer and start producing data'}
-                    </span>
+                    <span className="des">{getDescriptin()}</span>
                 </div>
             )}
             {tabValue === tabs[1] &&

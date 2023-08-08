@@ -13,6 +13,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"memphis/db"
 	"memphis/models"
 	"sync"
@@ -20,6 +21,7 @@ import (
 )
 
 func (srv *Server) removeStaleStations() {
+	// TODO - handle stale partition and deleting its resources
 	stations, err := db.GetActiveStations()
 	if err != nil {
 		srv.Errorf("removeStaleStations: %v", err.Error())
@@ -27,9 +29,15 @@ func (srv *Server) removeStaleStations() {
 	for _, s := range stations {
 		go func(srv *Server, s models.Station) {
 			stationName, _ := StationNameFromStr(s.Name)
-			_, err = srv.memphisStreamInfo(s.TenantName, stationName.Intern())
-			if IsNatsErr(err, JSStreamNotFoundErr) {
-				srv.Warnf("[tenant: %v]removeStaleStations: Found zombie station to delete: %v", s.TenantName, s.Name)
+			var partitionsToDelete []int
+			for _, p := range s.PartitionsList {
+				_, err = srv.memphisStreamInfo(s.TenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
+				if IsNatsErr(err, JSStreamNotFoundErr) {
+					partitionsToDelete = append(partitionsToDelete, p)
+				}
+			}
+
+			if 0 < len(partitionsToDelete) {
 				err := removeStationResources(srv, s, false)
 				if err != nil {
 					srv.Errorf("[tenant: %v]removeStaleStations at removeStationResources: %v", s.TenantName, err.Error())

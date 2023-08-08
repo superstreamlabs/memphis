@@ -29,7 +29,7 @@ import { Form } from 'antd';
 
 import { generateName, getUnique } from '../../../../services/valueConvertor';
 import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
-import stationsIcon from '../../../../assets/images/stationsIcon.svg';
+import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
 import errorModal from '../../../../assets/images/errorModal.svg';
 import BackIcon from '../../../../assets/images/backIcon.svg';
 import tagsIcon from '../../../../assets/images/tagsIcon.svg';
@@ -43,7 +43,7 @@ import { Context } from '../../../../hooks/store';
 import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import AttachStationModal from '../attachStationModal';
-const avro = require('avro-js')
+const avro = require('avro-js');
 
 loader.init();
 loader.config({ monaco });
@@ -425,7 +425,12 @@ function CreateSchema({ createNew }) {
                         </div>
                         <span>
                             Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
-                            <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemas-management" target="_blank" rel="noreferrer">
+                            <a
+                                className="learn-more"
+                                href="https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management"
+                                target="_blank"
+                                rel="noreferrer"
+                            >
                                 Learn more
                             </a>
                         </span>
@@ -490,7 +495,12 @@ function CreateSchema({ createNew }) {
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
                                         Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
-                                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/formats" target="_blank" rel="noreferrer">
+                                        <a
+                                            className="learn-more"
+                                            href="https://docs.memphis.dev/memphis/memphis-schemaverse/formats/produce-consume"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             Learn more
                                         </a>
                                     </p>
@@ -521,6 +531,7 @@ function CreateSchema({ createNew }) {
                                         backgroundColorType="purple"
                                         fontSize="12px"
                                         fontFamily="InterSemiBold"
+                                        htmlType="button"
                                         disabled={
                                             formFields?.schema_content === '' ||
                                             formFields?.schema_content?.includes('type') ||
@@ -538,6 +549,7 @@ function CreateSchema({ createNew }) {
                                     backgroundColorType="purple"
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
+                                    htmlType="button"
                                     isLoading={validateLoading}
                                     disabled={formFields?.schema_content === ''}
                                     onClick={() => handleValidateSchema()}
@@ -641,12 +653,11 @@ function CreateSchema({ createNew }) {
                 </div>
             </Modal>
 
-            {/** attach schema to station modal */}
             <Modal
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        <img src={stationsIcon} alt="stationsIcon" />
+                        <img src={stationsIconActive} alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

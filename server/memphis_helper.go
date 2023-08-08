@@ -134,6 +134,8 @@ var (
 	THROUGHPUT_LEGACY_STREAM_EXIST   bool
 )
 
+type Messages []models.MessageDetails
+
 func createReplyHandler(s *Server, respCh chan []byte) simplifiedMsgHandler {
 	return func(_ *client, subject, _ string, msg []byte) {
 		go func(msg []byte) {
@@ -187,7 +189,7 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool) error {
+func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, partition_number int) error {
 	var maxMsgs int
 	if retentionType == "messages" && retentionValue > 0 {
 		maxMsgs = retentionValue
@@ -221,10 +223,17 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
 	}
 
+	var internName string
+	if partition_number > 0 {
+		internName = fmt.Sprintf("%v$%v", sn.Intern(), partition_number)
+	} else {
+		internName = sn.Intern()
+	}
+
 	return s.
 		memphisAddStream(tenantName, &StreamConfig{
-			Name:                 sn.Intern(),
-			Subjects:             []string{sn.Intern() + ".>"},
+			Name:                 internName,
+			Subjects:             []string{internName + ".>"},
 			Retention:            retentionPolicy,
 			MaxConsumers:         -1,
 			MaxMsgs:              int64(maxMsgs),
@@ -565,7 +574,7 @@ func getInternalConsumerName(cn string) string {
 	return replaceDelimiters(cn)
 }
 
-func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station) error {
+func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, station models.Station, partitionsList []int) error {
 	var consumerName string
 	if consumer.ConsumersGroup != "" {
 		consumerName = consumer.ConsumersGroup
@@ -594,6 +603,10 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 		return err
 	}
 
+	if len(partitionsList) > len(station.PartitionsList) {
+		partitionsList = station.PartitionsList
+	}
+
 	var deliveryPolicy DeliverPolicy
 	var optStartSeq uint64
 	// This check for case when the last message is 0 (in case StartConsumeFromSequence > 1 the LastMessages is 0 )
@@ -617,26 +630,52 @@ func (s *Server) CreateConsumer(tenantName string, consumer models.Consumer, sta
 	} else if consumer.StartConsumeFromSeq == 1 || consumer.LastMessages == -1 {
 		deliveryPolicy = DeliverAll
 	}
+	if len(partitionsList) == 0 {
+		consumerConfig := &ConsumerConfig{
+			Durable:       consumerName,
+			DeliverPolicy: deliveryPolicy,
+			AckPolicy:     AckExplicit,
+			AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+			MaxDeliver:    MaxMsgDeliveries,
+			FilterSubject: stationName.Intern() + ".final",
+			ReplayPolicy:  ReplayInstant,
+			MaxAckPending: -1,
+			HeadersOnly:   false,
+			// RateLimit: ,// Bits per sec
+			// Heartbeat: // time.Duration,
+		}
 
-	consumerConfig := &ConsumerConfig{
-		Durable:       consumerName,
-		DeliverPolicy: deliveryPolicy,
-		AckPolicy:     AckExplicit,
-		AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
-		MaxDeliver:    MaxMsgDeliveries,
-		FilterSubject: stationName.Intern() + ".final",
-		ReplayPolicy:  ReplayInstant,
-		MaxAckPending: -1,
-		HeadersOnly:   false,
-		// RateLimit: ,// Bits per sec
-		// Heartbeat: // time.Duration,
-	}
+		if deliveryPolicy == DeliverByStartSequence {
+			consumerConfig.OptStartSeq = optStartSeq
+		}
+		err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
+		return err
+	} else {
+		for _, pl := range partitionsList {
+			consumerConfig := &ConsumerConfig{
+				Durable:       consumerName,
+				DeliverPolicy: deliveryPolicy,
+				AckPolicy:     AckExplicit,
+				AckWait:       time.Duration(maxAckTimeMs) * time.Millisecond,
+				MaxDeliver:    MaxMsgDeliveries,
+				FilterSubject: stationName.Intern() + "$" + strconv.Itoa(pl) + ".final",
+				ReplayPolicy:  ReplayInstant,
+				MaxAckPending: -1,
+				HeadersOnly:   false,
+				// RateLimit: ,// Bits per sec
+				// Heartbeat: // time.Duration,
+			}
 
-	if deliveryPolicy == DeliverByStartSequence {
-		consumerConfig.OptStartSeq = optStartSeq
+			if deliveryPolicy == DeliverByStartSequence {
+				consumerConfig.OptStartSeq = optStartSeq
+			}
+			err = s.memphisAddConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), consumerConfig)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	err = s.memphisAddConsumer(tenantName, stationName.Intern(), consumerConfig)
-	return err
+	return nil
 }
 
 func (s *Server) memphisAddConsumer(tenantName, streamName string, cc *ConsumerConfig) error {
@@ -659,9 +698,19 @@ func (s *Server) memphisAddConsumer(tenantName, streamName string, cc *ConsumerC
 	return resp.ToError()
 }
 
-func (s *Server) RemoveConsumer(tenantName string, stationName StationName, cn string) error {
+func (s *Server) RemoveConsumer(tenantName string, stationName StationName, cn string, partitionsList []int) error {
 	cn = getInternalConsumerName(cn)
-	return s.memphisRemoveConsumer(tenantName, stationName.Intern(), cn)
+	if len(partitionsList) == 0 {
+		return s.memphisRemoveConsumer(tenantName, stationName.Intern(), cn)
+	} else {
+		for _, pl := range partitionsList {
+			err := s.memphisRemoveConsumer(tenantName, stationName.Intern()+"$"+strconv.Itoa(pl), cn)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error {
@@ -675,22 +724,47 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string) (*ConsumerInfo, error) {
-	cgName = replaceDelimiters(cgName)
-	requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
-
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionsList []int) (*ConsumerInfo, error) {
 	var resp JSApiConsumerInfoResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
-	if err != nil {
-		return nil, err
+	cgName = replaceDelimiters(cgName)
+	var cgInfo *ConsumerInfo
+	if len(partitionsList) == 0 {
+		requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
+		err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+		if err != nil {
+			return nil, err
+		}
+		err = resp.ToError()
+		if err != nil {
+			return nil, err
+		}
+		cgInfo = resp.ConsumerInfo
+	} else {
+		init := false
+		for _, pl := range partitionsList {
+			stationWithPartition := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(pl))
+			requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationWithPartition, cgName)
+			err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
+			if err != nil {
+				return nil, err
+			}
+			err = resp.ToError()
+			if err != nil {
+				return nil, err
+			}
+			if !init {
+				cgInfo = resp.ConsumerInfo
+				init = true
+			} else {
+				cgInfo.NumAckPending += resp.ConsumerInfo.NumAckPending
+				cgInfo.NumRedelivered += resp.ConsumerInfo.NumRedelivered
+				cgInfo.NumWaiting += resp.ConsumerInfo.NumWaiting
+				cgInfo.NumPending += resp.ConsumerInfo.NumPending
+			}
+		}
 	}
 
-	err = resp.ToError()
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.ConsumerInfo, nil
+	return cgInfo, nil
 }
 
 func (s *Server) RemoveStream(tenantName, streamName string) error {
@@ -705,8 +779,14 @@ func (s *Server) RemoveStream(tenantName, streamName string) error {
 	return resp.ToError()
 }
 
-func (s *Server) PurgeStream(tenantName, streamName string) error {
-	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamName)
+func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int) error {
+	var streamAndPartition string
+	if partitionNumber == -1 {
+		streamAndPartition = streamName
+	} else {
+		streamAndPartition = fmt.Sprintf("%v$%v", streamName, partitionNumber)
+	}
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
 	var resp JSApiStreamPurgeResponse
 	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
@@ -726,8 +806,14 @@ func (s *Server) MemphisVersion() string {
 	return string(data)
 }
 
-func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64) error {
-	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, stationName.Intern())
+func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq uint64, partitionNumber int) error {
+	var streamName string
+	if partitionNumber == -1 {
+		streamName = stationName.Intern()
+	} else {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), partitionNumber)
+	}
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, streamName)
 
 	var resp JSApiMsgDeleteResponse
 	req := JSApiMsgDeleteRequest{Seq: msgSeq}
@@ -740,8 +826,8 @@ func (s *Server) RemoveMsg(tenantName string, stationName StationName, msgSeq ui
 	return resp.ToError()
 }
 
-func (s *Server) GetTotalMessagesInStation(tenantName string, stationName StationName) (int, error) {
-	streamInfo, err := s.memphisStreamInfo(tenantName, stationName.Intern())
+func (s *Server) GetTotalMessagesInStation(tenantName string, streamName string) (int, error) {
+	streamInfo, err := s.memphisStreamInfo(tenantName, streamName)
 	if err != nil {
 		return 0, err
 	}
@@ -790,12 +876,45 @@ func (s *Server) GetAvgMsgSizeInStation(station models.Station) (int64, error) {
 		return 0, err
 	}
 
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
-	if err != nil || streamInfo.State.Bytes == 0 {
+	var msgBytes uint64
+	var msgCount uint64
+	if len(station.PartitionsList) == 0 {
+		streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
+		if err != nil || streamInfo.State.Bytes == 0 {
+			return 0, err
+		}
+		msgBytes = streamInfo.State.Bytes
+		msgCount = streamInfo.State.Msgs
+	} else {
+		for _, p := range station.PartitionsList {
+			streamInfo, err := s.memphisStreamInfo(station.TenantName, fmt.Sprintf("%v$%v", stationName.Intern(), p))
+			if err != nil {
+				return 0, err
+			}
+			msgBytes = msgBytes + streamInfo.State.Bytes
+			msgCount = msgCount + streamInfo.State.Msgs
+		}
+	}
+
+	if err != nil || msgBytes == 0 {
 		return 0, err
 	}
 
-	return int64(streamInfo.State.Bytes / streamInfo.State.Msgs), nil
+	return int64(msgBytes / msgCount), nil
+}
+
+func (s *Server) GetAvgMsgSizeInPartition(tenantName, streamName string) (int64, error) {
+	var msgBytes uint64
+	var msgCount uint64
+
+	streamInfo, err := s.memphisStreamInfo(tenantName, streamName)
+	if err != nil || streamInfo.State.Bytes == 0 {
+		return 0, err
+	}
+	msgBytes = streamInfo.State.Bytes
+	msgCount = streamInfo.State.Msgs
+
+	return int64(msgBytes / msgCount), nil
 }
 
 func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error) {
@@ -849,7 +968,44 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
+
+	if len(station.PartitionsList) == 0 {
+		return s.GetMessagesFromPartition(station, stationName.Intern(), messagesToFetch, 0)
+	} else {
+		var messages Messages
+		for _, p := range station.PartitionsList {
+			partitionMessages, err := s.GetMessagesFromPartition(station, fmt.Sprintf("%v$%v", stationName.Intern(), p), messagesToFetch, p)
+			if err != nil {
+				return []models.MessageDetails{}, err
+			}
+			messages = append(messages, partitionMessages...)
+		}
+
+		if len(messages) == 0 {
+			return []models.MessageDetails{}, nil
+		} else if len(messages) <= 1000 {
+			return messages, nil
+		} else {
+			sort.Sort(messages)
+			return messages[:1000], nil
+		}
+	}
+}
+
+func (msgs Messages) Len() int {
+	return len(msgs)
+}
+
+func (msgs Messages) Less(i, j int) bool {
+	return msgs[i].TimeSent.Before(msgs[j].TimeSent)
+}
+
+func (msgs Messages) Swap(i, j int) {
+	msgs[i], msgs[j] = msgs[j], msgs[i]
+}
+
+func (s *Server) GetMessagesFromPartition(station models.Station, streamName string, messagesToFetch int, partition int) ([]models.MessageDetails, error) {
+	streamInfo, err := s.memphisStreamInfo(station.TenantName, streamName)
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
@@ -863,22 +1019,28 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 		messagesToFetch = int(totalMessages)
 	}
 
-	filterSubj := stationName.Intern() + ".final"
+	filterSubj := streamName + ".final"
 	if !station.IsNative {
 		filterSubj = ""
 	}
 
 	msgs, err := s.memphisGetMsgs(station.TenantName, filterSubj,
-		stationName.Intern(),
+		streamName,
 		startSequence,
 		messagesToFetch,
 		5*time.Second,
 		true,
 	)
-	var messages []models.MessageDetails
+
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
+
+	if len(msgs) == 0 {
+		return []models.MessageDetails{}, nil
+	}
+
+	var messages []models.MessageDetails
 
 	stationIsNative := station.IsNative
 
@@ -927,6 +1089,7 @@ func (s *Server) GetMessages(station models.Station, messagesToFetch int) ([]mod
 			messageDetails.ProducedBy = producedByHeader
 			messageDetails.ConnectionId = connectionIdHeader
 			messageDetails.Headers = headersJson
+			messageDetails.Partition = partition
 		}
 
 		messages = append(messages, messageDetails)
@@ -1047,22 +1210,40 @@ cleanup:
 	return msgs, nil
 }
 
-func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64) (*StoredMsg, error) {
-	return s.memphisGetMessage(tenantName, stationName.Intern(), msgSeq)
+func (s *Server) GetMessage(tenantName string, stationName StationName, msgSeq uint64, paritionNumber int) (*StoredMsg, error) {
+	var streamName string
+	if paritionNumber != -1 {
+		streamName = fmt.Sprintf("%v$%v", stationName.Intern(), paritionNumber)
+	} else {
+		streamName = stationName.Intern()
+	}
+
+	return s.memphisGetMessage(tenantName, streamName, msgSeq)
 }
 
-func (s *Server) GetLeaderAndFollowers(station models.Station) (string, []string, error) {
+func (s *Server) GetLeaderAndFollowers(station models.Station, partitionNumber int) (string, []string, error) {
 	var followers []string
+	var streamInfo *StreamInfo
 	stationName, err := StationNameFromStr(station.Name)
 	if err != nil {
-		return "", followers, err
+		return "", []string{}, err
 	}
+	if len(station.PartitionsList) > 0 {
+		if partitionNumber == -1 {
+			return "", []string{}, nil
+		}
+		streamName := fmt.Sprintf("%s$%s", stationName.Intern(), strconv.Itoa(partitionNumber))
+		streamInfo, err = s.memphisStreamInfo(station.TenantName, streamName)
+		if err != nil {
+			return "", []string{}, err
+		}
+	} else { // backward compatibility
+		streamInfo, err = s.memphisStreamInfo(station.TenantName, stationName.Intern())
+		if err != nil {
+			return "", []string{}, err
+		}
 
-	streamInfo, err := s.memphisStreamInfo(station.TenantName, stationName.Intern())
-	if err != nil {
-		return "", followers, err
 	}
-
 	for _, replica := range streamInfo.Cluster.Replicas {
 		followers = append(followers, replica.Name)
 	}
@@ -1398,7 +1579,8 @@ func getAccountsAndUsersString() (string, error) {
 		if err != nil {
 			return "", err
 		}
-		usrsList := []UserConfig{{User: t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
+		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
+		usrsList := []UserConfig{{User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
 			for _, usr := range usrMap {
 				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
@@ -1477,7 +1659,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 			return err
 		}
 		stationsMap[station.ID] = station
-		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled)
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled, 0)
 		if err != nil {
 			return err
 		}
@@ -1492,7 +1674,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 	}
 	for _, consumer := range consumers {
 		station := stationsMap[consumer.StationId]
-		err = s.CreateConsumer(consumer.TenantName, consumer, station)
+		err = s.CreateConsumer(consumer.TenantName, consumer, station, station.PartitionsList)
 		if err != nil {
 			return err
 		}

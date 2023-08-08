@@ -12,21 +12,27 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import CheckboxComponent from '../../../../components/checkBox';
 import attachedPlaceholder from '../../../../assets/images/attachedPlaceholder.svg';
+import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
+import Modal from '../../../../components/modal';
+import CreateStationForm from '../../../../components/createStationForm';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName, update }) {
+    const createStationRef = useRef(null);
     const [isCheck, setIsCheck] = useState([]);
     const [isCheckAll, setIsCheckAll] = useState(false);
     const [allStations, setAllStations] = useState([]);
     const [attachLoader, setAttachLoader] = useState(false);
     const [indeterminate, setIndeterminate] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [open, modalFlip] = useState(false);
 
     const onCheckedAll = (e) => {
         if (!update && attachedStations?.length > 0) {
@@ -127,6 +133,20 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                     <div className="placeholder">
                         <img src={attachedPlaceholder} alt="attachedPlaceholder" />
                         <p>No stations yet</p>
+                        <Button
+                            className="modal-btn"
+                            width="160px"
+                            height="34px"
+                            placeholder={'Create new station'}
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontWeight="600"
+                            aria-haspopup="true"
+                            boxShadowStyle="float"
+                            onClick={() => modalFlip(true)}
+                        />
                     </div>
                 )}
                 {allStations?.length > 0 && (
@@ -154,21 +174,21 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                     </div>
                 )}
             </div>
-            <div className="buttons">
-                {allStations?.length > 0 && (
-                    <>
-                        <Button
-                            width="150px"
-                            height="34px"
-                            placeholder="Cancel"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            border="gray-light"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => close()}
-                        />
+            <div className="buttons" style={{ justifyContent: allStations?.length > 0 ? 'space-between' : 'flex-end' }}>
+                <>
+                    <Button
+                        width="150px"
+                        height="34px"
+                        placeholder="Cancel"
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType="white"
+                        border="gray-light"
+                        fontSize="12px"
+                        fontFamily="InterSemiBold"
+                        onClick={() => close()}
+                    />
+                    {allStations?.length > 0 && (
                         <Button
                             width="150px"
                             height="34px"
@@ -182,9 +202,35 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                             disabled={isCheck?.length === 0}
                             onClick={() => attachToStation()}
                         />
-                    </>
-                )}
+                    )}
+                </>
             </div>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationsIconActive} alt="stationsIconActive" />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
+                height="65vh"
+                width="1020px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    modalFlip(false);
+                }}
+                rBtnClick={() => {
+                    createStationRef.current();
+                }}
+                clickOutside={() => modalFlip(false)}
+                open={open}
+                isLoading={creatingProsessd}
+            >
+                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
+            </Modal>
         </div>
     );
 }

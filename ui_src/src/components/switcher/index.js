@@ -21,7 +21,6 @@ const Switcher = ({ checkedChildren, unCheckedChildren, onChange, checked, disab
             <div className="switch-button">
                 <Switch
                     disabled={disabled}
-                    className="test"
                     onChange={(e) => onChange(e)}
                     checked={checked}
                     checkedChildren={checkedChildren}

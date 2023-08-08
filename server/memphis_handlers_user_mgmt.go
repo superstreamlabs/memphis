@@ -777,7 +777,6 @@ func SendUserDeleteCacheUpdate(usernames []string, tenantName string) {
 		serv.Errorf("[tenant: %v]user cache at SendUserCacheUpdates: error sending internal msg : %v", tenantName, err.Error())
 		return
 	}
-
 }
 
 func validateUsername(username string) error {
@@ -857,4 +856,23 @@ func validatePassword(password string) error {
 	}
 
 	return errors.New("Password must be at least 8 characters long, contain both uppercase and lowercase, and at least one number and one special character")
+}
+
+func CreateInternalApplicationUserForExistTenants() error {
+	tenants, err := db.GetAllTenantsWithoutGlobal()
+	if err != nil {
+		return err
+	}
+	password, err := EncryptAES([]byte(configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD))
+	if err != nil {
+		return err
+	}
+	for _, tenant := range tenants {
+		_, err := db.CreateUserIfNotExist("$"+tenant.Name, "application", password, "", false, 1, tenant.Name, false, "", "", "", "")
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

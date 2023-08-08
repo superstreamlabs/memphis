@@ -11,12 +11,11 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Form } from 'antd';
 
-import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, replicasConvertor } from '../../services/valueConvertor';
+import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, partitionsValidator, replicasConvertor } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
@@ -51,11 +50,11 @@ const retanionOptions = [
         label: 'Messages'
     },
     {
-        id: 3,
+        id: 4,
         value: 'ack_based',
         disabled: isCloud() ? false : true,
         label: 'Ack based',
-        tooltip: (
+        tooltip: isCloud() ? null : (
             <div>
                 <span>
                     Available for
@@ -168,7 +167,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             dls_configuration: {
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
-            }
+            },
+            partitions_number: Number(formFields.partitions_number)
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
@@ -178,20 +178,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_AVAILABLE_REPLICAS);
             let replicas = [];
-            switch (data?.available_replicas) {
-                case 1:
-                    replicas = ['No HA (1)'];
-                    break;
-                case 3:
-                    replicas = ['No HA (1)', 'HA (3)'];
-                    break;
-                case 5:
-                    replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
-                    break;
-                default:
-                    replicas = ['No HA (1)'];
-                    break;
-            }
+            if (data?.available_replicas >= 1 && data?.available_replicas < 3) replicas = ['No HA (1)'];
+            else if (data?.available_replicas >= 3 && data?.available_replicas < 5) replicas = ['No HA (1)', 'HA (3)'];
+            else if (data?.available_replicas >= 5) replicas = ['No HA (1)', 'HA (3)', 'Super HA (5)'];
+            else replicas = ['No HA (1)'];
+
             setActualPods(replicas);
         } catch (error) {}
     };
@@ -304,33 +295,74 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                {!isCloud() && (
+                <div className="replicas-partition-container">
+                    {!isCloud() && (
+                        <div className="replicas-container">
+                            <TitleComponent
+                                headerTitle="Replicas"
+                                typeTitle="sub-header"
+                                headerDescription="Amount of mirrors per message."
+                                learnMore={true}
+                                link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
+                            />
+                            <div>
+                                <Form.Item
+                                    name="replicas"
+                                    initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                    style={{ height: '50px' }}
+                                >
+                                    <SelectComponent
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        radiusType="semi-round"
+                                        height="40px"
+                                        popupClassName="select-options"
+                                        options={actualPods}
+                                        value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
+                                        onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                        disabled={!allowEdit}
+                                    />
+                                </Form.Item>
+                            </div>
+                        </div>
+                    )}
                     <div className="replicas-container">
-                        <TitleComponent
-                            headerTitle="Replicas"
-                            typeTitle="sub-header"
-                            headerDescription="Amount of mirrors per message."
-                            learnMore={true}
-                            link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                        />
+                        <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Amount of partitions per station." learnMore={false} />
                         <div>
-                            <Form.Item name="replicas" initialValue={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]} style={{ height: '50px' }}>
-                                <SelectComponent
+                            <Form.Item
+                                name="partitions_number"
+                                initialValue={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
+                                rules={[
+                                    {
+                                        validator: (_, value) => {
+                                            return new Promise((resolve, reject) => {
+                                                let validation = partitionsValidator(Number(value));
+                                                if (validation === '') return resolve();
+                                                else return reject(partitionsValidator(Number(value)));
+                                            });
+                                        }
+                                    }
+                                ]}
+                                style={{ height: '50px' }}
+                            >
+                                <Input
+                                    placeholder="Type"
+                                    type="number"
+                                    radiusType="semi-round"
                                     colorType="black"
                                     backgroundColorType="none"
                                     borderColorType="gray"
-                                    radiusType="semi-round"
                                     height="40px"
-                                    popupClassName="select-options"
-                                    options={actualPods}
-                                    value={getStartedStateRef?.formFieldsCreateStation?.replicas || actualPods[0]}
-                                    onChange={(e) => getStarted && updateFormState('replicas', e)}
+                                    onBlur={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
+                                    onChange={(e) => getStarted && updateFormState('partitions_number', e.target.value)}
+                                    value={getStartedStateRef?.formFieldsCreateStation?.partitions_number || 1}
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
                         </div>
                     </div>
-                )}
+                </div>
                 <div className="idempotency-type">
                     <Form.Item name="idempotency">
                         <div>
@@ -456,7 +488,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
-                            {retentionType === 'message_age_sec' && (
+                            {retentionType === retanionOptions[0].value && (
                                 <div className="time-value">
                                     <div className="days-section">
                                         <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
@@ -515,7 +547,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     </div>
                                 </div>
                             )}
-                            {retentionType === 'bytes' && (
+                            {retentionType === retanionOptions[1].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionSizeValue || 1000}>
                                         <Input
@@ -536,7 +568,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <p>bytes</p>
                                 </div>
                             )}
-                            {retentionType === 'messages' && (
+                            {retentionType === retanionOptions[2].value && (
                                 <div className="retention-type">
                                     <Form.Item name="retentionMessagesValue" initialValue={getStartedStateRef?.formFieldsCreateStation?.retentionMessagesValue || 10}>
                                         <Input
@@ -555,6 +587,11 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         />
                                     </Form.Item>
                                     <p>messages</p>
+                                </div>
+                            )}
+                            {retentionType === retanionOptions[3].value && (
+                                <div className="ackbased-type">
+                                    <p>Messages have a default retention of 2 weeks until acknowledged, with auto-deletion if no active consumer.</p>
                                 </div>
                             )}
                         </div>
@@ -632,6 +669,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         radiusType="circle"
                                                         backgroundColorType="purple"
                                                         fontSize="12px"
+                                                        htmlType="button"
                                                         fontWeight="bold"
                                                         boxShadowStyle="none"
                                                         disabled={!allowEdit}

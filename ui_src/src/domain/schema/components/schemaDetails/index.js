@@ -20,7 +20,7 @@ import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
 
 import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
-import stationsIcon from '../../../../assets/images/stationsIconActive.svg';
+import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
 import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
 import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
 import redirectIcon from '../../../../assets/images/redirectIcon.svg';
@@ -48,7 +48,7 @@ import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
 import SegmentButton from '../../../../components/segmentButton';
 import AttachStationModal from '../attachStationModal';
-const avro = require('avro-js')
+const avro = require('avro-js');
 
 loader.init();
 loader.config({ monaco });
@@ -675,7 +675,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        <img src={stationsIcon} alt="stationsIcon" />
+                        <img src={stationsIconActive} alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

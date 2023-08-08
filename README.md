@@ -41,9 +41,8 @@ We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/>
 </p>
 
 Memphis.dev is more than a broker. It's a new streaming stack.<br><br>
-It accelerates the development of real-time applications that require<br>
-high throughput, low latency, small footprint, and multiple protocols,<br>with minimum platform operations, and all the observability you can think of.<br><br>
-Highly resilient, distributed architecture, cloud-native, and run on any Kubernetes,<br>on any cloud without zookeeper, bookeeper, or JVM.
+It significantly accelerates the development of real-time applications that require a streaming platform with<br>
+high throughput, low latency, easy troubleshooting, fast time-to-value,<br>minimal platform operations, and all the observability you can think of.<br>
 
 ## 🫣 A world without Memphis
 When your application requires a message broker or a queue,<br>
