@@ -394,7 +394,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, connectedRepo map[string]interface{}) ([]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
 	token := githubIntegration.Keys["token"].(string)
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
@@ -413,7 +413,6 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 		return []functionDetails{}, err
 	}
 
-	functionsDetails := []functionDetails{}
 	for _, directoryContent := range repoContent {
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
@@ -453,11 +452,12 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 
 					if isValidFileYaml {
 						fileDetails := functionDetails{
-							Content:    content,
-							Commit:     commit,
-							ContentMap: contentMap,
-							RepoName:   repo,
-							Branch:     branch,
+							Content:         content,
+							Commit:          commit,
+							ContentMap:      contentMap,
+							RepoName:        repo,
+							Branch:          branch,
+							IntegrationName: githubIntegration.Name,
 						}
 						functionsDetails = append(functionsDetails, fileDetails)
 						break

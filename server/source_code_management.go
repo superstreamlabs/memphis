@@ -25,11 +25,12 @@ type GetSourceCodeBranchesSchema struct {
 }
 
 type functionDetails struct {
-	Content    *github.RepositoryContent `json:"content"`
-	Commit     *github.RepositoryCommit  `json:"commit"`
-	ContentMap map[string]interface{}    `json:"content_map"`
-	RepoName   string                    `json:"repo_name"`
-	Branch     string                    `json:"branch"`
+	Content         *github.RepositoryContent `json:"content"`
+	Commit          *github.RepositoryCommit  `json:"commit"`
+	ContentMap      map[string]interface{}    `json:"content_map"`
+	RepoName        string                    `json:"repo_name"`
+	Branch          string                    `json:"branch"`
+	IntegrationName string                    `json:"integration_name"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
@@ -87,16 +88,31 @@ func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]s
 	return branchesPerRepo
 }
 
-func GetContentOfSelectedRepo(sourceCodeIntegrationType string, integration models.Integration, connectedRepo map[string]interface{}) ([]functionDetails, error) {
+func GetContentOfSelectedRepo(integration models.Integration, connectedRepo map[string]interface{}, contentDetails []functionDetails) ([]functionDetails, error) {
 	var err error
-	contentDetails := []functionDetails{}
-	switch sourceCodeIntegrationType {
+	switch integration.Name {
 	case "github":
-		contentDetails, err = GetGithubContentFromConnectedRepo(integration, connectedRepo)
+		contentDetails, err = GetGithubContentFromConnectedRepo(integration, connectedRepo, contentDetails)
 		if err != nil {
 			return contentDetails, err
 		}
 	}
 
 	return contentDetails, nil
+}
+
+func GetContentOfSelectedRepos(connectedReposPerIntegration map[string][]interface{}, tenantName string, contentDetails []functionDetails) []functionDetails {
+	var err error
+	for k, connectedRepoPerIntegration := range connectedReposPerIntegration {
+		for _, connectedRepo := range connectedRepoPerIntegration {
+			connectedRepoRes := connectedRepo.(map[string]interface{})
+			tenantIntegrations, _ := IntegrationsConcurrentCache.Load(tenantName)
+			integration := tenantIntegrations[k].(models.Integration)
+			contentDetails, err = GetContentOfSelectedRepo(integration, connectedRepoRes, contentDetails)
+			if err != nil {
+				continue
+			}
+		}
+	}
+	return contentDetails
 }

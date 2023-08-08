@@ -47,29 +47,22 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	functions := []FunctionsResult{}
 
-	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
-		if integration, ok := tenantIntegrations["github"].(models.Integration); ok {
-			connectedRepos, err := fh.GetConnectedSourceCodeRepos(integration)
-			if err != nil {
-				serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
-				return
-			}
-			for _, connectedRepo := range connectedRepos {
-				connectedRepoRes := connectedRepo.(map[string]interface{})
-				contentDetails, err := GetContentOfSelectedRepo(integration.Name, integration, connectedRepoRes)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContentOfSelectedRepos: %v", user.TenantName, user.Username, err.Error())
-					continue
-				}
-				functions, err = GetFunctionsDetails(contentDetails, integration.Name, functions)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
-					continue
-				}
-			}
-		}
+	connectedRepos, err := fh.GetConnectedSourceCodeRepos(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
+		return
+	}
+
+	functions := []FunctionsResult{}
+	contentDetails := []functionDetails{}
+
+	contentDetailsRes := GetContentOfSelectedRepos(connectedRepos, user.TenantName, contentDetails)
+
+	functions, err = GetFunctionsDetails(contentDetailsRes, functions)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
+		return
 	}
 	c.JSON(200, functions)
 }
@@ -89,23 +82,37 @@ func validateYamlContent(yamlMap map[string]interface{}) error {
 	return nil
 }
 
-func (fh FunctionsHandler) GetConnectedSourceCodeRepos(integration models.Integration) ([]interface{}, error) {
-	connectedRepos := integration.Keys["connected_repos"].([]interface{})
+func (fh FunctionsHandler) GetConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, error) {
+	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
 	selectedRepos := []interface{}{}
-	for _, repo := range connectedRepos {
-		repository := repo.(map[string]interface{})
-		repoType := repository["type"].(string)
-		if repoType == "functions" {
-			selectedRepos = append(selectedRepos, repo)
+	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
+		for k := range tenantIntegrations {
+			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
+				if connectedRepos, ok := integration.Keys["connected_repos"].([]interface{}); ok {
+					for _, repo := range connectedRepos {
+						repository := repo.(map[string]interface{})
+						repoType := repository["type"].(string)
+						if repoType == "functions" {
+							selectedRepos = append(selectedRepos, repo)
+							selectedReposPerSourceCodeIntegration[k] = selectedRepos
+						}
+					}
+				} else {
+					continue
+				}
+			} else {
+				continue
+			}
 		}
+
 	}
-	return selectedRepos, nil
+	return selectedReposPerSourceCodeIntegration, nil
 }
 
-func GetFunctionsDetails(functionsDetails []functionDetails, sourceCodeTypeIntegration string, functions []FunctionsResult) ([]FunctionsResult, error) {
-	switch sourceCodeTypeIntegration {
-	case "github":
-		for _, functionDetails := range functionsDetails {
+func GetFunctionsDetails(functionsDetails []functionDetails, functions []FunctionsResult) ([]FunctionsResult, error) {
+	for _, functionDetails := range functionsDetails {
+		switch functionDetails.IntegrationName {
+		case "github":
 			fucntionContentMap := functionDetails.ContentMap
 			commit := functionDetails.Commit
 			fileContent := functionDetails.Content
