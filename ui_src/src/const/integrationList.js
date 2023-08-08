@@ -61,6 +61,10 @@ export const CATEGORY_LIST = {
     CDC: {
         name: 'CDC',
         color: ColorPalette[11]
+    },
+    SourceCode: {
+        name: 'Source Code',
+        color: ColorPalette[6]
     }
 };
 
@@ -280,7 +284,7 @@ export const INTEGRATION_LIST = {
         icon: <img src={githubIntegrationIcon} alt="gitHubIcon" />,
         description:
             'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
-        category: CATEGORY_LIST['All'],
+        category: CATEGORY_LIST['SourceCode'],
         header: (
             <div className="header-left-side">
                 <img src={githubIntegrationIcon} alt="gitHubLogo" />
