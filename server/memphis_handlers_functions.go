@@ -75,18 +75,25 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 		fileContent := functionDetails.Content
 		repo := functionDetails.RepoName
 		branch := functionDetails.Branch
-		tagsInterfaceSlice := fucntionContentMap["tags"].([]interface{})
-		tagsStrings := make([]string, len(fucntionContentMap["tags"].([]interface{})))
-
-		for i, v := range tagsInterfaceSlice {
-			if str, ok := v.(string); ok {
-				tagsStrings[i] = str
+		tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
+		tagsStrings := []string{}
+		if ok {
+			tagsStrings = make([]string, len(fucntionContentMap["tags"].([]interface{})))
+			for i, v := range tagsInterfaceSlice {
+				if str, ok := v.(string); ok {
+					tagsStrings[i] = str
+				}
 			}
+		}
+
+		description, ok := fucntionContentMap["description"].(string)
+		if !ok {
+			description = ""
 		}
 
 		functionDetails := models.FunctionsResult{
 			FunctionName: fucntionContentMap["function_name"].(string),
-			Description:  fucntionContentMap["description"].(string),
+			Description:  description,
 			Tags:         tagsStrings,
 			Language:     fucntionContentMap["language"].(string),
 			LastCommit:   *commit.Commit.Committer.Date,
