@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
+	"gopkg.in/yaml.v2"
 )
 
 type githubRepoDetails struct {
@@ -18,6 +20,12 @@ type githubRepoDetails struct {
 	Branch    string `json:"branch"`
 	Type      string `json:"type"`
 	RepoOwner string `json:"repo_owner"`
+}
+
+type fileContentDetails struct {
+	Content    *github.RepositoryContent `json:"content"`
+	Commit     *github.RepositoryCommit  `json:"commit"`
+	ContentMap map[string]interface{}    `json:"content_map"`
 }
 
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
@@ -392,18 +400,79 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepos(repo, owner string, githubIntegration models.Integration) ([]*github.RepositoryContent, error) {
-	repoContent := []*github.RepositoryContent{}
+func GetGithubContentFromConnectedRepos(githubIntegration models.Integration, connectedRepo map[string]interface{}) ([]fileContentDetails, error) {
 	token := githubIntegration.Keys["token"].(string)
+	branch := connectedRepo["branch"].(string)
+	repo := connectedRepo["repo_name"].(string)
+	owner := connectedRepo["repo_owner"].(string)
+	var content *github.RepositoryContent
+	var commit *github.RepositoryCommit
+	var contentMap map[string]interface{}
+
 	client, err := getGithubClient(token)
 	if err != nil {
-		return []*github.RepositoryContent{}, err
+		return []fileContentDetails{}, err
 	}
 
-	_, repoContent, _, err = client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
+	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
 	if err != nil {
-		return []*github.RepositoryContent{}, err
+		return []fileContentDetails{}, err
 	}
 
-	return repoContent, nil
+	filesContentArr := []fileContentDetails{}
+	for _, directoryContent := range repoContent {
+		if directoryContent.GetType() == "dir" {
+			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
+			if err != nil {
+				return []fileContentDetails{}, err
+			}
+
+			isValidFileYaml := false
+			for _, fileContent := range filesContent {
+				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
+					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
+					if err != nil {
+						return []fileContentDetails{}, err
+					}
+
+					decodedContent, err := base64.StdEncoding.DecodeString(*content.Content)
+					if err != nil {
+						return []fileContentDetails{}, err
+					}
+
+					err = yaml.Unmarshal(decodedContent, &contentMap)
+					if err != nil {
+						return []fileContentDetails{}, err
+					}
+
+					err = validateYamlContent(contentMap)
+					if err != nil {
+						isValidFileYaml = false
+						continue
+					}
+					isValidFileYaml = true
+
+					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
+					if err != nil {
+						return []fileContentDetails{}, err
+					}
+
+					if isValidFileYaml {
+						fileDetails := fileContentDetails{
+							Content:    content,
+							Commit:     commit,
+							ContentMap: contentMap,
+						}
+						filesContentArr = append(filesContentArr, fileDetails)
+						break
+					}
+				}
+			}
+			if !isValidFileYaml {
+				continue
+			}
+		}
+	}
+
+	return filesContentArr, nil
 }

@@ -12,17 +12,12 @@
 package server
 
 import (
-	"context"
-	"encoding/base64"
 	"time"
 
 	"fmt"
 	"memphis/models"
-	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/go-github/github"
-	"gopkg.in/yaml.v2"
 )
 
 type ContentYamlFile struct {
@@ -54,33 +49,24 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 	}
 	functions := []FunctionsResult{}
 
-	for k := range SourceCodeManagementFunctionsMap {
-		if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); !ok {
-			serv.Warnf("GetAllFunctions: %v", "the integration deos not exist")
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		} else {
-			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
-				connectedRepos, err := fh.GetConnectedSourceCodeRepos(integration)
+	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
+		if integration, ok := tenantIntegrations["github"].(models.Integration); ok {
+			connectedRepos, err := fh.GetConnectedSourceCodeRepos(integration)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
+				return
+			}
+			for _, connectedRepo := range connectedRepos {
+				connectedRepoRes := connectedRepo.(map[string]interface{})
+				contentDetails, err := GetContentOfSelectedRepos(integration.Name, integration, connectedRepoRes)
 				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
+					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContentOfSelectedRepos: %v", user.TenantName, user.Username, err.Error())
 					continue
 				}
-				var repoContent interface{}
-				for _, connectedRepo := range connectedRepos {
-					connectedRepoRes := connectedRepo.(map[string]interface{})
-					repo := connectedRepoRes["repo_name"].(string)
-					owner := connectedRepoRes["repo_owner"].(string)
-					repoContent, err = fh.GetContentOfSelectedRepos(repo, owner, k, integration)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContentOfSelectedRepos: %v", user.TenantName, user.Username, err.Error())
-						continue
-					}
-					functions, err = GetFunctionsDetails(user, k, integration, repoContent, connectedRepoRes, functions)
-					if err != nil {
-						serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
-						continue
-					}
+				functions, err = GetFunctionsDetails(contentDetails, integration.Name, functions, connectedRepoRes["repo_name"].(string), connectedRepoRes["branch"].(string))
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
+					continue
 				}
 			}
 		}
@@ -116,106 +102,41 @@ func (fh FunctionsHandler) GetConnectedSourceCodeRepos(integration models.Integr
 	return selectedRepos, nil
 }
 
-func (fh FunctionsHandler) GetContentOfSelectedRepos(repo, owner string, sourceCodeIntegrationType string, integration models.Integration) ([]*github.RepositoryContent, error) {
-	repos, err := GetContentDetails(repo, owner, sourceCodeIntegrationType, integration)
-	if err != nil {
-		return []*github.RepositoryContent{}, err
-	}
-	return repos, nil
-}
-
-func GetFunctionsDetails(user models.User, sourceCodeTypeIntegration string, integration models.Integration, repoContent interface{}, connectedRepo map[string]interface{}, functions []FunctionsResult) ([]FunctionsResult, error) {
-	repo := connectedRepo["repo_name"].(string)
-	owner := connectedRepo["repo_owner"].(string)
-	branch := connectedRepo["branch"].(string)
+func GetFunctionsDetails(contentDetails []fileContentDetails, sourceCodeTypeIntegration string, functions []FunctionsResult, repo, branch string) ([]FunctionsResult, error) {
 	switch sourceCodeTypeIntegration {
 	case "github":
-		client, err := getGithubClient(integration.Keys["token"].(string))
-		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at getGithubClient: %v", user.TenantName, user.Username, err.Error())
-			return []FunctionsResult{}, err
-		}
-		for _, directoryContent := range repoContent.([]*github.RepositoryContent) {
-			if directoryContent.GetType() == "dir" {
-				_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
-				if err != nil {
-					serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContents: %v", user.TenantName, user.Username, err.Error())
-					return []FunctionsResult{}, err
-				}
+		for _, fileDetails := range contentDetails {
+			contentMapContent := fileDetails.ContentMap
+			commit := fileDetails.Commit
+			fileContent := fileDetails.Content
+			tagsInterfaceSlice := contentMapContent["tags"].([]interface{})
+			tagsStrings := make([]string, len(contentMapContent["tags"].([]interface{})))
 
-				isValidFileYaml := false
-				for _, fileContent := range filesContent {
-					if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
-						content, _, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetContents: %v", user.TenantName, user.Username, err.Error())
-							return []FunctionsResult{}, err
-						}
-
-						decodedContent, err := base64.StdEncoding.DecodeString(*content.Content)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at DecodeString: %v", user.TenantName, user.Username, err.Error())
-							return []FunctionsResult{}, err
-						}
-
-						var contentMap map[string]interface{}
-						err = yaml.Unmarshal(decodedContent, &contentMap)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at yaml.Unmarshal: %v", user.TenantName, user.Username, err.Error())
-							return []FunctionsResult{}, err
-						}
-
-						err = validateYamlContent(contentMap)
-						if err != nil {
-							isValidFileYaml = false
-							serv.Warnf("[tenant: %v][user: %v]GetAllFunctions at validateYamlContent: %v", user.TenantName, user.Username, err.Error())
-							continue
-						}
-						isValidFileYaml = true
-						tagsInterfaceSlice := contentMap["tags"].([]interface{})
-						tagsStrings := make([]string, len(contentMap["tags"].([]interface{})))
-
-						for i, v := range tagsInterfaceSlice {
-							if str, ok := v.(string); ok {
-								tagsStrings[i] = str
-							}
-						}
-
-						fileYaml := ContentYamlFile{
-							FunctionName: contentMap["function_name"].(string),
-							Description:  contentMap["description"].(string),
-							Tags:         tagsStrings,
-							Language:     contentMap["language"].(string),
-						}
-
-						commit, _, err := client.Repositories.GetCommit(context.Background(), owner, repo, branch)
-						if err != nil {
-							serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetCommit: %v", user.TenantName, user.Username, err.Error())
-							return []FunctionsResult{}, err
-						}
-
-						functionDetails := FunctionsResult{
-							FunctionName: fileYaml.FunctionName,
-							Description:  fileYaml.Description,
-							Tags:         fileYaml.Tags,
-							Language:     fileYaml.Language,
-							LastCommit:   *commit.Commit.Committer.Date,
-							Link:         *fileContent.HTMLURL,
-							Repository:   repo,
-							Branch:       branch,
-						}
-
-						functions = append(functions, functionDetails)
-						if isValidFileYaml {
-							break
-						}
-					}
-				}
-				if !isValidFileYaml {
-					serv.Warnf("[tenant: %v][user: %v]GetAllFunctions: %v", user.TenantName, user.Username, "You must include in your repo directory that includes yaml file")
-					continue
+			for i, v := range tagsInterfaceSlice {
+				if str, ok := v.(string); ok {
+					tagsStrings[i] = str
 				}
 			}
+
+			fileYaml := ContentYamlFile{
+				FunctionName: contentMapContent["function_name"].(string),
+				Description:  contentMapContent["description"].(string),
+				Tags:         tagsStrings,
+				Language:     contentMapContent["language"].(string),
+			}
+
+			functionDetails := FunctionsResult{
+				FunctionName: fileYaml.FunctionName,
+				Description:  fileYaml.Description,
+				Tags:         fileYaml.Tags,
+				Language:     fileYaml.Language,
+				LastCommit:   *commit.Commit.Committer.Date,
+				Link:         *fileContent.HTMLURL,
+				Repository:   repo,
+				Branch:       branch,
+			}
+
+			functions = append(functions, functionDetails)
 		}
 	}
 	return functions, nil
