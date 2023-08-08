@@ -67,35 +67,6 @@ func validateYamlContent(yamlMap map[string]interface{}) error {
 	return nil
 }
 
-func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, bool) {
-	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
-	scmIntegrated := false
-	selectedRepos := []interface{}{}
-	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
-		for k := range tenantIntegrations {
-			if integration, ok := tenantIntegrations[k].(models.Integration); ok {
-				if connectedRepos, ok := integration.Keys["connected_repos"].([]interface{}); ok {
-					scmIntegrated = true
-					for _, repo := range connectedRepos {
-						repository := repo.(map[string]interface{})
-						repoType := repository["type"].(string)
-						if repoType == "functions" {
-							selectedRepos = append(selectedRepos, repo)
-							selectedReposPerSourceCodeIntegration[k] = selectedRepos
-						}
-					}
-				} else {
-					continue
-				}
-			} else {
-				continue
-			}
-		}
-
-	}
-	return selectedReposPerSourceCodeIntegration, scmIntegrated
-}
-
 func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.FunctionsResult, error) {
 	functions := []models.FunctionsResult{}
 	for _, functionDetails := range functionsDetails {
