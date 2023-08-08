@@ -31,6 +31,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 	functionsResult, err := fh.GetFunctions(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
@@ -38,8 +39,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
-	contentDetails := []functionDetails{}
-	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName, contentDetails)
+	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName)
 	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
 	if err != nil {
 		return models.FunctionsRes{}, err
@@ -75,18 +75,25 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 		fileContent := functionDetails.Content
 		repo := functionDetails.RepoName
 		branch := functionDetails.Branch
-		tagsInterfaceSlice := fucntionContentMap["tags"].([]interface{})
-		tagsStrings := make([]string, len(fucntionContentMap["tags"].([]interface{})))
-
-		for i, v := range tagsInterfaceSlice {
-			if str, ok := v.(string); ok {
-				tagsStrings[i] = str
+		tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
+		tagsStrings := []string{}
+		if ok {
+			tagsStrings = make([]string, len(fucntionContentMap["tags"].([]interface{})))
+			for i, v := range tagsInterfaceSlice {
+				if str, ok := v.(string); ok {
+					tagsStrings[i] = str
+				}
 			}
+		}
+
+		description, ok := fucntionContentMap["description"].(string)
+		if !ok {
+			description = ""
 		}
 
 		functionDetails := models.FunctionsResult{
 			FunctionName: fucntionContentMap["function_name"].(string),
-			Description:  fucntionContentMap["description"].(string),
+			Description:  description,
 			Tags:         tagsStrings,
 			Language:     fucntionContentMap["language"].(string),
 			LastCommit:   *commit.Commit.Committer.Date,
