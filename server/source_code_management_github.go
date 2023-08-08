@@ -202,6 +202,10 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 		}
 	}
 
+	if len(keys["connected_repos"].([]interface{})) == 0 {
+		updateIntegration["connected_repos"] = []githubRepoDetails{}
+	}
+
 	githubIntegration, err := db.UpdateIntegration(user.TenantName, "github", updateIntegration, properties)
 	if err != nil {
 		return models.Integration{}, err
