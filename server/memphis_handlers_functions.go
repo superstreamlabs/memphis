@@ -31,6 +31,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 	functionsResult, err := fh.GetFunctions(user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
