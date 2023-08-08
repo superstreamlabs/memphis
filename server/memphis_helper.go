@@ -1031,10 +1031,16 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 		5*time.Second,
 		true,
 	)
-	var messages []models.MessageDetails
+
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
+
+	if len(msgs) == 0 {
+		return []models.MessageDetails{}, nil
+	}
+
+	var messages []models.MessageDetails
 
 	stationIsNative := station.IsNative
 
