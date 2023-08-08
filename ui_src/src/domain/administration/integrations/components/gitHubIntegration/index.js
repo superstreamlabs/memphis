@@ -45,8 +45,10 @@ const GitHubIntegration = ({ close, value }) => {
     const [repos, setRepos] = useState([]);
     const [addNew, setAddNew] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
+    const [isIntegrated, setIsIntagrated] = useState(false);
 
     useEffect(() => {
+        value && Object.keys(value).length > 0 && setIsIntagrated(true);
         const images = [];
         images.push(INTEGRATION_LIST['GitHub'].banner.props.src);
         images.push(INTEGRATION_LIST['GitHub'].insideBanner.props.src);
@@ -78,7 +80,7 @@ const GitHubIntegration = ({ close, value }) => {
             const obj1 = arr1[i];
             const obj2 = arr2[i];
 
-            if (obj1.repo_name !== obj2.repo_name || obj1.repo_owner !== obj2.repo_owner || obj1.branch !== obj2.branch) {
+            if (obj1?.repo_name !== obj2?.repo_name || obj1?.repo_owner !== obj2?.repo_owner || obj1?.branch !== obj2?.branch) {
                 return false;
             }
         }
@@ -87,8 +89,8 @@ const GitHubIntegration = ({ close, value }) => {
     }
 
     useEffect(() => {
-        const results = areEqual(formFields?.keys?.connected_repos, value.keys?.connected_repos);
-        setIsChanged(!results);
+        const results = areEqual(formFields?.keys?.connected_repos, value?.keys?.connected_repos);
+        setIsChanged(value ? !results : true);
     }, [formFields]);
 
     const updateKeysConnectedRepos = (repo, index) => {
@@ -153,6 +155,7 @@ const GitHubIntegration = ({ close, value }) => {
             dispatch({ type: 'ADD_INTEGRATION', payload: data });
             getIntegration();
             setLoadingCreate(false);
+            setIsIntagrated(true);
         } catch (err) {
             setLoadingCreate(false);
         }
@@ -214,8 +217,8 @@ const GitHubIntegration = ({ close, value }) => {
                     {githubConfiguration?.insideBanner}
                     <div className="integrate-header">
                         {githubConfiguration.header}
-                        <div className={!isValue ? 'action-buttons flex-end' : 'action-buttons'}>
-                            {isValue && (
+                        <div className={!isIntegrated ? 'action-buttons flex-end' : 'action-buttons'}>
+                            {isIntegrated && (
                                 <Button
                                     width="100px"
                                     height="35px"
@@ -251,7 +254,7 @@ const GitHubIntegration = ({ close, value }) => {
                             <div className="api-key">
                                 <span className="connect-bth-gh">
                                     <p>API Token</p>
-                                    {isValue ? (
+                                    {isIntegrated ? (
                                         <div className="connected-to-gh">
                                             <img src={tickCircle} className="connected" alt="connected" />
                                             &nbsp;Connected
@@ -299,7 +302,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     />
                                 </Form.Item>
                             </div>
-                            {isValue && (
+                            {isIntegrated && (
                                 <div className="input-field">
                                     <p className="title">Repos</p>
                                     <div className="repos-container">
@@ -366,7 +369,7 @@ const GitHubIntegration = ({ close, value }) => {
                                 <Button
                                     width="80%"
                                     height="45px"
-                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    placeholder={'Update'}
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"
@@ -374,7 +377,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     onClick={updateIntegration}
-                                    disabled={!value.keys?.token || !isChanged}
+                                    disabled={!isIntegrated || (formFields?.keys?.token === '' && !isChanged)}
                                 />
                             </div>
                         </Form.Item>
