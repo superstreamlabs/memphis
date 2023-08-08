@@ -101,9 +101,10 @@ func GetContentOfSelectedRepo(integration models.Integration, connectedRepo map[
 	return contentDetails, nil
 }
 
-func GetContentOfSelectedRepos(connectedReposPerIntegration map[string][]interface{}, tenantName string, contentDetails []functionDetails) []functionDetails {
+func GetContentOfSelectedRepos(tenantName string, contentDetails []functionDetails) []functionDetails {
+	connectedRepos := getConnectedSourceCodeRepos(tenantName)
 	var err error
-	for k, connectedRepoPerIntegration := range connectedReposPerIntegration {
+	for k, connectedRepoPerIntegration := range connectedRepos {
 		for _, connectedRepo := range connectedRepoPerIntegration {
 			connectedRepoRes := connectedRepo.(map[string]interface{})
 			tenantIntegrations, _ := IntegrationsConcurrentCache.Load(tenantName)

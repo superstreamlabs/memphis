@@ -399,9 +399,6 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
-	var content *github.RepositoryContent
-	var commit *github.RepositoryCommit
-	var contentMap map[string]interface{}
 
 	client, err := getGithubClient(token)
 	if err != nil {
@@ -422,6 +419,9 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 
 			isValidFileYaml := false
 			for _, fileContent := range filesContent {
+				var content *github.RepositoryContent
+				var commit *github.RepositoryCommit
+				var contentMap map[string]interface{}
 				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
 					if err != nil {

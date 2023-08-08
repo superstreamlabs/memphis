@@ -12,31 +12,11 @@
 package server
 
 import (
-	"time"
-
 	"fmt"
 	"memphis/models"
 
 	"github.com/gin-gonic/gin"
 )
-
-type ContentYamlFile struct {
-	FunctionName string   `json:"function_name" yaml:"function_name"`
-	Description  string   `json:"description" yaml:"description"`
-	Tags         []string `json:"tags" yaml:"tags"`
-	Language     string   `json:"language" yaml:"language"`
-}
-
-type FunctionsResult struct {
-	FunctionName string    `json:"function_name"`
-	Description  string    `json:"description"`
-	Tags         []string  `json:"tags"`
-	Language     string    `json:"language"`
-	LastCommit   time.Time `json:"last_commit"`
-	Link         string    `json:"link"`
-	Repository   string    `json:"repository"`
-	Branch       string    `json:"branch"`
-}
 
 type FunctionsHandler struct{}
 
@@ -48,18 +28,9 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 		return
 	}
 
-	connectedRepos, err := fh.GetConnectedSourceCodeRepos(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetConnectedSourceCodeRepos: %v", user.TenantName, user.Username, err.Error())
-		return
-	}
-
-	functions := []FunctionsResult{}
 	contentDetails := []functionDetails{}
-
-	contentDetailsRes := GetContentOfSelectedRepos(connectedRepos, user.TenantName, contentDetails)
-
-	functions, err = GetFunctionsDetails(contentDetailsRes, functions)
+	contentDetailsOfSelectedRepos := GetContentOfSelectedRepos(user.TenantName, contentDetails)
+	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctionsDetails: %v", user.TenantName, user.Username, err.Error())
 		return
@@ -68,7 +39,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 }
 
 func validateYamlContent(yamlMap map[string]interface{}) error {
-	requiredFields := []string{"function_name", "description", "tags", "language"}
+	requiredFields := []string{"function_name", "language"}
 	missingFields := make([]string, 0)
 	for _, field := range requiredFields {
 		if _, exists := yamlMap[field]; !exists {
@@ -82,7 +53,7 @@ func validateYamlContent(yamlMap map[string]interface{}) error {
 	return nil
 }
 
-func (fh FunctionsHandler) GetConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, error) {
+func getConnectedSourceCodeRepos(tenantName string) map[string][]interface{} {
 	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
 	selectedRepos := []interface{}{}
 	if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); ok {
@@ -106,47 +77,38 @@ func (fh FunctionsHandler) GetConnectedSourceCodeRepos(tenantName string) (map[s
 		}
 
 	}
-	return selectedReposPerSourceCodeIntegration, nil
+	return selectedReposPerSourceCodeIntegration
 }
 
-func GetFunctionsDetails(functionsDetails []functionDetails, functions []FunctionsResult) ([]FunctionsResult, error) {
+func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.FunctionsResult, error) {
+	functions := []models.FunctionsResult{}
 	for _, functionDetails := range functionsDetails {
-		switch functionDetails.IntegrationName {
-		case "github":
-			fucntionContentMap := functionDetails.ContentMap
-			commit := functionDetails.Commit
-			fileContent := functionDetails.Content
-			repo := functionDetails.RepoName
-			branch := functionDetails.Branch
-			tagsInterfaceSlice := fucntionContentMap["tags"].([]interface{})
-			tagsStrings := make([]string, len(fucntionContentMap["tags"].([]interface{})))
+		fucntionContentMap := functionDetails.ContentMap
+		commit := functionDetails.Commit
+		fileContent := functionDetails.Content
+		repo := functionDetails.RepoName
+		branch := functionDetails.Branch
+		tagsInterfaceSlice := fucntionContentMap["tags"].([]interface{})
+		tagsStrings := make([]string, len(fucntionContentMap["tags"].([]interface{})))
 
-			for i, v := range tagsInterfaceSlice {
-				if str, ok := v.(string); ok {
-					tagsStrings[i] = str
-				}
+		for i, v := range tagsInterfaceSlice {
+			if str, ok := v.(string); ok {
+				tagsStrings[i] = str
 			}
-
-			fileYaml := ContentYamlFile{
-				FunctionName: fucntionContentMap["function_name"].(string),
-				Description:  fucntionContentMap["description"].(string),
-				Tags:         tagsStrings,
-				Language:     fucntionContentMap["language"].(string),
-			}
-
-			functionDetails := FunctionsResult{
-				FunctionName: fileYaml.FunctionName,
-				Description:  fileYaml.Description,
-				Tags:         fileYaml.Tags,
-				Language:     fileYaml.Language,
-				LastCommit:   *commit.Commit.Committer.Date,
-				Link:         *fileContent.HTMLURL,
-				Repository:   repo,
-				Branch:       branch,
-			}
-
-			functions = append(functions, functionDetails)
 		}
+
+		functionDetails := models.FunctionsResult{
+			FunctionName: fucntionContentMap["function_name"].(string),
+			Description:  fucntionContentMap["description"].(string),
+			Tags:         tagsStrings,
+			Language:     fucntionContentMap["language"].(string),
+			LastCommit:   *commit.Commit.Committer.Date,
+			Link:         *fileContent.HTMLURL,
+			Repository:   repo,
+			Branch:       branch,
+		}
+
+		functions = append(functions, functionDetails)
 	}
 	return functions, nil
 }
