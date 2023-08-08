@@ -53,6 +53,7 @@ import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
+import Functions from './domain/functions';
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -391,6 +392,32 @@ const App = withRouter((props) => {
                                         content={
                                             <div>
                                                 <MessageJourney />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.functions}`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Functions />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
+                                path={`${pathDomains.functions}/:name`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Functions />
                                             </div>
                                         }
                                     ></AppWrapper>

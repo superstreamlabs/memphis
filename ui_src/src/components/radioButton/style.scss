@@ -1,5 +1,13 @@
 .radio-group {
     display: flex;
+    .radio-wrapper{
+        position: relative;
+        .cloud-only-tooltip{
+            z-index: 3;
+            right: 10px;
+            top: -8px;
+        }
+    }
     .ant-radio-wrapper {
         margin-right: 21px;
         color: #777777;

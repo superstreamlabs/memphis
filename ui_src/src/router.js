@@ -15,6 +15,7 @@ const pathDomains = {
     signup: '/signup',
     overview: '/overview',
     stations: '/stations',
+    functions: '/functions',
     users: '/users',
     schemaverse: '/schemaverse',
     administration: '/administration',

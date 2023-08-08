@@ -14,19 +14,24 @@ import './style.scss';
 import { Close } from '@material-ui/icons';
 
 import React from 'react';
+import { ColorPalette } from '../../const/globalConst';
 
 const Tag = ({ tag, onDelete, editable, border = false, onClick, rounded = false }) => {
     return (
         <div
             className="tag-wrapper"
-            key={tag.name}
-            style={{ background: `rgba(${tag.color},0.2)`, borderColor: border ? `rgb(${tag.color})` : 'transparent', borderRadius: rounded ? '20px' : '4px' }}
-            onClick={() => onClick && onClick(tag.name)}
+            key={tag.name || tag}
+            style={{
+                background: `rgba(${tag.color || ColorPalette[4]},0.2)`,
+                borderColor: border ? `rgb(${tag.color || ColorPalette[4]})` : 'transparent',
+                borderRadius: rounded ? '20px' : '4px'
+            }}
+            onClick={() => onClick && onClick(tag.name || tag)}
         >
-            <div className="tag-content" style={{ color: `rgb(${tag.color})` }}>
-                {tag.name}
+            <div className="tag-content" style={{ color: `rgb(${tag.color || ColorPalette[4]})` }}>
+                {tag.name || tag}
             </div>
-            {editable && <Close className="close" style={{ color: `rgb(${tag.color})` }} onClick={onDelete} />}
+            {editable && <Close className="close" style={{ color: `rgb(${tag.color || ColorPalette[4]})` }} onClick={onDelete} />}
         </div>
     );
 };

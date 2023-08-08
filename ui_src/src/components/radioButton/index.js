@@ -15,6 +15,7 @@ import './style.scss';
 import { Radio } from 'antd';
 import React from 'react';
 import TooltipComponent from '../tooltip/tooltip';
+import CloudOnly from '../cloudOnly';
 
 const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled, vertical, fontFamily, radioWrapper, labelType, height, radioStyle }) => {
     const handleChange = (e) => {
@@ -59,6 +60,7 @@ const RadioButton = ({ options = [], radioValue, onChange, optionType, disabled,
                             style={{ height: height }}
                             className={labelType ? (radioValue === option.value ? 'label-type radio-value' : 'label-type') : radioWrapper || 'radio-wrapper'}
                         >
+                            {option.onlyCloud && <CloudOnly />}
                             <span
                                 className={labelType ? (radioValue === option.value ? 'radio-style radio-selected' : 'radio-style') : `label ${radioStyle}`}
                                 style={{ fontFamily: fontFamily }}

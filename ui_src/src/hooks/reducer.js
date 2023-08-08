@@ -87,6 +87,16 @@ const Reducer = (state, action) => {
                 ...state,
                 stationFilteredList: action.payload
             };
+        case 'SET_FUNCTION_LIST':
+            return {
+                ...state,
+                functionList: action.payload
+            };
+        case 'SET_FUNCTION_FILTERED_LIST':
+            return {
+                ...state,
+                functionFilteredList: action.payload
+            };
         case 'SET_SCHEMA_LIST':
             return {
                 ...state,
