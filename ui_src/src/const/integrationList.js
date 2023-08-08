@@ -416,7 +416,7 @@ export const INTEGRATION_LIST = {
         ),
         steps: [
             {
-                title: 'Step 0: Create an application-type Memphis user for Debezium',
+                title: 'Step 0: Create an client-type Memphis user for Debezium',
                 key: 0
             },
             {

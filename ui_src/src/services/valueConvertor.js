@@ -347,9 +347,9 @@ export const partitionsValidator = (value) => {
         return 'At least 1 partition is required';
     }
     if (isCloud() && value > 30) {
-        return 'Up to 30 partitions allowed';
+        return 'Max number of partitions is: 30';
     } else if (!isCloud() && value > 10000) {
-        return 'Up to 10,000 partitions allowed';
+        return 'Max number of partitions is: 10,000';
     } else {
         return '';
     }

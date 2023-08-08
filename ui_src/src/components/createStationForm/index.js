@@ -54,7 +54,7 @@ const retanionOptions = [
         value: 'ack_based',
         disabled: isCloud() ? false : true,
         label: 'Ack based',
-        onlyCloud: true
+        onlyCloud: isCloud() ? false : true
     }
 ];
 
@@ -581,7 +581,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             )}
                             {retentionType === retanionOptions[3].value && (
                                 <div className="ackbased-type">
-                                    <p>Messages have a default retention of 2 weeks until acknowledged, with auto-deletion if no active consumer.</p>
+                                    <p>In case of no active consumer groups, messages will be automatically expelled from the station after 14 days.</p>
                                 </div>
                             )}
                         </div>
