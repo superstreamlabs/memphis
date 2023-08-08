@@ -69,6 +69,8 @@ export function getFontColor(colorType) {
 
 export function getBackgroundColor(backgroundColor) {
     switch (backgroundColor) {
+        case 'green':
+            return '#27AE60';
         case 'purple':
             return '#6557FF';
         case 'purple-light':
