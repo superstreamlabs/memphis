@@ -11,7 +11,9 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message } from 'antd';
+import { Form, message, Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
+
 import tickCircle from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
@@ -163,6 +165,16 @@ const GitHubIntegration = ({ close, value }) => {
         }
     };
 
+    const antIcon = (
+        <LoadingOutlined
+            style={{
+                fontSize: 24,
+                color: '#5A4FE5'
+            }}
+            spin
+        />
+    );
+
     return (
         <dynamic-integration is="3xd" className="integration-modal-container">
             {!imagesLoaded && (
@@ -213,25 +225,13 @@ const GitHubIntegration = ({ close, value }) => {
                                 <span className="connect-bth-gh">
                                     <p>API Token</p>
                                     {isValue ? (
-                                        <Button
-                                            width="100px"
-                                            height="22px"
-                                            placeholder={
-                                                <span>
-                                                    <img src={tickCircle} className="connected" alt="connected" />
-                                                    &nbsp;Connected
-                                                </span>
-                                            }
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="green"
-                                            fontSize="12px"
-                                            fontFamily="InterSemiBold"
-                                            onClick={createIntegration}
-                                        />
+                                        <div className="connected-to-gh">
+                                            <img src={tickCircle} className="connected" alt="connected" />
+                                            &nbsp;Connected
+                                        </div>
                                     ) : (
                                         <Button
-                                            width="70px"
+                                            width="80px"
                                             height="22px"
                                             placeholder={'Connect'}
                                             colorType="white"
@@ -282,6 +282,11 @@ const GitHubIntegration = ({ close, value }) => {
                                             <label>BRANCH</label>
                                         </div>
                                         <div className="repos-body">
+                                            {(!formFields?.keys?.connected_repos?.length || formFields?.keys?.connected_repos?.length === 0) && (
+                                                <div className="repos-loader">
+                                                    <Spin indicator={antIcon} />
+                                                </div>
+                                            )}
                                             {formFields?.keys?.connected_repos?.map((repo, index) => {
                                                 return (
                                                     <IntegrationItem
