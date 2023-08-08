@@ -28,7 +28,7 @@ import { httpRequest } from '../../../../services/http';
 import Tag from '../../../../components/tag';
 import CustomTabs from '../../../../components/Tabs';
 
-function FunctionBox({ key, funcDetails }) {
+function FunctionBox({ funcDetails }) {
     const history = useHistory();
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
@@ -38,7 +38,7 @@ function FunctionBox({ key, funcDetails }) {
     useEffect(() => {
         const url = window.location.href;
         const functionName = url.split('functions/')[1];
-        if (functionName === functionDetails?.name) {
+        if (functionName === functionDetails?.function_name) {
             setOpen(true);
             setSelectedFunction(functionName);
         }
@@ -49,82 +49,67 @@ function FunctionBox({ key, funcDetails }) {
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
-        setOpen(flag);
-        if (flag) {
-            history.push(`${pathDomains.functions}/${functionDetails?.name}`);
-            setSelectedFunction(functionDetails?.name);
-        } else {
-            history.push(`${pathDomains.functions}`);
-            setSelectedFunction('');
-        }
-    };
-
-    const removeTag = async (tagName, schemaName) => {
-        try {
-            await httpRequest('DELETE', `${ApiEndpoints.REMOVE_TAG}`, { name: tagName, entity_type: 'schema', entity_name: schemaName });
-            functionDetails.tags = functionDetails?.tags.filter((tag) => tag.name !== tagName);
-            setFunctionDetils({ ...functionDetails });
-        } catch (error) {}
-    };
-
-    const updateTags = async (tags) => {
-        functionDetails.tags = tags;
-        setFunctionDetils({ ...functionDetails });
+        // setOpen(flag);
+        // if (flag) {
+        //     history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
+        //     setSelectedFunction(functionDetails?.function_name);
+        // } else {
+        //     history.push(`${pathDomains.functions}`);
+        //     setSelectedFunction('');
+        // }
     };
 
     return (
         <>
-            <div key={functionDetails?.name} className={selectedFunction === functionDetails.name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}>
+            <div
+                key={functionDetails?.function_name}
+                className={selectedFunction === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+            >
                 <header is="x3d" onClick={() => handleDrawer(true)}>
                     <div className="function-name">
-                        <OverflowTip text={functionDetails?.name} maxWidth={'300px'}>
-                            <span>{functionDetails?.name}</span>
+                        <OverflowTip text={functionDetails?.function_name} maxWidth={'300px'}>
+                            <span>{functionDetails?.function_name}</span>
                         </OverflowTip>
                     </div>
                     <div className="function-details">
                         <div className="function-repo">
                             <IoGitBranch />
-                            <OverflowTip text={functionDetails?.repo} maxWidth={'150px'}>
-                                <span>memphiscloud - master</span>
+                            <OverflowTip text={functionDetails?.repository - functionDetails?.branch} maxWidth={'150px'}>
+                                <span>
+                                    {functionDetails?.repository} - {functionDetails?.branch}
+                                </span>
                             </OverflowTip>
                         </div>
                         <div className="function-code-type">
                             <FaCode />
-                            <OverflowTip text={functionDetails?.repo} maxWidth={'150px'}>
-                                <span>.net</span>
+                            <OverflowTip text={functionDetails?.language} maxWidth={'150px'}>
+                                <span>{functionDetails?.language}</span>
                             </OverflowTip>
                         </div>
                     </div>
                 </header>
                 <tags is="x3d">
-                    <TagsList
-                        tagsToShow={3}
-                        tags={functionDetails?.tags}
-                        editable
-                        entityType="schema"
-                        entityName={functionDetails?.name}
-                        handleDelete={(tag) => removeTag(tag, functionDetails?.name)}
-                        handleTagsUpdate={(tags) => updateTags(tags)}
-                    />
+                    <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
                 </tags>
                 <description is="x3d" onClick={() => handleDrawer(true)}>
                     <span>
-                        Donec dictum tristique porta. Etiam convallis lorem lobortis nulla molestie, nec tincidunt ex ullamcorper. Quisque ultrices lobortis elit sed
-                        euismod. Duis in ultrices dolor, ac rhoncus
+                        <OverflowTip text={functionDetails?.description} maxWidth={'300px'}>
+                            <span>{functionDetails?.description}</span>
+                        </OverflowTip>
                     </span>
                 </description>
                 <date is="x3d" onClick={() => handleDrawer(true)}>
                     <div className="flex">
                         <FiGitCommit />
-                        <p>Commits on {parsingDate(functionDetails?.created_at, false, false)}</p>
+                        <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
                     </div>
-                    <Tag editable={false} tag={{ name: 'Community', color: '101, 87, 255' }} rounded={true} />
+                    <Tag editable={false} tag={{ name: 'Custom', color: '101, 87, 255' }} rounded={true} />
                 </date>
             </div>
             <Drawer
                 title={
                     <div>
-                        <p>{functionDetails?.name}</p>
+                        <p>{functionDetails?.function_name}</p>
                         <CustomTabs tabs={['Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
                     </div>
                 }
@@ -133,7 +118,7 @@ function FunctionBox({ key, funcDetails }) {
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
-                open={open}
+                open={false}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             ></Drawer>

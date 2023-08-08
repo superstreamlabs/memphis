@@ -17,7 +17,7 @@ import { FilterStoreContext } from './';
 import { Collapse } from 'antd';
 import { Checkbox } from 'antd';
 import { Divider } from 'antd';
-import Tag from '../../components/tag';
+import Tag from '../tag';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import Button from '../button';

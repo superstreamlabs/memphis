@@ -54,17 +54,7 @@ const retanionOptions = [
         value: 'ack_based',
         disabled: isCloud() ? false : true,
         label: 'Ack based',
-        tooltip: isCloud() ? null : (
-            <div>
-                <span>
-                    Available for
-                    <a className="a-link" href="https://cloud.memphis.dev" target="_blank">
-                        Memphis Cloud
-                    </a>{' '}
-                    users only
-                </span>
-            </div>
-        )
+        onlyCloud: true
     }
 ];
 

@@ -26,7 +26,7 @@ import Loader from '../../../../../components/loader';
 import IntegrationItem from './integratedItem';
 
 const GitHubIntegration = ({ close, value }) => {
-    const isValue = value && Object.keys(value)?.length !== 0;
+    const isValue = value && Object?.keys(value)?.length !== 0;
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
@@ -87,7 +87,7 @@ const GitHubIntegration = ({ close, value }) => {
     }
 
     useEffect(() => {
-        const results = areEqual(formFields.keys?.connected_repos, value.keys?.connected_repos);
+        const results = areEqual(formFields?.keys?.connected_repos, value.keys?.connected_repos);
         setIsChanged(!results);
     }, [formFields]);
 

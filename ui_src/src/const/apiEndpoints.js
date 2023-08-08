@@ -76,6 +76,9 @@ export const ApiEndpoints = {
     ROLL_BACK_VERSION: '/schemas/rollBackVersion',
     VALIDATE_SCHEMA: '/schemas/validateSchema',
 
+    //Functions
+    GET_ALL_FUNCTIONS: '/functions/getAllFunctions',
+
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',
     UPDATE_INTEGRATION: '/integrations/updateIntegration',

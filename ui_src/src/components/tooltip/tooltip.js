@@ -13,8 +13,9 @@
 import React from 'react';
 import { Tooltip } from 'antd';
 
-const TooltipComponent = ({ text = '', minWidth, placement = 'bottom', children }) => {
+const TooltipComponent = ({ className, text = '', minWidth, placement = 'bottom', children }) => {
     const fieldProps = {
+        className: className || 'tooltip',
         title: text,
         placement: placement,
         overlayStyle: {

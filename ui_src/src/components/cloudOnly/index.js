@@ -11,29 +11,28 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import { Close } from '@material-ui/icons';
 
 import React from 'react';
-import { ColorPalette } from '../../const/globalConst';
+import cloudOnlyIcon from '../../assets/images/cloudOnlyIcon.svg';
+import TooltipComponent from '../tooltip/tooltip';
 
-const Tag = ({ tag, onDelete, editable, border = false, onClick, rounded = false }) => {
+const CloudOnly = () => {
     return (
-        <div
-            className="tag-wrapper"
-            key={tag.name || tag}
-            style={{
-                background: `rgba(${tag.color || ColorPalette[4]},0.2)`,
-                borderColor: border ? `rgb(${tag.color || ColorPalette[4]})` : 'transparent',
-                borderRadius: rounded ? '20px' : '4px'
-            }}
-            onClick={() => onClick && onClick(tag.name || tag)}
+        <TooltipComponent
+            className="cloud-only-tooltip"
+            text={
+                <span className="cloudOnlyIcon">
+                    Available in
+                    <a className="a-link" href="https://cloud.memphis.dev" target="_blank">
+                        Memphis.dev
+                    </a>{' '}
+                    Cloud
+                </span>
+            }
         >
-            <div className="tag-content" style={{ color: `rgb(${tag.color || ColorPalette[4]})` }}>
-                {tag.name || tag}
-            </div>
-            {editable && <Close className="close" style={{ color: `rgb(${tag.color || ColorPalette[4]})` }} onClick={onDelete} />}
-        </div>
+            <img src={cloudOnlyIcon} alt="cloudOnly" className="cloud-only" />;
+        </TooltipComponent>
     );
 };
 
-export default Tag;
+export default CloudOnly;
