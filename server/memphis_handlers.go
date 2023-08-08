@@ -39,6 +39,7 @@ type Handlers struct {
 	Billing        BillingHandler
 	userMgmt       UserMgmtHandler
 	AsyncTasks     AsyncTasksHandler
+	Functions      FunctionsHandler
 }
 
 var serv *Server

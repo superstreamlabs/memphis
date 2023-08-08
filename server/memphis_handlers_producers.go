@@ -43,7 +43,7 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string) (bool, bool, error, models.Station) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int) (bool, bool, error, models.Station) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
@@ -74,6 +74,11 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err, models.Station{}
 	}
 	if !exist {
+		if version < 2 {
+			err := errors.New("This station does not exist, a default station can not be created automatically, please upgrade your SDK version")
+			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
+			return false, false, err, models.Station{}
+		}
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username)
 		if err != nil {
@@ -151,7 +156,7 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		return
 	}
 	_, _, err, _ = s.createProducerDirectCommon(c, cpr.Name,
-		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
+		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0)
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 }
 
@@ -183,7 +188,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName)
+	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion)
 	if err != nil {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return

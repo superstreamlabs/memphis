@@ -175,8 +175,16 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
+	if csr.PartitionsNumber == 0 {
+		errMsg := fmt.Errorf("you are using an old SDK, make sure to update your SDK")
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect -  tried to use an old SDK", csr.TenantName, csr.Username)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+
 	if csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station %v", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
+		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)

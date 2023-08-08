@@ -68,8 +68,8 @@ type createConsumerResponse struct {
 }
 
 type createConsumerResponseV1 struct {
-	Partitions []int  `json:"partitions"`
-	Err        string `json:"error"`
+	PartitionsUpdate models.PartitionsUpdate `json:"partitions_update"`
+	Err              string                  `json:"error"`
 }
 
 type createProducerResponse struct {

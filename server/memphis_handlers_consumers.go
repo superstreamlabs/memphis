@@ -291,11 +291,11 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	partitions, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, 1, ccr.StartConsumeFromSequence, ccr.LastMessages)
+	partitions, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, ccr.RequestVersion, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	if err != nil {
 		respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
 	}
-	resp.Partitions = partitions
+	resp.PartitionsUpdate = models.PartitionsUpdate{PartitionsList: partitions}
 	respondWithResp(s.MemphisGlobalAccountString(), s, reply, &resp)
 }
 
