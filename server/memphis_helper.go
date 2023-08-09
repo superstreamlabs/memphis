@@ -1030,6 +1030,8 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 		messagesToFetch,
 		5*time.Second,
 		true,
+		station.RetentionType == "ack_based",
+		station.Replicas,
 	)
 
 	if err != nil {
@@ -1114,9 +1116,13 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 	return -1
 }
 
-func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader bool) ([]StoredMsg, error) {
+func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader, isAckBasedStation bool, consumerReplicas int) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
+	replicas := 1
+	if isAckBasedStation {
+		replicas = consumerReplicas
+	}
 
 	cc := ConsumerConfig{
 		FilterSubject: filterSubj,
@@ -1124,7 +1130,7 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 		DeliverPolicy: DeliverByStartSequence,
 		Durable:       durableName,
 		AckPolicy:     AckExplicit,
-		Replicas:      1,
+		Replicas:      replicas,
 	}
 
 	err := s.memphisAddConsumer(tenantName, streamName, &cc)

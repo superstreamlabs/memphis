@@ -75,6 +75,7 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 		fileContent := functionDetails.Content
 		repo := functionDetails.RepoName
 		branch := functionDetails.Branch
+		owner := functionDetails.Owner
 		tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
 		tagsStrings := []string{}
 		if ok {
@@ -100,6 +101,7 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 			Link:         *fileContent.HTMLURL,
 			Repository:   repo,
 			Branch:       branch,
+			Owner:        owner,
 		}
 
 		functions = append(functions, functionDetails)
