@@ -169,8 +169,13 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	updateIntegration["token"] = keys["token"].(string)
 	for _, key := range keys["connected_repos"].([]interface{}) {
 		connectedRepoDetails := key.(map[string]interface{})
-		repoOwner, ok := connectedRepoDetails["repo_owner"].(string)
-		if !ok {
+		var repoOwner string
+		repoOwnerInterface, ok := connectedRepoDetails["repo_owner"].([]interface{})
+		if ok {
+			for _, owner := range repoOwnerInterface {
+				repoOwner = owner.(string)
+			}
+		} else {
 			userDetails, _, err := client.Users.Get(context.Background(), "")
 			if err != nil {
 				return models.Integration{}, err
@@ -191,7 +196,7 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 			RepoName:  connectedRepoDetails["repo_name"].(string),
 			Branch:    connectedRepoDetails["branch"].(string),
 			Type:      connectedRepoDetails["type"].(string),
-			RepoOwner: connectedRepoDetails["repo_owner"].(string),
+			RepoOwner: repoOwner,
 		}
 
 		if connectedRepositories, ok := updateIntegration["connected_repos"].([]githubRepoDetails); !ok {
