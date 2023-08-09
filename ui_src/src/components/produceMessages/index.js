@@ -248,11 +248,11 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             disabled={!isCloud()}
                         />
                     </Form.Item>
-                    <p className="field-title">Number of recordes</p>
+                    <p className="field-title">Number of records</p>
                     <Form.Item className="form-input" name="amount" initialValue={1}>
                         <InputNumberComponent
                             min={1}
-                            max={isCloud() ? 100 : 1}
+                            max={isCloud() ? 1000 : 1}
                             onChange={(e) => updateFormState('amount', e)}
                             value={formFields.amount}
                             placeholder={formFields.amount || 1}
