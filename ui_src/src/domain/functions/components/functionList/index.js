@@ -37,7 +37,7 @@ function FunctionList() {
         getAllFunctions();
         return () => {
             dispatch({ type: 'SET_FUNCTION_LIST', payload: [] });
-            dispatch({ type: 'SET_FANCTION_FILTERED_LIST', payload: [] });
+            dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: [] });
         };
     }, []);
 
@@ -66,6 +66,7 @@ function FunctionList() {
                         let data = jc.decode(msg.data);
                         setIntegrated(data.scm_integrated);
                         dispatch({ type: 'SET_FUNCTION_LIST', payload: data?.functions });
+                        dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: data?.functions });
                     }
                 }
             } catch (err) {
@@ -87,17 +88,23 @@ function FunctionList() {
     }, [state.socket]);
 
     const getAllFunctions = async () => {
+        setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data.scm_integrated);
             dispatch({ type: 'SET_FUNCTION_LIST', payload: data?.functions });
-            dispatch({ type: 'SET_FANCTION_FILTERED_LIST', payload: data?.functions });
+            dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: data?.functions });
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
         } catch (error) {
             setisLoading(false);
         }
+    };
+
+    const fetchFunctions = async () => {
+        getAllFunctions();
+        modalFlip(false);
     };
 
     return (
@@ -134,8 +141,8 @@ function FunctionList() {
                     </div>
                 )}
                 {!isLoading &&
-                    state.functionFilteredList?.map((func) => {
-                        return <FunctionBox funcDetails={func} />;
+                    state.functionFilteredList?.map((func, index) => {
+                        return <FunctionBox key={index} funcDetails={func} />;
                     })}
                 {!isLoading && state.functionList?.length === 0 && (
                     <div className="no-schema-to-display">
@@ -171,7 +178,11 @@ function FunctionList() {
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 <GitHubIntegration
                     close={(data) => {
-                        modalFlip(false);
+                        if (Object.keys(data).length > 0) {
+                            fetchFunctions();
+                        } else {
+                            modalFlip(false);
+                        }
                     }}
                     value={{}}
                 />
