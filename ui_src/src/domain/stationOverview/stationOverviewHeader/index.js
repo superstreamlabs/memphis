@@ -153,7 +153,7 @@ const StationOverviewHeader = () => {
                         />
                     </div>
                     <span className="created-by">
-                        Created by {stationState?.stationMetaData?.created_by_username} at {stationState?.stationMetaData?.created_at}{' '}
+                        Created by <b>{stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
                         {!stationState?.stationMetaData?.is_native && '(non-native)'}
                     </span>
                 </div>

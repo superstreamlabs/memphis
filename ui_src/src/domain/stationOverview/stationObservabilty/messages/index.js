@@ -409,41 +409,36 @@ const Messages = () => {
                             />
                         ]}
                     ></DetailBox>
-                    {!isCloud() &&
-                        stationState?.stationPartition !==
-                            -1(
-                                <DetailBox
-                                    img={leaderImg}
-                                    title={'Leader'}
-                                    desc={
-                                        <span>
-                                            The current leader of this station.{' '}
-                                            <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    }
-                                    data={[stationState?.stationSocketData?.leader]}
-                                />
-                            )}
-                    {stationState?.stationSocketData?.followers?.length > 0 &&
-                        !isCloud() &&
-                        stationState?.stationPartition !==
-                            -1(
-                                <DetailBox
-                                    img={followersImg}
-                                    title={'Followers'}
-                                    desc={
-                                        <span>
-                                            The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
-                                            <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    }
-                                    data={stationState?.stationSocketData?.followers}
-                                />
-                            )}
+                    {!isCloud() && stationState?.stationPartition !== -1 && (
+                        <DetailBox
+                            img={leaderImg}
+                            title={'Leader'}
+                            desc={
+                                <span>
+                                    The current leader of this station.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                            data={[stationState?.stationSocketData?.leader]}
+                        />
+                    )}
+                    {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
+                        <DetailBox
+                            img={followersImg}
+                            title={'Followers'}
+                            desc={
+                                <span>
+                                    The brokers that contain a replica of this station and in case of failure will replace the leader.{' '}
+                                    <a href="https://docs.memphis.dev/memphis/memphis/concepts/station#leaders-and-followers" target="_blank">
+                                        Learn more
+                                    </a>
+                                </span>
+                            }
+                            data={stationState?.stationSocketData?.followers}
+                        />
+                    )}
 
                     <DetailBox
                         img={idempotencyIcon}
