@@ -170,19 +170,15 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	for _, key := range keys["connected_repos"].([]interface{}) {
 		connectedRepoDetails := key.(map[string]interface{})
 		var repoOwner string
-		repoOwnerStr, ok := connectedRepoDetails["repo_owner"].(string)
-		if !ok {
-			repoOwnerInterface, ok := connectedRepoDetails["repo_owner"].([]interface{})
-			if ok {
-				for _, owner := range repoOwnerInterface {
-					repoOwner = owner.(string)
-				}
-			} else {
-				userDetails, _, err := client.Users.Get(context.Background(), "")
-				if err != nil {
-					return models.Integration{}, err
-				}
-				repoOwner = userDetails.GetLogin()
+		repoOwnerInterface, ok := connectedRepoDetails["repo_owner"].([]interface{})
+		if ok {
+			for _, owner := range repoOwnerInterface {
+				repoOwner = owner.(string)
+			}
+		} else {
+			userDetails, _, err := client.Users.Get(context.Background(), "")
+			if err != nil {
+				return models.Integration{}, err
 			}
 		} else {
 			repoOwner = repoOwnerStr
