@@ -449,6 +449,9 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 			return []models.DelayedCgResp{}, err
 		}
 		for _, consumer := range resp.Consumers {
+			if strings.Contains(consumer.Stream, "$") {
+				consumer.Stream = strings.Split(consumer.Stream, "$")[0]
+			}
 			if consumer.NumPending > 0 {
 				stationName := StationNameFromStreamName(consumer.Stream)
 				consumerName := revertDelimiters(consumer.Name)
@@ -456,13 +459,18 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.De
 				if _, ok := consumers[externalStationName]; !ok {
 					consumers[externalStationName] = map[string]models.DelayedCg{consumerName: {CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumPending)}}
 				} else {
-					consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumPending)}
+					if _, ok := consumers[externalStationName][consumerName]; !ok {
+						consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: uint64(consumer.NumPending)}
+					} else {
+						numOfDelayMsgs := consumers[externalStationName][consumerName].NumOfDelayedMsgs + uint64(consumer.NumPending)
+						consumers[externalStationName][consumerName] = models.DelayedCg{CGName: consumerName, NumOfDelayedMsgs: numOfDelayMsgs}
+					}
 				}
 				consumerNames = append(consumerNames, consumerName)
 			}
 		}
 	}
-	consumersFromDb, err := db.GetActiveConsumersByName(consumerNames, tenantName)
+	consumersFromDb, err := db.GetActiveCgsByName(consumerNames, tenantName)
 	if err != nil {
 		return []models.DelayedCgResp{}, err
 	}
