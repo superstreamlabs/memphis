@@ -13,18 +13,23 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
+import { JSONCodec, StringCodec } from 'nats.ws';
+import { useHistory } from 'react-router-dom';
+
+import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import placeholderFunctions from '../../../../assets/images/placeholderFunctions.svg';
+import integratedIcon from '../../../../assets/images/integratedIcon.svg';
+import searchIcon from '../../../../assets/images/searchIcon.svg';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import Filter from '../../../../components/filter';
 import { Context } from '../../../../hooks/store';
-import { useHistory } from 'react-router-dom';
-import FunctionBox from '../functionBox';
 import Modal from '../../../../components/modal';
-import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
-import { JSONCodec, StringCodec } from 'nats.ws';
+import FunctionBox from '../functionBox';
+import SearchInput from '../../../../components/searchInput';
 
 function FunctionList() {
     const history = useHistory();
@@ -32,13 +37,12 @@ function FunctionList() {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrated, setIntegrated] = useState(false);
+    const [functionList, setFunctionList] = useState([]);
+    const [copyOfFunctionList, setCopyOfFunctionList] = useState([]);
+    const [searchInput, setSearchInput] = useState('');
 
     useEffect(() => {
         getAllFunctions();
-        return () => {
-            dispatch({ type: 'SET_FUNCTION_LIST', payload: [] });
-            dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: [] });
-        };
     }, []);
 
     useEffect(() => {
@@ -64,9 +68,8 @@ function FunctionList() {
                 if (sub) {
                     for await (const msg of sub) {
                         let data = jc.decode(msg.data);
-                        setIntegrated(data.scm_integrated);
-                        dispatch({ type: 'SET_FUNCTION_LIST', payload: data?.functions });
-                        dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: data?.functions });
+                        setIntegrated(data?.scm_integrated);
+                        setFunctionList(data?.functions);
                     }
                 }
             } catch (err) {
@@ -92,8 +95,8 @@ function FunctionList() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data.scm_integrated);
-            dispatch({ type: 'SET_FUNCTION_LIST', payload: data?.functions });
-            dispatch({ type: 'SET_FUNCTION_FILTERED_LIST', payload: data?.functions });
+            setFunctionList(data?.functions);
+            setCopyOfFunctionList(data?.functions);
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -107,45 +110,70 @@ function FunctionList() {
         modalFlip(false);
     };
 
+    useEffect(() => {
+        if (searchInput.length > 1) {
+            let copy = copyOfFunctionList;
+            const results = copy.filter(
+                (func) => func?.function_name?.toLowerCase()?.includes(searchInput.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
+            );
+            setCopyOfFunctionList(results);
+        } else {
+            setCopyOfFunctionList(functionList);
+        }
+    }, [searchInput, functionList]);
+
+    const handleSearch = (e) => {
+        setSearchInput(e.target.value);
+    };
+
     return (
-        <div className="schema-container">
+        <div className="function-container">
             <div className="header-wraper">
                 <div className="main-header-wrapper">
-                    <label className="main-header-h1">
-                        Functions <label className="length-list">{state.functionFilteredList?.length > 0 && `(${state.functionFilteredList?.length})`}</label>
-                    </label>
+                    <div className="header-flex-wrapper">
+                        <label className="main-header-h1">
+                            Functions <label className="length-list">{copyOfFunctionList?.length > 0 && `(${copyOfFunctionList?.length})`}</label>
+                        </label>
+                        {integrated && (
+                            <div className="integrated-wrapper">
+                                <img src={integratedIcon} alt="integratedIcon" />
+                                <OverflowTip text={'Integrated with GitHub'} maxWidth={'180px'}>
+                                    <span>{'Integrated with GitHub'}</span>
+                                </OverflowTip>
+                            </div>
+                        )}
+                    </div>
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
-                    {/* <Filter filterComponent="function" height="34px" /> */}
-                    {/* <Button
-                        width="160px"
+                    <SearchInput
+                        placeholder="Search here"
+                        colorType="navy"
+                        backgroundColorType="gray-dark"
+                        width="288px"
                         height="34px"
-                        placeholder={'Create from blank'}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontWeight="600"
-                        boxShadowStyle="float"
-                        aria-haspopup="true"
-                        onClick={() => {}}
-                    /> */}
+                        borderRadiusType="circle"
+                        borderColorType="none"
+                        boxShadowsType="none"
+                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                        onChange={handleSearch}
+                        value={searchInput}
+                    />
                 </div>
             </div>
 
-            <div className="schema-list">
+            <div className="function-list">
                 {isLoading && (
                     <div className="loader-uploading">
                         <Loader />
                     </div>
                 )}
                 {!isLoading &&
-                    state.functionFilteredList?.map((func, index) => {
+                    copyOfFunctionList?.map((func, index) => {
                         return <FunctionBox key={index} funcDetails={func} />;
                     })}
-                {!isLoading && state.functionList?.length === 0 && (
-                    <div className="no-schema-to-display">
+                {!isLoading && functionList?.length === 0 && (
+                    <div className="no-function-to-display">
                         <img src={placeholderFunctions} width="150" alt="placeholderFunctions" />
                         <p className="title">No functions yet</p>
                         <p className="sub-title">Functions will start to sync and appear once an integration with a git repository is established.</p>
@@ -167,8 +195,8 @@ function FunctionList() {
                         )}
                     </div>
                 )}
-                {!isLoading && state.functionList?.length > 0 && state.functionFilteredList?.length === 0 && (
-                    <div className="no-schema-to-display">
+                {!isLoading && functionList?.length > 0 && copyOfFunctionList?.length === 0 && (
+                    <div className="no-function-to-display">
                         <img src={placeholderFunctions} width="150" alt="placeholderFunctions" />
                         <p className="title">No functions found</p>
                         <p className="sub-title">Please try to search again</p>
