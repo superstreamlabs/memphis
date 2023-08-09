@@ -106,7 +106,7 @@ const StationOverview = () => {
                     );
                     if (rawBrokerName) {
                         const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition}.${brokerName}`);
+                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
                         listenForUpdates();
                     }
                 })();
@@ -140,7 +140,7 @@ const StationOverview = () => {
                 }
             }
         };
-    }, [stationState?.stationPartition]);
+    }, [state?.socket, stationState?.stationPartition]);
 
     return (
         <StationStoreContext.Provider value={[stationState, stationDispatch]}>
