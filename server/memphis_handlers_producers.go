@@ -75,7 +75,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 	}
 	if !exist {
 		if version < 2 {
-			err := errors.New("This station does not exist, a default station can not be created automatically, please upgrade your SDK version")
+			err := errors.New("this station does not exist, a default station can not be created automatically, please upgrade your SDK version")
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
 		}
@@ -111,7 +111,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	} else {
 		if version < 2 {
-			err := errors.New("To produce to this station please upgrade your SDK version")
+			err := errors.New("to produce to this station please upgrade your SDK version")
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
 		}
