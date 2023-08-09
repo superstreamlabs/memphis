@@ -289,7 +289,11 @@ dynamic-integration {
                 position: relative;
             }
             .remove-icon {
+                color: #A9A9A9;
                 cursor: pointer;
+                width: 17px;
+                line-height: 17px;
+                height: 17px;
             }
         }
         .repos-item > img:first-child {

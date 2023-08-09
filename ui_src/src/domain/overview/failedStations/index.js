@@ -69,9 +69,11 @@ const FailedStations = ({ createStationTrigger }) => {
                                             </OverflowTip>
                                             <OverflowTip
                                                 className="station-details total"
-                                                text={station?.partitions_list ? station?.partitions_list?.length?.toLocaleString() : 1}
+                                                text={station?.partitions_list?.length === 0 ? 1 : station?.partitions_list?.length?.toLocaleString()}
                                             >
-                                                <span className="centered">{station?.partitions_list ? station?.partitions_list?.length?.toLocaleString() : 1}</span>
+                                                <span className="centered">
+                                                    {station?.partitions_list?.length === 0 ? 1 : station?.partitions_list?.length?.toLocaleString()}
+                                                </span>
                                             </OverflowTip>
                                             <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
                                                 <span className="centered">{station.total_messages?.toLocaleString()}</span>

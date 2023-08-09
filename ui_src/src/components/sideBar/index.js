@@ -249,19 +249,6 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('functions')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(pathDomains.functions)}
-                >
-                    {state.route === 'functions' ? (
-                        <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
-                    ) : (
-                        <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
-                    )}
-                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div>
 
                 <div
                     className="item-wrapper"
@@ -277,6 +264,19 @@ function SideBar() {
                         )}
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
+                </div>
+                <div
+                    className="item-wrapper"
+                    onMouseEnter={() => setHoveredItem('functions')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    onClick={() => history.push(pathDomains.functions)}
+                >
+                    {state.route === 'functions' ? (
+                        <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
+                    ) : (
+                        <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
+                    )}
+                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
                 </div>
                 <div
                     className="item-wrapper"
