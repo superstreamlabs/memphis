@@ -71,7 +71,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </OverflowTip>
                         </div>
                         <label className="data-labels date">
-                            Created by {station?.station?.created_by_username} at {parsingDate(station?.station?.created_at)}{' '}
+                            Created by <b>{station?.station?.created_by_username}</b> at {parsingDate(station?.station?.created_at)}{' '}
                         </label>
                     </div>
                     <div className="middle-section">

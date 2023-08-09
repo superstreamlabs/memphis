@@ -87,7 +87,7 @@ const ProduceConsumList = ({ producer }) => {
 
     const onSelectedRow = (rowIndex, type) => {
         setSelectedRowIndex(rowIndex);
-        arrangeData(type, rowIndex);
+        arrangeData(rowIndex);
     };
 
     const arrangeData = (rowIndex) => {
