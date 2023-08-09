@@ -109,6 +109,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
+	} else {
+		if version < 2 {
+			err := errors.New("To produce to this station please upgrade your SDK version")
+			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
+			return false, false, err, models.Station{}
+		}
 	}
 
 	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList)

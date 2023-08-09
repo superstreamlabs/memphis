@@ -1068,14 +1068,6 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-			// This check for backward compatability
-			if connectionIdHeader == "" || producedByHeader == "" {
-				connectionIdHeader = headersJson["connectionId"]
-				producedByHeader = strings.ToLower(headersJson["producedBy"])
-				if connectionIdHeader == "" || producedByHeader == "" {
-					return []models.MessageDetails{}, errors.New("missing mandatory message headers, please upgrade the SDK version you are using")
-				}
-			}
 
 			for header := range headersJson {
 				if strings.HasPrefix(header, "$memphis") {

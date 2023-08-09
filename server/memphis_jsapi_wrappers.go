@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"errors"
 	"memphis/models"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -176,11 +177,13 @@ func (s *Server) memphisJSApiWrapStreamCreate(sub *subscription, c *client, _ *A
 		return
 	}
 
-	if len(cfg.Name) > 32 {
-		resp.Error = NewJSStreamCreateError(errors.New("stream name can not be greater than 32 characters"))
+	streamName, err := validateStreamName(cfg.Name)
+	if err != nil {
+		resp.Error = NewJSStreamCreateError(err)
 		s.sendAPIErrResponse(ci, acc, subject, reply, string(msg), s.jsonResponse(&resp))
 		return
 	}
+	cfg.Name = streamName
 
 	go memphisCreateNonNativeStationIfNeeded(s, reply, cfg, c)
 
@@ -191,4 +194,38 @@ func (s *Server) memphisJSApiWrapStreamDelete(sub *subscription, c *client, acc 
 	go memphisDeleteNonNativeStationIfNeeded(s, reply, streamNameFromSubject(subject), c)
 
 	s.jsStreamDeleteRequestIntern(sub, c, acc, subject, reply, rmsg)
+}
+
+func validateStreamName(streamName string) (string, error) {
+	name := strings.ToLower(streamName)
+	emptyErrStr := "stream name can not be empty"
+	tooLongErrStr := "stream name should be under 128 characters"
+	invalidCharErrStr := "only alphanumeric and the '_', '-' characters are allowed in stream name"
+	firstLetterErrStr := "stream name can not start or end with non alphanumeric character"
+
+	emptyErr := errors.New(emptyErrStr)
+	tooLongErr := errors.New(tooLongErrStr)
+	invalidCharErr := errors.New(invalidCharErrStr)
+	firstLetterErr := errors.New(firstLetterErrStr)
+
+	if len(name) == 0 {
+		return "", emptyErr
+	}
+
+	if len(name) > 128 {
+		return "", tooLongErr
+	}
+
+	re := regexp.MustCompile("^[a-z0-9_-]*$")
+
+	validName := re.MatchString(name)
+	if !validName {
+		return "", invalidCharErr
+	}
+
+	if name[0:1] == "-" || name[0:1] == "_" || name[len(name)-1:] == "." || name[len(name)-1:] == "-" || name[len(name)-1:] == "_" {
+		return "", firstLetterErr
+	}
+
+	return name, nil
 }

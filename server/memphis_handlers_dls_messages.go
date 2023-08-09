@@ -99,8 +99,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		if producedByHeader == "" {
 			producedByHeader = headersJson["producedBy"]
 			if producedByHeader == "" {
-				serv.Warnf("handleNewUnackedMsg: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-				return nil
+				producedByHeader = "unknown"
 			}
 		}
 

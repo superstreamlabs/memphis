@@ -175,7 +175,7 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
-	if csr.PartitionsNumber == 0 {
+	if csr.PartitionsNumber == 0 && isNative {
 		errMsg := fmt.Errorf("you are using an old SDK, make sure to update your SDK")
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect -  tried to use an old SDK", csr.TenantName, csr.Username)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
@@ -183,7 +183,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1 {
+	if (csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1) && isNative {
 		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
@@ -1570,17 +1570,6 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 		}
 	}
 
-	// This check for backward compatability
-	if connectionIdHeader == "" || producedByHeader == "" {
-		connectionIdHeader = headersJson["connectionId"]
-		producedByHeader = strings.ToLower(headersJson["producedBy"])
-		if connectionIdHeader == "" || producedByHeader == "" {
-			serv.Warnf("[tenant: %v][user: %v]GetMessageDetails: missing mandatory message headers, please upgrade the SDK version you are using", user.TenantName, user.Username)
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "missing mandatory message headers, please upgrade the SDK version you are using"})
-			return
-		}
-	}
-
 	connectionId := connectionIdHeader
 	poisonedCgs := make([]models.PoisonedCg, 0)
 	// Only native stations have CGs
@@ -1601,6 +1590,10 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 	}
 	if exist {
 		isActive = producer.IsActive
+	} else {
+		if producedByHeader == "" {
+			producedByHeader = "unknown"
+		}
 	}
 
 	msg := models.MessageResponse{
