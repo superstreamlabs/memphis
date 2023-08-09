@@ -110,7 +110,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			}
 		}
 	} else {
-		if version < 2 {
+		if version < 2 && len(station.PartitionsList) > 0 {
 			err := errors.New("to produce to this station please upgrade your SDK version")
 			serv.Warnf("[tenant: %v]createProducerDirectCommon : Producer %v at station %v : %v", user.TenantName, pName, pStationName, err.Error())
 			return false, false, err, models.Station{}
