@@ -22,6 +22,7 @@ type FunctionsResult struct {
 	Link         string    `json:"link"`
 	Repository   string    `json:"repository"`
 	Branch       string    `json:"branch"`
+	Owner        string    `json:"owner"`
 }
 
 type FunctionsRes struct {
