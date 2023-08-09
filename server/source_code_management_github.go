@@ -277,7 +277,7 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 	if err != nil {
 		return models.Integration{}, map[string]string{}, err
 	}
-	repositoriesMap := make(map[string]string)
+	repositoriesMap := make(map[string][]string)
 
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
@@ -288,7 +288,11 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 		for _, repo := range repos {
 			repoOwner := repo.GetOwner().GetLogin()
 			repoName := repo.GetName()
-			repositoriesMap[repoName] = repoOwner
+			if _, exists := repositoriesMap[repoName]; exists {
+				repositoriesMap[repoName] = append(repositoriesMap[repoName], repoOwner)
+			} else {
+				repositoriesMap[repoName] = []string{repoOwner}
+			}
 		}
 
 		// Check if there are more pages
@@ -358,10 +362,14 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 		}
 		for repo, branches := range branchesPerRepo {
 			if repo == repoName {
-				isRepoExists = true
-				isBranchExists := containsElement(branches, *branch.Name)
-				if !isBranchExists {
-					branchInfoList = append(branchInfoList, *branch.Name)
+				for owner := range branches {
+					if owner == repoOwner {
+						isRepoExists = true
+						isBranchExists := containsElement(branches[owner], *branch.Name)
+						if !isBranchExists {
+							branchInfoList = append(branchInfoList, *branch.Name)
+						}
+					}
 				}
 			}
 		}
@@ -411,14 +419,14 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 
 	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
 	if err != nil {
-		return []functionDetails{}, err
+		return functionsDetails, err
 	}
 
 	for _, directoryContent := range repoContent {
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
 			if err != nil {
-				return []functionDetails{}, err
+				continue
 			}
 
 			isValidFileYaml := false
@@ -462,6 +470,7 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 							RepoName:        repo,
 							Branch:          branch,
 							IntegrationName: githubIntegration.Name,
+							Owner:           owner,
 						}
 						functionsDetails = append(functionsDetails, fileDetails)
 						break

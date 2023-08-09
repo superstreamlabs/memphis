@@ -31,6 +31,7 @@ type functionDetails struct {
 	RepoName        string                    `json:"repo_name"`
 	Branch          string                    `json:"branch"`
 	IntegrationName string                    `json:"integration_name"`
+	Owner           string                    `json:"owner"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
@@ -71,18 +72,20 @@ func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, acti
 	return integrationRes, allRepos, nil
 }
 
-func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string][]string {
-	branchesPerRepo := map[string][]string{}
+func orderBranchesPerConnectedRepos(connectedRepos []interface{}) map[string]map[string][]string {
+	branchesPerRepo := map[string]map[string][]string{}
 	for _, connectRepo := range connectedRepos {
 		var connectedBranchList []string
 		repo := connectRepo.(map[string]interface{})["repo_name"].(string)
 		branch := connectRepo.(map[string]interface{})["branch"].(string)
+		owner := connectRepo.(map[string]interface{})["repo_owner"].(string)
 		if _, ok := branchesPerRepo[repo]; !ok {
 			connectedBranchList = append(connectedBranchList, branch)
-			branchesPerRepo[repo] = connectedBranchList
+			branchesPerRepo[repo] = map[string][]string{}
+			branchesPerRepo[repo][owner] = connectedBranchList
 		} else {
-			connectedBranchList = append(branchesPerRepo[repo], branch)
-			branchesPerRepo[repo] = connectedBranchList
+			connectedBranchList = append(branchesPerRepo[repo][owner], branch)
+			branchesPerRepo[repo][owner] = connectedBranchList
 		}
 	}
 	return branchesPerRepo
