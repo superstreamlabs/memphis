@@ -166,7 +166,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			}
 		}
 	} else {
-		if requestVersion < 2 {
+		if requestVersion < 2 && len(station.PartitionsList) > 0 {
 			err := errors.New("to consume from this station please upgrade your SDK version")
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
