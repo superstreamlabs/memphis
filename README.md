@@ -1,11 +1,5 @@
 
-<div align="center">
- 
-![Hackathon banner](https://github.com/memphisdev/memphis/assets/107035359/6ff3c175-15c7-4ef2-b08e-da57443f946b)
-
-We are happy to announce Memphis #1 hackathon #SaveZakar!📣 📣 📣 <br/> 
-**For more information & Sign up click [here](https://www.hackathon.memphis.dev/)!**
-<hr/> 
+![Banner- Memphis dev streaming ](https://github.com/memphisdev/memphis/assets/107035359/ffa62f72-c494-4143-a416-a704649e646b)
 
 </div>
 
