@@ -129,15 +129,24 @@ const StationOverview = () => {
             }
         };
 
-        subscribeAndListen();
+        const stopListenAndSubscribe = async (subscribe = false) => {
+            try {
+                await sub.unsubscribe();
+                subscribe && subscribeAndListen();
+            } catch (err) {
+                console.error('Error unsubscribing from station overview data:', err);
+            }
+        };
+
+        if (sub) {
+            stopListenAndSubscribe(true);
+        } else {
+            subscribeAndListen();
+        }
 
         return () => {
             if (sub) {
-                try {
-                    sub.unsubscribe();
-                } catch (err) {
-                    console.error('Error unsubscribing from station overview data:', err);
-                }
+                stopListenAndSubscribe();
             }
         };
     }, [state?.socket, stationState?.stationPartition]);
