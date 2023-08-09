@@ -1552,7 +1552,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 				Headers:  headersJson,
 			},
 			Producer: models.ProducerDetailsResp{
-				Name:     "",
+				Name:     "unknown",
 				IsActive: false,
 			},
 			PoisonedCgs: []models.PoisonedCg{},

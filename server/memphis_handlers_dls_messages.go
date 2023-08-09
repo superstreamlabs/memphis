@@ -94,13 +94,8 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	poisonedCgs := []string{}
 	if station.IsNative {
 		producedByHeader = headersJson["$memphis_producedBy"]
-
-		// This check for backward compatability
 		if producedByHeader == "" {
-			producedByHeader = headersJson["producedBy"]
-			if producedByHeader == "" {
-				producedByHeader = "unknown"
-			}
+			producedByHeader = "unknown"
 		}
 
 		if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent
