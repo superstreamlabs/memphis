@@ -5,7 +5,7 @@
 
 .partition-item {
     cursor: pointer;
-    width: 150px;
+    width: 140px;
     height: 40px;
     vertical-align: middle;
     display: flex;
@@ -33,7 +33,7 @@
     border-radius: 50px;
     color: rgb(29, 29, 29);
     background-color: rgb(255, 255, 255);
-    width: 150px;
+    width: 140px;
     height: 34px;
     border-color: rgb(255, 255, 255);
     font-size: 13px;
@@ -49,13 +49,10 @@
     .filter-partition-container {
         display: flex;
         justify-content: space-between;
-        width: 130px;
+        width: 120px;
         cursor: pointer;
         .filter-title {
             color: #737373;
-        }
-        .partition-icon{
-            margin-right: 5px
         }
     }
 }

@@ -54,10 +54,8 @@ const PartitionsFilter = ({ partitions_number }) => {
         <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
             <div className="filter-partition-btn">
                 <div className="filter-partition-container">
-                    <div>
-                        <img src={partitionIcon} alt="PartitionIcon" className="partition-icon" />
-                        {selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}
-                    </div>
+                    <img src={partitionIcon} alt="PartitionIcon" className="partition-icon" />
+                    <div>{selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}</div>
                     <img src={CollapseArrow} alt="CollapseArrow" />
                 </div>
             </div>
