@@ -22,7 +22,7 @@ const Tag = ({ tag, onDelete, editable, border = false, onClick, rounded = false
             className="tag-wrapper"
             key={tag.name || tag}
             style={{
-                background: `rgba(${tag.color || ColorPalette[4]},0.2)`,
+                background: `rgba(${tag.color || ColorPalette[4]},0.1)`,
                 borderColor: border ? `rgb(${tag.color || ColorPalette[4]})` : 'transparent',
                 borderRadius: rounded ? '20px' : '4px'
             }}
