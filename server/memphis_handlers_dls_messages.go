@@ -94,14 +94,8 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	poisonedCgs := []string{}
 	if station.IsNative {
 		producedByHeader = headersJson["$memphis_producedBy"]
-
-		// This check for backward compatability
 		if producedByHeader == "" {
-			producedByHeader = headersJson["producedBy"]
-			if producedByHeader == "" {
-				serv.Warnf("handleNewUnackedMsg: Error while getting notified about a poison message: Missing mandatory message headers, please upgrade the SDK version you are using")
-				return nil
-			}
+			producedByHeader = "unknown"
 		}
 
 		if producedByHeader == "$memphis_dls" { // skip poison messages which have been resent

@@ -165,6 +165,12 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 				analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
 			}
 		}
+	} else {
+		if version < 2 {
+			err := errors.New("To consume from this station please upgrade your SDK version")
+			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
+			return []int{}, err
+		}
 	}
 
 	consumerGroupExist, consumerFromGroup, err := isConsumerGroupExist(consumerGroup, station.ID)
