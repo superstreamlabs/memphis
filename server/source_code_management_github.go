@@ -170,18 +170,24 @@ func updateGithubIntegration(user models.User, keys map[string]interface{}, prop
 	for _, key := range keys["connected_repos"].([]interface{}) {
 		connectedRepoDetails := key.(map[string]interface{})
 		var repoOwner string
-		repoOwnerInterface, ok := connectedRepoDetails["repo_owner"].([]interface{})
-		if ok {
-			for _, owner := range repoOwnerInterface {
-				repoOwner = owner.(string)
+		repoOwnerStr, ok := connectedRepoDetails["repo_owner"].(string)
+		if !ok {
+			repoOwnerInterface, ok := connectedRepoDetails["repo_owner"].([]interface{})
+			if ok {
+				for _, owner := range repoOwnerInterface {
+					repoOwner = owner.(string)
+				}
+			} else {
+				userDetails, _, err := client.Users.Get(context.Background(), "")
+				if err != nil {
+					return models.Integration{}, err
+				}
+				repoOwner = userDetails.GetLogin()
 			}
 		} else {
-			userDetails, _, err := client.Users.Get(context.Background(), "")
-			if err != nil {
-				return models.Integration{}, err
-			}
-			repoOwner = userDetails.GetLogin()
+			repoOwner = repoOwnerStr
 		}
+
 		_, _, err = client.Repositories.Get(context.Background(), repoOwner, connectedRepoDetails["repo_name"].(string))
 		if err != nil {
 			if strings.Contains(err.Error(), "Not Found") {
