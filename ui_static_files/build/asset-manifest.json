@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.8fb8107e.css",
-    "main.js": "/static/js/main.d49d9ecd.js",
+    "main.css": "/static/css/main.f11c122a.css",
+    "main.js": "/static/js/main.e39854b7.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -148,6 +148,7 @@
     "static/media/DeadLetteredMessages.svg": "/static/media/DeadLetteredMessages.585f63bd9ae514421daf68c91edb41c1.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
+    "static/media/integratedIcon.svg": "/static/media/integratedIcon.2830b402e968acc07f7e479782d0f701.svg",
     "static/media/githubBranchIcon.svg": "/static/media/githubBranchIcon.584358d0c1bebd525947ddc5abc29bf3.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
     "static/media/schemaIcon.svg": "/static/media/schemaIcon.0a6892a86a18f11ccf9f3b88dcb32d8f.svg",
@@ -233,6 +234,7 @@
     "static/media/leaderDetails.svg": "/static/media/leaderDetails.4fc16d0b0db4d9be1e3f5fffe0d0442d.svg",
     "static/media/documentIcon.svg": "/static/media/documentIcon.ddd3a6eec0e833b80782299f4728ae9a.svg",
     "static/media/notUsedIcon.svg": "/static/media/notUsedIcon.d34b2a8e7cd5f8c760477123f305b2ab.svg",
+    "static/media/codeIconBlack.svg": "/static/media/codeIconBlack.e0488e37f910267edf5a64ba07c438c6.svg",
     "static/media/deleteIcon.svg": "/static/media/deleteIcon.fa438e877ea1cdfbbd5e49624303aecf.svg",
     "static/media/documentIconActive.svg": "/static/media/documentIconActive.ab4e72d74aa4241e4fd6c43d35b47a30.svg",
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
@@ -295,7 +297,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.8fb8107e.css",
-    "static/js/main.d49d9ecd.js"
+    "static/css/main.f11c122a.css",
+    "static/js/main.e39854b7.js"
   ]
 }

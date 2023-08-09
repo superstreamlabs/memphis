@@ -35,8 +35,6 @@ const initialState = {
     stationFilteredList: [],
     schemaList: [],
     schemaFilteredList: [],
-    functionList: [],
-    functionFilteredList: [],
     logsFilter: [],
     integrationsList: [],
     isLatest: true,

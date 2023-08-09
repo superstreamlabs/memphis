@@ -1,17 +1,35 @@
-.schema-container {
+.function-container {
     width: calc(100% - 90px);
     position: absolute;
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-
+    .header-flex-wrapper{
+        display: flex;
+        gap: 10px;
+        .integrated-wrapper{
+            display: flex;
+            padding: 3px 10px;
+            align-items: center;
+            border-radius: 32px;
+            border: 1px solid #E1E1E1;
+            gap: 3px;
+            font-size: 14px;
+            font-family: 'InterMedium';
+            svg{
+                color: black;
+                width: 15px;
+                height: 15px;
+            }
+        }
+    }
     .action-section {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
     }
 
-    .schema-list {
+    .function-list {
         height: calc(95vh - 80px);
         width: 100%;
         position: relative;
@@ -23,7 +41,7 @@
         padding: 3px;
         align-content: flex-start;
         flex-wrap: wrap;
-        .no-schema-to-display {
+        .no-function-to-display {
             position: relative;
             display: flex;
             flex-direction: column;

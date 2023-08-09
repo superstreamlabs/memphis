@@ -13,20 +13,22 @@
 import './style.scss';
 
 import { IoClose, IoGitBranch } from 'react-icons/io5';
-import { FaCode } from 'react-icons/fa';
-import { FiGitCommit } from 'react-icons/fi';
-import { Drawer } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
+import { FiGitCommit } from 'react-icons/fi';
+import { FaCode } from 'react-icons/fa';
+import { Drawer } from 'antd';
 
 import { parsingDate } from '../../../../services/valueConvertor';
-import TagsList from '../../../../components/tagList';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import pathDomains from '../../../../router';
+import codeIconBlack from '../../../../assets/images/codeIconBlack.svg';
+import githubBranchIcon from '../../../../assets/images/githubBranchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import Tag from '../../../../components/tag';
+import TagsList from '../../../../components/tagList';
 import CustomTabs from '../../../../components/Tabs';
+import pathDomains from '../../../../router';
+import Tag from '../../../../components/tag';
 
 function FunctionBox({ funcDetails }) {
     const history = useHistory();
@@ -73,7 +75,7 @@ function FunctionBox({ funcDetails }) {
                     </div>
                     <div className="function-details">
                         <div className="function-repo">
-                            <IoGitBranch />
+                            <img src={githubBranchIcon} alt="github-branch-icon" />
                             <OverflowTip text={functionDetails?.repository - functionDetails?.branch} maxWidth={'150px'}>
                                 <span>
                                     {functionDetails?.repository} - {functionDetails?.branch}
@@ -81,7 +83,7 @@ function FunctionBox({ funcDetails }) {
                             </OverflowTip>
                         </div>
                         <div className="function-code-type">
-                            <FaCode />
+                            <img src={codeIconBlack} alt="code-icon" />
                             <OverflowTip text={functionDetails?.language} maxWidth={'150px'}>
                                 <span>{functionDetails?.language}</span>
                             </OverflowTip>
