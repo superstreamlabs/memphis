@@ -397,7 +397,7 @@ const App = withRouter((props) => {
                                     ></AppWrapper>
                                 }
                             />
-                            <PrivateRoute
+                            {/* <PrivateRoute
                                 exact
                                 path={`${pathDomains.functions}`}
                                 component={
@@ -422,7 +422,7 @@ const App = withRouter((props) => {
                                         }
                                     ></AppWrapper>
                                 }
-                            />
+                            /> */}
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.schemaverse}/create`}
@@ -574,7 +574,7 @@ const App = withRouter((props) => {
                                     ></AppWrapper>
                                 }
                             />
-                            <PrivateRoute
+                            {/* <PrivateRoute
                                 exact
                                 path={`${pathDomains.functions}`}
                                 component={
@@ -599,7 +599,7 @@ const App = withRouter((props) => {
                                         }
                                     ></AppWrapper>
                                 }
-                            />
+                            /> */}
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.schemaverse}/create`}

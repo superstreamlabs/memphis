@@ -32,6 +32,7 @@ import Button from '../button';
 import Input from '../Input';
 import Copy from '../copy';
 import pathDomains from '../../router';
+import CloudOnly from '../cloudOnly';
 
 loader.init();
 loader.config({ monaco });
@@ -40,7 +41,7 @@ const partitons = ['all'];
 const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const history = useHistory();
-    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 120 : 60));
+    const [messageExample, setMessageExample] = useState(generateJSONWithMaxLength(isCloud() ? 120 : 55));
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({});
 
@@ -55,7 +56,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
     };
 
     const generateMessage = () => {
-        setMessageExample(generateJSONWithMaxLength(isCloud() ? 120 : 60));
+        setMessageExample(generateJSONWithMaxLength(isCloud() ? 120 : 55));
     };
 
     const handleEditorChange = (newValue) => {
@@ -227,14 +228,22 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     </Form.List>
                     <Divider className="seperator" />
                     <div className="by-pass-switcher">
-                        <TitleComponent headerTitle="Bypass schema enforcement" typeTitle="sub-header" headerDescription="Check this box to avoid schema validation" />
-                        <Form.Item className="form-input" name="bypass_schema" initialValue={false}>
-                            <Switcher onChange={(e) => updateFormState('bypass_schema', e)} checked={formFields.bypass_schema} />
+                        <TitleComponent
+                            headerTitle="Bypass schema enforcement"
+                            cloudOnly={true}
+                            typeTitle="sub-header"
+                            headerDescription="Check this box to avoid schema validation"
+                        />
+                        <Form.Item className="form-input" name="bypass_schema" initialValue={true}>
+                            <Switcher disabled={!isCloud()} onChange={(e) => updateFormState('bypass_schema', e)} checked={isCloud() ? formFields.bypass_schema : true} />
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
                     <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
-                        <p className="field-title">Partition</p>
+                        <div className="header-flex">
+                            <p className="field-title">Partition</p>
+                            {!isCloud() && <CloudOnly position={'relative'} />}
+                        </div>
                         <SelectComponent
                             value={formFields.partition_number || partitons[0]}
                             colorType="navy"
@@ -248,7 +257,10 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             disabled={!isCloud()}
                         />
                     </Form.Item>
-                    <p className="field-title">Number of records</p>
+                    <div className="header-flex">
+                        <p className="field-title">Number of records</p>
+                        {!isCloud() && <CloudOnly position={'relative'} />}
+                    </div>
                     <Form.Item className="form-input" name="amount" initialValue={1}>
                         <InputNumberComponent
                             min={1}
