@@ -18,7 +18,6 @@ import AuthService from './services/auth';
 import { isCloud } from './services/valueConvertor';
 import { CLOUD_URL } from './config';
 import pathDomains from './router';
-import { LOCAL_STORAGE_SKIP_GET_STARTED } from './const/localStorageConsts';
 
 function PrivateRoute(props) {
     const { component: Component, ...rest } = props;

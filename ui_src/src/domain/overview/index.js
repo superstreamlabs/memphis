@@ -211,20 +211,20 @@ function OverView() {
                                         Welcome, <span className="username">{username}</span>
                                     </h1>
                                 )}
-                                {isCloud() && (
-                                    <div className="org-details">
+                                <div className="org-details">
+                                    {isCloud() && (
                                         <div className="hostname">
                                             <p>Account ID : </p>
                                             <span>{localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)}</span>
                                             <Copy width="12" data={localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)} />
                                         </div>
-                                        <div className="hostname">
-                                            <p>Broker hostname : </p>
-                                            <span>{host}</span>
-                                            <Copy width="12" data={host} />
-                                        </div>
+                                    )}
+                                    <div className="hostname">
+                                        <p>Broker hostname : </p>
+                                        <span>{host}</span>
+                                        <Copy width="12" data={host} />
                                     </div>
-                                )}
+                                </div>
                             </div>
                         </div>
                         <div className="btn-section">

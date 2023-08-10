@@ -205,9 +205,7 @@ function Requests() {
                         <p className="ammount">${totalDataOutPrice?.toLocaleString('en-US')}</p>
                     </span>
                     <span className="billing-item">
-                        <p className="item">
-                            Discount <label className="discount-badge">private-beta</label>
-                        </p>
+                        <p className="item">Discount</p>
                         <p className="ammount">${totalDiscount?.toLocaleString('en-US')}</p>
                     </span>
                     <Divider />

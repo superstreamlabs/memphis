@@ -16,10 +16,14 @@ import React from 'react';
 import cloudOnlyIcon from '../../assets/images/cloudOnlyIcon.svg';
 import TooltipComponent from '../tooltip/tooltip';
 
-const CloudOnly = () => {
+const CloudOnly = ({ position }) => {
+    const style = {
+        position: position || 'absolute'
+    };
     return (
         <TooltipComponent
             className="cloud-only-tooltip"
+            style={style}
             text={
                 <span className="cloudOnlyIcon">
                     Available in
@@ -30,7 +34,7 @@ const CloudOnly = () => {
                 </span>
             }
         >
-            <img src={cloudOnlyIcon} alt="cloudOnly" className="cloud-only" />;
+            <img src={cloudOnlyIcon} alt="cloudOnly" className="cloud-only" />
         </TooltipComponent>
     );
 };

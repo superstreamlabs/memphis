@@ -139,6 +139,13 @@
         .ant-input-number-handler-wrap {
             opacity: 1;
         }
+        .header-flex{
+            display: flex;
+            gap: 5px;
+            p{
+                margin: 0;
+            }
+        }
     }
     .by-pass-switcher {
         display: flex;
