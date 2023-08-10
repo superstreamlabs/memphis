@@ -248,7 +248,7 @@ function OverView() {
                     <div className="top-component">
                         <GenericDetails />
                     </div>
-                    <div className="overview-components">
+                    <div className={isCloud() ? "overview-components overview-components-cloud": "overview-components"}>
                         <div className="left-side">
                             <FailedStations createStationTrigger={(e) => modalFlip(e)} />
                             <Throughput />
