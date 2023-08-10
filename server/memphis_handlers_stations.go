@@ -175,23 +175,6 @@ func (s *Server) createStationDirectIntern(c *client,
 	jsApiResp := JSApiStreamCreateResponse{ApiResponse: ApiResponse{Type: JSApiStreamCreateResponseType}}
 	memphisGlobalAcc := s.MemphisGlobalAccount()
 
-	if csr.PartitionsNumber == 0 && isNative {
-		errMsg := fmt.Errorf("you are using an old SDK, make sure to update your SDK")
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect -  tried to use an old SDK", csr.TenantName, csr.Username)
-		jsApiResp.Error = NewJSStreamCreateError(errMsg)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
-		return
-	}
-
-	if (csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1) && isNative {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
-		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
-		jsApiResp.Error = NewJSStreamCreateError(errMsg)
-		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
-		return
-	}
-	partitionsList := make([]int, 0)
-
 	stationName, err := StationNameFromStr(csr.StationName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at StationNameFromStr: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -227,7 +210,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		csr.TenantName = t.Name
 	}
 
-	exist, _, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
+	exist, station, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user:%v]createStationDirect at db.GetStationByName: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -235,11 +218,28 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if exist {
+	if exist && ((csr.PartitionsNumber == 0 && len(station.PartitionsList) == 0) || (csr.PartitionsNumber > 0 && len(station.PartitionsList) > 0)) {
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
 	}
+
+	if csr.PartitionsNumber == 0 && isNative {
+		errMsg := fmt.Errorf("you are using an old SDK, make sure to update your SDK")
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect -  tried to use an old SDK", csr.TenantName, csr.Username)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+
+	if (csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1) && isNative {
+		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
+		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+	partitionsList := make([]int, 0)
 
 	schemaName := csr.SchemaName
 	var schemaDetails models.SchemaDetails
