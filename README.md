@@ -148,7 +148,7 @@ Create a new schema | :white_check_mark: | :white_check_mark: | :white_check_mar
 Enforce a schema Protobuf | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Enforce a schema Json | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :construction: (WIP)
 Enforce a schema GraphQL | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
-Enforce a schema Avro | :white_check_mark: | :white_check_mark: | :white_check_mark: | :construction: (WIP) | :x: | :x:
+Enforce a schema Avro | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Detach a schema | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :x:
 Produce | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark:
 Add headers | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark:
