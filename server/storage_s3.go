@@ -52,8 +52,17 @@ func cacheDetailsS3(keys map[string]interface{}, properties map[string]bool, ten
 	s3Integration.Keys["secret_key"] = keys["secret_key"].(string)
 	s3Integration.Keys["bucket_name"] = keys["bucket_name"].(string)
 	s3Integration.Keys["region"] = keys["region"].(string)
-	s3Integration.Keys["url"] = keys["url"].(string)
-	s3Integration.Keys["s3_path_style"] = keys["s3_path_style"].(string)
+	if _, ok := s3Integration.Keys["url"].(string); ok {
+		s3Integration.Keys["url"] = keys["url"].(string)
+	} else {
+		s3Integration.Keys["url"] = ""
+	}
+	if _, ok := s3Integration.Keys["s3_path_style"].(string); ok {
+		s3Integration.Keys["s3_path_style"] = keys["s3_path_style"].(string)
+	} else {
+		s3Integration.Keys["s3_path_style"] = "false"
+
+	}
 	s3Integration.Name = "s3"
 	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
 		IntegrationsConcurrentCache.Add(tenantName, map[string]interface{}{"s3": s3Integration})
