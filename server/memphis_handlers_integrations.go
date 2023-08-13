@@ -263,14 +263,15 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
 	}
 
-	integration, branchesMap, err := getSourceCodeDetails(user.TenantName, body, "get_all_repos")
+	sourceCodeIntegration, branchesMap, err := getSourceCodeDetails(user.TenantName, body, "get_all_repos")
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 	if integration.Name == "github" {
-		c.IndentedJSON(200, gin.H{"integaraion": integration, "repos": branchesMap})
+		integration = sourceCodeIntegration
+		c.IndentedJSON(200, gin.H{"integration": integration, "repos": branchesMap})
 		return
 	}
 	c.IndentedJSON(200, integration)
@@ -298,6 +299,11 @@ func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 		}
 		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if integration.Name == "" {
+		c.IndentedJSON(200, nil)
 		return
 	}
 
