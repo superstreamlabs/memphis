@@ -140,7 +140,7 @@
             position: relative;
             width: 100%;
             min-width: 1250px;
-            height: calc(100% - 110px);
+            height: calc(100% - 185px);
             justify-content: space-between;
             gap: 1vw;
             .left-side {
@@ -169,6 +169,9 @@
                 height: 100%;
                 position: relative;
             }
+        }
+        .overview-components-cloud{
+            height: calc(100% - 110px) !important;
         }
     }
     .no-data {

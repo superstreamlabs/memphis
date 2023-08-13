@@ -31,7 +31,7 @@ const GenerateTokenModal = ({ host, close }) => {
     const [formFields, setFormFields] = useState({
         username: appUsers[0]?.name || '',
         connection_token: '',
-        account_id: isCloud() ? localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID) : 1,
+        account_id: isCloud() ? Number(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)) : 1,
         token_expiry_in_minutes: 123,
         refresh_token_expiry_in_minutes: 10000092
     });
@@ -66,7 +66,7 @@ const GenerateTokenModal = ({ host, close }) => {
             setFormFields({
                 username: appUsers[0]?.name || '',
                 password: '',
-                account_id: isCloud() ? localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID) : 1,
+                account_id: isCloud() ? Number(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)) : 1,
                 token_expiry_in_minutes: 123,
                 refresh_token_expiry_in_minutes: 10000092
             });
