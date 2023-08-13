@@ -67,7 +67,7 @@ func cacheDetailsS3(keys map[string]interface{}, properties map[string]bool, ten
 }
 
 func (it IntegrationsHandler) handleCreateS3Integration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
-	statusCode, _, err := it.handleS3Integration(tenantName, keys)
+	statusCode, keys, err := it.handleS3Integration(tenantName, keys)
 	if err != nil {
 		return models.Integration{}, statusCode, err
 	}
@@ -119,8 +119,20 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 	secretKey := keys["secret_key"]
 	region := keys["region"]
 	bucketName := keys["bucket_name"]
-	pathStyle, _ := strconv.ParseBool(keys["s3_path_style"].(string))
-	url := keys["url"]
+	var pathStyle bool
+	var url string
+	if _, ok := keys["s3_path_style"].(string); ok {
+		pathStyle, _ = strconv.ParseBool(keys["s3_path_style"].(string))
+	} else {
+		pathStyle = false
+		keys["s3_path_style"] = "false"
+	}
+	if _, ok := keys["url"].(string); ok {
+		url = keys["url"].(string)
+	} else {
+		url = ""
+		keys["url"] = url
+	}
 
 	if keys["secret_key"] == "" {
 		exist, integrationFromDb, err := db.GetIntegration("s3", tenantName)
@@ -155,7 +167,7 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 	cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
 		awsconfig.WithCredentialsProvider(provider),
 		awsconfig.WithRegion(region.(string)),
-		awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region.(string), url.(string))),
+		awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(region.(string), url)),
 	)
 	if err != nil {
 		return 500, map[string]interface{}{}, err
@@ -165,7 +177,7 @@ func (it IntegrationsHandler) handleS3Integration(tenantName string, keys map[st
 		o.UsePathStyle = pathStyle
 	})
 
-	statusCode, err := testS3Integration(svc, bucketName.(string), url.(string))
+	statusCode, err := testS3Integration(svc, bucketName.(string), url)
 	if err != nil {
 		return statusCode, map[string]interface{}{}, err
 	}
