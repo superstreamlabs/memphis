@@ -287,28 +287,26 @@ func (s *Server) CreateInternalJetStreamResources() {
 		}
 	} else {
 		s.WaitForLeaderElection()
-		if s.JetStreamIsLeader() {
-			for !ready { // wait for cluster to be ready if we are in cluster mode
-				timeout := time.NewTimer(1 * time.Minute)
-				go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
-				select {
-				case <-timeout.C:
-					s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
-					err := <-successCh
-					if err != nil {
-						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
-						continue
-					}
-					ready = true
-				case err := <-successCh:
-					if err != nil {
-						s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
-						<-timeout.C
-						continue
-					}
-					timeout.Stop()
-					ready = true
+		for !ready { // wait for cluster to be ready if we are in cluster mode
+			timeout := time.NewTimer(1 * time.Minute)
+			go tryCreateInternalJetStreamResources(s, retentionDur, successCh, true)
+			select {
+			case <-timeout.C:
+				s.Warnf("CreateInternalJetStreamResources: system streams creation takes more than a minute")
+				err := <-successCh
+				if err != nil {
+					s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
+					continue
 				}
+				ready = true
+			case err := <-successCh:
+				if err != nil {
+					s.Warnf("CreateInternalJetStreamResources: %v", err.Error())
+					<-timeout.C
+					continue
+				}
+				timeout.Stop()
+				ready = true
 			}
 		}
 	}
