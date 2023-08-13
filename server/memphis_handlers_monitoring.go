@@ -954,7 +954,7 @@ func checkCompStatus(components models.Components) string {
 	return healthyStatus
 }
 
-func getDbStorageSize() (float64, error) {
+func getDbStorageUsage() (float64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := db.MetadataDbClient.Client.Acquire(ctx)

@@ -333,17 +333,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			dockerPorts := []int{}
 			storage_size := getUnixStorageSize()
 			if strings.Contains(containerName, "metadata") {
-				dbStorageSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
 				perc := 0
 				if storage_size > 0 {
-					perc = int(math.Ceil((float64(dbStorageSize) / float64(storage_size)) * 100))
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
 				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat(dbStorageSize),
+					Current:    shortenFloat(dbStorageUsage),
 					Percentage: perc,
 				}
 				containerName = strings.TrimPrefix(containerName, "memphis-")
@@ -550,17 +550,17 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageStat := defaultStat
 			dockerPorts := []int{}
 			if strings.Contains(containerName, "metadata") && !strings.Contains(containerName, "coordinator") {
-				dbStorageSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
 				perc := 0
 				if storage_size > 0 {
-					perc = int(math.Ceil((float64(dbStorageSize) / float64(storage_size)) * 100))
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
 				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
-					Current:    shortenFloat(dbStorageSize),
+					Current:    shortenFloat(dbStorageUsage),
 					Percentage: perc,
 				}
 
@@ -715,7 +715,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageUsage := float64(0)
 			if isMinikube {
 				if strings.Contains(strings.ToLower(pod.Name), "metadata") {
-					storageUsage, err = getDbStorageSize()
+					storageUsage, err = getDbStorageUsage()
 					if err != nil {
 						return components, metricsEnabled, err
 					}
