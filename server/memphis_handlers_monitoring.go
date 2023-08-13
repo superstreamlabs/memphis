@@ -954,47 +954,78 @@ func checkCompStatus(components models.Components) string {
 	return healthyStatus
 }
 
-func getDbStorageSize() (float64, float64, error) {
+func getDbStorageSize() (float64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), db.DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := db.MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
 	defer conn.Release()
-	var dbStorageSize, totalSize float64
-	query := `SELECT pg_database_size($1) AS db_size,
-	(SELECT coalesce(sum(pg_total_relation_size(relid)), 0) 
-	 FROM pg_catalog.pg_statio_all_tables) AS total_size`
+	var dbStorageSize float64
+	query := `SELECT pg_database_size($1) AS db_size`
 	stmt, err := conn.Conn().Prepare(ctx, "get_db_storage_size", query)
-	if err != nil {
-		return 0, 0, err
-	}
-	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.METADATA_DB_DBNAME).Scan(&dbStorageSize, &totalSize)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return dbStorageSize, totalSize, nil
-}
-
-func getUnixStorageSize() (float64, error) {
-	out, err := exec.Command("df", "-h", "/").Output()
 	if err != nil {
 		return 0, err
 	}
-	var storage_size float64
+	err = conn.Conn().QueryRow(ctx, stmt.Name, configuration.METADATA_DB_DBNAME).Scan(&dbStorageSize)
+	if err != nil {
+		return 0, err
+	}
+
+	return dbStorageSize, nil
+}
+
+func getUnixStorageSize() float64 {
+	out, err := exec.Command("df", "-h", "/").Output()
+	if err != nil {
+		serv.Errorf("getUnixStorageSize: " + err.Error())
+		return 0
+	}
+	var storageSize float64
 	output := string(out[:])
 	splitted_output := strings.Split(output, "\n")
 	parsedline := strings.Fields(splitted_output[1])
 	if len(parsedline) > 0 {
-		stringSize := strings.Split(parsedline[1], "G")
-		storage_size, err = strconv.ParseFloat(stringSize[0], 64)
-		if err != nil {
-			return 0, err
+		re := regexp.MustCompile(`^([\d.]+)([A-Za-z]+)$`)
+		matches := re.FindStringSubmatch(parsedline[1])
+		if len(matches) != 3 {
+			serv.Warnf("getUnixStorageSize: invalid size format")
+			return 0
 		}
+		sizeStr := matches[1]
+		unit := matches[2]
+		storageSize, err = strconv.ParseFloat(sizeStr, 64)
+		if err != nil {
+			serv.Errorf("getUnixStorageSize: " + err.Error())
+			return 0
+		}
+		switch unit {
+		case "T":
+			storageSize *= 1024 * 1024 * 1024 * 1024 // Terabytes to bytes
+		case "G":
+			storageSize *= 1024 * 1024 * 1024 // Gigabytes to bytes
+		case "M":
+			storageSize *= 1024 * 1024 // Megabytes to bytes
+		case "K":
+			storageSize *= 1024 // Kilobytes to bytes
+		case "Ti":
+			storageSize *= 1024 * 1024 * 1024 * 1024 // Tebibytes to bytes
+		case "Gi":
+			storageSize *= 1024 * 1024 * 1024 // Gibibytes to bytes
+		case "Mi":
+			storageSize *= 1024 * 1024 // Mebibytes to bytes
+		case "Ki":
+			storageSize *= 1024 // Kibibytes to bytes
+		default:
+			storageSize = 0
+			serv.Warnf("getUnixStorageSize: unsupported unit: %s", unit)
+		}
+	} else {
+		serv.Warnf("getUnixStorageSize: invalid size format")
+		return 0
 	}
-	return storage_size * 1024 * 1024 * 1024, nil
+	return storageSize
 }
 
 func getUnixMemoryUsage() (float64, error) {
