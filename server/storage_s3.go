@@ -61,7 +61,6 @@ func cacheDetailsS3(keys map[string]interface{}, properties map[string]bool, ten
 		s3Integration.Keys["s3_path_style"] = keys["s3_path_style"].(string)
 	} else {
 		s3Integration.Keys["s3_path_style"] = "false"
-
 	}
 	s3Integration.Name = "s3"
 	if _, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
