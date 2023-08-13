@@ -445,7 +445,7 @@ func GetGithubContentFromConnectedRepo(githubIntegration models.Integration, con
 				var content *github.RepositoryContent
 				var commit *github.RepositoryCommit
 				var contentMap map[string]interface{}
-				if *fileContent.Type == "file" && strings.HasSuffix(*fileContent.Name, ".yaml") {
+				if *fileContent.Type == "file" && *fileContent.Name == "memphis.yaml" {
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
 					if err != nil {
 						continue

@@ -256,7 +256,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	var ccr createConsumerRequestV1
-	var resp createConsumerResponseV1
+	var resp createConsumerResponse
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
 	if err != nil {
@@ -279,30 +279,35 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	if ccr.StartConsumeFromSequence <= 0 {
 		err := errors.New("startConsumeFromSequence has to be a positive number")
 		serv.Warnf("[tenant: %v]createConsumerDirect: %v", tenantName, err.Error())
-		respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	if ccr.LastMessages < -1 {
 		err := errors.New("min value for LastMessages is -1")
 		serv.Warnf("[tenant: %v]createConsumerDirect: %v", tenantName, err.Error())
-		respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	if ccr.StartConsumeFromSequence > 1 && ccr.LastMessages > -1 {
 		err := errors.New("consumer creation options can't contain both startConsumeFromSequence and lastMessages")
 		serv.Warnf("[tenant: %v]createConsumerDirect: %v", tenantName, err.Error())
-		respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
 
 	partitions, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, ccr.RequestVersion, ccr.StartConsumeFromSequence, ccr.LastMessages)
 	if err != nil {
-		respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	}
-	resp.PartitionsUpdate = models.PartitionsUpdate{PartitionsList: partitions}
-	respondWithResp(s.MemphisGlobalAccountString(), s, reply, &resp)
+	if len(partitions) == 0 && ccr.RequestVersion < 2 {
+		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
+	} else {
+		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
+
+	}
 }
 
 func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station models.Station) ([]models.Cg, []models.Cg, []models.Cg, error) { // for socket io endpoint

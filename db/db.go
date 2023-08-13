@@ -6663,7 +6663,7 @@ func CreateUserIfNotExist(username string, userType string, hashedPassword strin
 	ON CONFLICT (username, tenant_name) DO NOTHING
 	RETURNING id`
 
-	stmt, err := conn.Conn().Prepare(ctx, "create_new_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "create_new_user_if_not_exist", query)
 	if err != nil {
 		return models.User{}, err
 	}

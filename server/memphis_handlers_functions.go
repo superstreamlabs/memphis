@@ -80,9 +80,12 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 		tagsStrings := []string{}
 		if ok {
 			tagsStrings = make([]string, len(fucntionContentMap["tags"].([]interface{})))
-			for i, v := range tagsInterfaceSlice {
-				if str, ok := v.(string); ok {
-					tagsStrings[i] = str
+			for i, tag := range tagsInterfaceSlice {
+				tagMap := tag.(map[interface{}]interface{})
+				for _, v := range tagMap {
+					if str, ok := v.(string); ok {
+						tagsStrings[i] = str
+					}
 				}
 			}
 		}
