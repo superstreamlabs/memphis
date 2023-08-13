@@ -40,7 +40,7 @@
         }
         .coming-soon {
             background-color: var(--purple);
-            color: var(--white);
+            color: var(--white) !important;
             font-size: 10px;
             position: relative;
             border-radius: 32px;

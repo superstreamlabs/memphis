@@ -16,12 +16,12 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"math/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"memphis/analytics"
 	"memphis/db"
 	"memphis/memphis_cache"
@@ -1982,27 +1982,30 @@ func getDefaultReplicas() int {
 }
 
 func updateSystemLiveness() {
-	stationsHandler := StationsHandler{S: serv}
-	stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
+	shouldSend, _ := shouldSendAnalytics()
+	if shouldSend {
+		stationsHandler := StationsHandler{S: serv}
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: %v", err.Error())
+			return
+		}
 
-	producersCount, err := db.CountAllActiveProudcers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
+		producersCount, err := db.CountAllActiveProudcers()
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: %v", err.Error())
+			return
+		}
 
-	consumersCount, err := db.CountAllActiveConsumers()
-	if err != nil {
-		serv.Warnf("updateSystemLiveness: %v", err.Error())
-		return
-	}
+		consumersCount, err := db.CountAllActiveConsumers()
+		if err != nil {
+			serv.Warnf("updateSystemLiveness: %v", err.Error())
+			return
+		}
 
-	analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
-	analytics.SendEvent("", "", analyticsParams, "system-is-up")
+		analyticsParams := map[string]interface{}{"total-messages": strconv.Itoa(int(totalMessages)), "total-dls-messages": strconv.Itoa(int(totalDlsMsgs)), "total-stations": strconv.Itoa(len(stations)), "active-producers": strconv.Itoa(int(producersCount)), "active-consumers": strconv.Itoa(int(consumersCount))}
+		analytics.SendEvent("", "", analyticsParams, "system-is-up")
+	}
 }
 
 func (umh UserMgmtHandler) GetRelevantSystemMessages() ([]SystemMessage, error) {

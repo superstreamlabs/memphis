@@ -146,7 +146,6 @@ func (s *Server) KillZombieResources() {
 		if firstIteration || count == 1*60 { // once in 1 hour
 			updateSystemLiveness()
 			count = 0
-
 		}
 		firstIteration = false
 		count++
