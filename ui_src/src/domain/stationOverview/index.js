@@ -31,6 +31,7 @@ const initializeState = {
     stationSocketData: {},
     stationPartition: -1
 };
+let sub;
 
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
@@ -39,6 +40,7 @@ const StationOverview = () => {
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
+    const [socketOn, setSocketOn] = useState(false);
 
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -82,7 +84,9 @@ const StationOverview = () => {
         }
     };
     useEffect(() => {
-        getStationDetails();
+        if (socketOn) {
+            getStationDetails();
+        }
     }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages]);
 
     useEffect(() => {
@@ -93,27 +97,9 @@ const StationOverview = () => {
         stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
     }, []);
 
-    useEffect(() => {
-        let sub;
+    const startListen = async () => {
         const jc = JSONCodec();
         const sc = StringCodec();
-        const subscribeAndListen = async () => {
-            try {
-                (async () => {
-                    const rawBrokerName = await state.socket?.request(
-                        `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
-                        sc.encode('SUB')
-                    );
-                    if (rawBrokerName) {
-                        const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                        sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
-                        listenForUpdates();
-                    }
-                })();
-            } catch (err) {
-                console.error('Error subscribing to station overview data:', err);
-            }
-        };
 
         const listenForUpdates = async () => {
             try {
@@ -122,6 +108,9 @@ const StationOverview = () => {
                         let data = jc.decode(msg.data);
                         sortData(data);
                         stationDispatch({ type: 'SET_SOCKET_DATA', payload: data });
+                        if (!socketOn) {
+                            setSocketOn(true);
+                        }
                     }
                 }
             } catch (err) {
@@ -129,27 +118,46 @@ const StationOverview = () => {
             }
         };
 
-        const stopListenAndSubscribe = async (subscribe = false) => {
+        try {
+            const rawBrokerName = await state.socket?.request(
+                `$memphis_ws_subs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}`,
+                sc.encode('SUB')
+            );
+            if (rawBrokerName) {
+                const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                sub = state.socket?.subscribe(`$memphis_ws_pubs.station_overview_data.${stationName}.${stationState?.stationPartition || -1}.${brokerName}`);
+                listenForUpdates();
+            }
+        } catch (err) {
+            console.error('Error subscribing to station overview data:', err);
+        }
+    };
+
+    const stopListen = async () => {
+        if (sub) {
             try {
                 await sub.unsubscribe();
-                subscribe && subscribeAndListen();
             } catch (err) {
                 console.error('Error unsubscribing from station overview data:', err);
             }
-        };
-
-        if (sub) {
-            stopListenAndSubscribe(true);
-        } else {
-            subscribeAndListen();
         }
+    };
 
+    useEffect(() => {
+        if (state.socket) {
+            startListen();
+        }
         return () => {
-            if (sub) {
-                stopListenAndSubscribe();
-            }
+            stopListen();
         };
-    }, [state?.socket, stationState?.stationPartition]);
+    }, [state.socket]);
+
+    useEffect(() => {
+        if (sub && socketOn) {
+            stopListen();
+            startListen();
+        }
+    }, [stationState?.stationPartition]);
 
     return (
         <StationStoreContext.Provider value={[stationState, stationDispatch]}>
