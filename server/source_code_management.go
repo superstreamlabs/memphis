@@ -61,8 +61,6 @@ func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, acti
 						}
 
 					}
-				} else if !ok {
-					return models.Integration{}, map[string]string{}, fmt.Errorf("failed get source code %s branches: github integration does not exist", k)
 				}
 			}
 		default:
