@@ -49,7 +49,8 @@ const Schemaverse = () => {
                             schemas={[
                                 { name: 'Protobuf', usage: state?.monitor_data?.schemas_details?.protobuf || 0 },
                                 { name: 'Json', usage: state?.monitor_data?.schemas_details?.json_schema || 0 },
-                                { name: 'GraphQL', usage: state?.monitor_data?.schemas_details?.Graphql || 0 }
+                                { name: 'GraphQL', usage: state?.monitor_data?.schemas_details?.Graphql || 0 },
+                                { name: 'Avro', usage: state?.monitor_data?.schemas_details?.avro || 0 }
                             ]}
                         />
                     </div>
