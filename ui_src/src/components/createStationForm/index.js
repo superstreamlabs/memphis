@@ -52,9 +52,7 @@ const retanionOptions = [
     {
         id: 4,
         value: 'ack_based',
-        disabled: isCloud() ? false : true,
-        label: 'Ack based',
-        onlyCloud: isCloud() ? false : true
+        label: 'Ack based'
     }
 ];
 
