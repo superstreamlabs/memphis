@@ -186,14 +186,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				isWindows = true
 				storageComp = defaultStat // TODO: add support for windows
 			default:
-				storage_size, err = getUnixStorageSize()
-				if err != nil {
-					return components, metricsEnabled, err
+				storage_size = getUnixStorageSize()
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
 				}
 				storageComp = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
+					Percentage: perc,
 				}
 				memUsage, err = getUnixMemoryUsage()
 				if err != nil {
@@ -318,10 +319,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
 			memoryLimit := float64(dockerStats.MemoryStats.Limit)
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
 			cpuStat := models.CompStats{
 				Total:      shortenFloat(cpuLimit),
 				Current:    shortenFloat(totalCpuUsage),
@@ -334,26 +331,36 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			storageStat := defaultStat
 			dockerPorts := []int{}
+			storage_size := getUnixStorageSize()
 			if strings.Contains(containerName, "metadata") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
+				}
 				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(dbStorageUsage),
+					Percentage: perc,
 				}
 				containerName = strings.TrimPrefix(containerName, "memphis-")
-			} else if strings.Contains(containerName, "cluster") {
+			} else if strings.Contains(containerName, "memphis-1") {
 				v, err := serv.Varz(nil)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
+				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
+					Percentage: perc,
 				}
 			}
 			for _, port := range container.Ports {
@@ -397,14 +404,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			isWindows = true
 			storageComp = defaultStat // TODO: add support for windows
 		default:
-			storage_size, err = getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
+			storage_size = getUnixStorageSize()
+			perc := 0
+			if storage_size > 0 {
+				perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
 			}
 			storageComp = models.CompStats{
 				Total:      shortenFloat(storage_size),
 				Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-				Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
+				Percentage: perc,
 			}
 			memUsage, err = getUnixMemoryUsage()
 			if err != nil {
@@ -528,10 +536,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
 			memoryLimit := float64(dockerStats.MemoryStats.Limit)
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
+			storage_size := getUnixStorageSize()
 			cpuStat := models.CompStats{
 				Total:      shortenFloat(cpuLimit),
 				Current:    shortenFloat(totalCpuUsage),
@@ -545,14 +550,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageStat := defaultStat
 			dockerPorts := []int{}
 			if strings.Contains(containerName, "metadata") && !strings.Contains(containerName, "coordinator") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
+				}
 				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(dbStorageUsage),
+					Percentage: perc,
 				}
 
 			} else if strings.Contains(containerName, "cluster") {
@@ -560,10 +569,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
+				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
+					Percentage: perc,
 				}
 			}
 			for _, port := range container.Ports {
@@ -702,11 +715,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageUsage := float64(0)
 			if isMinikube {
 				if strings.Contains(strings.ToLower(pod.Name), "metadata") {
-					storageUsage, _, err = getDbStorageSize()
+					storageUsage, err = getDbStorageUsage()
 					if err != nil {
 						return components, metricsEnabled, err
 					}
-				} else if strings.Contains(strings.ToLower(pod.Name), "cluster") {
+				} else if strings.Contains(strings.ToLower(pod.Name), "memphis-0") {
 					v, err := serv.Varz(nil)
 					if err != nil {
 						return components, metricsEnabled, err
