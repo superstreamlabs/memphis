@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.d2357107.css",
-    "main.js": "/static/js/main.beb6bc7e.js",
+    "main.js": "/static/js/main.6b1ef818.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -83,7 +83,7 @@
     "static/js/6476.634b9f6d.chunk.js": "/static/js/6476.634b9f6d.chunk.js",
     "static/js/1391.ba40a944.chunk.js": "/static/js/1391.ba40a944.chunk.js",
     "static/js/6619.03b4c4cd.chunk.js": "/static/js/6619.03b4c4cd.chunk.js",
-    "static/js/1448.2f35c683.chunk.js": "/static/js/1448.2f35c683.chunk.js",
+    "static/js/1448.9e4b081c.chunk.js": "/static/js/1448.9e4b081c.chunk.js",
     "static/js/4027.81c097fc.chunk.js": "/static/js/4027.81c097fc.chunk.js",
     "static/media/Inter-Bold.ttf": "/static/media/Inter-Bold.a73db89c43e44ca8f5e0.ttf",
     "static/media/Inter-SemiBold.ttf": "/static/media/Inter-SemiBold.45b4c2ae493bb481102f.ttf",
@@ -191,6 +191,7 @@
     "static/media/finishFlag.svg": "/static/media/finishFlag.cdd2d450a2a93dbfa465c9e00803394f.svg",
     "static/media/grayFinish.svg": "/static/media/grayFinish.5ebcc02830185386ebc7d136451079dd.svg",
     "static/media/partitionIcon.svg": "/static/media/partitionIcon.366540a11872c42c760905b6708b4af3.svg",
+    "static/media/index.umd.cjs": "/static/media/index.umd.411bcbb098030aa2d966.cjs",
     "static/media/file_download.svg": "/static/media/file_download.7010ceaf1a68c3e0941959b6f558ee5b.svg",
     "static/media/deadLetter.svg": "/static/media/deadLetter.0806dd1e9dce011b6b909e31634b0311.svg",
     "static/media/errorindication.svg": "/static/media/errorindication.6f6e388f5a1f899e9d6c810addcaf2d9.svg",
@@ -297,6 +298,6 @@
   },
   "entrypoints": [
     "static/css/main.d2357107.css",
-    "static/js/main.beb6bc7e.js"
+    "static/js/main.6b1ef818.js"
   ]
 }
