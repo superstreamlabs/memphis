@@ -47,7 +47,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
 
     useEffect(() => {
         produceMessagesRef.current = onFinish;
-    }, []);
+    }, [messageExample]);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -139,7 +139,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
         <div className="produce-modal-wrapper">
             <div className="produce-message">
                 <div className="generate-wrapper">
-                    <p className="field-title">Value</p>
+                    <p className="field-title">JSON-based value</p>
                     <div className="generate-action" onClick={() => generateMessage()}>
                         <img src={refresh} width="14" />
                         <span>Generate example</span>
@@ -220,7 +220,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                 <Form.Item>
                                     <div className="add-field" onClick={() => add()}>
                                         <FiPlus />
-                                        <span>Add field</span>
+                                        <span>New header</span>
                                     </div>
                                 </Form.Item>
                             </>
