@@ -2,6 +2,7 @@ import React from 'react';
 import './style.scss';
 import Lottie from 'lottie-react';
 import CloudOnly from '../cloudOnly';
+import { isCloud } from '../../services/valueConvertor';
 
 const TitleComponent = (props) => {
     const { headerTitle, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link, cloudOnly = false } = props;
@@ -27,7 +28,7 @@ const TitleComponent = (props) => {
                         {headerTitle}
                     </p>
                 )}
-                {cloudOnly && <CloudOnly position={'relative'} />}
+                {cloudOnly && !isCloud() && <CloudOnly position={'relative'} />}
             </div>
             {headerDescription && (
                 <p className="header-description" style={style?.description}>
