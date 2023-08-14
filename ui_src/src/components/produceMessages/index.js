@@ -102,7 +102,6 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
             await httpRequest('POST', ApiEndpoints.PRODUCE, bodyRequest);
             getStationDetails();
         } catch (error) {
-        } finally {
             setLoading(false);
         }
     };
@@ -230,7 +229,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     <div className="by-pass-switcher">
                         <TitleComponent
                             headerTitle="Bypass schema enforcement"
-                            cloudOnly={true}
+                            cloudOnly={isCloud() ? false : true}
                             typeTitle="sub-header"
                             headerDescription="Check this box to avoid schema validation"
                         />

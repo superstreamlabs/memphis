@@ -25,7 +25,7 @@ export const SDK_CODE_EXAMPLE = {
             host: '<memphis-host>',
             username: '<application type username>',
             connectionToken: '<broker-token>',
-            accountId: '<account-id>'
+            accountId: "<account-id>"
         });
 
         const producer = await memphisConnection.producer({
@@ -57,7 +57,7 @@ export const SDK_CODE_EXAMPLE = {
             host: '<memphis-host>',
             username: '<application type username>',
             connectionToken: '<broker-token>',
-            accountId: '<account-id>'
+            accountId: "<account-id>"
         });
 
         const consumer = await memphisConnection.consumer({
@@ -101,7 +101,7 @@ export const SDK_CODE_EXAMPLE = {
             host: '<memphis-host>',
             username: '<application type username>',
             connectionToken: '<broker-token>',
-            accountId: '<account-id>'
+            accountId: "<account-id>"
         });
 
         const producer = await memphisConnection.producer({
@@ -133,7 +133,7 @@ export const SDK_CODE_EXAMPLE = {
             host: '<memphis-host>',
             username: '<application type username>',
             connectionToken: '<broker-token>',
-            accountId: '<account-id>'
+            accountId: "<account-id>"
         });
 
         const consumer = await memphisConnection.consumer({
@@ -309,7 +309,7 @@ if __name__ == "__main__":
     },
 
     '.NET (C#)': {
-        langCode: "C#",
+        langCode: 'C#',
         installation: `dotnet add package Memphis.Client`,
         producer: `using System.Collections.Specialized;
 using System.Text;
@@ -444,6 +444,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
 --data-raw '{
     "username": "<application type username>",
     "connection_token": "<broker-token>",
+    "accountId": "<account-id>",
     "token_expiry_in_minutes": 123,
     "refresh_token_expiry_in_minutes": 10000092\n}'`
     },
@@ -505,6 +506,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         payload := strings.NewReader({
           "username": "<application type username>",
           "connection_token": "<broker-token>",
+          "accountId": "<account-id>",
           "token_expiry_in_minutes": 123,
           "refresh_token_expiry_in_minutes": 10000092
       })
@@ -563,6 +565,7 @@ axios(config)
 var data = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
+  "accountId": "<account-id>",
   "token_expiry_in_minutes": 123,
   "refresh_token_expiry_in_minutes": 10000092
 });
@@ -612,6 +615,7 @@ url = "localhost/auth/authenticate"
 payload = json.dumps({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
+  "accountId": "<account-id>",
   "token_expiry_in_minutes": 123,
   "refresh_token_expiry_in_minutes": 10000092
 })
@@ -675,6 +679,7 @@ myHeaders.append("Content-Type", "application/json");
 var raw = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
+  "accountId": "<account-id>",
   "token_expiry_in_minutes": 123,
   "refresh_token_expiry_in_minutes": 10000092
 });

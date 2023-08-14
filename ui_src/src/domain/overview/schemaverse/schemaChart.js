@@ -17,6 +17,7 @@ import { Badge } from 'antd';
 
 const SchemaChart = ({ schemas }) => {
     const [max, setMax] = useState(null);
+
     useEffect(() => {
         const max = schemas?.reduce((a, b) => (a.usage > b.usage ? a : b)).usage;
         setMax(max);

@@ -123,6 +123,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         codeEx.producer = codeEx.producer.replaceAll('localhost', restGWHost);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', restGWHost);
+        codeEx.producer = codeEx.producer.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
+        codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         if (username) {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<application type username>', username);
         }
