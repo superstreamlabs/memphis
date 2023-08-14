@@ -2016,26 +2016,8 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 	return nil
 }
 
-func validateRetentionType(retentionType string) error {
-	if retentionType == "ack_based" {
-		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
-	}
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
-
-	return nil
-}
-
 func getRetentionPolicy(retentionType string) RetentionPolicy {
 	return LimitsPolicy
-}
-
-func validateRetentionPolicy(policy RetentionPolicy) error {
-	if policy != LimitsPolicy {
-		return errors.New("the only supported retention type is limits")
-	}
-	return nil
 }
 
 func (sh StationsHandler) Produce(c *gin.Context) {

@@ -90,6 +90,21 @@ func validateStorageType(storageType string) error {
 	return nil
 }
 
+func validateRetentionType(retentionType string) error {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" && retentionType != "ack_based" {
+		return errors.New("retention type can be one of the following message_age_sec/messages/bytes/ack_based")
+	}
+
+	return nil
+}
+
+func validateRetentionPolicy(policy RetentionPolicy) error {
+	if policy != LimitsPolicy && policy != InterestPolicy {
+		return errors.New("the only supported retention types are limits/interest")
+	}
+	return nil
+}
+
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
 	if idempotencyWindow > 86400000 { // 24 hours
 		return errors.New("idempotency window can not exceed 24 hours")
