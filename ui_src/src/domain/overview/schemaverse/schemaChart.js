@@ -24,7 +24,7 @@ const SchemaChart = ({ schemas }) => {
     }, [schemas]);
 
     const getLength = (usage) => {
-        return usage / max;
+        return max === 0 ? 0 : usage / max;
     };
 
     return (
