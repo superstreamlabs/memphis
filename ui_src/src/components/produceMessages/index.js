@@ -233,7 +233,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                             typeTitle="sub-header"
                             headerDescription="Check this box to avoid schema validation"
                         />
-                        <Form.Item className="form-input" name="bypass_schema" initialValue={true}>
+                        <Form.Item className="form-input" name="bypass_schema" initialValue={isCloud() ? false : true}>
                             <Switcher disabled={!isCloud()} onChange={(e) => updateFormState('bypass_schema', e)} checked={isCloud() ? formFields.bypass_schema : true} />
                         </Form.Item>
                     </div>

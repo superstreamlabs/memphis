@@ -340,6 +340,7 @@ const ProduceConsumList = ({ producer }) => {
                 lBtnClick={() => setOpenProduceMessages(false)}
                 lBtnText={'Cancel'}
                 isLoading={produceloading}
+                keyListener={false}
             >
                 <ProduceMessages
                     stationName={stationState?.stationMetaData?.name}
