@@ -59,7 +59,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	data := message.Data
 	time := message.Time
 	lenPayload := len(data) + len(headers)
-
 	// backward compatibility
 	if accountName == "" {
 		accountName = s.MemphisGlobalAccountString()
@@ -77,8 +76,6 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
 	messageSeq := message.StreamSeq
-	var headersJson map[string]string
-
 	// backward compatibility
 	if data == nil {
 		poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
@@ -95,7 +92,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		headers = poisonMessageContent.Header
 		lenPayload = len(poisonMessageContent.Data) + len(poisonMessageContent.Header)
 	}
-
+	var headersJson map[string]string
 	if headers != nil {
 		headersJson, err = DecodeHeader(headers)
 		if err != nil {
