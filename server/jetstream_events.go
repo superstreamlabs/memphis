@@ -107,6 +107,8 @@ type JSConsumerDeliveryExceededAdvisory struct {
 	Domain     string `json:"domain,omitempty"`
 	// ** added by memphis
 	Account string `json:"account,omitempty"`
+	Headers []byte `json:"headers,omitempty"`
+	Data    []byte `json:"data,omitempty"`
 	// added by memphis **
 }
 

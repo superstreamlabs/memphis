@@ -2942,7 +2942,7 @@ func (o *consumer) incDeliveryCount(sseq uint64) uint64 {
 }
 
 // send a delivery exceeded advisory.
-func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64) {
+func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64, sm *StoreMsg) { // ** added by memphis (sm to notifyDeliveryExceeded) **
 	// *** added by memphis
 	if strings.HasPrefix(o.stream, "$memphis") { // skipping memphis streams max deliveries events
 		return
@@ -2961,6 +2961,8 @@ func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64) {
 		Domain:     o.srv.getOpts().JetStreamDomain,
 		// ** added by memphis
 		Account: o.acc.GetName(),
+		Headers: sm.hdr,
+		Data:    sm.msg,
 		// added by memphis **
 	}
 
@@ -3006,18 +3008,21 @@ func (o *consumer) getNextMsg() (*jsPubMsg, uint64, bool, error) { // *** bool (
 	if o.hasRedeliveries() {
 		for seq = o.getNextToRedeliver(); seq > 0; seq = o.getNextToRedeliver() {
 			dc = o.incDeliveryCount(seq)
+			// **  added by memphis
+			pmsg := getJSPubMsgFromPool()
+			sm, err := o.mset.store.LoadMsg(seq, &pmsg.StoreMsg)
+			//  added by memphis **
 			if o.maxdc > 0 && dc > o.maxdc {
 				// Only send once
 				if dc == o.maxdc+1 {
-					o.notifyDeliveryExceeded(seq, dc-1)
+					// ** added by memphis (sm to notifyDeliveryExceeded) **
+					o.notifyDeliveryExceeded(seq, dc-1, sm)
 				}
 				// Make sure to remove from pending.
 				delete(o.pending, seq)
 				continue
 			}
 			if seq > 0 {
-				pmsg := getJSPubMsgFromPool()
-				sm, err := o.mset.store.LoadMsg(seq, &pmsg.StoreMsg)
 				if sm == nil || err != nil {
 					pmsg.returnToPool()
 					pmsg, dc = nil, 0
