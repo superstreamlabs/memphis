@@ -116,6 +116,13 @@ func validateIdempotencyWindow(retentionType string, retentionValue int, idempot
 	return nil
 }
 
+func getRetentionPolicy(retentionType string) RetentionPolicy {
+	if retentionType == "ack_based" {
+		return InterestPolicy
+	}
+	return LimitsPolicy
+}
+
 // TODO remove the station resources - functions, connectors
 func removeStationResources(s *Server, station models.Station, shouldDeleteStream bool) error {
 	stationName, err := StationNameFromStr(station.Name)
