@@ -2130,7 +2130,7 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
-	_, created, err := CreateDefaultStationWithTags(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	_, created, err := CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
 	if err != nil {
 		return err
 	}

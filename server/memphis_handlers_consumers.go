@@ -135,7 +135,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 			return []int{}, err
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username)
+		station, created, err = CreateDefaultStation(user.TenantName, s, stationName, user.ID, user.Username, "", 0)
 		if err != nil {
 			serv.Warnf("[tenant: %v]createConsumerDirectCommon at CreateDefaultStation: Consumer %v at station %v : %v", tenantName, consumerName, cStationName, err.Error())
 			return []int{}, err
