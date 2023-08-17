@@ -25,6 +25,9 @@ type Producer struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 	TenantName     string    `json:"tenant_name"`
 	PartitionsList []int     `json:"partitions"`
+	Version        int       `json:"version"`
+	Sdk            string    `json:"sdk"`
+	AppId          string    `json:"app_id"`
 }
 
 type ExtendedProducer struct {
@@ -58,4 +61,17 @@ type CreateProducerSchema struct {
 type DestroyProducerSchema struct {
 	Name        string `json:"name" binding:"required"`
 	StationName string `json:"station_name" binding:"required"`
+}
+
+type ProducerForGraph struct {
+	Name      string `json:"name"`
+	StationId int    `json:"station_id"`
+	AppId     string `json:"app_id"`
+}
+
+type ProducerForGraphWithCount struct {
+	Name      string `json:"name"`
+	StationId int    `json:"station_id"`
+	AppId     string `json:"app_id"`
+	Count     int    `json:"count"`
 }

@@ -142,6 +142,13 @@ type ExtendedStationLight struct {
 	Version                     int         `json:"version"`
 }
 
+type StationLight struct {
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	DlsMsgs       int    `json:"dls_messages"`
+	TotalMessages int    `json:"total_messages"`
+}
+
 type ActiveProducersConsumersDetails struct {
 	ID                   int `json:"id"`
 	ActiveProducersCount int `json:"active_producers_count"`

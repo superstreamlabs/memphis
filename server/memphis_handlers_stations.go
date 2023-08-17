@@ -2392,3 +2392,53 @@ func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantN
 		return
 	}
 }
+
+func (sh StationsHandler) GetStationsDetailsForGraphOverview(tenantName string) (map[int]models.StationLight, error) {
+	var stations []models.StationLight
+	totalMessages := uint64(0)
+	if tenantName == "" {
+		tenantName = serv.MemphisGlobalAccountString()
+	}
+
+	stations, err := db.GetAllActiveStationsLight(tenantName)
+	if err != nil {
+		return map[int]models.StationLight{}, err
+	}
+	if len(stations) == 0 {
+		return map[int]models.StationLight{}, nil
+	} else {
+		stationTotalMsgs := make(map[string]int)
+		acc, err := sh.S.lookupAccount(tenantName)
+		if err != nil {
+			return map[int]models.StationLight{}, err
+		}
+		accName := acc.Name
+		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
+		if err != nil {
+			return map[int]models.StationLight{}, err
+		}
+		for _, info := range allStreamInfo {
+			streamName := info.Config.Name
+			if !strings.Contains(streamName, "$memphis") {
+				totalMessages += info.State.Msgs
+				if strings.Contains(streamName, "$") {
+					stationNameAndPartition := strings.Split(streamName, "$")
+					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Msgs)
+				} else {
+					stationTotalMsgs[streamName] = int(info.State.Msgs)
+				}
+			}
+		}
+
+		stationsRes := make(map[int]models.StationLight, len(stations))
+		for i := 0; i < len(stations); i++ {
+			fullStationName, err := StationNameFromStr(stations[i].Name)
+			if err != nil {
+				return map[int]models.StationLight{}, err
+			}
+			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
+			stationsRes[stations[i].ID] = stations[i]
+		}
+		return stationsRes, nil
+	}
+}
