@@ -2016,10 +2016,6 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 	return nil
 }
 
-func getRetentionPolicy(retentionType string) RetentionPolicy {
-	return LimitsPolicy
-}
-
 func (sh StationsHandler) Produce(c *gin.Context) {
 	var body ProduceSchema
 	ok := utils.Validate(c, &body, false, nil)

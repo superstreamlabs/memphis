@@ -78,7 +78,7 @@ const storageTierTwoOptions = [
         id: 1,
         value: 's3',
         label: 'S3 Compatible Object Storage',
-        desc: 'Use object storage as a 2nd tier storage for archiving and post-stream analysis'
+        desc: 'Use object storage as a second storage tier for ingested data'
     }
 ];
 
