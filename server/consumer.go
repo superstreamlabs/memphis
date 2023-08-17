@@ -2960,12 +2960,16 @@ func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64, sm *StoreMsg) { // **
 		Deliveries: dc,
 		Domain:     o.srv.getOpts().JetStreamDomain,
 		// ** added by memphis
-		Account:  o.acc.GetName(),
-		Headers:  sm.hdr,
-		Data:     sm.msg,
-		TimeSent: sm.ts,
+		Account: o.acc.GetName(),
 		// added by memphis **
 	}
+	// added by memphis ***
+	if sm != nil {
+		e.Headers = sm.hdr
+		e.Data = sm.msg
+		e.TimeSent = sm.ts
+	}
+	// added by memphis **
 
 	j, err := json.Marshal(e)
 	if err != nil {
