@@ -2960,9 +2960,10 @@ func (o *consumer) notifyDeliveryExceeded(sseq, dc uint64, sm *StoreMsg) { // **
 		Deliveries: dc,
 		Domain:     o.srv.getOpts().JetStreamDomain,
 		// ** added by memphis
-		Account: o.acc.GetName(),
-		Headers: sm.hdr,
-		Data:    sm.msg,
+		Account:  o.acc.GetName(),
+		Headers:  sm.hdr,
+		Data:     sm.msg,
+		TimeSent: sm.ts,
 		// added by memphis **
 	}
 
@@ -3023,6 +3024,10 @@ func (o *consumer) getNextMsg() (*jsPubMsg, uint64, bool, error) { // *** bool (
 				continue
 			}
 			if seq > 0 {
+				// **  removed by memphis
+				// pmsg := getJSPubMsgFromPool()
+				// sm, err := o.mset.store.LoadMsg(seq, &pmsg.StoreMsg)
+				// removed by memphis **
 				if sm == nil || err != nil {
 					pmsg.returnToPool()
 					pmsg, dc = nil, 0

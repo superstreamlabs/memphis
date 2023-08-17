@@ -57,7 +57,11 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	accountName := message.Account
 	headers := message.Headers
 	data := message.Data
-	time := message.Time
+	timeSent := message.TimeSent
+	var timeSentTimeStamp time.Time
+	if timeSent != 0 {
+		timeSentTimeStamp = time.Unix(0, timeSent).UTC()
+	}
 	lenPayload := len(data) + len(headers)
 	// backward compatibility
 	if accountName == "" {
@@ -87,7 +91,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			return err
 		}
 
-		time = poisonMessageContent.Time
+		timeSentTimeStamp = poisonMessageContent.Time
 		data = poisonMessageContent.Data
 		headers = poisonMessageContent.Header
 		lenPayload = len(poisonMessageContent.Data) + len(poisonMessageContent.Header)
@@ -116,7 +120,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	}
 
 	messageDetails := models.MessagePayload{
-		TimeSent: time,
+		TimeSent: timeSentTimeStamp,
 		Size:     lenPayload,
 		Data:     hex.EncodeToString(data),
 		Headers:  headersJson,
