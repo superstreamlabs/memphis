@@ -127,7 +127,7 @@ func runMemphis(s *server.Server) {
 		if strings.Contains(err.Error(), "already exists") {
 			s.Warnf("Failed create default entities: " + err.Error())
 		} else {
-			s.Errorf("Failed create default stations and tags: " + err.Error())
+			s.Errorf("Failed create default entities: " + err.Error())
 		}
 	}
 
