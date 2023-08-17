@@ -99,6 +99,94 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 	return newStation, true, nil
 }
 
+func CreateDefaultStationWithTags(tenantName string, s *Server, sn StationName, userId int, username, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
+	stationName := sn.Ext()
+	replicas := getDefaultReplicas()
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, replicas, false, 1)
+	if err != nil {
+		return models.Station{}, false, err
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 1)
+	if err != nil {
+		return models.Station{}, false, err
+	}
+	if rowsUpdated == 0 {
+		return models.Station{}, false, nil
+	}
+
+	err = CreateDefaultTags("station", newStation.ID, tenantName)
+	if err != nil {
+		return models.Station{}, false, err
+	}
+
+	return newStation, true, nil
+}
+
+func CreateDefaultSchema(username, tenantName string, userId int) (string, error) {
+	defaultSchemaName := "default"
+	defualtSchemaType := "json"
+	defualtSchemaContent := `{
+		"$id": "https://example.com/address.schema.json",
+		"description": "An address similar to http://microformats.org/wiki/h-card",
+		"type": "object",
+		"properties": {
+			"post-office-box": {
+			"type": "number"
+			},
+			"extended-address": {
+			"type": "string"
+			},
+			"street-address": {
+			"type": "string"
+			},
+			"locality": {
+			"type": "string"
+			},
+			"region": {
+			"type": "string"
+			},
+			"postal-code": {
+			"type": "string"
+			},
+			"country-name": {
+			"type": "string"
+			}
+		},
+		"required": [ "locality" ]
+	}`
+	newSchema, rowsUpdated, err := db.InsertNewSchema(defaultSchemaName, defualtSchemaType, username, tenantName)
+	if err != nil {
+		return "", err
+	}
+
+	if rowsUpdated == 1 {
+		_, _, err = db.InsertNewSchemaVersion(1, userId, username, defualtSchemaContent, newSchema.ID, "", "", true, tenantName)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		errMsg := fmt.Sprintf("Schema with the name %v already exists ", newSchema.Name)
+		return "", fmt.Errorf(errMsg)
+	}
+
+	err = CreateDefaultTags("schema", newSchema.ID, tenantName)
+	if err != nil {
+		return "", err
+	}
+	return newSchema.Name, nil
+}
+
+func CreateDefaultTags(tagType string, id int, tenantName string) error {
+	defaultTags := models.CreateTag{Name: "default"}
+
+	err := AddTagsToEntity([]models.CreateTag{defaultTags}, tagType, id, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func validateName(name, objectType string) error {
 	emptyErrStr := fmt.Sprintf("%v name can not be empty", objectType)
 	tooLongErrStr := fmt.Sprintf("%v should be under 128 characters", objectType)

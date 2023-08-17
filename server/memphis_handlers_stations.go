@@ -382,7 +382,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -391,6 +391,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 	if rowsUpdated > 0 {
+		err = CreateDefaultTags("station", newStation.ID, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]createStationDirect at CreateDefaultTags: %v", user.TenantName, user.Username, err.Error())
+			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+			return
+		}
 		message := "Station " + stationName.Ext() + " has been created by user " + username
 		serv.Noticef("[tenant:%v][user: %v] %v", user.TenantName, user.Username, message)
 		var auditLogs []interface{}
@@ -994,6 +1000,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else {
+		err = CreateDefaultTags("station", newStation.ID, tenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateDefaultTags: %v", tenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}

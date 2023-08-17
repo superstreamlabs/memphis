@@ -122,6 +122,15 @@ func runMemphis(s *server.Server) {
 		}
 	}
 
+	err = s.CreateDefaultEntities()
+	if err != nil {
+		if strings.Contains(err.Error(), "already exists") {
+			s.Warnf("Failed create default entities: " + err.Error())
+		} else {
+			s.Errorf("Failed create default stations and tags: " + err.Error())
+		}
+	}
+
 	go http_server.InitializeHttpServer(s)
 
 	var env string
