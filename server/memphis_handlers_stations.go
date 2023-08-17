@@ -232,7 +232,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		csr.TenantName = t.Name
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
+	exist, _, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user:%v]createStationDirect at db.GetStationByName: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -240,7 +240,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if exist && ((csr.PartitionsNumber == 0 && len(station.PartitionsList) == 0) || (csr.PartitionsNumber > 0 && len(station.PartitionsList) > 0)) {
+	if exist {
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
