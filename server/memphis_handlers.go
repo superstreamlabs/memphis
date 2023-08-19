@@ -80,7 +80,7 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username string) (models.Station, bool, error) {
 	stationName := sn.Ext()
 	replicas := getDefaultReplicas()
-	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, replicas, false, 1)
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 3600, "file", 120000, replicas, false, 1)
 	if err != nil {
 		return models.Station{}, false, err
 	}
@@ -88,7 +88,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 	schemaName := ""
 	schemaVersionNumber := 0
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 604800, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 1)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName, userId, username, "message_age_sec", 3600, "file", replicas, schemaName, schemaVersionNumber, 120000, true, models.DlsConfiguration{Poison: true, Schemaverse: true}, false, tenantName, []int{1}, 1)
 	if err != nil {
 		return models.Station{}, false, err
 	}

@@ -306,13 +306,13 @@ func (s *Server) createStationDirectIntern(c *client,
 
 		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
-			retentionValue = 604800 // 1 week
+			retentionValue = 3600 // 1 hour
 		} else {
 			retentionValue = csr.RetentionValue
 		}
 	} else {
 		retentionType = "message_age_sec"
-		retentionValue = 604800 // 1 week
+		retentionValue = 3600 // 1 hour
 	}
 
 	var storageType string
@@ -914,11 +914,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 		if body.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
-			body.RetentionValue = 604800 // 1 week
+			body.RetentionValue = 3600 // 1 hour
 		}
 	} else {
 		retentionType = "message_age_sec"
-		body.RetentionValue = 604800 // 1 week
+		body.RetentionValue = 3600 // 1 hour
 	}
 
 	if body.StorageType != "" {
