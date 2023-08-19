@@ -1534,7 +1534,7 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	globalUsers := []UserConfig{{User: "$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	globalUsers := []UserConfig{{User: "$$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
 	accounts := map[string]AccountConfig{
 		"$SYS": {
 			Users: []UserConfig{
