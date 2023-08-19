@@ -80,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			return false, false, err, models.Station{}
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username)
+		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			return false, false, err, models.Station{}
