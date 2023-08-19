@@ -70,7 +70,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
 		return err
 	}
 	if !station.DlsConfigurationPoison {
@@ -87,7 +87,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			if IsNatsErr(err, JSNoMessageFoundErr) {
 				return nil
 			}
-			serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
+			serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
 			return err
 		}
 
