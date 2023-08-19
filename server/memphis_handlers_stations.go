@@ -2400,7 +2400,7 @@ func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantN
 	}
 }
 
-func (sh StationsHandler) GetStationsDetailsForGraphOverview(tenantName string) (map[int]models.StationLight, error) {
+func getStationsDetailsForGraphOverview(tenantName string) (map[int]models.StationLight, error) {
 	var stations []models.StationLight
 	totalMessages := uint64(0)
 	if tenantName == "" {
@@ -2415,7 +2415,7 @@ func (sh StationsHandler) GetStationsDetailsForGraphOverview(tenantName string) 
 		return map[int]models.StationLight{}, nil
 	} else {
 		stationTotalMsgs := make(map[string]int)
-		acc, err := sh.S.lookupAccount(tenantName)
+		acc, err := serv.lookupAccount(tenantName)
 		if err != nil {
 			return map[int]models.StationLight{}, err
 		}

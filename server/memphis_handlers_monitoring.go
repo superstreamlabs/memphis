@@ -1330,8 +1330,7 @@ func (mh MonitoringHandler) GetGraphOverview(c *gin.Context) {
 }
 
 func (mh MonitoringHandler) getGraphOverview(tenantName string) (models.GraphOverviewResponse, error) {
-	stationsHandler := StationsHandler{S: mh.S}
-	stations, err := stationsHandler.GetStationsDetailsForGraphOverview(tenantName)
+	stations, err := getStationsDetailsForGraphOverview(tenantName)
 	if err != nil {
 		return models.GraphOverviewResponse{}, fmt.Errorf("getGraphOverview at GetStationsDetailsForGraphOverview: %v", err.Error())
 	}
