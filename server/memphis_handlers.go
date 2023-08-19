@@ -80,7 +80,7 @@ func getUserDetailsFromMiddleware(c *gin.Context) (models.User, error) {
 func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId int, username, schemaName string, schemaVersionNumber int) (models.Station, bool, error) {
 	stationName := sn.Ext()
 	replicas := getDefaultReplicas()
-	err := s.CreateStream(tenantName, sn, "message_age_sec", 604800, "file", 120000, replicas, false, 1)
+	err := s.CreateStream(tenantName, sn, "message_age_sec", 3600, "file", 120000, replicas, false, 1)
 	if err != nil {
 		return models.Station{}, false, err
 	}

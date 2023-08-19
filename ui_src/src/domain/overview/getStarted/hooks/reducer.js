@@ -16,7 +16,7 @@ const initialState = {
     formFieldsCreateStation: {
         name: '',
         retention_type: 'message_age_sec',
-        retention_value: 604800,
+        retention_value: 3600,
         storage_type: 'file',
         replicas: 1,
         days: 7,
