@@ -123,10 +123,8 @@ func runMemphis(s *server.Server) {
 	}
 
 	err = s.CreateDefaultEntitiesOnMemphisAccount()
-	if err != nil {
-		if err != nil && !strings.Contains(err.Error(), "already exists") {
-			s.Errorf("Failed create default entities: " + err.Error())
-		}
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		s.Errorf("Failed create default entities: " + err.Error())
 	}
 
 	go http_server.InitializeHttpServer(s)
