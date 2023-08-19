@@ -2101,15 +2101,6 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (s *Server) CreateDefaultEntities() error {
-	err := s.CreateDefaultEntitiesOnMemphisAccount()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 	defaultStationName := "default"
 	exist, user, err := db.GetRootUser(serv.MemphisGlobalAccountString())
@@ -2130,13 +2121,10 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
-	_, created, err := CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
 	if err != nil {
 		return err
 	}
 
-	if !created {
-		return errors.New("default station not created")
-	}
 	return nil
 }
