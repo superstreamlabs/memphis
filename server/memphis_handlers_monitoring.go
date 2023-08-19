@@ -1311,3 +1311,215 @@ func getDockerMacAddress() (string, error) {
 	}
 	return macAdress, nil
 }
+
+func (mh MonitoringHandler) GetGraphOverview(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetGraphOverview at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	res, err := mh.getGraphOverview(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]%v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	}
+
+	c.IndentedJSON(200, res)
+}
+
+func (mh MonitoringHandler) getGraphOverview(tenantName string) (models.GraphOverviewResponse, error) {
+	stations, err := getStationsDetailsForGraphOverview(tenantName)
+	if err != nil {
+		return models.GraphOverviewResponse{}, fmt.Errorf("getGraphOverview at GetStationsDetailsForGraphOverview: %v", err.Error())
+	}
+
+	apps := map[string]models.ArrangeGraphNode{}
+	producers, err := db.GetAllActiveProducersForGraph()
+	if err != nil {
+		return models.GraphOverviewResponse{}, fmt.Errorf("getGraphOverview at GetAllActiveProducersForGraph: %v", err.Error())
+
+	}
+
+	for _, p := range producers {
+		if pn, ok := apps[p.AppId]; !ok {
+			apps[p.AppId] = models.ArrangeGraphNode{
+				AppId:     p.AppId,
+				Consumers: []models.ConsumerForGraph{},
+				Producers: []models.ProducerForGraph{p},
+				From:      []int{},
+				To:        []int{p.StationId},
+			}
+		} else {
+			pn.Producers = append(pn.Producers, p)
+			pn.To = append(pn.To, p.StationId)
+			apps[p.AppId] = pn
+		}
+	}
+
+	consumers, err := db.GetAllActiveConsumersForGraph()
+	if err != nil {
+		return models.GraphOverviewResponse{}, fmt.Errorf("getGraphOverview at GetAllActiveConsumersForGraph: %v", err.Error())
+	}
+
+	for _, c := range consumers {
+		if cn, ok := apps[c.AppId]; !ok {
+			apps[c.AppId] = models.ArrangeGraphNode{
+				AppId:     c.AppId,
+				Consumers: []models.ConsumerForGraph{c},
+				Producers: []models.ProducerForGraph{},
+				From:      []int{c.StationId},
+				To:        []int{},
+			}
+		} else {
+			cn.Consumers = append(cn.Consumers, c)
+			cn.From = append(cn.From, c.StationId)
+			apps[c.AppId] = cn
+		}
+	}
+
+	arrangedApps := []models.ArrangedApps{}
+
+	for _, v := range apps {
+		prods, prodKey := arrangeProducersForGraph(v.Producers)
+		consums, ConsKey := arrangeConsumersForGraph(v.Consumers)
+		from := removeIntDuplicates(v.From)
+		to := removeIntDuplicates(v.To)
+		arrangedApps = append(arrangedApps, models.ArrangedApps{
+			AppId:     v.AppId,
+			Consumers: consums,
+			Producers: prods,
+			From:      from,
+			To:        to,
+			Key:       fmt.Sprintf("%v_%v_%v_%v", prodKey, ConsKey, from, to),
+		})
+	}
+
+	appsRes := removeDuplicatesFromArrangedApps(arrangedApps)
+
+	return models.GraphOverviewResponse{
+		Stations: stations,
+		Apps:     appsRes,
+	}, nil
+}
+
+func arrangeProducersForGraph(producers []models.ProducerForGraph) ([]models.GraphNodeComponent, string) {
+	producersMap := map[string]models.GraphNodeComponent{}
+	for _, p := range producers {
+		if pn, ok := producersMap[p.Name]; !ok {
+			producersMap[p.Name] = models.GraphNodeComponent{
+				Name:      p.Name,
+				AppId:     p.AppId,
+				StationId: p.StationId,
+				Count:     1,
+			}
+		} else {
+			pn.Count += 1
+			producersMap[p.Name] = pn
+		}
+	}
+	keys := make([]string, 0, len(producersMap))
+	for k := range producersMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	producersSorted := []models.GraphNodeComponent{}
+	for _, k := range keys {
+		producersSorted = append(producersSorted, producersMap[k])
+	}
+	return producersSorted, fmt.Sprintf("%v", keys)
+}
+
+func arrangeConsumersForGraph(consumers []models.ConsumerForGraph) ([]models.GraphNodeComponent, string) {
+	consumersMap := map[string]models.GraphNodeComponent{}
+	for _, c := range consumers {
+		if cn, ok := consumersMap[c.Name]; !ok {
+			consumersMap[c.Name] = models.GraphNodeComponent{
+				Name:      c.Name,
+				AppId:     c.AppId,
+				StationId: c.StationId,
+				Count:     1,
+			}
+		} else {
+			cn.Count += 1
+			consumersMap[c.Name] = cn
+		}
+	}
+	keys := make([]string, 0, len(consumersMap))
+	for k := range consumersMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	consumersSorted := []models.GraphNodeComponent{}
+	for _, k := range keys {
+		consumersSorted = append(consumersSorted, consumersMap[k])
+	}
+	return consumersSorted, fmt.Sprintf("%v", keys)
+}
+
+func arrangeGraphNodeComponents(components []models.GraphNodeComponent) []models.GraphNodeComponent {
+	componentsMap := map[string]models.GraphNodeComponent{}
+	for _, c := range components {
+		if cn, ok := componentsMap[c.Name]; !ok {
+			componentsMap[c.Name] = models.GraphNodeComponent{
+				Name:      c.Name,
+				AppId:     c.AppId,
+				StationId: c.StationId,
+				Count:     1,
+			}
+		} else {
+			cn.Count += 1
+			componentsMap[c.Name] = cn
+		}
+	}
+	keys := make([]string, 0, len(componentsMap))
+	for k := range componentsMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	consumersSorted := []models.GraphNodeComponent{}
+	for _, k := range keys {
+		consumersSorted = append(consumersSorted, componentsMap[k])
+	}
+	return consumersSorted
+}
+
+func removeIntDuplicates(elements []int) []int {
+	encountered := map[int]bool{}
+	result := []int{}
+	for v := range elements {
+		if !encountered[elements[v]] {
+			encountered[elements[v]] = true
+			result = append(result, elements[v])
+		}
+	}
+	sort.Ints(result)
+	return result
+}
+
+func removeDuplicatesFromArrangedApps(arrangedApps []models.ArrangedApps) []models.GraphNode {
+	res := map[string]models.GraphNode{}
+	for _, v := range arrangedApps {
+		if app, ok := res[v.Key]; !ok {
+			res[v.Key] = models.GraphNode{
+				AppId:     v.AppId,
+				Consumers: v.Consumers,
+				Producers: v.Producers,
+				From:      v.From,
+				To:        v.To,
+			}
+		} else {
+			prods := arrangeGraphNodeComponents(append(app.Producers, v.Producers...))
+			cons := arrangeGraphNodeComponents(append(app.Consumers, v.Consumers...))
+			app.Producers = prods
+			app.Consumers = cons
+			res[v.Key] = app
+		}
+	}
+	resArray := []models.GraphNode{}
+	for _, v := range res {
+		resArray = append(resArray, v)
+	}
+	return resArray
+}
