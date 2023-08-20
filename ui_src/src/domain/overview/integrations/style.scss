@@ -21,15 +21,18 @@
             border: 1px solid #f1f1f1;
             border-radius: 4px;
             padding: 8px;
+            cursor: pointer;
             .img-icon {
                 height: 20px;
                 width: 20px;
+                cursor: pointer;
             }
             .integration-name {
                 font-weight: 600;
                 font-size: 14px;
                 color: #2e2c34;
                 margin-left: 10px;
+                cursor: pointer;
             }
         }
     }

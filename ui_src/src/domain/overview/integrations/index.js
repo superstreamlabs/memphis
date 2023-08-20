@@ -12,40 +12,104 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
 import slackLogo from '../../../../src/assets/images/slackLogo.svg';
 import s3Logo from '../../../../src/assets/images/s3Logo.svg';
 import pathDomains from '../../../router';
+import Modal from '../../../../src/components/modal';
+import SlackIntegration from '../../administration/integrations/components/slackIntegration';
+import S3Integration from '../../administration/integrations/components/s3Integration';
+import DebeziumIntegration from '../../administration/integrations/components/debeziumIntegration';
 
 const Integrations = () => {
     const history = useHistory();
+    const [modalIsOpen, modalFlip] = useState(false);
+    const [integrateValue, setIntegrateValue] = useState({});
+    const [valueName, setValueName] = useState('');
+    const ref = useRef();
+    ref.current = integrateValue;
 
+    const modalContent = () => {
+        switch (valueName) {
+            case 'Slack':
+                return (
+                    <SlackIntegration
+                        close={(data) => {
+                            modalFlip(false);
+                            setIntegrateValue(data);
+                        }}
+                        value={ref.current}
+                    />
+                );
+            case 'S3':
+                return (
+                    <S3Integration
+                        close={(data) => {
+                            modalFlip(false);
+                            setIntegrateValue(data);
+                        }}
+                        value={ref.current}
+                    />
+                );
+            case 'Debezium and Postgres':
+                return (
+                    <DebeziumIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
+                    />
+                );
+            default:
+                break;
+        }
+    };
     return (
         <div className="overview-components-wrapper">
             <div className="overview-integrations-container">
                 <div className="overview-components-header integrations-header">
                     <p>Integrations</p>
                     <label className="link-to-page" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
-                        Explore more Integration
+                        Explore more Integrations
                     </label>
                 </div>
-                <div className="integrations-list">
+                <div
+                    className="integrations-list"
+                    onClick={() => {
+                        setValueName('Slack');
+                        modalFlip(true);
+                    }}
+                >
                     <div className="integration-item">
                         <img className="img-icon" src={slackLogo} alt="slack" />
                         <label className="integration-name">Slack</label>
                     </div>
-                    <div className="integration-item">
+                    <div
+                        className="integration-item"
+                        onClick={() => {
+                            setValueName('S3');
+                            modalFlip(true);
+                        }}
+                    >
                         <img className="img-icon" src={s3Logo} alt="s3" />
                         <label className="integration-name">S3 Bucket</label>
                     </div>
-                    <div className="integration-item">
+                    <div
+                        className="integration-item"
+                        onClick={() => {
+                            setValueName('Debezium and Postgres');
+                            modalFlip(true);
+                        }}
+                    >
                         <img className="img-icon" src={debeziumIcon} alt="debezium" />
                         <label className="integration-name">Debezium and Postgres</label>
                     </div>
                 </div>
             </div>
+            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+                {modalContent()}
+            </Modal>
         </div>
     );
 };
