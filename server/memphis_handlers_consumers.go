@@ -178,6 +178,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at isConsumerGroupExist: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return []int{}, err
 	}
+
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
 	newConsumer, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList, requestVersion, sdkName, appId)
@@ -266,7 +267,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	}
 
 	if err := json.Unmarshal([]byte(message), &ccr); err != nil || ccr.RequestVersion < 3 {
-
 		var ccrV1 createConsumerRequestV1
 		if err := json.Unmarshal(msg, &ccrV1); err != nil {
 			var ccrV0 createConsumerRequestV0

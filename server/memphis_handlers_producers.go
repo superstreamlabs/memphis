@@ -115,6 +115,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			return false, false, err, models.Station{}
 		}
 	}
+
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
 	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
