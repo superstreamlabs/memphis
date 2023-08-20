@@ -14,9 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
-import { useHistory } from 'react-router-dom';
 
-import { convertBytes, parsingDate } from '../../services/valueConvertor';
 import { BsZoomIn, BsZoomOut } from 'react-icons/bs';
 import { MdZoomOutMap } from 'react-icons/md';
 import { IoCloseOutline } from 'react-icons/io5';
@@ -25,8 +23,7 @@ import { Canvas, Node, Edge, Label } from 'reaflow';
 import { httpRequest } from '../../services/http';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
-import { Divider, message } from 'antd';
-import pathDomains from '../../router';
+import { Divider } from 'antd';
 import Connection from './components/connection';
 import Station from './components/station';
 
@@ -202,19 +199,13 @@ const fake_data = {
 };
 
 const StreamLineage = ({ expend, setExpended }) => {
-    const [state, dispatch] = useContext(Context);
-    const url = window.location.href;
+    const [dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
-    const [processing, setProcessing] = useState(false);
-    const [messageData, setMessageData] = useState({});
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
-    const [zoom, setZoom] = useState(0.7);
     const ref = useRef(null);
 
-    const history = useHistory();
-
-    const getPosionMessageDetails = async () => {
+    const getGraphData = async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_GRAPH_OVERVIEW);
@@ -225,8 +216,7 @@ const StreamLineage = ({ expend, setExpended }) => {
     };
 
     useEffect(() => {
-        dispatch({ type: 'SET_ROUTE', payload: 'overview' });
-        getPosionMessageDetails();
+        getGraphData();
     }, []);
 
     // useEfrfect(() => {
@@ -375,7 +365,6 @@ const StreamLineage = ({ expend, setExpended }) => {
                         edges={edges}
                         fit={true}
                         ref={ref}
-                        zoom={zoom}
                         maxZoom={0.2}
                         minZoom={-0.9}
                         height={'100%'}
