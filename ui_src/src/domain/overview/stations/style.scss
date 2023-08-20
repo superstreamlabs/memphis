@@ -1,10 +1,10 @@
-.failed-stations-container {
+.stations-container {
     position: relative;
     min-width: 400px;
     min-height: 230px;
     height: 100%;
     overflow: hidden;
-    .failed-stations-header {
+    .stations-header {
         padding: 15px;
         padding-bottom: 5px;
     }
@@ -61,7 +61,7 @@
             height: calc(100% - 42px);
             overflow: auto;
             cursor: pointer;
-            padding: 0 0 5px 15px;
+            padding: 0 5px 5px 15px;
             .stations-row {
                 display: grid;
                 grid-template-columns: 20% 15% 15% 15% 13% 15%;
@@ -89,6 +89,12 @@
                 }
                 .station-name {
                     padding-left: 20px;
+                    display: flex;
+                    flex-direction: column;
+                    span{
+                        font-size: 10px;
+                        color: var(--black, rgba(74, 73, 92, 0.80));
+                    }
                 }
             }
             .even {
@@ -110,6 +116,12 @@
                     display: flex !important;
                 }
             }
+        }
+        .rows-wrapper-cloud .stations-row, .coulmns-table-cloud{
+            grid-template-columns: 30% 15% 15% 13% 10% !important;
+        }
+        .rows-wrapper-cloud .stations-row{
+            height: 40px;
         }
         .centered {
             display: flex;
@@ -142,6 +154,11 @@
         .lottie {
             svg {
                 width: 90px !important;
+            }
+        }
+        .lottie-cloud{
+            svg {
+                width: 60px !important;
             }
         }
     }

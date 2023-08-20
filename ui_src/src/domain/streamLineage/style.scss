@@ -1,0 +1,146 @@
+$grid-color: rgba(150, 150, 150, .3);
+
+.stream-lineage-container {
+    position: relative;
+    padding: 1vw;
+    min-width: 700px;
+    border-radius: 16px;
+    height: calc(100% - 70px);
+    background-color: white;
+	background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px);
+	background-size: 100px 220px, 220px 100px, 20px 20px, 20px 20px;
+	background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+    overflow: hidden;
+    .title-wrapper{
+        display: flex;
+        justify-content: space-between;
+        .bread-crumbs{
+            display: flex;
+            height: 30px;
+            align-items: center;
+            p{
+                margin: 0;
+                font-family: 'InterSemiBold';
+                font-size: 20px;
+                line-height: 29px;
+                color: #1D1D1D; 
+            }
+            span{
+                font-family: 'InterMedium';
+                font-size: 16px;
+                line-height: 29px;
+                color: #667085; 
+                
+            }
+        }
+        .actions-wrapper{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: absolute;
+            right: 10px;
+            .close-wrapper{
+                width: 40px;
+                height: 40px;
+                background: white;
+                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);   
+                border-radius: 8px;
+                font-family: 'Inter';
+                font-size: 12px;
+                color: #9EA3AE;
+                cursor: pointer;
+                align-items: center;
+                display: flex;
+                justify-content: center;
+                svg{
+                    width: 18px;
+                    height: 18px;
+                }
+                svg:hover{
+                    color: var(--purple);
+                }
+            }
+            .zoom-wrapper{
+                width: 40px;
+                height: 80px;
+                border-radius: 8px;
+                background: white;
+                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);               
+                align-items: center;
+                display: grid;
+                grid-template-rows: 30% 3% 30% 3% 30%;
+                justify-items: center;
+                svg{
+                    color: #9EA3AE;
+                    cursor: pointer;
+                }
+                svg:hover{
+                    color: var(--purple);
+                }
+                .ant-divider-horizontal{
+                    margin: 0;
+                }
+                .fit-wrapper{
+                    font-size: 12px;
+                    color: #9EA3AE;
+                    cursor: pointer;
+                }
+                span:hover{
+                    color: var(--purple);
+                }
+            }
+        }
+    }
+
+    .canvas-wrapper{
+        height: calc(100% - 20px);
+        .edge {
+            stroke-width: 8;
+            stroke-dasharray: 5;
+            stroke: #34C759;
+
+        }
+        .processing {
+            stroke-dasharray: 5;
+            animation: dashdraw .5s linear infinite;
+        }
+        @keyframes dashdraw {
+            0% { stroke-dashoffset: 10; }
+        }
+    }
+    .loader-uploading{
+        position: relative;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        .loader-container{
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+}
+.lineage-smaller{
+    background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px) !important;
+	background-size: 100px 150px, 150px 100px, 20px 20px, 20px 20px !important;
+	background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px !important;
+    height: 100% !important;
+    max-height: 100%;
+    .bread-crumbs p{
+        font-size: 17px !important;
+    }
+}
+
+    .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
+        overflow: overlay !important;
+    }
+    
+    .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd::-webkit-scrollbar{
+        display: none !important;
+    }
+
+    

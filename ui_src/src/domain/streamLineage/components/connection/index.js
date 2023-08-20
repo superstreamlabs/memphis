@@ -12,20 +12,32 @@
 
 import './style.scss';
 
-import React from 'react';
-import Lottie from 'lottie-react';
+import React, { Component } from 'react';
+import { HiOutlineChartSquareBar } from 'react-icons/hi';
 
-import animationData from '../../assets/lotties/MemphisGif.json';
-
-const Loader = ({ background = true, auto = true }) => {
+const Connection = ({ id, producers, consumers }) => {
     return (
-        <div className="loader-container">
-            {background && <div className="gif-wrapper"></div>}
-            <div className={auto && 'memphis-gif'} style={{ height: '10vw', width: '10vw' }}>
-                <Lottie animationData={animationData} loop={true} />
+        <div className="connection-wrapper">
+            <div className="connection-header">
+                <HiOutlineChartSquareBar />
+                <div className="connection-id">{id}</div>
             </div>
+            {producers?.length > 0 &&
+                producers?.map((producer, index) => (
+                    <div key={index} className="rectangle producer">
+                        <p>{producer.name}</p>
+                        <div className="count">{producer.count}</div>
+                    </div>
+                ))}
+            {consumers?.length > 0 &&
+                consumers.map((consumer, index) => (
+                    <div key={index} className="rectangle consumer">
+                        <p>{consumer.name}</p>
+                        <div className="count">{consumer.count}</div>
+                    </div>
+                ))}
         </div>
     );
 };
 
-export default Loader;
+export default Connection;

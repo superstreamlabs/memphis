@@ -33,8 +33,7 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
 import GenericDetails from './genericDetails';
-import FailedStations from './failedStations';
-import Schemaverse from './schemaverse';
+import Stations from './stations';
 import Tags from './tags';
 import Integrations from './integrations';
 import Loader from '../../components/loader';
@@ -45,6 +44,7 @@ import AsyncTasks from '../../components/asyncTasks';
 import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
+import StreamLineage from '../streamLineage';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -62,7 +62,7 @@ function OverView() {
     const [username, SetUsername] = useState('');
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
-    const [isDataLoaded, setIsDataLoaded] = useState(false);
+    const [lineageExpend, setExpend] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
 
@@ -107,7 +107,6 @@ function OverView() {
             const data = await httpRequest('GET', ApiEndpoints.GET_MAIN_OVERVIEW_DATA);
             arrangeData(data);
             setisLoading(false);
-            setIsDataLoaded(true);
         } catch (error) {
             setisLoading(false);
         }
@@ -245,26 +244,39 @@ function OverView() {
                             />
                         </div>
                     </div>
-                    <div className="top-component">
-                        <GenericDetails />
-                    </div>
-                    <div className={isCloud() ? "overview-components overview-components-cloud": "overview-components"}>
-                        <div className="left-side">
-                            <FailedStations createStationTrigger={(e) => modalFlip(e)} />
-                            <Throughput />
-                        </div>
-                        {isCloud() ? (
-                            <div className="right-side cloud">
-                                <Schemaverse />
-                                <Tags />
-                                <Integrations />
+                    {!lineageExpend ? (
+                        <>
+                            <div className="top-component">
+                                <GenericDetails />
                             </div>
-                        ) : (
-                            <div className="right-side">
-                                <SystemComponents />
-                            </div>
-                        )}
-                    </div>
+                            {isCloud() ? (
+                                <div className="overview-components overview-components-cloud">
+                                    <div className="left-side">
+                                        <StreamLineage setExpended={(e) => setExpend(e)} expend={lineageExpend} />
+                                        <Throughput />
+                                    </div>
+                                    <div className="right-side cloud">
+                                        <Stations createStationTrigger={(e) => modalFlip(e)} />
+                                        <Tags />
+                                        <Integrations />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="overview-components">
+                                    <div className="left-side">
+                                        <Stations createStationTrigger={(e) => modalFlip(e)} />
+                                        <Throughput />
+                                    </div>
+
+                                    <div className="right-side">
+                                        <SystemComponents />
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <StreamLineage setExpended={(e) => setExpend(e)} expend={lineageExpend} />
+                    )}
                 </div>
             )}
             {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && (

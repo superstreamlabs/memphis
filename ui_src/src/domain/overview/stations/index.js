@@ -18,7 +18,7 @@ import { KeyboardArrowRightRounded } from '@material-ui/icons';
 import Lottie from 'lottie-react';
 
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
-import { parsingDate } from '../../../services/valueConvertor';
+import { isCloud, parsingDate } from '../../../services/valueConvertor';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
@@ -30,7 +30,7 @@ import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
 
-const FailedStations = ({ createStationTrigger }) => {
+const Stations = ({ createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
 
@@ -39,23 +39,23 @@ const FailedStations = ({ createStationTrigger }) => {
     };
     return (
         <div className="overview-components-wrapper">
-            <div className="failed-stations-container">
-                <div className="overview-components-header failed-stations-header">
+            <div className="stations-container">
+                <div className="overview-components-header stations-header">
                     <p> Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
                     <label>A station is a distributed unit that stores messages</label>
                 </div>
                 <div className="err-stations-list">
                     {state?.monitor_data?.stations?.length > 0 ? (
                         <>
-                            <div className="coulmns-table">
+                            <div className={!isCloud() ? 'coulmns-table' : 'coulmns-table coulmns-table-cloud'}>
                                 <span className="station-name">Name</span>
-                                <span>Creation date</span>
+                                {!isCloud() && <span>Creation date</span>}
+                                <span className="title-center">Mssages</span>
                                 <span className="title-center">Partitions</span>
-                                <span className="title-center">Stored messages</span>
                                 <span className="title-center">Status</span>
                                 <span></span>
                             </div>
-                            <div className="rows-wrapper">
+                            <div className={!isCloud() ? 'rows-wrapper' : 'rows-wrapper rows-wrapper-cloud'}>
                                 <Virtuoso
                                     data={state?.monitor_data?.stations}
                                     overscan={100}
@@ -63,9 +63,15 @@ const FailedStations = ({ createStationTrigger }) => {
                                         <div className={index % 2 === 0 ? 'stations-row' : 'stations-row even'} key={index} onClick={() => goToStation(station.name)}>
                                             <OverflowTip className="station-details station-name" text={station.name}>
                                                 {station.name}
+                                                {isCloud() && <span className="creates">{parsingDate(station.created_at)}</span>}
                                             </OverflowTip>
-                                            <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
-                                                {parsingDate(station.created_at)}
+                                            {!isCloud() && (
+                                                <OverflowTip className="station-creation" text={parsingDate(station.created_at)}>
+                                                    {parsingDate(station.created_at)}
+                                                </OverflowTip>
+                                            )}
+                                            <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
+                                                <span className="centered">{station.total_messages?.toLocaleString()}</span>
                                             </OverflowTip>
                                             <OverflowTip
                                                 className="station-details total"
@@ -75,10 +81,7 @@ const FailedStations = ({ createStationTrigger }) => {
                                                     {station?.partitions_list?.length === 0 ? 1 : station?.partitions_list?.length?.toLocaleString()}
                                                 </span>
                                             </OverflowTip>
-                                            <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
-                                                <span className="centered">{station.total_messages?.toLocaleString()}</span>
-                                            </OverflowTip>
-                                            <div className="centered lottie">
+                                            <div className={!isCloud() ? 'centered lottie' : 'centered lottie-cloud'}>
                                                 {station?.has_dls_messages ? (
                                                     station?.activity ? (
                                                         <Lottie animationData={activeAndUnhealthy} loop={true} />
@@ -93,7 +96,7 @@ const FailedStations = ({ createStationTrigger }) => {
                                             </div>
                                             <div className="centered">
                                                 <div className="staion-link">
-                                                    <span>View Station</span>
+                                                    <span>View</span>
                                                     <KeyboardArrowRightRounded />
                                                 </div>
                                             </div>
@@ -127,4 +130,4 @@ const FailedStations = ({ createStationTrigger }) => {
     );
 };
 
-export default FailedStations;
+export default Stations;

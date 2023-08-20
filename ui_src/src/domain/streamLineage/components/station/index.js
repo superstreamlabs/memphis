@@ -12,20 +12,33 @@
 
 import './style.scss';
 
-import React from 'react';
-import Lottie from 'lottie-react';
+import React, { Component } from 'react';
+import { BiSolidEnvelope } from 'react-icons/bi';
+import { PiWarningFill } from 'react-icons/pi';
 
-import animationData from '../../assets/lotties/MemphisGif.json';
-
-const Loader = ({ background = true, auto = true }) => {
+const Station = ({ stationName, dls_messages, total_messages }) => {
     return (
-        <div className="loader-container">
-            {background && <div className="gif-wrapper"></div>}
-            <div className={auto && 'memphis-gif'} style={{ height: '10vw', width: '10vw' }}>
-                <Lottie animationData={animationData} loop={true} />
+        <div className="station-graph-wrapper">
+            <div className="yellow-background" />
+            <div className="station-details">
+                <div className="station-name">{stationName}</div>
+                <div className="station-messages">
+                    <div className="icon-wrapper">
+                        <BiSolidEnvelope />
+                    </div>
+                    <div className="station-messages-title">Amount of messages</div>
+                    <div className="station-messages-count">{total_messages}</div>
+                </div>
+                <div className="station-messages">
+                    <div className="icon-wrapper">
+                        <PiWarningFill />
+                    </div>
+                    <div className="station-messages-title">Amount of DLS messages</div>
+                    <div className="station-messages-count">{dls_messages}</div>
+                </div>
             </div>
         </div>
     );
 };
 
-export default Loader;
+export default Station;
