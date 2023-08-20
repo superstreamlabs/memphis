@@ -117,25 +117,25 @@ type GraphNode struct {
 	AppId     string               `json:"app_id"`
 	Consumers []GraphNodeComponent `json:"consumers"`
 	Producers []GraphNodeComponent `json:"producers"`
-	From      []int                `json:"from"`
-	To        []int                `json:"to"`
+	From      []StationIDActive    `json:"from"`
+	To        []StationIDActive    `json:"to"`
 }
 
 type ArrangedApps struct {
 	AppId     string               `json:"app_id"`
 	Consumers []GraphNodeComponent `json:"consumers"`
 	Producers []GraphNodeComponent `json:"producers"`
-	From      []int                `json:"from"`
-	To        []int                `json:"to"`
+	From      []StationIDActive    `json:"from"`
+	To        []StationIDActive    `json:"to"`
 	Key       string               `json:"key"`
 }
 
 type ArrangeGraphNode struct {
-	AppId     string             `json:"app_id"`
-	Consumers []ConsumerForGraph `json:"consumers"`
-	Producers []ProducerForGraph `json:"producers"`
-	From      []int              `json:"from"`
-	To        []int              `json:"to"`
+	AppId     string                  `json:"app_id"`
+	Consumers []ConsumerForGraph      `json:"consumers"`
+	Producers []ProducerForGraph      `json:"producers"`
+	From      map[int]StationIDActive `json:"from"`
+	To        map[int]StationIDActive `json:"to"`
 }
 
 type GraphNodeComponent struct {
@@ -143,4 +143,9 @@ type GraphNodeComponent struct {
 	StationId int    `json:"station_id"`
 	AppId     string `json:"app_id"`
 	Count     int    `json:"count"`
+}
+
+type StationIDActive struct {
+	StationId int  `json:"station_id"`
+	Active    bool `json:"active"`
 }
