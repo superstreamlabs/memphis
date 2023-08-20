@@ -3804,7 +3804,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Schema{}, 0, errors.New("Schema" + schemaName + " already exists")
+					return models.Schema{}, 0, errors.New("Schema " + schemaName + " already exists")
 				} else {
 					return models.Schema{}, 0, errors.New(pgErr.Detail)
 				}
