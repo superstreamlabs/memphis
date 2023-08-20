@@ -96,6 +96,9 @@ func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
 func AddUsrMgmtCloudRoutes(userMgmtRoutes *gin.RouterGroup, userMgmtHandler UserMgmtHandler) {
 }
 
+func AddMonitoringCloudRoutes(monitoringRoutes *gin.RouterGroup, monitoringHandler MonitoringHandler) {
+}
+
 func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
@@ -2099,6 +2102,14 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	serv.sendInternalAccountMsgWithHeadersWithEcho(account, subject, body.MsgPayload, body.MsgHdrs)
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+type GraphOverviewResponse struct {
+	Stations map[int]models.StationLight `json:"stations"`
+}
+
+func (mh MonitoringHandler) getGraphOverview(tenantName string) (GraphOverviewResponse, error) {
+	return GraphOverviewResponse{}, nil
 }
 
 func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {

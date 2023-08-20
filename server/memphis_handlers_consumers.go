@@ -76,11 +76,11 @@ func GetConsumerGroupMembers(cgName string, station models.Station) ([]models.Cg
 }
 
 func (s *Server) createConsumerDirectV0(c *client, reply, tenantName string, ccr createConsumerRequestV0, requestVersion int) {
-	_, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1)
+	_, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, requestVersion, 1, -1, ccr.ConnectionId)
 	respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 }
 
-func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId, tenantName, userName string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64) ([]int, error) {
+func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationName, cGroup, cType, connectionId, tenantName, userName string, maxAckTime, maxMsgDeliveries, requestVersion int, startConsumeFromSequence uint64, lastMessages int64, appId string) ([]int, error) {
 	name := strings.ToLower(consumerName)
 	err := validateConsumerName(name)
 	if err != nil {
@@ -179,7 +179,9 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 		return []int{}, err
 	}
 
-	newConsumer, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList)
+	splitted := strings.Split(c.opts.Lang, ".")
+	sdkName := splitted[len(splitted)-1]
+	newConsumer, err := db.InsertNewConsumer(name, station.ID, consumerType, connectionId, consumerGroup, maxAckTime, maxMsgDeliveries, startConsumeFromSequence, lastMessages, tenantName, station.PartitionsList, requestVersion, sdkName, appId)
 	if err != nil {
 		serv.Errorf("[tenant: %v]createConsumerDirectCommon at InsertNewConsumer: Consumer %v at station %v :%v", user.TenantName, consumerName, cStationName, err.Error())
 		return []int{}, err
@@ -255,7 +257,7 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 }
 
 func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
-	var ccr createConsumerRequestV1
+	var ccr createConsumerRequestV2
 	var resp createConsumerResponse
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
@@ -264,15 +266,32 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if err := json.Unmarshal([]byte(message), &ccr); err != nil || ccr.RequestVersion < 1 {
-		var ccrV0 createConsumerRequestV0
-		if err := json.Unmarshal(msg, &ccrV0); err != nil {
-			s.Errorf("[tenant: %v]createConsumerDirect at json.Unmarshal: Failed creating consumer: %v: %v", tenantName, err.Error(), string(msg))
-			respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+	if err := json.Unmarshal([]byte(message), &ccr); err != nil || ccr.RequestVersion < 3 {
+		var ccrV1 createConsumerRequestV1
+		if err := json.Unmarshal(msg, &ccrV1); err != nil {
+			var ccrV0 createConsumerRequestV0
+			if err := json.Unmarshal(msg, &ccrV0); err != nil {
+				s.Errorf("[tenant: %v]createConsumerDirect at json.Unmarshal: Failed creating consumer: %v: %v", tenantName, err.Error(), string(msg))
+				respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
+				return
+			}
+			s.createConsumerDirectV0(c, reply, tenantName, ccrV0, ccr.RequestVersion)
 			return
 		}
-		s.createConsumerDirectV0(c, reply, tenantName, ccrV0, ccr.RequestVersion)
-		return
+		ccr = createConsumerRequestV2{
+			Name:                     ccrV1.Name,
+			StationName:              ccrV1.StationName,
+			ConnectionId:             ccrV1.ConnectionId,
+			ConsumerType:             ccrV1.ConsumerType,
+			ConsumerGroup:            ccrV1.ConsumerGroup,
+			MaxAckTimeMillis:         ccrV1.MaxAckTimeMillis,
+			MaxMsgDeliveries:         ccrV1.MaxMsgDeliveries,
+			Username:                 ccrV1.Username,
+			StartConsumeFromSequence: ccrV1.StartConsumeFromSequence,
+			LastMessages:             ccrV1.LastMessages,
+			RequestVersion:           ccrV1.RequestVersion,
+			AppId:                    ccrV1.ConnectionId,
+		}
 	}
 
 	ccr.TenantName = tenantName
@@ -297,7 +316,7 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	partitions, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, ccr.RequestVersion, ccr.StartConsumeFromSequence, ccr.LastMessages)
+	partitions, err := s.createConsumerDirectCommon(c, ccr.Name, ccr.StationName, ccr.ConsumerGroup, ccr.ConsumerType, ccr.ConnectionId, tenantName, ccr.Username, ccr.MaxAckTimeMillis, ccr.MaxMsgDeliveries, ccr.RequestVersion, ccr.StartConsumeFromSequence, ccr.LastMessages, ccr.AppId)
 	if err != nil {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	}

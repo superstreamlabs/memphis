@@ -1311,3 +1311,20 @@ func getDockerMacAddress() (string, error) {
 	}
 	return macAdress, nil
 }
+
+func (mh MonitoringHandler) GetGraphOverview(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetGraphOverview at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	res, err := mh.getGraphOverview(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]%v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+	}
+
+	c.IndentedJSON(200, res)
+}

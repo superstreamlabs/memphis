@@ -40,6 +40,7 @@ const (
 	memphisWS_subj_GetAsyncTasks        = "get_async_tasks"
 	ws_updates_interval_sec             = 5
 	memphisWS_subj_GetAllFunctions      = "get_all_functions"
+	memphisWS_subj_GetGraphOverview     = "get_graph_overview"
 )
 
 type memphisWSReqFiller func(tenantName string) (any, error)
@@ -263,6 +264,10 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	case memphisWS_subj_GetAllFunctions:
 		return func(string) (any, error) {
 			return h.Functions.GetFunctions(tenantName)
+		}, nil
+	case memphisWS_subj_GetGraphOverview:
+		return func(string) (any, error) {
+			return h.Monitoring.getGraphOverview(tenantName)
 		}, nil
 	default:
 		return nil, errors.New("invalid subject")
