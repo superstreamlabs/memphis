@@ -77,10 +77,10 @@ const Signup = (props) => {
     const [loadingSubmit, setLoadingSubmit] = useState(false);
 
     const getSignupFlag = useCallback(async () => {
-        // const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
-        // if (!data.show_signup || state.skipSignup) {
-        //     history.push(pathDomains.login);
-        // }
+        const data = await httpRequest('GET', ApiEndpoints.GET_SIGNUP_FLAG);
+        if (!data.show_signup || state.skipSignup) {
+            history.push(pathDomains.login);
+        }
         setisLoading(false);
     }, []);
 
