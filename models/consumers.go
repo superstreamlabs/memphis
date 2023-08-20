@@ -122,8 +122,3 @@ type ConsumerForGraph struct {
 	AppId     string `json:"app_id"`
 	IsActive  bool   `json:"is_active"`
 }
-
-type CGMembersCount struct {
-	Name  string `json:"name"`
-	Count int    `json:"count"`
-}
