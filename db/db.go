@@ -1543,7 +1543,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 	return stations, nil
 }
 
-func GetAllActiveStationsLight(tenantName string) ([]models.StationLight, error) {
+func GetStationsLight(tenantName string) ([]models.StationLight, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1557,7 +1557,6 @@ func GetAllActiveStationsLight(tenantName string) ([]models.StationLight, error)
 	(SELECT COUNT(*) FROM dls_messages dm WHERE dm.station_id = s.id) AS dls_count
 	FROM stations AS s
 	WHERE s.is_deleted = false AND s.tenant_name = $1
-	AND (EXISTS (SELECT 1 FROM producers WHERE station_id = s.id AND is_active = true) OR EXISTS (SELECT 1 FROM consumers WHERE station_id = s.id AND is_active = true))
 	ORDER BY s.updated_at DESC
 	LIMIT 40000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations_light", query)
@@ -2412,7 +2411,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func GetAllActiveProducersForGraph() ([]models.ProducerForGraph, error) {
+func GetProducersForGraph() ([]models.ProducerForGraph, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2420,11 +2419,11 @@ func GetAllActiveProducersForGraph() ([]models.ProducerForGraph, error) {
 		return []models.ProducerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT p.name, p.station_id, p.app_id
+	query := `SELECT p.name, p.station_id, p.app_id, p.is_active
 				FROM producers AS p
-				WHERE p.is_active = true ORDER BY p.name, p.station_id DESC
+				ORDER BY p.name, p.station_id DESC
 				LIMIT 40000;`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_producers_for_graph", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
 	}
@@ -2950,7 +2949,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func GetAllActiveConsumersForGraph() ([]models.ConsumerForGraph, error) {
+func GetConsumersForGraph() ([]models.ConsumerForGraph, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2958,11 +2957,11 @@ func GetAllActiveConsumersForGraph() ([]models.ConsumerForGraph, error) {
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.consumers_group, c.station_id, c.app_id
+	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
 				FROM consumers AS c
-				WHERE c.is_active = true ORDER BY c.name, c.station_id DESC
+				ORDER BY c.name, c.station_id DESC
 				LIMIT 40000;`
-	stmt, err := conn.Conn().Prepare(ctx, "get_all_active_consumers_for_graph", query)
+	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err
 	}
