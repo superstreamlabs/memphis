@@ -2104,6 +2104,10 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	c.IndentedJSON(200, gin.H{})
 }
 
-func (mh MonitoringHandler) getGraphOverview(tenantName string) (models.GraphOverviewResponse, error) {
-	return models.GraphOverviewResponse{}, nil
+type GraphOverviewResponse struct {
+	Stations map[int]models.StationLight `json:"stations"`
+}
+
+func (mh MonitoringHandler) getGraphOverview(tenantName string) (GraphOverviewResponse, error) {
+	return GraphOverviewResponse{}, nil
 }
