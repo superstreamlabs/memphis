@@ -13,7 +13,8 @@ package server
 
 import (
 	"encoding/json"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 const sdkClientsUpdatesSubject = "$memphis_sdk_clients_updates"

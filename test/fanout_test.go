@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 	"github.com/nats-io/nats.go"
 )
 

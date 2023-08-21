@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 // So we can pass tests and benchmarks..

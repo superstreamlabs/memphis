@@ -24,12 +24,13 @@ import (
 	"io"
 	"log"
 	"math/rand"
-	"memphis/db"
-	"memphis/logger"
-	"memphis/memphis_cache"
 	"net"
 	"net/http"
 	"regexp"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/logger"
+	"github.com/memphisdev/memphis/memphis_cache"
 
 	// Allow dynamic profiling.
 	_ "net/http/pprof"
@@ -3843,7 +3844,7 @@ func (s *Server) initializeMemphis() {
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-	err = s.InitializeFirestore()
+	err = s.InitializeCloudComponents()
 	if err != nil {
 		s.Errorf("Failed initializing firestore: " + err.Error())
 	}

@@ -14,11 +14,12 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
 	"strconv"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
 
 	"errors"
 	"strings"

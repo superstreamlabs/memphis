@@ -12,7 +12,7 @@
 package routes
 
 import (
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 
 	"github.com/gin-gonic/gin"
 )

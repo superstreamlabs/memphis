@@ -16,10 +16,10 @@ import (
 	"fmt"
 	"strings"
 
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/models"
-	"memphis/utils"
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )

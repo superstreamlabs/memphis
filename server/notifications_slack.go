@@ -14,9 +14,10 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"memphis/db"
-	"memphis/models"
 	"strings"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/slack-go/slack"
 )

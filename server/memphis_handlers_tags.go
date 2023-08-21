@@ -14,13 +14,14 @@ package server
 import (
 	"errors"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/models"
-	"memphis/utils"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )

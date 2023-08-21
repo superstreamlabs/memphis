@@ -20,7 +20,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	srvlog "memphis/logger"
+	srvlog "github.com/memphisdev/memphis/logger"
 )
 
 // Logger interface of the NATS Server

@@ -14,11 +14,12 @@ package analytics
 import (
 	"encoding/json"
 	"fmt"
-	"memphis/conf"
-	"memphis/db"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/conf"
+	"github.com/memphisdev/memphis/db"
 
 	"github.com/gofrs/uuid"
 	"github.com/memphisdev/memphis.go"

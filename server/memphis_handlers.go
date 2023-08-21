@@ -14,11 +14,12 @@ package server
 import (
 	"errors"
 	"fmt"
-	"memphis/conf"
-	"memphis/db"
-	"memphis/models"
 	"regexp"
 	"strings"
+
+	"github.com/memphisdev/memphis/conf"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nats-io/nuid"

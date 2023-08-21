@@ -32,7 +32,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 	"github.com/nats-io/nats.go"
 	"golang.org/x/crypto/ocsp"
 )

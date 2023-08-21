@@ -15,11 +15,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/models"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 func flushMapToTier2Storage() error {

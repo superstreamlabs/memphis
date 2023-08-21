@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 const PROTO_TEST_PORT = 9922

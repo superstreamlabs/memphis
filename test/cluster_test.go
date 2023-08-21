@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 // Helper function to check that a cluster is formed

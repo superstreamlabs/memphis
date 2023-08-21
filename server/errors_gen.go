@@ -26,7 +26,7 @@ import (
 	"strings"
 	"text/template"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 var tagRe = regexp.MustCompile("\\{(.+?)}")

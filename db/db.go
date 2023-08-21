@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	"memphis/conf"
 	"strings"
 
-	"memphis/models"
+	"github.com/memphisdev/memphis/conf"
+
+	"github.com/memphisdev/memphis/models"
 
 	"context"
 	"time"

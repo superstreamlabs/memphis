@@ -18,11 +18,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/http_server"
-	"memphis/server"
 	"strings"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/http_server"
+	"github.com/memphisdev/memphis/server"
 
 	"os"
 

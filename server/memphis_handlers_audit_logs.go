@@ -12,8 +12,8 @@
 package server
 
 import (
-	"memphis/db"
-	"memphis/models"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 )
 
 type AuditLogsHandler struct{}

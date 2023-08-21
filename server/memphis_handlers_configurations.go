@@ -12,10 +12,11 @@
 package server
 
 import (
-	"memphis/db"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
 )
 
 type ConfigurationsHandler struct{ S *Server }

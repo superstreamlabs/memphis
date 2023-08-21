@@ -16,7 +16,7 @@ package test
 import (
 	"testing"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 func runPedanticServer() *server.Server {

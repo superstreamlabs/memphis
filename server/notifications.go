@@ -13,7 +13,8 @@ package server
 
 import (
 	"errors"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 func SendNotification(tenantName string, title string, message string, msgType string) error {

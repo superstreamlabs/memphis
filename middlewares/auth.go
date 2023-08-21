@@ -15,9 +15,9 @@ import (
 	"errors"
 	"fmt"
 
-	"memphis/conf"
-	"memphis/memphis_cache"
-	"memphis/models"
+	"github.com/memphisdev/memphis/conf"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
 
 	"strings"
 	"time"
