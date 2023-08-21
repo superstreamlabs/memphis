@@ -2412,7 +2412,7 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func GetProducersForGraph() ([]models.ProducerForGraph, error) {
+func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2422,13 +2422,14 @@ func GetProducersForGraph() ([]models.ProducerForGraph, error) {
 	defer conn.Release()
 	query := `SELECT p.name, p.station_id, p.app_id, p.is_active
 				FROM producers AS p
+				WHERE p.tenant_name = $1
 				ORDER BY p.name, p.station_id DESC
 				LIMIT 40000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
 	}
@@ -2950,7 +2951,7 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 	return consumers, nil
 }
 
-func GetConsumersForGraph() ([]models.ConsumerForGraph, error) {
+func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -2960,13 +2961,14 @@ func GetConsumersForGraph() ([]models.ConsumerForGraph, error) {
 	defer conn.Release()
 	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
 				FROM consumers AS c
+				WHERE c.tenant_name = $1
 				ORDER BY c.name, c.station_id DESC
 				LIMIT 40000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err
 	}
