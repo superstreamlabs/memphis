@@ -269,9 +269,9 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 
 	if err := json.Unmarshal([]byte(message), &ccr); err != nil || ccr.RequestVersion < 3 {
 		var ccrV1 createConsumerRequestV1
-		if err := json.Unmarshal(msg, &ccrV1); err != nil {
+		if err := json.Unmarshal([]byte(message), &ccrV1); err != nil {
 			var ccrV0 createConsumerRequestV0
-			if err := json.Unmarshal(msg, &ccrV0); err != nil {
+			if err := json.Unmarshal([]byte(message), &ccrV0); err != nil {
 				s.Errorf("[tenant: %v]createConsumerDirect at json.Unmarshal: Failed creating consumer: %v: %v", tenantName, err.Error(), string(msg))
 				respondWithRespErr(serv.MemphisGlobalAccountString(), s, reply, err, &resp)
 				return
