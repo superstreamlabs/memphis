@@ -1,4 +1,4 @@
-module memphis
+module github.com/memphisdev/memphis
 
 go 1.19
 
