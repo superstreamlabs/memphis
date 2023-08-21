@@ -18,7 +18,7 @@ import (
 	"strconv"
 	"testing"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 func TestResolveRandomPort(t *testing.T) {

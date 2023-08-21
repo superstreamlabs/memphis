@@ -22,8 +22,8 @@ import (
 	"testing"
 	"time"
 
-	"memphis/internal/testhelper"
-	"memphis/logger"
+	"github.com/memphisdev/memphis/internal/testhelper"
+	"github.com/memphisdev/memphis/logger"
 )
 
 func TestSetLogger(t *testing.T) {

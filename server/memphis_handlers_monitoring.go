@@ -17,10 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/models"
-	"memphis/utils"
 	"net"
 	"os"
 	"os/exec"
@@ -29,6 +25,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 

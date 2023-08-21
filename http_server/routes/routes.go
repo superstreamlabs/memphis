@@ -12,10 +12,10 @@
 package routes
 
 import (
-	"memphis/middlewares"
-	"memphis/server"
-	ui "memphis/ui_static_files"
-	"memphis/utils"
+	"github.com/memphisdev/memphis/middlewares"
+	"github.com/memphisdev/memphis/server"
+	ui "github.com/memphisdev/memphis/ui_static_files"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )

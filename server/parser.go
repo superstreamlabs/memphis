@@ -18,10 +18,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"memphis/db"
 	"net/http"
 	"net/textproto"
 	"strings"
+
+	"github.com/memphisdev/memphis/db"
 )
 
 type parserState int

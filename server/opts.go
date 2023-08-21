@@ -36,7 +36,7 @@ import (
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 
-	"memphis/conf"
+	"github.com/memphisdev/memphis/conf"
 )
 
 var allowUnknownTopLevelField = int32(0)

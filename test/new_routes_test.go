@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"memphis/logger"
-	"memphis/server"
-	"github.com/nats-io/nats.go"
+	"github.com/memphisdev/github.com/nats-io/nats.go"
+	"github.com/memphisdev/memphis/logger"
+	"github.com/memphisdev/memphis/server"
 )
 
 func runNewRouteServer(t *testing.T) (*server.Server, *server.Options) {

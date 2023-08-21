@@ -14,10 +14,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"memphis/models"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 const (

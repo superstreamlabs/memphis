@@ -28,10 +28,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/memphisdev/memphis/internal/ldap"
 	"github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nkeys"
 	"golang.org/x/crypto/bcrypt"
-	"memphis/internal/ldap"
 )
 
 // Authentication is an interface for implementing authentication

@@ -22,11 +22,6 @@ import (
 	"io"
 	"math"
 	"math/rand"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
-	"memphis/utils"
 	"net/http"
 	"runtime"
 	"sort"
@@ -34,6 +29,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-contrib/cors"
@@ -983,7 +984,7 @@ func (s *Server) InitializeEventCounter() error {
 	return nil
 }
 
-func (s *Server) InitializeFirestore() error {
+func (s *Server) InitializeCloudComponents() error {
 	return nil
 }
 

@@ -13,11 +13,12 @@ package server
 
 import (
 	"fmt"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
-	"memphis/utils"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )

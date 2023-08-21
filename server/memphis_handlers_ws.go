@@ -15,11 +15,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
-	"memphis/models"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/gofrs/uuid"
 )

@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 // waits until a calculated list of listeners is resolved or a timeout

@@ -12,7 +12,7 @@
 package server
 
 import (
-	"memphis/db"
+	"github.com/memphisdev/memphis/db"
 )
 
 func CreateGlobalTenantOnFirstSystemLoad() error {

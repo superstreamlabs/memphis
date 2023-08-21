@@ -30,7 +30,7 @@ import (
 
 	"github.com/nats-io/nkeys"
 
-	"memphis/internal/testhelper"
+	"github.com/memphisdev/memphis/internal/testhelper"
 
 	jwt "github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"

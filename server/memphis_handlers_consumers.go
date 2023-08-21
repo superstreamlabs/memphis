@@ -18,12 +18,13 @@ import (
 	"sort"
 	"strconv"
 
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
 
 	"k8s.io/utils/strings/slices"
 )

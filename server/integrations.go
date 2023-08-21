@@ -14,7 +14,8 @@ package server
 import (
 	"errors"
 	"fmt"
-	"memphis/db"
+
+	"github.com/memphisdev/memphis/db"
 )
 
 var IntegrationsConcurrentCache *concurrentMap[map[string]interface{}]

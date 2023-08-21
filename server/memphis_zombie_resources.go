@@ -14,10 +14,11 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"memphis/db"
-	"memphis/models"
 	"sync"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 )
 
 func (srv *Server) removeStaleStations() {

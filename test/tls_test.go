@@ -29,7 +29,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 var noOpErrHandler = func(_ *nats.Conn, _ *nats.Subscription, _ error) {}

@@ -13,7 +13,8 @@ package server
 
 import (
 	"fmt"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/gin-gonic/gin"
 )
