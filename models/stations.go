@@ -143,10 +143,12 @@ type ExtendedStationLight struct {
 }
 
 type StationLight struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	DlsMsgs       int    `json:"dls_messages"`
-	TotalMessages int    `json:"total_messages"`
+	ID            int         `json:"id"`
+	Name          string      `json:"name"`
+	DlsMsgs       int         `json:"dls_messages"`
+	SchemaName    string      `json:"schema_name"`
+	TotalMessages int         `json:"total_messages"`
+	Tags          []CreateTag `json:"tags"`
 }
 
 type ActiveProducersConsumersDetails struct {
