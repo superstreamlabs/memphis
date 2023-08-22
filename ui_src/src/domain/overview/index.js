@@ -252,7 +252,7 @@ function OverView() {
                             {isCloud() ? (
                                 <div className="overview-components overview-components-cloud">
                                     <div className="left-side">
-                                        <StreamLineage setExpended={(e) => setExpend(e)} expend={lineageExpend} />
+                                        <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                                         <Throughput />
                                     </div>
                                     <div className="right-side cloud">

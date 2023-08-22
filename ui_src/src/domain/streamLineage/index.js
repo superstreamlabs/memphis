@@ -13,193 +13,26 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, useRef } from 'react';
-import { StringCodec, JSONCodec } from 'nats.ws';
-
 import { BsZoomIn, BsZoomOut } from 'react-icons/bs';
-import { MdZoomOutMap } from 'react-icons/md';
-import { IoCloseOutline } from 'react-icons/io5';
-import { ApiEndpoints } from '../../const/apiEndpoints';
 import { Canvas, Node, Edge, Label } from 'reaflow';
+import { IoRefresh } from 'react-icons/io5';
+import { StringCodec, JSONCodec } from 'nats.ws';
+import { MdZoomOutMap } from 'react-icons/md';
+import { IoClose } from 'react-icons/io5';
+import { Divider } from 'antd';
+
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
+import BackIcon from '../../assets/images/backIcon.svg';
 import { httpRequest } from '../../services/http';
+import Connection from './components/connection';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
-import { Divider } from 'antd';
-import Connection from './components/connection';
 import Station from './components/station';
+import Button from '../../components/button';
 
-const fake_data = {
-    stations: [
-        {
-            id: 1,
-            name: 'a',
-            dls_messages: 90,
-            total_messages: 132006
-        },
-        {
-            id: 8,
-            name: 'a1',
-            dls_messages: 0,
-            total_messages: 145
-        },
-        {
-            id: 9,
-            name: 'a2',
-            dls_messages: 0,
-            total_messages: 145
-        },
-        {
-            id: 10,
-            name: 'a3',
-            dls_messages: 0,
-            total_messages: 145
-        },
-        {
-            id: 11,
-            name: 'a4',
-            dls_messages: 0,
-            total_messages: 145
-        },
-        {
-            id: 12,
-            name: 'a5',
-            dls_messages: 0,
-            total_messages: 145
-        },
-        {
-            id: 13,
-            name: 'a6',
-            dls_messages: 0,
-            total_messages: 145
-        }
-    ],
-    apps: [
-        {
-            app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-            consumers: [],
-            producers: [
-                {
-                    name: 'a',
-                    station_id: 1,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a1',
-                    station_id: 8,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a2',
-                    station_id: 9,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a3',
-                    station_id: 10,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                }
-            ],
-            from: [],
-            to: [1, 8, 9, 10]
-        },
-        {
-            app_id: '93919a6c-d550-40a8-9ca3-51365496768b',
-            consumers: [
-                {
-                    name: 'c022',
-                    station_id: 10,
-                    app_id: '93919a6c-d550-40a8-9ca3-51365496768b',
-                    count: 1
-                },
-                {
-                    name: 'c0232',
-                    station_id: 9,
-                    app_id: '93919a6c-d550-40a8-9ca3-51365496768b',
-                    count: 1
-                },
-                {
-                    name: 'c9020202',
-                    station_id: 8,
-                    app_id: '93919a6c-d550-40a8-9ca3-51365496768b',
-                    count: 2
-                }
-            ],
-            producers: [],
-            from: [1, 8, 9, 10],
-            to: [11, 12]
-        },
-        {
-            app_id: 'e9727623-0b9f-49ec-be3c-66593184b99c',
-            consumers: [],
-            producers: [
-                {
-                    name: 'a',
-                    station_id: 1,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a1',
-                    station_id: 8,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a2',
-                    station_id: 9,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a3',
-                    station_id: 10,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                }
-            ],
-            from: [],
-            to: [11, 12, 13]
-        },
-        {
-            app_id: 'e9727623-0b9f-49ec-be3c-66593184b349c',
-            consumers: [],
-            producers: [
-                {
-                    name: 'a',
-                    station_id: 1,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a1',
-                    station_id: 8,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a2',
-                    station_id: 9,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                },
-                {
-                    name: 'a3',
-                    station_id: 10,
-                    app_id: 'e9727623-0b9f-49ec-be3c-66593184b16c',
-                    count: 1
-                }
-            ],
-            from: [11, 12, 13],
-            to: []
-        }
-    ]
-};
-
-const StreamLineage = ({ expend, setExpended }) => {
-    const [dispatch] = useContext(Context);
+const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
+    const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
@@ -209,7 +42,7 @@ const StreamLineage = ({ expend, setExpended }) => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_GRAPH_OVERVIEW);
-            arrangeData(fake_data);
+            arrangeData(data);
         } catch (error) {
             setisLoading(false);
         }
@@ -219,50 +52,50 @@ const StreamLineage = ({ expend, setExpended }) => {
         getGraphData();
     }, []);
 
-    // useEfrfect(() => {
-    //     let sub;
-    //     const jc = JSONCodec();
-    //     const sc = StringCodec();
+    useEffect(() => {
+        const sc = StringCodec();
+        const jc = JSONCodec();
+        let sub;
 
-    //     const subscribeAndListen = async (subName, pubName, messageId) => {
-    //         try {
-    //             const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.${subName}.${messageId}`, sc.encode('SUB'));
+        const subscribeToOverviewData = async () => {
+            try {
+                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_graph_overview`, sc.encode('SUB'));
 
-    //             if (rawBrokerName) {
-    //                 const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-    //                 sub = state.socket?.subscribe(`$memphis_ws_pubs.${pubName}.${messageId}.${brokerName}`);
-    //                 listenForUpdates(subName, messageId);
-    //             }
-    //         } catch (err) {
-    //             console.error(`Error subscribing to ${subName} data for messageId ${messageId}:`, err);
-    //             return;
-    //         }
-    //     };
-    //     const listenForUpdates = async (subName, messageId) => {
-    //         try {
-    //             if (sub) {
-    //                 for await (const msg of sub) {
-    //                     let data = jc.decode(msg.data);
-    //                     arrangeData(data);
-    //                 }
-    //             }
-    //         } catch (err) {
-    //             console.error(`Error receiving ${subName} data updates for messageId ${messageId}:`, err);
-    //         }
-    //     };
+                if (rawBrokerName) {
+                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
+                    sub = state.socket?.subscribe(`$memphis_ws_pubs.get_graph_overview.${brokerName}`);
+                    listenForUpdates();
+                }
+            } catch (err) {
+                console.error('Error subscribing to overview data:', err);
+            }
+        };
 
-    //     subscribeAndListen('poison_message_journey_data', 'poison_message_journey_data', messageId);
+        const listenForUpdates = async () => {
+            try {
+                if (sub) {
+                    for await (const msg of sub) {
+                        let data = jc.decode(msg.data);
+                        arrangeData(data);
+                    }
+                }
+            } catch (err) {
+                console.error('Error receiving graph data updates:', err);
+            }
+        };
 
-    //     return () => {
-    //         if (sub) {
-    //             try {
-    //                 sub.unsubscribe();
-    //             } catch (err) {
-    //                 console.error('Error unsubscribing from message journey data:', err);
-    //             }
-    //         }
-    //     };
-    // }, [state.socket]);
+        expend && subscribeToOverviewData();
+
+        return () => {
+            if (sub) {
+                try {
+                    sub.unsubscribe();
+                } catch (err) {
+                    console.error('Error unsubscribing from graph data:', err);
+                }
+            }
+        };
+    }, [state.socket, expend]);
 
     const arrangeData = (data) => {
         let nodesList = [];
@@ -273,22 +106,42 @@ const StreamLineage = ({ expend, setExpended }) => {
                     id: row.id,
                     text: row.name,
                     width: 300,
-                    height: 300,
+                    height: row.schema_name !== '' ? 280 : 250,
                     data: {
                         value: 'station',
                         name: row.name,
                         dls_messages: row.dls_messages,
-                        total_messages: row.total_messages
-                    }
+                        total_messages: row.total_messages,
+                        schema_name: row.schema_name
+                    },
+                    ports: [
+                        {
+                            id: `${row.id}_east`,
+                            side: 'EAST',
+                            width: 10,
+                            height: 10,
+                            hidden: true
+                        },
+                        {
+                            id: `${row.id}_west`,
+                            side: 'WEST',
+                            width: 10,
+                            height: 10,
+                            hidden: true
+                        }
+                    ]
                 };
                 nodesList.push(node);
             });
-            data['apps']?.map((row, index) => {
+            const sortedArray = data['apps']?.slice().sort((a, b) => {
+                return a.app_id.localeCompare(b.app_id);
+            });
+            sortedArray?.map((row, index) => {
                 let node = {
                     id: row.app_id,
                     text: 'app',
                     width: 300,
-                    height: 260,
+                    height: 100 + row.producers.length * 30 + row.consumers.length * 30,
                     data: {
                         value: 'app',
                         producers: row.producers,
@@ -297,31 +150,41 @@ const StreamLineage = ({ expend, setExpended }) => {
                 };
                 row.from.map((from, index) => {
                     let edge = {
-                        id: `${row.app_id}-${from}`,
-                        from: from,
+                        id: `${row.app_id}-${from.station_id}`,
+                        from: from.station_id,
                         to: row.app_id,
-                        fromPort: from,
+                        fromPort: `${from.station_id}_east`,
                         toPort: row.app_id,
-                        selectionDisabled: true
+                        selectionDisabled: true,
+                        data: {
+                            active: from.active
+                        }
                     };
                     edgesList.push(edge);
                 });
                 row.to.map((to, index) => {
                     let edge = {
-                        id: `${row.app_id}-${to}`,
+                        id: `${row.app_id}-${to.station_id}`,
                         from: row.app_id,
-                        to: to,
+                        to: to.station_id,
                         fromPort: row.app_id,
-                        toPort: to,
-                        selectionDisabled: true
+                        toPort: `${to.station_id}_west`,
+                        selectionDisabled: true,
+                        data: {
+                            active: to.active
+                        }
                     };
                     edgesList.push(edge);
                 });
                 nodesList.push(node);
             });
-
             setEdges(edgesList);
             setNodes(nodesList);
+            setTimeout(() => {
+                if (ref.current) {
+                    ref.current.fitCanvas();
+                }
+            }, 100);
             setTimeout(() => {
                 setisLoading(false);
             }, 1000);
@@ -329,33 +192,49 @@ const StreamLineage = ({ expend, setExpended }) => {
     };
 
     return (
-        <div className={expend ? 'stream-lineage-container' : 'stream-lineage-container overview-components-wrapper lineage-smaller'}>
+        <div
+            className={
+                expend
+                    ? 'stream-lineage-container'
+                    : nodes?.length > 0
+                    ? 'stream-lineage-container overview-components-wrapper lineage-smaller'
+                    : 'overview-components-wrapper lineage-empthy'
+            }
+        >
             <div className="title-wrapper">
                 <div className="bread-crumbs">
-                    <p>Graph View</p>
+                    <p>System overview</p>
                 </div>
-                <div className="actions-wrapper">
-                    <div className="close-wrapper">
-                        {expend && <IoCloseOutline onClick={() => setExpended(false)} />}
-                        {!expend && <MdZoomOutMap onClick={() => setExpended(true)} />}
+                {!expend && nodes?.length > 0 && (
+                    <div className="refresh-wrapper" onClick={() => getGraphData()}>
+                        <IoRefresh />
+                        Refresh
                     </div>
-                    <div className="zoom-wrapper">
-                        <BsZoomIn onClick={() => ref.current.zoomIn()} />
-                        <Divider />
-                        <BsZoomOut onClick={() => ref.current.zoomOut()} />
-                        <Divider />
-                        <span className="fit-wrapper" onClick={() => ref.current.fitCanvas()}>
-                            Fit
-                        </span>
+                )}
+                {nodes?.length > 0 && (
+                    <div className="actions-wrapper">
+                        <div className="close-wrapper">
+                            {expend && <IoClose onClick={() => setExpended(false)} />}
+                            {!expend && <MdZoomOutMap onClick={() => setExpended(true)} />}
+                        </div>
+                        <div className="zoom-wrapper">
+                            <BsZoomIn onClick={() => ref.current.zoomIn()} />
+                            <Divider />
+                            <BsZoomOut onClick={() => ref.current.zoomOut()} />
+                            <Divider />
+                            <span className="fit-wrapper" onClick={() => ref.current.fitCanvas()}>
+                                Fit
+                            </span>
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
             {isLoading && (
                 <div className="loader-uploading">
                     <Loader background={false} auto={false} />
                 </div>
             )}
-            {!isLoading && (
+            {!isLoading && nodes?.length > 0 && (
                 <div className="canvas-wrapper">
                     <Canvas
                         className="canvas"
@@ -368,7 +247,7 @@ const StreamLineage = ({ expend, setExpended }) => {
                         maxZoom={0.2}
                         minZoom={-0.9}
                         height={'100%'}
-                        maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 170}
+                        // maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 170}
                         node={
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (
@@ -381,6 +260,7 @@ const StreamLineage = ({ expend, setExpended }) => {
                                                 stationName={event.node.data.name}
                                                 dls_messages={event.node.data.dls_messages}
                                                 total_messages={event.node.data.total_messages}
+                                                schema_name={event.node.data.schema_name}
                                             />
                                         )}
                                     </foreignObject>
@@ -389,7 +269,26 @@ const StreamLineage = ({ expend, setExpended }) => {
                         }
                         zoomable={true}
                         arrow={null}
-                        edge={(edge) => <Edge {...edge} className={'edge'} />}
+                        edge={(edge) => <Edge {...edge} className={edge.data.active ? 'edge processing' : 'edge'} />}
+                    />
+                </div>
+            )}
+            {!isLoading && nodes?.length === 0 && (
+                <div className="empty-connections-container">
+                    <img src={graphPlaceholder} alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
+                    <p>There aren’t any connection to show</p>
+                    <span className="desc">Start by creating a new station</span>
+                    <Button
+                        className="modal-btn"
+                        height="34px"
+                        placeholder={'Start by create a new station'}
+                        colorType="white"
+                        radiusType="circle"
+                        backgroundColorType="purple"
+                        fontSize="12px"
+                        fontWeight="600"
+                        aria-haspopup="true"
+                        onClick={() => createStationTrigger(true)}
                     />
                 </div>
             )}

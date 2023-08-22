@@ -12,30 +12,45 @@
 
 import './style.scss';
 
-import React, { Component } from 'react';
+import React from 'react';
 import { BiSolidEnvelope } from 'react-icons/bi';
 import { PiWarningFill } from 'react-icons/pi';
 
-const Station = ({ stationName, dls_messages, total_messages }) => {
+import redirectWhite from '../../../../assets/images/redirectWhite.svg';
+import { useHistory } from 'react-router-dom/cjs/react-router-dom.min';
+import pathDomains from '../../../../router';
+
+const Station = ({ stationName, dls_messages, total_messages, schema_name }) => {
+    const history = useHistory();
+
+    const goToStation = () => {
+        history.push(`${pathDomains.stations}/${stationName}`);
+    };
     return (
-        <div className="station-graph-wrapper">
+        <div className="station-graph-wrapper" onClick={() => goToStation()}>
             <div className="yellow-background" />
             <div className="station-details">
+                <img src={redirectWhite} alt="redirectWhite" />
                 <div className="station-name">{stationName}</div>
                 <div className="station-messages">
                     <div className="icon-wrapper">
                         <BiSolidEnvelope />
                     </div>
-                    <div className="station-messages-title">Amount of messages</div>
+                    <div className="station-messages-title">Messages</div>
                     <div className="station-messages-count">{total_messages}</div>
                 </div>
                 <div className="station-messages">
                     <div className="icon-wrapper">
                         <PiWarningFill />
                     </div>
-                    <div className="station-messages-title">Amount of DLS messages</div>
+                    <div className="station-messages-title">DLS messages</div>
                     <div className="station-messages-count">{dls_messages}</div>
                 </div>
+                {schema_name !== '' && (
+                    <div className="station-messages schema-attached">
+                        <div className="schema-attached-title">Schema attached</div>
+                    </div>
+                )}
             </div>
         </div>
     );

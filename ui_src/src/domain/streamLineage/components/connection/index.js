@@ -20,7 +20,7 @@ const Connection = ({ id, producers, consumers }) => {
         <div className="connection-wrapper">
             <div className="connection-header">
                 <HiOutlineChartSquareBar />
-                <div className="connection-id">{id}</div>
+                <div className="connection-id">Connection</div>
             </div>
             {producers?.length > 0 &&
                 producers?.map((producer, index) => (

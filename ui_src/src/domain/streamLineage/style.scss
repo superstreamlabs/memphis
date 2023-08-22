@@ -18,6 +18,10 @@ $grid-color: rgba(150, 150, 150, .3);
             display: flex;
             height: 30px;
             align-items: center;
+            img{
+                margin-right: 10px;
+                cursor: pointer;
+            }
             p{
                 margin: 0;
                 font-family: 'InterSemiBold';
@@ -31,6 +35,24 @@ $grid-color: rgba(150, 150, 150, .3);
                 line-height: 29px;
                 color: #667085; 
                 
+            }
+        }
+        .refresh-wrapper{
+            display: flex;
+            margin-right: 55px;
+            border-radius: 8px;
+            background: var(--box-2, #FFF);
+            box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);   
+            align-items: center;
+            padding: 0 10px;
+            gap: 5px;
+            height: 40px;
+            cursor: pointer;
+            font-family: 'InterMedium';
+            svg{
+                color: #9EA3AE;
+                width: 20px;
+                height: 20px;
             }
         }
         .actions-wrapper{
@@ -97,11 +119,10 @@ $grid-color: rgba(150, 150, 150, .3);
         height: calc(100% - 20px);
         .edge {
             stroke-width: 8;
-            stroke-dasharray: 5;
-            stroke: #34C759;
-
+             stroke: rgba(101,87,255,.1);
         }
         .processing {
+            stroke: #34C759;
             stroke-dasharray: 5;
             animation: dashdraw .5s linear infinite;
         }
@@ -134,6 +155,58 @@ $grid-color: rgba(150, 150, 150, .3);
         font-size: 17px !important;
     }
 }
+
+.lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
+    max-height: 250px !important;
+}
+.lineage-empthy{
+    padding: 15px;
+    position: relative;
+    height: 100%;
+    .loader-uploading{
+        position: relative;
+        display: flex;
+        width: 100%;
+        height: 100%;
+        .loader-container{
+            position: relative;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+    .bread-crumbs{
+        p{
+            margin: 0;
+            font-family: 'InterSemiBold';
+            font-size: 17px;
+            line-height: 29px;
+            color: #1D1D1D; 
+        }
+    }
+    .empty-connections-container{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        img{
+            width: 120px;
+        }
+        p{
+            margin: 0;
+            font-family: 'InterSemiBold';
+            font-size: 16px;
+        }
+        .desc{
+            font-family: 'InterMedium';
+            color: #979797;
+            font-size: 14px;
+        }
+    }
+}
+
 
     .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
         overflow: overlay !important;
