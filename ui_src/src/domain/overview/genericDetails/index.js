@@ -52,6 +52,22 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
+                    <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Messages</span>
+                        <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
+                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <div className="data-wrapper">
+                        <span>Dead-letter messages</span>
+                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
+                    </div>
+                </div>
+                <Divider type="vertical" />
+                <div className="data-box">
                     <img src={consumeLagIcon} width={50} height={50} alt="Logo" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Slow consumption stations</span>
@@ -63,22 +79,6 @@ const GenericDetails = () => {
                                 </Popover>
                             )}
                         </div>
-                    </div>
-                </div>
-                <Divider type="vertical" />
-                <div className="data-box">
-                    <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
-                    <div className="data-wrapper">
-                        <span>Stored messages</span>
-                        <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
-                    </div>
-                </div>
-                <Divider type="vertical" />
-                <div className="data-box">
-                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
-                    <div className="data-wrapper">
-                        <span>Dead-letter messages</span>
-                        <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
                     </div>
                 </div>
             </div>

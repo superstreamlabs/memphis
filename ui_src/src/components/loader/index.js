@@ -17,11 +17,11 @@ import Lottie from 'lottie-react';
 
 import animationData from '../../assets/lotties/MemphisGif.json';
 
-const Loader = ({ background = true }) => {
+const Loader = ({ background = true, auto = true }) => {
     return (
         <div className="loader-container">
             {background && <div className="gif-wrapper"></div>}
-            <div className="memphis-gif" style={{ height: '10vw', width: '10vw' }}>
+            <div className={auto && 'memphis-gif'} style={{ height: '10vw', width: '10vw' }}>
                 <Lottie animationData={animationData} loop={true} />
             </div>
         </div>
