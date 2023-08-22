@@ -1554,7 +1554,7 @@ func GetStationsLight(tenantName string) ([]models.StationLight, error) {
 	defer conn.Release()
 
 	query := `
-	SELECT s.id, s.name,
+	SELECT s.id, s.name, s.schema_name,
 	(SELECT COUNT(*) FROM dls_messages dm WHERE dm.station_id = s.id) AS dls_count
 	FROM stations AS s
 	WHERE s.is_deleted = false AND s.tenant_name = $1
@@ -1579,6 +1579,7 @@ func GetStationsLight(tenantName string) ([]models.StationLight, error) {
 		if err := rows.Scan(
 			&stationRes.ID,
 			&stationRes.Name,
+			&stationRes.SchemaName,
 			&stationRes.DlsMsgs,
 		); err != nil {
 			return []models.StationLight{}, err
@@ -5043,6 +5044,47 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	}
 	if len(tags) == 0 {
 		return []models.Tag{}, err
+	}
+	return tags, nil
+}
+
+func GetTagsByEntityIDLight(entity string, id int) ([]models.CreateTag, error) {
+	var entityDBList string
+	switch entity {
+	case "station":
+		entityDBList = "stations"
+	case "schema":
+		entityDBList = "schemas"
+	case "user":
+		entityDBList = "users"
+	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	defer conn.Release()
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	query := `SELECT t.name, t.color FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `) LIMIT 1000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id_light"+uid.String(), query)
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.CreateTag])
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.CreateTag{}, err
 	}
 	return tags, nil
 }
