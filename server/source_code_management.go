@@ -14,7 +14,8 @@ package server
 import (
 	"errors"
 	"fmt"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/google/go-github/github"
 )

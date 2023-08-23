@@ -18,11 +18,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/http_server"
-	"memphis/server"
 	"strings"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/http_server"
+	"github.com/memphisdev/memphis/server"
 
 	"os"
 
@@ -120,6 +121,11 @@ func runMemphis(s *server.Server) {
 				s.Errorf("Data from global account to memphis account failed: %s", err.Error())
 			}
 		}
+	}
+
+	err = s.CreateDefaultEntitiesOnMemphisAccount()
+	if err != nil && !strings.Contains(err.Error(), "already exists") {
+		s.Errorf("Failed create default entities: " + err.Error())
 	}
 
 	go http_server.InitializeHttpServer(s)

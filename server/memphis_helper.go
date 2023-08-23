@@ -21,8 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
-	"memphis/db"
-	"memphis/models"
 	"net/http"
 	"net/textproto"
 	"os"
@@ -30,6 +28,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/gofrs/uuid"
 	"github.com/nats-io/nuid"
@@ -1068,7 +1069,6 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 			connectionIdHeader := headersJson["$memphis_connectionId"]
 			producedByHeader := strings.ToLower(headersJson["$memphis_producedBy"])
 
-
 			for header := range headersJson {
 				if strings.HasPrefix(header, "$memphis") {
 					delete(headersJson, header)
@@ -1534,7 +1534,7 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	globalUsers := []UserConfig{{User: "$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	globalUsers := []UserConfig{{User: "$$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
 	accounts := map[string]AccountConfig{
 		"$SYS": {
 			Users: []UserConfig{

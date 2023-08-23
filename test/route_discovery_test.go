@@ -26,7 +26,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 func runSeedServer(t *testing.T) (*server.Server, *server.Options) {

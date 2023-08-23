@@ -15,13 +15,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
 
 	"k8s.io/utils/strings/slices"
 )
@@ -43,14 +44,13 @@ func validateProducerType(producerType string) error {
 	return nil
 }
 
-func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int) (bool, bool, error, models.Station) {
+func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnectionId string, pStationName StationName, username string, tenantName string, version int, appId string) (bool, bool, error, models.Station) {
 	name := strings.ToLower(pName)
 	err := validateProducerName(name)
 	if err != nil {
 		serv.Warnf("createProducerDirectCommon at validateProducerName: Producer %v at station %v: %v", pName, pStationName.external, err.Error())
 		return false, false, err, models.Station{}
 	}
-
 	producerType := strings.ToLower(pType)
 	err = validateProducerType(producerType)
 	if err != nil {
@@ -80,7 +80,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 			return false, false, err, models.Station{}
 		}
 		var created bool
-		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username)
+		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
 			return false, false, err, models.Station{}
@@ -117,7 +117,9 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
-	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList)
+	splitted := strings.Split(c.opts.Lang, ".")
+	sdkName := splitted[len(splitted)-1]
+	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at InsertNewProducer: %v", user.TenantName, user.Username, err.Error())
 		return false, false, err, models.Station{}
@@ -162,12 +164,12 @@ func (s *Server) createProducerDirectV0(c *client, reply string, cpr createProdu
 		return
 	}
 	_, _, err, _ = s.createProducerDirectCommon(c, cpr.Name,
-		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0)
+		cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, 0, cpr.ConnectionId)
 	respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 }
 
 func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
-	var cpr createProducerRequestV1
+	var cpr createProducerRequestV2
 	var resp createProducerResponse
 
 	tenantName, message, err := s.getTenantNameAndMessage(msg)
@@ -176,15 +178,27 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 1 {
-		var cprV0 createProducerRequestV0
-		if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
-			s.Errorf("[tenant: %v]createProducerDirect: %v", tenantName, err.Error())
-			respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+	if err := json.Unmarshal([]byte(message), &cpr); err != nil || cpr.RequestVersion < 3 {
+		var cprV1 createProducerRequestV1
+		if err := json.Unmarshal([]byte(message), &cprV1); err != nil {
+			var cprV0 createProducerRequestV0
+			if err := json.Unmarshal([]byte(message), &cprV0); err != nil {
+				s.Errorf("[tenant: %v]createProducerDirect: %v", tenantName, err.Error())
+				respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+				return
+			}
+			s.createProducerDirectV0(c, reply, cprV0, tenantName)
 			return
 		}
-		s.createProducerDirectV0(c, reply, cprV0, tenantName)
-		return
+		cpr = createProducerRequestV2{
+			Name:           cprV1.Name,
+			StationName:    cprV1.StationName,
+			ConnectionId:   cprV1.ConnectionId,
+			ProducerType:   cprV1.ProducerType,
+			RequestVersion: cprV1.RequestVersion,
+			Username:       cprV1.Username,
+			AppId:          cprV1.ConnectionId,
+		}
 	}
 	cpr.TenantName = tenantName
 	sn, err := StationNameFromStr(cpr.StationName)
@@ -194,7 +208,7 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion)
+	clusterSendNotification, schemaVerseToDls, err, station := s.createProducerDirectCommon(c, cpr.Name, cpr.ProducerType, cpr.ConnectionId, sn, cpr.Username, tenantName, cpr.RequestVersion, cpr.AppId)
 	if err != nil {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return

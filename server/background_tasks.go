@@ -15,10 +15,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
 	"sync"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
 
 	"strconv"
 	"strings"

@@ -16,12 +16,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
-	"memphis/models"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 )
 
 const (
@@ -55,6 +56,14 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	}
 
 	accountName := message.Account
+	headers := message.Headers
+	data := message.Data
+	timeSent := message.TimeSent
+	var timeSentTimeStamp time.Time
+	if timeSent != 0 {
+		timeSentTimeStamp = time.Unix(0, timeSent).UTC()
+	}
+	lenPayload := len(data) + len(headers)
 	// backward compatibility
 	if accountName == "" {
 		accountName = s.MemphisGlobalAccountString()
@@ -62,7 +71,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
 		return err
 	}
 	if !station.DlsConfigurationPoison {
@@ -72,18 +81,25 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	cgName := message.Consumer
 	cgName = revertDelimiters(cgName)
 	messageSeq := message.StreamSeq
-	poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
-	if err != nil {
-		if IsNatsErr(err, JSNoMessageFoundErr) {
-			return nil
+	// backward compatibility
+	if data == nil {
+		poisonMessageContent, err := s.memphisGetMessage(accountName, message.Stream, uint64(messageSeq))
+		if err != nil {
+			if IsNatsErr(err, JSNoMessageFoundErr) {
+				return nil
+			}
+			serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
+			return err
 		}
-		serv.Errorf("handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", stationName.Ext(), err.Error())
-		return err
-	}
 
+		timeSentTimeStamp = poisonMessageContent.Time
+		data = poisonMessageContent.Data
+		headers = poisonMessageContent.Header
+		lenPayload = len(poisonMessageContent.Data) + len(poisonMessageContent.Header)
+	}
 	var headersJson map[string]string
-	if poisonMessageContent.Header != nil {
-		headersJson, err = DecodeHeader(poisonMessageContent.Header)
+	if headers != nil {
+		headersJson, err = DecodeHeader(headers)
 		if err != nil {
 			serv.Errorf("handleNewUnackedMsg: %v", err.Error())
 			return err
@@ -105,9 +121,9 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	}
 
 	messageDetails := models.MessagePayload{
-		TimeSent: poisonMessageContent.Time,
-		Size:     len(poisonMessageContent.Data) + len(poisonMessageContent.Header),
-		Data:     hex.EncodeToString(poisonMessageContent.Data),
+		TimeSent: timeSentTimeStamp,
+		Size:     lenPayload,
+		Data:     hex.EncodeToString(data),
 		Headers:  headersJson,
 	}
 

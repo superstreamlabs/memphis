@@ -318,8 +318,8 @@ const ProduceConsumList = ({ producer }) => {
                         <div className="header-img-container">
                             <img className="headerImage" src={playVideoIcon} alt="stationImg" />
                         </div>
-                        <p>Produce</p>
-                        <label>Quick message producing.</label>
+                        <p>Produce a message</p>
+                        <label>Produce a message through the Console.</label>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}
@@ -340,6 +340,7 @@ const ProduceConsumList = ({ producer }) => {
                 lBtnClick={() => setOpenProduceMessages(false)}
                 lBtnText={'Cancel'}
                 isLoading={produceloading}
+                keyListener={false}
             >
                 <ProduceMessages
                     stationName={stationState?.stationMetaData?.name}

@@ -29,10 +29,10 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/memphisdev/memphis/server/sysmem"
 	"github.com/minio/highwayhash"
 	"github.com/nats-io/nkeys"
 	"github.com/nats-io/nuid"
-	"memphis/server/sysmem"
 )
 
 // JetStreamConfig determines this server's configuration.

@@ -27,8 +27,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/memphisdev/memphis/logger"
 	"github.com/nats-io/nats.go"
-	"memphis/logger"
 )
 
 func TestSignalToReOpenLogFile(t *testing.T) {

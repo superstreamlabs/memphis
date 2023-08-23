@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/db"
-	"memphis/models"
 	"strings"
+
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"

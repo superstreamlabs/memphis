@@ -16,15 +16,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
-	"memphis/utils"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -90,6 +91,21 @@ func validateStorageType(storageType string) error {
 	return nil
 }
 
+func validateRetentionType(retentionType string) error {
+	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" && retentionType != "ack_based" {
+		return errors.New("retention type can be one of the following message_age_sec/messages/bytes/ack_based")
+	}
+
+	return nil
+}
+
+func validateRetentionPolicy(policy RetentionPolicy) error {
+	if policy != LimitsPolicy && policy != InterestPolicy {
+		return errors.New("the only supported retention types are limits/interest")
+	}
+	return nil
+}
+
 func validateIdempotencyWindow(retentionType string, retentionValue int, idempotencyWindow int64) error {
 	if idempotencyWindow > 86400000 { // 24 hours
 		return errors.New("idempotency window can not exceed 24 hours")
@@ -99,6 +115,13 @@ func validateIdempotencyWindow(retentionType string, retentionValue int, idempot
 	}
 
 	return nil
+}
+
+func getRetentionPolicy(retentionType string) RetentionPolicy {
+	if retentionType == "ack_based" {
+		return InterestPolicy
+	}
+	return LimitsPolicy
 }
 
 // TODO remove the station resources - functions, connectors
@@ -210,7 +233,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		csr.TenantName = t.Name
 	}
 
-	exist, station, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
+	exist, _, err := db.GetStationByName(stationName.Ext(), csr.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user:%v]createStationDirect at db.GetStationByName: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
 		jsApiResp.Error = NewJSStreamCreateError(err)
@@ -218,7 +241,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if exist && ((csr.PartitionsNumber == 0 && len(station.PartitionsList) == 0) || (csr.PartitionsNumber > 0 && len(station.PartitionsList) > 0)) {
+	if exist {
 		jsApiResp.Error = NewJSStreamNameExistError()
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 		return
@@ -284,13 +307,13 @@ func (s *Server) createStationDirectIntern(c *client,
 
 		if csr.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
-			retentionValue = 604800 // 1 week
+			retentionValue = 3600 // 1 hour
 		} else {
 			retentionValue = csr.RetentionValue
 		}
 	} else {
 		retentionType = "message_age_sec"
-		retentionValue = 604800 // 1 week
+		retentionValue = 3600 // 1 hour
 	}
 
 	var storageType string
@@ -360,7 +383,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	_, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -369,6 +392,12 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 	if rowsUpdated > 0 {
+		err = CreateDefaultTags("station", newStation.ID, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]createStationDirect at CreateDefaultTags: %v", user.TenantName, user.Username, err.Error())
+			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+			return
+		}
 		message := "Station " + stationName.Ext() + " has been created by user " + username
 		serv.Noticef("[tenant:%v][user: %v] %v", user.TenantName, user.Username, message)
 		var auditLogs []interface{}
@@ -892,11 +921,11 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 
 		if body.RetentionValue <= 0 && retentionType != "ack_based" {
 			retentionType = "message_age_sec"
-			body.RetentionValue = 604800 // 1 week
+			body.RetentionValue = 3600 // 1 hour
 		}
 	} else {
 		retentionType = "message_age_sec"
-		body.RetentionValue = 604800 // 1 week
+		body.RetentionValue = 3600 // 1 hour
 	}
 
 	if body.StorageType != "" {
@@ -972,6 +1001,13 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else {
+		err = CreateDefaultTags("station", newStation.ID, tenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]CreateStation at CreateDefaultTags: %v", tenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}

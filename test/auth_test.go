@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 func doAuthConnect(t tLogger, c net.Conn, token, user, pass string) {

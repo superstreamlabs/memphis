@@ -17,21 +17,22 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
-	"memphis/utils"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
+
 	"github.com/gin-gonic/gin"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/hamba/avro/v2"
 	"github.com/jhump/protoreflect/desc/protoparse"
 	"github.com/santhosh-tekuri/jsonschema/v5"
-	"github.com/hamba/avro/v2"
 )
 
 type SchemasHandler struct{ S *Server }
@@ -483,6 +484,13 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateNewSchema at AddTagsToEntity: Failed creating tag at schema %v: %v", user.TenantName, user.Username, schemaName, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	} else {
+		err = CreateDefaultTags("schema", newSchema.ID, tenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]createNewSchema at CreateDefaultTags: %v", tenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -999,6 +1007,12 @@ func (s *Server) createNewSchema(newSchemaReq CreateSchemaReq, tenantName string
 			s.Errorf("[tenant: %v][user: %v]createNewSchema at db.InsertNewSchemaVersion: %v", tenantName, user.Username, err.Error())
 			return err
 		}
+	}
+
+	err = CreateDefaultTags("schema", newSchema.ID, tenantName)
+	if err != nil {
+		s.Errorf("[tenant: %v][user: %v]createNewSchema at CreateDefaultTags: %v", tenantName, user.Username, err.Error())
+		return err
 	}
 
 	return nil

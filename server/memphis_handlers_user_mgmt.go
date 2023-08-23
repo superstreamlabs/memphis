@@ -16,10 +16,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/models"
-	"memphis/utils"
 	"mime/multipart"
 	"os"
 	"path/filepath"
@@ -28,6 +24,11 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"

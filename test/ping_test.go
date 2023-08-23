@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 const (

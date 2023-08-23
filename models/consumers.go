@@ -30,6 +30,9 @@ type Consumer struct {
 	LastMessages        int64     `json:"last_messages"`
 	TenantName          string    `json:"tenant_name"`
 	PartitionsList      []int     `json:"partitions_list"`
+	Version             int       `json:"version"`
+	Sdk                 string    `json:"sdk"`
+	AppId               string    `json:"app_id"`
 }
 
 type ExtendedConsumer struct {
@@ -111,4 +114,11 @@ type LightCG struct {
 	StationId      int    `json:"station_id"`
 	TenantName     string `json:"tenant_name"`
 	PartitionsList []int  `json:"partitions_list"`
+}
+
+type ConsumerForGraph struct {
+	Name      string `json:"name"`
+	StationId int    `json:"station_id"`
+	AppId     string `json:"app_id"`
+	IsActive  bool   `json:"is_active"`
 }

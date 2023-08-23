@@ -13,7 +13,8 @@ package server
 
 import (
 	"encoding/json"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 const sdkClientsUpdatesSubject = "$memphis_sdk_clients_updates"
@@ -61,6 +62,17 @@ type createProducerRequestV1 struct {
 	RequestVersion int    `json:"req_version"`
 	Username       string `json:"username"`
 	TenantName     string `json:"tenant_name"`
+}
+
+type createProducerRequestV2 struct {
+	Name           string `json:"name"`
+	StationName    string `json:"station_name"`
+	ConnectionId   string `json:"connection_id"`
+	ProducerType   string `json:"producer_type"`
+	RequestVersion int    `json:"req_version"`
+	Username       string `json:"username"`
+	TenantName     string `json:"tenant_name"`
+	AppId          string `json:"app_id"`
 }
 
 type createConsumerResponse struct {
@@ -120,6 +132,22 @@ type createConsumerRequestV1 struct {
 	LastMessages             int64  `json:"last_messages"`
 	RequestVersion           int    `json:"req_version"`
 	TenantName               string `json:"tenant_name"`
+}
+
+type createConsumerRequestV2 struct {
+	Name                     string `json:"name"`
+	StationName              string `json:"station_name"`
+	ConnectionId             string `json:"connection_id"`
+	ConsumerType             string `json:"consumer_type"`
+	ConsumerGroup            string `json:"consumers_group"`
+	MaxAckTimeMillis         int    `json:"max_ack_time_ms"`
+	MaxMsgDeliveries         int    `json:"max_msg_deliveries"`
+	Username                 string `json:"username"`
+	StartConsumeFromSequence uint64 `json:"start_consume_from_sequence"`
+	LastMessages             int64  `json:"last_messages"`
+	RequestVersion           int    `json:"req_version"`
+	TenantName               string `json:"tenant_name"`
+	AppId                    string `json:"app_id"`
 }
 
 type attachSchemaRequest struct {

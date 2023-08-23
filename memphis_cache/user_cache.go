@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"memphis/conf"
-	"memphis/db"
-	"memphis/models"
+
+	"github.com/memphisdev/memphis/conf"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/models"
 
 	"github.com/allegro/bigcache/v3"
 )

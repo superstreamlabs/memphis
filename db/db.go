@@ -19,10 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	"memphis/conf"
 	"strings"
 
-	"memphis/models"
+	"github.com/memphisdev/memphis/conf"
+
+	"github.com/memphisdev/memphis/models"
 
 	"context"
 	"time"
@@ -294,6 +295,10 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			CREATE INDEX IF NOT EXISTS consumer_tenant_name ON consumers(tenant_name);
 			CREATE INDEX IF NOT EXISTS consumer_connection_id ON consumers(connection_id);
 			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 2;
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS sdk VARCHAR NOT NULL DEFAULT 'unknown';
+			ALTER TABLE consumers ADD COLUMN IF NOT EXISTS app_id VARCHAR NOT NULL DEFAULT 'unknown';
+			UPDATE consumers SET app_id = connection_id WHERE app_id = 'unknown';
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -323,6 +328,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		last_msgs SERIAL NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		partitions INTEGER[],
+		version INTEGER NOT NULL DEFAULT 2,
+		sdk VARCHAR NOT NULL DEFAULT 'unknown',
+		app_id VARCHAR NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -443,6 +451,10 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			CREATE INDEX IF NOT EXISTS producer_tenant_name ON producers(tenant_name);
 			CREATE INDEX IF NOT EXISTS producer_connection_id ON producers(connection_id);
 			ALTER TABLE producers ADD COLUMN IF NOT EXISTS partitions INTEGER[];
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 2;
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS sdk VARCHAR NOT NULL DEFAULT 'unknown';
+			ALTER TABLE producers ADD COLUMN IF NOT EXISTS app_id VARCHAR NOT NULL DEFAULT 'unknown';
+			UPDATE producers SET app_id = connection_id WHERE app_id = 'unknown';
 			IF EXISTS (
 				SELECT 1
 				FROM information_schema.columns
@@ -466,6 +478,9 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		updated_at TIMESTAMPTZ NOT NULL,
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		partitions INTEGER[],
+		version INTEGER NOT NULL DEFAULT 2,
+		sdk VARCHAR NOT NULL DEFAULT 'unknown',
+		app_id VARCHAR NOT NULL,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -1529,6 +1544,54 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 	return stations, nil
 }
 
+func GetStationsLight(tenantName string) ([]models.StationLight, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.StationLight{}, err
+	}
+	defer conn.Release()
+
+	query := `
+	SELECT s.id, s.name, s.schema_name,
+	(SELECT COUNT(*) FROM dls_messages dm WHERE dm.station_id = s.id) AS dls_count
+	FROM stations AS s
+	WHERE s.is_deleted = false AND s.tenant_name = $1
+	ORDER BY s.updated_at DESC
+	LIMIT 40000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_active_stations_light", query)
+	if err != nil {
+		return []models.StationLight{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.StationLight{}, err
+	}
+	if err == pgx.ErrNoRows {
+		return []models.StationLight{}, nil
+	}
+	defer rows.Close()
+	stations := []models.StationLight{}
+	for rows.Next() {
+		var stationRes models.StationLight
+		if err := rows.Scan(
+			&stationRes.ID,
+			&stationRes.Name,
+			&stationRes.SchemaName,
+			&stationRes.DlsMsgs,
+		); err != nil {
+			return []models.StationLight{}, err
+		}
+		stations = append(stations, stationRes)
+	}
+	if err := rows.Err(); err != nil {
+		return []models.StationLight{}, err
+	}
+	return stations, nil
+}
+
 func GetAllStationsWithActiveProducersConsumersPerTenant(tenantName string) ([]models.ActiveProducersConsumersDetails, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -2350,7 +2413,39 @@ func GetActiveProducerByStationID(producerName string, stationId int) (bool, mod
 	return true, producers[0], nil
 }
 
-func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string, partitionsList []int) (models.Producer, error) {
+func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ProducerForGraph{}, err
+	}
+	defer conn.Release()
+	query := `SELECT p.name, p.station_id, p.app_id, p.is_active
+				FROM producers AS p
+				WHERE p.tenant_name = $1
+				ORDER BY p.name, p.station_id DESC
+				LIMIT 40000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
+	if err != nil {
+		return []models.ProducerForGraph{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.ProducerForGraph{}, err
+	}
+	defer rows.Close()
+	producers, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ProducerForGraph])
+	if err != nil {
+		return []models.ProducerForGraph{}, err
+	}
+	if len(producers) == 0 {
+		return []models.ProducerForGraph{}, nil
+	}
+	return producers, nil
+}
+
+func InsertNewProducer(name string, stationId int, producerType string, connectionIdObj string, tenantName string, partitionsList []int, version int, sdk string, appId string) (models.Producer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2368,8 +2463,11 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 		updated_at, 
 		type,
 		tenant_name,
-		partitions) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+		partitions,
+		version,
+		sdk,
+		app_id) 
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_producer", query)
 	if err != nil {
@@ -2382,7 +2480,7 @@ func InsertNewProducer(name string, stationId int, producerType string, connecti
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName, partitionsList)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, stationId, connectionIdObj, isActive, updatedAt, producerType, tenantName, partitionsList, version, sdk, appId)
 	if err != nil {
 		return models.Producer{}, err
 	}
@@ -2703,7 +2801,9 @@ func InsertNewConsumer(name string,
 	maxMsgDeliveries int,
 	startConsumeFromSequence uint64,
 	lastMessages int64,
-	tenantName string, partitionsList []int) (models.Consumer, error) {
+	tenantName string,
+	partitionsList []int,
+	version int, sdk string, appId string) (models.Consumer, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -2726,8 +2826,11 @@ func InsertNewConsumer(name string,
 		last_msgs,
 		type,
 		tenant_name, 
-		partitions) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
+		partitions,
+		version,
+		sdk,
+		app_id)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) 
 	RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_consumer", query)
@@ -2740,7 +2843,7 @@ func InsertNewConsumer(name string,
 	isActive := true
 
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
-		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList)
+		name, stationId, connectionIdObj, cgName, maxAckTime, isActive, updatedAt, maxMsgDeliveries, startConsumeFromSequence, lastMessages, consumerType, tenantName, partitionsList, version, sdk, appId)
 	if err != nil {
 		return models.Consumer{}, err
 	}
@@ -2847,6 +2950,38 @@ func GetAllConsumersByStation(stationId int) ([]models.ExtendedConsumer, error) 
 		return []models.ExtendedConsumer{}, nil
 	}
 	return consumers, nil
+}
+
+func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.ConsumerForGraph{}, err
+	}
+	defer conn.Release()
+	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
+				FROM consumers AS c
+				WHERE c.tenant_name = $1
+				ORDER BY c.name, c.station_id DESC
+				LIMIT 40000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
+	if err != nil {
+		return []models.ConsumerForGraph{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return []models.ConsumerForGraph{}, err
+	}
+	defer rows.Close()
+	cgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.ConsumerForGraph])
+	if err != nil {
+		return []models.ConsumerForGraph{}, err
+	}
+	if len(cgs) == 0 {
+		return []models.ConsumerForGraph{}, nil
+	}
+	return cgs, nil
 }
 
 func DeleteConsumerByNameStationIDAndConnID(connectionId, name string, stationId int) (bool, models.Consumer, error) {
@@ -3673,7 +3808,7 @@ func InsertNewSchema(schemaName string, schemaType string, createdByUsername str
 		if errors.As(err, &pgErr) {
 			if pgErr.Detail != "" {
 				if strings.Contains(pgErr.Detail, "already exists") {
-					return models.Schema{}, 0, errors.New("Schema" + schemaName + " already exists")
+					return models.Schema{}, 0, errors.New("Schema " + schemaName + " already exists")
 				} else {
 					return models.Schema{}, 0, errors.New(pgErr.Detail)
 				}
@@ -4909,6 +5044,47 @@ func GetTagsByEntityID(entity string, id int) ([]models.Tag, error) {
 	}
 	if len(tags) == 0 {
 		return []models.Tag{}, err
+	}
+	return tags, nil
+}
+
+func GetTagsByEntityIDLight(entity string, id int) ([]models.CreateTag, error) {
+	var entityDBList string
+	switch entity {
+	case "station":
+		entityDBList = "stations"
+	case "schema":
+		entityDBList = "schemas"
+	case "user":
+		entityDBList = "users"
+	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	defer conn.Release()
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	query := `SELECT t.name, t.color FROM tags AS t WHERE $1 = ANY(t.` + entityDBList + `) LIMIT 1000;`
+	stmt, err := conn.Conn().Prepare(ctx, "get_tags_by_entity_id_light"+uid.String(), query)
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tags, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.CreateTag])
+	if err != nil {
+		return []models.CreateTag{}, err
+	}
+	if len(tags) == 0 {
+		return []models.CreateTag{}, err
 	}
 	return tags, nil
 }

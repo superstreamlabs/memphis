@@ -32,8 +32,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/memphisdev/memphis/server/pse"
 	"github.com/nats-io/jwt/v2"
-	"memphis/server/pse"
 )
 
 // Snapshot this

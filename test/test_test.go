@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 	"golang.org/x/time/rate"
 )
 

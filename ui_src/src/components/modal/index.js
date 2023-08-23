@@ -35,6 +35,7 @@ const TransitionsModal = ({
     hr = false,
     className,
     zIndex = null,
+    keyListener = true,
     onPressEnter = () => {}
 }) => {
     const contentStyle = {
@@ -52,7 +53,7 @@ const TransitionsModal = ({
                 } else onPressEnter();
             }
         };
-        if (open) {
+        if (open && keyListener) {
             document.addEventListener('keydown', keyDownHandler);
         }
         return () => {

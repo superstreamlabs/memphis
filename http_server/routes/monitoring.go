@@ -12,7 +12,7 @@
 package routes
 
 import (
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,4 +26,5 @@ func InitializeMonitoringRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	monitoringRoutes.GET("/getSystemLogs", monitoringHandler.GetSystemLogs)
 	monitoringRoutes.GET("/downloadSystemLogs", monitoringHandler.DownloadSystemLogs)
 	monitoringRoutes.GET("/getAvailableReplicas", monitoringHandler.GetAvailableReplicas)
+	server.AddMonitoringCloudRoutes(monitoringRoutes, monitoringHandler)
 }

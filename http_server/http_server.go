@@ -13,8 +13,9 @@ package http_server
 
 import (
 	"fmt"
-	"memphis/http_server/routes"
-	"memphis/server"
+
+	"github.com/memphisdev/memphis/http_server/routes"
+	"github.com/memphisdev/memphis/server"
 )
 
 func InitializeHttpServer(s *server.Server) {

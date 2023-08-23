@@ -14,10 +14,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"memphis/models"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/memphisdev/memphis/models"
 )
 
 const (
@@ -76,7 +77,7 @@ func memphisCreateNonNativeStationIfNeeded(s *Server, reply string, cfg StreamCo
 			}
 
 			retentionType := "message_age_sec"
-			retentionValue := 604800
+			retentionValue := 3600
 			if cfg.MaxAge > 0 {
 				retentionType = "message_age_sec"
 				retentionValue = int(cfg.MaxAge / 1000000000)

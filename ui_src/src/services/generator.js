@@ -28,7 +28,7 @@ export const generator = () => {
     const hasUppercase = /(?=.*[A-Z])/;
     const hasLowercase = /(?=.*[a-z])/;
     const hasNumeric = /(?=.*\d)/;
-    const hasSpecialChars = /(?=.*[!?\-@#$%^&*])/;
+    const hasSpecialChars = /(?=.*[!?\-@#$%])/;
 
     while (
         (!hasUppercase.test(password) || !hasLowercase.test(password) || !hasNumeric.test(password) || !hasSpecialChars.test(password) || password.length < minLength) &&

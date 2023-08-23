@@ -47,7 +47,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
 
     useEffect(() => {
         produceMessagesRef.current = onFinish;
-    }, []);
+    }, [messageExample]);
 
     const updateFormState = (field, value) => {
         let updatedValue = { ...formFields };
@@ -102,7 +102,6 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
             await httpRequest('POST', ApiEndpoints.PRODUCE, bodyRequest);
             getStationDetails();
         } catch (error) {
-        } finally {
             setLoading(false);
         }
     };
@@ -139,7 +138,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
         <div className="produce-modal-wrapper">
             <div className="produce-message">
                 <div className="generate-wrapper">
-                    <p className="field-title">Value</p>
+                    <p className="field-title">JSON-based value</p>
                     <div className="generate-action" onClick={() => generateMessage()}>
                         <img src={refresh} width="14" />
                         <span>Generate example</span>
@@ -220,7 +219,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                                 <Form.Item>
                                     <div className="add-field" onClick={() => add()}>
                                         <FiPlus />
-                                        <span>Add field</span>
+                                        <span>New header</span>
                                     </div>
                                 </Form.Item>
                             </>
@@ -230,11 +229,11 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     <div className="by-pass-switcher">
                         <TitleComponent
                             headerTitle="Bypass schema enforcement"
-                            cloudOnly={true}
+                            cloudOnly={isCloud() ? false : true}
                             typeTitle="sub-header"
                             headerDescription="Check this box to avoid schema validation"
                         />
-                        <Form.Item className="form-input" name="bypass_schema" initialValue={true}>
+                        <Form.Item className="form-input" name="bypass_schema" initialValue={isCloud() ? false : true}>
                             <Switcher disabled={!isCloud()} onChange={(e) => updateFormState('bypass_schema', e)} checked={isCloud() ? formFields.bypass_schema : true} />
                         </Form.Item>
                     </div>

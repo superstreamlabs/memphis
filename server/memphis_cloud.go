@@ -22,11 +22,6 @@ import (
 	"io"
 	"math"
 	"math/rand"
-	"memphis/analytics"
-	"memphis/db"
-	"memphis/memphis_cache"
-	"memphis/models"
-	"memphis/utils"
 	"net/http"
 	"runtime"
 	"sort"
@@ -34,6 +29,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/memphisdev/memphis/analytics"
+	"github.com/memphisdev/memphis/db"
+	"github.com/memphisdev/memphis/memphis_cache"
+	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	dockerClient "github.com/docker/docker/client"
 	"github.com/gin-contrib/cors"
@@ -94,6 +95,9 @@ func InitializeTenantsRoutes(router *gin.RouterGroup, h *Handlers) {
 }
 
 func AddUsrMgmtCloudRoutes(userMgmtRoutes *gin.RouterGroup, userMgmtHandler UserMgmtHandler) {
+}
+
+func AddMonitoringCloudRoutes(monitoringRoutes *gin.RouterGroup, monitoringHandler MonitoringHandler) {
 }
 
 func getStationStorageType(storageType string) string {
@@ -186,14 +190,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				isWindows = true
 				storageComp = defaultStat // TODO: add support for windows
 			default:
-				storage_size, err = getUnixStorageSize()
-				if err != nil {
-					return components, metricsEnabled, err
+				storage_size = getUnixStorageSize()
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
 				}
 				storageComp = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
+					Percentage: perc,
 				}
 				memUsage, err = getUnixMemoryUsage()
 				if err != nil {
@@ -318,10 +323,6 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
 			memoryLimit := float64(dockerStats.MemoryStats.Limit)
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
 			cpuStat := models.CompStats{
 				Total:      shortenFloat(cpuLimit),
 				Current:    shortenFloat(totalCpuUsage),
@@ -334,26 +335,36 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			}
 			storageStat := defaultStat
 			dockerPorts := []int{}
+			storage_size := getUnixStorageSize()
 			if strings.Contains(containerName, "metadata") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
+				}
 				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(dbStorageUsage),
+					Percentage: perc,
 				}
 				containerName = strings.TrimPrefix(containerName, "memphis-")
-			} else if strings.Contains(containerName, "cluster") {
+			} else if strings.Contains(containerName, "memphis-1") {
 				v, err := serv.Varz(nil)
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
+				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
+					Percentage: perc,
 				}
 			}
 			for _, port := range container.Ports {
@@ -397,14 +408,15 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			isWindows = true
 			storageComp = defaultStat // TODO: add support for windows
 		default:
-			storage_size, err = getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
+			storage_size = getUnixStorageSize()
+			perc := 0
+			if storage_size > 0 {
+				perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
 			}
 			storageComp = models.CompStats{
 				Total:      shortenFloat(storage_size),
 				Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-				Percentage: int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100)),
+				Percentage: perc,
 			}
 			memUsage, err = getUnixMemoryUsage()
 			if err != nil {
@@ -528,10 +540,7 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			totalMemoryUsage := float64(dockerStats.MemoryStats.Usage)
 			memoryLimit := float64(dockerStats.MemoryStats.Limit)
 			memoryPercentage := math.Ceil((float64(totalMemoryUsage) / float64(memoryLimit)) * 100)
-			storage_size, err := getUnixStorageSize()
-			if err != nil {
-				return components, metricsEnabled, err
-			}
+			storage_size := getUnixStorageSize()
 			cpuStat := models.CompStats{
 				Total:      shortenFloat(cpuLimit),
 				Current:    shortenFloat(totalCpuUsage),
@@ -545,14 +554,18 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageStat := defaultStat
 			dockerPorts := []int{}
 			if strings.Contains(containerName, "metadata") && !strings.Contains(containerName, "coordinator") {
-				dbStorageSize, totalSize, err := getDbStorageSize()
+				dbStorageUsage, err := getDbStorageUsage()
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(dbStorageUsage) / float64(storage_size)) * 100))
+				}
 				storageStat = models.CompStats{
-					Total:      shortenFloat(totalSize),
-					Current:    shortenFloat(dbStorageSize),
-					Percentage: int(math.Ceil(float64(dbStorageSize) / float64(totalSize))),
+					Total:      shortenFloat(storage_size),
+					Current:    shortenFloat(dbStorageUsage),
+					Percentage: perc,
 				}
 
 			} else if strings.Contains(containerName, "cluster") {
@@ -560,10 +573,14 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 				if err != nil {
 					return components, metricsEnabled, err
 				}
+				perc := 0
+				if storage_size > 0 {
+					perc = int(math.Ceil((float64(v.JetStream.Stats.Store) / storage_size) * 100))
+				}
 				storageStat = models.CompStats{
 					Total:      shortenFloat(storage_size),
 					Current:    shortenFloat(float64(v.JetStream.Stats.Store)),
-					Percentage: int(math.Ceil(float64(v.JetStream.Stats.Store) / storage_size)),
+					Percentage: perc,
 				}
 			}
 			for _, port := range container.Ports {
@@ -702,11 +719,11 @@ func (mh MonitoringHandler) GetSystemComponents() ([]models.SystemComponents, bo
 			storageUsage := float64(0)
 			if isMinikube {
 				if strings.Contains(strings.ToLower(pod.Name), "metadata") {
-					storageUsage, _, err = getDbStorageSize()
+					storageUsage, err = getDbStorageUsage()
 					if err != nil {
 						return components, metricsEnabled, err
 					}
-				} else if strings.Contains(strings.ToLower(pod.Name), "cluster") {
+				} else if strings.Contains(strings.ToLower(pod.Name), "memphis-0") {
 					v, err := serv.Varz(nil)
 					if err != nil {
 						return components, metricsEnabled, err
@@ -967,7 +984,7 @@ func (s *Server) InitializeEventCounter() error {
 	return nil
 }
 
-func (s *Server) InitializeFirestore() error {
+func (s *Server) InitializeCloudComponents() error {
 	return nil
 }
 
@@ -2003,28 +2020,6 @@ func (s *Server) SetDlsRetentionForExistTenants() error {
 	return nil
 }
 
-func validateRetentionType(retentionType string) error {
-	if retentionType == "ack_based" {
-		return errors.New("this type of retention is supported only on the cloud version of Memphis, available on cloud.memphis.dev")
-	}
-	if retentionType != "message_age_sec" && retentionType != "messages" && retentionType != "bytes" {
-		return errors.New("retention type can be one of the following message_age_sec/messages/bytes")
-	}
-
-	return nil
-}
-
-func getRetentionPolicy(retentionType string) RetentionPolicy {
-	return LimitsPolicy
-}
-
-func validateRetentionPolicy(policy RetentionPolicy) error {
-	if policy != LimitsPolicy {
-		return errors.New("the only supported retention type is limits")
-	}
-	return nil
-}
-
 func (sh StationsHandler) Produce(c *gin.Context) {
 	var body ProduceSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -2108,4 +2103,40 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 	serv.sendInternalAccountMsgWithHeadersWithEcho(account, subject, body.MsgPayload, body.MsgHdrs)
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+type GraphOverviewResponse struct {
+	Stations map[int]models.StationLight `json:"stations"`
+}
+
+func (mh MonitoringHandler) getGraphOverview(tenantName string) (GraphOverviewResponse, error) {
+	return GraphOverviewResponse{}, nil
+}
+
+func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
+	defaultStationName := "default"
+	exist, user, err := db.GetRootUser(serv.MemphisGlobalAccountString())
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return errors.New("root user does not exist")
+	}
+
+	stationName, err := StationNameFromStr(defaultStationName)
+	if err != nil {
+		return err
+	}
+
+	schemaName, err := CreateDefaultSchema(user.Username, user.TenantName, user.ID)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = CreateDefaultStation(serv.MemphisGlobalAccountString(), serv, stationName, user.ID, user.Username, schemaName, 1)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"memphis/server"
+	"github.com/memphisdev/memphis/server"
 )
 
 const PERF_PORT = 8422
