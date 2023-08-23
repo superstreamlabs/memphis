@@ -20,16 +20,27 @@
         .integration-item {
             border: 1px solid #f1f1f1;
             border-radius: 4px;
-            padding: 8px;
+            padding: 8px 15px 8px 10px;
+            cursor: pointer;
+            position: relative;
+            .connected {
+                position: absolute;
+                top: 1px;
+                right: 1px;
+                color: #27ae60;
+                font-size: 14px;
+            }
             .img-icon {
                 height: 20px;
                 width: 20px;
+                cursor: pointer;
             }
             .integration-name {
                 font-weight: 600;
                 font-size: 14px;
                 color: #2e2c34;
                 margin-left: 10px;
+                cursor: pointer;
             }
         }
     }

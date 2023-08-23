@@ -12,40 +12,135 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
+import { Context } from '../../../hooks/store';
 import debeziumIcon from '../../../../src/assets/images/debeziumIcon.svg';
 import slackLogo from '../../../../src/assets/images/slackLogo.svg';
 import s3Logo from '../../../../src/assets/images/s3Logo.svg';
 import pathDomains from '../../../router';
+import Modal from '../../../../src/components/modal';
+import SlackIntegration from '../../administration/integrations/components/slackIntegration';
+import S3Integration from '../../administration/integrations/components/s3Integration';
+import DebeziumIntegration from '../../administration/integrations/components/debeziumIntegration';
+import { httpRequest } from '../../../services/http';
+import { ApiEndpoints } from '../../../const/apiEndpoints';
+import CheckCircleIcon from '@material-ui/icons/CheckCircle';
 
 const Integrations = () => {
+    const [state, dispatch] = useContext(Context);
+    const [modalIsOpen, modalFlip] = useState(false);
+    const [integrations, setIntegrations] = useState([
+        { name: 'Slack', logo: slackLogo, value: {} },
+        { name: 'S3', logo: s3Logo, value: {} },
+        { name: 'Debezium and Postgres', logo: debeziumIcon, value: {} }
+    ]);
     const history = useHistory();
+    const ref = useRef();
 
+    useEffect(() => {
+        getallIntegration();
+    }, []);
+
+    const getallIntegration = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_INTEGRATION);
+            dispatch({ type: 'SET_INTEGRATIONS', payload: data || [] });
+        } catch (err) {
+            return;
+        }
+    };
+
+    const updateIntegrationValue = (value, index) => {
+        let integrationsCopy = [...integrations];
+        integrationsCopy[index].value = value;
+        setIntegrations(integrationsCopy);
+    };
+    useEffect(() => {
+        if (state.integrationsList?.length > 0) {
+            integrations?.forEach((integration, index) => {
+                const value = checkIfUsed(integration?.name);
+                if (value) {
+                    updateIntegrationValue(value, index);
+                }
+            });
+        }
+    }, [state?.integrationsList]);
+
+    const checkIfUsed = (integrationName) => {
+        let index = state.integrationsList?.findIndex((integration) => integration.name === integrationName?.toLowerCase());
+        if (index !== -1) {
+            return state.integrationsList[index];
+        } else return;
+    };
+
+    const modalContent = () => {
+        switch (ref.current) {
+            case 'Slack':
+                return (
+                    <SlackIntegration
+                        close={(value) => {
+                            modalFlip(false);
+                            updateIntegrationValue(value, 0);
+                        }}
+                        value={integrations[0]?.value}
+                    />
+                );
+            case 'S3':
+                return (
+                    <S3Integration
+                        close={(value) => {
+                            modalFlip(false);
+                            updateIntegrationValue(value, 1);
+                        }}
+                        value={integrations[1]?.value}
+                    />
+                );
+            case 'Debezium and Postgres':
+                return (
+                    <DebeziumIntegration
+                        close={(value) => {
+                            modalFlip(false);
+                            updateIntegrationValue(value, 2);
+                        }}
+                        value={integrations[2]?.value}
+                    />
+                );
+            default:
+                break;
+        }
+    };
     return (
         <div className="overview-components-wrapper">
             <div className="overview-integrations-container">
                 <div className="overview-components-header integrations-header">
                     <p>Integrations</p>
                     <label className="link-to-page" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
-                        Explore more Integration
+                        Explore more Integrations
                     </label>
                 </div>
                 <div className="integrations-list">
-                    <div className="integration-item">
-                        <img className="img-icon" src={slackLogo} alt="slack" />
-                        <label className="integration-name">Slack</label>
-                    </div>
-                    <div className="integration-item">
-                        <img className="img-icon" src={s3Logo} alt="s3" />
-                        <label className="integration-name">S3 Bucket</label>
-                    </div>
-                    <div className="integration-item">
-                        <img className="img-icon" src={debeziumIcon} alt="debezium" />
-                        <label className="integration-name">Debezium and Postgres</label>
-                    </div>
+                    {integrations?.map((integration, index) => {
+                        return (
+                            <div
+                                className="integration-item"
+                                key={index}
+                                onClick={() => {
+                                    ref.current = integration.name;
+                                    modalFlip(true);
+                                }}
+                            >
+                                {integrations[index]?.value && Object.keys(integrations[index]?.value).length > 0 && <CheckCircleIcon className="connected" />}
+                                <img className="img-icon" src={integration.logo} alt={integration.name} />
+                                <label className="integration-name">{integration.name}</label>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
+            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+                {modalContent()}
+            </Modal>
         </div>
     );
 };
