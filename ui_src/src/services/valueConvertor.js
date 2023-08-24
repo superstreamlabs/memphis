@@ -99,6 +99,27 @@ export const parsingDate = (date, withSeconds = false, withTime = true) => {
         return '';
     }
 };
+
+export const parsingDateTime = (dateString) => {
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    const date = new Date(dateString);
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+
+    const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+
+    const formattedTime = `${formattedHours}:${formattedMinutes} ${ampm}`;
+    const formattedDate = `${month} ${day}, ${year}, at ${formattedTime}`;
+
+    return formattedDate;
+};
 export const parsingDateWithotTime = (date) => {
     if (date) {
         var options = { year: 'numeric', month: 'short', day: 'numeric' };
