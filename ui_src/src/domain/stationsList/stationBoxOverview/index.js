@@ -31,8 +31,9 @@ import remoteStorage from '../../../assets/images/remoteStorage.svg';
 import { ReactComponent as ClockIcon } from '../../../assets/images/TimeFill.svg';
 import { ReactComponent as UserIcon } from '../../../assets/images/userPerson.svg';
 import { ReactComponent as SchemaIcon } from '../../../assets/images/schemaIconActive.svg';
+import { ReactComponent as RetentionIcon } from '../../../assets/images/timeSchedule.svg';
+import { ReactComponent as PartitionIcon } from '../../../assets/images/partitionIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import { parsingDate } from '../../../services/valueConvertor';
 import CheckboxComponent from '../../../components/checkBox';
 import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
@@ -58,6 +59,21 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                 break;
         }
     }, []);
+
+    const replaceTimeUnits = (inputString) => {
+        const replacements = [
+            { search: /\bdays?\b/g, replace: 'd' },
+            { search: /\bminutes?\b/g, replace: 'm' },
+            { search: /\bseconds?\b/g, replace: 's' }
+        ];
+
+        let outputString = inputString;
+        for (const replacement of replacements) {
+            outputString = outputString.replace(replacement.search, replacement.replace);
+        }
+
+        return outputString;
+    };
 
     console.log(station);
 
@@ -102,28 +118,20 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="right-section">
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={retentionIcon} alt="retention" />
+                                    <RetentionIcon />
                                     <label className="data-labels retention">Retention</label>
                                 </div>
-                                <OverflowTip className="data-info" text={retentionValue} width={'90px'}>
-                                    {retentionValue}
+                                <OverflowTip className="data-info retention-info " text={replaceTimeUnits(retentionValue)} width={'90px'}>
+                                    {replaceTimeUnits(retentionValue)}
                                 </OverflowTip>
                             </div>
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={storageIcon} alt="storage" />
-                                    <label className="data-labels storage">Local storage</label>
+                                    <img src={remoteStorage} alt="storage" />
+                                    <label className="data-labels storage">Storage type</label>
                                 </div>
 
                                 <p className="data-info">{station?.station?.storage_type}</p>
-                            </div>
-                            <div className="station-meta">
-                                <div className="header">
-                                    <img src={remoteStorage} alt="remoteStorage" />
-                                    <label className="data-labels storage">Remote storage</label>
-                                </div>
-
-                                <p className="data-info">{station?.station?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}</p>
                             </div>
                             {!isCloud() && (
                                 <div className="station-meta">
@@ -131,7 +139,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                         <img src={replicasIcon} alt="replicas" />
                                         <label className="data-labels replicas">Replicas</label>
                                     </div>
-                                    <p className="data-info">{replicasConvertor(station?.station?.replicas, false)}</p>
+                                    <p className="data-info">{station?.station?.replicas}</p>
                                 </div>
                             )}
                             <div className="station-meta">
@@ -142,6 +150,30 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
 
                                 <p className="data-info">
                                     {station.total_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : station?.total_messages?.toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="station-meta">
+                                <div className="header">
+                                    <img src={poisonMsgIcon} alt="poison messages" />
+                                    <label className="data-labels total">Poison messages</label>
+                                </div>
+
+                                <p className="data-info">
+                                    {station.posion_messages === 0 ? <MinusOutlined style={{ color: '#2E2C34' }} /> : station?.posion_messages?.toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="station-meta">
+                                <div className="header">
+                                    <PartitionIcon />
+                                    <label className="data-labels total">Partition</label>
+                                </div>
+
+                                <p className="data-info">
+                                    {station?.station?.partitions_list[0] === 0 ? (
+                                        <MinusOutlined style={{ color: '#2E2C34' }} />
+                                    ) : (
+                                        station?.station?.partitions_list[0].toLocaleString()
+                                    )}
                                 </p>
                             </div>
                             <div className="station-meta poison">
