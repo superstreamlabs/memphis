@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.cdf5f9dd.css",
-    "main.js": "/static/js/main.4145eea4.js",
+    "main.css": "/static/css/main.fcedef38.css",
+    "main.js": "/static/js/main.d0b5b9c4.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -211,6 +211,7 @@
     "static/media/warningCircle.svg": "/static/media/warningCircle.35b628c068d0871aa55a59e28a393ffb.svg",
     "static/media/usersIconActive.svg": "/static/media/usersIconActive.b85b8f2e28394e7e41d2d5e18774ec50.svg",
     "static/media/logsActive.svg": "/static/media/logsActive.dd10b6ca576cba4444205502394b8456.svg",
+    "static/media/timeSchedule.svg": "/static/media/timeSchedule.564f30140af97f27cb7150d50d2a2d2e.svg",
     "static/media/storage.svg": "/static/media/storage.6a918fd2ccba4582d4b45da508962d21.svg",
     "static/media/grayAppUserIcon.svg": "/static/media/grayAppUserIcon.9401d63d3a38a3310942a1db6bb09bf1.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
@@ -245,6 +246,7 @@
     "static/media/versionUpgradeColor.svg": "/static/media/versionUpgradeColor.4c642366ef44734f80cce3f4ad5a51fe.svg",
     "static/media/versionUpgradeGray.svg": "/static/media/versionUpgradeGray.d62075ba8f33dcb5290fba6116c4a109.svg",
     "static/media/retentionIcon.svg": "/static/media/retentionIcon.1bad53366a0bc248fa647412a9b3a732.svg",
+    "static/media/userPerson.svg": "/static/media/userPerson.ff1d63b3458add3062c152ad9b2ba333.svg",
     "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/requestsGray.svg": "/static/media/requestsGray.4353f2c3977ca42e61270d98cf753381.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
@@ -270,6 +272,7 @@
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
     "static/media/componentIcon.svg": "/static/media/componentIcon.c7e98367f39a7a5e86d1da122feba8af.svg",
     "static/media/docsLogo.svg": "/static/media/docsLogo.47318fe8ea2ef1cfe195bd21d8a3b4f5.svg",
+    "static/media/TimeFill.svg": "/static/media/TimeFill.bec2989f51458fe251e269295380f4ea.svg",
     "static/media/addUserIcon.svg": "/static/media/addUserIcon.db68a5ce64cc9eb38d66fd25774c79c9.svg",
     "static/media/overviewIcon.svg": "/static/media/overviewIcon.5a0fa6784283dc830b1c5cadf668de93.svg",
     "static/media/refresh.svg": "/static/media/refresh.ba93d46f83e615f1174f50004368da8d.svg",
@@ -298,7 +301,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.cdf5f9dd.css",
-    "static/js/main.4145eea4.js"
+    "static/css/main.fcedef38.css",
+    "static/js/main.d0b5b9c4.js"
   ]
 }
