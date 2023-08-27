@@ -30,9 +30,13 @@ import noCodeExample from '../../assets/images/noCodeExample.svg';
 import codeIcon from '../../assets/images/codeIcon.svg';
 import refresh from '../../assets/images/refresh.svg';
 import SelectComponent from '../select';
-import CustomTabs from '../Tabs';
+import TitleComponent from '../titleComponent/index';
 import Modal from '../modal';
+import Input from '../Input';
+import Switcher from '../switcher';
 import Copy from '../copy';
+import SegmentButton from '../segmentButton';
+import { Divider, Form } from 'antd';
 
 loader.init();
 loader.config({ monaco });
@@ -49,7 +53,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     });
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
     const [generateModal, setGenerateModal] = useState(false);
-
+    const [creationForm] = Form.useForm();
     const restGWHost =
         localStorage.getItem(LOCAL_STORAGE_ENV) === 'docker'
             ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
@@ -159,6 +163,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         }
     };
 
+    useEffect(() => {
+        console.log(creationForm.getFieldsValue());
+    }, [creationForm]);
+
     const generateEditor = (langCode, value) => {
         return (
             <>
@@ -186,125 +194,221 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
 
     return (
         <div className="code-example-details-container sdk-example">
-            {withHeader && (
-                <div className="modal-header">
-                    <div className="header-img-container">
-                        <img className="headerImage" src={codeIcon} alt="codeIcon" />
-                    </div>
-                    <p>Code examplesn</p>
-                    <label>Some code snippets that will help you get started with Memphis</label>
-                </div>
-            )}
-            <div className="select-lan">
-                <div>
-                    <p className="field-title">Protocol</p>
-                    <SelectComponent
-                        value={protocolSelected}
-                        colorType="navy"
-                        backgroundColorType="none"
-                        borderColorType="gray"
-                        radiusType="semi-round"
-                        width="220px"
-                        height="50px"
-                        options={selectProtocolOption}
-                        onChange={(e) => handleSelectProtocol(e)}
-                        popupClassName="select-options"
-                    />
-                </div>
-                <div>
-                    <p className="field-title">Language</p>
-                    <SelectComponent
-                        value={langSelected}
-                        colorType="navy"
-                        backgroundColorType="none"
-                        borderColorType="gray"
-                        radiusType="semi-round"
-                        width="220px"
-                        height="50px"
-                        options={protocolSelected === 'SDK (TCP)' ? selectLngOption : selectProtocolLngOptions}
-                        onChange={(e) => (protocolSelected === 'SDK (TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
-                        popupClassName="select-options"
-                    />
-                </div>
-            </div>
-            {protocolSelected === 'SDK (TCP)' && (
-                <>
-                    <div className="installation">
-                        <p className="field-title">Package installation</p>
-                        <div className="install-copy">
-                            <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
-                            <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
+            <div>
+                {withHeader && (
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={codeIcon} alt="codeIcon" />
                         </div>
+                        <p>Code example</p>
+                        <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
-                    <div className="tabs">
-                        {showTabs && <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs}></CustomTabs>}
-                        {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
-                        {SDK_CODE_EXAMPLE[langSelected].link ? (
-                            <div className="guidline">
-                                <img src={noCodeExample} />
-                                <div className="content">
-                                    <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
-                                    <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
-                                    <a className="learn-more" href={SDK_CODE_EXAMPLE[langSelected].link} target="_blank">
-                                        View Documentation
-                                    </a>
-                                </div>
+                )}
+                <div className="select-lan">
+                    <div>
+                        <p className="field-title">Protocol</p>
+                        <SelectComponent
+                            value={protocolSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="220px"
+                            height="42px"
+                            options={selectProtocolOption}
+                            onChange={(e) => handleSelectProtocol(e)}
+                            popupClassName="select-options"
+                        />
+                    </div>
+                    <div>
+                        <p className="field-title">Language</p>
+                        <SelectComponent
+                            value={langSelected}
+                            colorType="navy"
+                            backgroundColorType="none"
+                            borderColorType="gray"
+                            radiusType="semi-round"
+                            width="220px"
+                            height="42px"
+                            options={protocolSelected === 'SDK (TCP)' ? selectLngOption : selectProtocolLngOptions}
+                            onChange={(e) => (protocolSelected === 'SDK (TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
+                            popupClassName="select-options"
+                        />
+                    </div>
+                </div>
+                {protocolSelected === 'SDK (TCP)' && (
+                    <>
+                        <div className="installation">
+                            <p className="field-title">Package installation</p>
+                            <div className="install-copy">
+                                <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                                <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
                             </div>
-                        ) : (
+                        </div>
+                        <div className="tabs">
+                            {showTabs && <SegmentButton value={tabValue} options={tabs} onChange={(tabValue) => setTabValue(tabValue)} />}
+                            {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
+                            {SDK_CODE_EXAMPLE[langSelected].link && (
+                                <div className="guidline">
+                                    <img src={noCodeExample} />
+                                    <div className="content">
+                                        <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
+                                        <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
+                                        <a className="learn-more" href={SDK_CODE_EXAMPLE[langSelected].link} target="_blank">
+                                            View Documentation
+                                        </a>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="code-builder">
+                            <Form name="form" form={creationForm} autoComplete="off" className={''}>
+                                <div className="username-section">
+                                    <span>
+                                        <TitleComponent headerTitle="Username" typeTitle="sub-header" headerDescription="Lorem Ipsum is not simply random text" />
+                                        <Form.Item name="user_name">
+                                            <Input
+                                                placeholder="Type user name"
+                                                type="text"
+                                                maxLength="128"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="white"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                onBlur={(e) => creationForm.setFieldValue('user_name', e.target.value)}
+                                                onChange={(e) => creationForm.setFieldValue('user_name', e.target.value)}
+                                                value={creationForm.getFieldValue('user_name')}
+                                            />
+                                        </Form.Item>
+                                    </span>
+                                    <span>
+                                        <TitleComponent headerTitle="Password" typeTitle="sub-header" headerDescription="Lorem Ipsum is not simply random text" />
+                                        <Form.Item name="password">
+                                            <Input
+                                                placeholder="Type password"
+                                                type="text"
+                                                maxLength="128"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="white"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                onBlur={(e) => creationForm.setFieldValue('password', e.target.value)}
+                                                onChange={(e) => creationForm.setFieldValue('password', e.target.value)}
+                                                value={creationForm.getFieldValue('password')}
+                                            />
+                                        </Form.Item>
+                                    </span>
+                                </div>
+                                <TitleComponent
+                                    headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
+                                    typeTitle="sub-header"
+                                    headerDescription="Lorem Ipsum is not simply random text"
+                                />
+                                <Form.Item name="producer_consumer_name">
+                                    <Input
+                                        placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
+                                        type="text"
+                                        maxLength="128"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="white"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        onBlur={(e) => creationForm.setFieldValue('producer_consumer_name', e.target.value)}
+                                        onChange={(e) => creationForm.setFieldValue('producer_consumer_name', e.target.value)}
+                                        value={creationForm.getFieldValue('producer_consumer_name')}
+                                    />
+                                </Form.Item>
+                                <div className="username-section">
+                                    <TitleComponent
+                                        headerTitle="Blocking/non-blocking"
+                                        typeTitle="sub-header"
+                                        headerDescription="Lorem Ipsum is not simply random text"
+                                    />
+
+                                    <Form.Item name="blocking" initialValue={true}>
+                                        <Switcher
+                                            onChange={() => creationForm.setFieldValue('blocking', !creationForm.getFieldValue('blocking'))}
+                                            checked={creationForm.getFieldValue('blocking')}
+                                        />
+                                    </Form.Item>
+                                </div>
+                                <div className="username-section">
+                                    <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Lorem Ipsum is not simply random text" />
+                                    <Form.Item name="use_headers" initialValue={true}>
+                                        <Switcher
+                                            onChange={() => creationForm.setFieldValue('use_headers', !creationForm.getFieldValue('use_headers'))}
+                                            checked={creationForm.getFieldValue('use_headers')}
+                                        />
+                                    </Form.Item>
+                                </div>
+                            </Form>
+                        </div>
+                    </>
+                )}
+
+                <Modal
+                    header="Generate JWT token"
+                    displayButtons={false}
+                    height="400px"
+                    width="400px"
+                    clickOutside={() => setGenerateModal(false)}
+                    open={generateModal}
+                    className="generate-modal"
+                >
+                    <GenerateTokenModal host={restGWHost} close={() => setGenerateModal(false)} />
+                </Modal>
+            </div>
+            <Divider type="vertical" />
+            <div>
+                {protocolSelected === 'SDK (TCP)' && (
+                    <>
+                        <div className="tabs">
                             <div className="code-example">
                                 <div className="code-content">
                                     {generateEditor(SDK_CODE_EXAMPLE[langSelected].langCode, tabValue === 'Consumer' ? codeExample.consumer : codeExample.producer)}
                                 </div>
                             </div>
-                        )}
-                    </div>
-                </>
-            )}
-            {protocolSelected === 'REST (HTTP)' && (
-                <>
-                    <div className="installation">
-                        <div className="generate-wrapper">
-                            <p className="field-title">Step 1: Generate a token</p>
-                            <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                <img src={refresh} width="14" />
-                                <span>Generate JWT token</span>
-                            </div>
                         </div>
-                        <div className="code-example ce-protoco">
-                            <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
-                        </div>
-                    </div>
-                    <div className="tabs">
-                        <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
-                        {consumer ? (
-                            <div className="guidline">
-                                <img src={noCodeExample} />
-                                <div className="content">
-                                    <p>Coming soon</p>
-                                    <span>
-                                        Please <a>upvote</a> to prioritize it!
-                                    </span>
+                    </>
+                )}
+                {protocolSelected === 'REST (HTTP)' && (
+                    <>
+                        <div className="installation">
+                            <div className="generate-wrapper">
+                                <p className="field-title">Step 1: Generate a token</p>
+                                <div className="generate-action" onClick={() => setGenerateModal(true)}>
+                                    <img src={refresh} width="14" />
+                                    <span>Generate JWT token</span>
                                 </div>
                             </div>
-                        ) : (
                             <div className="code-example ce-protoco">
-                                <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                             </div>
-                        )}
-                    </div>
-                </>
-            )}
-            <Modal
-                header="Generate JWT token"
-                displayButtons={false}
-                height="400px"
-                width="400px"
-                clickOutside={() => setGenerateModal(false)}
-                open={generateModal}
-                className="generate-modal"
-            >
-                <GenerateTokenModal host={restGWHost} close={() => setGenerateModal(false)} />
-            </Modal>
+                        </div>
+                        <div className="tabs">
+                            <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
+                            {consumer ? (
+                                <div className="guidline">
+                                    <img src={noCodeExample} />
+                                    <div className="content">
+                                        <p>Coming soon</p>
+                                        <span>
+                                            Please <a>upvote</a> to prioritize it!
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="code-example ce-protoco">
+                                    <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 };
