@@ -1,14 +1,11 @@
 .station-box-container {
     width: calc(100%);
     background-color: white;
-    // border-radius: 10px;
     border-radius: 8px;
-    // box-shadow: 0px 0px 4px 3px rgba(221, 221, 221, 0.3);
     box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
     min-height: 60px;
     margin-bottom: 17px;
     overflow: auto;
-    // padding: 15px;
     display: flex;
     justify-content: space-between;
     cursor: pointer;
@@ -37,6 +34,7 @@
         .header {
             display: flex;
             align-items: center;
+            gap: 6px;
         }
     }
     .data-info {
@@ -77,7 +75,6 @@
         padding-top: 19px;
         padding-bottom: 19px;
         .left-section {
-            max-width: 300px;
             padding-right: 40px;
             display: flex;
             flex-direction: column;

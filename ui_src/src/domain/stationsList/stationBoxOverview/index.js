@@ -17,25 +17,23 @@ import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 
-import { convertSecondsToDate, isCloud, parsingDateTime, replicasConvertor, parsingDateWithotTime } from '../../../services/valueConvertor';
+import { convertSecondsToDate, isCloud, parsingDate, replicasConvertor, parsingDateWithotTime } from '../../../services/valueConvertor';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
-import retentionIcon from '../../../assets/images/retentionIcon.svg';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import replicasIcon from '../../../assets/images/replicasIcon.svg';
 import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
 import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
 import remoteStorage from '../../../assets/images/remoteStorage.svg';
-import { ReactComponent as ClockIcon } from '../../../assets/images/TimeFill.svg';
+import { ReactComponent as ClockIcon } from '../../../assets/images/timeFill.svg';
 import { ReactComponent as UserIcon } from '../../../assets/images/userPerson.svg';
 import { ReactComponent as SchemaIcon } from '../../../assets/images/schemaIconActive.svg';
-import { ReactComponent as RetentionIcon } from '../../../assets/images/timeSchedule.svg';
+import { ReactComponent as RetentionIcon } from '../../../assets/images/retentionIcon.svg';
 import { ReactComponent as PartitionIcon } from '../../../assets/images/partitionIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import CheckboxComponent from '../../../components/checkBox';
-import storageIcon from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
 
@@ -44,8 +42,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     useEffect(() => {
         switch (station?.station?.retention_type) {
             case 'message_age_sec':
-                convertSecondsToDate(station?.station?.retention_value);
-                setRetentionValue(convertSecondsToDate(station?.station?.retention_value));
+                setRetentionValue(station?.station?.retention_value);
                 break;
             case 'bytes':
                 setRetentionValue(`${station?.station?.retention_value} bytes`);
@@ -59,23 +56,6 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                 break;
         }
     }, []);
-
-    const replaceTimeUnits = (inputString) => {
-        const replacements = [
-            { search: /\bdays?\b/g, replace: 'd' },
-            { search: /\bminutes?\b/g, replace: 'm' },
-            { search: /\bseconds?\b/g, replace: 's' }
-        ];
-
-        let outputString = inputString;
-        for (const replacement of replacements) {
-            outputString = outputString.replace(replacement.search, replacement.replace);
-        }
-
-        return outputString;
-    };
-
-    console.log(station);
 
     return (
         <div>
@@ -121,8 +101,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                     <RetentionIcon />
                                     <label className="data-labels retention">Retention</label>
                                 </div>
-                                <OverflowTip className="data-info retention-info " text={replaceTimeUnits(retentionValue)} width={'90px'}>
-                                    {replaceTimeUnits(retentionValue)}
+                                <OverflowTip className="data-info retention-info " text={convertSecondsToDate(retentionValue, true)} width={'90px'}>
+                                    {convertSecondsToDate(retentionValue, true)}
                                 </OverflowTip>
                             </div>
                             <div className="station-meta">
@@ -205,7 +185,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     <div className="bottom-section">
                         <div className="meta-container">
                             <ClockIcon />
-                            <label className="data-labels date">Created at: {parsingDateTime(station?.station?.created_at)}</label>
+                            <label className="data-labels date">Created at: {parsingDate(station?.station?.created_at)}</label>
                         </div>
                         <div className="meta-container">
                             <UserIcon />
