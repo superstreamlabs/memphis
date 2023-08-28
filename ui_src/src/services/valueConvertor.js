@@ -37,7 +37,7 @@ export const convertSecondsToDateObject = (seconds) => {
     };
 };
 
-export const convertSecondsToDate = (seconds) => {
+export const convertSecondsToDate = (seconds, short = false) => {
     const days = Math.floor(seconds / 86400);
     seconds -= days * 86400;
     const hours = Math.floor(seconds / 3600);
@@ -85,6 +85,21 @@ export const convertSecondsToDate = (seconds) => {
             result = `${result} and ${spliter[i]}`;
         }
     }
+    if (short) {
+        const replacements = [
+            { search: /\bdays?\b/g, replace: 'd' },
+            { search: /\bhours?\b/g, replace: 'h' },
+            { search: /\bminutes?\b/g, replace: 'm' },
+            { search: /\bseconds?\b/g, replace: 's' }
+        ];
+        let outputString = result;
+        for (const replacement of replacements) {
+            outputString = outputString.replace(replacement.search, replacement.replace);
+            console.log(outputString);
+        }
+        result = outputString;
+    }
+
     return result;
 };
 
@@ -99,6 +114,7 @@ export const parsingDate = (date, withSeconds = false, withTime = true) => {
         return '';
     }
 };
+
 export const parsingDateWithotTime = (date) => {
     if (date) {
         var options = { year: 'numeric', month: 'short', day: 'numeric' };
