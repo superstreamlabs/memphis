@@ -9,12 +9,6 @@
         height: 100%;
         margin: 0;
     }
-    // gap: 10px;
-    // // display: flex;
-    // // flex-direction: column;
-    // height: calc(100% - 50px);
-    // font-family: 'Inter';
-    // margin-top: 15px;
     .header-wrapper {
         p {
             font-family: 'InterSemiBold';
@@ -26,6 +20,9 @@
             font-size: 12px;
             color: #84818a;
         }
+    }
+    .segment-button-wrapper {
+        margin: 10px 0px;
     }
     .modal-header {
         .header-img-container {
@@ -71,9 +68,11 @@
     }
     .select-lan {
         display: flex;
-        gap: 40px;
+        gap: 10px;
+        margin: 10px 0px;
     }
     .installation {
+        margin: 10px 0px;
         .generate-wrapper {
             display: flex;
             justify-content: space-between;
@@ -109,11 +108,14 @@
         }
     }
     .code-example {
+        height: 100%;
+        position: relative;
         .code-content {
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
-            height: 350px;
+            // height: 350px;
+            height: 540px;
             overflow: auto;
             align-items: flex-start;
             display: flex;
@@ -128,14 +130,19 @@
             }
         }
     }
+    .ant-collapse-content-box {
+        padding: 0px !important;
+    }
     .guidline {
         border: 1px solid var(--gray);
         box-sizing: border-box;
         border-radius: 4px;
-        height: 150px;
+        // height: 150px;
+        height: calc(100% - 400px);
         display: flex;
         gap: 20px;
         align-items: center;
+        padding-right: 10px;
         img {
             width: 100px;
             margin-left: 10px;
@@ -144,7 +151,8 @@
             display: flex;
             flex-direction: column;
             width: 420px;
-            gap: 5px;
+            // gap: 5px;
+            gap: 20px;
             p {
                 margin: 0;
                 font-family: 'InterSemiBold';
@@ -176,11 +184,47 @@
         background-color: #efefef;
         border-radius: 12px;
         padding: 20px;
-        margin: 0 20px 20px 0;
+        margin: 0px 20px 20px 0;
+        .ant-collapse-header {
+            padding: 0;
+            flex-direction: row-reverse;
+        }
+        .collapse-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .collapse-description {
+            font-size: 14px;
+            font-weight: 400;
+            color: #84818a;
+        }
         .username-section {
             display: flex;
             justify-content: space-between;
             gap: 10px;
+        }
+        .ant-divider-horizontal {
+            margin: 10px 0px 0px 0px;
+        }
+        .ant-form-item {
+            margin-bottom: 10px;
+        }
+        .title-container {
+            margin-top: 10px;
+        }
+    }
+    .code-output-title {
+        border-radius: 8px;
+        background: rgba(101, 87, 255, 0.1);
+        padding: 15px 20px;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        p {
+            margin-bottom: 5px;
+            color: #6557ff;
+            font-family: 'InterSemiBold';
+            font-size: 16px;
         }
     }
 }

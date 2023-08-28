@@ -182,14 +182,10 @@ func main() {
         fmt.Printf("Producer failed: %v", err)
         os.Exit(1)
     }
-
-    hdrs := memphis.Headers{}
-    hdrs.New()
-    err = hdrs.Add("key", "value")
-    if err != nil {
-        fmt.Printf("Header failed: %v", err)
-        os.Exit(1)
-    }
+    
+    <headers-declaration>
+    <headers-initiation>
+    <headers-addition>
 
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
     if err != nil {
@@ -259,10 +255,13 @@ async def main():
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
         producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>") # you can send the message parameter as dict as well
-        headers = Headers()
-        headers.add("key", "value") 
+        
+        <headers-initiation>
+        <headers-addition>
+        // headers = Headers()
+        // headers.add("key", "value") 
         for i in range(5):
-            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers)
+            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers<blocking>)
         
     except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
         print(e)
