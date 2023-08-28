@@ -17,7 +17,7 @@ import { MinusOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import Lottie from 'lottie-react';
 
-import { convertSecondsToDate, isCloud, parsingDate, replicasConvertor, parsingDateWithotTime } from '../../../services/valueConvertor';
+import { convertSecondsToDate, isCloud, parsingDate } from '../../../services/valueConvertor';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
