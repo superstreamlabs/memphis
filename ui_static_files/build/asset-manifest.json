@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.cdf5f9dd.css",
-    "main.js": "/static/js/main.4145eea4.js",
+    "main.css": "/static/css/main.fc866f4e.css",
+    "main.js": "/static/js/main.16c7fd67.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -239,12 +239,12 @@
     "static/media/documentIconActive.svg": "/static/media/documentIconActive.ab4e72d74aa4241e4fd6c43d35b47a30.svg",
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
     "static/media/codeIcon.svg": "/static/media/codeIcon.6ddd4e5ba7c67ec8dc850bc8255bbc78.svg",
-    "static/media/strIcon.svg": "/static/media/strIcon.cb9e929312f19af88af31d0e16a65580.svg",
     "static/media/TotalStations.svg": "/static/media/TotalStations.16e95265e663f4e33db9709a800c50c5.svg",
     "static/media/credit-card.svg": "/static/media/credit-card.f8f860bd90af5dc72d6b4963be4fae14.svg",
     "static/media/versionUpgradeColor.svg": "/static/media/versionUpgradeColor.4c642366ef44734f80cce3f4ad5a51fe.svg",
     "static/media/versionUpgradeGray.svg": "/static/media/versionUpgradeGray.d62075ba8f33dcb5290fba6116c4a109.svg",
     "static/media/retentionIcon.svg": "/static/media/retentionIcon.1bad53366a0bc248fa647412a9b3a732.svg",
+    "static/media/userPerson.svg": "/static/media/userPerson.ff1d63b3458add3062c152ad9b2ba333.svg",
     "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/requestsGray.svg": "/static/media/requestsGray.4353f2c3977ca42e61270d98cf753381.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
@@ -270,6 +270,7 @@
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
     "static/media/componentIcon.svg": "/static/media/componentIcon.c7e98367f39a7a5e86d1da122feba8af.svg",
     "static/media/docsLogo.svg": "/static/media/docsLogo.47318fe8ea2ef1cfe195bd21d8a3b4f5.svg",
+    "static/media/timeFill.svg": "/static/media/timeFill.bec2989f51458fe251e269295380f4ea.svg",
     "static/media/addUserIcon.svg": "/static/media/addUserIcon.db68a5ce64cc9eb38d66fd25774c79c9.svg",
     "static/media/overviewIcon.svg": "/static/media/overviewIcon.5a0fa6784283dc830b1c5cadf668de93.svg",
     "static/media/refresh.svg": "/static/media/refresh.ba93d46f83e615f1174f50004368da8d.svg",
@@ -298,7 +299,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.cdf5f9dd.css",
-    "static/js/main.4145eea4.js"
+    "static/css/main.fc866f4e.css",
+    "static/js/main.16c7fd67.js"
   ]
 }

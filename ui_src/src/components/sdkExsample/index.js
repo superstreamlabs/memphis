@@ -285,6 +285,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('connection_token', 'password');
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<broker-token>', '<password>');
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('memphis.ConnectionToken', 'memphis.Password');
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("strings.NewReader('{", "strings.NewReader(`{");
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("}')", " }`)");
         }
         if (formFields.password !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<password>', formFields.password);

@@ -4127,7 +4127,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]interface
 }
 
 // User Functions
-func UpdtaePendingUser(tenantName, username string, pending bool) error {
+func UpdatePendingUser(tenantName, username string, pending bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4929,7 +4929,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	return newTag, nil
 }
 
-func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName string) error {
+func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName, color string) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -4946,14 +4946,26 @@ func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName 
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2 AND tenant_name = $3`
-	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName)
-	if err != nil {
-		return err
+	if color == "" {
+		query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2 AND tenant_name = $3`
+		stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName)
+		if err != nil {
+			return err
+		}
+	} else {
+		query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) , color = $4 WHERE name = $2 AND tenant_name = $3`
+		stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName, color)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -6546,6 +6558,31 @@ func DeleteConfByTenantName(tenantName string) error {
 	WHERE tenant_name=$1`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_conf_by_tenant_name", query)
+	if err != nil {
+		return err
+	}
+	tenantName = strings.ToLower(tenantName)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteIntegrationsByTenantName(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM integrations
+	WHERE tenant_name=$1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_integrations_by_tenant_name", query)
 	if err != nil {
 		return err
 	}

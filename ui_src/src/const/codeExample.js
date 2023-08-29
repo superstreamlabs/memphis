@@ -448,7 +448,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
 --data-raw '{
     "username": "<application type username>",
     "connection_token": "<broker-token>",
-    "accountId": "<account-id>",
+    "account_id": "<account-id>",
     "token_expiry_in_minutes": "<token_expiry_in_minutes>",
     "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"\n}'`
     },
@@ -508,10 +508,10 @@ export const PROTOCOL_CODE_EXAMPLE = {
         url := "localhost/auth/authenticate"
         method := "POST"
       
-        payload := strings.NewReader({
+        payload := strings.NewReader('{
           "username": "<application type username>",
           "connection_token": "<broker-token>",
-          "accountId": "<account-id>",
+          "account_id": "<account-id>",
           "token_expiry_in_minutes": "<token_expiry_in_minutes>",
           "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
       })
@@ -571,7 +571,7 @@ axios(config)
 var data = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
+  "account_id": "<account-id>",
   "token_expiry_in_minutes": "<token_expiry_in_minutes>",
   "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
@@ -622,7 +622,7 @@ url = "localhost/auth/authenticate"
 payload = json.dumps({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
+  "account_id": "<account-id>",
   "token_expiry_in_minutes": "<token_expiry_in_minutes>",
   "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 })
@@ -652,7 +652,7 @@ Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
   .build();
 MediaType mediaType = MediaType.parse("application/json");
-RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": "<token_expiry_in_minutes>",\n    \"refresh_token_expiry_in_minutes\": "<refresh_token_expiry_in_minutes>"\n}");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": "<token_expiry_in_minutes>",\n    \"refresh_token_expiry_in_minutes\": "<refresh_token_expiry_in_minutes>"\n    \"account_id\": \"<account-id>\"\n}");
 Request request = new Request.Builder()
   .url("localhost/auth/authenticate")
   .method("POST", body)
@@ -662,7 +662,8 @@ Response response = client.newCall(request).execute();`
     },
     'JavaScript - Fetch': {
         langCode: 'javascript',
-        producer: `var myHeaders = new Headers();
+        producer: `const fetch = require('node-fetch');
+const myHeaders = new fetch.Headers();
 myHeaders.append("Authorization", "Bearer <jwt>");
 myHeaders.append("Content-Type", "application/json");
 <headers-addition>
@@ -682,13 +683,14 @@ fetch("localhost/stations/<station-name>/produce/single", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));`,
-        tokenGenerate: `var myHeaders = new Headers();
+        tokenGenerate: `const fetch = require('node-fetch');
+const myHeaders = new fetch.Headers();
 myHeaders.append("Content-Type", "application/json");
 
 var raw = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
+  "account_id": "<account-id>",
   "token_expiry_in_minutes": "<token_expiry_in_minutes>",
   "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
@@ -733,6 +735,7 @@ console.log(response);
   "data": JSON.stringify({
     "username": "<application type username>",
     "connection_token": "<broker-token>",
+    "account_id": "<account-id>",
     "token_expiry_in_minutes": "<token_expiry_in_minutes>",
     "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
   }),

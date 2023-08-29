@@ -481,7 +481,7 @@ func (sh SchemasHandler) CreateNewSchema(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName)
+		err = AddTagsToEntity(body.Tags, "schema", newSchema.ID, tenantName, "")
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateNewSchema at AddTagsToEntity: Failed creating tag at schema %v: %v", user.TenantName, user.Username, schemaName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
