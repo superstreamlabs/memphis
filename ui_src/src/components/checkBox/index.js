@@ -26,6 +26,7 @@ const CheckboxComponent = ({ indeterminate = false, disabled = false, defaultChe
             onChange={onChange}
             name={checkName}
             disabled={disabled}
+            onClick={(e) => e.stopPropagation()}
         />
     );
 };

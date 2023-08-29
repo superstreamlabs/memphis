@@ -1,16 +1,16 @@
 .station-box-container {
     width: calc(100%);
     background-color: white;
-    border-radius: 10px;
-    box-shadow: 0px 0px 4px 3px rgba(221, 221, 221, 0.3);
+    border-radius: 8px;
+    box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
     min-height: 60px;
     margin-bottom: 17px;
     overflow: auto;
-    padding: 15px;
     display: flex;
     justify-content: space-between;
     cursor: pointer;
     min-width: 1370px;
+    flex-direction: column;
     .data-labels {
         color: #84818a;
         font-size: 12px;
@@ -33,9 +33,8 @@
         flex-direction: column;
         .header {
             display: flex;
-        }
-        .data-info {
-            margin-left: 17px;
+            align-items: center;
+            gap: 6px;
         }
     }
     .data-info {
@@ -58,95 +57,135 @@
             height: 20px;
         }
     }
-    .left-section {
-        max-width: 300px;
-        width: 100%;
-        .check-box {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-            .station-name {
-                font-size: 17px;
-                font-family: 'InterSemiBold';
-                margin: 0;
-                margin-left: 25px;
-                color: #2e2c34;
-                cursor: pointer !important;
-                align-items: center;
-                .non-native-label {
-                    color: #84818a;
-                    font-size: 12px;
-                    font-family: 'InterSemiBold';
-                }
-            }
-        }
-        .date {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            display: inline-block;
-            max-width: 300px;
-        }
+    .retention-info {
+        text-transform: none;
+        width: fit-content !important;
     }
-    .middle-section {
-        border-left: 1px solid #e9e9e9;
-        padding-left: 20px;
-        display: flex;
-        max-width: 400px;
-        width: 100%;
-        .station-created {
-            margin-right: 40px;
-        }
-        .tags-list {
-            margin-bottom: 0px;
-            margin-left: 1px;
-            margin-top: 10px;
-            max-width: 230px;
-        }
+    .main-section,
+    .bottom-section {
+        padding-left: 18px;
+        padding-right: 18px;
     }
-    .right-section {
-        width: 50%;
-        display: flex;
-        border-left: 1px solid #e9e9e9;
-        padding-left: 20px;
+    .main-section {
         justify-content: space-between;
-        .station-meta {
-            img,
-            svg {
-                width: 14px;
-                margin-right: 3px;
-            }
-        }
-        .station-actions {
+        display: flex;
+        flex-direction: row;
+        width: calc(100%);
+        min-height: 101px;
+        padding-top: 19px;
+        padding-bottom: 19px;
+        .left-section {
+            padding-right: 40px;
             display: flex;
-            width: 35px;
-            height: 100%;
-            align-items: center;
-            .action {
-                border: 1px solid #ececec;
-                border-radius: 8px;
-                width: 30px;
-                height: 30px;
-                justify-content: center;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 11px;
+            .check-box {
+                display: flex;
+                flex-direction: row;
                 align-items: center;
-                cursor: pointer;
-                img,
-                svg {
-                    width: 15px;
+                gap: 11px;
+                .station-name {
+                    font-size: 17px;
+                    font-family: 'InterSemiBold';
+                    margin: 0;
+                    color: #2e2c34;
+                    cursor: pointer !important;
+                    align-items: center;
+                    .non-native-label {
+                        color: #84818a;
+                        font-size: 12px;
+                        font-family: 'InterSemiBold';
+                    }
                 }
-                display: none;
             }
-            .action:hover {
-                opacity: 0.8;
+            .date {
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                display: inline-block;
+                max-width: 300px;
+            }
+        }
+        .middle-section {
+            border-left: 1px solid #e9e9e9;
+            padding-left: 20px;
+            padding-right: 20px;
+            display: flex;
+            max-width: 400px;
+            padding-left: 20px;
+            padding-right: 40px;
+            .station-created {
+                margin-right: 40px;
+            }
+            .tags-list {
+                margin-bottom: 0px;
+                margin-left: 1px;
+                margin-top: 10px;
+                max-width: 230px;
+            }
+        }
+        .right-section {
+            display: flex;
+            border-left: 1px solid #e9e9e9;
+            padding-left: 20px;
+            justify-content: space-between;
+            flex-grow: 1;
+            .station-meta {
+                img {
+                    width: 14px;
+                    margin-right: 3px;
+                }
+            }
+            .station-actions {
+                display: flex;
+                width: 35px;
+                height: 100%;
+                align-items: flex-start;
+                .action {
+                    border: 1px solid #ececec;
+                    border-radius: 8px;
+                    width: 30px;
+                    height: 30px;
+                    justify-content: center;
+                    background: rgba(101, 87, 255, 0.2);
+                    cursor: pointer;
+                    img {
+                        width: 15px;
+                    }
+                    display: none;
+                }
+                .action:hover {
+                    opacity: 0.8;
+                }
             }
         }
     }
-}
-.station-box-container:hover {
-    .action {
-        display: flex !important;
+    .bottom-section {
+        min-height: 42px;
+        border-top: 1px solid rgba(101, 87, 255, 0.15);
+        background: rgba(101, 87, 255, 0.1);
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 28px;
+        .meta-container {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    }
+    &:hover {
+        .action {
+            display: flex !important;
+        }
+        border-radius: 8px;
+        outline: 2px solid #6557ff;
+        background: #ecebff;
     }
 }
+
 .check-box-station {
     position: absolute;
     padding: 19px;
