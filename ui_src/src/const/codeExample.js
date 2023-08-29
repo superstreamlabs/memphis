@@ -449,8 +449,8 @@ export const PROTOCOL_CODE_EXAMPLE = {
     "username": "<application type username>",
     "connection_token": "<broker-token>",
     "accountId": "<account-id>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092\n}'`
+    "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+    "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"\n}'`
     },
     Go: {
         langCode: 'go',
@@ -512,8 +512,8 @@ export const PROTOCOL_CODE_EXAMPLE = {
           "username": "<application type username>",
           "connection_token": "<broker-token>",
           "accountId": "<account-id>",
-          "token_expiry_in_minutes": 123,
-          "refresh_token_expiry_in_minutes": 10000092
+          "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+          "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
       })
       
         client := &http.Client {
@@ -572,8 +572,8 @@ var data = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
 
 var config = {
@@ -623,8 +623,8 @@ payload = json.dumps({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 })
 headers = {
   'Content-Type': 'application/json'
@@ -652,7 +652,7 @@ Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
   .build();
 MediaType mediaType = MediaType.parse("application/json");
-RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": 123,\n    \"refresh_token_expiry_in_minutes\": 10000092\n}");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": "<token_expiry_in_minutes>",\n    \"refresh_token_expiry_in_minutes\": "<refresh_token_expiry_in_minutes>"\n}");
 Request request = new Request.Builder()
   .url("localhost/auth/authenticate")
   .method("POST", body)
@@ -689,8 +689,8 @@ var raw = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
 
 var requestOptions = {
@@ -733,8 +733,8 @@ console.log(response);
   "data": JSON.stringify({
     "username": "<application type username>",
     "connection_token": "<broker-token>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092
+    "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+    "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
   }),
   };
 
@@ -781,8 +781,8 @@ internal class Program
         { 
             "username": "<application type username>",    
             "password": "<password>",
-            "token_expiry_in_minutes": 123,
-            "refresh_token_expiry_in_minutes": 10000092
+            "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+            "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
         }
         """, null, "application/json");
         request.Content = content;

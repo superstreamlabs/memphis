@@ -64,7 +64,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         producerConsumerName: '',
         blocking: false,
         useHeaders: false,
-        headersList: [{ key: '', value: '' }]
+        headersList: [{ key: '', value: '' }],
+        jwt: '',
+        tokenExpiry: '',
+        refreshToken: ''
     });
     const { Panel } = Collapse;
     const updateFormFields = (field, value) => {
@@ -251,6 +254,15 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         }
         if (formFields.password !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<password>', formFields.password);
+        }
+        if (formFields.tokenExpiry !== '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<token_expiry_in_minutes>', formFields.tokenExpiry);
+        }
+        if (formFields.refreshToken !== '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<refresh_token_expiry_in_minutes>', formFields.refreshToken);
+        }
+        if (formFields.jwt !== '') {
+            codeEx.producer = codeEx.producer?.replaceAll('<jwt>', formFields.jwt);
         }
         if (formFields.useHeaders) {
             if (lang === 'cURL') {
@@ -478,6 +490,130 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             value={formFields.producerConsumerName}
                                                         />
                                                     </Form.Item>
+                                                    <div className="username-section">
+                                                        <span>
+                                                            <TitleComponent headerTitle="Username" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Type user name"
+                                                                    type="text"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('userName', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('userName', e.target.value)}
+                                                                    value={formFields.userName}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <span>
+                                                            <TitleComponent headerTitle="Password" typeTitle="sub-header" />
+                                                            <Form.Item name="password">
+                                                                <Input
+                                                                    placeholder="Type password"
+                                                                    type="text"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('password', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('password', e.target.value)}
+                                                                    value={formFields.password}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {protocolSelected === 'REST (HTTP)' && (
+                                                <>
+                                                    <div className="username-section">
+                                                        <span>
+                                                            <TitleComponent headerTitle="Token expiry (In minutes)" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Type user name"
+                                                                    type="text"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => !isNaN(e.target.value) && updateFormFields('tokenExpiry', e.target.value)}
+                                                                    onChange={(e) => !isNaN(e.target.value) && updateFormFields('tokenExpiry', e.target.value)}
+                                                                    value={formFields.tokenExpiry}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <span>
+                                                            <TitleComponent headerTitle="Refresh token expiry (In minutes)" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Refresh token expiry"
+                                                                    type="text"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => !isNaN(e.target.value) && updateFormFields('refreshToken', e.target.value)}
+                                                                    onChange={(e) => !isNaN(e.target.value) && updateFormFields('refreshToken', e.target.value)}
+                                                                    value={formFields.refreshToken}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                    </div>
+                                                    <Divider />
+                                                    <TitleComponent
+                                                        headerTitle="JWT"
+                                                        typeTitle="sub-header"
+                                                        headerDescription="To be able to recognize a specific producer across the system"
+                                                    />
+                                                    <Form.Item>
+                                                        <Input
+                                                            placeholder="JWT"
+                                                            type="text"
+                                                            maxLength="128"
+                                                            radiusType="semi-round"
+                                                            colorType="black"
+                                                            backgroundColorType="white"
+                                                            borderColorType="gray"
+                                                            height="40px"
+                                                            onBlur={(e) => updateFormFields('jwt', e.target.value)}
+                                                            onChange={(e) => updateFormFields('jwt', e.target.value)}
+                                                            value={formFields.jwt}
+                                                        />
+                                                    </Form.Item>
+
+                                                    <TitleComponent
+                                                        headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
+                                                        typeTitle="sub-header"
+                                                        headerDescription={`To be able to recognize a specific ${
+                                                            tabValue === 'Producer' ? 'producer' : 'consumer'
+                                                        } across the system`}
+                                                    />
+                                                    <Form.Item>
+                                                        <Input
+                                                            placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
+                                                            type="text"
+                                                            maxLength="128"
+                                                            radiusType="semi-round"
+                                                            colorType="black"
+                                                            backgroundColorType="white"
+                                                            borderColorType="gray"
+                                                            height="40px"
+                                                            onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                            onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                            value={formFields.producerConsumerName}
+                                                        />
+                                                    </Form.Item>
                                                 </>
                                             )}
                                             {langSelected === 'Python' && (
@@ -522,7 +658,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                         height="40px"
                                                                         onBlur={(e) => updateHeaders('key', e.target.value, index)}
                                                                         onChange={(e) => updateHeaders('key', e.target.value, index)}
-                                                                        value={formFields.headersList[index].key}
+                                                                        value={header.key}
                                                                     />
                                                                 </Form.Item>
                                                             </span>
@@ -540,12 +676,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                         height="40px"
                                                                         onBlur={(e) => updateHeaders('value', e.target.value, index)}
                                                                         onChange={(e) => updateHeaders('value', e.target.value, index)}
-                                                                        value={formFields.headersList[index].value}
+                                                                        value={header.value}
                                                                     />
                                                                 </Form.Item>
                                                             </span>
                                                             <FiMinusCircle className="remove-icon" onClick={() => removeHeader(index)} />
-                                                            {/* <div onClick={() => removeHeader(index)}>-</div> */}
                                                         </div>
                                                     ))}
                                                     <div className="generate-action" onClick={() => addHeader()}>
