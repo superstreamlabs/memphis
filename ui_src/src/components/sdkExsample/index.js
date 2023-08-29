@@ -13,7 +13,7 @@
 import './style.scss';
 
 import Editor, { loader } from '@monaco-editor/react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import * as monaco from 'monaco-editor';
 
 import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
@@ -29,6 +29,7 @@ import GenerateTokenModal from '../../domain/stationOverview/components/generate
 import noCodeExample from '../../assets/images/noCodeExample.svg';
 import codeIcon from '../../assets/images/codeIcon.svg';
 import refresh from '../../assets/images/refresh.svg';
+import addUserIcon from '../../assets/images/addUserIcon.svg';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
@@ -39,6 +40,7 @@ import Input from '../Input';
 import Switcher from '../switcher';
 import Copy from '../copy';
 import SegmentButton from '../segmentButton';
+import CreateUserDetails from '../../domain/users/createUserDetails';
 import { Divider, Form } from 'antd';
 import { FiMinusCircle, FiPlus } from 'react-icons/fi';
 
@@ -69,7 +71,20 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         tokenExpiry: '',
         refreshToken: ''
     });
+    const [createUserLoader, setCreateUserLoader] = useState(false);
+    const [addUserModalIsOpen, addUserModalFlip] = useState(false);
+    const createUserRef = useRef(null);
+
     const { Panel } = Collapse;
+
+    useEffect(() => {
+        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+    }, []);
+
+    useEffect(() => {
+        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+    }, [formFields, tabValue]);
+
     const updateFormFields = (field, value) => {
         setFormFields({ ...formFields, [field]: value });
     };
@@ -92,9 +107,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         else headersList.splice(index, 1);
         setFormFields({ ...formFields, headersList });
     };
-    useEffect(() => {
-        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
-    }, [formFields, tabValue]);
+
+    const handleAddUser = (userData) => {
+        setCreateUserLoader(false);
+        addUserModalFlip(false);
+        updateFormFields('userName', userData.username);
+    };
 
     const removeLineWithSubstring = (content, targetSubstring) => {
         const lines = content.split('\n');
@@ -103,6 +121,22 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
 
         const modifiedContent = filteredLines.join('\n');
         return modifiedContent;
+    };
+
+    const handleSelectLang = (e, isSdk = true) => {
+        setLangSelected(e);
+        isSdk ? changeDynamicCode(e) : changeProtocolDynamicCode(e);
+    };
+
+    const handleSelectProtocol = (e) => {
+        setProtocolSelected(e);
+        if (e === 'REST (HTTP)') {
+            changeProtocolDynamicCode('cURL');
+            setLangSelected('cURL');
+        } else {
+            setLangSelected('Go');
+            changeDynamicCode('Go');
+        }
     };
 
     const restGWHost =
@@ -307,26 +341,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         setCodeExample(codeEx);
     };
 
-    useEffect(() => {
-        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
-    }, []);
-
-    const handleSelectLang = (e, isSdk = true) => {
-        setLangSelected(e);
-        isSdk ? changeDynamicCode(e) : changeProtocolDynamicCode(e);
-    };
-
-    const handleSelectProtocol = (e) => {
-        setProtocolSelected(e);
-        if (e === 'REST (HTTP)') {
-            changeProtocolDynamicCode('cURL');
-            setLangSelected('cURL');
-        } else {
-            setLangSelected('Go');
-            changeDynamicCode('Go');
-        }
-    };
-
     const generateEditor = (langCode, value) => {
         return (
             <>
@@ -421,13 +435,23 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         showArrow={true}
                                         header={
                                             <div>
-                                                <p className="collapse-title">Parameters</p>
+                                                <span className="panel-header">
+                                                    <p className="collapse-title">Parameters</p>
+                                                    <label className="custom-label">Custom</label>
+                                                </span>
+
                                                 <label className="collapse-description">Clients can have multiple parameters to best suit each use case best</label>
                                             </div>
                                         }
                                     >
-                                        <div>
+                                        <div className="parameters-section">
                                             <Divider />
+                                            <div className="new-user">
+                                                <div className="generate-action" onClick={() => addUserModalFlip(true)}>
+                                                    <FiPlus />
+                                                    <span>Create new user</span>
+                                                </div>
+                                            </div>
                                             <div className="username-section">
                                                 <span>
                                                     <TitleComponent headerTitle="Username" typeTitle="sub-header" />
@@ -435,7 +459,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                         <Input
                                                             placeholder="Type user name"
                                                             type="text"
-                                                            maxLength="128"
+                                                            maxLength="220"
                                                             radiusType="semi-round"
                                                             colorType="black"
                                                             backgroundColorType="white"
@@ -453,7 +477,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                         <Input
                                                             placeholder="Type password"
                                                             type="text"
-                                                            maxLength="128"
+                                                            maxLength="220"
                                                             radiusType="semi-round"
                                                             colorType="black"
                                                             backgroundColorType="white"
@@ -490,54 +514,20 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             value={formFields.producerConsumerName}
                                                         />
                                                     </Form.Item>
-                                                    <div className="username-section">
-                                                        <span>
-                                                            <TitleComponent headerTitle="Username" typeTitle="sub-header" />
-                                                            <Form.Item>
-                                                                <Input
-                                                                    placeholder="Type user name"
-                                                                    type="text"
-                                                                    maxLength="128"
-                                                                    radiusType="semi-round"
-                                                                    colorType="black"
-                                                                    backgroundColorType="white"
-                                                                    borderColorType="gray"
-                                                                    height="40px"
-                                                                    onBlur={(e) => updateFormFields('userName', e.target.value)}
-                                                                    onChange={(e) => updateFormFields('userName', e.target.value)}
-                                                                    value={formFields.userName}
-                                                                />
-                                                            </Form.Item>
-                                                        </span>
-                                                        <span>
-                                                            <TitleComponent headerTitle="Password" typeTitle="sub-header" />
-                                                            <Form.Item name="password">
-                                                                <Input
-                                                                    placeholder="Type password"
-                                                                    type="text"
-                                                                    maxLength="128"
-                                                                    radiusType="semi-round"
-                                                                    colorType="black"
-                                                                    backgroundColorType="white"
-                                                                    borderColorType="gray"
-                                                                    height="40px"
-                                                                    onBlur={(e) => updateFormFields('password', e.target.value)}
-                                                                    onChange={(e) => updateFormFields('password', e.target.value)}
-                                                                    value={formFields.password}
-                                                                />
-                                                            </Form.Item>
-                                                        </span>
-                                                    </div>
                                                 </>
                                             )}
                                             {protocolSelected === 'REST (HTTP)' && (
                                                 <>
                                                     <div className="username-section">
                                                         <span>
-                                                            <TitleComponent headerTitle="Token expiry (In minutes)" typeTitle="sub-header" />
+                                                            <TitleComponent
+                                                                headerTitle="Token expiry"
+                                                                headerDescription="Token expiry (In minutes)"
+                                                                typeTitle="sub-header"
+                                                            />
                                                             <Form.Item>
                                                                 <Input
-                                                                    placeholder="Type user name"
+                                                                    placeholder="Type token expiry"
                                                                     type="text"
                                                                     maxLength="128"
                                                                     radiusType="semi-round"
@@ -552,7 +542,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             </Form.Item>
                                                         </span>
                                                         <span>
-                                                            <TitleComponent headerTitle="Refresh token expiry (In minutes)" typeTitle="sub-header" />
+                                                            <TitleComponent
+                                                                headerTitle="Refresh token expiry"
+                                                                headerDescription="Refresh token expiry (In minutes)"
+                                                                typeTitle="sub-header"
+                                                            />
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Refresh token expiry"
@@ -650,7 +644,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                     <Input
                                                                         placeholder="Type key"
                                                                         type="text"
-                                                                        maxLength="128"
+                                                                        maxLength="200"
                                                                         radiusType="semi-round"
                                                                         colorType="black"
                                                                         backgroundColorType="white"
@@ -668,7 +662,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                     <Input
                                                                         placeholder="Type value"
                                                                         type="text"
-                                                                        maxLength="128"
+                                                                        maxLength="200"
                                                                         radiusType="semi-round"
                                                                         colorType="black"
                                                                         backgroundColorType="white"
@@ -707,12 +701,43 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 >
                     <GenerateTokenModal host={restGWHost} close={() => setGenerateModal(false)} />
                 </Modal>
+                <Modal
+                    header={
+                        <div className="modal-header">
+                            <div className="header-img-container">
+                                <img className="headerImage" src={addUserIcon} alt="stationImg" />
+                            </div>
+                            <p>Add a new user</p>
+                            <label>Enter user details to get started</label>
+                        </div>
+                    }
+                    height="555px"
+                    width="450px"
+                    rBtnText="Create"
+                    lBtnText="Cancel"
+                    lBtnClick={() => {
+                        addUserModalFlip(false);
+                        setCreateUserLoader(false);
+                    }}
+                    clickOutside={() => {
+                        setCreateUserLoader(false);
+                        addUserModalFlip(false);
+                    }}
+                    rBtnClick={() => {
+                        setCreateUserLoader(true);
+                        createUserRef.current();
+                    }}
+                    isLoading={createUserLoader}
+                    open={addUserModalIsOpen}
+                >
+                    <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
+                </Modal>
             </div>
             <Divider type="vertical" />
             <div>
                 <div className="code-output-title">
                     <p>Code Output</p>
-                    <label>Lorem Ipsum is not simply random text</label>
+                    <label>Copy code example to your IDE</label>
                 </div>
                 {protocolSelected === 'SDK (TCP)' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">

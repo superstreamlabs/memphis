@@ -18,6 +18,7 @@
             text-decoration: underline;
         }
     }
+
     .code-generator-container {
         height: 540px;
         overflow-y: auto;
@@ -30,21 +31,46 @@
                 padding: 0;
                 flex-direction: row-reverse;
             }
-            .collapse-title {
-                font-size: 18px;
-                font-weight: 600;
-                margin: 0;
+            .panel-header {
+                display: flex;
+                align-items: center;
+                .custom-label {
+                    font-family: 'InterSemiBold';
+                    color: #ffc633;
+                    background-color: rgba(255, 198, 51, 0.2);
+                    padding: 2px 10px;
+                    border-radius: 16px;
+                    margin-left: 15px;
+                }
+                .collapse-title {
+                    font-size: 18px;
+                    font-weight: 600;
+                    margin: 0;
+                }
             }
             .collapse-description {
                 font-size: 14px;
                 font-weight: 400;
                 color: #84818a;
             }
+            .parameters-section {
+                position: relative;
+                .new-user {
+                    position: absolute;
+                    right: 0px;
+                    top: 10px;
+                }
+            }
             .username-section {
                 display: flex;
                 justify-content: space-between;
                 align-items: flex-end;
                 gap: 10px;
+                width: 100%;
+
+                span {
+                    width: 100%;
+                }
                 .remove-icon {
                     margin-bottom: 20px;
                     cursor: pointer;
