@@ -88,6 +88,82 @@ type ProduceSchema struct {
 	DataFormat      string            `json:"data_format"`
 }
 
+func removeTenantResources(tenantName string, user models.User) error {
+	err := db.RemoveProducersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveConsumersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemaVersionsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveSchemasByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveTagsResourcesByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveAuditLogsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteDlsMsgsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.RemoveStationsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	users_list, err := db.DeleteUsersByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	SendUserDeleteCacheUpdate(users_list, tenantName)
+
+	err = db.DeleteConfByTenantName(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteIntegrationsByTenantName(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = serv.memphisPurgeResourcesAccount(tenantName)
+	if err != nil {
+		if err != nil && !IsNatsErr(err, JSStreamNotFoundErr) {
+			return err
+		}
+	}
+
+	if configuration.USER_PASS_BASED_AUTH {
+		// send signal to reload config
+		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func InitializeBillingRoutes(router *gin.RouterGroup, h *Handlers) {
 }
 
