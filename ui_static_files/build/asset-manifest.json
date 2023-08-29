@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.fcedef38.css",
-    "main.js": "/static/js/main.d0b5b9c4.js",
+    "main.css": "/static/css/main.3ca59399.css",
+    "main.js": "/static/js/main.60752d28.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -176,7 +176,6 @@
     "static/media/TieredStorageInterval.svg": "/static/media/TieredStorageInterval.456b755bab0bde86d6f78f37ac9b2807.svg",
     "static/media/bgGetStarted.svg": "/static/media/bgGetStarted.1db75bcd048189e22af661908cfdd4e0.svg",
     "static/media/verifiedIcon.svg": "/static/media/verifiedIcon.0d8d050883148eadba2c89769a9a3d46.svg",
-    "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "static/media/newrelicBanner.webp": "/static/media/newrelicBanner.7ac3fcee8ec773e5fa4c.webp",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
@@ -211,7 +210,6 @@
     "static/media/warningCircle.svg": "/static/media/warningCircle.35b628c068d0871aa55a59e28a393ffb.svg",
     "static/media/usersIconActive.svg": "/static/media/usersIconActive.b85b8f2e28394e7e41d2d5e18774ec50.svg",
     "static/media/logsActive.svg": "/static/media/logsActive.dd10b6ca576cba4444205502394b8456.svg",
-    "static/media/timeSchedule.svg": "/static/media/timeSchedule.564f30140af97f27cb7150d50d2a2d2e.svg",
     "static/media/storage.svg": "/static/media/storage.6a918fd2ccba4582d4b45da508962d21.svg",
     "static/media/grayAppUserIcon.svg": "/static/media/grayAppUserIcon.9401d63d3a38a3310942a1db6bb09bf1.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
@@ -226,7 +224,6 @@
     "static/media/redeliver.svg": "/static/media/redeliver.3caf70ae4dec01ad025a11d1408c6a4f.svg",
     "static/media/task.svg": "/static/media/task.e71baa37fcbd85f3c691d282c9276b84.svg",
     "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
-    "static/media/functionsIconActive.svg": "/static/media/functionsIconActive.d78e7df2228cec87552c5f52d0de75b8.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/star.svg": "/static/media/star.8699de919483296eb55b8a677dbb5c7e.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
@@ -240,7 +237,6 @@
     "static/media/documentIconActive.svg": "/static/media/documentIconActive.ab4e72d74aa4241e4fd6c43d35b47a30.svg",
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
     "static/media/codeIcon.svg": "/static/media/codeIcon.6ddd4e5ba7c67ec8dc850bc8255bbc78.svg",
-    "static/media/strIcon.svg": "/static/media/strIcon.cb9e929312f19af88af31d0e16a65580.svg",
     "static/media/TotalStations.svg": "/static/media/TotalStations.16e95265e663f4e33db9709a800c50c5.svg",
     "static/media/credit-card.svg": "/static/media/credit-card.f8f860bd90af5dc72d6b4963be4fae14.svg",
     "static/media/versionUpgradeColor.svg": "/static/media/versionUpgradeColor.4c642366ef44734f80cce3f4ad5a51fe.svg",
@@ -254,10 +250,8 @@
     "static/media/BrokerHostname.svg": "/static/media/BrokerHostname.9934a24a7838aaef881a0964af3a7779.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
     "static/media/germanyIcon.svg": "/static/media/germanyIcon.1430a42efa53867a4433049db47844ef.svg",
-    "static/media/paymentsGray.svg": "/static/media/paymentsGray.5b47c51db2ea9b6ac864da7c7f1963f8.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.fd4af1a8971f8bd9499888ffd8dd2a43.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
-    "static/media/paymentsColor.svg": "/static/media/paymentsColor.5d1339878ec45e734fff414b719b1124.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
     "static/media/stopUsingIcon.svg": "/static/media/stopUsingIcon.7e0db2ab31e9777c5ec29a204dd7a982.svg",
     "static/media/successIcon.svg": "/static/media/successIcon.3336829a34ff376fc3692311485b2563.svg",
@@ -272,7 +266,7 @@
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
     "static/media/componentIcon.svg": "/static/media/componentIcon.c7e98367f39a7a5e86d1da122feba8af.svg",
     "static/media/docsLogo.svg": "/static/media/docsLogo.47318fe8ea2ef1cfe195bd21d8a3b4f5.svg",
-    "static/media/TimeFill.svg": "/static/media/TimeFill.bec2989f51458fe251e269295380f4ea.svg",
+    "static/media/timeFill.svg": "/static/media/timeFill.bec2989f51458fe251e269295380f4ea.svg",
     "static/media/addUserIcon.svg": "/static/media/addUserIcon.db68a5ce64cc9eb38d66fd25774c79c9.svg",
     "static/media/overviewIcon.svg": "/static/media/overviewIcon.5a0fa6784283dc830b1c5cadf668de93.svg",
     "static/media/refresh.svg": "/static/media/refresh.ba93d46f83e615f1174f50004368da8d.svg",
@@ -301,7 +295,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.fcedef38.css",
-    "static/js/main.d0b5b9c4.js"
+    "static/css/main.3ca59399.css",
+    "static/js/main.60752d28.js"
   ]
 }
