@@ -158,8 +158,8 @@ func CreateDefaultSchema(username, tenantName string, userId int) (string, error
 
 func CreateDefaultTags(tagType string, id int, tenantName string) error {
 	defaultTags := models.CreateTag{Name: "default"}
-
-	err := AddTagsToEntity([]models.CreateTag{defaultTags}, tagType, id, tenantName)
+	color := "0, 165, 255"
+	err := AddTagsToEntity([]models.CreateTag{defaultTags}, tagType, id, tenantName, color)
 	if err != nil {
 		return err
 	}

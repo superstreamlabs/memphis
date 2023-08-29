@@ -998,7 +998,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName)
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, "")
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
