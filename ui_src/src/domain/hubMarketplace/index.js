@@ -21,11 +21,11 @@ import React, { useState } from 'react';
 
 import FunctionsOverview from '../../components/functionsOverview';
 import { getFontColor } from '../../utils/styleTemplates';
-import Seperator from '../../assets/images/seperator.svg';
+import { ReactComponent as SeperatorIcon } from '../../assets/images/seperator.svg';
 import ConnectToHub from '../../components/connectToHub';
-import Connect from '../../assets/images/connect.svg';
+import { ReactComponent as ConnectIcon } from '../../assets/images/connect.svg';
 import Button from '../../components/button';
-import Close from '../../assets/images/close.svg';
+import { ReactComponent as CloseIcon } from '../../assets/images/close.svg';
 import FunctionDetails from './functionDetails';
 import FunctionsList from './functionsList';
 
@@ -128,10 +128,10 @@ function HubMarketplace(props) {
             <div className="functions-modal-header">
                 <div>
                     <label className="visit-hub">Visit hub</label>
-                    <img src={Seperator} alt="seperator" width="20" height="20" className="seperator" />
+                    <SeperatorIcon width={20} height={20} className="seperator" alt="seperator" />
                     {signedToHub ? (
                         <>
-                            <img src={Connect} alt="connect to hub" width="20" height="20" className="pointer" />
+                            <ConnectIcon width={20} height={20} className="pointer" alt="connect to hub" />
                             <label className="sign-in-hub connected">Connected to hub</label>
                         </>
                     ) : (
@@ -139,8 +139,7 @@ function HubMarketplace(props) {
                             Sign in to hub
                         </label>
                     )}
-
-                    <img src={Close} alt="close" width="12" height="12" style={{ cursor: 'pointer' }} onClick={handleCloseModal} />
+                    <CloseIcon alt="close" width={12} height={12} style={{ cursor: 'pointer' }} onClick={handleCloseModal} />
                 </div>
             </div>
 

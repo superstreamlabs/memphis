@@ -19,7 +19,7 @@ import { useHistory } from 'react-router-dom';
 import { convertBytes, parsingDate } from '../../services/valueConvertor';
 import PoisonMessage from './components/poisonMessage';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import BackIcon from '../../assets/images/backIcon.svg';
+import { ReactComponent as BackIcon } from '../../assets/images/backIcon.svg';
 import ConsumerGroup from './components/consumerGroup';
 import { Canvas, Node, Edge, Label } from 'reaflow';
 import { httpRequest } from '../../services/http';
@@ -257,7 +257,7 @@ const MessageJourney = () => {
                 producer: {
                     is_active: data.producer?.is_active,
                     is_deleted: data.producer?.is_deleted,
-                    name: data.producer?.name,
+                    name: data.producer?.name
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,
@@ -283,7 +283,7 @@ const MessageJourney = () => {
             {!isLoading && (
                 <div className="message-journey-container">
                     <div className="bread-crumbs">
-                        <img src={BackIcon} onClick={() => returnBack()} alt="backIcon" />
+                        <BackIcon alt="backIcon" onClick={() => returnBack()} />
                         <p>
                             Message seq: <span>{messageData?.message_seq}</span>
                         </p>

@@ -18,7 +18,8 @@
             grid-template-rows: 25% 25% 50%;
             .logoImg {
                 padding: 50px;
-                img {
+                img,
+                svg {
                     width: 175px;
                     height: auto;
                 }
@@ -50,7 +51,7 @@
                 .ant-form-item-control {
                     margin: 0;
                 }
-                .ant-form-item-explain-error{
+                .ant-form-item-explain-error {
                     min-width: 195px;
                 }
             }

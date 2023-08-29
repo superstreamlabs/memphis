@@ -12,18 +12,20 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import './style.scss';
-import GetStartedIcon from '../../../../assets/images/getStartedIcon.svg';
-import AppUserIcon from '../../../../assets/images/usersIconActive.svg';
-import EmptyStation from '../../../../assets/images/emptyStation.svg';
-import DataProduced from '../../../../assets/images/dataProduced.svg';
-import ConsumeDataImg from '../../../../assets/images/stationsIconActive.svg';
-import FullStation from '../../../../assets/images/fullStation.svg';
-import FinishFlag from '../../../../assets/images/finishFlag.svg';
-import GrayAppUserIcon from '../../../../assets/images/grayAppUserIcon.svg';
-import GrayProduceDataImg from '../../../../assets/images/grayProduceDataImg.svg';
-import GrayConsumeDataImg from '../../../../assets/images/grayConsumeDataImg.svg';
-import GrayfinishStep from '../../../../assets/images/grayFinish.svg';
-import CompletedStep from '../../../../assets/images/checkIcon.svg';
+
+import { ReactComponent as GetStartedIcon } from '../../../../assets/images/getStartedIcon.svg';
+import { ReactComponent as AppUserIcon } from '../../../../assets/images/usersIconActive.svg';
+import { ReactComponent as EmptyStationIcon } from '../../../../assets/images/emptyStation.svg';
+import { ReactComponent as DataProducedIcon } from '../../../../assets/images/dataProduced.svg';
+import { ReactComponent as ConsumeDataIcon } from '../../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as FullStationIcon } from '../../../../assets/images/fullStation.svg';
+import { ReactComponent as FinishFlagIcon } from '../../../../assets/images/finishFlag.svg';
+import { ReactComponent as GrayAppUserIcon } from '../../../../assets/images/grayAppUserIcon.svg';
+import { ReactComponent as GrayProduceDataIcon } from '../../../../assets/images/grayProduceDataImg.svg';
+import { ReactComponent as GrayConsumeDataIcon } from '../../../../assets/images/grayConsumeDataImg.svg';
+import { ReactComponent as GrayfinishStepIcon } from '../../../../assets/images/grayFinish.svg';
+import { ReactComponent as CompletedStepIcon } from '../../../../assets/images/checkIcon.svg';
+import Finish from '../finish';
 
 const Step = ({ stepNumber, stepName, currentStep, completedSteps, stepsDescription, onSideBarClick }) => {
     const docLinks = {
@@ -35,26 +37,26 @@ const Step = ({ stepNumber, stepName, currentStep, completedSteps, stepsDescript
     const getIcon = useMemo(() => {
         switch (stepNumber) {
             case 1:
-                return <img className="sidebar-image" src={GetStartedIcon} alt="getStartedIcon" />;
+                return <GetStartedIcon className="sidebar-image" alt="getStartedIcon" />;
             case 2:
                 return completedSteps + 1 >= stepNumber ? (
-                    <img className="sidebar-image" src={AppUserIcon} alt="getStartedIcon" />
+                    <AppUserIcon className="sidebar-image" alt="getStartedIcon" />
                 ) : (
-                    <img className="sidebar-image" src={GrayAppUserIcon} alt="getStartedIcon" />
+                    <GrayAppUserIcon className="sidebar-image" alt="getStartedIcon" />
                 );
             case 3:
-                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={DataProduced} alt="getStartedIcon" />;
-                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={EmptyStation} alt="getStartedIcon" />;
-                else return <img className="sidebar-image" src={GrayProduceDataImg} alt="getStartedIcon" />;
+                if (completedSteps + 1 > stepNumber) return <DataProducedIcon className="sidebar-image" alt="getStartedIcon" />;
+                else if (completedSteps + 1 === stepNumber) return <EmptyStationIcon className="sidebar-image" alt="getStartedIcon" />;
+                else return <GrayProduceDataIcon className="sidebar-image" alt="getStartedIcon" />;
             case 4:
-                if (completedSteps + 1 > stepNumber) return <img className="sidebar-image" src={ConsumeDataImg} alt="getStartedIcon" />;
-                else if (completedSteps + 1 === stepNumber) return <img className="sidebar-image" src={FullStation} alt="getStartedIcon" />;
-                else return <img className="sidebar-image" src={GrayConsumeDataImg} alt="getStartedIcon" />;
+                if (completedSteps + 1 > stepNumber) return <ConsumeDataIcon className="sidebar-image" alt="getStartedIcon" />;
+                else if (completedSteps + 1 === stepNumber) return <FullStationIcon className="sidebar-image" alt="getStartedIcon" />;
+                else return <GrayConsumeDataIcon className="sidebar-image" alt="getStartedIcon" />;
             case 5:
                 return completedSteps + 1 >= stepNumber ? (
-                    <img className="sidebar-image" src={FinishFlag} alt="getStartedIcon" />
+                    <FinishFlagIcon className="sidebar-image" alt="getStartedIcon" />
                 ) : (
-                    <img className="sidebar-image" src={GrayfinishStep} alt="getStartedIcon" />
+                    <GrayfinishStepIcon className="sidebar-image" alt="getStartedIcon" />
                 );
             default:
                 return null;
@@ -69,7 +71,7 @@ const Step = ({ stepNumber, stepName, currentStep, completedSteps, stepsDescript
                 {getIcon}
                 <div className="step-name-completed">
                     <p className={currentStep === stepNumber ? 'step-name curr-step-name' : 'step-name'}>{stepName}</p>
-                    {completedSteps >= stepNumber && stepNumber !== 5 && <img className="completed" src={CompletedStep} alt="completed" />}
+                    {completedSteps >= stepNumber && stepNumber !== 5 && <CompletedStepIcon className="completed" alt="completed" />}
                 </div>
             </div>
             <div className={completedSteps >= stepNumber ? 'side-step-body border-completed' : stepNumber !== 5 ? 'side-step-body border' : 'side-step-body'}>

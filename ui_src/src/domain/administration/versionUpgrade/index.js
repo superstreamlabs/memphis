@@ -17,9 +17,9 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { DOCKER_UPGRADE_URL, K8S_UPGRADE_URL, LATEST_RELEASE_URL, RELEASE_DOCS_URL, RELEASE_NOTES_URL } from '../../../config';
 import { GithubRequest } from '../../../services/githubRequests';
 import { LOCAL_STORAGE_ENV } from '../../../const/localStorageConsts';
-import upgradeBanner from '../../../assets/images/upgradeBanner.svg';
-import uptodateIcon from '../../../assets/images/uptodateIcon.svg';
-import fullLogo from '../../../assets/images/fullLogo.svg';
+import { ReactComponent as UpgradeBannerIcon } from '../../../assets/images/upgradeBanner.svg';
+import { ReactComponent as UpdateIcon } from '../../../assets/images/uptodateIcon.svg';
+import { ReactComponent as FullLogoIcon } from '../../../assets/images/fullLogo.svg';
 import Button from '../../../components/button';
 import { Context } from '../../../hooks/store';
 import NoteItem from './components/noteItem';
@@ -27,6 +27,7 @@ import Loader from '../../../components/loader';
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { compareVersions } from '../../../services/valueConvertor';
+import { Update } from '@material-ui/icons';
 
 function VersionUpgrade() {
     const [state, dispatch] = useContext(Context);
@@ -129,7 +130,7 @@ function VersionUpgrade() {
                 <>
                     {' '}
                     <div className="uptodate-section">
-                        <img src={uptodateIcon} alt="uptodateIcon" />
+                        <UpdateIcon alt="updateIcon" />
                         <div className="content">
                             <p>You are up to date.</p>
                             <span>Memphis.dev version v{state.currentVersion} is the latest version available.</span>
@@ -139,7 +140,7 @@ function VersionUpgrade() {
             ) : (
                 <>
                     <div className="banner-section">
-                        <img src={upgradeBanner} width="97%" alt="upgradeBanner" />
+                        <UpgradeBannerIcon alt="upgradeBannerIcon" width="97%" />
                         <div className="actions">
                             <div className="current-version-wrapper">
                                 <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
@@ -147,7 +148,7 @@ function VersionUpgrade() {
                                 </version>
                             </div>
                             <div className="logo">
-                                <img src={fullLogo} alt="fullLogo" />
+                                <FullLogoIcon alt="fullLogoIcon" />
                                 <div className="version-wrapper">
                                     <p>{latestVersion}</p>
                                 </div>

@@ -15,8 +15,8 @@ import './style.scss';
 import React, { useEffect, useRef, useState } from 'react';
 
 import CheckboxComponent from '../../../../components/checkBox';
-import attachedPlaceholder from '../../../../assets/images/attachedPlaceholder.svg';
-import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as AttachedPlaceholderIcon } from '../../../../assets/images/attachedPlaceholder.svg';
+import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
@@ -131,7 +131,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                     </div>
                 ) : (
                     <div className="placeholder">
-                        <img src={attachedPlaceholder} alt="attachedPlaceholder" />
+                        <AttachedPlaceholderIcon alt="attachedPlaceholder" />
                         <p>No stations yet</p>
                         <Button
                             className="modal-btn"
@@ -209,7 +209,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={stationsIconActive} alt="stationsIconActive" />
+                            <StationsActiveIcon alt="stationsIconActive" className="headerImage" />
                         </div>
                         <p>Create new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>

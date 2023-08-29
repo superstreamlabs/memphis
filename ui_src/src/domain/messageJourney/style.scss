@@ -4,56 +4,56 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-    .bread-crumbs{
+    .bread-crumbs {
         display: flex;
         height: 30px;
         align-items: center;
-        img{
+        img,
+        svg {
             margin-right: 10px;
             cursor: pointer;
         }
-        p{
+        p {
             margin: 0;
             font-family: 'InterSemiBold';
             font-size: 20px;
             line-height: 29px;
-            color: #1D1D1D; 
+            color: #1d1d1d;
         }
-        span{
+        span {
             font-family: 'InterMedium';
             font-size: 16px;
             line-height: 29px;
-            color: #667085; 
-            
+            color: #667085;
         }
     }
     .ant-collapse-item.ant-collapse-no-arrow {
-        background: #FFFFFF;
-        border: 1px solid #EFEFEF;
+        background: #ffffff;
+        border: 1px solid #efefef;
         box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
         border-radius: 8px;
     }
-    .collapse-header{
+    .collapse-header {
         display: flex;
         justify-content: space-between;
         width: 100%;
-        p{
+        p {
             margin: 0;
             font-family: 'InterSemiBold';
             font-size: 14px;
         }
-        img{
+        img,
+        svg {
             width: 12px;
             margin-left: 10px;
         }
-        
     }
-    .canvas-wrapper{
+    .canvas-wrapper {
         height: calc(100vh - 50px);
         .edge {
             stroke-width: 8;
         }
-        .producer{
+        .producer {
             stroke: rgba(101, 87, 255, 0.1);
         }
         .consumer {
@@ -61,24 +61,24 @@
         }
         .processing {
             stroke-dasharray: 5;
-            animation: dashdraw .5s linear infinite;
+            animation: dashdraw 0.5s linear infinite;
         }
         @keyframes dashdraw {
-            0% { stroke-dashoffset: 10; }
+            0% {
+                stroke-dashoffset: 10;
+            }
         }
     }
 }
-    
-    .node-wrapper{
-        .collapse-header{
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-        }
-    }
 
-    .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
-        overflow: overlay !important;
+.node-wrapper {
+    .collapse-header {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
     }
+}
 
-    
+.Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd {
+    overflow: overlay !important;
+}

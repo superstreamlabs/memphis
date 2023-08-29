@@ -17,10 +17,11 @@ import { InfoOutlined } from '@material-ui/icons';
 import { message } from 'antd';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
-import deadLetterPlaceholder from '../../../../assets/images/deadLetterPlaceholder.svg';
+import { ReactComponent as DeadLetterPlaceholderIcon } from '../../../../assets/images/deadLetterPlaceholder.svg';
 import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
-import purgeWrapperIcon from '../../../../assets/images/purgeWrapperIcon.svg';
+import { ReactComponent as PurgeWrapperIcon } from '../../../../assets/images/purgeWrapperIcon.svg';
 import waitingMessages from '../../../../assets/images/waitingMessages.svg';
+import { ReactComponent as WaitingMessagesIcon } from '../../../../assets/images/waitingMessages.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
 import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
@@ -368,6 +369,7 @@ const Messages = () => {
             {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
                     <img width={100} src={waitingMessages} alt="waitingMessages" />
+                    <WaitingMessagesIcon width={100} alt="waitingMessages" />
                     <p>No messages</p>
                     <span className="des">{getDescriptin()}</span>
                 </div>
@@ -376,7 +378,7 @@ const Messages = () => {
                 ((subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
                     (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
-                        <img width={80} src={deadLetterPlaceholder} alt="waitingMessages" />
+                        <DeadLetterPlaceholderIcon width={80} alt="waitingMessages" />
                         <p>Hooray! No messages</p>
                     </div>
                 )}
@@ -456,7 +458,7 @@ const Messages = () => {
                 </div>
             )}
             <Modal
-                header={<img src={purgeWrapperIcon} alt="deleteWrapperIcon" />}
+                header={<PurgeWrapperIcon alt="deleteWrapperIcon" />}
                 width="460px"
                 height="320px"
                 displayButtons={false}

@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useState } from 'react';
 import { DatePicker } from 'antd';
-import CalendarIcon from '../../assets/images/Calendar.svg';
+import { ReactComponent as CalendarIcon } from '../../assets/images/Calendar.svg';
 const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, picker, dateFrom }) => {
     const [disabledMonths, setDisabledMonths] = useState([]);
 
@@ -42,7 +42,7 @@ const DatePickerComponent = ({ width, height, minWidth, onChange, placeholder, p
             <DatePicker
                 onChange={(date, dateString) => onChange(date._d)}
                 placeholder={placeholder}
-                suffixIcon={<img src={CalendarIcon} />}
+                suffixIcon={<CalendarIcon />}
                 popupClassName="date-picker-popup"
                 picker={picker}
                 allowClear={false}

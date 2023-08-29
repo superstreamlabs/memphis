@@ -24,7 +24,7 @@
     min-width: 1050px;
     height: 60px;
 }
-.main-header-wrapper{
+.main-header-wrapper {
     display: flex;
     flex-direction: column;
 }
@@ -149,7 +149,7 @@ pre {
     }
 }
 
-.ant-divider-vertical{
+.ant-divider-vertical {
     border-left-width: 2px;
 }
 
@@ -161,30 +161,30 @@ pre {
     transform: rotate(0deg);
 }
 
-.notification-wrapper{
+.notification-wrapper {
     border-radius: 12px;
-    border: 1px solid var(--gray-200, #EAECF0);
+    border: 1px solid var(--gray-200, #eaecf0);
     box-shadow: 0px 4px 6px -2px rgba(16, 24, 40, 0.03), 0px 12px 16px -4px rgba(16, 24, 40, 0.08);
-    .ant-notification-notice-message{
+    .ant-notification-notice-message {
         font-family: 'InterSemiBold';
         font-size: 16px;
     }
-    .ant-notification-notice-description{
+    .ant-notification-notice-description {
         font-family: 'Inter';
         font-size: 14px;
         color: #475467;
     }
 }
-.avatar-image{
+.avatar-image {
     border-radius: 50%;
 }
 
-.system-notification{
+.system-notification {
     position: absolute;
     width: 100%;
     text-align: -webkit-center;
-    .notification-wrapper{
-        opacity: 0;       
+    .notification-wrapper {
+        opacity: 0;
         width: fit-content;
         padding: 0 20px;
         height: 30px;
@@ -197,9 +197,9 @@ pre {
         border-right: 1px solid rgba(101, 87, 255, 0.09);
         border-bottom: 1px solid rgba(101, 87, 255, 0.09);
         border-left: 1px solid rgba(101, 87, 255, 0.09);
-        background: linear-gradient(157deg, rgba(29, 29, 29, 0.06) 0%, rgba(101, 87, 255, 0.10) 100%);
-        box-shadow: 0px 2px 2px 0px rgba(101, 87, 255, 0.10);
-        .notification-badge{
+        background: linear-gradient(157deg, rgba(29, 29, 29, 0.06) 0%, rgba(101, 87, 255, 0.1) 100%);
+        box-shadow: 0px 2px 2px 0px rgba(101, 87, 255, 0.1);
+        .notification-badge {
             background: var(--purple);
             font-size: 12px;
             font-family: 'InterMedium';
@@ -211,18 +211,19 @@ pre {
             align-items: center;
             height: 20px;
         }
-        p{
+        p {
             margin: 0;
-            color:rgba(74, 73, 92, 0.80);
+            color: rgba(74, 73, 92, 0.8);
             font-size: 14px;
             font-family: 'Inter';
         }
-        a{
+        a {
             font-family: 'InterSemiBold';
             font-size: 14px;
             display: flex;
         }
-        img{
+        img,
+        svg {
             width: 12px;
             margin-left: 5px;
         }
@@ -235,21 +236,19 @@ pre {
 
 .hide-notification .notification-wrapper {
     animation: slide-out 0.5s ease-out forwards;
-  }
-  
-
+}
 
 @keyframes slide-in {
     0% {
-      top: -100px;
-      opacity: 0; /* Start with opacity 0 */
+        top: -100px;
+        opacity: 0; /* Start with opacity 0 */
     }
     100% {
-      top: 0;
-      opacity: 1; /* End with opacity 1 */
+        top: 0;
+        opacity: 1; /* End with opacity 1 */
     }
-  }
-  
+}
+
 @keyframes slide-out {
     0% {
         top: 0;
@@ -260,7 +259,3 @@ pre {
         opacity: 0; /* End with opacity 0 */
     }
 }
-  
-  
-  
-  

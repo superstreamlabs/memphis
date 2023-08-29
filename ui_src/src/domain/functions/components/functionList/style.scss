@@ -4,19 +4,19 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-    .header-flex-wrapper{
+    .header-flex-wrapper {
         display: flex;
         gap: 10px;
-        .integrated-wrapper{
+        .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
             align-items: center;
             border-radius: 32px;
-            border: 1px solid #E1E1E1;
+            border: 1px solid #e1e1e1;
             gap: 3px;
             font-size: 14px;
             font-family: 'InterMedium';
-            svg{
+            svg {
                 color: black;
                 width: 15px;
                 height: 15px;
@@ -49,7 +49,8 @@
             height: 100%;
             justify-content: center;
             width: 100%;
-            img {
+            img,
+            svg {
                 margin-bottom: 30px;
             }
             .title {

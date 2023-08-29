@@ -10,12 +10,12 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import './style.scss';
-
 import React, { useState } from 'react';
-import CreditCardImg from '../../../../../../assets/images/setting/credit-card.svg';
-import AddPaymentImg from '../../../../../../assets/images/setting/addPayment.svg';
+import { ReactComponent as CreditCardIcon } from '../../../../../../assets/images/setting/credit-card.svg';
+import { ReactComponent as AddPaymentIcon } from '../../../../../../assets/images/setting/addPayment.svg';
 import Button from '../../../../../../components/button';
+
+import './style.scss';
 
 function PaymentMethod() {
     const [paymentMethods, setPaymentMethods] = useState(['method1']);
@@ -32,7 +32,7 @@ function PaymentMethod() {
                     </div>
                     <div className="payment-method-bottom">
                         <div className="credit-card-bottom">
-                            <img src={CreditCardImg} alt="credit-card-img" />
+                            <CreditCardIcon alt="credit-card-img" />
                             <div>
                                 <p>**** **** **** 4956</p>
                                 <p>Debit Card</p>
@@ -60,7 +60,7 @@ function PaymentMethod() {
                 </>
             ) : (
                 <div className="no-payment-method">
-                    <img src={AddPaymentImg} className="add-payment-img" alt="add-payment" />
+                    <AddPaymentIcon className="add-payment" alt="add-payment" />
                     <div>
                         <p className="payment-method-title">Payment Method</p>
                         <p className="payment-method-description">Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece o</p>

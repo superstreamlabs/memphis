@@ -14,14 +14,12 @@ import './style.scss';
 
 import React, { useContext } from 'react';
 
-import versionUpgradeColor from '../../assets/images/setting/versionUpgradeColor.svg';
-import versionUpgradeGray from '../../assets/images/setting/versionUpgradeGray.svg';
-import ClusterConfColor from '../../assets/images/setting/clusterConfColor.svg';
-import IntegrationColor from '../../assets/images/setting/integrationColor.svg';
-import ClusterConfGray from '../../assets/images/setting/clusterConfGray.svg';
-import IntegrationGray from '../../assets/images/setting/integrationGray.svg';
-import RequestsColor from '../../assets/images/setting/requestsColor.svg';
-import RequestsGray from '../../assets/images/setting/requestsGray.svg';
+import { ReactComponent as VersionUpgradeColorIcon } from '../../assets/images/setting/versionUpgradeColor.svg';
+import { ReactComponent as VersionUpgradeGrayIcon } from '../../assets/images/setting/versionUpgradeGray.svg';
+import { ReactComponent as ClusterConfColorIcon } from '../../assets/images/setting/clusterConfColor.svg';
+import { ReactComponent as IntegrationColorIcon } from '../../assets/images/setting/integrationColor.svg';
+import { ReactComponent as ClusterConfGrayIcon } from '../../assets/images/setting/clusterConfGray.svg';
+import { ReactComponent as IntegrationGrayIcon } from '../../assets/images/setting/integrationGray.svg';
 import { isCloud } from '../../services/valueConvertor';
 import { Context } from '../../hooks/store';
 
@@ -34,17 +32,21 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
             <p className="sub-header">Modify environment configuration</p>
             <div className="side-menu administration">
                 <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
-                    <img src={selectedMenuItem === 'integrations' ? IntegrationColor : IntegrationGray} alt="notifications" />
+                    {selectedMenuItem === 'integrations' ? <IntegrationColorIcon alt="notifications" /> : <IntegrationGrayIcon alt="notifications" />}
                     Integrations
                 </div>
                 <div className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('cluster_configuration')}>
-                    <img src={selectedMenuItem === 'cluster_configuration' ? ClusterConfColor : ClusterConfGray} alt="clusterConfiguration" />
+                    {selectedMenuItem === 'cluster_configuration' ? (
+                        <ClusterConfColorIcon alt="clusterConfiguration" />
+                    ) : (
+                        <ClusterConfGrayIcon alt="clusterConfiguration" />
+                    )}
                     Environment configuration
                 </div>
                 {!isCloud() && (
                     <>
                         <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
-                            <img src={selectedMenuItem === 'version_upgrade' ? versionUpgradeColor : versionUpgradeGray} alt="versionUpgrade" />
+                            {selectedMenuItem === 'version_upgrade' ? <VersionUpgradeColorIcon alt="versionUpgrade" /> : <VersionUpgradeGrayIcon alt="versionUpgrade" />}
                             System information
                             {!state.isLatest && <div className="update-available">Update available</div>}
                         </div>

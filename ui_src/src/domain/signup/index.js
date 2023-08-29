@@ -25,10 +25,9 @@ import {
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
 } from '../../const/localStorageConsts';
-import FullLogo from '../../assets/images/fullLogo.svg';
-import signupInfo from '../../assets/images/signupInfo.svg';
+import { ReactComponent as FullLogo } from '../../assets/images/fullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import signup from '../../assets/images/signup.svg';
+import { ReactComponent as SignupIcon } from '../../assets/images/signup.svg';
 import { httpRequest } from '../../services/http';
 import Switcher from '../../components/switcher';
 import AuthService from '../../services/auth';
@@ -150,9 +149,9 @@ const Signup = (props) => {
             {!isLoading && (
                 <section className="signup-container">
                     {state.loading ? <Loader></Loader> : ''}
-                    <img alt="signup-img" className="signup-img" src={signup}></img>
+                    <SignupIcon alt="signup-icon" className="signup-icon" />
                     <div className="signup-form">
-                        <img alt="logo" className="form-logo" src={FullLogo}></img>
+                        <FullLogo alt="logo" className="form-logo" />
                         <p className="signup-sub-title">Let’s create your first user</p>
                         <Form
                             className="form-fields"

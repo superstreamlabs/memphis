@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import { AddRounded, CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
+import { AddRounded, CheckCircleOutlineRounded, Create, ErrorOutlineRounded } from '@material-ui/icons';
 import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import React, { useContext, useEffect, useState } from 'react';
@@ -20,15 +20,15 @@ import Schema from 'protocol-buffers-schema';
 import { message } from 'antd';
 
 import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
-import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
-import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
-import scrollBackIcon from '../../../../assets/images/scrollBackIcon.svg';
-import redirectIcon from '../../../../assets/images/redirectIcon.svg';
-import createdByIcon from '../../../../assets/images/createdByIcon.svg';
-import verifiedIcon from '../../../../assets/images/verifiedIcon.svg';
-import rollBackIcon from '../../../../assets/images/rollBackIcon.svg';
+import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as CreatedDateIcon } from '../../../../assets/images/createdDateIcon.svg';
+import { ReactComponent as ScrollBackIcon } from '../../../../assets/images/scrollBackIcon.svg';
+import { ReactComponent as RedirectIcon } from '../../../../assets/images/redirectIcon.svg';
+import { ReactComponent as CreatedByIcon } from '../../../../assets/images/createdByIcon.svg';
+import { ReactComponent as VerifiedIcon } from '../../../../assets/images/verifiedIcon.svg';
+import { ReactComponent as RollBackIcon } from '../../../../assets/images/rollBackIcon.svg';
 import SelectVersion from '../../../../components/selectVersion';
-import typeIcon from '../../../../assets/images/typeIcon.svg';
+import { ReactComponent as TypeIcon } from '../../../../assets/images/typeIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SelectComponent from '../../../../components/select';
 import { httpRequest } from '../../../../services/http';
@@ -348,19 +348,19 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             <div className="scrollable-wrapper">
                 <div className="type-created">
                     <div className="wrapper">
-                        <img src={typeIcon} alt="typeIcon" />
+                        <TypeIcon alt="typeIcon" />
                         <p>Type:</p>
                         {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
-                        <img src={createdByIcon} alt="createdByIcon" />
+                        <CreatedByIcon alt="createdByIcon" />
                         <p>Created by:</p>
                         <OverflowTip text={currentVersion?.created_by_username} maxWidth={'150px'}>
                             <span>{currentVersion?.created_by_username}</span>
                         </OverflowTip>
                     </div>
                     <div className="wrapper">
-                        <img src={createdDateIcon} alt="typeIcon" />
+                        <CreatedDateIcon alt="createdDateIcon" />
                         <span>{parsingDate(currentVersion?.created_at)}</span>
                     </div>
                 </div>
@@ -425,7 +425,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">
-                                        <img src={verifiedIcon} alt="verifiedIcon" />
+                                        ] <VerifiedIcon alt="verifiedIcon" />
                                         <p>Validate</p>
                                     </div>
                                 }
@@ -537,7 +537,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                         <OverflowTip className="ovel-station" text={station} maxWidth="130px" cursor="pointer">
                                             {station}
                                         </OverflowTip>
-                                        <img src={redirectIcon} />
+                                        <RedirectIcon />
                                     </div>
                                 );
                             })}
@@ -565,7 +565,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             height="34px"
                             placeholder={
                                 <div className="placeholder-button">
-                                    <img src={scrollBackIcon} alt="scrollBackIcon" />
+                                    <ScrollBackIcon alt="scrollBackIcon" />
                                     <p>Activate</p>
                                 </div>
                             }
@@ -594,7 +594,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
             </div>
             <Modal
-                header={<img src={rollBackIcon} alt="rollBackIcon" />}
+                header={<RollBackIcon alt="rollBackIcon" />}
                 width="400px"
                 height="160px"
                 displayButtons={false}
@@ -633,7 +633,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
             </Modal>
             <Modal
-                header={<img src={rollBackIcon} alt="rollBackIcon" />}
+                header={<RollBackIcon alt="rollBackIcon" />}
                 width="430px"
                 height="200px"
                 displayButtons={false}
@@ -675,7 +675,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        <img src={stationsIconActive} alt="stationsIconActive" />
+                        = <StationsActiveIcon alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

@@ -26,9 +26,9 @@ import {
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
 } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
-import noCodeExample from '../../assets/images/noCodeExample.svg';
-import codeIcon from '../../assets/images/codeIcon.svg';
-import refresh from '../../assets/images/refresh.svg';
+import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
+import { ReactComponent as CodeIcon } from '../../assets/images/codeIcon.svg';
+import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
 import SelectComponent from '../select';
 import CustomTabs from '../Tabs';
 import Modal from '../modal';
@@ -189,7 +189,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             {withHeader && (
                 <div className="modal-header">
                     <div className="header-img-container">
-                        <img className="headerImage" src={codeIcon} alt="codeIcon" />
+                        <CodeIcon className="headerImage" alt="codeIcon" />
                     </div>
                     <p>Code examplesn</p>
                     <label>Some code snippets that will help you get started with Memphis</label>
@@ -241,7 +241,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
                         {SDK_CODE_EXAMPLE[langSelected].link ? (
                             <div className="guidline">
-                                <img src={noCodeExample} />
+                                <NoCodeExampleIcon alt="noCodeExample" />
                                 <div className="content">
                                     <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
                                     <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
@@ -266,7 +266,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <div className="generate-wrapper">
                             <p className="field-title">Step 1: Generate a token</p>
                             <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                <img src={refresh} width="14" />
+                                <RefreshIcon width="14" />
                                 <span>Generate JWT token</span>
                             </div>
                         </div>
@@ -278,7 +278,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
                         {consumer ? (
                             <div className="guidline">
-                                <img src={noCodeExample} />
+                                <NoCodeExampleIcon alt="noCodeExample" />
                                 <div className="content">
                                     <p>Coming soon</p>
                                     <span>

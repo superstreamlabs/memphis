@@ -17,8 +17,8 @@ import { useHistory } from 'react-router-dom';
 import React, { useContext } from 'react';
 import { Select } from 'antd';
 
-import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import placeholderSchema from '../../assets/images/placeholderSchema.svg';
+import { ReactComponent as SchemaSelectIcon } from '../../assets/images/schemaIconSelect.svg';
+import { ReactComponent as PlaceholderSchemaIcon } from '../../assets/images/placeholderSchema.svg';
 import { parsingDate } from '../../services/valueConvertor';
 import { Context } from '../../hooks/store';
 import Button from '../button';
@@ -50,7 +50,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                 popupClassName="select-schema-options"
                 notFoundContent={
                     <div className="no-schema-to-display">
-                        <img src={placeholderSchema} width="50" height="50" alt="placeholderSchema" />
+                        <PlaceholderSchemaIcon alt="PlaceholderSchemaIcon" width={50} height={50} />
                         <p className="title">No schemas yet</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
@@ -74,7 +74,7 @@ const SelectSchema = ({ options, onChange, value, placeholder }) => {
                     return (
                         <Option key={schema?.id} value={schema?.name}>
                             <div className="schema-details">
-                                <img src={SchemaIconSelect} alt="SchemaIconSelect" height="20px" />
+                                <SchemaSelectIcon alt="SchemaSelectIcon" height={20} />
                                 <p className="schema-name">{schema?.name}</p>
                             </div>
                             <p className="created-by">

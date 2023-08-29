@@ -18,22 +18,20 @@ import { useHistory } from 'react-router-dom';
 import { MinusOutlined } from '@ant-design/icons';
 
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
-import deleteWrapperIcon from '../../../assets/images/deleteWrapperIcon.svg';
-import averageMesIcon from '../../../assets/images/averageMesIcon.svg';
-import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
-import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
+import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as AverageMesIcon } from '../../../assets/images/averageMesIcon.svg';
+import { ReactComponent as StopUsingIcon } from '../../../assets/images/stopUsingIcon.svg';
+import { ReactComponent as SchemaIconActive } from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
 import PartitionsFilter from '../../../components/partitionsFilter';
-
-import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
+import { ReactComponent as AwaitingIcon } from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
-import redirectIcon from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
-import deleteIcon from '../../../assets/images/deleteIcon.svg';
 import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
-import BackIcon from '../../../assets/images/backIcon.svg';
+import { ReactComponent as BackIcon } from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
 import SdkExample from '../../../components/sdkExsample';
 import { httpRequest } from '../../../services/http';
@@ -134,7 +132,7 @@ const StationOverviewHeader = () => {
             <div className="title-wrapper">
                 <div className="station-details">
                     <div className="station-name">
-                        <img src={BackIcon} onClick={() => returnToStaionsList()} alt="backIcon" />
+                        <BackIcon onClick={() => returnToStaionsList()} alt="backIcon" />
                         <OverflowTip text={stationState?.stationMetaData?.name} className="station-name-overlow" maxWidth={'350px'} textAlign={'center'}>
                             {stationState?.stationMetaData?.name}
                         </OverflowTip>
@@ -211,7 +209,7 @@ const StationOverviewHeader = () => {
                 <div className="icons-wrapper">
                     <div className="details-wrapper">
                         <div className="icon">
-                            <img src={schemaIconActive} width={22} height={44} alt="schemaIconActive" />
+                            <SchemaIconActive width={22} height={44} alt="schemaIconActive" />
                         </div>
                         <div className="more-details schema-box">
                             <div className="schema-header">
@@ -225,8 +223,7 @@ const StationOverviewHeader = () => {
                                     )}
                                 </div>
                                 {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
-                                    <img
-                                        src={redirectIcon}
+                                    <RedirectIcon
                                         width={15}
                                         height={15}
                                         alt="redirectIcon"
@@ -300,7 +297,7 @@ const StationOverviewHeader = () => {
                     </div>
                     <div className="details-wrapper middle">
                         <div className="icon">
-                            <img src={awaitingIcon} width={22} height={44} alt="awaitingIcon" />
+                            <AwaitingIcon width={22} height={44} alt="awaitingIcon" />
                         </div>
                         <div className="more-details">
                             <p className="title">Total messages</p>
@@ -309,7 +306,7 @@ const StationOverviewHeader = () => {
                     </div>
                     <div className="details-wrapper pointer">
                         <div className="icon">
-                            <img src={averageMesIcon} width={24} height={24} alt="averageMesIcon" />
+                            <AverageMesIcon width={24} height={24} alt="averageMesIcon" />
                         </div>
                         <div className="more-details ">
                             <p className="title">Av. message size</p>
@@ -404,7 +401,7 @@ const StationOverviewHeader = () => {
                     />
                 </Modal>
                 <Modal
-                    header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                    header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                     width="520px"
                     height="240px"
                     displayButtons={false}
@@ -420,7 +417,7 @@ const StationOverviewHeader = () => {
                     />
                 </Modal>
                 <Modal
-                    header={<img src={stopUsingIcon} alt="stopUsingIcon" />}
+                    header={<StopUsingIcon alt="stopUsingIcon" />}
                     width="520px"
                     height="240px"
                     displayButtons={false}

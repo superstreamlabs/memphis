@@ -22,16 +22,16 @@ import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
-import retentionIcon from '../../../assets/images/retentionIcon.svg';
-import redirectIcon from '../../../assets/images/redirectIcon.svg';
-import replicasIcon from '../../../assets/images/replicasIcon.svg';
-import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
-import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
-import remoteStorage from '../../../assets/images/remoteStorage.svg';
+import { ReactComponent as RetentionIcon } from '../../../assets/images/retentionIcon.svg';
+import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as ReplicasIcon } from '../../../assets/images/replicasIcon.svg';
+import { ReactComponent as TotalMsgIcon } from '../../../assets/images/totalMsgIcon.svg';
+import { ReactComponent as PoisonMsgIcon } from '../../../assets/images/poisonMsgIcon.svg';
+import { ReactComponent as RemoteStorageIcon } from '../../../assets/images/remoteStorage.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import { parsingDate } from '../../../services/valueConvertor';
 import CheckboxComponent from '../../../components/checkBox';
-import storageIcon from '../../../assets/images/strIcon.svg';
+import { ReactComponent as StorageIcon } from '../../../assets/images/strIcon.svg';
 import TagsList from '../../../components/tagList';
 import pathDomains from '../../../router';
 
@@ -102,7 +102,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                     <div className="right-section">
                         <div className="station-meta">
                             <div className="header">
-                                <img src={retentionIcon} alt="retention" />
+                                <RetentionIcon alt="retentionIcon" />
                                 <label className="data-labels retention">Retention</label>
                             </div>
                             <OverflowTip className="data-info" text={retentionValue} width={'90px'}>
@@ -111,7 +111,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta">
                             <div className="header">
-                                <img src={storageIcon} alt="storage" />
+                                <StorageIcon alt="storageIcon" />
                                 <label className="data-labels storage">Local storage</label>
                             </div>
 
@@ -119,7 +119,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta">
                             <div className="header">
-                                <img src={remoteStorage} alt="remoteStorage" />
+                                <RemoteStorageIcon alt="remoteStorageIcon" />
                                 <label className="data-labels storage">Remote storage</label>
                             </div>
 
@@ -128,7 +128,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         {!isCloud() && (
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={replicasIcon} alt="replicas" />
+                                    <ReplicasIcon alt="replicasIcon" />
                                     <label className="data-labels replicas">Replicas</label>
                                 </div>
                                 <p className="data-info">{replicasConvertor(station?.station?.replicas, false)}</p>
@@ -136,7 +136,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         )}
                         <div className="station-meta">
                             <div className="header">
-                                <img src={totalMsgIcon} alt="total messages" />
+                                <TotalMsgIcon alt="totalMsgIcon" />
                                 <label className="data-labels total">Total messages</label>
                             </div>
 
@@ -146,7 +146,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-meta poison">
                             <div className="header">
-                                <img src={poisonMsgIcon} alt="poison messages" />
+                                <PoisonMsgIcon alt="poisonMsgIcon" />
                                 <label className="data-labels">Status</label>
                             </div>
                             <div className="health-icon">
@@ -165,7 +165,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         </div>
                         <div className="station-actions">
                             <div className="action">
-                                <img src={redirectIcon} alt="redirectIcon" />
+                                <RedirectIcon alt="redirectIcon" />
                             </div>
                         </div>
                     </div>

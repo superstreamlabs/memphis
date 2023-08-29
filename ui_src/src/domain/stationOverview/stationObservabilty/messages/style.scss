@@ -93,7 +93,7 @@
             p {
                 margin: 0;
             }
-            .left-coulmn-wrapper{
+            .left-coulmn-wrapper {
                 width: 40%;
                 display: flex;
                 justify-content: center;
@@ -216,7 +216,8 @@
                 margin-left: 3%;
                 .botton-title {
                     display: flex;
-                    img {
+                    img,
+                    svg {
                         margin-right: 5px;
                     }
                     p {

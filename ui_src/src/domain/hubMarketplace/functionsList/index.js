@@ -18,7 +18,7 @@ import React from 'react';
 
 import SearchInput from '../../../components/searchInput';
 import SelectComponent from '../../../components/select';
-import installed from '../../../assets/images/installed.svg';
+import { ReactComponent as InstalledIcon } from '../../../assets/images/installed.svg';
 import VerifiedBedge from '../verifiedBedge';
 
 const funcList = [
@@ -124,7 +124,7 @@ function FunctionsList(props) {
                                 </div>
                             </div>
                             <div className="function-description">{func.funcDesc}</div>
-                            <img src={installed} alt="Downloaded" width="20" height="20" className="installed" />
+                            <InstalledIcon alt="Downloaded" width={20} height={20} className="installed" />
                         </div>
                     ))}
             </div>

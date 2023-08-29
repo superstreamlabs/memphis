@@ -15,9 +15,9 @@ import './style.scss';
 import React, { useState, useContext, useEffect } from 'react';
 import { Form, message } from 'antd';
 
-import poisionAlertIcon from '../../../../../assets/images/poisionAlertIcon.svg';
-import disconAlertIcon from '../../../../../assets/images/disconAlertIcon.svg';
-import schemaAlertIcon from '../../../../../assets/images/schemaAlertIcon.svg';
+import { ReactComponent as PoisionAlertIcon } from '../../../../../assets/images/poisionAlertIcon.svg';
+import { ReactComponent as DisconAlertIcon } from '../../../../../assets/images/disconAlertIcon.svg';
+import { ReactComponent as SchemaAlertIcon } from '../../../../../assets/images/schemaAlertIcon.svg';
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
@@ -264,7 +264,7 @@ const SlackIntegration = ({ close, value }) => {
                                 <>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={poisionAlertIcon} />
+                                            <PoisionAlertIcon />
                                             <div className="name-des">
                                                 <p>New unacked message</p>
                                                 <span>
@@ -282,7 +282,7 @@ const SlackIntegration = ({ close, value }) => {
                                     </div>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={schemaAlertIcon} />
+                                            <SchemaAlertIcon />
                                             <div className="name-des">
                                                 <p>Schema validation failure</p>
                                                 <span>Triggered once a client fails in schema validation</span>
@@ -299,7 +299,7 @@ const SlackIntegration = ({ close, value }) => {
                                     </div>
                                     <div className="option-wrapper">
                                         <div className="option-name">
-                                            <img src={disconAlertIcon} />
+                                            <DisconAlertIcon />
                                             <div className="name-des">
                                                 <p>Disconnected clients</p>
                                                 <span>Triggered once a producer/consumer get disconnected</span>

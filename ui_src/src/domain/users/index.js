@@ -18,10 +18,15 @@ import { AccountCircleRounded } from '@material-ui/icons';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../const/localStorageConsts';
 import { isCloud, parsingDate } from '../../services/valueConvertor';
 import addUserIcon from '../../assets/images/addUserIcon.svg';
+import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
 import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
 import mailIcon from '../../assets/images/mailIcon.svg';
+import { ReactComponent as MailIcon } from '../../assets/images/mailIcon.svg';
 import deleteIcon from '../../assets/images/deleteIcon.svg';
+import { ReactComponent as DeleteIcon } from '../../assets/images/deleteIcon.svg';
 import searchIcon from '../../assets/images/searchIcon.svg';
+import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
 import SegmentButton from '../../components/segmentButton';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import SearchInput from '../../components/searchInput';
@@ -265,7 +270,7 @@ function Users() {
                         height="30px"
                         placeholder={
                             <div className="action-button">
-                                <img className="delete-icon" src={deleteIcon} alt="deleteIcon" />
+                                <DeleteIcon className="delete-icon" alt="deleteIcon" />
                                 Delete user
                             </div>
                         }
@@ -373,7 +378,7 @@ function Users() {
                                     height="30px"
                                     placeholder={
                                         <div className="action-button">
-                                            <img className="action-img-btn" src={mailIcon} alt="mailIcon" />
+                                            <MailIcon className="action-img-btn" alt="mailIcon" />
                                             Resend email
                                         </div>
                                     }
@@ -393,7 +398,7 @@ function Users() {
                                     height="30px"
                                     placeholder={
                                         <div className="action-button">
-                                            <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                            <DeleteIcon className="action-img-btn" alt="deleteIcon" />
                                             Revoke
                                         </div>
                                     }
@@ -415,7 +420,7 @@ function Users() {
                                 height="30px"
                                 placeholder={
                                     <div className="action-button">
-                                        <img className="action-img-btn" src={deleteIcon} alt="deleteIcon" />
+                                        <DeleteIcon className="action-img-btn" alt="deleteIcon" />
                                         Delete user
                                     </div>
                                 }
@@ -470,7 +475,7 @@ function Users() {
                         borderRadiusType="circle"
                         borderColorType="none"
                         boxShadowsType="none"
-                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                        iconComponent={<SearchIcon alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />
@@ -510,7 +515,7 @@ function Users() {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={addUserIcon} alt="stationImg" />
+                            <AddUserIcon className="headerImage" alt="addUserIcon" />
                         </div>
                         <p>Add a new user</p>
                         <label>Enter user details to get started</label>
@@ -558,7 +563,7 @@ function Users() {
                 </div>
             </Modal>
             <Modal
-                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                 width="520px"
                 height="240px"
                 displayButtons={false}

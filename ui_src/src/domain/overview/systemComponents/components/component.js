@@ -19,7 +19,7 @@ import React from 'react';
 
 import { PieChart, Pie } from 'recharts';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import ComponentIcon from '../../../../assets/images/componentIcon.svg';
+import { ReactComponent as ComponentIcon } from '../../../../assets/images/componentIcon.svg';
 import SysCompInfo from './sysCompInfo';
 
 const remainingPorstPopInnerStyle = { padding: '5px', borderRadius: '4px', boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.12), 0px 23px 44px rgba(176, 183, 195, 0.14)' };
@@ -43,7 +43,7 @@ const Component = ({ comp, i }) => {
 
     return (
         <div className="sys-components-container" key={`${comp?.podName}${i}`}>
-            <img src={ComponentIcon} className="component-img" alt="ComponentIcon" width="18" height="18" />
+            <ComponentIcon className="component-img" alt="ComponentIcon" width={18} height={18} />
             <div className="component">
                 <div className="sys-components">
                     <OverflowTip maxWidth="calc(100% - 170px)" position="absolute" text={comp?.name}>

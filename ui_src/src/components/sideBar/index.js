@@ -20,27 +20,26 @@ import { useHistory, Link } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 
 import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME, USER_IMAGE } from '../../const/localStorageConsts';
-import integrationIconColor from '../../assets/images/integrationIconColor.svg';
-import functionsIconActive from '../../assets/images/functionsIconActive.svg';
-import overviewIconActive from '../../assets/images/overviewIconActive.svg';
-import stationsIconActive from '../../assets/images/stationsIconActive.svg';
-import documentIconActive from '../../assets/images/documentIconActive.svg';
+import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
+import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
+import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
+import { ReactComponent as DocumentActiveIcon } from '../../assets/images/documentIconActive.svg';
 import { compareVersions, isCloud } from '../../services/valueConvertor';
-import supportIconColor from '../../assets/images/supportIconColor.svg';
-import schemaIconActive from '../../assets/images/schemaIconActive.svg';
-import integrationIcon from '../../assets/images/integrationIcon.svg';
-import usersIconActive from '../../assets/images/usersIconActive.svg';
-import functionsIcon from '../../assets/images/functionsIcon.svg';
-import documentIcon from '../../assets/images/documentIcon.svg';
-import overviewIcon from '../../assets/images/overviewIcon.svg';
-import stationsIcon from '../../assets/images/stationsIcon.svg';
-import supportIcon from '../../assets/images/supportIcon.svg';
+import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
+import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
+import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
+import { ReactComponent as UsersActiveIcon } from '../../assets/images/usersIconActive.svg';
+import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
+import { ReactComponent as DocumentIcon } from '../../assets/images/documentIcon.svg';
+import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
+import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
+import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
-import logsActive from '../../assets/images/logsActive.svg';
-import schemaIcon from '../../assets/images/schemaIcon.svg';
+import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
+import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
 import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
-import usersIcon from '../../assets/images/usersIcon.svg';
-import logsIcon from '../../assets/images/logsIcon.svg';
+import { ReactComponent as UsersIcon } from '../../assets/images/usersIcon.svg';
+import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
@@ -227,9 +226,11 @@ function SideBar() {
                 >
                     <div className="icon">
                         {state.route === 'overview' ? (
-                            <img src={overviewIconActive} alt="overviewIconActive" width="20" height="20"></img>
+                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'overview' ? (
+                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
                         ) : (
-                            <img src={hoveredItem === 'overview' ? overviewIconActive : overviewIcon} alt="overviewIcon" width="20" height="20"></img>
+                            <OverviewIcon alt="OverviewIcon" width={20} height={20} />
                         )}
                     </div>
                     <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
@@ -242,9 +243,11 @@ function SideBar() {
                 >
                     <div className="icon">
                         {state.route === 'stations' ? (
-                            <img src={stationsIconActive} alt="stationsIconActive" width="20" height="20"></img>
+                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'stations' ? (
+                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
                         ) : (
-                            <img src={hoveredItem === 'stations' ? stationsIconActive : stationsIcon} alt="stationsIcon" width="20" height="20"></img>
+                            <StationsIcon alt="StationsIcon" width={20} height={20} />
                         )}
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
@@ -258,9 +261,11 @@ function SideBar() {
                 >
                     <div className="icon">
                         {state.route === 'schemaverse' ? (
-                            <img src={schemaIconActive} alt="schemaIconActive" width="20" height="20"></img>
+                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'schemaverse' ? (
+                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
                         ) : (
-                            <img src={hoveredItem === 'schemaverse' ? schemaIconActive : schemaIcon} alt="schemaIcon" width="20" height="20"></img>
+                            <SchemaIcon alt="SchemaIcon" width={20} height={20} />
                         )}
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
@@ -286,9 +291,11 @@ function SideBar() {
                 >
                     <div className="icon">
                         {state.route === 'users' ? (
-                            <img src={usersIconActive} alt="usersIconActive" width="20" height="20"></img>
+                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'users' ? (
+                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
                         ) : (
-                            <img src={hoveredItem === 'users' ? usersIconActive : usersIcon} alt="usersIcon" width="20" height="20"></img>
+                            <UsersIcon alt="UsersIcon" width={20} height={20} />
                         )}
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
@@ -302,9 +309,11 @@ function SideBar() {
                     >
                         <div className="icon">
                             {state.route === 'logs' ? (
-                                <img src={logsActive} alt="usersIconActive" width="20" height="20"></img>
+                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
+                            ) : hoveredItem === 'logs' ? (
+                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
                             ) : (
-                                <img src={hoveredItem === 'logs' ? logsActive : logsIcon} alt="usersIcon" width="20" height="20"></img>
+                                <LogsIcon alt="LogsIcon" width={20} height={20} />
                             )}
                         </div>
                         <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
@@ -312,7 +321,7 @@ function SideBar() {
                 )}
                 <div className="item-wrapper">
                     <div className="icon not-available">
-                        <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
+                        <FunctionsIcon alt="FunctionsIcon" width={20} height={20} />
                     </div>
                     <p className="not-available">Functions</p>
                     <p className="coming-soon">Soon</p>
@@ -325,7 +334,7 @@ function SideBar() {
                     onMouseLeave={() => setHoveredItem('')}
                     onClick={() => history.push(`${pathDomains.administration}/integrations`)}
                 >
-                    <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
+                    {hoveredItem === 'integrations' ? <IntegrationColorIcon alt="IntegrationColorIcon" /> : <IntegrationIcon alt="IntegrationIcon" />}
                     <label className="icon-name">Integrations</label>
                 </div>
                 {isCloud() && (
@@ -343,7 +352,7 @@ function SideBar() {
                             onMouseLeave={() => setHoveredItem('')}
                             onClick={() => setPopoverOpenSupport(true)}
                         >
-                            <img src={hoveredItem === 'support' ? supportIconColor : supportIcon} />
+                            {hoveredItem === 'support' ? <SupportColorIcon alt="SupportColorIcon" /> : <SupportIcon alt="SupportIcon" />}
                             <label className="icon-name">Support</label>
                         </div>
                     </Popover>
@@ -351,7 +360,7 @@ function SideBar() {
                 {!isCloud() && (
                     <Link to={{ pathname: DOC_URL }} target="_blank">
                         <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
-                            <img src={hoveredItem === 'documentation' ? documentIconActive : documentIcon} />
+                            {hoveredItem === 'documentation' ? <DocumentActiveIcon alt="DocumentActiveIcon" /> : <DocumentIcon alt="DocumentIcon" />}
                             <label className="icon-name">Docs</label>
                         </div>
                     </Link>

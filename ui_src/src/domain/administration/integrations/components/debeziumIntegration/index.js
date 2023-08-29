@@ -15,7 +15,7 @@ import { useHistory } from 'react-router-dom';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import Button from '../../../../../components/button';
 import Loader from '../../../../../components/loader';
 import Copy from '../../../../../components/copy';
@@ -23,7 +23,7 @@ import pathDomains from '../../../../../router';
 
 const { Panel } = Collapse;
 
-const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+const ExpandIcon = ({ isActive }) => <CollapseArrowIcon className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} alt="collapse-arrow" />;
 
 const DebeziumIntegration = ({ close }) => {
     const debeziumConfiguration = INTEGRATION_LIST['Debezium and Postgres'];

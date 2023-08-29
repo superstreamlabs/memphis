@@ -17,13 +17,13 @@
             margin-right: 20px;
         }
         .data-wrapper {
-            .info-icon-wrapper{
+            .info-icon-wrapper {
                 display: flex;
-                align-items:center;
+                align-items: center;
                 svg {
                     width: 14px;
                     cursor: pointer;
-                    color: #BFBFBF;
+                    color: #bfbfbf;
                 }
             }
             .operational-health {
@@ -35,7 +35,6 @@
                 color: #979797;
                 font-family: 'InterMedium';
                 display: flex;
-               
             }
             p {
                 font-size: 22px;
@@ -49,7 +48,6 @@
                     margin: 14px 0px 0px 5px;
                 }
             }
-
         }
     }
     .progress {
@@ -127,53 +125,54 @@
 //         }
 //     }
 // }
-.consumption-stations-box{
-    p{
+.consumption-stations-box {
+    p {
         margin: 0;
     }
-    .box-wrapper{
+    .box-wrapper {
         padding: 10px;
-        .box-header{
-            p{
+        .box-header {
+            p {
                 font-family: 'InterMedium';
                 font-size: 14px;
             }
-            span{
-                color: var(--black, rgba(74, 73, 92, 0.80));
+            span {
+                color: var(--black, rgba(74, 73, 92, 0.8));
                 font-family: 'Inter';
                 font-size: 12px;
             }
         }
-        .station-list{
+        .station-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            .station-lag-wrapper{
+            .station-lag-wrapper {
                 border-radius: 6px;
-                border: 1px solid #E7E7E7;
+                border: 1px solid #e7e7e7;
                 padding: 5px;
-                .station-lag-header{
+                .station-lag-header {
                     display: flex;
                     border-radius: 4px;
-                    background: #F7E8E8;
+                    background: #f7e8e8;
                     padding: 5px;
                     height: 35px;
                     justify-content: space-between;
                     align-items: center;
                     cursor: pointer;
-                    .left{
+                    .left {
                         display: flex;
-                        img{
+                        img,
+                        svg {
                             width: 20px;
                             margin-right: 5px;
                         }
-                        p{
+                        p {
                             font-family: 'InterMedium';
                         }
                     }
                 }
-                .station-lag-content{
-                    .station-lag-content-header{
+                .station-lag-content {
+                    .station-lag-content-header {
                         display: flex;
                         color: var(--purple);
                         font-family: 'InterMedium';
@@ -181,46 +180,46 @@
                         gap: 5px;
                         align-items: center;
                         cursor: pointer;
-                        svg{
+                        svg {
                             width: 20px;
                             color: var(--purple);
                         }
-                        .collapse-arrow{
+                        .collapse-arrow {
                             transform: rotate(180deg);
                         }
-                        .open{
+                        .open {
                             transform: rotate(0deg);
                         }
                     }
-                    .collapse-row{
+                    .collapse-row {
                         display: flex;
                         height: 30px;
-                        align-items:center;
+                        align-items: center;
                         gap: 5px;
-                        .station-name{
-                            color: #B1B1B1;
+                        .station-name {
+                            color: #b1b1b1;
                             font-family: 'Inter';
                             font-size: 12px;
                         }
-                        .station-badge{
-                            .ant-badge-count{
+                        .station-badge {
+                            .ant-badge-count {
                                 background: rgba(201, 103, 101, 0.15);
-                                color: #C96765;
+                                color: #c96765;
                                 font-family: 'InterSemiBold';
                                 font-size: 12px;
                             }
                         }
                     }
-                    .ant-divider-horizontal{
+                    .ant-divider-horizontal {
                         margin: 5px 0px;
                     }
                 }
-                .collapse-wrapper{
+                .collapse-wrapper {
                     background: transparent;
-                    svg{
+                    svg {
                         color: var(--purple);
                     }
-                    .ant-collapse-header-text{
+                    .ant-collapse-header-text {
                         color: var(--purple);
                         font-family: 'InterMedium';
                         font-size: 12px;

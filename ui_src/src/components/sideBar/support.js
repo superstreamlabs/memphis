@@ -14,9 +14,9 @@ import './style.scss';
 
 import React, { useState } from 'react';
 
-import supportIconColor from '../../assets/images/supportIconColor.svg';
-import documentIcon from '../../assets/images/documentIcon.svg';
-import mailsendIcon from '../../assets/images/mailsendIcon.svg';
+import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
+import { ReactComponent as DocumentIcon } from '../../assets/images/documentIcon.svg';
+import { ReactComponent as MailsendIcon } from '../../assets/images/mailsendIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import SelectComponent from '../select';
@@ -66,7 +66,7 @@ const Support = ({ closeModal }) => {
         <div className="menu-content">
             <div className="support-container">
                 <div className="support-image">
-                    <img src={supportIconColor} />
+                    <SupportColorIcon />
                 </div>
                 <p className="popover-header">Need Support?</p>
                 <label>We're here to help!</label>
@@ -74,7 +74,7 @@ const Support = ({ closeModal }) => {
                 <div className="support-span">
                     <div className="support-content">
                         <div className="flex">
-                            <img src={documentIcon} alt="documentIcon" />
+                            = <DocumentIcon alt="documentIcon" />
                             <p>Link to Documentation</p>
                         </div>
                         <a href={DOC_URL} target="_blank" rel="noreferrer">
@@ -83,7 +83,7 @@ const Support = ({ closeModal }) => {
                     </div>
                     <div className="support-content">
                         <div className="flex">
-                            <img src={mailsendIcon} alt="mailsendIcon" />
+                            <MailsendIcon alt="mailsendIcon" />
                             <p>Support Email</p>
                         </div>
                         <EmailLink email={'support@memphis.dev'} />

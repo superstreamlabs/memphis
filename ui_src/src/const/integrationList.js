@@ -23,20 +23,20 @@ import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
 import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
-import pagerDutyIcon from '../assets/images/pagerDutyIcon.svg';
+import { ReactComponent as PageDutyIcon } from '../assets/images/pagerDutyIcon.svg';
 import githubIntegrationIcon from '../assets/images/githubIntegrationIcon.svg';
 import githubBannerPopup from '../assets/images/githubBannerPopup.webp';
 import githubBanner from '../assets/images/githubBanner.webp';
-import newrelicIcon from '../assets/images/newrelicIcon.svg';
-import influxDBIcon from '../assets/images/influxDBIcon.svg';
+import { ReactComponent as NewRelicIcon } from '../assets/images/newrelicIcon.svg';
+import { ReactComponent as InfluxDBIcon } from '../assets/images/influxDBIcon.svg';
 import slackBanner from '../assets/images/slackBanner.webp';
-import datadogIcon from '../assets/images/datadogIcon.svg';
-import grafanaIcon from '../assets/images/grafanaIcon.svg';
-import debeziumIcon from '../assets/images/debeziumIcon.svg';
-import elasticIcon from '../assets/images/elasticIcon.svg';
-import slackLogo from '../assets/images/slackLogo.svg';
+import { ReactComponent as DatadogIcon } from '../assets/images/datadogIcon.svg';
+import { ReactComponent as GrafanaIcon } from '../assets/images/grafanaIcon.svg';
+import { ReactComponent as DebeziumIcon } from '../assets/images/debeziumIcon.svg';
+import { ReactComponent as ElasticIcon } from '../assets/images/elasticIcon.svg';
+import { ReactComponent as SlackLogo } from '../assets/images/slackLogo.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
-import s3Logo from '../assets/images/s3Logo.svg';
+import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
 
@@ -181,13 +181,13 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
         insideBanner: <img className="insideBanner" src={datadogBannerPopup} alt="datadogBannerPopup" />,
-        icon: <img src={datadogIcon} alt="datadogIcon" />,
+        icon: <DatadogIcon alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={datadogIcon} alt="datadogIcon" />
+                <DatadogIcon alt="datadogIcon" />
                 <div className="details">
                     <p>Datadog</p>
                     <span>by memphis</span>
@@ -226,12 +226,12 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
-        icon: <img src={slackLogo} alt="slackLogo" />,
+        icon: <SlackLogo alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         category: CATEGORY_LIST['Notifications'],
         header: (
             <div className="header-left-side">
-                <img src={slackLogo} alt="slackLogo" />
+                <SlackLogo alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
                     <span>by memphis</span>
@@ -252,14 +252,14 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
-        icon: <img src={s3Logo} alt="s3Logo" />,
+        icon: <S3Logo alt="s3Logo" />,
         description:
             'S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage'],
         header: (
             <div className="header-left-side">
-                <img src={s3Logo} alt="s3Logo" />
+                <S3Logo alt="s3Logo" />
                 <div className="details">
                     <p>S3 Compatible Object Storage</p>
                     <span>by memphis</span>
@@ -270,7 +270,8 @@ export const INTEGRATION_LIST = {
             <div className="integrate-description">
                 <p>Description</p>
                 <span className="content">
-                S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.
+                    S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples:
+                    AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.
                 </span>
             </div>
         )
@@ -308,14 +309,14 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={elasticBanner} alt="elasticBanner" />,
         insideBanner: <img className="insideBanner" src={elasticBannerPopup} alt="elasticBannerPopup" />,
-        icon: <img src={elasticIcon} alt="elasticIcon" />,
+        icon: <ElasticIcon alt="elasticIcon" />,
         description: 'Monitor and observe Memphis infrastructure using Elasticsearch Observability and Kibana',
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={elasticIcon} alt="elasticIcon" />
+                <ElasticIcon alt="elasticIcon" />
                 <div className="details">
                     <p>Elasticsearch observability</p>
                     <span>by memphis</span>
@@ -352,13 +353,13 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={grafanaBanner} alt="grafanaBanner" />,
         insideBanner: <img className="insideBanner" src={grafanaBannerPopup} alt="grafanaBannerPopup" />,
-        icon: <img src={grafanaIcon} alt="grafanaIcon" />,
+        icon: <GrafanaIcon alt="grafanaIcon" />,
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={grafanaIcon} alt="grafanaIcon" />
+                <GrafanaIcon alt="grafanaIcon" />
                 <div className="details">
                     <p>Grafana</p>
                     <span>by memphis</span>
@@ -391,13 +392,13 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={debeziumBanner} alt="debeziumBanner" />,
         insideBanner: <img className="insideBanner" src={debeziumBannerPopup} alt="debeziumBannerPopup" />,
-        icon: <img src={debeziumIcon} alt="debeziumIcon" />,
+        icon: <DebeziumIcon alt="debeziumIcon" />,
         description:
             'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
         category: CATEGORY_LIST['CDC'],
         header: (
             <div className="header-left-side">
-                <img src={debeziumIcon} alt="debeziumIcon" />
+                <DebeziumIcon alt="debeziumIcon" />
                 <div className="details">
                     <p>Debezium and Postgres</p>
                     <span>by memphis</span>
@@ -429,14 +430,14 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
-        icon: <img src={pagerDutyIcon} alt="pagerDutyIcon" />,
+        icon: <PageDutyIcon alt="pagerDutyIcon" />,
         description: 'In PagerDuty, you can configure operations schedules to allow for 24x7 monitoring by an operations team that can span the globe.',
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={pagerDutyIcon} alt="pagerDutyIcon" />
+                <PageDutyIcon alt="pagerDutyIcon" />
                 <div className="details">
                     <p>PagerDuty</p>
                     <span>by memphis</span>
@@ -457,14 +458,14 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
         insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
-        icon: <img src={newrelicIcon} alt="newrelicIcon" />,
+        icon: <NewRelicIcon alt="newrelicIcon" />,
         description: 'New Relic is where dev, ops, security and business teams solve software. Integrate memphis logs and metrics with New Relic',
         comingSoon: true,
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={newrelicIcon} alt="newrelicIcon" />
+                <NewRelicIcon alt="newrelicIcon" />
                 <div className="details">
                     <p>New Relic</p>
                     <span>by memphis</span>
@@ -485,14 +486,14 @@ export const INTEGRATION_LIST = {
         by: 'memphis',
         banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
         insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
-        icon: <img src={influxDBIcon} alt="influxDBIcon" />,
+        icon: <InfluxDBIcon alt="influxDBIcon" />,
         description: 'Ship memphis logs to influxDB for near real-time monitoring with Grafana visualization',
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         osOnly: true,
         header: (
             <div className="header-left-side">
-                <img src={influxDBIcon} alt="influxDBIcon" />
+                <InfluxDBIcon alt="influxDBIcon" />
                 <div className="details">
                     <p>influxDB</p>
                     <span>by memphis</span>

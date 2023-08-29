@@ -1,4 +1,4 @@
-$grid-color: rgba(150, 150, 150, .3);
+$grid-color: rgba(150, 150, 150, 0.3);
 
 .stream-lineage-container {
     position: relative;
@@ -7,135 +7,137 @@ $grid-color: rgba(150, 150, 150, .3);
     border-radius: 16px;
     height: calc(100% - 70px);
     background-color: white;
-	background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px);
-	background-size: 100px 220px, 220px 100px, 20px 20px, 20px 20px;
-	background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+    background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px);
+    background-size: 100px 220px, 220px 100px, 20px 20px, 20px 20px;
+    background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
     overflow: hidden;
-    .title-wrapper{
+    .title-wrapper {
         display: flex;
         justify-content: space-between;
-        .bread-crumbs{
+        .bread-crumbs {
             display: flex;
             height: 30px;
             align-items: center;
-            img{
+            img,
+            svg {
                 margin-right: 10px;
                 cursor: pointer;
             }
-            p{
+            p {
                 margin: 0;
                 font-family: 'InterSemiBold';
                 font-size: 20px;
                 line-height: 29px;
-                color: #1D1D1D; 
+                color: #1d1d1d;
             }
-            span{
+            span {
                 font-family: 'InterMedium';
                 font-size: 16px;
                 line-height: 29px;
-                color: #667085; 
-                
+                color: #667085;
             }
         }
-        .refresh-wrapper{
+        .refresh-wrapper {
             display: flex;
             margin-right: 55px;
             border-radius: 8px;
-            background: var(--box-2, #FFF);
-            box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);   
+            background: var(--box-2, #fff);
+            box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);
             align-items: center;
             padding: 0 10px;
             gap: 5px;
             height: 40px;
             cursor: pointer;
             font-family: 'InterMedium';
-            svg{
-                color: #9EA3AE;
+            svg {
+                color: #9ea3ae;
                 width: 20px;
                 height: 20px;
             }
         }
-        .actions-wrapper{
+        .actions-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 10px;
             position: absolute;
             right: 10px;
-            .close-wrapper{
+            .close-wrapper {
                 width: 40px;
                 height: 40px;
                 background: white;
-                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);   
+                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);
                 border-radius: 8px;
                 font-family: 'Inter';
                 font-size: 12px;
-                color: #9EA3AE;
+                color: #9ea3ae;
                 cursor: pointer;
                 align-items: center;
                 display: flex;
                 justify-content: center;
-                svg{
+                svg {
                     width: 18px;
                     height: 18px;
                 }
-                svg:hover{
+                svg:hover {
                     color: var(--purple);
                 }
             }
-            .zoom-wrapper{
+            .zoom-wrapper {
                 width: 40px;
                 height: 80px;
                 border-radius: 8px;
                 background: white;
-                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);               
+                box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);
                 align-items: center;
                 display: grid;
                 grid-template-rows: 30% 3% 30% 3% 30%;
                 justify-items: center;
-                svg{
-                    color: #9EA3AE;
+                svg {
+                    color: #9ea3ae;
                     cursor: pointer;
                 }
-                svg:hover{
+                svg:hover {
                     color: var(--purple);
                 }
-                .ant-divider-horizontal{
+                .ant-divider-horizontal {
                     margin: 0;
                 }
-                .fit-wrapper{
+                .fit-wrapper {
                     font-size: 12px;
-                    color: #9EA3AE;
+                    color: #9ea3ae;
                     cursor: pointer;
                 }
-                span:hover{
+                span:hover {
                     color: var(--purple);
                 }
             }
         }
     }
 
-    .canvas-wrapper{
+    .canvas-wrapper {
         height: calc(100% - 20px);
         .edge {
             stroke-width: 8;
-             stroke: rgba(101,87,255,.1);
+            stroke: rgba(101, 87, 255, 0.1);
         }
         .processing {
-            stroke: #34C759;
+            stroke: #34c759;
             stroke-dasharray: 5;
-            animation: dashdraw .5s linear infinite;
+            animation: dashdraw 0.5s linear infinite;
         }
         @keyframes dashdraw {
-            0% { stroke-dashoffset: 10; }
+            0% {
+                stroke-dashoffset: 10;
+            }
         }
     }
-    .loader-uploading{
+    .loader-uploading {
         position: relative;
         display: flex;
         width: 100%;
         height: 100%;
-        .loader-container{
+        .loader-container {
             position: relative;
             height: 100%;
             width: 100%;
@@ -145,30 +147,30 @@ $grid-color: rgba(150, 150, 150, .3);
         }
     }
 }
-.lineage-smaller{
+.lineage-smaller {
     background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px) !important;
-	background-size: 100px 150px, 150px 100px, 20px 20px, 20px 20px !important;
-	background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px !important;
+    background-size: 100px 150px, 150px 100px, 20px 20px, 20px 20px !important;
+    background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px !important;
     height: 100% !important;
     max-height: 100%;
-    .bread-crumbs p{
+    .bread-crumbs p {
         font-size: 17px !important;
     }
 }
 
-.lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
+.lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd {
     max-height: 250px !important;
 }
-.lineage-empthy{
+.lineage-empthy {
     padding: 15px;
     position: relative;
     height: 100%;
-    .loader-uploading{
+    .loader-uploading {
         position: relative;
         display: flex;
         width: 100%;
         height: 100%;
-        .loader-container{
+        .loader-container {
             position: relative;
             height: 100%;
             width: 100%;
@@ -177,29 +179,30 @@ $grid-color: rgba(150, 150, 150, .3);
             align-items: center;
         }
     }
-    .bread-crumbs{
-        p{
+    .bread-crumbs {
+        p {
             margin: 0;
             font-family: 'InterSemiBold';
             font-size: 17px;
             line-height: 29px;
-            color: #1D1D1D; 
+            color: #1d1d1d;
         }
     }
-    .empty-connections-container{
+    .empty-connections-container {
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 10px;
-        img{
+        img,
+        svg {
             width: 120px;
         }
-        p{
+        p {
             margin: 0;
             font-family: 'InterSemiBold';
             font-size: 16px;
         }
-        .desc{
+        .desc {
             font-family: 'InterMedium';
             color: #979797;
             font-size: 14px;
@@ -207,13 +210,10 @@ $grid-color: rgba(150, 150, 150, .3);
     }
 }
 
+.Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd {
+    overflow: overlay !important;
+}
 
-    .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
-        overflow: overlay !important;
-    }
-    
-    .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd::-webkit-scrollbar{
-        display: none !important;
-    }
-
-    
+.Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd::-webkit-scrollbar {
+    display: none !important;
+}

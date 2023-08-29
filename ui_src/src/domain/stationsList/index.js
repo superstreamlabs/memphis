@@ -23,9 +23,9 @@ import './style.scss';
 import React, { useEffect, useContext, useState, useRef } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 
-import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
 import StationsInstructions from '../../components/stationsInstructions';
-import stationImg from '../../assets/images/stationsIconActive.svg';
+import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { stationFilterArray } from '../../services/valueConvertor';
 import DeleteItemsModal from '../../components/deleteItemsModal';
@@ -221,7 +221,7 @@ const StationsList = () => {
                     header={
                         <div className="modal-header">
                             <div className="header-img-container">
-                                <img className="headerImage" src={stationImg} alt="stationImg" />
+                                <StationIcon alt="stationIcon" />
                             </div>
                             <p>Create new station</p>
                             <label>A station is a distributed unit that stores the produced data.</label>
@@ -245,7 +245,7 @@ const StationsList = () => {
                 </Modal>
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                 width="520px"
                 height="240px"
                 displayButtons={false}

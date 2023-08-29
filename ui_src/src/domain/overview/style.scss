@@ -103,7 +103,8 @@
                     p {
                         margin: 0;
                     }
-                    img {
+                    img,
+                    svg {
                         width: 16px;
                     }
                 }
@@ -170,7 +171,7 @@
                 position: relative;
             }
         }
-        .overview-components-cloud{
+        .overview-components-cloud {
             height: calc(100% - 110px) !important;
         }
     }
@@ -181,7 +182,8 @@
         justify-content: center;
         align-items: center;
         height: 100%;
-        img {
+        img,
+        svg {
             width: 90px;
             height: 90px;
         }

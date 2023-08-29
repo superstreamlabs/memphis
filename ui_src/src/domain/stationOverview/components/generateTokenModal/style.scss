@@ -1,41 +1,42 @@
-.generate-modal-wrapper{
+.generate-modal-wrapper {
     display: flex;
     flex-direction: column;
     height: 100%;
     justify-content: space-between;
-    p{
+    p {
         margin-bottom: 0;
     }
-    .desc{
+    .desc {
         font-size: 14px;
         color: #667085;
     }
-    .field-title{
+    .field-title {
         font-family: 'InterMedium';
         font-size: 14px;
     }
-    .api-token{
-        .input-and-copy{
+    .api-token {
+        .input-and-copy {
             display: grid;
             width: 100%;
             grid-template-columns: 95% 5%;
             align-items: center;
         }
-        .generate-again{
+        .generate-again {
             font-size: 14px;
             font-family: 'InterMedium';
             color: var(--purple);
             width: fit-content;
             cursor: pointer;
-            img{
-                margin-right:4px;
+            img,
+            svg {
+                margin-right: 4px;
             }
-            :hover{
+            :hover {
                 text-decoration: underline;
             }
         }
         textarea {
-            word-break:break-all !important
-          }
+            word-break: break-all !important;
+        }
     }
 }

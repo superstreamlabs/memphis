@@ -17,7 +17,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import React, { useState } from 'react';
 
-import Close from '../../assets/images/close.svg';
+import { ReactComponent as CloseIcon } from '../../assets/images/close.svg';
 import Input from '../Input';
 import Button from '../button';
 import CheckboxComponent from '../checkBox';
@@ -78,7 +78,7 @@ function ConnectToHub(props) {
                 <div className="connect-to-hub">
                     <div className="connect-to-hub-header">
                         <p>Sign in to hub</p>
-                        <img src={Close} alt="close" width="12" height="12" onClick={clearFormAndClose} />
+                        <CloseIcon alt="close" onClick={clearFormAndClose} width={12} height={12} />
                     </div>
                     <div className="user-password-sectoin">
                         <div className="user-name-input">

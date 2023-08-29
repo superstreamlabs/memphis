@@ -14,12 +14,12 @@ import './style.scss';
 
 import React from 'react';
 
-import VerifiedUser from '../../../assets/images/verified.svg';
+import { ReactComponent as VerifiedUserIcon } from '../../../assets/images/verified.svg';
 
 function VerifiedBedge() {
     return (
         <span className="verified-badge">
-            <img src={VerifiedUser} alt="verified" />
+            <VerifiedUserIcon alt="verified" />
             <p>Verified</p>
         </span>
     );

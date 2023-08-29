@@ -15,7 +15,7 @@ import './style.scss';
 import React from 'react';
 
 import { parsingDate } from '../../../../services/valueConvertor';
-import sourceIcon from '../../../../assets/images/sourceIcon.svg';
+import { ReactComponent as SourceIcon } from '../../../../assets/images/sourceIcon.svg';
 import LogBadge from '../../../../components/logBadge';
 
 const LogPayload = ({ value, onSelected, selectedRow }) => {
@@ -26,7 +26,7 @@ const LogPayload = ({ value, onSelected, selectedRow }) => {
             <p className="created-date">{parsingDate(value?.created_at)}</p>
             <div className="log-info">
                 <div className="source">
-                    <img src={sourceIcon} alt="sourceIcon" />
+                    <SourceIcon alt="sourceIcon" />
                     <p>{value?.source}</p>
                 </div>
                 <LogBadge type={value?.type} />

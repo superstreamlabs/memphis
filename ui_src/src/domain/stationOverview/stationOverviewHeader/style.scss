@@ -13,7 +13,8 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
-                img {
+                img,
+                svg {
                     cursor: pointer;
                 }
 
@@ -51,7 +52,8 @@
                     justify-content: center;
                     cursor: pointer;
                     display: flex;
-                    img {
+                    img,
+                    svg {
                         width: 15px;
                     }
                 }
@@ -205,7 +207,8 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    img {
+                    img,
+                    svg {
                         cursor: pointer;
                     }
                     .schema-version {

@@ -14,9 +14,9 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 
-import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
-import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
-import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
+import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
+import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
+import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
@@ -159,7 +159,7 @@ const Integrations = () => {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <img src={cloudeBadge} alt="cloud badge" />
+                                        <CloudeBadgeIcon alt="cloud badge" />
                                         <div className="cloud-icon">
                                             <CloudQueueRounded />
                                         </div>
@@ -173,7 +173,7 @@ const Integrations = () => {
                             return (
                                 <div key={key}>
                                     <div className="experimental-badge">
-                                        <img src={experimentalIcon} alt="experimental" />
+                                        <ExperimentalIcon alt="experimental" />
                                     </div>
                                     {integrationElement}
                                 </div>
@@ -186,7 +186,7 @@ const Integrations = () => {
             )}
             <Modal
                 className="request-integration-modal"
-                header={<img src={integrationRequestIcon} alt="errorModal" />}
+                header={<IntegrationRequestIcon alt="errorModal" />}
                 height="250px"
                 width="450px"
                 displayButtons={false}

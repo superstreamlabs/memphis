@@ -17,11 +17,11 @@ import { Drawer } from 'antd';
 import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
-import createdDateIcon from '../../../../assets/images/createdDateIcon.svg';
-import notUsedIcond from '../../../../assets/images/notUsedIcon.svg';
+import { ReactComponent as CreatedDateIcon } from '../../../../assets/images/createdDateIcon.svg';
+import { ReactComponent as NotUsedIcond } from '../../../../assets/images/notUsedIcon.svg';
 import { capitalizeFirst, parsingDate } from '../../../../services/valueConvertor';
 import CheckboxComponent from '../../../../components/checkBox';
-import usedIcond from '../../../../assets/images/usedIcon.svg';
+import { ReactComponent as UsedIcond } from '../../../../assets/images/usedIcon.svg';
 import TagsList from '../../../../components/tagList';
 import SchemaDetails from '../schemaDetails';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
@@ -76,8 +76,16 @@ function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
                                 </OverflowTip>
                             </div>
                             <div className="is-used">
-                                <img src={schema.used ? usedIcond : notUsedIcond} alt="usedIcond" />
-                                {schema.used ? <p className="used">Used</p> : <p className="not-used"> Not used</p>}
+                                {schema.used ? (
+                                    <>
+                                        <UsedIcond /> <p className="used">Used</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <NotUsedIcond />
+                                        <p className="not-used"> Not used</p>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </header>
@@ -105,7 +113,7 @@ function SchemaBox({ schemaBox, handleCheckedClick, isCheck }) {
                         />
                     </tags>
                     <date is="x3d" onClick={() => handleDrawer(true)}>
-                        <img src={createdDateIcon} alt="createdDateIcon" />
+                        <CreatedDateIcon alt="createdDateIcon" />
                         <p>{parsingDate(schema.created_at)}</p>
                     </date>
                 </div>

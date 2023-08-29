@@ -15,11 +15,10 @@ import './style.scss';
 import React, { useContext } from 'react';
 import { Divider, Popover } from 'antd';
 
-import consumeLagIcon from '../../../assets/images/consumeLagIcon.svg';
-
-import TotalMsg from '../../../assets/images/TotalMessages.svg';
-import TotalPoison from '../../../assets/images/DeadLetteredMessages.svg';
-import TotalStations from '../../../assets/images/TotalStations.svg';
+import { ReactComponent as ConsumeLagIcon } from '../../../assets/images/consumeLagIcon.svg';
+import { ReactComponent as TotalMsgIcon } from '../../../assets/images/TotalMessages.svg';
+import { ReactComponent as TotalPoisonIcon } from '../../../assets/images/DeadLetteredMessages.svg';
+import { ReactComponent as TotalStationsIcon } from '../../../assets/images/TotalStations.svg';
 import { Context } from '../../../hooks/store';
 import { InfoOutlined, InfoRounded } from '@material-ui/icons';
 import StationLagCollapse from './stationCollapse';
@@ -44,7 +43,7 @@ const GenericDetails = () => {
         <div className="overview-components-wrapper">
             <div className="generic-details-container">
                 <div className="data-box">
-                    <img src={TotalStations} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <TotalStationsIcon width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Stations</span>
                         <p>{state?.monitor_data?.total_stations?.toLocaleString()}</p>
@@ -52,7 +51,7 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
-                    <img src={TotalMsg} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <TotalMsgIcon width={50} height={50} alt="Total stations" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Messages</span>
                         <p>{state?.monitor_data?.total_messages?.toLocaleString()}</p>
@@ -60,7 +59,7 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
-                    <img src={TotalPoison} width={50} height={50} alt="Total stations" className="icon-wrapper" />
+                    <TotalPoisonIcon width={50} height={50} alt="Total posions" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Dead-letter messages</span>
                         <p>{state?.monitor_data?.total_dls_messages?.toLocaleString()}</p>
@@ -68,7 +67,7 @@ const GenericDetails = () => {
                 </div>
                 <Divider type="vertical" />
                 <div className="data-box">
-                    <img src={consumeLagIcon} width={50} height={50} alt="Logo" className="icon-wrapper" />
+                    <ConsumeLagIcon width={50} height={50} alt="Logo" className="icon-wrapper" />
                     <div className="data-wrapper">
                         <span>Slow consumption stations</span>
                         <div className="info-icon-wrapper">

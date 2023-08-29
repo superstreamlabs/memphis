@@ -14,7 +14,7 @@
     .data-labels {
         color: #84818a;
         font-size: 12px;
-        font-family: "InterSemiBold";
+        font-family: 'InterSemiBold';
         cursor: pointer;
     }
     .poison {
@@ -45,7 +45,7 @@
         text-transform: capitalize;
         margin-left: 1px;
         margin-top: 10px;
-        font-family: "InterSemiBold";
+        font-family: 'InterSemiBold';
         cursor: pointer !important;
         .anticon svg {
             color: #2e2c34;
@@ -67,7 +67,7 @@
             margin-bottom: 10px;
             .station-name {
                 font-size: 17px;
-                font-family: "InterSemiBold";
+                font-family: 'InterSemiBold';
                 margin: 0;
                 margin-left: 25px;
                 color: #2e2c34;
@@ -76,7 +76,7 @@
                 .non-native-label {
                     color: #84818a;
                     font-size: 12px;
-                    font-family: "InterSemiBold";
+                    font-family: 'InterSemiBold';
                 }
             }
         }
@@ -111,7 +111,8 @@
         padding-left: 20px;
         justify-content: space-between;
         .station-meta {
-            img {
+            img,
+            svg {
                 width: 14px;
                 margin-right: 3px;
             }
@@ -127,8 +128,10 @@
                 width: 30px;
                 height: 30px;
                 justify-content: center;
+                align-items: center;
                 cursor: pointer;
-                img {
+                img,
+                svg {
                     width: 15px;
                 }
                 display: none;

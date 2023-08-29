@@ -86,7 +86,8 @@
                 margin: 0;
                 cursor: pointer;
             }
-            img {
+            img,
+            svg {
                 width: 18px;
             }
         }
@@ -148,7 +149,8 @@
         margin: 0;
     }
     .company-logo {
-        img {
+        img,
+        svg {
             position: absolute;
             background-color: #ffffff;
             border-radius: 50%;
@@ -211,7 +213,8 @@
         color: var(--purple) !important;
     }
     .company-logo {
-        img {
+        img,
+        svg {
             border: 1px solid #e3e0ff;
         }
     }
@@ -244,7 +247,8 @@
         align-items: center;
         justify-content: center;
         margin-bottom: 5px;
-        img {
+        img,
+        svg {
             width: 20px;
             height: 20px;
         }
@@ -280,15 +284,15 @@
         margin-bottom: 0;
         display: flex;
         justify-content: space-between;
-        .flex{
+        .flex {
             display: flex;
             gap: 5px;
         }
-        a{
+        a {
             text-decoration: underline;
             font-family: 'InterSemiBold';
         }
-        span{
+        span {
             font-family: 'InterSemiBold';
         }
     }
@@ -304,7 +308,7 @@
         margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
-        .button-container button{
+        .button-container button {
             font-size: 12px !important;
             font-family: 'InterSemiBold' !important;
         }

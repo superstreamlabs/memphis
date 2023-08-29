@@ -20,7 +20,7 @@ import { Divider } from 'antd';
 
 import SelectComponent from '../../../components/select';
 import Button from '../../../components/button';
-import Close from '../../../assets/images/close.svg';
+import { ReactComponent as CloseIcon } from '../../../assets/images/close.svg';
 import Input from '../../../components/Input';
 
 const useStyles = makeStyles((theme) => ({
@@ -85,7 +85,7 @@ function FunctionForm(props) {
                                     <p className="data-type">Data type: {props.chosenFunction.inputDataType}</p>
                                 </div>
                             </div>
-                            <img src={Close} alt="close" width="12" height="12" className="close-form" onClick={clearFormAndClose} />
+                            <CloseIcon alt="close" width={12} height={12} className="close-form" onClick={handleCloseModal} />
                         </div>
                         <div className="input-section">
                             <div className="input-item">

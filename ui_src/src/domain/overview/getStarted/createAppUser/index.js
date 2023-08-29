@@ -17,8 +17,8 @@ import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStora
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import Button from '../../../../components/button';
-import Information from '../../../../assets/images/information.svg';
-import UserCheck from '../../../../assets/images/userCheck.svg';
+import { ReactComponent as InformationIcon } from '../../../../assets/images/information.svg';
+import { ReactComponent as UserCheckIcon } from '../../../../assets/images/userCheck.svg';
 import userCreator from '../../../../assets/lotties/userCreator.json';
 import Input from '../../../../components/Input';
 import { GetStartedStoreContext } from '..';
@@ -179,7 +179,7 @@ const CreateAppUser = (props) => {
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) !== 'true' && (
                 <div className="connection-details-container">
                     <div className="user-details-container">
-                        <img src={UserCheck} alt="usercheck" width="20px" height="20px"></img>
+                        <UserCheckIcon alt="usercheck" width={20} height={20} />
                         <p className="user-connection-details">User connection details</p>
                     </div>
                     <div className="container-username-token">
@@ -196,7 +196,7 @@ const CreateAppUser = (props) => {
             )}
             {isCreatedUser === screenEnum['DATA_RECIEVED'] && (
                 <div className="information-container">
-                    <img src={Information} alt="information" className="information-img" />
+                    <InformationIcon alt="information" className="information-img" />
                     {localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? (
                         <p className="information">Please save your credentials for future usage.</p>
                     ) : (

@@ -26,7 +26,7 @@ import {
     LOCAL_STORAGE_ACCOUNT_ID,
     USER_IMAGE
 } from '../../const/localStorageConsts';
-import stationImg from '../../assets/images/stationsIconActive.svg';
+import { ReactComponent as StationIcon } from '../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -286,7 +286,7 @@ function OverView() {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={stationImg} alt="stationImg" />
+                            <StationIcon className="headerImage" alt="stationImg" />
                         </div>
                         <p>Create new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>

@@ -22,7 +22,7 @@ import * as monaco from 'monaco-editor';
 import { StationStoreContext } from '../../domain/stationOverview';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { convertArrayToObject, generateJSONWithMaxLength, isCloud } from '../../services/valueConvertor';
-import refresh from '../../assets/images/refresh.svg';
+import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
 import InputNumberComponent from '../InputNumber';
 import { httpRequest } from '../../services/http';
 import TitleComponent from '../titleComponent';
@@ -140,7 +140,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                 <div className="generate-wrapper">
                     <p className="field-title">JSON-based value</p>
                     <div className="generate-action" onClick={() => generateMessage()}>
-                        <img src={refresh} width="14" />
+                        = <RefreshIcon width={14} />
                         <span>Generate example</span>
                     </div>
                 </div>

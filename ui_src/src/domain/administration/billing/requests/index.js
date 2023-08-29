@@ -16,17 +16,17 @@ import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { convertBytesToGb } from '../../../../services/valueConvertor';
 import { Divider } from 'antd';
-import TotalMsgIcon from '../../../../assets/images/setting/totalMsgIcon.svg';
-import PriceIcon from '../../../../assets/images/setting/priceIcon.svg';
-import RequestsIn from '../../../../assets/images/setting/requestsIn.svg';
-import RequestsOut from '../../../../assets/images/setting/requestsOut.svg';
-import CloudProviderAWS from '../../../../assets/images/setting/cloudProviderAWS.svg';
-import USAIcon from '../../../../assets/images/setting/usaIcon.svg';
-import GermanyIcon from '../../../../assets/images/setting/germanyIcon.svg';
-import Consumed from '../../../../assets/images/setting/consumed.svg';
-import Redeliver from '../../../../assets/images/setting/redeliver.svg';
-import DeadLetter from '../../../../assets/images/setting/deadLetter.svg';
-import Storage from '../../../../assets/images/setting/storage.svg';
+import { ReactComponent as TotalMsgIcon } from '../../../../assets/images/setting/totalMsgIcon.svg';
+import { ReactComponent as PriceIcon } from '../../../../assets/images/setting/priceIcon.svg';
+import { ReactComponent as RequestsInIcon } from '../../../../assets/images/setting/requestsIn.svg';
+import { ReactComponent as RequestsOutIcon } from '../../../../assets/images/setting/requestsOut.svg';
+import { ReactComponent as CloudProviderAWSIcon } from '../../../../assets/images/setting/cloudProviderAWS.svg';
+import { ReactComponent as USAIcon } from '../../../../assets/images/setting/usaIcon.svg';
+import { ReactComponent as GermanyIcon } from '../../../../assets/images/setting/germanyIcon.svg';
+import { ReactComponent as ConsumedIcon } from '../../../../assets/images/setting/consumed.svg';
+import { ReactComponent as RedeliverIcon } from '../../../../assets/images/setting/redeliver.svg';
+import { ReactComponent as DeadLetterIcon } from '../../../../assets/images/setting/deadLetter.svg';
+import { ReactComponent as StorageIcon } from '../../../../assets/images/setting/storage.svg';
 import DatePickerComponent from '../../../../components/datePicker';
 import SegmentButton from '../../../../components/segmentButton';
 import Loader from '../../../../components/loader';
@@ -126,7 +126,7 @@ function Requests() {
                     <div className="requests-summary-in-out">
                         <div className="data-in">
                             <div className="requests-total">
-                                <img src={RequestsIn} alt="data in" />
+                                <RequestsInIcon alt="data in" />
                                 <span className="requests-data">
                                     <label className="requests-title-in">Data in</label>
                                     <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in))?.toLocaleString('en-US')}Gb</label>
@@ -134,7 +134,7 @@ function Requests() {
                             </div>
                             <div className="total-messages">
                                 <div className="total-messages-in">
-                                    <img src={TotalMsgIcon} alt="data in" />
+                                    <TotalMsgIcon alt="data in" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
 
@@ -142,7 +142,7 @@ function Requests() {
                                     </span>
                                 </div>
                                 <div className="total-messages-in">
-                                    <img src={PriceIcon} alt="data in" />
+                                    <PriceIcon alt="data in" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Price Per Gb</label>
                                         <label className="total-value">${usageData && usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>
@@ -150,12 +150,12 @@ function Requests() {
                                 </div>
                             </div>
                             <span className="cloud-provider">
-                                <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
+                                <label className="cloud-provider-label">Provider: </label> <CloudProviderAWSIcon alt="cloud provider" />
                             </span>
                         </div>
                         <div className="data-out">
                             <div className="requests-total">
-                                <img src={RequestsOut} alt="data out" />
+                                <RequestsOutIcon alt="data out" />
                                 <span className="requests-data">
                                     <label className="requests-title-out">Data out</label>
                                     <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_out))?.toLocaleString('en-US')}Gb</label>
@@ -163,14 +163,14 @@ function Requests() {
                             </div>
                             <div className="total-messages">
                                 <div className="total-messages-out">
-                                    <img src={TotalMsgIcon} alt="data out" />
+                                    <TotalMsgIcon alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Total Events</label>
                                         <label className="total-value">{usageData ? usageData?.data_out_events?.toLocaleString('en-US') : 0}</label>
                                     </span>
                                 </div>
                                 <div className="total-messages-out">
-                                    <img src={PriceIcon} alt="data out" />
+                                    <PriceIcon alt="data out" />
                                     <span className="requests-data">
                                         <label className="requests-title-in">Price Per Gb</label>
                                         <label className="total-value">${usageData && usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>
@@ -228,7 +228,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge yellow"></div>
                                 <div className="circle-img">
-                                    <img src={Consumed} alt="Consumed" />
+                                    <ConsumedIcon alt="Consumed" />
                                 </div>
 
                                 <div>
@@ -242,7 +242,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge yellow"></div>
                                 <div className="circle-img">
-                                    <img src={Redeliver} alt="Consumed" />
+                                    <RedeliverIcon alt="Redelivered" />
                                 </div>
 
                                 <div>
@@ -256,7 +256,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge yellow"></div>
                                 <div className="circle-img">
-                                    <img src={Storage} alt="Storage" />
+                                    <StorageIcon alt="Storage" />
                                 </div>
 
                                 <div>
@@ -270,7 +270,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge yellow"></div>
                                 <div className="circle-img">
-                                    <img src={DeadLetter} alt="Consumed" />
+                                    <DeadLetterIcon alt="Dead-letter" />
                                 </div>
 
                                 <div>
@@ -288,7 +288,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge green"></div>
                                 <div className="circle-img">
-                                    <img src={Consumed} alt="Consumed" />
+                                    <ConsumedIcon alt="Consumed" />
                                 </div>
 
                                 <div>

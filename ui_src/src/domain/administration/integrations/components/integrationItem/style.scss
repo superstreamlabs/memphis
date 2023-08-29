@@ -1,56 +1,57 @@
-integ-item{
+integ-item {
     display: flex;
     flex-direction: column;
-    border: 1px solid #BCBCBC;
+    border: 1px solid #bcbcbc;
     border-radius: 8px;
     width: 270px;
     height: 300px;
     cursor: pointer;
-    p{
+    p {
         margin: 0;
     }
-    .banner{
+    .banner {
         border-top-left-radius: 7px;
         border-top-right-radius: 7px;
     }
-    .integrate-icon{
+    .integrate-icon {
         display: flex;
         justify-content: center;
-        position:absolute;
+        position: absolute;
         margin: 10px;
         box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
         border-radius: 8px;
         background: var(--purple);
         padding: 3px 7px;
         color: white;
-        img{
-           width: 18px; 
+        img,
+        svg {
+            width: 18px;
         }
-        p{
+        p {
             margin-left: 5px;
             font-family: 'InterMedium';
         }
-
     }
-    .integration-name{
+    .integration-name {
         display: flex;
         margin: 15px;
-        img{
+        img,
+        svg {
             margin-right: 10px;
             width: 32px;
         }
-        p{
+        p {
             font-size: 14px;
             line-height: 14px;
             font-family: 'InterMedium';
         }
-        span{
+        span {
             font-size: 12px;
             font-family: 'InterMedium';
             color: rgba(74, 73, 92, 0.8);
         }
     }
-    .integration-description{
+    .integration-description {
         margin: 0px 15px;
         margin-right: 3px;
         font-size: 12px;
@@ -58,8 +59,8 @@ integ-item{
         height: calc(100% - 232px);
         overflow: scroll;
     }
-    .category{
-        border-top: 1px solid rgba(0,0,0,0.1);
+    .category {
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
         height: 33px;
         padding: 0 15px;
         display: flex;
@@ -67,14 +68,14 @@ integ-item{
     }
 }
 
-.integration-modal{
-    .ant-modal-content{
+.integration-modal {
+    .ant-modal-content {
         border-radius: 16px !important;
-        .ant-modal-close-x{
+        .ant-modal-close-x {
             display: flex;
             align-items: center;
             justify-content: center;
-            .anticon{
+            .anticon {
                 background: rgba(161, 161, 161, 0.3);
                 border-radius: 15px;
                 width: 25px;
@@ -82,60 +83,61 @@ integ-item{
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                svg{
+                svg {
                     color: white;
                 }
             }
         }
     }
-    .ant-modal-body{
-        padding: 0 !important
+    .ant-modal-body {
+        padding: 0 !important;
     }
-    .integrate-header{
+    .integrate-header {
         display: flex;
         margin: 20px;
-        justify-content:space-between;
-        align-items:center;
-        .header-left-side{
+        justify-content: space-between;
+        align-items: center;
+        .header-left-side {
             display: flex;
-            img{
+            img,
+            svg {
                 width: 38px;
             }
-            .details{
+            .details {
                 margin-left: 10px;
-                p{
+                p {
                     font-family: 'InterSemiBold';
                     font-size: 20px;
                     line-height: 20px;
                 }
-                span{
+                span {
                     font-family: 'InterMedium';
                     font-size: 13px;
                     color: rgba(74, 73, 92, 0.8);
                 }
-                svg{
+                svg {
                     font-size: 8px;
                     color: rgba(74, 73, 92, 0.8);
                     margin: 0px 5px;
                 }
             }
         }
-        .action-buttons{
+        .action-buttons {
             display: flex;
             width: 250px;
             justify-content: space-between;
         }
-        .flex-end{
+        .flex-end {
             flex-basis: min-content;
         }
     }
-    .integrate-description{
+    .integrate-description {
         margin: 0 20px;
-        p{
+        p {
             font-family: 'InterMedium';
             font-size: 15px;
         }
-        span{
+        span {
             color: rgba(74, 73, 92, 0.8);
             font-size: 12px;
         }

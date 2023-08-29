@@ -1,4 +1,4 @@
-.pubSub-list-container{
+.pubSub-list-container {
     background: white;
     position: relative;
     width: 20vw;
@@ -19,16 +19,17 @@
             font-size: 14px;
             margin: 0;
         }
-        .add-connector-button{
+        .add-connector-button {
             cursor: pointer;
             color: var(--purple);
             font-family: 'InterSemiBold';
             font-size: 12px;
         }
-        .producer-placeholder{
+        .producer-placeholder {
             display: flex;
             align-items: center;
-            img{
+            img,
+            svg {
                 margin-right: 5px;
             }
         }
@@ -41,7 +42,7 @@
         color: #737373;
         padding: 0px 15px 0px 15px;
         line-height: 35px;
-        span{
+        span {
             font-family: 'Inter';
             font-size: 12px;
             color: #979797;
@@ -56,7 +57,7 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        .list-container{
+        .list-container {
             overflow: auto;
             .pubSub-row {
                 height: 35px;
@@ -70,61 +71,60 @@
                 padding: 5px;
                 margin-right: 10px;
                 margin-top: 5px;
-                .status-icon
-                {
+                .status-icon {
                     position: relative;
                     display: flex;
-                    justify-content:center;
-                    .circle-status{
+                    justify-content: center;
+                    .circle-status {
                         border-radius: 32px;
                         width: 18px;
                         height: 18px;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        .dot{
+                        .dot {
                             width: 6px;
                             height: 6px;
                             border-radius: 50px;
                         }
-                        .disconnected-dot{
-                            background: #F7685B;
+                        .disconnected-dot {
+                            background: #f7685b;
                         }
                         .active-dot {
-                            background: #2ED47A;
+                            background: #2ed47a;
                         }
-                        .proccesing{
-                            background: #2ED47A;
-                            animation: blinker 0.5s cubic-bezier(.5, 0, 1, 1) infinite alternate;  
+                        .proccesing {
+                            background: #2ed47a;
+                            animation: blinker 0.5s cubic-bezier(0.5, 0, 1, 1) infinite alternate;
                         }
                     }
-                    .disconnected{
-                        background: #FEE4E2;
+                    .disconnected {
+                        background: #fee4e2;
                     }
-                    .active{
-                        background: #DDF8E9;
+                    .active {
+                        background: #ddf8e9;
                     }
                     .deleted svg {
                         width: 15px;
-                        color: #ADADAD;
+                        color: #adadad;
                     }
-                    img{
+                    img,
+                    svg {
                         width: 12px;
                         display: block;
-                        cursor: pointer; 
+                        cursor: pointer;
                     }
-                } 
-                div{
-                    cursor: pointer !important; 
                 }
-               
+                div {
+                    cursor: pointer !important;
+                }
             }
-            .deleted{
-                color: #ADADAD !important;
+            .deleted {
+                color: #adadad !important;
             }
-            .selected{
-                background: #E3E0FF !important;
-                border: 1px solid #6557FF;
+            .selected {
+                background: #e3e0ff !important;
+                border: 1px solid #6557ff;
                 border-radius: 4px;
                 padding: 4px;
             }
@@ -133,20 +133,20 @@
                 border-radius: 5px;
             }
         }
-        .collapse-wrapper{
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 26.87%);
+        .collapse-wrapper {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, #ffffff 26.87%);
         }
         .ant-space {
             width: 100%;
         }
-        .empty-pub-sub{
+        .empty-pub-sub {
             display: flex;
             width: 95%;
             height: 100%;
             position: absolute;
             align-items: center;
             justify-content: center;
-            p{
+            p {
                 margin: 0;
                 color: var(--gray);
                 font-family: 'InterSemiBold';
@@ -155,7 +155,7 @@
         }
 
         .consumer-producer-number {
-            background: #DFDFDF;
+            background: #dfdfdf;
             max-width: 30px;
             display: center;
             justify-content: center;
@@ -165,23 +165,23 @@
         }
     }
 }
-.unsupported-placeholder{
+.unsupported-placeholder {
     position: absolute;
     display: flex;
     place-content: center;
-    align-items:center;
+    align-items: center;
     height: calc(100% - 60px);
     text-align: -webkit-center;
     text-align: -moz-center;
     background: rgb(255 255 255 / 76%);
     backdrop-filter: blur(1.5px);
     top: 56px;
-    flex-direction:column;
-    .placeholder-wrapper{
+    flex-direction: column;
+    .placeholder-wrapper {
         width: 90%;
-        p{
+        p {
             margin: 20px 0px;
-            color: #1D1D1D;
+            color: #1d1d1d;
             font-family: 'InterSemiBold';
             font-size: 22px;
             text-shadow: 0px 0px 24px rgba(0, 0, 0, 0.1);
@@ -189,7 +189,11 @@
     }
 }
 
-@keyframes blinker {  
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
+@keyframes blinker {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}

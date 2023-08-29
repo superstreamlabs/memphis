@@ -17,16 +17,17 @@ import Lottie from 'lottie-react';
 import { Space } from 'antd';
 
 import { convertBytes, parsingDate } from '../../../../../services/valueConvertor';
-import attachedPlaceholder from '../../../../../assets/images/attachedPlaceholder.svg';
+import { ReactComponent as AttachedPlaceholderIcon } from '../../../../../assets/images/attachedPlaceholder.svg';
 import animationData from '../../../../../assets/lotties/MemphisGif.json';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
-import Journey from '../../../../../assets/images/journey.svg';
+import { ReactComponent as JourneyIcon } from '../../../../../assets/images/journey.svg';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { StationStoreContext } from '../../..';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 import StatusIndication from '../../../../../components/indication';
+import { Place } from '@material-ui/icons';
 
 const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const url = window.location.href;
@@ -197,7 +198,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                                 height="40px"
                                 placeholder={
                                     <div className="botton-title">
-                                        <img src={Journey} alt="Journey" />
+                                        <JourneyIcon alt="Journey" />
                                         <p>Message Journey</p>
                                     </div>
                                 }
@@ -214,7 +215,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                     </>
                 ) : (
                     <div className="placeholder">
-                        <img src={attachedPlaceholder} />
+                        <AttachedPlaceholderIcon />
                         <p>No message selected</p>
                     </div>
                 )}

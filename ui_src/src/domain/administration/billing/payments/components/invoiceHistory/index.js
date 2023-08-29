@@ -14,7 +14,7 @@ import './style.scss';
 
 import React from 'react';
 import Button from '../../../../../../components/button';
-import FileDownload from '../../../../../../assets/images/setting/file_download.svg';
+import { ReactComponent as FileDownloadIcon } from '../../../../../../assets/images/setting/file_download.svg';
 import Filter from '../../../../../../components/filter';
 import { Space, Table, Tag } from 'antd';
 
@@ -106,7 +106,7 @@ function InvoiceHistory() {
                         height="32px"
                         placeholder={
                             <div>
-                                <img className="download-img" src={FileDownload} alt="Generate Report" />
+                                <FileDownloadIcon className="download-img" alt="Generate Report" />
                                 Generate Report
                             </div>
                         }

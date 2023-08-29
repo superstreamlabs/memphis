@@ -10,13 +10,11 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import '../style.scss';
-
 import React from 'react';
-import PaymentsColor from '../../../assets/images/setting/paymentsColor.svg';
-import PaymentsGray from '../../../assets/images/setting/paymentsGray.svg';
-import RequestsColor from '../../../assets/images/setting/requestsColor.svg';
-import RequestsGray from '../../../assets/images/setting/requestsGray.svg';
+import { ReactComponent as RequestsColorIcon } from '../../../assets/images/setting/requestsColor.svg';
+import { ReactComponent as RequestsGrayIcon } from '../../../assets/images/setting/requestsGray.svg';
+
+import '../style.scss';
 
 function BillingMenu({ selectedMenuItem, setMenuItem }) {
     return (
@@ -24,7 +22,7 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
             <p className="header">Billing</p>
             <p className="sub-header">View your monthly usage</p>
             <div className={selectedMenuItem === 'usage' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('usage')}>
-                <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
+                {selectedMenuItem === 'usage' ? <RequestsColorIcon alt="usage report" /> : <RequestsGrayIcon alt="usage report" />}
                 Usage Report
             </div>
         </div>

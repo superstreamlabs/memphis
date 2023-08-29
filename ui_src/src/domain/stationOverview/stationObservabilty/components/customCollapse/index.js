@@ -12,10 +12,10 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { Collapse } from 'antd';
+import { Col, Collapse } from 'antd';
 
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
-import warningCircle from '../../../../../assets/images/warningCircle.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as WarningCircleIcon } from '../../../../../assets/images/warningCircle.svg';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import Copy from '../../../../../components/copy';
 import { messageParser } from '../../../../../services/valueConvertor';
@@ -72,10 +72,14 @@ const CustomCollapse = ({ status, data, header, defaultOpen, collapsible, messag
                                 <p className="title">
                                     {header}
                                     {header === 'Headers' && <span className="consumer-number">{data !== undefined ? Object?.keys(data)?.length : ''}</span>}
-                                    {header === 'Validation error' && <img className="validation-image" src={warningCircle} alt="warningCircle" />}
+                                    {header === 'Validation error' && <WarningCircleIcon className="validation-image" />}
                                 </p>
                                 <status is="x3d">
-                                    <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                    {activeKey[0] === '1' ? (
+                                        <CollapseArrowIcon className="collapse-arrow-icon open" />
+                                    ) : (
+                                        <CollapseArrowIcon className="collapse-arrow-icon close" />
+                                    )}
                                 </status>
                             </div>
                         </div>

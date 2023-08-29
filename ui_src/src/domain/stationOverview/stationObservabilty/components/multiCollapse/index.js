@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import StatusIndication from '../../../../../components/indication';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
@@ -49,9 +50,13 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                     <p className="title">
                                         {header} <span className="consumer-number">{collapseData?.length}</span>
                                     </p>
-                                    
+
                                     <status is="x3d">
-                                        <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
+                                        {activeKey[0] === '1' ? (
+                                            <CollapseArrowIcon className="collapse-arrow-icon open" />
+                                        ) : (
+                                            <CollapseArrowIcon className="collapse-arrow-icon close" />
+                                        )}
                                     </status>
                                 </div>
                             </TooltipComponent>
@@ -61,16 +66,16 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                         <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
                             {collapseData?.length > 0 &&
                                 collapseData?.map((row, index) => {
-                                        return (<Panel
+                                    return (
+                                        <Panel
                                             showArrow={false}
                                             header={
                                                 <div className="collapse-header">
                                                     <p className="title">{row.name}</p>
                                                     <status is="x3d">
                                                         <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                        <img
+                                                        <CollapseArrowIcon
                                                             className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
-                                                            src={CollapseArrow}
                                                             alt="collapse-arrow"
                                                         />
                                                     </status>
@@ -92,7 +97,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                                     }
                                                 })}
                                         </Panel>
-                                        );
+                                    );
                                 })}
                         </Collapse>
                     </Panel>
@@ -110,9 +115,8 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                                 <p className="title">{row.name}</p>
                                                 <status is="x3d">
                                                     <StatusIndication is_active={row.is_active} is_deleted={row.is_deleted} />
-                                                    <img
+                                                    <CollapseArrowIcon
                                                         className={Number(activeChiledKey) === index ? 'collapse-arrow open' : 'collapse-arrow close'}
-                                                        src={CollapseArrow}
                                                         alt="collapse-arrow"
                                                     />
                                                 </status>

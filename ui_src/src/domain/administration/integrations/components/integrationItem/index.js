@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
 
-import integrated from '../../../../../assets/images/integrated.svg';
+import { ReactComponent as IntegratedIcon } from '../../../../../assets/images/integrated.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
 import { Context } from '../../../../../hooks/store';
 import Modal from '../../../../../components/modal';
@@ -123,7 +123,7 @@ const IntegrationItem = ({ value }) => {
                 {value?.banner}
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
                     <div className="integrate-icon">
-                        <img src={integrated} />
+                        <IntegratedIcon />
                         <p>Integrated</p>
                     </div>
                 )}

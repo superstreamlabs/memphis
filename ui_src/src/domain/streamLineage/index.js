@@ -23,6 +23,7 @@ import { Divider } from 'antd';
 
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
+import { ReactComponent as GraphPlaceholder } from '../../assets/images/graphPlaceholder.svg';
 import BackIcon from '../../assets/images/backIcon.svg';
 import { httpRequest } from '../../services/http';
 import Connection from './components/connection';
@@ -275,7 +276,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             )}
             {!isLoading && nodes?.length === 0 && (
                 <div className="empty-connections-container">
-                    <img src={graphPlaceholder} alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
+                    <GraphPlaceholder alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
                     <p>There aren’t any connection to show</p>
                     <span className="desc">Start by creating a new station</span>
                     <Button
