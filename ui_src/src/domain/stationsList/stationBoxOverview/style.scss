@@ -148,9 +148,11 @@
                     width: 30px;
                     height: 30px;
                     justify-content: center;
+                    align-items: center;
                     background: rgba(101, 87, 255, 0.2);
                     cursor: pointer;
-                    img {
+                    img,
+                    svg {
                         width: 15px;
                     }
                     display: none;
