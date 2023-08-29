@@ -32,9 +32,9 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+        <headers-initiation>
+        <headers-addition>
 
-        const headers = memphis.headers()
-        headers.add('key', 'value')
         await producer.produce({
             message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
             headers: headers
@@ -108,9 +108,9 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+            <headers-initiation>
+            <headers-addition>
 
-            const headers = memphis.headers()
-            headers.add('key', 'value');
             await producer.produce({
                 message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
                 headers: headers
@@ -258,8 +258,7 @@ async def main():
         
         <headers-initiation>
         <headers-addition>
-        // headers = Headers()
-        // headers.add("key", "value") 
+    
         for i in range(5):
             await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers<blocking>)
         
@@ -337,8 +336,13 @@ namespace Producer
                     GenerateUniqueSuffix = true
                 });
 
-                var commonHeaders = new NameValueCollection();
-                commonHeaders.Add("key-1", "value-1");
+                <headers-declaration>
+                
+                
+
+
+                <headers-initiation>
+                <headers-addition>
 
                 for (int i = 0; i < 10_000000; i++)
                 {
@@ -437,6 +441,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single' \\
 --header 'Authorization: Bearer <jwt>' \\
 --header 'Content-Type: application/json' \\
+<headers-addition>
 --data-raw '{"message": "New Message"}'`,
         tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate' \\
 --header 'Content-Type: application/json' \\
@@ -474,7 +479,8 @@ export const PROTOCOL_CODE_EXAMPLE = {
         }
         req.Header.Add("Authorization", "Bearer <jwt>")
         req.Header.Add("Content-Type", "application/json")
-      
+        <headers-addition>
+
         res, err := client.Do(req)
         if err != nil {
             fmt.Println(err)
@@ -547,7 +553,8 @@ var config = {
   url: 'localhost/stations/<station-name>/produce/single',
   headers: { 
     'Authorization': 'Bearer <jwt>', 
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    <headers-addition>
   },
   data : data
 };
@@ -599,7 +606,8 @@ payload = json.dumps({
 })
 headers = {
   'Authorization': 'Bearer <jwt>',
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  <headers-addition>
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)
@@ -638,6 +646,7 @@ Request request = new Request.Builder()
   .method("POST", body)
   .addHeader("Authorization", "Bearer <jwt>")
   .addHeader("Content-Type", "application/json")
+  <headers-addition>
   .build();
 Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
@@ -656,6 +665,7 @@ Response response = client.newCall(request).execute();`
         producer: `var myHeaders = new Headers();
 myHeaders.append("Authorization", "Bearer <jwt>");
 myHeaders.append("Content-Type", "application/json");
+<headers-addition>
 
 var raw = JSON.stringify({
   "message": "New Message"
@@ -703,8 +713,8 @@ fetch("localhost/auth/authenticate", requestOptions)
   "timeout": 0,
   "headers": {
     "Authorization": "Bearer <jwt>",
-    "Content-Type": "application/json"
-  },
+    "Content-Type": "application/json",
+    <headers-addition>
   "data": JSON.stringify({
     "message": "New Message"
   }),

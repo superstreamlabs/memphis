@@ -40,6 +40,7 @@ import Switcher from '../switcher';
 import Copy from '../copy';
 import SegmentButton from '../segmentButton';
 import { Divider, Form } from 'antd';
+import { FiMinusCircle, FiPlus } from 'react-icons/fi';
 
 loader.init();
 loader.config({ monaco });
@@ -55,11 +56,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         producer: '',
         consumer: ''
     });
-    const { Panel } = Collapse;
-
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
     const [generateModal, setGenerateModal] = useState(false);
-    const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         userName: '',
         password: '',
@@ -68,7 +66,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         useHeaders: false,
         headersList: [{ key: '', value: '' }]
     });
-
+    const { Panel } = Collapse;
     const updateFormFields = (field, value) => {
         setFormFields({ ...formFields, [field]: value });
     };
@@ -92,8 +90,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         setFormFields({ ...formFields, headersList });
     };
     useEffect(() => {
-        console.log('formFields', formFields);
-        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode('cURL');
+        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
     }, [formFields, tabValue]);
 
     const removeLineWithSubstring = (content, targetSubstring) => {
@@ -111,7 +108,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
 
     const changeDynamicCode = (lang) => {
-        console.log('lang', lang);
         let codeEx = {};
         if (!SDK_CODE_EXAMPLE[lang].link) {
             codeEx.producer = SDK_CODE_EXAMPLE[lang]?.producer;
@@ -200,7 +196,20 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'headers = Headers()');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
-                            formFields.headersList.map((header) => `headers.add("${header.key}", "${header.value}")\t\t`).join('\n\t\t')
+                            formFields.headersList.map((header) => `headers.add("${header.key}", "${header.value}")`).join('\n\t\t')
+                        );
+                    } else if (langSelected === '.NET (C#)') {
+                        codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-declaration>');
+                        codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'var commonHeaders = new NameValueCollection();');
+                        codeEx.producer = codeEx.producer?.replaceAll(
+                            '<headers-addition>',
+                            formFields.headersList.map((header) => `commonHeaders.Add("${header.key}", "${header.value}")`).join('\n\t\t\t\t')
+                        );
+                    } else if (langSelected === 'TypeScript' || langSelected === 'Node.js') {
+                        codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', '\n\t\tconst headers = memphis.headers()');
+                        codeEx.producer = codeEx.producer?.replaceAll(
+                            '<headers-addition>',
+                            formFields.headersList.map((header) => `headers.add("${header.key}", "${header.value}")`).join('\n\t\t\t')
                         );
                     }
                 }
@@ -210,6 +219,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-addition>');
                 if (langSelected === 'Go') codeEx.producer = codeEx.producer?.replaceAll(', memphis.MsgHeaders(hdrs)', '');
                 else if (langSelected === 'Python') codeEx.producer = codeEx.producer?.replaceAll(', headers=headers', '');
+                else if (langSelected === '.NET (C#)') codeEx.producer = codeEx.producer?.replaceAll(', commonHeaders', '');
+                else if (langSelected === 'TypeScript') codeEx.producer = removeLineWithSubstring(codeEx.producer, 'headers: headers');
             }
 
             setCodeExample(codeEx);
@@ -227,6 +238,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         if (username) {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<application type username>', username);
+        } else if (formFields.userName !== '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<application type username>', formFields.userName);
         }
         if (connectionCreds) {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<broker-token>', connectionCreds);
@@ -236,11 +249,54 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<broker-token>', '<password>');
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('memphis.ConnectionToken', 'memphis.Password');
         }
+        if (formFields.password !== '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<password>', formFields.password);
+        }
+        if (formFields.useHeaders) {
+            if (lang === 'cURL') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `--header '${header.key}: ${header.value}'\\`).join(' \n')
+                );
+            } else if (lang === 'Node.js') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `'${header.key}': '${header.value}',`).join('\n\t')
+                );
+            } else if (lang === 'Go') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `req.Header.Add("${header.key}", "${header.value}")`).join('\n\t\t')
+                );
+            } else if (lang === 'Java') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `.addHeader("${header.key}", "${header.value}")`).join('\n  ')
+                );
+            } else if (lang === 'Python') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `'${header.key}': '${header.value}',`).join('\n  ')
+                );
+            } else if (lang === 'JavaScript - jQuery') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `"${header.key}": "${header.value}",`).join('\n\t')
+                );
+            } else if (lang === 'JavaScript - Fetch') {
+                codeEx.producer = codeEx.producer?.replaceAll(
+                    '<headers-addition>',
+                    formFields.headersList.map((header) => `myHeaders.append("${header.key}", "${header.value}");`).join('\n')
+                );
+            }
+        } else {
+            codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-addition>');
+        }
         setCodeExample(codeEx);
     };
 
     useEffect(() => {
-        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode('cURL');
+        protocolSelected === 'SDK (TCP)' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
     }, []);
 
     const handleSelectLang = (e, isSdk = true) => {
@@ -296,53 +352,57 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
-                <div className="select-lan">
-                    <div>
-                        <p className="field-title">Protocol</p>
-                        <SelectComponent
-                            value={protocolSelected}
-                            colorType="navy"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            width="235px"
-                            height="42px"
-                            options={selectProtocolOption}
-                            onChange={(e) => handleSelectProtocol(e)}
-                            popupClassName="select-options"
-                        />
-                    </div>
-                    <div>
-                        <p className="field-title">Language</p>
-                        <SelectComponent
-                            value={langSelected}
-                            colorType="navy"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            width="235px"
-                            height="42px"
-                            options={protocolSelected === 'SDK (TCP)' ? selectLngOption : selectProtocolLngOptions}
-                            onChange={(e) => (protocolSelected === 'SDK (TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
-                            popupClassName="select-options"
-                        />
-                    </div>
-                </div>
-                {protocolSelected === 'SDK (TCP)' && (
-                    <>
-                        <div className="installation">
-                            <p className="field-title">Package installation</p>
-                            <div className="install-copy">
-                                <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
-                                <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
-                            </div>
+                <div className="code-generator-container">
+                    <div className="select-lan">
+                        <div>
+                            <p className="field-title">Protocol</p>
+                            <SelectComponent
+                                value={protocolSelected}
+                                colorType="navy"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                width="235px"
+                                height="42px"
+                                options={selectProtocolOption}
+                                onChange={(e) => handleSelectProtocol(e)}
+                                popupClassName="select-options"
+                            />
                         </div>
-                        <div className="tabs">
-                            {showTabs && <SegmentButton value={tabValue} options={tabs} onChange={(tabValue) => setTabValue(tabValue)} size="medium" />}
-                            {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
+                        <div>
+                            <p className="field-title">Language</p>
+                            <SelectComponent
+                                value={langSelected}
+                                colorType="navy"
+                                backgroundColorType="none"
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                width="235px"
+                                height="42px"
+                                options={protocolSelected === 'SDK (TCP)' ? selectLngOption : selectProtocolLngOptions}
+                                onChange={(e) => (protocolSelected === 'SDK (TCP)' ? handleSelectLang(e) : handleSelectLang(e, false))}
+                                popupClassName="select-options"
+                            />
                         </div>
+                    </div>
 
-                        {!SDK_CODE_EXAMPLE[langSelected].link && (
+                    <>
+                        {protocolSelected === 'SDK (TCP)' && (
+                            <>
+                                <div className="installation">
+                                    <p className="field-title">Package installation</p>
+                                    <div className="install-copy">
+                                        <p>{SDK_CODE_EXAMPLE[langSelected].installation}</p>
+                                        <Copy data={SDK_CODE_EXAMPLE[langSelected].installation} />
+                                    </div>
+                                </div>
+                                <div className="tabs">
+                                    {showTabs && <SegmentButton value={tabValue} options={tabs} onChange={(tabValue) => setTabValue(tabValue)} size="medium" />}
+                                    {!showTabs && <p className="field-title">{`Code snippet for ${tabValue === 'Producer' ? 'producing' : 'consuming'} data`}</p>}
+                                </div>
+                            </>
+                        )}
+                        {
                             <div className="code-builder">
                                 <Collapse ghost className="custom-collapse" expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} accordion>
                                     <Panel
@@ -358,7 +418,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         }
                                     >
                                         <div>
-                                            {/* <Form name="form" form={creationForm} autoComplete="off" className={''}> */}
                                             <Divider />
                                             <div className="username-section">
                                                 <span>
@@ -406,26 +465,30 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </span>
                                             </div>
-                                            <TitleComponent
-                                                headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
-                                                typeTitle="sub-header"
-                                                headerDescription="Lorem Ipsum is not simply random text"
-                                            />
-                                            <Form.Item>
-                                                <Input
-                                                    placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
-                                                    type="text"
-                                                    maxLength="128"
-                                                    radiusType="semi-round"
-                                                    colorType="black"
-                                                    backgroundColorType="white"
-                                                    borderColorType="gray"
-                                                    height="40px"
-                                                    onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                    onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                    value={formFields.producerConsumerName}
-                                                />
-                                            </Form.Item>
+                                            {protocolSelected === 'SDK (TCP)' && (
+                                                <>
+                                                    <TitleComponent
+                                                        headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
+                                                        typeTitle="sub-header"
+                                                        headerDescription="Lorem Ipsum is not simply random text"
+                                                    />
+                                                    <Form.Item>
+                                                        <Input
+                                                            placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
+                                                            type="text"
+                                                            maxLength="128"
+                                                            radiusType="semi-round"
+                                                            colorType="black"
+                                                            backgroundColorType="white"
+                                                            borderColorType="gray"
+                                                            height="40px"
+                                                            onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                            onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                            value={formFields.producerConsumerName}
+                                                        />
+                                                    </Form.Item>
+                                                </>
+                                            )}
                                             {langSelected === 'Python' && (
                                                 <div className="username-section">
                                                     <TitleComponent
@@ -439,13 +502,22 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            <div className="username-section">
-                                                <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Lorem Ipsum is not simply random text" />
-                                                <Form.Item>
-                                                    <Switcher onChange={() => updateFormFields('useHeaders', !formFields.useHeaders)} checked={formFields.useHeaders} />
-                                                </Form.Item>
-                                            </div>
-                                            {formFields.useHeaders && (
+                                            {tabValue === 'Producer' && (
+                                                <div className="username-section">
+                                                    <TitleComponent
+                                                        headerTitle="Headers"
+                                                        typeTitle="sub-header"
+                                                        headerDescription="Lorem Ipsum is not simply random text"
+                                                    />
+                                                    <Form.Item>
+                                                        <Switcher
+                                                            onChange={() => updateFormFields('useHeaders', !formFields.useHeaders)}
+                                                            checked={formFields.useHeaders}
+                                                        />
+                                                    </Form.Item>
+                                                </div>
+                                            )}
+                                            {formFields.useHeaders && tabValue === 'Producer' && (
                                                 <div>
                                                     {formFields.headersList.map((header, index) => (
                                                         <div className="username-section" key={index}>
@@ -485,20 +557,23 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                     />
                                                                 </Form.Item>
                                                             </span>
-                                                            <div onClick={() => removeHeader(index)}>-</div>
+                                                            <FiMinusCircle className="remove-icon" onClick={() => removeHeader(index)} />
+                                                            {/* <div onClick={() => removeHeader(index)}>-</div> */}
                                                         </div>
                                                     ))}
-                                                    <div onClick={() => addHeader()}>Add more</div>
+                                                    <div className="generate-action" onClick={() => addHeader()}>
+                                                        <FiPlus />
+                                                        <span>Add more</span>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
                                     </Panel>
                                 </Collapse>
                             </div>
-                        )}
+                        }
                     </>
-                )}
-
+                </div>
                 <Modal
                     header="Generate JWT token"
                     displayButtons={false}
@@ -517,7 +592,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     <p>Code Output</p>
                     <label>Lorem Ipsum is not simply random text</label>
                 </div>
-                {/* {SDK_CODE_EXAMPLE[langSelected]?.link && (
+                {protocolSelected === 'SDK (TCP)' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">
                         <img src={noCodeExample} />
                         <div className="content">
@@ -528,8 +603,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             </a>
                         </div>
                     </div>
-                )} */}
-                {protocolSelected === 'SDK (TCP)' && (
+                )}
+                {protocolSelected === 'SDK (TCP)' && !SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <>
                         <div className="tabs">
                             <div className="code-example">

@@ -298,8 +298,16 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal width="1200" height="720px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
-                <SdkExample withHeader={true} showTabs={false} consumer={true} stationName={stationState?.stationMetaData?.name} />
+            <Modal
+                width="1200px"
+                height="720px"
+                clickOutside={() => {
+                    setOpenCreateConsumer(false);
+                }}
+                open={openCreateConsumer}
+                displayButtons={false}
+            >
+                <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} consumer={true} />
             </Modal>
             <Modal
                 width="1200px"

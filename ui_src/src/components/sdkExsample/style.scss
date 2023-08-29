@@ -3,8 +3,64 @@
     grid-template-columns: 49% 2% 49%;
     justify-content: space-between;
     height: 100%;
-    // height: calc(100% - 50px);
     margin-top: 15px;
+    .generate-action {
+        display: flex;
+        color: var(--purple);
+        font-family: 'InterMedium';
+        font-size: 14px;
+        cursor: pointer;
+        align-items: center;
+        img {
+            margin-right: 4px;
+        }
+        :hover {
+            text-decoration: underline;
+        }
+    }
+    .code-generator-container {
+        height: 540px;
+        overflow-y: auto;
+        .code-builder {
+            background-color: #efefef;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 0px 20px 20px 0;
+            .ant-collapse-header {
+                padding: 0;
+                flex-direction: row-reverse;
+            }
+            .collapse-title {
+                font-size: 18px;
+                font-weight: 600;
+                margin: 0;
+            }
+            .collapse-description {
+                font-size: 14px;
+                font-weight: 400;
+                color: #84818a;
+            }
+            .username-section {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+                gap: 10px;
+                .remove-icon {
+                    margin-bottom: 20px;
+                    cursor: pointer;
+                }
+            }
+            .ant-divider-horizontal {
+                margin: 10px 0px 0px 0px;
+            }
+            .ant-form-item {
+                margin-bottom: 10px;
+            }
+            .title-container {
+                margin-top: 10px;
+            }
+        }
+    }
     .ant-divider-vertical {
         height: 100%;
         margin: 0;
@@ -76,20 +132,6 @@
         .generate-wrapper {
             display: flex;
             justify-content: space-between;
-            .generate-action {
-                display: flex;
-                color: var(--purple);
-                font-family: 'InterMedium';
-                font-size: 14px;
-                cursor: pointer;
-                align-items: center;
-                img {
-                    margin-right: 4px;
-                }
-                :hover {
-                    text-decoration: underline;
-                }
-            }
         }
         .install-copy {
             border: 1px solid var(--gray);
@@ -180,40 +222,7 @@
             height: 200px !important;
         }
     }
-    .code-builder {
-        background-color: #efefef;
-        border-radius: 12px;
-        padding: 20px;
-        margin: 0px 20px 20px 0;
-        .ant-collapse-header {
-            padding: 0;
-            flex-direction: row-reverse;
-        }
-        .collapse-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-        }
-        .collapse-description {
-            font-size: 14px;
-            font-weight: 400;
-            color: #84818a;
-        }
-        .username-section {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        .ant-divider-horizontal {
-            margin: 10px 0px 0px 0px;
-        }
-        .ant-form-item {
-            margin-bottom: 10px;
-        }
-        .title-container {
-            margin-top: 10px;
-        }
-    }
+
     .code-output-title {
         border-radius: 8px;
         background: rgba(101, 87, 255, 0.1);
