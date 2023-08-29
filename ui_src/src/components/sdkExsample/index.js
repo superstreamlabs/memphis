@@ -409,11 +409,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         showArrow={true}
                                         header={
                                             <div>
-                                                <p className="collapse-title">Configuration</p>
-                                                <label className="collapse-description">
-                                                    Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin
-                                                    literature from
-                                                </label>
+                                                <p className="collapse-title">Parameters</p>
+                                                <label className="collapse-description">Clients can have multiple parameters to best suit each use case best</label>
                                             </div>
                                         }
                                     >
@@ -421,11 +418,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                             <Divider />
                                             <div className="username-section">
                                                 <span>
-                                                    <TitleComponent
-                                                        headerTitle="Username"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="Lorem Ipsum is not simply random text"
-                                                    />
+                                                    <TitleComponent headerTitle="Username" typeTitle="sub-header" />
                                                     <Form.Item>
                                                         <Input
                                                             placeholder="Type user name"
@@ -443,11 +436,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </span>
                                                 <span>
-                                                    <TitleComponent
-                                                        headerTitle="Password"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="Lorem Ipsum is not simply random text"
-                                                    />
+                                                    <TitleComponent headerTitle="Password" typeTitle="sub-header" />
                                                     <Form.Item name="password">
                                                         <Input
                                                             placeholder="Type password"
@@ -470,7 +459,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     <TitleComponent
                                                         headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
                                                         typeTitle="sub-header"
-                                                        headerDescription="Lorem Ipsum is not simply random text"
+                                                        headerDescription={`To be able to recognize a specific ${
+                                                            tabValue === 'Producer' ? 'producer' : 'consumer'
+                                                        } across the system`}
                                                     />
                                                     <Form.Item>
                                                         <Input
@@ -492,23 +483,19 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                             {langSelected === 'Python' && (
                                                 <div className="username-section">
                                                     <TitleComponent
-                                                        headerTitle="Blocking/non-blocking"
+                                                        headerTitle="Sync/Async"
                                                         typeTitle="sub-header"
-                                                        headerDescription="Lorem Ipsum is not simply random text"
+                                                        headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
                                                     />
 
-                                                    <Form.Item name="blocking">
+                                                    <Form.Item>
                                                         <Switcher onChange={() => updateFormFields('blocking', !formFields.blocking)} checked={formFields.blocking} />
                                                     </Form.Item>
                                                 </div>
                                             )}
                                             {tabValue === 'Producer' && (
                                                 <div className="username-section">
-                                                    <TitleComponent
-                                                        headerTitle="Headers"
-                                                        typeTitle="sub-header"
-                                                        headerDescription="Lorem Ipsum is not simply random text"
-                                                    />
+                                                    <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Add header to the message" />
                                                     <Form.Item>
                                                         <Switcher
                                                             onChange={() => updateFormFields('useHeaders', !formFields.useHeaders)}
