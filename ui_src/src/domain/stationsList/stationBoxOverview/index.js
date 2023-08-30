@@ -58,7 +58,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     }, []);
 
     return (
-        <div>
+        <div style={{ padding: '2px' }}>
             <Link to={`${pathDomains.stations}/${station?.station?.name}`}>
                 <div className="station-box-container">
                     <div className="main-section">
