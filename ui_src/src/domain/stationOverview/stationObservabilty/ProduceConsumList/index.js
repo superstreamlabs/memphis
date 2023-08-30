@@ -396,7 +396,7 @@ const ProduceConsumList = ({ producer }) => {
                 keyListener={false}
             >
                 <p className="no-consumer-message--p "> Ack based station without consumers</p>
-                <label className="no-consumer-message--label ">Lomnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam</label>
+                <label className="no-consumer-message--label ">When using ack-based retention, a consumer must be connected before producing a message.</label>
             </Modal>
         </div>
     );
