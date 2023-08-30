@@ -94,7 +94,8 @@ const Login = (props) => {
                     AuthService.saveToLocalStorage(data);
                     try {
                         const ws_port = data.ws_port;
-                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                        // const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
+                        const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost`;
 
                         let conn;
                         if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
@@ -116,7 +117,7 @@ const Login = (props) => {
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {
-                        setLoadingSubmit(false);
+                        throw new Error(error);
                     }
                     dispatch({ type: 'SET_USER_DATA', payload: data });
                     history.push(referer);
@@ -124,6 +125,7 @@ const Login = (props) => {
             } catch (err) {
                 setError(err);
                 setLoadingSubmit(false);
+                console.log(err);
             }
             setLoadingSubmit(false);
         }
