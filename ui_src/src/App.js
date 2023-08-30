@@ -113,13 +113,15 @@ const App = withRouter((props) => {
                     }
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {
-                    return;
+                    throw new Error(error);
                 }
                 dispatch({ type: 'SET_USER_DATA', payload: data });
             }
             history.push('/overview');
             setCloudLogedIn(true);
-        } catch (error) {}
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     useEffect(() => {

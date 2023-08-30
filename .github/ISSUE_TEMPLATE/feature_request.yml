@@ -10,14 +10,10 @@ body:
         Thanks for taking the time to fill out this feature request!
   - type: textarea
     attributes:
-      label: Current behavior
+      label: Description
       description: Is your feature request related to a problem? Please describe.
     validations:
-      required: false
-  - type: textarea
-    attributes:
-      label: Suggested solution
-      description: Describe the solution you'd like.
+      required: true
   - type: input
     id: context
     attributes:
@@ -31,11 +27,3 @@ body:
       options:
         - label: I agree to follow this project's Code of Conduct
           required: true
-  - type: checkboxes
-    id: contribution
-    attributes:
-      label: Contributing Docs
-      description: If you plan on contributing code please read - [Contribution Guide](https://docs.memphis.dev/memphis-new/getting-started/how-to-contribute)
-      options:
-        - label: I agree to follow this project's Contribution Docs
-          required: false
