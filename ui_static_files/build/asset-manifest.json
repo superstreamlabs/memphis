@@ -298,8 +298,5 @@
     "static/media/stationsIconActive.svg": "/static/media/stationsIconActive.e26419ca89a74315be8a7f6bf33756f3.svg",
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
-  "entrypoints": [
-    "static/css/main.fc866f4e.css",
-    "static/js/main.53cfddc9.js"
-  ]
+  "entrypoints": ["static/css/main.fc866f4e.css", "static/js/main.53cfddc9.js"]
 }
