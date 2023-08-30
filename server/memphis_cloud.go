@@ -104,7 +104,7 @@ func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
 
-func GetStationMaxAge(retentionType string, retentionValue int) time.Duration {
+func GetStationMaxAge(retentionType, tenantName string, retentionValue int) time.Duration {
 	if retentionType == "message_age_sec" && retentionValue > 0 {
 		return time.Duration(retentionValue) * time.Second
 	}
@@ -2139,4 +2139,20 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 	}
 
 	return nil
+}
+
+func ScheduledCloudCacheRefresh() {
+	return
+}
+
+func ValidataAccessToFeature(tenantName, featureName string) bool {
+	return true
+}
+
+func ValidataUsageLimitOfFeature(tenantName, featureName string, amount int) (bool, int) {
+	return true, 10000 // this is the number of the max partitions
+}
+
+func validateRetentionPolicyUsage(tenantName, retentionType string, retentionValue int) bool {
+	return true
 }
