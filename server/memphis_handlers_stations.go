@@ -255,8 +255,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if (csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1) && isNative {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
+	canCreate, partitionLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-partitions-per-station", csr.PartitionsNumber)
+
+	if (!canCreate || csr.PartitionsNumber < 1) && isNative {
+		var errMsg error
+		if canCreate {
+			errMsg = fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, partitionLimit, csr.StationName)
+		} else {
+			errMsg = fmt.Errorf("This amount of partitions you are trying to create for a single station is not supported on your pricing plan")
+		}
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
@@ -302,6 +309,13 @@ func (s *Server) createStationDirectIntern(c *client,
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect at validateRetentionType: %v", csr.TenantName, csr.Username, err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+
+		if !validateRetentionPolicyUsage(csr.TenantName, retentionType, csr.RetentionValue) {
+			serv.Warnf("[tenant: %v][user:%v]createStationDirect at validateRetentionType: Retention Type or Value is not supported in the plan", csr.TenantName, csr.Username)
+			jsApiResp.Error = NewJSStreamCreateError(fmt.Errorf("This retention type or value is not supported in your pricing plan"))
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, fmt.Errorf("Retention Type or Value is not supported in the plan"))
 			return
 		}
 
@@ -851,10 +865,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	if body.PartitionsNumber > MAX_PARTITIONS || body.PartitionsNumber < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v replicas (max:%v min:1): Station %v", body.PartitionsNumber, MAX_PARTITIONS, body.Name)
+	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
+
+	if !canCreate || body.PartitionsNumber < 1 {
+		var errMsg error
+		if canCreate {
+			errMsg = fmt.Errorf("cannot create station with %v replicas (max:%v min:1): Station %v", body.PartitionsNumber, partitionLimit, body.Name)
+		} else {
+			errMsg = fmt.Errorf("this amount of partitions you are trying to create for a single station is not supported on your pricing plan")
+		}
 		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg.Error()})
 		return
 	}
 	partitionsList := make([]int, 0)
@@ -916,6 +937,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionType: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+
+		if !validateRetentionPolicyUsage(tenantName, retentionType, body.RetentionValue) {
+			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionPolicyUsage: Retention Type or Value is not supported in the plan", user.TenantName, user.Username)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This retention type or value is not supported in your pricing plan"})
 			return
 		}
 
