@@ -320,6 +320,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
 	go s.RemoveOldProducersAndConsumers()
+	go ScheduledCloudCacheRefresh()
 
 	return nil
 }

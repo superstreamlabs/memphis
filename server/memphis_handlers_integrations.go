@@ -72,6 +72,11 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		}
 		integration = slackIntegration
 	case "s3":
+		if !ValidataAccessToFeature(user.TenantName, "feature-storage-tiering") {
+			serv.Warnf("[tenant: %v][user: %v]CreateIntegration at ValidataAccessToFeature: %v", user.TenantName, user.Username, "feature-storage-tiering")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This feature is not available on your current pricing plan, in order to enjoy it you will have to upgrade your plan"})
+			return
+		}
 		s3Integration, errorCode, err := it.handleCreateS3Integration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {
