@@ -95,7 +95,6 @@ export const convertSecondsToDate = (seconds, short = false) => {
         let outputString = result;
         for (const replacement of replacements) {
             outputString = outputString.replace(replacement.search, replacement.replace);
-            console.log(outputString);
         }
         result = outputString;
     }
