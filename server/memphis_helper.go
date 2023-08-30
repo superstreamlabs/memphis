@@ -205,7 +205,7 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 		maxBytes = -1
 	}
 
-	maxAge := GetStationMaxAge(retentionType, retentionValue)
+	maxAge := GetStationMaxAge(retentionType, tenantName, retentionValue)
 	retentionPolicy := getRetentionPolicy(retentionType)
 
 	var storage StorageType
