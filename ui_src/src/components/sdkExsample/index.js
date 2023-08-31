@@ -705,8 +705,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 <Modal
                     header="Generate JWT token"
                     displayButtons={false}
-                    height="480px"
-                    width="400px"
+                    width="460px"
                     clickOutside={() => setGenerateModal(false)}
                     open={generateModal}
                     className="generate-modal"
