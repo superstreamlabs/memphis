@@ -621,15 +621,28 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
 
                                                     <TitleComponent
-                                                        headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
+                                                        headerTitle={`${
+                                                            (protocolSelected === 'SDK (TCP)' && tabValue === 'Producer') ||
+                                                            (protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data')
+                                                                ? 'Producer'
+                                                                : 'Consumer'
+                                                        } name`}
                                                         typeTitle="sub-header"
                                                         headerDescription={`To be able to recognize a specific ${
-                                                            tabValue === 'Producer' ? 'producer' : 'consumer'
+                                                            (protocolSelected === 'SDK (TCP)' && tabValue === 'Producer') ||
+                                                            (protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data')
+                                                                ? 'producer'
+                                                                : 'consumer'
                                                         } across the system`}
                                                     />
                                                     <Form.Item>
                                                         <Input
-                                                            placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
+                                                            placeholder={`Type ${
+                                                                (protocolSelected === 'SDK (TCP)' && tabValue === 'Producer') ||
+                                                                (protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data')
+                                                                    ? 'producer'
+                                                                    : 'consumer'
+                                                            } name`}
                                                             type="text"
                                                             maxLength="128"
                                                             radiusType="semi-round"
