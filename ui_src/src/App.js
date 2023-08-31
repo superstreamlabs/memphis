@@ -82,7 +82,7 @@ const App = withRouter(() => {
     });
     const [displayedNotifications, setDisplayedNotifications] = useState([]);
     const [systemMessage, setSystemMessage] = useState([]);
-    const { stigg } = useStiggContext();
+    const { stigg } = isCloud() && useStiggContext();
 
     const stateRef = useRef([]);
     stateRef.current = [cloudLogedIn, persistedNotifications];
