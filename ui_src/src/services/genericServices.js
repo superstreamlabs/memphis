@@ -9,19 +9,38 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
+import { message } from 'antd';
 
-import './style.scss';
-
-import React from 'react';
-
-import VerifiedUser from '../../../assets/images/verified.svg';
-
-function VerifiedBedge() {
-    return (
-        <span className="verified-badge">
-            <img src={VerifiedUser} alt="verified" />
-            <p>Verified</p>
-        </span>
-    );
-}
-export default VerifiedBedge;
+export const showMessages = (type, content) => {
+    switch (type) {
+        case 'success':
+            message.success({
+                key: 'memphisSuccessMessage',
+                content: content,
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisSuccessMessage')
+            });
+            break;
+        case 'error':
+            message.error({
+                key: 'memphisErrorMessage',
+                content: content,
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisErrorMessage')
+            });
+            break;
+        case 'warning':
+            message.warning({
+                key: 'memphisWarningMessage',
+                content: content,
+                duration: 5,
+                style: { cursor: 'pointer' },
+                onClick: () => message.destroy('memphisWarningMessage')
+            });
+            break;
+        default:
+            break;
+    }
+};

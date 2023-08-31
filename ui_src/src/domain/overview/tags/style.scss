@@ -20,6 +20,9 @@
                     color: rgba(74, 73, 92, 0.8);
                     margin-right: 10px;
                 }
+                .tag-wrapper{
+                    max-width: unset !important;
+                }
             }
             .attached-component {
                 font-weight: 600;

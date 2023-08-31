@@ -19,7 +19,14 @@ import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { useHistory, Link } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 
-import { LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_COMPANY_LOGO, LOCAL_STORAGE_FULL_NAME, LOCAL_STORAGE_USER_NAME, USER_IMAGE } from '../../const/localStorageConsts';
+import {
+    LOCAL_STORAGE_ACCOUNT_NAME,
+    LOCAL_STORAGE_AVATAR_ID,
+    LOCAL_STORAGE_COMPANY_LOGO,
+    LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_USER_NAME,
+    USER_IMAGE
+} from '../../const/localStorageConsts';
 import integrationIconColor from '../../assets/images/integrationIconColor.svg';
 import functionsIconActive from '../../assets/images/functionsIconActive.svg';
 import overviewIconActive from '../../assets/images/overviewIconActive.svg';
@@ -49,6 +56,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
+import UpgradePlans from '../upgradePlans';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -81,6 +89,7 @@ function SideBar() {
             }
         } catch (error) {}
     }, []);
+    const isRoot = state?.userData?.user_type === 'root';
 
     const getSystemVersion = useCallback(async () => {
         try {
@@ -148,17 +157,20 @@ function SideBar() {
                         <img src={state?.companyLogo || Logo} width="15" height="15" alt="companyLogo" />
                     </span>
                 </span>
-                <p>
-                    {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
-                        ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
-                        : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
-                </p>
+                <div className="account-details">
+                    <p>
+                        {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
+                            ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
+                            : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
+                    </p>
+                    <span className="company-name">{state?.userData?.account_name || localStorage.getItem(LOCAL_STORAGE_ACCOUNT_NAME)}</span>
+                </div>
             </div>
             <Divider />
             <div
                 className="item-wrap"
                 onClick={() => {
-                    history.push(pathDomains.profile);
+                    history.replace(pathDomains.profile);
                     setPopoverOpenSetting(false);
                 }}
             >
@@ -172,7 +184,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    history.push(`${pathDomains.administration}/integrations`);
+                    history.replace(`${pathDomains.administration}/integrations`);
                     setPopoverOpenSetting(false);
                 }}
             >
@@ -187,7 +199,7 @@ function SideBar() {
                 <div
                     className="item-wrap"
                     onClick={() => {
-                        history.push(`${pathDomains.administration}/usage`);
+                        history.replace(`${pathDomains.administration}/usage`);
                         setPopoverOpenSetting(false);
                     }}
                 >
@@ -216,14 +228,14 @@ function SideBar() {
                     height="45"
                     className="logoimg"
                     alt="logo"
-                    onClick={() => history.push(pathDomains.overview)}
+                    onClick={() => history.replace(pathDomains.overview)}
                 />
 
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('overview')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(pathDomains.overview)}
+                    onClick={() => history.replace(pathDomains.overview)}
                 >
                     <div className="icon">
                         {state.route === 'overview' ? (
@@ -238,7 +250,7 @@ function SideBar() {
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('stations')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(pathDomains.stations)}
+                    onClick={() => history.replace(pathDomains.stations)}
                 >
                     <div className="icon">
                         {state.route === 'stations' ? (
@@ -254,7 +266,7 @@ function SideBar() {
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('schemaverse')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(`${pathDomains.schemaverse}/list`)}
+                    onClick={() => history.replace(`${pathDomains.schemaverse}/list`)}
                 >
                     <div className="icon">
                         {state.route === 'schemaverse' ? (
@@ -269,7 +281,7 @@ function SideBar() {
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(pathDomains.functions)}
+                    onClick={() => history.replace(pathDomains.functions)}
                 >
                     {state.route === 'functions' ? (
                         <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
@@ -282,7 +294,7 @@ function SideBar() {
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('users')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(pathDomains.users)}
+                    onClick={() => history.replace(pathDomains.users)}
                 >
                     <div className="icon">
                         {state.route === 'users' ? (
@@ -298,7 +310,7 @@ function SideBar() {
                         className="item-wrapper"
                         onMouseEnter={() => setHoveredItem('logs')}
                         onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.push(pathDomains.sysLogs)}
+                        onClick={() => history.replace(pathDomains.sysLogs)}
                     >
                         <div className="icon">
                             {state.route === 'logs' ? (
@@ -310,20 +322,22 @@ function SideBar() {
                         <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
                     </div>
                 )}
-                <div className="item-wrapper">
-                    <div className="icon not-available">
-                        <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
+                {isCloud() && (
+                    <div className="item-wrapper">
+                        <div className="icon not-available">
+                            <img src={functionsIcon} alt="usersIcon" width="20" height="20"></img>
+                        </div>
+                        <p className="not-available">Functions</p>
+                        <p className="coming-soon">Soon</p>
                     </div>
-                    <p className="not-available">Functions</p>
-                    <p className="coming-soon">Soon</p>
-                </div>
+                )}
             </div>
             <div className="bottom-icons">
                 <div
                     className="integration-icon-wrapper"
                     onMouseEnter={() => setHoveredItem('integrations')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.push(`${pathDomains.administration}/integrations`)}
+                    onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
                 >
                     <img src={hoveredItem === 'integrations' ? integrationIconColor : integrationIcon} />
                     <label className="icon-name">Integrations</label>
@@ -380,11 +394,21 @@ function SideBar() {
                     <version
                         is="x3d"
                         style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}
-                        onClick={() => (!state.isLatest ? history.push(`${pathDomains.administration}/version_upgrade`) : null)}
+                        onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/version_upgrade`) : null)}
                     >
                         {!state.isLatest && <div className="update-note" />}
                         <p>v{state.currentVersion}</p>
                     </version>
+                )}
+                {isCloud() && (
+                    <UpgradePlans
+                        content={
+                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                <p className="upgrade-plan">Upgrade</p>
+                            </div>
+                        }
+                        isExternal={false}
+                    />
                 )}
             </div>
         </div>

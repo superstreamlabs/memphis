@@ -10,47 +10,37 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import React, { createContext, useReducer } from 'react';
+import './style.scss';
 
-import Reducer from './reducer';
+import React, { useContext, useEffect, useState } from 'react';
 
-const initialState = {
-    userData: {
-        user_id: '',
-        already_logged_in: false,
-        created_at: '',
-        user_type: '',
-        avatar_id: 1,
-        username: '',
-        full_name: '',
-        account_id: '',
-        account_name: '',
-        user_image: ''
-    },
-    companyLogo: '',
-    monitor_data: {},
-    loading: false,
-    error: null,
-    route: '',
-    isAuthentication: false,
-    analytics_modal: true,
-    socket: null,
-    skipSignup: false,
-    stationList: [],
-    stationFilteredList: [],
-    schemaList: [],
-    schemaFilteredList: [],
-    logsFilter: [],
-    integrationsList: [],
-    isLatest: true,
-    currentVersion: ''
+import { Context } from '../../hooks/store';
+import UpgradePlans from '../upgradePlans';
+
+const StorageLeft = ({}) => {
+    const [state, dispatch] = useContext(Context);
+    const [notify, setNotify] = useState(false);
+    const isFreePlan = state?.userData?.user_type === 'root';
+    const isRoot = state?.userData?.user_type === 'root';
+
+    useEffect(() => {}, []);
+
+    return (
+        isFreePlan && (
+            <div className="storage-left-wrapper">
+                <div className={notify ? 'storage-left notify-wrapper' : 'storage-left'}>
+                    <p>1 / 2 GB left</p>
+                    <UpgradePlans
+                        content={
+                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                <p className="upgrade-plan">Upgrade</p>
+                            </div>
+                        }
+                        isExternal={false}
+                    />
+                </div>
+            </div>
+        )
+    );
 };
-
-const Store = ({ children }) => {
-    const [state, dispatch] = useReducer(Reducer, initialState);
-
-    return <Context.Provider value={[state, dispatch]}>{children}</Context.Provider>;
-};
-
-export const Context = createContext(initialState);
-export default Store;
+export default StorageLeft;

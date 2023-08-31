@@ -13,11 +13,12 @@
 import React, { useContext, useState } from 'react';
 import { Context } from '../../../hooks/store';
 import { LOCAL_STORAGE_COMPANY_LOGO } from '../../../const/localStorageConsts';
-import { Upload, message } from 'antd';
+import { Upload } from 'antd';
 import Button from '../../../components/button';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { httpRequest } from '../../../services/http';
 import Logo from '../../../assets/images/logo.svg';
+import { showMessages } from '../../../services/genericServices';
 
 function ImgUploader() {
     const [state, dispatch] = useContext(Context);
@@ -38,7 +39,7 @@ function ImgUploader() {
         beforeUpload: (file) => {
             const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
             if (!isJpgOrPng) {
-                message.error('JPG/PNG format required', 3);
+                showMessages('error', 'You can only upload JPG/PNG file!');
             }
             setFileList([file]);
             return isJpgOrPng;

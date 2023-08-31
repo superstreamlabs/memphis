@@ -13,23 +13,24 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
+import { CloudQueueRounded } from '@material-ui/icons';
+import { message } from 'antd';
 
 import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
-import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
-import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
+import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
+import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
+import { isCloud } from '../../../services/valueConvertor';
 import { httpRequest } from '../../../services/http';
-import { Context } from '../../../hooks/store';
-import { CloudQueueRounded } from '@material-ui/icons';
 import Button from '../../../components/button';
+import Loader from '../../../components/loader';
+import { Context } from '../../../hooks/store';
 import Modal from '../../../components/modal';
 import Input from '../../../components/Input';
-import { message } from 'antd';
 import Tag from '../../../components/tag';
-import Loader from '../../../components/loader';
-import { isCloud } from '../../../services/valueConvertor';
+import { showMessages } from '../../../services/genericServices';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -90,13 +91,7 @@ const Integrations = () => {
     const handleSendRequest = async () => {
         try {
             await httpRequest('POST', ApiEndpoints.REQUEST_INTEGRATION, { request_content: integrationRequest });
-            message.success({
-                key: 'memphisSuccessMessage',
-                content: 'Thanks for your feedback',
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisSuccessMessage')
-            });
+            showMessages('success', 'Thanks for your feedback');
             modalFlip(false);
             setIntegrationRequest('');
         } catch (err) {
