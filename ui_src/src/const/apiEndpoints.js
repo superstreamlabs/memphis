@@ -100,6 +100,8 @@ export const ApiEndpoints = {
     GET_BILLING_DETAILS: '/billing/getBill',
     UPGRADE_PLAN: '/billing/upgradePlan',
     DOWNGRADE_CHECK: '/billing/downgradeCheck',
+    GET_BILLING_ALERT: '/billing/getBillingAlert',
+    UPDATE_BILLING_ALERT: '/billing/setBillingAlert',
     RESEND_INVITATION: '/usermgmt/resendInvitation',
     REVOKED_INVITATION: '/usermgmt/revokeInvitation',
     SIGN_OUT: '/usermgmt/signOut',

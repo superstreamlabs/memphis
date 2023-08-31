@@ -40,8 +40,8 @@ const TooltipComponent = ({ className, text = '', minWidth, placement = 'bottom'
             display: 'flex',
             textAlign: 'center'
         },
-        visible: tooltipVisible,
-        onVisibleChange: (open) => setTooltipVisible(open)
+        open: tooltipVisible,
+        onOpenChange: (open) => setTooltipVisible(open)
     };
 
     return (
