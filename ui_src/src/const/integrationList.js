@@ -270,7 +270,8 @@ export const INTEGRATION_LIST = {
             <div className="integrate-description">
                 <p>Description</p>
                 <span className="content">
-                S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.
+                    S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples:
+                    AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.
                 </span>
             </div>
         )

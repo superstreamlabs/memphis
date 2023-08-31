@@ -27,7 +27,7 @@ import { isCloud } from '../../../services/valueConvertor';
 import { Context } from '../../../hooks/store';
 import UpgradePlans from '../../../components/upgradePlans';
 
-const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType, userList }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, clientType = false }) => {
     const [state, dispatch] = useContext(Context);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
