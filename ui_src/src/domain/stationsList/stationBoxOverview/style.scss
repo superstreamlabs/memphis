@@ -164,7 +164,7 @@
     .bottom-section {
         min-height: 42px;
         border-top: 1px solid rgba(101, 87, 255, 0.15);
-        background: rgba(101, 87, 255, 0.1);
+        background: rgba(166, 158, 252, 0.03);
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
@@ -177,12 +177,8 @@
         }
     }
     &:hover {
-        .action {
-            display: flex !important;
-        }
         border-radius: 8px;
-        outline: 2px solid #6557ff;
-        background: #ecebff;
+        outline: 1px solid #dedbf9;
     }
 }
 

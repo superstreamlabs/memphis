@@ -19,18 +19,33 @@
 import './style.scss';
 
 import { BrowserRouter } from 'react-router-dom';
+import { StiggProvider } from '@stigg/react-sdk';
 import ReactDOM from 'react-dom';
 import React from 'react';
 
+import { isCloud } from './services/valueConvertor';
 import reportWebVitals from './reportWebVitals';
+import { STIGG_CLIENT_ID } from './config';
 import Store from './hooks/store';
 import App from './App';
+
+const theme = {
+    palette: {
+        primary: '#6557FF'
+    }
+};
 
 function MemphisApp() {
     return (
         <Store>
             <BrowserRouter>
-                <App />
+                {isCloud() ? (
+                    <StiggProvider theme={theme} apiKey={STIGG_CLIENT_ID}>
+                        <App />
+                    </StiggProvider>
+                ) : (
+                    <App />
+                )}
             </BrowserRouter>
         </Store>
     );

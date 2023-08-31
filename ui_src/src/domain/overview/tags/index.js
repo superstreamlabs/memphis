@@ -39,7 +39,7 @@ const Tags = () => {
                                         <label className="attached-component">
                                             {`${tag.stations_count} station${tag.stations_count === 1 ? '' : 's'}, ${tag.schemas_count} schema${
                                                 tag.schemas_count === 1 ? '' : 's'
-                                            }.`}
+                                            }`}
                                         </label>
                                     </span>
                                     <Divider />

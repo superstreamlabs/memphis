@@ -26,8 +26,8 @@ import { httpRequest } from '../../services/http';
 import Producer from './components/producer';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
-import { message } from 'antd';
 import pathDomains from '../../router';
+import { showMessages } from '../../services/genericServices';
 
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
@@ -155,13 +155,7 @@ const MessageJourney = () => {
         ];
         if (data) {
             if (!data?.poisoned_cgs || data?.poisoned_cgs.length === 0) {
-                message.success({
-                    key: 'memphisSuccessMessage',
-                    content: 'Unacknowledged message has been acked by all of its failed CGs',
-                    duration: 5,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisSuccessMessage')
-                });
+                showMessages('success', 'Unacknowledged message has been acked by all of its failed CGs');
                 returnBack();
             }
             data?.poisoned_cgs?.map((row, index) => {
@@ -257,7 +251,7 @@ const MessageJourney = () => {
                 producer: {
                     is_active: data.producer?.is_active,
                     is_deleted: data.producer?.is_deleted,
-                    name: data.producer?.name,
+                    name: data.producer?.name
                 },
                 message: data.message?.data,
                 headers: data.message?.headers,

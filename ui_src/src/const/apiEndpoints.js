@@ -98,6 +98,8 @@ export const ApiEndpoints = {
 
     //Cloud
     GET_BILLING_DETAILS: '/billing/getBill',
+    UPGRADE_PLAN: '/billing/upgradePlan',
+    DOWNGRADE_CHECK: '/billing/downgradeCheck',
     RESEND_INVITATION: '/usermgmt/resendInvitation',
     REVOKED_INVITATION: '/usermgmt/revokeInvitation',
     SIGN_OUT: '/usermgmt/signOut',

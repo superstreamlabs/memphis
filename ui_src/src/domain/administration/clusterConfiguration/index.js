@@ -40,6 +40,7 @@ import {
     LOGS_RETENTION_IN_DAYS
 } from '../../../const/localStorageConsts';
 import Loader from '../../../components/loader';
+import { showMessages } from '../../../services/genericServices';
 
 function ClusterConfiguration() {
     const [formFields, setFormFields] = useState({});
@@ -81,13 +82,7 @@ function ClusterConfiguration() {
             updateLocalStorage(data);
             setIsChanged(false);
             setOldValues(data);
-            message.success({
-                key: 'memphisSuccessMessage',
-                content: 'Successfully updated',
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisSuccessMessage')
-            });
+            showMessages('success', 'Successfully updated');
         } catch (err) {
             return;
         }
