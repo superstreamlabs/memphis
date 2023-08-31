@@ -12,24 +12,18 @@
 
 import './style.scss';
 import TotalPayment from './components/totalPayment';
-import PaymentMethod from './components/paymentMethod';
-import InvoiceHistory from './components/invoiceHistory';
 import React from 'react';
 
-function Payments({ selectedMenuItem, setMenuItem }) {
+function Payments() {
     return (
         <div className="payments-container">
             <div className="header-preferences">
                 <div className="header">
                     <p className="main-header">Payments</p>
-                    <p className="memphis-label">Please provide a content</p>
+                    <p className="memphis-label">This section is for managing your payment methods and invoices.</p>
                 </div>
             </div>
-            <div className="payments-section">
-                <TotalPayment />
-                <PaymentMethod />
-            </div>
-            <InvoiceHistory />
+            <TotalPayment />
         </div>
     );
 }

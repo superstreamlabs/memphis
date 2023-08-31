@@ -12,22 +12,32 @@
 
 import './style.scss';
 
-import React from 'react';
+import { CustomerPortalProvider, InvoicesSection, PaymentDetailsSection, SubscriptionsOverview } from '@stigg/react-sdk';
+import React, { useState } from 'react';
+
+import UpgradePlans from '../../../../../../components/upgradePlans';
 
 function TotalPayments() {
+    const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+
     return (
-        <div className="payments-section-card">
-            <div className="total-payment-top">
-                <div>
-                    <p className="total-payment">Total Payment</p>
-                    <p className="last-payment">Last payment date is 02 June 2023</p>
+        <div className="payments-section-wrapper">
+            <CustomerPortalProvider>
+                <div className="subscription-wrapper">
+                    <SubscriptionsOverview onManageSubscription={() => setIsPaywallOpen(true)} />
                 </div>
-                <div className="payment-amount">
-                    <label>$</label>
-                    <label className="payment-amount-number">299</label>
+            </CustomerPortalProvider>
+            <CustomerPortalProvider>
+                <div className="payment-details-wrapper">
+                    <PaymentDetailsSection />
                 </div>
-            </div>
-            <label className="total-payment-bottom">Remove payment</label>
+            </CustomerPortalProvider>
+            <CustomerPortalProvider>
+                <div className="invoices-wrapper">
+                    <InvoicesSection />
+                </div>
+            </CustomerPortalProvider>
+            {isPaywallOpen && <UpgradePlans open={isPaywallOpen} onClose={() => setIsPaywallOpen(false)} />}
         </div>
     );
 }

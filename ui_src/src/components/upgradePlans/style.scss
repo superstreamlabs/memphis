@@ -1,0 +1,226 @@
+.pricing-plans-modal {
+    .ant-modal-body{
+        padding-right: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-bottom: 10px !important;
+    }
+    .paywall-header{
+        p{
+            font-family: 'InterSemiBold' !important;
+            font-size: 28px;
+            margin: 0;
+        }
+    }
+    .description, .paywall-footer{
+        font-size: 14px;
+        color: #667085;
+        font-family: 'Inter';
+        display: flex;
+        align-items: center;
+        svg{
+            width: 18px;
+            height: 18px;
+            margin-left: 2px;
+            margin-right: 5px;
+            color: var(--purple);
+        }
+    }
+    .emcdfp60{
+        position: relative;
+        overflow: auto;
+        padding-right: 24px;
+        .eacdu8d8{
+            padding: 30px !important;
+            .css-lmbc13-HighlightBadge{
+                left: 30%;
+                width: 40%;
+                display: flex;
+                justify-content: center;
+                p{
+                    font-family: 'InterSemiBold' !important;
+                }
+            }
+            .css-sm3wbh-HeaderWrapper{
+                .eacdu8d7{
+                    font-family: 'InterSemiBold' !important;
+                    color: black !important;
+                }
+                .typography-level-1{
+                    font-family: 'InterSemiBold' !important;
+                    color: black !important;
+                }
+                .css-6cbyca-StyledText, .typography-level-3{
+                    font-family: 'InterMedium' !important;
+                    color: #6C727F !important;
+                }
+                .GJISb{
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .css-1qvl40c-Divider{
+                    height: 1px !important;
+                }
+                .stigg-paywall-plan-button-layout{
+                    button{
+                        border-radius: 32px !important;
+                    }
+                    .css-1n78f2x-OfferingButton{
+                        background: transparent !important;
+                        border-color: var(--purple) !important;
+                        p{
+                            color: var(--purple) !important;
+                        }
+                    }
+                    .css-1n78f2x-OfferingButton:hover{
+                        background: var(--purple) !important;
+                        opacity: 1 !important;
+                        p{
+                            color: white !important;
+                        }
+                    }
+                }
+            }
+            .css-1qvl40c-Divider{
+                margin-bottom: 20px !important;
+            }
+            .stigg-plan-entitlements-container{
+                gap: 10px !important;
+                .stigg-plan-entitlements-title{
+                    color: black !important;
+                    font-family: 'Inter' !important;
+                    font-size: 16px !important;
+                }
+                .stigg-entitlement-name {
+                    color: #6C727F !important;
+                    font-family: 'InterMedium' !important;
+                    font-size: 14px !important;
+                }
+                svg path{
+                    fill: var(--purple) !important;
+                }
+            }
+        }
+        .eacdu8d8:nth-last-child(1){
+            display: none;
+        }
+        .stigg-current-plan{
+            background: transparent !important;
+            .css-1vgaedi-OfferingButton{
+                background: #F0EFF0 !important;
+                border-color: #84818A !important;
+                border-radius: 32px !important;
+                opacity: unset;
+                p{
+                    color: #84818A !important;
+                }
+            }
+            .css-1vgaedi-OfferingButton:hover{
+                opacity: 1 !important;
+            }
+        }
+        .ee5i8qp0{
+            display: none;
+        }
+    }
+}
+.instructions-modal{
+    .ant-modal-body{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    p{
+        margin: 0;
+    }
+    .instructions-redirect{
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        .redirect-section{
+            border: 1px solid #E7E7E7;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            .violation-title{
+                font-family: 'InterSemibold';
+                font-size: 16px;
+            }
+            .flex-line{
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                cursor: pointer;
+                span{
+                    font-family: 'InterMedium';
+                    font-size: 14px;
+                    color: var(--purple);
+                }
+            }
+            .hint-line{
+                display: flex;
+                align-items: center;
+                color: #B0B7C3;
+                font-family: 'InterMedium';
+            }
+            .violations-list{
+                border-radius: 4px;
+                background: rgba(112, 112, 112, 0.10);
+                padding: 8px 15px;
+                margin-top: 5px;
+            }
+        }
+    }
+    .instructions-button{
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+.downgrade-modal{
+    .ant-modal-body{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    p{
+        margin: 0;
+    }
+    
+    .downgrade-reasons{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-family: 'InterSemiBold';
+    }
+    .downgrade-box{
+        margin-top: 5px;
+        p{
+            font-family: 'InterSemibold';
+            font-family: 14px;
+        }
+        span{
+            color: #A9A9A9;
+            font-family: 'Inter';
+        }
+    }
+    .instructions-button{
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        
+    }
+}
+
+.upgrade-plans-container{
+    .disabled{
+        cursor: not-allowed !important;
+        opacity: 0.5;
+    }
+}

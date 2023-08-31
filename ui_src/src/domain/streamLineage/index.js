@@ -30,6 +30,7 @@ import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Station from './components/station';
 import Button from '../../components/button';
+import LockFeature from '../../components/lockFeature';
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -181,11 +182,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             setEdges(edgesList);
             setNodes(nodesList);
             setTimeout(() => {
-                if (ref.current) {
-                    ref.current.fitCanvas();
-                }
-            }, 100);
-            setTimeout(() => {
                 setisLoading(false);
             }, 1000);
         }
@@ -213,19 +209,31 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                 )}
                 {nodes?.length > 0 && (
                     <div className="actions-wrapper">
-                        <div className="close-wrapper">
-                            {expend && <IoClose onClick={() => setExpended(false)} />}
-                            {!expend && <MdZoomOutMap onClick={() => setExpended(true)} />}
+                        <div
+                            className="close-wrapper"
+                            onClick={() =>
+                                expend
+                                    ? setExpended(false)
+                                    : state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview']
+                                    ? setExpended(true)
+                                    : null
+                            }
+                        >
+                            {expend && <IoClose />}
+                            {!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview'] && <LockFeature />}
+                            {!expend && state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] && <MdZoomOutMap />}
                         </div>
-                        <div className="zoom-wrapper">
-                            <BsZoomIn onClick={() => ref.current.zoomIn()} />
-                            <Divider />
-                            <BsZoomOut onClick={() => ref.current.zoomOut()} />
-                            <Divider />
-                            <span className="fit-wrapper" onClick={() => ref.current.fitCanvas()}>
-                                Fit
-                            </span>
-                        </div>
+                        {expend && (
+                            <div className="zoom-wrapper">
+                                <BsZoomIn onClick={() => ref.current.zoomIn()} />
+                                <Divider />
+                                <BsZoomOut onClick={() => ref.current.zoomOut()} />
+                                <Divider />
+                                <span className="fit-wrapper" onClick={() => ref.current.fitCanvas()}>
+                                    Fit
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -247,7 +255,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         maxZoom={0.2}
                         minZoom={-0.9}
                         height={'100%'}
-                        // maxHeight={nodes?.length < 5 ? 700 : nodes?.length * 170}
                         node={
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (
@@ -276,8 +283,8 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             {!isLoading && nodes?.length === 0 && (
                 <div className="empty-connections-container">
                     <img src={graphPlaceholder} alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
-                    <p>There aren’t any connection to show</p>
-                    <span className="desc">Start by creating a new station</span>
+                    <p>There are no entities to display</p>
+                    <span className="desc">Please create at least one entity, such as a station, to display the graph overview.</span>
                     <Button
                         className="modal-btn"
                         height="34px"

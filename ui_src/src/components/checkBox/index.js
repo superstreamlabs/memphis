@@ -24,10 +24,11 @@ const CheckboxComponent = ({ indeterminate = false, disabled = false, defaultChe
             checked={checked}
             id={id}
             onChange={onChange}
-            name={checkName}
             disabled={disabled}
             onClick={(e) => e.stopPropagation()}
-        />
+        >
+            {checkName}
+        </Checkbox>
     );
 };
 

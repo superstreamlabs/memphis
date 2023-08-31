@@ -20,7 +20,12 @@ const initialState = {
         already_logged_in: false,
         created_at: '',
         user_type: '',
-        avatar_id: 1
+        avatar_id: 1,
+        username: '',
+        full_name: '',
+        account_id: '',
+        account_name: '',
+        user_image: ''
     },
     companyLogo: '',
     monitor_data: {},

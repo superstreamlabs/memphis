@@ -23,6 +23,7 @@ import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
 import Checkbox from '../../../../../components/checkBox';
 import Loader from '../../../../../components/loader';
+import { showMessages } from '../../../../../services/genericServices';
 
 const S3Integration = ({ close, value }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
@@ -95,13 +96,7 @@ const S3Integration = ({ close, value }) => {
             disconnect ? setLoadingDisconnect(false) : setLoadingSubmit(false);
         }, 1000);
         close(data);
-        message.success({
-            key: 'memphisSuccessMessage',
-            content: disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully',
-            duration: 5,
-            style: { cursor: 'pointer' },
-            onClick: () => message.destroy('memphisSuccessMessage')
-        });
+        showMessages('success', disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully');
     };
 
     const updateIntegration = async (withToken = true) => {
