@@ -6183,6 +6183,31 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 	return tenants, nil
 }
 
+func IsTenantExists(tenantName string) (bool, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Release()
+
+	query := `SELECT EXISTS(SELECT 1 FROM tenants WHERE name = $1 LIMIT 1)`
+	stmt, err := conn.Conn().Prepare(ctx, "is_tenant_exists", query)
+	if err != nil {
+		return false, err
+	}
+
+	var exists bool
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func GetTenantById(id int) (bool, models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
