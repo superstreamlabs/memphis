@@ -32,3 +32,7 @@ func (mc *MemphisCache) Set(key string, data []byte) error {
 func (mc *MemphisCache) Delete(key string) error {
 	return mc.Cache.Delete(key)
 }
+
+func (mc *MemphisCache) Iterator() *bigcache.EntryInfoIterator {
+	return mc.Cache.Iterator()
+}

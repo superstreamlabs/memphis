@@ -1902,6 +1902,10 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 	return true
 }
 
+func (s *Server) SendBillingAlertWhenNeeded() error {
+	return nil
+}
+
 func shouldSendAnalytics() (bool, error) {
 	if configuration.ENV == "staging" || configuration.ENV == "dev" {
 		return false, nil
