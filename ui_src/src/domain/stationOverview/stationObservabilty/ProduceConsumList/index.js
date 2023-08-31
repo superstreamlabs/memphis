@@ -307,7 +307,7 @@ const ProduceConsumList = ({ producer }) => {
             </div>
             <Modal
                 width="1200px"
-                height="720px"
+                height="780px"
                 clickOutside={() => {
                     setOpenCreateConsumer(false);
                 }}
@@ -318,7 +318,7 @@ const ProduceConsumList = ({ producer }) => {
             </Modal>
             <Modal
                 width="1200px"
-                height="720px"
+                height="780px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
                 }}

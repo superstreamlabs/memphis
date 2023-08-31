@@ -381,7 +381,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
-                <div className="code-generator-container" style={{ height: withHeader ? '550px' : '700px' }}>
+                <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
                     <div className="select-lan">
                         <div>
                             <p className="field-title">Protocol</p>
@@ -705,8 +705,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 <Modal
                     header="Generate JWT token"
                     displayButtons={false}
-                    height="480px"
-                    width="400px"
+                    width="460px"
                     clickOutside={() => setGenerateModal(false)}
                     open={generateModal}
                     className="generate-modal"

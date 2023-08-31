@@ -170,7 +170,7 @@ const GenerateTokenModal = ({ host, close, returnToken }) => {
                                 <div className="input-and-copy">
                                     <Input
                                         width="98%"
-                                        numberOfRows="4"
+                                        numberOfRows="5"
                                         type="textArea"
                                         fontSize="12px"
                                         radiusType="semi-round"
@@ -188,7 +188,7 @@ const GenerateTokenModal = ({ host, close, returnToken }) => {
                                 <div className="input-and-copy">
                                     <Input
                                         width="98%"
-                                        numberOfRows="4"
+                                        numberOfRows="5"
                                         type="textArea"
                                         fontSize="12px"
                                         radiusType="semi-round"
