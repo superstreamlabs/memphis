@@ -4,6 +4,12 @@
     justify-content: space-between;
     height: calc(100% - 15px);
     margin-top: 15px;
+    .sub-header-title {
+        margin-bottom: 5px;
+    }
+    .title-container {
+        margin: 15px 0px 5px 0px;
+    }
     .generate-action {
         display: flex;
         color: var(--purple);
@@ -69,17 +75,12 @@
             .username-section {
                 display: flex;
                 justify-content: space-between;
-                align-items: flex-end;
+                align-items: flex-start;
                 gap: 10px;
                 width: 100%;
-                .title-container {
-                    margin: 15px 0px 5px 0px;
-                }
+
                 .input-item {
                     width: 100%;
-                    .sub-header-title {
-                        margin-bottom: 0px;
-                    }
                 }
                 .remove-icon {
                     margin-bottom: 18px;

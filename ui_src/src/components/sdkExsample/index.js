@@ -682,55 +682,57 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {formFields.useHeaders && tabValue === 'Producer' && (
-                                                <div>
-                                                    {formFields.headersList.map((header, index) => (
-                                                        <div className="username-section" key={index}>
-                                                            <span className="input-item">
-                                                                <TitleComponent headerTitle="Key" typeTitle="sub-header" />
-                                                                <Form.Item>
-                                                                    <Input
-                                                                        placeholder="Type key"
-                                                                        type="text"
-                                                                        maxLength="200"
-                                                                        radiusType="semi-round"
-                                                                        colorType="black"
-                                                                        backgroundColorType="white"
-                                                                        borderColorType="gray"
-                                                                        height="40px"
-                                                                        onBlur={(e) => updateHeaders('key', e.target.value, index)}
-                                                                        onChange={(e) => updateHeaders('key', e.target.value, index)}
-                                                                        value={header.key}
-                                                                    />
-                                                                </Form.Item>
-                                                            </span>
-                                                            <span className="input-item">
-                                                                <TitleComponent headerTitle="Value" typeTitle="sub-header" />
-                                                                <Form.Item>
-                                                                    <Input
-                                                                        placeholder="Type value"
-                                                                        type="text"
-                                                                        maxLength="200"
-                                                                        radiusType="semi-round"
-                                                                        colorType="black"
-                                                                        backgroundColorType="white"
-                                                                        borderColorType="gray"
-                                                                        height="40px"
-                                                                        onBlur={(e) => updateHeaders('value', e.target.value, index)}
-                                                                        onChange={(e) => updateHeaders('value', e.target.value, index)}
-                                                                        value={header.value}
-                                                                    />
-                                                                </Form.Item>
-                                                            </span>
-                                                            <FiMinusCircle className="remove-icon" onClick={() => removeHeader(index)} />
+                                            {formFields.useHeaders &&
+                                                ((protocolSelected === 'SDK (TCP)' && tabValue === 'Producer') ||
+                                                    (protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data')) && (
+                                                    <div>
+                                                        {formFields.headersList.map((header, index) => (
+                                                            <div className="username-section" key={index}>
+                                                                <span className="input-item">
+                                                                    <TitleComponent headerTitle="Key" typeTitle="sub-header" />
+                                                                    <Form.Item>
+                                                                        <Input
+                                                                            placeholder="Type key"
+                                                                            type="text"
+                                                                            maxLength="200"
+                                                                            radiusType="semi-round"
+                                                                            colorType="black"
+                                                                            backgroundColorType="white"
+                                                                            borderColorType="gray"
+                                                                            height="40px"
+                                                                            onBlur={(e) => updateHeaders('key', e.target.value, index)}
+                                                                            onChange={(e) => updateHeaders('key', e.target.value, index)}
+                                                                            value={header.key}
+                                                                        />
+                                                                    </Form.Item>
+                                                                </span>
+                                                                <span className="input-item">
+                                                                    <TitleComponent headerTitle="Value" typeTitle="sub-header" />
+                                                                    <Form.Item>
+                                                                        <Input
+                                                                            placeholder="Type value"
+                                                                            type="text"
+                                                                            maxLength="200"
+                                                                            radiusType="semi-round"
+                                                                            colorType="black"
+                                                                            backgroundColorType="white"
+                                                                            borderColorType="gray"
+                                                                            height="40px"
+                                                                            onBlur={(e) => updateHeaders('value', e.target.value, index)}
+                                                                            onChange={(e) => updateHeaders('value', e.target.value, index)}
+                                                                            value={header.value}
+                                                                        />
+                                                                    </Form.Item>
+                                                                </span>
+                                                                <FiMinusCircle className="remove-icon" onClick={() => removeHeader(index)} />
+                                                            </div>
+                                                        ))}
+                                                        <div className="generate-action" onClick={() => addHeader()}>
+                                                            <FiPlus />
+                                                            <span>Add more</span>
                                                         </div>
-                                                    ))}
-                                                    <div className="generate-action" onClick={() => addHeader()}>
-                                                        <FiPlus />
-                                                        <span>Add more</span>
                                                     </div>
-                                                </div>
-                                            )}
+                                                )}
                                         </div>
                                     </Panel>
                                 </Collapse>
