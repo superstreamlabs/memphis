@@ -107,7 +107,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [modalIsOpen, modalFlip] = useState(false);
     const [retentionViolation, setRetentionViolation] = useState(false);
     const [partitonViolation, setPartitonViolation] = useState(false);
-    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'];
+    const storageTiringLimits = isCloud() && state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'];
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
@@ -707,13 +707,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         ? selectedTier2Option
                                                             ? SelectedRemoteStorageOption(false, false)
                                                             : SelectedRemoteStorageOption(true, true)
-                                                        : storageTiringLimits
+                                                        : (isCloud() && storageTiringLimits) || !isCloud()
                                                         ? modalFlip(true)
                                                         : null
                                                 }
                                                 selectedOption={selectedTier2Option}
                                                 button={
-                                                    storageTiringLimits ? (
+                                                    (isCloud() && storageTiringLimits) || !isCloud() ? (
                                                         <Button
                                                             width="90px"
                                                             height="30px"
