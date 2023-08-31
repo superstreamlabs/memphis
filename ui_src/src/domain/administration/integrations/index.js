@@ -39,6 +39,7 @@ const Integrations = () => {
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [filterList, setFilterList] = useState(INTEGRATION_LIST);
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
 
     useEffect(() => {
         getallIntegration();
@@ -148,7 +149,9 @@ const Integrations = () => {
                         }
 
                         const key = integrationItem.name;
-                        const integrationElement = <IntegrationItem key={key} value={integrationItem} />;
+                        const integrationElement = (
+                            <IntegrationItem lockFeature={integrationItem.name === 'S3' && storageTiringLimits} key={key} value={integrationItem} />
+                        );
 
                         if (integrationItem.comingSoon) {
                             return (

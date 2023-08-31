@@ -64,7 +64,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 }
             } catch (error) {}
         } else {
-            updatePlan(plan);
+            await updatePlan(plan);
         }
     };
 
@@ -282,7 +282,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 <Fragment>
                     <div className="downgrade-reasons">
                         {reasons.map((reason) => (
-                            <CheckboxComponent checked={isCheck?.includes(reason)} id={reason} onChange={handleCheckedClick} checkName={reason} />
+                            <CheckboxComponent key={reason} checked={isCheck?.includes(reason)} id={reason} onChange={handleCheckedClick} checkName={reason} />
                         ))}
                     </div>
                     {isCheck?.includes('Other') && (

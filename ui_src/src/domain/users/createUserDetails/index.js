@@ -27,7 +27,7 @@ import { isCloud } from '../../../services/valueConvertor';
 import { Context } from '../../../hooks/store';
 import UpgradePlans from '../../../components/upgradePlans';
 
-const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, clientType = false }) => {
     const [state, dispatch] = useContext(Context);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
@@ -83,8 +83,8 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList }
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
-    const checkPlanViolation = (formFields) => {
-        const usersLimits = state?.userData?.entitlements['feature-management-users']?.limits;
+    const checkPlanViolation = () => {
+        const usersLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-management-users']?.limits;
         const usersExceeded = userList?.management_users?.length === usersLimits;
         setUserViolation(usersExceeded);
 

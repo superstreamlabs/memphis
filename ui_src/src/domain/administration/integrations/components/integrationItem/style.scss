@@ -5,6 +5,7 @@ integ-item{
     border-radius: 8px;
     width: 270px;
     height: 300px;
+    position: relative;
     cursor: pointer;
     p{
         margin: 0;
@@ -31,6 +32,22 @@ integ-item{
             font-family: 'InterMedium';
         }
 
+    }
+    .lock-integration{
+        background: #2e2c34;
+        border-radius: 8px;
+        position: absolute;
+        width: 35px;
+        height: 30px;
+        margin: 5px;
+        right: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        svg{
+            width: 20px;
+            height: 20px;
+        }
     }
     .integration-name{
         display: flex;
