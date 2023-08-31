@@ -32,9 +32,9 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+        <headers-initiation>
+        <headers-addition>
 
-        const headers = memphis.headers()
-        headers.add('key', 'value')
         await producer.produce({
             message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
             headers: headers
@@ -108,9 +108,9 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+            <headers-initiation>
+            <headers-addition>
 
-            const headers = memphis.headers()
-            headers.add('key', 'value');
             await producer.produce({
                 message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
                 headers: headers
@@ -182,14 +182,10 @@ func main() {
         fmt.Printf("Producer failed: %v", err)
         os.Exit(1)
     }
-
-    hdrs := memphis.Headers{}
-    hdrs.New()
-    err = hdrs.Add("key", "value")
-    if err != nil {
-        fmt.Printf("Header failed: %v", err)
-        os.Exit(1)
-    }
+    
+    <headers-declaration>
+    <headers-initiation>
+    <headers-addition>
 
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
     if err != nil {
@@ -259,10 +255,12 @@ async def main():
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
         producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>") # you can send the message parameter as dict as well
-        headers = Headers()
-        headers.add("key", "value") 
+        
+        <headers-initiation>
+        <headers-addition>
+    
         for i in range(5):
-            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers)
+            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers<blocking>)
         
     except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
         print(e)
@@ -338,8 +336,13 @@ namespace Producer
                     GenerateUniqueSuffix = true
                 });
 
-                var commonHeaders = new NameValueCollection();
-                commonHeaders.Add("key-1", "value-1");
+                <headers-declaration>
+                
+                
+
+
+                <headers-initiation>
+                <headers-addition>
 
                 for (int i = 0; i < 10_000000; i++)
                 {
@@ -438,6 +441,7 @@ export const PROTOCOL_CODE_EXAMPLE = {
         producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single' \\
 --header 'Authorization: Bearer <jwt>' \\
 --header 'Content-Type: application/json' \\
+<headers-addition>
 --data-raw '{"message": "New Message"}'`,
         tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate' \\
 --header 'Content-Type: application/json' \\
@@ -445,8 +449,8 @@ export const PROTOCOL_CODE_EXAMPLE = {
     "username": "<application type username>",
     "connection_token": "<broker-token>",
     "account_id": "<account-id>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092\n}'`
+    "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+    "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"\n}'`
     },
     Go: {
         langCode: 'go',
@@ -475,7 +479,8 @@ export const PROTOCOL_CODE_EXAMPLE = {
         }
         req.Header.Add("Authorization", "Bearer <jwt>")
         req.Header.Add("Content-Type", "application/json")
-      
+        <headers-addition>
+
         res, err := client.Do(req)
         if err != nil {
             fmt.Println(err)
@@ -507,9 +512,9 @@ export const PROTOCOL_CODE_EXAMPLE = {
           "username": "<application type username>",
           "connection_token": "<broker-token>",
           "account_id": "<account-id>",
-          "token_expiry_in_minutes": 123,
-          "refresh_token_expiry_in_minutes": 10000092
-      }')
+          "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+          "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
+      })
       
         client := &http.Client {
         }
@@ -548,7 +553,8 @@ var config = {
   url: 'localhost/stations/<station-name>/produce/single',
   headers: { 
     'Authorization': 'Bearer <jwt>', 
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    <headers-addition>
   },
   data : data
 };
@@ -566,8 +572,8 @@ var data = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "account_id": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
 
 var config = {
@@ -600,7 +606,8 @@ payload = json.dumps({
 })
 headers = {
   'Authorization': 'Bearer <jwt>',
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  <headers-addition>
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)
@@ -616,8 +623,8 @@ payload = json.dumps({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "account_id": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 })
 headers = {
   'Content-Type': 'application/json'
@@ -639,12 +646,13 @@ Request request = new Request.Builder()
   .method("POST", body)
   .addHeader("Authorization", "Bearer <jwt>")
   .addHeader("Content-Type", "application/json")
+  <headers-addition>
   .build();
 Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
   .build();
 MediaType mediaType = MediaType.parse("application/json");
-RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": 123,\n    \"refresh_token_expiry_in_minutes\": 10000092\n    \"account_id\": \"<account-id>\"\n}");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": "<token_expiry_in_minutes>",\n    \"refresh_token_expiry_in_minutes\": "<refresh_token_expiry_in_minutes>"\n    \"account_id\": \"<account-id>\"\n}");
 Request request = new Request.Builder()
   .url("localhost/auth/authenticate")
   .method("POST", body)
@@ -658,6 +666,7 @@ Response response = client.newCall(request).execute();`
 const myHeaders = new fetch.Headers();
 myHeaders.append("Authorization", "Bearer <jwt>");
 myHeaders.append("Content-Type", "application/json");
+<headers-addition>
 
 var raw = JSON.stringify({
   "message": "New Message"
@@ -682,8 +691,8 @@ var raw = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
   "account_id": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+  "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
 });
 
 var requestOptions = {
@@ -706,8 +715,8 @@ fetch("localhost/auth/authenticate", requestOptions)
   "timeout": 0,
   "headers": {
     "Authorization": "Bearer <jwt>",
-    "Content-Type": "application/json"
-  },
+    "Content-Type": "application/json",
+    <headers-addition>
   "data": JSON.stringify({
     "message": "New Message"
   }),
@@ -727,8 +736,8 @@ console.log(response);
     "username": "<application type username>",
     "connection_token": "<broker-token>",
     "account_id": "<account-id>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092
+    "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+    "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
   }),
   };
 
@@ -775,8 +784,8 @@ internal class Program
         { 
             "username": "<application type username>",    
             "password": "<password>",
-            "token_expiry_in_minutes": 123,
-            "refresh_token_expiry_in_minutes": 10000092
+            "token_expiry_in_minutes": "<token_expiry_in_minutes>",
+            "refresh_token_expiry_in_minutes": "<refresh_token_expiry_in_minutes>"
         }
         """, null, "application/json");
         request.Content = content;

@@ -151,7 +151,6 @@ const ProduceConsumList = ({ producer }) => {
     return (
         <div>
             <div className="pubSub-list-container">
-                {' '}
                 <div className="header">
                     {producer && (
                         <>
@@ -306,12 +305,20 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal width="710px" height="720px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
-                <SdkExample withHeader={true} showTabs={false} consumer={true} stationName={stationState?.stationMetaData?.name} />
+            <Modal
+                width="1200px"
+                height="780px"
+                clickOutside={() => {
+                    setOpenCreateConsumer(false);
+                }}
+                open={openCreateConsumer}
+                displayButtons={false}
+            >
+                <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} consumer={true} />
             </Modal>
             <Modal
-                width="710px"
-                height="720px"
+                width="1200px"
+                height="780px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
                 }}

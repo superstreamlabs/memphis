@@ -39,7 +39,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
     return (
         <>
             {header !== undefined ? (
-                <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi">
+                <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi" showArrow={false}>
                     <Panel
                         showArrow={false}
                         collapsible={collapseData?.length === 0 ? 'disabled' : null}
@@ -49,7 +49,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                     <p className="title">
                                         {header} <span className="consumer-number">{collapseData?.length}</span>
                                     </p>
-                                    
+
                                     <status is="x3d">
                                         <img className={activeKey[0] === '1' ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />
                                     </status>
@@ -61,7 +61,8 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                         <Collapse ghost accordion={true} className="collapse-child" onChange={onChiledChange}>
                             {collapseData?.length > 0 &&
                                 collapseData?.map((row, index) => {
-                                        return (<Panel
+                                    return (
+                                        <Panel
                                             showArrow={false}
                                             header={
                                                 <div className="collapse-header">
@@ -92,7 +93,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
                                                     }
                                                 })}
                                         </Panel>
-                                        );
+                                    );
                                 })}
                         </Collapse>
                     </Panel>

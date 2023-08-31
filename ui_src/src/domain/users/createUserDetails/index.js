@@ -34,7 +34,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         username: '',
         password: ''
     });
-    const [userType, setUserType] = useState('management');
+    const [userType, setUserType] = useState(clientType ? 'application' : 'management');
     const isRoot = state?.userData?.user_type === 'root';
     const [userViolation, setUserViolation] = useState(false);
     const [passwordType, setPasswordType] = useState(0);
@@ -138,7 +138,11 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
             <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish}>
                 <div className="field user-type">
                     <Form.Item name="user_type" initialValue={userType}>
-                        <SelectCheckBox selectOptions={userTypeOptions} handleOnClick={(e) => handleUserTypeChanged(e.value)} selectedOption={userType} />
+                        <SelectCheckBox
+                            selectOptions={clientType ? userTypeOptions?.filter((type) => type.value === 'application') : userTypeOptions}
+                            handleOnClick={(e) => handleUserTypeChanged(e.value)}
+                            selectedOption={userType}
+                        />
                     </Form.Item>
                 </div>
                 <div className="user-details">

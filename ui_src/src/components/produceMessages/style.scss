@@ -4,59 +4,59 @@
     flex-direction: column;
     height: calc(100% - 15px);
     font-family: 'Inter';
-    .header-wrapper{
-        p{
+    .header-wrapper {
+        p {
             font-family: 'InterSemiBold';
             font-size: 16px;
             margin: 0;
         }
-        span{
+        span {
             font-family: 'Inter';
             font-size: 12px;
-            color: #84818A;
+            color: #84818a;
         }
     }
-    .field-title{
+    .field-title {
         font-family: 'InterMedium';
         font-size: 14px;
         margin-bottom: 5px;
     }
-    .headers-wrapper{
+    .headers-wrapper {
         display: flex;
         flex-direction: column;
         max-height: 100px;
         overflow: auto;
     }
-    .message-example{
-.code-content{
-    background:  rgba(250,250,250,0.4);
-}
-        .editor-message{
-            .margin{
-                background-color: rgba(250,250,250,0.4);
+    .message-example {
+        .code-content {
+            background: rgba(250, 250, 250, 0.4);
+        }
+        .editor-message {
+            .margin {
+                background-color: rgba(250, 250, 250, 0.4);
             }
-            .monaco-editor-background{
-                background-color: rgba(250,250,250,0.4) !important;
+            .monaco-editor-background {
+                background-color: rgba(250, 250, 250, 0.4) !important;
             }
         }
     }
     .produce-message {
         height: 230px;
         position: relative;
-        .generate-wrapper{
+        .generate-wrapper {
             display: flex;
             justify-content: space-between;
-            .generate-action{
+            .generate-action {
                 display: flex;
                 color: var(--purple);
                 font-family: 'InterMedium';
                 font-size: 14px;
                 cursor: pointer;
                 align-items: center;
-                img{
+                img {
                     margin-right: 4px;
                 }
-                :hover{
+                :hover {
                     text-decoration: underline;
                 }
             }
@@ -65,7 +65,7 @@
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
-            height: 50px;
+            height: 42px;
             width: 480px;
             display: flex;
             align-items: center;
@@ -86,9 +86,9 @@
                 box-sizing: border-box;
                 border-radius: 4px;
                 overflow: auto;
-                align-items:flex-start;
+                align-items: flex-start;
                 display: flex;
-                justify-content:space-evenly;
+                justify-content: space-evenly;
                 padding-top: 10px;
                 p {
                     margin: 0;
@@ -100,20 +100,20 @@
             }
         }
     }
-   
-    .produce-form{
+
+    .produce-form {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         height: calc(100%);
-        .remove-icon{
-            color: #A9A9A9;
+        .remove-icon {
+            color: #a9a9a9;
             cursor: pointer;
             width: 17px;
             line-height: 17px;
             height: 17px;
         }
-        .add-field{
+        .add-field {
             display: flex;
             gap: 3px;
             color: var(--purple);
@@ -122,7 +122,7 @@
             align-items: center;
         }
         .ant-input-number {
-            width:100%;
+            width: 100%;
             height: 45px;
             border-radius: 4px;
             border: 1px solid var(--gray);
@@ -139,10 +139,10 @@
         .ant-input-number-handler-wrap {
             opacity: 1;
         }
-        .header-flex{
+        .header-flex {
             display: flex;
             gap: 5px;
-            p{
+            p {
                 margin: 0;
             }
         }
@@ -150,7 +150,7 @@
     .by-pass-switcher {
         display: flex;
         justify-content: space-between;
-        .title-container{
+        .title-container {
             margin-bottom: 0px !important;
         }
         .switch-button {
@@ -160,30 +160,29 @@
             min-width: 35px;
         }
     }
-    .seperator{
+    .seperator {
         margin: 10px 0;
     }
-    .ant-form-item{
+    .ant-form-item {
         margin-bottom: 10px;
     }
 }
 
-.produce-modal{
- 
-    .button-container{
-        button{
+.produce-modal {
+    .button-container {
+        button {
             height: 35px !important;
             font-size: 14px;
             width: 110px !important;
         }
-        .action-button{
+        .action-button {
             display: flex;
             gap: 5px;
             align-items: center;
-            svg{
+            svg {
                 width: 18px;
                 height: 18px;
             }
         }
     }
-  }
+}

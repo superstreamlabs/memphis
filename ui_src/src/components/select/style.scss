@@ -2,7 +2,7 @@
     .select {
         border: 1px solid;
         display: flex;
-        align-items: center;   
+        align-items: center;
     }
     .ant-select:not(.ant-select-customize-input) .ant-select-selector {
         border: unset;
@@ -10,10 +10,16 @@
         text-align: initial;
         align-items: center;
     }
+    // .ant-select-selector {
+    //     border: unset;
+    //     color: #5e5e68;
+    //     font-family: 'InterMedium';
+
+    // }
     .ant-select-arrow {
         background-color: transparent;
     }
-    .ant-select-selection-item span{
+    .ant-select-selection-item span {
         display: none;
     }
 }
@@ -29,12 +35,12 @@
 .select-options {
     z-index: 9999;
     position: absolute;
-    background: #FFFFFF;
-    border: 1px solid #DADADA;
+    background: #ffffff;
+    border: 1px solid #dadada;
     box-shadow: 0px 10px 10px rgb(16 10 85 / 10%);
     border-radius: 8px;
     padding: 3px;
-    .ant-select-item{
+    .ant-select-item {
         color: rgba(74, 73, 92, 0.8) !important;
     }
     .ant-select-item-option-content {
