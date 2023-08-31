@@ -381,7 +381,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
-                <div className="code-generator-container" style={{ height: withHeader ? '550px' : '700px' }}>
+                <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
                     <div className="select-lan">
                         <div>
                             <p className="field-title">Protocol</p>

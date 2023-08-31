@@ -83,8 +83,8 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
-    const checkPlanViolation = (formFields) => {
-        const usersLimits = state?.userData?.entitlements['feature-management-users']?.limits;
+    const checkPlanViolation = () => {
+        const usersLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-management-users']?.limits;
         const usersExceeded = userList?.management_users?.length === usersLimits;
         setUserViolation(usersExceeded);
 
