@@ -1,5 +1,6 @@
 .payments-container {
     height: 100%;
+    overflow: auto;
     .header-preferences {
         display: flex;
         justify-content: space-between;

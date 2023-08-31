@@ -19,6 +19,7 @@ import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import ColorPicker from '../../colorPicker';
 import { ColorPalette } from '../../../const/globalConst';
+import { showMessages } from '../../../services/genericServices';
 
 const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => {
     const [creationForm] = Form.useForm();
@@ -52,13 +53,7 @@ const NewTagGenerator = ({ searchVal, allTags, handleFinish, handleCancel }) => 
             return;
         } else {
             if (allTags.some((tag) => formFields.name === tag.name)) {
-                message.warning({
-                    key: 'memphisWarningMessage',
-                    content: 'Tag with this name already exists',
-                    duration: 5,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisWarningMessage')
-                });
+                showMessages('warning', 'Tag with this name already exists');
             } else {
                 try {
                     let data = {

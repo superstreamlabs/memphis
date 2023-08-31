@@ -39,7 +39,9 @@ import {
     DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS,
     LOGS_RETENTION_IN_DAYS,
     TIERED_STORAGE_UPLOAD_INTERVAL,
-    USER_IMAGE
+    USER_IMAGE,
+    LOCAL_STORAGE_ACCOUNT_NAME,
+    LOCAL_STORAGE_ENTITLEMENTS
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 import { isCloud } from './valueConvertor';
@@ -71,10 +73,12 @@ const AuthService = (function () {
         localStorage.setItem(LOCAL_STORAGE_CONNECTION_TOKEN, userData.connection_token);
         localStorage.setItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH, userData.user_pass_based_auth);
         localStorage.setItem(LOCAL_STORAGE_ACCOUNT_ID, userData.account_id);
+        localStorage.setItem(LOCAL_STORAGE_ACCOUNT_NAME, userData.account_name);
         localStorage.setItem(LOCAL_STORAGE_INTERNAL_WS_PASS, userData.internal_ws_pass);
         localStorage.setItem(DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS, userData.dls_retention);
         localStorage.setItem(LOGS_RETENTION_IN_DAYS, userData.logs_retention);
         localStorage.setItem(TIERED_STORAGE_UPLOAD_INTERVAL, userData.tiered_storage_time_sec);
+        isCloud() && localStorage.setItem(LOCAL_STORAGE_ENTITLEMENTS, JSON.stringify(userData.entitlements));
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }

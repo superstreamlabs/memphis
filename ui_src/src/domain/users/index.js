@@ -516,7 +516,6 @@ function Users() {
                         <label>Enter user details to get started</label>
                     </div>
                 }
-                height="555px"
                 width="450px"
                 rBtnText="Create"
                 lBtnText="Cancel"
@@ -535,7 +534,12 @@ function Users() {
                 isLoading={createUserLoader}
                 open={addUserModalIsOpen}
             >
-                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
+                <CreateUserDetails
+                    createUserRef={createUserRef}
+                    userList={userList}
+                    closeModal={(userData) => handleAddUser(userData)}
+                    handleLoader={(e) => setCreateUserLoader(e)}
+                />
             </Modal>
             <Modal
                 header="User connection details"

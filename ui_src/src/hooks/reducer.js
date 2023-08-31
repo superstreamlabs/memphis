@@ -14,6 +14,7 @@ const Reducer = (state, action) => {
     let index;
     let updateSchemaListState = state?.schemaList;
     let copyIntegration = state?.integrationsList;
+    let newUserData = state.userData;
     switch (action.type) {
         case 'SET_USER_DATA':
             return {
@@ -61,8 +62,13 @@ const Reducer = (state, action) => {
                 monitor_data: action.payload
             };
         case 'SET_AVATAR_ID':
-            let newUserData = state.userData;
             newUserData.avatar_id = action.payload;
+            return {
+                ...state,
+                userData: newUserData
+            };
+        case 'SET_ENTITLEMENTS':
+            newUserData.entitlements = action.payload;
             return {
                 ...state,
                 userData: newUserData

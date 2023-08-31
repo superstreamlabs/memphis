@@ -12,8 +12,9 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Form } from 'antd';
+import { HiLockClosed } from 'react-icons/hi';
 
 import Input from '../../../components/Input';
 import RadioButton from '../../../components/radioButton';
@@ -23,16 +24,20 @@ import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
+import { Context } from '../../../hooks/store';
+import UpgradePlans from '../../../components/upgradePlans';
 
-const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType, userList }) => {
+    const [state, dispatch] = useContext(Context);
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
         password: ''
     });
     const [userType, setUserType] = useState(clientType ? 'application' : 'management');
+    const isRoot = state?.userData?.user_type === 'root';
+    const [userViolation, setUserViolation] = useState(false);
     const [passwordType, setPasswordType] = useState(0);
-
     const userTypeOptions = [
         {
             id: 1,
@@ -78,13 +83,27 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType
         setFormFields((formFields) => ({ ...formFields, ...updatedValue }));
     };
 
+    const checkPlanViolation = (formFields) => {
+        const usersLimits = state?.userData?.entitlements['feature-management-users']?.limits;
+        const usersExceeded = userList?.management_users?.length === usersLimits;
+        setUserViolation(usersExceeded);
+
+        return !usersExceeded;
+    };
+
     const onFinish = async () => {
         try {
+            let canCreate = isCloud() ? false : true;
             const fieldsValue = await creationForm.validateFields();
             if (fieldsValue?.errorFields) {
                 handleLoader(false);
                 return;
             } else {
+                if (isCloud()) canCreate = checkPlanViolation(formFields);
+                if (!canCreate) {
+                    handleLoader(false);
+                    return;
+                }
                 if (fieldsValue?.passwordType === 0 ?? passwordType === 0) {
                     fieldsValue['password'] = fieldsValue['generatedPassword'];
                 }
@@ -363,6 +382,22 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType
                                 </div>
                             </div>
                         )}
+                    </div>
+                )}
+                {userViolation && (
+                    <div className="show-violation-form">
+                        <div className="flex-line">
+                            <HiLockClosed className="lock-feature-icon" />
+                            <p>Your current plan allows {state?.userData?.entitlements['feature-management-users']?.limits} management users</p>
+                        </div>
+                        <UpgradePlans
+                            content={
+                                <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                    <p className="upgrade-plan">Upgrade now</p>
+                                </div>
+                            }
+                            isExternal={false}
+                        />
                     </div>
                 )}
             </Form>

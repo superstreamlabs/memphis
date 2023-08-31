@@ -25,67 +25,56 @@ import { useHistory } from 'react-router-dom';
 import pathDomains from '../../router';
 import VersionUpgrade from './versionUpgrade';
 import { isCloud } from '../../services/valueConvertor';
+import { useLocation } from 'react-router-dom/cjs/react-router-dom.min';
 
 function Administration({ step }) {
-    const [selectedMenuItem, selectMenuItem] = useState(step || 'integrations');
+    const [selectedMenuItem, setSelectedMenuItem] = useState('integrations');
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
+    const location = useLocation();
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'administration' });
     }, []);
 
-    const getComponent = () => {
+    useEffect(() => {
+        const pathSegments = location.pathname.split('/');
+        const selected = pathSegments[pathSegments.length - 1];
+        setSelectedMenuItem(selected);
+    }, [location]);
+
+    const handleMenuItemChange = (menuItem) => {
+        setSelectedMenuItem(menuItem);
+        history.push(`${pathDomains.administration}/${menuItem}`);
+    };
+
+    const renderSelectedComponent = () => {
         switch (selectedMenuItem) {
             case 'integrations':
-                if (window.location.href.split('/integrations').length > 1) {
-                    return <Integrations />;
-                } else {
-                    history.replace(`${pathDomains.administration}/integrations`);
-                    break;
-                }
+                return <Integrations />;
             case 'cluster_configuration':
-                if (window.location.href.split('/cluster_configuration').length > 1) {
-                    return <ClusterConfiguration />;
-                } else {
-                    history.replace(`${pathDomains.administration}/cluster_configuration`);
-                    break;
-                }
+                return <ClusterConfiguration />;
             case 'version_upgrade':
                 if (!isCloud()) {
-                    if (window.location.href.split('/version_upgrade').length > 1) {
-                        return <VersionUpgrade />;
-                    } else {
-                        history.replace(`${pathDomains.administration}/version_upgrade`);
-                        break;
-                    }
+                    return <VersionUpgrade />;
                 }
+                break;
             case 'usage':
-                if (window.location.href.split('/usage').length > 1) {
-                    return <Requests />;
-                } else {
-                    history.replace(`${pathDomains.administration}/usage`);
-                    break;
-                }
-            // case 'payments':
-            //     if (window.location.href.split('/payments').length > 1) {
-            //         return <Payments />;
-            //     } else {
-            //         history.replace(`${pathDomains.administration}/payments`);
-            //         break;
-            //     }
+                return <Requests />;
+            case 'payments':
+                return <Payments />;
             default:
-                return;
+                return null; // Handle invalid selections
         }
     };
+
     return (
         <div className="setting-container">
             <div className="menu-container">
-                <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />
-                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={(item) => selectMenuItem(item)} />}
+                <AccountMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />
+                {isCloud() && <BillingMenu selectedMenuItem={selectedMenuItem} setMenuItem={handleMenuItemChange} />}
             </div>
-
-            <div className="setting-items">{getComponent()}</div>
+            <div className="setting-items">{renderSelectedComponent()}</div>
         </div>
     );
 }

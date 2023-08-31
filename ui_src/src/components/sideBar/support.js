@@ -25,6 +25,7 @@ import EmailLink from '../emailLink';
 import Button from '../button';
 import Input from '../Input';
 import { message } from 'antd';
+import { showMessages } from '../../services/genericServices';
 
 const Support = ({ closeModal }) => {
     const [severity, setSeverity] = useState('Critical (Cannot produce or consume data)');
@@ -47,13 +48,7 @@ const Support = ({ closeModal }) => {
             clearValues();
             setTimeout(() => {
                 setLoader(false);
-                message.success({
-                    key: 'memphisSuccessMessage',
-                    content: 'Your ticket has been opened and will be reviewed by our support as soon as possible.',
-                    duration: 5,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisSuccessMessage')
-                });
+                showMessages('success', 'Your ticket has been opened and will be reviewed by our support as soon as possible.');
                 closeModal(false);
             }, 1000);
         } catch (error) {

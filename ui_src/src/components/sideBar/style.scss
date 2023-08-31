@@ -120,6 +120,24 @@
                 right: -2px;
             }
         }
+        .upgrade-plans-container{
+            width: 85%;
+            .upgrade-button-wrapper{
+                background: var(--yellow);
+                border-radius: 32px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-bottom: 10px;
+                cursor: pointer;
+                p{
+                    margin: 0;
+                    font-family: 'InterSemiBold';
+                    font-size: 12px;
+                }
+            }
+        }
     }
 }
 
@@ -143,9 +161,24 @@
         align-items: center;
         position: relative;
     }
-    p {
-        padding-left: 8px;
-        margin: 0;
+    .account-details{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding-left: 10px;
+        gap: 5px;
+        p{
+            margin: 0;
+            font-size: 13px;
+            line-height: 13px;
+            font-family: 'InterSemiBold';
+        }
+        span{
+            font-size: 12px;
+            line-height: 12px;
+            font-family: 'Inter';
+            color: var(--purple)
+        }
     }
     .company-logo {
         img {

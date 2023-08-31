@@ -11,27 +11,31 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
+import { HiLockClosed } from 'react-icons/hi';
 import { Form } from 'antd';
 
 import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, partitionsValidator, replicasConvertor } from '../../services/valueConvertor';
+import S3Integration from '../../domain/administration/integrations/components/s3Integration';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import InputNumberComponent from '../InputNumber';
+import OverflowTip from '../tooltip/overflowtip';
 import TitleComponent from '../titleComponent';
+import SelectCheckBox from '../selectCheckBox';
+import { Context } from '../../hooks/store';
+import UpgradePlans from '../upgradePlans';
 import SelectSchema from '../selectSchema';
 import RadioButton from '../radioButton';
+import LockFeature from '../lockFeature';
 import SelectComponent from '../select';
 import pathDomains from '../../router';
 import Switcher from '../switcher';
 import CustomTabs from '../Tabs';
 import Button from '../button';
 import Input from '../Input';
-import OverflowTip from '../tooltip/overflowtip';
 import Modal from '../modal';
-import S3Integration from '../../domain/administration/integrations/components/s3Integration';
-import SelectCheckBox from '../selectCheckBox';
 
 const retanionOptions = [
     {
@@ -85,6 +89,7 @@ const storageTierTwoOptions = [
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
 const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
+    const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [creationForm] = Form.useForm();
     const [allowEdit, setAllowEdit] = useState(true);
@@ -100,10 +105,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [parserName, setParserName] = useState('');
     const [integrateValue, setIntegrateValue] = useState(null);
     const [modalIsOpen, modalFlip] = useState(false);
+    const [retentionViolation, setRetentionViolation] = useState(false);
+    const [partitonViolation, setPartitonViolation] = useState(false);
+    const storageTiringLimits = state?.userData?.entitlements['feature-storage-tiering'];
     const tabs = [
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
+    const isRoot = state?.userData?.user_type === 'root';
     useEffect(() => {
         if (!isCloud()) {
             getAvailableReplicas();
@@ -139,8 +148,28 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
     };
 
+    const checkPlanViolation = (formFields) => {
+        const partitionsLimits = state?.userData?.entitlements['feature-partitions-per-station']?.limits;
+        const retentionLimits = state?.userData?.entitlements['feature-storage-retention']?.limits;
+
+        const partitionsExceeded = Number(formFields.partitions_number) > partitionsLimits;
+
+        const retentionDays =
+            formFields.retention_type === 'message_age_sec' ? convertDateToSeconds(formFields.days, formFields.hours, formFields.minutes, formFields.seconds) / 86400 : 0;
+
+        const retentionExceeded = retentionDays > retentionLimits;
+
+        setPartitonViolation(partitionsExceeded);
+        setRetentionViolation(retentionExceeded);
+
+        return !(partitionsExceeded || retentionExceeded);
+    };
+
     const onFinish = async () => {
+        let canCreate = isCloud() ? false : true;
         const formFields = await creationForm.validateFields();
+        if (isCloud()) canCreate = checkPlanViolation(formFields);
+        if (!canCreate) return;
         const retentionValue = getRetentionValue(formFields);
         const idempotencyValue = getIdempotencyValue(formFields);
         const bodyRequest = {
@@ -283,7 +312,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                 </div>
-                <div className="replicas-partition-container">
+                <div className="replicas-partition-container" style={{ display: isCloud() ? 'block' : 'grid' }}>
                     {!isCloud() && (
                         <div className="replicas-container">
                             <TitleComponent
@@ -348,6 +377,22 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     disabled={!allowEdit}
                                 />
                             </Form.Item>
+                            {partitonViolation && (
+                                <div className="show-violation-form">
+                                    <div className="flex-line">
+                                        <HiLockClosed className="lock-feature-icon" />
+                                        <p>Your current plan allows {state?.userData?.entitlements['feature-partitions-per-station']?.limits} partitions</p>
+                                    </div>
+                                    <UpgradePlans
+                                        content={
+                                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                                <p className="upgrade-plan">Upgrade now</p>
+                                            </div>
+                                        }
+                                        isExternal={false}
+                                    />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -447,12 +492,14 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </div>
                     <div className="content">
                         {tabValue === tabs[0].name && (
-                            <p className="description">
-                                The criteria for which messages will be expelled from the station.&nbsp;
-                                <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
-                                    Learn more
-                                </a>
-                            </p>
+                            <>
+                                <p className="description">
+                                    The criteria for which messages will be expelled from the station.&nbsp;
+                                    <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
+                                        Learn more
+                                    </a>
+                                </p>
+                            </>
                         )}
                         {tabValue === tabs[1].name && (
                             <p className="description">
@@ -582,6 +629,22 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     <p>In case of no active consumer groups, messages will be automatically expelled from the station after 14 days.</p>
                                 </div>
                             )}
+                            {retentionViolation && (
+                                <div className="show-violation-form">
+                                    <div className="flex-line">
+                                        <HiLockClosed className="lock-feature-icon" />
+                                        <p>Your current plan allows {state?.userData?.entitlements['feature-storage-retention']?.limits} retention days</p>
+                                    </div>
+                                    <UpgradePlans
+                                        content={
+                                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                                <p className="upgrade-plan">Upgrade now</p>
+                                            </div>
+                                        }
+                                        isExternal={false}
+                                    />
+                                </div>
+                            )}
                         </div>
                         <div className="storage-container">
                             <TitleComponent
@@ -644,25 +707,31 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                         ? selectedTier2Option
                                                             ? SelectedRemoteStorageOption(false, false)
                                                             : SelectedRemoteStorageOption(true, true)
-                                                        : modalFlip(true)
+                                                        : storageTiringLimits
+                                                        ? modalFlip(true)
+                                                        : null
                                                 }
                                                 selectedOption={selectedTier2Option}
                                                 button={
-                                                    <Button
-                                                        width="90px"
-                                                        height="30px"
-                                                        placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
-                                                        colorType="white"
-                                                        border="none"
-                                                        radiusType="circle"
-                                                        backgroundColorType="purple"
-                                                        fontSize="12px"
-                                                        htmlType="button"
-                                                        fontWeight="bold"
-                                                        boxShadowStyle="none"
-                                                        disabled={!allowEdit}
-                                                        onClick={() => null}
-                                                    />
+                                                    storageTiringLimits ? (
+                                                        <Button
+                                                            width="90px"
+                                                            height="30px"
+                                                            placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
+                                                            colorType="white"
+                                                            border="none"
+                                                            radiusType="circle"
+                                                            backgroundColorType="purple"
+                                                            fontSize="12px"
+                                                            htmlType="button"
+                                                            fontWeight="bold"
+                                                            boxShadowStyle="none"
+                                                            disabled={!allowEdit}
+                                                            onClick={() => null}
+                                                        />
+                                                    ) : (
+                                                        <LockFeature />
+                                                    )
                                                 }
                                             />
                                         );
