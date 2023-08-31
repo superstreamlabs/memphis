@@ -226,7 +226,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             formFields.headersList
                                 .map(
                                     (header) =>
-                                        `err = hdrs.Add("${header.key}", "${header.value}")\n\tif err != nil {\n\t\tfmt.Printf("Header failed: %v", err)\n\t\tos.Exit(1)\n\t}`
+                                        `err = hdrs.Add("${header.key === '' ? '<key>' : header.key}", "${
+                                            header.value === '' ? '<value>' : header.value
+                                        }")\n\tif err != nil {\n\t\tfmt.Printf("Header failed: %v", err)\n\t\tos.Exit(1)\n\t}`
                                 )
                                 .join('\n\t')
                         );
@@ -234,20 +236,26 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'headers = Headers()');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
-                            formFields.headersList.map((header) => `headers.add("${header.key}", "${header.value}")`).join('\n\t\t')
+                            formFields.headersList
+                                .map((header) => `headers.add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
+                                .join('\n\t\t')
                         );
                     } else if (langSelected === '.NET (C#)') {
                         codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-declaration>');
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'var commonHeaders = new NameValueCollection();');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
-                            formFields.headersList.map((header) => `commonHeaders.Add("${header.key}", "${header.value}")`).join('\n\t\t\t\t')
+                            formFields.headersList
+                                .map((header) => `commonHeaders.Add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
+                                .join('\n\t\t\t\t')
                         );
                     } else if (langSelected === 'TypeScript' || langSelected === 'Node.js') {
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', '\n\t\tconst headers = memphis.headers()');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
-                            formFields.headersList.map((header) => `headers.add("${header.key}", "${header.value}")`).join('\n\t\t\t')
+                            formFields.headersList
+                                .map((header) => `headers.add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
+                                .join('\n\t\t\t')
                         );
                     }
                 }
@@ -305,37 +313,51 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             if (lang === 'cURL') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `--header '${header.key}: ${header.value}'\\`).join(' \n')
+                    formFields.headersList
+                        .map((header) => `--header '${header.key === '' ? '<key>' : header.key}: ${header.value === '' ? '<value>' : header.value}'\\`)
+                        .join(' \n')
                 );
             } else if (lang === 'Node.js') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `'${header.key}': '${header.value}',`).join('\n\t')
+                    formFields.headersList
+                        .map((header) => `'${header.key === '' ? '<key>' : header.key}': '${header.value === '' ? '<value>' : header.value}',`)
+                        .join('\n\t')
                 );
             } else if (lang === 'Go') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `req.Header.Add("${header.key}", "${header.value}")`).join('\n\t\t')
+                    formFields.headersList
+                        .map((header) => `req.Header.Add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
+                        .join('\n\t\t')
                 );
             } else if (lang === 'Java') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `.addHeader("${header.key}", "${header.value}")`).join('\n  ')
+                    formFields.headersList
+                        .map((header) => `.addHeader("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
+                        .join('\n  ')
                 );
             } else if (lang === 'Python') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `'${header.key}': '${header.value}',`).join('\n  ')
+                    formFields.headersList
+                        .map((header) => `'${header.key === '' ? '<key>' : header.key}': '${header.value === '' ? '<value>' : header.value}',`)
+                        .join('\n  ')
                 );
             } else if (lang === 'JavaScript - jQuery') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `"${header.key}": "${header.value}",`).join('\n\t')
+                    formFields.headersList
+                        .map((header) => `"${header.key === '' ? '<key>' : header.key}": "${header.value === '' ? '<value>' : header.value}",`)
+                        .join('\n\t')
                 );
             } else if (lang === 'JavaScript - Fetch') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
-                    formFields.headersList.map((header) => `myHeaders.append("${header.key}", "${header.value}");`).join('\n')
+                    formFields.headersList
+                        .map((header) => `myHeaders.append("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}");`)
+                        .join('\n')
                 );
             }
         } else {
@@ -635,7 +657,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {(tabValue === 'Producer' || tabValueRest === 'Produce data') && (
+                                            {((protocolSelected === 'SDK (TCP)' && tabValue === 'Producer') ||
+                                                (protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data')) && (
                                                 <div className="username-section">
                                                     <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Add header to the message" />
                                                     <Form.Item>
