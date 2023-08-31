@@ -321,6 +321,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.RefreshFirebaseFunctionsKey()
 	go s.RemoveOldProducersAndConsumers()
 	go ScheduledCloudCacheRefresh()
+	go s.SendBillingAlertWhenNeeded()
 
 	return nil
 }
