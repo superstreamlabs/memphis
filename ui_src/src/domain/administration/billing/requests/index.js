@@ -30,24 +30,21 @@ import Storage from '../../../../assets/images/setting/storage.svg';
 import DatePickerComponent from '../../../../components/datePicker';
 import SegmentButton from '../../../../components/segmentButton';
 import Loader from '../../../../components/loader';
+import { ReactComponent as DataInIcon } from '../../../../assets/images/dataIn.svg';
+import { ReactComponent as DataOutIcon } from '../../../../assets/images/dataOut.svg';
+import { ReactComponent as MessageIcon } from '../../../../assets/images/messageIcon.svg';
 import { LOCAL_STORAGE_CREATION_DATE } from '../../../../const/localStorageConsts';
 function Requests() {
     const [usageData, setUsageData] = useState(null);
     const [usageType, setUsageType] = useState('Data out');
     const [isLoading, setIsLoading] = useState(true);
-    const [totalDiscount, setTotalDiscount] = useState(0);
-    const [totalDataInPrice, setTotalDataInPrice] = useState(0);
-    const [totalDataOutPrice, setTotalDataOutPrice] = useState(0);
-    const [displayMonth, setDisplayMonth] = useState();
 
     const getBillingDetails = async (date) => {
         try {
             const month = date.getMonth();
             const year = date.getFullYear();
             const data = await httpRequest('GET', `${ApiEndpoints.GET_BILLING_DETAILS}?month=${month + 1}&year=${year}`);
-            setTotalDiscount(data?.total_free_tier_discount + data?.discount);
-            setTotalDataInPrice(data?.price_per_gb_in * convertBytesToGb(data?.data_in));
-            setTotalDataOutPrice(data?.price_per_gb_out * convertBytesToGb(data?.data_out));
+
             setUsageData(data);
             setIsLoading(false);
         } catch (err) {
@@ -55,60 +52,15 @@ function Requests() {
         }
     };
 
-    const formatNumber = (number) => {
-        const decimalPlaces = (number.toString().split('.')[1] || '').length;
-        switch (decimalPlaces) {
-            case decimalPlaces >= 3:
-                return number.toFixed(3);
-            case decimalPlaces >= 2:
-                return number.toFixed(2);
-            case decimalPlaces >= 1:
-                return number.toFixed(1);
-            default:
-                return number;
-        }
-    };
-
-    const getNextPaymentDate = () => {
-        const today = new Date();
-        const nextMonth = ((today.getMonth() + 1) % 12) + 1;
-        const year = today.getFullYear() + (nextMonth === 1 ? 1 : 0);
-        today.setMonth(nextMonth - 1);
-        return `01 ${today.toLocaleString('en-US', { month: 'long' })} ${year}`;
-    };
-
-    const genetrateSentence = () => {
-        const today = new Date();
-        const month = (today.getMonth() + 1) % 12;
-        const year = today.getFullYear();
-        if (displayMonth.month === month && displayMonth.year === year)
-            return `Next billing date is ${getNextPaymentDate()}. \nPrice will be calculated based on the usage of this month.`;
-        else {
-            const prevDate = new Date(displayMonth.year, displayMonth.month - 1, 1);
-            return `Billing details for ${prevDate.toLocaleString('en-US', { month: 'long' })} ${displayMonth.year}`;
-        }
-    };
-
     const onChangeDate = (date) => {
-        setDisplayMonth({ month: date.getMonth() + 1, year: date.getFullYear() });
         getBillingDetails(date);
     };
 
     useEffect(() => {
         const today = new Date();
-        const month = (today.getMonth() + 1) % 12;
-        const year = today.getFullYear();
-        setDisplayMonth({ month: month, year: year });
         getBillingDetails(today);
     }, []);
 
-    const getRegionImage = (region) => {
-        if (region === 'us-east-1') {
-            return USAIcon;
-        } else if (region === 'eu-central-1') {
-            return GermanyIcon;
-        } else return GermanyIcon;
-    };
     return (
         <div className="requests-container">
             {isLoading && <Loader />}
@@ -121,112 +73,64 @@ function Requests() {
                     <DatePickerComponent onChange={onChangeDate} picker="month" allowClear={false} dateFrom={localStorage.getItem(LOCAL_STORAGE_CREATION_DATE)} />
                 </div>
             </div>
-            <div className="usage-header-section">
-                <div className="requests-summary">
-                    <div className="requests-summary-in-out">
-                        <div className="data-in">
-                            <div className="requests-total">
-                                <img src={RequestsIn} alt="data in" />
-                                <span className="requests-data">
-                                    <label className="requests-title-in">Data in</label>
-                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_in))?.toLocaleString('en-US')}Gb</label>
-                                </span>
-                            </div>
-                            <div className="total-messages">
-                                <div className="total-messages-in">
-                                    <img src={TotalMsgIcon} alt="data in" />
-                                    <span className="requests-data">
-                                        <label className="requests-title-in">Total Events</label>
-
-                                        <label className="total-value">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</label>
-                                    </span>
-                                </div>
-                                <div className="total-messages-in">
-                                    <img src={PriceIcon} alt="data in" />
-                                    <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Gb</label>
-                                        <label className="total-value">${usageData && usageData?.price_per_gb_in?.toFixed(2).toLocaleString('en-US')}</label>
-                                    </span>
-                                </div>
-                            </div>
-                            <span className="cloud-provider">
-                                <label className="cloud-provider-label">Provider: </label> <img src={CloudProviderAWS} alt="cloud provider" />
-                            </span>
-                        </div>
-                        <div className="data-out">
-                            <div className="requests-total">
-                                <img src={RequestsOut} alt="data out" />
-                                <span className="requests-data">
-                                    <label className="requests-title-out">Data out</label>
-                                    <label className="data-gb">{usageData && formatNumber(convertBytesToGb(usageData?.data_out))?.toLocaleString('en-US')}Gb</label>
-                                </span>
-                            </div>
-                            <div className="total-messages">
-                                <div className="total-messages-out">
-                                    <img src={TotalMsgIcon} alt="data out" />
-                                    <span className="requests-data">
-                                        <label className="requests-title-in">Total Events</label>
-                                        <label className="total-value">{usageData ? usageData?.data_out_events?.toLocaleString('en-US') : 0}</label>
-                                    </span>
-                                </div>
-                                <div className="total-messages-out">
-                                    <img src={PriceIcon} alt="data out" />
-                                    <span className="requests-data">
-                                        <label className="requests-title-in">Price Per Gb</label>
-                                        <label className="total-value">${usageData && usageData?.price_per_gb_out?.toFixed(2).toLocaleString('en-US')}</label>
-                                    </span>
-                                </div>
-                            </div>
-                            <span className="cloud-provider">
-                                <label className="cloud-provider-label">Region: </label> <img src={getRegionImage(usageData?.region)} alt="region" />
-                                <label className="region">{usageData?.region === '' ? 'eu-central-1' : usageData?.region}</label>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-                <div className="total-payment">
-                    <div className="total-payment-header">
-                        <span>
-                            <p className="total-ammount">Total Payment</p>
-                            <p className="next-billing">{displayMonth && genetrateSentence()}</p>
-                        </span>
-                        <span className="price-val-star">
-                            <label className="requests-value">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</label>
-                            <p className="pricing-disclaimer">*</p>
-                        </span>
-                    </div>
-                    <Divider />
-                    <span className="billing-item">
-                        <p className="item">Data in</p>
-                        <p className="ammount">${totalDataInPrice?.toLocaleString('en-US')}</p>
-                    </span>
-                    <span className="billing-item">
-                        <p className="item">Data out</p>
-                        <p className="ammount">${totalDataOutPrice?.toLocaleString('en-US')}</p>
-                    </span>
-                    <span className="billing-item">
-                        <p className="item">Discount</p>
-                        <p className="ammount">${totalDiscount?.toLocaleString('en-US')}</p>
-                    </span>
-                    <Divider />
-                    <span className="billing-item">
-                        <p className="item">Total price</p>
-                        <p className="ammount">${usageData?.total_price_after_discount?.toLocaleString('en-US')}</p>
-                    </span>
-                    <span className="billing-item">
-                        <p className="pricing-disclaimer">*Please note that the pricing is not final</p>
-                    </span>
-                </div>
-            </div>
             <div className="usage-details">
                 <div className="segment-data">
-                    <SegmentButton size="medium" value={usageType} options={['Data in', 'Data out']} onChange={(e) => setUsageType(e)} />
+                    <div className={`tab-container ${usageType === 'Data in' ? 'active' : ''}`} onClick={() => setUsageType('Data in')}>
+                        <div className="tab">
+                            <div className="tab-item">
+                                <div className="top-row">
+                                    <span className="icon">
+                                        <DataInIcon />
+                                    </span>
+                                    <span className="text-left">Data in</span>
+                                </div>
+                                <div className="bottom-row">
+                                    <span className="text">{usageData ? usageData?.data_in?.toLocaleString('en-US') : 0}Gb</span>
+                                </div>
+                            </div>
+                            <div className="divider" />
+                            <div className="tab-item">
+                                <div className="top-row">
+                                    <MessageIcon />
+                                    <span className="text-right">Total Messages</span>
+                                </div>
+                                <div className="bottom-row">
+                                    <span className="text">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className={`tab-container ${usageType === 'Data out' ? 'active' : ''}`} onClick={() => setUsageType('Data out')}>
+                        <div className="tab">
+                            <div className="tab-item">
+                                <div className="top-row">
+                                    <span className="icon">
+                                        <DataOutIcon />
+                                    </span>
+                                    <span className="text-left">Data out</span>
+                                </div>
+                                <div className="bottom-row">
+                                    <span className="text">{usageData ? usageData?.data_out?.toLocaleString('en-US') : 0}Gb</span>
+                                </div>
+                            </div>
+                            <div className="divider" />
+                            <div className="tab-item">
+                                <div className="top-row">
+                                    <MessageIcon />
+                                    <span className="text-right">Total Messages</span>
+                                </div>
+                                <div className="bottom-row">
+                                    <span className="text">{usageData ? usageData?.data_out_events?.toLocaleString('en-US') : 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {usageType === 'Data out' && (
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="box-edge yellow"></div>
+                                <div className="box-edge lavander"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>
@@ -240,7 +144,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="box-edge yellow"></div>
+                                <div className="box-edge lavander"></div>
                                 <div className="circle-img">
                                     <img src={Redeliver} alt="Consumed" />
                                 </div>
@@ -254,7 +158,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="box-edge yellow"></div>
+                                <div className="box-edge lavander"></div>
                                 <div className="circle-img">
                                     <img src={Storage} alt="Storage" />
                                 </div>
@@ -268,7 +172,7 @@ function Requests() {
                         </div>
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="box-edge yellow"></div>
+                                <div className="box-edge lavander"></div>
                                 <div className="circle-img">
                                     <img src={DeadLetter} alt="Consumed" />
                                 </div>
@@ -286,7 +190,7 @@ function Requests() {
                     <div className="panel-container">
                         <div className="requests-panel">
                             <div className="requests-item">
-                                <div className="box-edge green"></div>
+                                <div className="box-edge lavander"></div>
                                 <div className="circle-img">
                                     <img src={Consumed} alt="Consumed" />
                                 </div>

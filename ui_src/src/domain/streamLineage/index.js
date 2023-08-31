@@ -276,7 +276,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         }
                         zoomable={true}
                         arrow={null}
-                        edge={(edge) => <Edge {...edge} className={edge.data.active ? 'edge processing' : 'edge'} />}
+                        edge={(edge) => <Edge {...edge} className={edge?.data?.active === true ? 'edge processing' : 'edge'} />}
                     />
                 </div>
             )}
