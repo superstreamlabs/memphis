@@ -2,13 +2,14 @@
     display: grid;
     grid-template-columns: 49% 2% 49%;
     justify-content: space-between;
-    height: 100%;
+    height: calc(100% - 15px);
     margin-top: 15px;
     .generate-action {
         display: flex;
         color: var(--purple);
         font-family: 'InterMedium';
         font-size: 14px;
+        margin-bottom: 10px;
         cursor: pointer;
         align-items: center;
         img {
@@ -20,15 +21,16 @@
     }
 
     .code-generator-container {
-        height: 540px;
         overflow-y: auto;
         .code-builder {
-            background-color: #efefef;
+            border: #e7e7e7 1px solid;
             border-radius: 12px;
-            padding: 20px;
             margin: 0px 20px 20px 0;
+            .ant-collapse {
+                background: rgba(101, 87, 255, 0.1);
+                border-radius: 12px;
+            }
             .ant-collapse-header {
-                padding: 0;
                 flex-direction: row-reverse;
             }
             .panel-header {
@@ -36,8 +38,8 @@
                 align-items: center;
                 .custom-label {
                     font-family: 'InterSemiBold';
-                    color: #ffc633;
-                    background-color: rgba(255, 198, 51, 0.2);
+                    color: #6557ff;
+                    background-color: rgba(101, 87, 255, 0.2);
                     padding: 2px 10px;
                     border-radius: 16px;
                     margin-left: 15px;
@@ -54,11 +56,14 @@
                 color: #84818a;
             }
             .parameters-section {
+                background-color: #ffffff;
+                border-radius: 0px 0px 12px 12px;
                 position: relative;
+                padding: 0px 15px;
                 .new-user {
                     position: absolute;
-                    right: 0px;
-                    top: 10px;
+                    right: 15px;
+                    top: 13px;
                 }
             }
             .username-section {
@@ -67,12 +72,18 @@
                 align-items: flex-end;
                 gap: 10px;
                 width: 100%;
-
-                span {
+                .title-container {
+                    margin: 15px 0px 5px 0px;
+                }
+                .input-item {
                     width: 100%;
+                    .sub-header-title {
+                        margin-bottom: 0px;
+                    }
                 }
                 .remove-icon {
-                    margin-bottom: 20px;
+                    margin-bottom: 18px;
+                    font-size: 25px;
                     cursor: pointer;
                 }
             }
@@ -81,9 +92,6 @@
             }
             .ant-form-item {
                 margin-bottom: 10px;
-            }
-            .title-container {
-                margin-top: 10px;
             }
         }
     }
@@ -182,7 +190,6 @@
             border: 1px solid var(--gray);
             box-sizing: border-box;
             border-radius: 4px;
-            // height: 350px;
             height: 540px;
             overflow: auto;
             align-items: flex-start;
@@ -205,7 +212,6 @@
         border: 1px solid var(--gray);
         box-sizing: border-box;
         border-radius: 4px;
-        // height: 150px;
         height: calc(100% - 400px);
         display: flex;
         gap: 20px;
@@ -219,7 +225,6 @@
             display: flex;
             flex-direction: column;
             width: 420px;
-            // gap: 5px;
             gap: 20px;
             p {
                 margin: 0;
@@ -242,10 +247,10 @@
     }
     .ce-protoco {
         .code-content {
-            height: 225px !important;
+            height: 500px !important;
         }
         .produce {
-            height: 200px !important;
+            height: 510px !important;
         }
     }
 

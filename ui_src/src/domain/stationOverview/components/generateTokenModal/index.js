@@ -24,7 +24,7 @@ import Copy from '../../../../components/copy';
 import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../../const/localStorageConsts';
 import { isCloud } from '../../../../services/valueConvertor';
 
-const GenerateTokenModal = ({ host, close }) => {
+const GenerateTokenModal = ({ host, close, returnToken }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [generateLoading, setGenerateLoading] = useState(false);
     const [appUsers, setAppUsers] = useState([]);
@@ -81,17 +81,12 @@ const GenerateTokenModal = ({ host, close }) => {
         try {
             let data = await httpRequest('POST', ApiEndpoints.GENERATE_TOKEN, { ...formFields }, {}, {}, false, 0, host);
             if (data) {
-                setUserToken(
-                    JSON.stringify(
-                        {
-                            jwt: data.jwt,
-                            jwt_refresh_token: data.jwt_refresh_token
-                        },
-                        null,
-                        1
-                    )
-                );
+                setUserToken({
+                    jwt: data.jwt,
+                    jwt_refresh_token: data.jwt_refresh_token
+                });
                 setGenerateLoading(false);
+                returnToken(data);
             }
         } catch (erro) {
             setGenerateLoading(false);
@@ -109,48 +104,50 @@ const GenerateTokenModal = ({ host, close }) => {
                     </p>
                     {Object.keys(userToken).length === 0 ? (
                         <>
-                            <div className="app-username">
-                                <p className="field-title">Client-type user</p>
-                                <SelectComponent
-                                    placeholder="choose your app user"
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    radiusType="semi-round"
-                                    height="40px"
-                                    popupClassName="select-options"
-                                    options={appUsers}
-                                    value={formFields?.username || appUsers[0]}
-                                    onChange={(e) => updateState('username', e)}
-                                />
-                            </div>
-                            <div className="app-token">
-                                <p className="field-title">{tokenTitle}</p>
-                                <Input
-                                    placeholder={tokenPlaceHolder}
-                                    type="text"
-                                    fontSize="12px"
-                                    radiusType="semi-round"
-                                    colorType="black"
-                                    backgroundColorType="none"
-                                    borderColorType="gray"
-                                    height="40px"
-                                    onBlur={(e) => {
-                                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                                            updateState('password', e.target.value);
-                                        } else {
-                                            updateState('connection_token', e.target.value);
-                                        }
-                                    }}
-                                    onChange={(e) => {
-                                        if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
-                                            updateState('password', e.target.value);
-                                        } else {
-                                            updateState('connection_token', e.target.value);
-                                        }
-                                    }}
-                                    value={localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? formFields.password : formFields.connection_token}
-                                />
+                            <div className="user-password-section">
+                                <div className="app-username">
+                                    <p className="field-title">Client-type user</p>
+                                    <SelectComponent
+                                        placeholder="choose your app user"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        radiusType="semi-round"
+                                        height="40px"
+                                        popupClassName="select-options"
+                                        options={appUsers}
+                                        value={formFields?.username || appUsers[0]}
+                                        onChange={(e) => updateState('username', e)}
+                                    />
+                                </div>
+                                <div className="app-token">
+                                    <p className="field-title">{tokenTitle}</p>
+                                    <Input
+                                        placeholder={tokenPlaceHolder}
+                                        type="password"
+                                        fontSize="12px"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        height="40px"
+                                        onBlur={(e) => {
+                                            if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                                                updateState('password', e.target.value);
+                                            } else {
+                                                updateState('connection_token', e.target.value);
+                                            }
+                                        }}
+                                        onChange={(e) => {
+                                            if (localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true') {
+                                                updateState('password', e.target.value);
+                                            } else {
+                                                updateState('connection_token', e.target.value);
+                                            }
+                                        }}
+                                        value={localStorage.getItem(LOCAL_STORAGE_USER_PASS_BASED_AUTH) === 'true' ? formFields.password : formFields.connection_token}
+                                    />
+                                </div>
                             </div>
                             <Button
                                 width="100%"
@@ -173,7 +170,7 @@ const GenerateTokenModal = ({ host, close }) => {
                                 <div className="input-and-copy">
                                     <Input
                                         width="98%"
-                                        numberOfRows="6"
+                                        numberOfRows="4"
                                         type="textArea"
                                         fontSize="12px"
                                         radiusType="semi-round"
@@ -181,9 +178,27 @@ const GenerateTokenModal = ({ host, close }) => {
                                         backgroundColorType="none"
                                         borderColorType="gray"
                                         disabled={true}
-                                        value={userToken}
+                                        value={userToken?.jwt}
                                     />
-                                    <Copy data={userToken} width={20} />
+                                    <Copy data={userToken?.jwt} width={20} />
+                                </div>
+                            </div>
+                            <div className="api-token">
+                                <p className="field-title">JWT refresh token</p>
+                                <div className="input-and-copy">
+                                    <Input
+                                        width="98%"
+                                        numberOfRows="4"
+                                        type="textArea"
+                                        fontSize="12px"
+                                        radiusType="semi-round"
+                                        colorType="black"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        disabled={true}
+                                        value={userToken?.jwt_refresh_token}
+                                    />
+                                    <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>
                                 <div className="generate-again" onClick={() => setUserToken({})}>
                                     <img src={refresh} width="14" />

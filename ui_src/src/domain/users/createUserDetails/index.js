@@ -24,13 +24,13 @@ import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
 import { isCloud } from '../../../services/valueConvertor';
 
-const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
+const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, clientType }) => {
     const [creationForm] = Form.useForm();
     const [formFields, setFormFields] = useState({
         username: '',
         password: ''
     });
-    const [userType, setUserType] = useState('management');
+    const [userType, setUserType] = useState(clientType ? 'application' : 'management');
     const [passwordType, setPasswordType] = useState(0);
 
     const userTypeOptions = [
@@ -119,7 +119,11 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader }) => {
             <Form name="form" form={creationForm} autoComplete="off" onFinish={onFinish}>
                 <div className="field user-type">
                     <Form.Item name="user_type" initialValue={userType}>
-                        <SelectCheckBox selectOptions={userTypeOptions} handleOnClick={(e) => handleUserTypeChanged(e.value)} selectedOption={userType} />
+                        <SelectCheckBox
+                            selectOptions={clientType ? userTypeOptions?.filter((type) => type.value === 'application') : userTypeOptions}
+                            handleOnClick={(e) => handleUserTypeChanged(e.value)}
+                            selectedOption={userType}
+                        />
                     </Form.Item>
                 </div>
                 <div className="user-details">

@@ -48,6 +48,7 @@ loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
+const tabsProtocol = ['Generate token', 'Produce data'];
 const selectProtocolOption = ['SDK (TCP)', 'REST (HTTP)'];
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
@@ -59,6 +60,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         consumer: ''
     });
     const [tabValue, setTabValue] = useState(consumer ? 'Consumer' : 'Producer');
+    const [tabValueRest, setTabValueRest] = useState('Generate token');
     const [generateModal, setGenerateModal] = useState(false);
     const [formFields, setFormFields] = useState({
         userName: '',
@@ -74,7 +76,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const createUserRef = useRef(null);
-
     const { Panel } = Collapse;
 
     useEffect(() => {
@@ -285,8 +286,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('connection_token', 'password');
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<broker-token>', '<password>');
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('memphis.ConnectionToken', 'memphis.Password');
-            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("strings.NewReader('{", "strings.NewReader(`{");
-            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("}')", " }`)");
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("strings.NewReader('{", 'strings.NewReader(`{');
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll("}')", ' }`)');
         }
         if (formFields.password !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<password>', formFields.password);
@@ -380,7 +381,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
-                <div className="code-generator-container">
+                <div className="code-generator-container" style={{ height: withHeader ? '550px' : '700px' }}>
                     <div className="select-lan">
                         <div>
                             <p className="field-title">Protocol</p>
@@ -430,13 +431,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 </div>
                             </>
                         )}
+                        {protocolSelected === 'REST (HTTP)' && (
+                            <SegmentButton value={tabValueRest} options={tabsProtocol} onChange={(tabValueRest) => setTabValueRest(tabValueRest)} size="medium" />
+                        )}
+
                         {
                             <div className="code-builder">
-                                <Collapse ghost className="custom-collapse" expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} accordion>
+                                <Collapse ghost expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
                                     <Panel
-                                        showArrow={true}
                                         header={
-                                            <div>
+                                            <div className="header">
                                                 <span className="panel-header">
                                                     <p className="collapse-title">Parameters</p>
                                                     <label className="custom-label">Custom</label>
@@ -447,51 +451,54 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         }
                                     >
                                         <div className="parameters-section">
-                                            <Divider />
-                                            <div className="new-user">
-                                                <div className="generate-action" onClick={() => addUserModalFlip(true)}>
-                                                    <FiPlus />
-                                                    <span>Create new user</span>
-                                                </div>
-                                            </div>
-                                            <div className="username-section">
-                                                <span>
-                                                    <TitleComponent headerTitle="Username" typeTitle="sub-header" />
-                                                    <Form.Item>
-                                                        <Input
-                                                            placeholder="Type user name"
-                                                            type="text"
-                                                            maxLength="220"
-                                                            radiusType="semi-round"
-                                                            colorType="black"
-                                                            backgroundColorType="white"
-                                                            borderColorType="gray"
-                                                            height="40px"
-                                                            onBlur={(e) => updateFormFields('userName', e.target.value)}
-                                                            onChange={(e) => updateFormFields('userName', e.target.value)}
-                                                            value={formFields.userName}
-                                                        />
-                                                    </Form.Item>
-                                                </span>
-                                                <span>
-                                                    <TitleComponent headerTitle="Password" typeTitle="sub-header" />
-                                                    <Form.Item name="password">
-                                                        <Input
-                                                            placeholder="Type password"
-                                                            type="text"
-                                                            maxLength="220"
-                                                            radiusType="semi-round"
-                                                            colorType="black"
-                                                            backgroundColorType="white"
-                                                            borderColorType="gray"
-                                                            height="40px"
-                                                            onBlur={(e) => updateFormFields('password', e.target.value)}
-                                                            onChange={(e) => updateFormFields('password', e.target.value)}
-                                                            value={formFields.password}
-                                                        />
-                                                    </Form.Item>
-                                                </span>
-                                            </div>
+                                            {(tabValue === 'SDK (TCP)' || tabValueRest === 'Generate token') && (
+                                                <>
+                                                    <div className="new-user">
+                                                        <div className="generate-action" onClick={() => addUserModalFlip(true)}>
+                                                            <FiPlus />
+                                                            <span>Create new user</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="username-section">
+                                                        <span className="input-item">
+                                                            <TitleComponent headerTitle="Username" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Type user name"
+                                                                    type="text"
+                                                                    maxLength="220"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('userName', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('userName', e.target.value)}
+                                                                    value={formFields.userName}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <span className="input-item">
+                                                            <TitleComponent headerTitle="Password" typeTitle="sub-header" />
+                                                            <Form.Item name="password">
+                                                                <Input
+                                                                    placeholder="Type password"
+                                                                    type="password"
+                                                                    fontSize="12px"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="none"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('password', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('password', e.target.value)}
+                                                                    value={formFields.password}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
                                             {protocolSelected === 'SDK (TCP)' && (
                                                 <>
                                                     <TitleComponent
@@ -518,10 +525,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </>
                                             )}
-                                            {protocolSelected === 'REST (HTTP)' && (
+                                            {protocolSelected === 'REST (HTTP)' && tabValueRest === 'Generate token' && (
                                                 <>
                                                     <div className="username-section">
-                                                        <span>
+                                                        <span className="input-item">
                                                             <TitleComponent
                                                                 headerTitle="Token expiry"
                                                                 headerDescription="Token expiry (In minutes)"
@@ -543,7 +550,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                 />
                                                             </Form.Item>
                                                         </span>
-                                                        <span>
+                                                        <span className="input-item">
                                                             <TitleComponent
                                                                 headerTitle="Refresh token expiry"
                                                                 headerDescription="Refresh token expiry (In minutes)"
@@ -566,7 +573,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             </Form.Item>
                                                         </span>
                                                     </div>
-                                                    <Divider />
+                                                </>
+                                            )}
+                                            {protocolSelected === 'REST (HTTP)' && tabValueRest === 'Produce data' && (
+                                                <>
                                                     <TitleComponent
                                                         headerTitle="JWT"
                                                         typeTitle="sub-header"
@@ -625,7 +635,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {tabValue === 'Producer' && (
+                                            {(tabValue === 'Producer' || tabValueRest === 'Produce data') && (
                                                 <div className="username-section">
                                                     <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Add header to the message" />
                                                     <Form.Item>
@@ -640,7 +650,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                 <div>
                                                     {formFields.headersList.map((header, index) => (
                                                         <div className="username-section" key={index}>
-                                                            <span>
+                                                            <span className="input-item">
                                                                 <TitleComponent headerTitle="Key" typeTitle="sub-header" />
                                                                 <Form.Item>
                                                                     <Input
@@ -658,7 +668,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                                     />
                                                                 </Form.Item>
                                                             </span>
-                                                            <span>
+                                                            <span className="input-item">
                                                                 <TitleComponent headerTitle="Value" typeTitle="sub-header" />
                                                                 <Form.Item>
                                                                     <Input
@@ -695,13 +705,20 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 <Modal
                     header="Generate JWT token"
                     displayButtons={false}
-                    height="400px"
+                    height="480px"
                     width="400px"
                     clickOutside={() => setGenerateModal(false)}
                     open={generateModal}
                     className="generate-modal"
                 >
-                    <GenerateTokenModal host={restGWHost} close={() => setGenerateModal(false)} />
+                    <GenerateTokenModal
+                        host={restGWHost}
+                        close={() => {
+                            setGenerateModal(false);
+                            setTabValueRest('Produce data');
+                        }}
+                        returnToken={(e) => updateFormFields('jwt', e.jwt)}
+                    />
                 </Modal>
                 <Modal
                     header={
@@ -713,7 +730,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                             <label>Enter user details to get started</label>
                         </div>
                     }
-                    height="555px"
+                    height="470px"
                     width="450px"
                     rBtnText="Create"
                     lBtnText="Cancel"
@@ -732,7 +749,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     isLoading={createUserLoader}
                     open={addUserModalIsOpen}
                 >
-                    <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
+                    <CreateUserDetails
+                        clientType
+                        createUserRef={createUserRef}
+                        closeModal={(userData) => handleAddUser(userData)}
+                        handleLoader={(e) => setCreateUserLoader(e)}
+                    />
                 </Modal>
             </div>
             <Divider type="vertical" />
@@ -766,36 +788,40 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 )}
                 {protocolSelected === 'REST (HTTP)' && (
                     <>
-                        <div className="installation">
-                            <div className="generate-wrapper">
-                                <p className="field-title">Step 1: Generate a token</p>
-                                <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                    <img src={refresh} width="14" />
-                                    <span>Generate JWT token</span>
-                                </div>
-                            </div>
-                            <div className="code-example ce-protoco">
-                                <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
-                            </div>
-                        </div>
-                        <div className="tabs">
-                            <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
-                            {consumer ? (
-                                <div className="guidline">
-                                    <img src={noCodeExample} />
-                                    <div className="content">
-                                        <p>Coming soon</p>
-                                        <span>
-                                            Please <a>upvote</a> to prioritize it!
-                                        </span>
+                        {tabValueRest === 'Generate token' && (
+                            <div className="installation">
+                                <div className="generate-wrapper">
+                                    <p className="field-title">Step 1: Generate a token</p>
+                                    <div className="generate-action" onClick={() => setGenerateModal(true)}>
+                                        <img src={refresh} width="14" />
+                                        <span>Generate JWT token</span>
                                     </div>
                                 </div>
-                            ) : (
                                 <div className="code-example ce-protoco">
-                                    <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                    <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+                        {tabValueRest === 'Produce data' && (
+                            <div className="tabs">
+                                <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
+                                {consumer ? (
+                                    <div className="guidline">
+                                        <img src={noCodeExample} />
+                                        <div className="content">
+                                            <p>Coming soon</p>
+                                            <span>
+                                                Please <a>upvote</a> to prioritize it!
+                                            </span>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="code-example ce-protoco">
+                                        <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </>
                 )}
             </div>
