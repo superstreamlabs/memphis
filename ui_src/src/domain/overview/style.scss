@@ -162,7 +162,7 @@
             }
             .cloud {
                 display: grid;
-                grid-template-rows: 49% 30% 17%;
+                grid-template-rows: 43% 30% 23%;
             }
 
             .system-components-wrapper {
@@ -170,7 +170,7 @@
                 position: relative;
             }
         }
-        .overview-components-cloud{
+        .overview-components-cloud {
             height: calc(100% - 110px) !important;
         }
     }
