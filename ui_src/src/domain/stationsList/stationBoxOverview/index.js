@@ -42,7 +42,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
     useEffect(() => {
         switch (station?.station?.retention_type) {
             case 'message_age_sec':
-                setRetentionValue(station?.station?.retention_value);
+                setRetentionValue(convertSecondsToDate(station?.station?.retention_value, true));
                 break;
             case 'bytes':
                 setRetentionValue(`${station?.station?.retention_value} bytes`);
@@ -56,22 +56,12 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                 break;
         }
     }, []);
-
     return (
         <div style={{ padding: '2px' }}>
             <Link to={`${pathDomains.stations}/${station?.station?.name}`}>
                 <div className="station-box-container">
                     <div className="main-section">
                         <div className="left-section">
-                            <div className="tags-list">
-                                {station?.tags.length === 0 ? (
-                                    <p className="data-info">
-                                        <MinusOutlined />
-                                    </p>
-                                ) : (
-                                    <TagsList tagsToShow={3} tags={station?.tags} />
-                                )}
-                            </div>
                             <div className="check-box">
                                 <CheckboxComponent checked={isCheck} id={station?.station?.name} onChange={handleCheckedClick} name={station?.station?.name} />
 
@@ -87,7 +77,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                     <label className="data-labels attached">Attached schema</label>
                                 </div>
                                 <OverflowTip
-                                    className="data-info"
+                                    className="data-info no-text-transform"
                                     text={station?.station?.schema_name === '' ? <MinusOutlined /> : station?.station?.schema_name}
                                     width={'90px'}
                                 >
@@ -101,8 +91,8 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                     <RetentionIcon />
                                     <label className="data-labels retention">Retention</label>
                                 </div>
-                                <OverflowTip className="data-info retention-info " text={convertSecondsToDate(retentionValue, true)} width={'90px'}>
-                                    {convertSecondsToDate(retentionValue, true)}
+                                <OverflowTip className="data-info retention-info " text={retentionValue} width={'90px'}>
+                                    {retentionValue}
                                 </OverflowTip>
                             </div>
                             <div className="station-meta">
@@ -190,6 +180,16 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                         <div className="meta-container">
                             <UserIcon />
                             <label className="data-labels date">Created by: {station?.station?.created_by_username}</label>
+                        </div>
+
+                        <div className="tags-list">
+                            {station?.tags.length === 0 ? (
+                                <p className="data-info">
+                                    <MinusOutlined />
+                                </p>
+                            ) : (
+                                <TagsList tagsToShow={3} tags={station?.tags} />
+                            )}
                         </div>
                     </div>
                 </div>

@@ -31,6 +31,7 @@
     .station-meta {
         display: flex;
         flex-direction: column;
+        gap: 10px;
         .header {
             display: flex;
             align-items: center;
@@ -43,7 +44,6 @@
         margin-bottom: 0px;
         text-transform: capitalize;
         margin-left: 1px;
-        margin-top: 10px;
         font-family: 'InterSemiBold';
         cursor: pointer !important;
         .anticon svg {
@@ -56,6 +56,9 @@
             width: 7px;
             height: 20px;
         }
+    }
+    .no-text-transform {
+        text-transform: none;
     }
     .retention-info {
         text-transform: none;
@@ -78,13 +81,15 @@
             padding-right: 40px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
+            justify-content: center;
             gap: 11px;
             .check-box {
                 display: flex;
                 flex-direction: row;
                 align-items: center;
                 gap: 11px;
+                transform: translateY(4px);
                 .station-name {
                     font-size: 17px;
                     font-family: 'InterSemiBold';
@@ -117,12 +122,6 @@
             padding-right: 40px;
             .station-created {
                 margin-right: 40px;
-            }
-            .tags-list {
-                margin-bottom: 0px;
-                margin-left: 1px;
-                margin-top: 10px;
-                max-width: 230px;
             }
         }
         .right-section {
@@ -170,10 +169,15 @@
         justify-content: flex-start;
         align-items: center;
         gap: 28px;
-        .meta-container {
+        .meta-container,
+        .tags-list {
             display: flex;
             align-items: center;
             gap: 4px;
+        }
+        .tags-list {
+            margin-left: auto;
+            max-width: 230px;
         }
     }
     &:hover {

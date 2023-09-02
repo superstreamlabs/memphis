@@ -352,7 +352,7 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 }
                 rBtnClick={() => {
-                    if (activeConsumerList.length > 0) {
+                    if (activeConsumerList.length > 0 || stationState?.stationMetaData?.retention_type !== 'ack_based') {
                         produceMessagesRef.current();
                     } else {
                         setOpenNoConsumer(true);
@@ -374,14 +374,12 @@ const ProduceConsumList = ({ producer }) => {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            {/* <img className="headerImage" src={playVideoIcon} alt="stationImg" /> */}
                             <ErrorModalIcon width={45} height={45} />
                         </div>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}
                 width="403px"
-                height="10vh"
                 clickOutside={() => {
                     setOpenNoConsumer(false);
                 }}
