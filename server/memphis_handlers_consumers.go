@@ -321,12 +321,31 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 	if err != nil {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	}
+
+	sn, err := StationNameFromStr(ccr.StationName)
+	if err != nil {
+		s.Warnf("[tenant: %v][user: %v]createConsumerDirect at StationNameFromStr: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+		return
+	}
+
+	schemaUpdate, err := getSchemaUpdateInitFromStation(sn, ccr.TenantName)
+	if err == ErrNoSchema {
+		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
+		return
+	}
+	if err != nil {
+		s.Errorf("[tenant: %v][user: %v]createConsumerDirect at getSchemaUpdateInitFromStation: Consumer %v at station %v: %v", ccr.TenantName, ccr.Username, ccr.Name, ccr.StationName, err.Error())
+		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
+		return
+	}
+
 	if len(partitions) == 0 && ccr.RequestVersion < 2 {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	} else {
-		v1Resp := createConsumerResponseV1{PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
+		v1Resp := createConsumerResponseV1{SchemaUpdate: *schemaUpdate, PartitionsUpdate: models.PartitionsUpdate{PartitionsList: partitions}, Err: ""}
 		respondWithResp(s.MemphisGlobalAccountString(), s, reply, &v1Resp)
-
 	}
 }
 

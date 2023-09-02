@@ -80,12 +80,13 @@ type createConsumerResponse struct {
 }
 
 type createConsumerResponseV1 struct {
+	SchemaUpdate     models.SchemaUpdateInit `json:"schema_update"`
 	PartitionsUpdate models.PartitionsUpdate `json:"partitions_update"`
 	Err              string                  `json:"error"`
 }
 
 type createProducerResponse struct {
-	SchemaUpdate            models.ProducerSchemaUpdateInit `json:"schema_update"`
+	SchemaUpdate            models.SchemaUpdateInit         `json:"schema_update"`
 	PartitionsUpdate        models.PartitionsUpdate         `json:"partitions_update"`
 	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
 	ClusterSendNotification bool                            `json:"send_notification"`
