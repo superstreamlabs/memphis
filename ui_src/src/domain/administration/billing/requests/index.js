@@ -14,7 +14,7 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { convertBytesToGb } from '../../../../services/valueConvertor';
+import { convertBytes } from '../../../../services/valueConvertor';
 import { Divider } from 'antd';
 import TotalMsgIcon from '../../../../assets/images/setting/totalMsgIcon.svg';
 import PriceIcon from '../../../../assets/images/setting/priceIcon.svg';
@@ -85,7 +85,7 @@ function Requests() {
                                     <span className="text-left">Data in</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_in?.toLocaleString('en-US') : 0}Gb</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_in, true) : 0}</span>
                                 </div>
                             </div>
                             <div className="divider" />
@@ -95,7 +95,7 @@ function Requests() {
                                     <span className="text-right">Total Messages</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</span>
+                                    <span className="text">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : '0 Gb'}</span>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +110,7 @@ function Requests() {
                                     <span className="text-left">Data out</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_out?.toLocaleString('en-US') : 0}Gb</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_out, true) : '0 Gb'}</span>
                                 </div>
                             </div>
                             <div className="divider" />

@@ -237,7 +237,7 @@
     }
     .usage-details {
         overflow-y: hidden;
-        height: calc(100% - 390px);
+        height: calc(100% - 120px);
         margin-top: 15px;
         .segment-data {
             margin-bottom: 31px;
@@ -287,9 +287,6 @@
                                 display: flex;
                                 justify-content: center;
                                 align-items: center;
-                                svg {
-                                    transform: translate(0.5px);
-                                }
                             }
                             .text-left,
                             .text-right {
