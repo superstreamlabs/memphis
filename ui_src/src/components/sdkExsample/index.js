@@ -238,7 +238,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'asyncProduceAck: false');
                 }
             }
-            if (formFields.useHeaders) {
+            if (formFields?.useHeaders) {
                 {
                     if (langSelected === 'Go') {
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-declaration>', 'hdrs := memphis.Headers{}');
