@@ -4,6 +4,11 @@
     justify-content: space-between;
     height: calc(100% - 15px);
     margin-top: 15px;
+    position: relative;
+    .left-side-container {
+        height: 745px;
+        position: relative;
+    }
     .sub-header-title {
         margin-bottom: 5px;
     }
@@ -78,13 +83,12 @@
                 align-items: flex-start;
                 gap: 10px;
                 width: 100%;
-
                 .input-item {
                     width: 100%;
                 }
                 .remove-icon {
-                    margin-bottom: 18px;
-                    font-size: 25px;
+                    margin-top: 45px;
+                    font-size: 30px;
                     cursor: pointer;
                 }
             }

@@ -37,7 +37,8 @@ export const SDK_CODE_EXAMPLE = {
 
         await producer.produce({
             message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-            headers: headers
+            headers: headers,
+            <producer-async>
         });
 
         memphisConnection.close();
@@ -113,7 +114,8 @@ export const SDK_CODE_EXAMPLE = {
 
             await producer.produce({
                 message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-                headers: headers
+                headers: headers,
+                <producer-async>
             });
 
         memphisConnection.close();
@@ -187,7 +189,7 @@ func main() {
     <headers-initiation>
     <headers-addition>
 
-    err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
+    err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs), <producer-async>)
     if err != nil {
         fmt.Printf("Produce failed: %v", err)
         os.Exit(1)
@@ -348,7 +350,7 @@ namespace Producer
                 {
                     await Task.Delay(1_000);
                     var text = $"Message #{i}: Welcome to Memphis";
-                    await producer.ProduceAsync(Encoding.UTF8.GetBytes(text), commonHeaders);
+                    await producer.ProduceAsync(Encoding.UTF8.GetBytes(text), commonHeaders, <producer-async>);
                     Console.WriteLine($"Message #{i} sent successfully");
                 }
 
