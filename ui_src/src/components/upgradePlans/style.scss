@@ -31,9 +31,9 @@
         position: relative;
         overflow: auto;
         padding-right: 24px;
-        .eacdu8d8{
+        .stigg-plan-offering-container{
             padding: 30px !important;
-            .css-lmbc13-HighlightBadge{
+            .stigg-highlight-badge{
                 left: 30%;
                 width: 40%;
                 display: flex;
@@ -42,8 +42,8 @@
                     font-family: 'InterSemiBold' !important;
                 }
             }
-            .css-sm3wbh-HeaderWrapper{
-                .eacdu8d7{
+            .stigg-header-wrapper{
+                .stigg-plan-header{
                     font-family: 'InterSemiBold' !important;
                     color: black !important;
                 }
@@ -51,40 +51,56 @@
                     font-family: 'InterSemiBold' !important;
                     color: black !important;
                 }
-                .css-6cbyca-StyledText, .typography-level-3{
+                .stigg-starting-at-text, .typography-level-3{
                     font-family: 'InterMedium' !important;
                     color: #6C727F !important;
                 }
-                .GJISb{
+                .stigg-price-text, .stigg-price-unit-and-billing-period-text{
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                }
-                .css-1qvl40c-Divider{
-                    height: 1px !important;
                 }
                 .stigg-paywall-plan-button-layout{
                     button{
                         border-radius: 32px !important;
                     }
-                    .css-1n78f2x-OfferingButton{
+                    .stigg-paywall-plan-button{
                         background: transparent !important;
                         border-color: var(--purple) !important;
                         p{
                             color: var(--purple) !important;
                         }
                     }
-                    .css-1n78f2x-OfferingButton:hover{
+                    .stigg-paywall-plan-button:hover{
                         background: var(--purple) !important;
                         opacity: 1 !important;
                         p{
                             color: white !important;
                         }
                     }
+                    button[disabled]{
+                        background: #F0EFF0 !important;
+                        border-color: #84818A !important;
+                        border-radius: 32px !important;
+                        opacity: unset;
+                        p{
+                            color: #84818A !important;
+                        }
+                    }
+                    button[disabled]:hover{
+                        background: #F0EFF0 !important;
+                        border-color: #84818A !important;
+                        border-radius: 32px !important;
+                        opacity: unset;
+                        p{
+                            color: #84818A !important;
+                        }
+                    }
                 }
             }
-            .css-1qvl40c-Divider{
+            .stigg-plan-header-divider{
                 margin-bottom: 20px !important;
+                height: 1px !important;
             }
             .stigg-plan-entitlements-container{
                 gap: 10px !important;
@@ -103,25 +119,13 @@
                 }
             }
         }
-        .eacdu8d8:nth-last-child(1){
+        .stigg-plan-offering-container:nth-last-child(1){
             display: none;
         }
         .stigg-current-plan{
             background: transparent !important;
-            .css-1vgaedi-OfferingButton{
-                background: #F0EFF0 !important;
-                border-color: #84818A !important;
-                border-radius: 32px !important;
-                opacity: unset;
-                p{
-                    color: #84818A !important;
-                }
-            }
-            .css-1vgaedi-OfferingButton:hover{
-                opacity: 1 !important;
-            }
         }
-        .ee5i8qp0{
+        .stigg-watermark{
             display: none;
         }
     }
@@ -215,12 +219,5 @@
         display: flex;
         justify-content: space-between;
         
-    }
-}
-
-.upgrade-plans-container{
-    .disabled{
-        cursor: not-allowed !important;
-        opacity: 0.5;
     }
 }

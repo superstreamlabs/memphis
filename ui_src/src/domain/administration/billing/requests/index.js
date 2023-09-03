@@ -14,7 +14,7 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { convertBytesToGb } from '../../../../services/valueConvertor';
+import { convertBytes } from '../../../../services/valueConvertor';
 import { Divider } from 'antd';
 import TotalMsgIcon from '../../../../assets/images/setting/totalMsgIcon.svg';
 import PriceIcon from '../../../../assets/images/setting/priceIcon.svg';
@@ -85,7 +85,7 @@ function Requests() {
                                     <span className="text-left">Data in</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_in?.toLocaleString('en-US') : 0}Gb</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_in, true) : 0}</span>
                                 </div>
                             </div>
                             <div className="divider" />
@@ -95,7 +95,7 @@ function Requests() {
                                     <span className="text-right">Total Messages</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : 0}</span>
+                                    <span className="text">{usageData ? usageData?.data_in_events?.toLocaleString('en-US') : '0 Gb'}</span>
                                 </div>
                             </div>
                         </div>
@@ -110,7 +110,7 @@ function Requests() {
                                     <span className="text-left">Data out</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? usageData?.data_out?.toLocaleString('en-US') : 0}Gb</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_out, true) : '0 Gb'}</span>
                                 </div>
                             </div>
                             <div className="divider" />
@@ -136,8 +136,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Consumed</label>
-                                    <label className="request-description">The total number of consumed events.</label>
+                                    <label className="request-type">Consumed messages</label>
+                                    <label className="request-description">The total number of consumed messages.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.consumed_events?.toLocaleString('en-US')}</label>
@@ -150,8 +150,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Redelivered</label>
-                                    <label className="request-description">The total number of redelivered events.</label>
+                                    <label className="request-type">Redelivered messages</label>
+                                    <label className="request-description">The total number of redelivered messages.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.redelivery_events?.toLocaleString('en-US')}</label>
@@ -178,8 +178,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Dead-letter events retrieval</label>
-                                    <label className="request-description">The total number of events retransmitted from Dead-Letter Stations.</label>
+                                    <label className="request-type">Dead-letter messages retrieval</label>
+                                    <label className="request-description">The total number of messages retransmitted from Dead-Letter Stations.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.dls_retransmit_events?.toLocaleString('en-US')}</label>
@@ -196,8 +196,8 @@ function Requests() {
                                 </div>
 
                                 <div>
-                                    <label className="request-type">Data in</label>
-                                    <label className="request-description">The total number of produced events.</label>
+                                    <label className="request-type">Produced messages</label>
+                                    <label className="request-description">The total number of produced messages.</label>
                                 </div>
                             </div>
                             <label className="requests-value">{usageData?.data_in_events?.toLocaleString('en-US')}</label>

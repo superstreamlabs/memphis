@@ -36,6 +36,7 @@ import GenericDetails from './genericDetails';
 import Stations from './stations';
 import Tags from './tags';
 import Integrations from './integrations';
+import Usage from './usage';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
@@ -259,7 +260,7 @@ function OverView() {
                                     <div className="right-side cloud">
                                         <Stations createStationTrigger={(e) => modalFlip(e)} />
                                         <Tags />
-                                        <Integrations />
+                                        {state?.monitor_data?.billing_details?.is_free_plan ? <Usage /> : <Integrations />}
                                     </div>
                                 </div>
                             ) : (

@@ -12,6 +12,7 @@
         border-radius: 8px !important;
         color: #101828;
         font-size: 12px;
+        width: fit-content;
     }
     .lock-tooltip-text{
         display: flex;
@@ -42,6 +43,9 @@
                 font-family: 'InterSemiBold';
 
             }
+        }
+        .upgrade-button-wrapper:hover{
+            opacity: 0.9;
         }
     }
 }

@@ -50,7 +50,7 @@ const Stations = ({ createStationTrigger }) => {
                             <div className={!isCloud() ? 'coulmns-table' : 'coulmns-table coulmns-table-cloud'}>
                                 <span className="station-name">Name</span>
                                 {!isCloud() && <span>Creation date</span>}
-                                <span className="title-center">Mssages</span>
+                                <span className="title-center">Messages</span>
                                 <span className="title-center">Partitions</span>
                                 <span className="title-center">Status</span>
                                 <span></span>

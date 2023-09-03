@@ -186,7 +186,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             }, 1000);
         }
     };
-
     return (
         <div
             className={
@@ -198,13 +197,13 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             }
         >
             <div className="title-wrapper">
-                <div className="bread-crumbs">
+                <div className="overview-components-header">
                     <p>System overview</p>
+                    <label>A dynamic, self-built graph visualization of your main system components</label>
                 </div>
                 {!expend && nodes?.length > 0 && (
                     <div className="refresh-wrapper" onClick={() => getGraphData()}>
                         <IoRefresh />
-                        Refresh
                     </div>
                 )}
                 {nodes?.length > 0 && (
@@ -220,8 +219,11 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                             }
                         >
                             {expend && <IoClose />}
-                            {!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview'] && <LockFeature />}
-                            {!expend && state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] && <MdZoomOutMap />}
+
+                            {!expend && <MdZoomOutMap />}
+                            {!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview'] && (
+                                <LockFeature header={'Full screen'} />
+                            )}
                         </div>
                         {expend && (
                             <div className="zoom-wrapper">
@@ -252,6 +254,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         edges={edges}
                         fit={true}
                         ref={ref}
+                        zoomable={state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] ? true : false}
                         maxZoom={0.2}
                         minZoom={-0.9}
                         height={'100%'}
@@ -274,7 +277,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                                 )}
                             </Node>
                         }
-                        zoomable={true}
                         arrow={null}
                         edge={(edge) => <Edge {...edge} className={edge?.data?.active === true ? 'edge processing' : 'edge'} />}
                     />

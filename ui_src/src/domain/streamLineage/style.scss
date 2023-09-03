@@ -14,27 +14,17 @@ $grid-color: rgba(150, 150, 150, .3);
     .title-wrapper{
         display: flex;
         justify-content: space-between;
-        .bread-crumbs{
-            display: flex;
-            height: 30px;
-            align-items: center;
-            img{
-                margin-right: 10px;
-                cursor: pointer;
-            }
-            p{
-                margin: 0;
+        .overview-components-header {
+            p {
+                align-items: center;
+                font-size: 17px;
                 font-family: 'InterSemiBold';
-                font-size: 20px;
-                line-height: 29px;
-                color: #1D1D1D; 
+                margin-bottom: 0;
             }
-            span{
+            label {
+                font-size: 14px;
+                color: #b4b4b4;
                 font-family: 'InterMedium';
-                font-size: 16px;
-                line-height: 29px;
-                color: #667085; 
-                
             }
         }
         .refresh-wrapper{
@@ -82,6 +72,11 @@ $grid-color: rgba(150, 150, 150, .3);
                 svg:hover{
                     color: var(--purple);
                 }
+                .lock-feature-icon{
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;   
+                }
             }
             .zoom-wrapper{
                 width: 40px;
@@ -116,7 +111,7 @@ $grid-color: rgba(150, 150, 150, .3);
     }
 
     .canvas-wrapper{
-        height: calc(100% - 20px);
+        height: calc(100% - 40px);
         .edge {
             stroke-width: 8;
              stroke: rgba(101,87,255,.1);
@@ -156,9 +151,10 @@ $grid-color: rgba(150, 150, 150, .3);
     }
 }
 
-.lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
-    max-height: 250px !important;
-}
+// .lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
+//     max-height: 250px !important;
+// }
+
 .lineage-empthy{
     padding: 15px;
     position: relative;

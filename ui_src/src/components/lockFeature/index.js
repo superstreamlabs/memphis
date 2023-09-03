@@ -19,7 +19,7 @@ import TooltipComponent from '../tooltip/tooltip';
 import { Context } from '../../hooks/store';
 import UpgradePlans from '../upgradePlans';
 
-const LockFeature = ({ position }) => {
+const LockFeature = ({ position, header }) => {
     const [state, dispatch] = useContext(Context);
     const style = {
         position: position || 'absolute'
@@ -36,11 +36,11 @@ const LockFeature = ({ position }) => {
             tooltipRef={tooltipRef}
             text={
                 <div className="lock-tooltip-text">
-                    <p>Upgrade needed</p>
+                    <p>{header || 'Upgrade needed'}</p>
                     <span>Please upgrade your plan to unlock this feature</span>
                     <UpgradePlans
                         content={
-                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'} onClick={() => (isRoot ? tooltipRef.current() : null)}>
+                            <div className="upgrade-button-wrapper" onClick={() => (isRoot ? tooltipRef.current() : null)}>
                                 <p className="upgrade-plan">Upgrade now</p>
                             </div>
                         }
