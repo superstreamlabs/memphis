@@ -25,6 +25,10 @@ import (
 
 func flushMapToTier2Storage() error {
 	for t, tenant := range tieredStorageMsgsMap.m {
+		if IsStorageLimitExceeded(t) {
+			serv.Warnf("[tenant:%s]flushMapToTier2Storage: %s", t, ErrUpgradePlan.Error())
+			continue
+		}
 		if ValidataAccessToFeature(t, "feature-storage-tiering") {
 			for k, f := range StorageFunctionsMap {
 				switch k {
@@ -63,6 +67,11 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 		memStore := storageType.(*memStore)
 		streamName = memStore.cfg.Name
 		tenantName = memStore.account.Name
+	}
+
+	if IsStorageLimitExceeded(tenantName) {
+		serv.Warnf("[tenant:%s]sendToTier2Storage: %s", tenantName, ErrUpgradePlan.Error())
+		return nil
 	}
 
 	for k := range StorageFunctionsMap {

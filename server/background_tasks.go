@@ -311,6 +311,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for cache updates" + err.Error())
 	}
 
+	err = s.ListenForCloudCacheUpdates()
+	if err != nil {
+		return errors.New("Failed to subscribing for cloud cache updates" + err.Error())
+	}
+
 	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeTieredStorageMsgs()

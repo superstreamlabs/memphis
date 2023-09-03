@@ -3844,10 +3844,6 @@ func (s *Server) initializeMemphis() {
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
 	}
-	err = s.InitializeCloudComponents()
-	if err != nil {
-		s.Errorf("Failed initializing firestore: " + err.Error())
-	}
 
 	err = InitializeIntegrations()
 	if err != nil {
