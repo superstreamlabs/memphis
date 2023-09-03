@@ -426,8 +426,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     </div>
                 )}
                 <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
-                    <div className="select-lan">
-                        <div>
+                    <div className="username-section">
+                        <span className="input-item">
                             <p className="field-title">Protocol</p>
                             <SelectComponent
                                 value={protocolSelected}
@@ -436,14 +436,13 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 radiusType="semi-round"
-                                width="235px"
                                 height="42px"
                                 options={selectProtocolOption}
                                 onChange={(e) => handleSelectProtocol(e)}
                                 popupClassName="select-options"
                             />
-                        </div>
-                        <div>
+                        </span>
+                        <span className="input-item">
                             <p className="field-title">Language</p>
                             <SelectComponent
                                 value={langSelected}
@@ -452,13 +451,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 radiusType="semi-round"
-                                width="235px"
                                 height="42px"
                                 options={protocolSelected === 'NATS' ? selectLngOption : selectProtocolLngOptions}
                                 onChange={(e) => (protocolSelected === 'NATS' ? handleSelectLang(e) : handleSelectLang(e, false))}
                                 popupClassName="select-options"
                             />
-                        </div>
+                        </span>
                     </div>
 
                     <>
@@ -499,12 +497,14 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         <div className="parameters-section">
                                             {(tabValue === 'NATS' || tabValueRest === 'Generate token') && (
                                                 <>
-                                                    <div className="new-user">
-                                                        <div className="generate-action" onClick={() => addUserModalFlip(true)}>
-                                                            <FiPlus />
-                                                            <span>Create new user</span>
+                                                    {withHeader && (
+                                                        <div className="new-user">
+                                                            <div className="generate-action" onClick={() => addUserModalFlip(true)}>
+                                                                <FiPlus />
+                                                                <span>Create new user</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
                                                     <div className="username-section">
                                                         <span className="input-item">
                                                             <TitleComponent headerTitle="Username" typeTitle="sub-header" />
@@ -841,7 +841,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             </div>
             <Divider type="vertical" />
             <div>
-                <div className="code-output-title">
+                <div className={`code-output-title ${withHeader && 'code-output-title-code-example'}`}>
                     <p>Code Output</p>
                     <label>Copy code example to your IDE</label>
                 </div>

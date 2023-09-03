@@ -5,6 +5,21 @@
     height: calc(100% - 15px);
     margin-top: 15px;
     position: relative;
+    .username-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+        .input-item {
+            width: 100%;
+        }
+        .remove-icon {
+            margin-top: 45px;
+            font-size: 30px;
+            cursor: pointer;
+        }
+    }
     .left-side-container {
         height: 745px;
         position: relative;
@@ -33,10 +48,11 @@
 
     .code-generator-container {
         overflow-y: auto;
+        padding-right: 20px;
         .code-builder {
             border: #e7e7e7 1px solid;
             border-radius: 12px;
-            margin: 0px 20px 20px 0;
+            margin-bottom: 20px;
             .ant-collapse {
                 background: rgba(101, 87, 255, 0.1);
                 border-radius: 12px;
@@ -75,21 +91,6 @@
                     position: absolute;
                     right: 15px;
                     top: 25px;
-                }
-            }
-            .username-section {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                gap: 10px;
-                width: 100%;
-                .input-item {
-                    width: 100%;
-                }
-                .remove-icon {
-                    margin-top: 45px;
-                    font-size: 30px;
-                    cursor: pointer;
                 }
             }
             .ant-divider-horizontal {
@@ -162,6 +163,7 @@
         margin-bottom: 5px;
     }
     .select-lan {
+        width: 100%;
         display: flex;
         gap: 10px;
         margin: 10px 0px;
@@ -177,7 +179,6 @@
             box-sizing: border-box;
             border-radius: 4px;
             height: 42px;
-            width: 480px;
             display: flex;
             align-items: center;
             padding: 0px 10px;
@@ -258,12 +259,14 @@
             height: 510px !important;
         }
     }
+    .code-output-title-code-example {
+        margin-top: 50px;
+    }
 
     .code-output-title {
         border-radius: 8px;
         background: rgba(101, 87, 255, 0.1);
         padding: 15px 20px;
-        margin-top: 40px;
         margin-bottom: 20px;
         p {
             margin-bottom: 5px;
