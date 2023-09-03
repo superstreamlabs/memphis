@@ -3577,6 +3577,15 @@ func (c *client) processInboundClientMsg(msg []byte) (bool, bool) {
 	c.in.msgs++
 	c.in.bytes += int32(len(msg) - LEN_CR_LF)
 
+	// *** added by Memphis
+	accName := c.Account().GetName()
+	subj := string(c.pa.subject)
+	if !strings.HasPrefix(subj, "$JS") && !strings.HasPrefix(subj, "_INBOX") && accName != MEMPHIS_GLOBAL_ACCOUNT && accName != globalAccountName && accName != DEFAULT_SYSTEM_ACCOUNT {
+		hdrBytes, msgBytes := c.msgParts(msg)
+		IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
+	}
+	// added by Memphis ***
+
 	// Check that client (could be here with SYSTEM) is not publishing on reserved "$GNR" prefix.
 	if c.kind == CLIENT && hasGWRoutedReplyPrefix(c.pa.subject) {
 		c.pubPermissionViolation(c.pa.subject)

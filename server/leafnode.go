@@ -2309,7 +2309,15 @@ func (c *client) processInboundLeafMsg(msg []byte) {
 	if srv == nil || acc == nil {
 		return
 	}
-
+	// *** added by Memphis - for billing in the future when we enable this
+	// accName := c.Account().GetName()
+	// subj := string(c.pa.subject)
+	// if !strings.HasPrefix(subj, "$JS") && !strings.HasPrefix(subj, "_INBOX") && accName != MEMPHIS_GLOBAL_ACCOUNT && accName != globalAccountName && accName != DEFAULT_SYSTEM_ACCOUNT {
+	// 	hdrBytes, msgBytes := c.msgParts(msg)
+	// 	IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
+	// }
+	// added by Memphis ***
+	
 	// Match the subscriptions. We will use our own L1 map if
 	// it's still valid, avoiding contention on the shared sublist.
 	var r *SublistResult

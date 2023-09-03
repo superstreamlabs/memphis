@@ -2933,7 +2933,15 @@ func (c *client) processInboundGatewayMsg(msg []byte) {
 	if c.opts.Verbose {
 		c.sendOK()
 	}
-
+	// *** added by Memphis - for billing in the future when we enable this
+	// accName := c.Account().GetName()
+	// subj := string(c.pa.subject)
+	// if !strings.HasPrefix(subj, "$JS") && !strings.HasPrefix(subj, "_INBOX") && accName != MEMPHIS_GLOBAL_ACCOUNT && accName != globalAccountName && accName != DEFAULT_SYSTEM_ACCOUNT {
+	// 	hdrBytes, msgBytes := c.msgParts(msg)
+	// 	IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
+	// }
+	// added by Memphis ***
+	
 	// Mostly under testing scenarios.
 	if c.srv == nil {
 		return
