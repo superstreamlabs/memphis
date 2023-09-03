@@ -426,8 +426,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     </div>
                 )}
                 <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
-                    {/* <div className="select-lan">
-                        <div> */}
                     <div className="username-section">
                         <span className="input-item">
                             <p className="field-title">Protocol</p>
@@ -438,15 +436,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 radiusType="semi-round"
-                                // width="235px"
                                 height="42px"
                                 options={selectProtocolOption}
                                 onChange={(e) => handleSelectProtocol(e)}
                                 popupClassName="select-options"
                             />
                         </span>
-                        {/* </div>
-                        <div> */}
                         <span className="input-item">
                             <p className="field-title">Language</p>
                             <SelectComponent
@@ -456,13 +451,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 backgroundColorType="none"
                                 borderColorType="gray"
                                 radiusType="semi-round"
-                                // width="235px"
                                 height="42px"
                                 options={protocolSelected === 'NATS' ? selectLngOption : selectProtocolLngOptions}
                                 onChange={(e) => (protocolSelected === 'NATS' ? handleSelectLang(e) : handleSelectLang(e, false))}
                                 popupClassName="select-options"
                             />
-                            {/* </div> */}
                         </span>
                     </div>
 
