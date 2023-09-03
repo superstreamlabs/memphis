@@ -392,7 +392,7 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                         </div>
                         <UpgradePlans
                             content={
-                                <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                <div className="upgrade-button-wrapper">
                                     <p className="upgrade-plan">Upgrade now</p>
                                 </div>
                             }

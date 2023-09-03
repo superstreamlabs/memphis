@@ -56,7 +56,7 @@ const retanionOptions = [
     {
         id: 4,
         value: 'ack_based',
-        label: 'Ack based'
+        label: 'Ack'
     }
 ];
 
@@ -385,7 +385,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     </div>
                                     <UpgradePlans
                                         content={
-                                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                            <div className="upgrade-button-wrapper">
                                                 <p className="upgrade-plan">Upgrade now</p>
                                             </div>
                                         }
@@ -526,13 +526,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             {retentionType === retanionOptions[0].value && (
                                 <div className="time-value">
                                     <div className="days-section">
-                                        <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 7}>
+                                        <Form.Item name="days" initialValue={getStartedStateRef?.formFieldsCreateStation?.days || 1}>
                                             <InputNumberComponent
                                                 min={0}
                                                 max={isCloud() ? 14 : 1000}
                                                 onChange={(e) => getStarted && updateFormState('days', e)}
                                                 value={getStartedStateRef?.formFieldsCreateStation?.days}
-                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 7}
+                                                placeholder={getStartedStateRef?.formFieldsCreateStation?.days || 1}
                                                 disabled={!allowEdit}
                                             />
                                         </Form.Item>
@@ -637,7 +637,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                     </div>
                                     <UpgradePlans
                                         content={
-                                            <div className={isRoot ? 'upgrade-button-wrapper' : 'upgrade-button-wrapper disabled'}>
+                                            <div className="upgrade-button-wrapper">
                                                 <p className="upgrade-plan">Upgrade now</p>
                                             </div>
                                         }
@@ -730,7 +730,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                                             onClick={() => null}
                                                         />
                                                     ) : (
-                                                        <LockFeature />
+                                                        <LockFeature header="Storage tiering" />
                                                     )
                                                 }
                                             />

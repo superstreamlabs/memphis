@@ -15,9 +15,9 @@ import './style.scss';
 import { Paywall, useStiggContext } from '@stigg/react-sdk';
 import { FiArrowUpRight, FiArrowDownLeft } from 'react-icons/fi';
 import { HiQuestionMarkCircle, HiOutlineExclamationCircle } from 'react-icons/hi';
+import { PiAsteriskSimpleFill } from 'react-icons/pi';
 import React, { Fragment, useContext, useState } from 'react';
 import { BsCheckLg } from 'react-icons/bs';
-import { IoClose } from 'react-icons/io5';
 import { Link } from 'react-router-dom';
 
 import { ReactComponent as RedirectIcon } from '../../assets/images/redirectIcon.svg';
@@ -35,7 +35,7 @@ const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Perform
 
 const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
     const [state, dispatch] = useContext(Context);
-    const { refreshData } = useStiggContext();
+    const { refreshData, isInitialized } = useStiggContext();
     const [instructionsModalOpen, setInstructionsModalOpen] = useState(false);
     const [downgradeModalOpen, setDowngradeModalOpen] = useState(false);
     const [downgradeInstructions, setDowngradeInstructions] = useState({});
@@ -109,10 +109,23 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
         }
     };
 
+    const handleUpdateTrigger = () => {
+        if (!isInitialized) {
+            showMessages('warning', 'Oh no! We are experiencing some issues with our new billing model. Please check again in a few minutes.');
+        } else {
+            isRoot ? setUpgradeModalOpen(true) : showMessages('warning', 'Upgrade is allowed by an owner user only.');
+        }
+    };
+
     return (
         <div className="upgrade-plans-container">
             {!isExternal && (
-                <div className="content-button-wrapper" onClick={() => (isRoot ? setUpgradeModalOpen(true) : null)}>
+                <div
+                    className="content-button-wrapper"
+                    onClick={() => {
+                        handleUpdateTrigger();
+                    }}
+                >
                     {content}
                 </div>
             )}
@@ -127,7 +140,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                     <div className="paywall-header">
                         <p>Pricing & Plans</p>
                         <div className="description">
-                            <label>Grow as needed and save costs!</label>
+                            <label>Prices are not included traffic charges!</label>
                             <a className="a-link" href="https://memphis.dev/pricing" target="_blank">
                                 Explore more
                             </a>
@@ -135,6 +148,9 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                         </div>
                     </div>
                     <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-starter-new" />
+                    <div className="paywall-footer">
+                        <label>*Coming soon</label>
+                    </div>
                     <div className="paywall-footer">
                         <HiQuestionMarkCircle />
                         <label>

@@ -352,10 +352,10 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 }
                 rBtnClick={() => {
-                    if (activeConsumerList.length > 0) {
-                        produceMessagesRef.current();
-                    } else {
+                    if (activeConsumerList.length === 0 && stationState?.stationMetaData?.retention_type === 'ack_based') {
                         setOpenNoConsumer(true);
+                    } else {
+                        produceMessagesRef.current();
                     }
                 }}
                 lBtnClick={() => setOpenProduceMessages(false)}
@@ -374,14 +374,12 @@ const ProduceConsumList = ({ producer }) => {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            {/* <img className="headerImage" src={playVideoIcon} alt="stationImg" /> */}
                             <ErrorModalIcon width={45} height={45} />
                         </div>
                     </div>
                 }
                 className={'modal-wrapper produce-modal'}
                 width="403px"
-                height="10vh"
                 clickOutside={() => {
                     setOpenNoConsumer(false);
                 }}
@@ -402,8 +400,8 @@ const ProduceConsumList = ({ producer }) => {
                 isLoading={produceloading}
                 keyListener={false}
             >
-                <p className="no-consumer-message--p "> Ack based station without consumers</p>
-                <label className="no-consumer-message--label ">When using ack-based retention, a consumer must be connected before producing a message.</label>
+                <p className="no-consumer-message--p">The message will not be stored</p>
+                <label className="no-consumer-message--label">When using ack-based retention, a message will not be stored if no consumers are connected.</label>
             </Modal>
         </div>
     );

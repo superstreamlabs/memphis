@@ -129,8 +129,11 @@ const IntegrationItem = ({ value, lockFeature }) => {
                     </div>
                 )}
                 {lockFeature && (
-                    <div className="lock-integration">
-                        <LockFeature />
+                    <div className="lock-wrapper">
+                        <div className="opacity-background" />
+                        <div className="lock-integration">
+                            <LockFeature header="Storage tiering" />
+                        </div>
                     </div>
                 )}
                 <div className="integration-name">

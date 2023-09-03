@@ -48,10 +48,10 @@ export const CLOUD_URL = isCloud()
 
 export const STIGG_CLIENT_ID = isCloud()
     ? window.location.href?.includes('localhost')
-        ? 'client-4dc45394-e808-4470-8d5d-7c4c4d162efb:04308cac-952e-4f75-a503-b3d93be85c9a'
+        ? 'client-becd87e7-8dba-4c0a-8e9f-bb10d5b0a1ff:04308cac-952e-4f75-a503-b3d93be85c9a'
         : window.location.href?.includes('cloud-qa')
-        ? 'client-933dacfa-c05d-4c60-8bc9-1fe28adcdb51:04308cac-952e-4f75-a503-b3d93be85c9a'
+        ? 'client-0abc22d6-1a09-40d4-bed8-2b682df63149:04308cac-952e-4f75-a503-b3d93be85c9a'
         : window.location.href?.includes('cloud-staging')
-        ? 'client-933dacfa-c05d-4c60-8bc9-1fe28adcdb51:04308cac-952e-4f75-a503-b3d93be85c9a'
+        ? 'client-05a500b6-81d3-4af5-afd9-8ea72f727edf:04308cac-952e-4f75-a503-b3d93be85c9a'
         : 'client-da938764-f7b9-406b-8d02-d2f834a795b4:04308cac-952e-4f75-a503-b3d93be85c9a'
     : null;

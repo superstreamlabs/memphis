@@ -3,7 +3,7 @@ import React from 'react';
 import './style.scss';
 
 const StationsInstructions = ({ header, button, image, newStation, des }) => {
-    const description = des || 'A station is a distributed unit that producers store data at and consumers consume data from.';
+    const description = des || 'A station is a distributed unit that stores messages.';
 
     return (
         <div className={image ? 'stations-placeholder' : 'stations-placeholder add-more'}>
