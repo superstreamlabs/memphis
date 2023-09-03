@@ -57,6 +57,8 @@ type LoginSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+var ErrUpgradePlan = errors.New("to continue using Memphis, please upgrade your plan to a paid plan")
+
 type MainOverviewData struct {
 	TotalStations     int                               `json:"total_stations"`
 	TotalMessages     uint64                            `json:"total_messages"`
@@ -2159,4 +2161,20 @@ func ValidataUsageLimitOfFeature(tenantName, featureName string, amount int) (bo
 
 func validateRetentionPolicyUsage(tenantName, retentionType string, retentionValue int) bool {
 	return true
+}
+
+func InitializeCloudComponents() error {
+	return nil
+}
+
+func (s *Server) ListenForCloudCacheUpdates() error {
+	return nil
+}
+
+func (c *client) AccountConnExceeded() {
+	c.sendErrAndErr(ErrTooManyAccountConnections.Error())
+}
+
+func IsStorageLimitExceeded(tenantName string) bool {
+	return false
 }

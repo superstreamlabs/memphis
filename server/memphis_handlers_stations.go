@@ -1491,6 +1491,12 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 		return
 	}
 
+	if IsStorageLimitExceeded(user.TenantName) {
+		serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at IsStorageLimitExceeded: %s", user.TenantName, user.Username, ErrUpgradePlan.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": ErrUpgradePlan.Error()})
+		return
+	}
+
 	stationName := strings.ToLower(body.StationName)
 	exist, station, err := db.GetStationByName(stationName, user.TenantName)
 	if err != nil {

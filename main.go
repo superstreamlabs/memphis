@@ -166,6 +166,11 @@ func main() {
 		server.PrintAndDie(fmt.Sprintf("%s: %s", exe, err))
 	}
 
+	err = server.InitializeCloudComponents()
+	if err != nil {
+		server.PrintAndDie(fmt.Sprintf("Failed initializing InitializeCloudComponents: %s: %s", exe, err))
+	}
+
 	// Configure the options from the flags/config file
 	opts, err := server.ConfigureOptions(fs, os.Args[1:],
 		server.PrintServerAndExit,

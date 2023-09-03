@@ -60,6 +60,7 @@ const (
 	MEMPHIS_GLOBAL_ACCOUNT = "$memphis"
 )
 
+var noLimit = -1
 var enableJetStream = true
 
 var memphisReplaceExportString = "replaceExports"
@@ -1492,10 +1493,11 @@ type UserConfig struct {
 }
 
 type AccountConfig struct {
-	Jetstream *bool        `json:"jetstream,omitempty"`
-	Users     []UserConfig `json:"users,omitempty"`
-	Exports   string       `json:"exports,omitempty"`
-	Imports   string       `json:"imports,omitempty"`
+	Jetstream *bool           `json:"jetstream,omitempty"`
+	Users     []UserConfig    `json:"users,omitempty"`
+	Limits    map[string]*int `json:"limits,omitempty"`
+	Exports   string          `json:"exports,omitempty"`
+	Imports   string          `json:"imports,omitempty"`
 }
 
 type Authorization struct {
@@ -1539,7 +1541,8 @@ func getAccountsAndUsersString() (string, error) {
 		"$SYS": {
 			Users: []UserConfig{
 				{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
-			}},
+			},
+			Limits: map[string]*int{"max_connections": &noLimit}},
 	}
 	if shouldCreateRootUserforGlobalAcc {
 		_, globalT, err := db.GetGlobalTenant()
@@ -1583,9 +1586,13 @@ func getAccountsAndUsersString() (string, error) {
 				usrsList = append(usrsList, usrChangeName)
 			}
 		}
-		accounts[t.Name] = AccountConfig{Jetstream: &enableJetStream, Users: usrsList, Imports: memphisReplaceImportString}
+		maxConnAllowed := noLimit
+		if IsStorageLimitExceeded(t.Name) {
+			maxConnAllowed = 0
+		}
+		accounts[t.Name] = AccountConfig{Jetstream: &enableJetStream, Users: usrsList, Limits: map[string]*int{"max_connections": &maxConnAllowed}, Imports: memphisReplaceImportString}
 	}
-	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Exports: memphisReplaceExportString}
+	accounts[MEMPHIS_GLOBAL_ACCOUNT] = AccountConfig{Jetstream: &enableJetStream, Users: globalUsers, Limits: map[string]*int{"max_connections": &noLimit}, Exports: memphisReplaceExportString}
 	jsonString, err := generateJSONString(accounts)
 	if err != nil {
 		return "", err
