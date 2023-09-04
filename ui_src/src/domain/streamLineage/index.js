@@ -23,7 +23,6 @@ import { Divider } from 'antd';
 
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
-import BackIcon from '../../assets/images/backIcon.svg';
 import { httpRequest } from '../../services/http';
 import Connection from './components/connection';
 import Loader from '../../components/loader';
@@ -186,6 +185,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             }, 1000);
         }
     };
+
     return (
         <div
             className={
@@ -255,9 +255,9 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         fit={true}
                         ref={ref}
                         zoomable={state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] ? true : false}
-                        maxZoom={0.2}
+                        maxZoom={0.1}
                         minZoom={-0.9}
-                        height={'100%'}
+                        maxHeight={nodes.length * 350}
                         node={
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (

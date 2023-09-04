@@ -15,20 +15,11 @@ import React, { useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { convertBytes } from '../../../../services/valueConvertor';
-import { Divider } from 'antd';
-import TotalMsgIcon from '../../../../assets/images/setting/totalMsgIcon.svg';
-import PriceIcon from '../../../../assets/images/setting/priceIcon.svg';
-import RequestsIn from '../../../../assets/images/setting/requestsIn.svg';
-import RequestsOut from '../../../../assets/images/setting/requestsOut.svg';
-import CloudProviderAWS from '../../../../assets/images/setting/cloudProviderAWS.svg';
-import USAIcon from '../../../../assets/images/setting/usaIcon.svg';
-import GermanyIcon from '../../../../assets/images/setting/germanyIcon.svg';
 import Consumed from '../../../../assets/images/setting/consumed.svg';
 import Redeliver from '../../../../assets/images/setting/redeliver.svg';
 import DeadLetter from '../../../../assets/images/setting/deadLetter.svg';
 import Storage from '../../../../assets/images/setting/storage.svg';
 import DatePickerComponent from '../../../../components/datePicker';
-import SegmentButton from '../../../../components/segmentButton';
 import Loader from '../../../../components/loader';
 import { ReactComponent as DataInIcon } from '../../../../assets/images/dataIn.svg';
 import { ReactComponent as DataOutIcon } from '../../../../assets/images/dataOut.svg';
@@ -85,7 +76,7 @@ function Requests() {
                                     <span className="text-left">Data in</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? convertBytes(usageData?.data_in, true) : 0}</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_in, false) : 0}</span>
                                 </div>
                             </div>
                             <div className="divider" />
@@ -110,7 +101,7 @@ function Requests() {
                                     <span className="text-left">Data out</span>
                                 </div>
                                 <div className="bottom-row">
-                                    <span className="text">{usageData ? convertBytes(usageData?.data_out, true) : '0 Gb'}</span>
+                                    <span className="text">{usageData ? convertBytes(usageData?.data_out, false) : '0 Gb'}</span>
                                 </div>
                             </div>
                             <div className="divider" />

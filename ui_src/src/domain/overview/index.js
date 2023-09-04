@@ -257,7 +257,7 @@ function OverView() {
                                         <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                                         <Throughput />
                                     </div>
-                                    <div className="right-side cloud">
+                                    <div className={state?.monitor_data?.billing_details?.is_free_plan ? 'right-side free-cloud' : 'right-side cloud'}>
                                         <Stations createStationTrigger={(e) => modalFlip(e)} />
                                         <Tags />
                                         {state?.monitor_data?.billing_details?.is_free_plan ? <Usage /> : <Integrations />}

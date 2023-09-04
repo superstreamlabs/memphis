@@ -10,7 +10,6 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 import React, { useContext } from 'react';
-import Button from '../../../components/button';
 import UpgradePlans from '../../../components/upgradePlans';
 
 import { Context } from '../../../hooks/store';
@@ -18,11 +17,10 @@ import { Context } from '../../../hooks/store';
 import './style.scss';
 const Usage = () => {
     const [state, dispatch] = useContext(Context);
-    const isRoot = state?.userData?.user_type === 'root';
 
     const actual = state?.monitor_data?.billing_details?.actual_usage || 0;
     const total = state?.monitor_data?.billing_details?.total_included || 1;
-    const widthInPercentage = (actual / total) * 100;
+    const widthInPercentage = (actual / total) * 100 > 100 ? 100 : (actual / total) * 100;
 
     const dataStyle = {
         width: `${widthInPercentage}%`,
@@ -45,7 +43,10 @@ const Usage = () => {
                 </div>
                 <div className="usage-body">
                     <div className="usageLeft-side">
-                        <div className="usageLeft-label" style={{ paddingLeft: `${widthInPercentage}%` }}>
+                        <div
+                            className="usageLeft-label"
+                            style={{ paddingLeft: `${widthInPercentage}%`, marginLeft: widthInPercentage > 99.5 ? '-1px' : widthInPercentage < 0.1 ? '1px' : '0px' }}
+                        >
                             <div className="dividerContainer">
                                 <span className="labelMain">Current usage</span>
                                 <span className="labelSecondary">{`${actual} GB`}</span>
