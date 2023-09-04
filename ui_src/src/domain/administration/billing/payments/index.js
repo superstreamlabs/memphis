@@ -12,8 +12,9 @@
 
 import './style.scss';
 
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useState, useContext } from 'react';
 
+import { Context } from '../../../../hooks/store';
 import billinigAlertIcon from '../../../../assets/images/billinigAlertIcon.svg';
 import TotalPayment from './components/totalPayment';
 import Button from '../../../../components/button';
@@ -25,11 +26,14 @@ import { showMessages } from '../../../../services/genericServices';
 import { Form } from 'antd';
 
 function Payments() {
+    const [state, dispatch] = useContext(Context);
     const [isOpen, setIsOpen] = useState(false);
     const [amount, setAmount] = useState('');
     const [alertLoading, setAlertLoading] = useState(false);
     const [formFields, setFormFields] = useState({});
     const [creationForm] = Form.useForm();
+
+    const isFreePlan = state?.monitor_data?.billing_details?.is_free_plan;
 
     useEffect(() => {
         getBillingAlert();
@@ -81,26 +85,28 @@ function Payments() {
                 <div className="header">
                     <div className="header-flex">
                         <p className="main-header">Payments</p>
-                        <Button
-                            className="modal-btn"
-                            width="fit-content"
-                            height="32px"
-                            placeholder={
-                                <div className="billinig-alert-button">
-                                    <img src={billinigAlertIcon} alt="billinigAlertIcon" />
-                                    <label>{Object.keys(formFields).length > 0 ? 'Edit Billing Alert' : 'Set Billing Alert'}</label>
-                                </div>
-                            }
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="none"
-                            border="gray-light"
-                            fontSize="14px"
-                            fontFamily="InterMedium"
-                            onClick={() => {
-                                setIsOpen(true);
-                            }}
-                        />
+                        {!!!isFreePlan && (
+                            <Button
+                                className="modal-btn"
+                                width="fit-content"
+                                height="32px"
+                                placeholder={
+                                    <div className="billinig-alert-button">
+                                        <img src={billinigAlertIcon} alt="billinigAlertIcon" />
+                                        <label>{Object.keys(formFields).length > 0 ? 'Edit Billing Alert' : 'Set Billing Alert'}</label>
+                                    </div>
+                                }
+                                colorType="black"
+                                radiusType="circle"
+                                backgroundColorType="none"
+                                border="gray-light"
+                                fontSize="14px"
+                                fontFamily="InterMedium"
+                                onClick={() => {
+                                    setIsOpen(true);
+                                }}
+                            />
+                        )}
                     </div>
                     <p className="memphis-label">This section is for managing your payment methods and invoices.</p>
                 </div>
