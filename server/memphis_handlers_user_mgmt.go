@@ -391,7 +391,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
