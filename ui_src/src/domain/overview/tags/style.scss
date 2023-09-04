@@ -6,9 +6,12 @@
     flex-direction: column;
     justify-content: space-between;
     .tags-items-container {
-        height: calc(100% - 30px);
+        height: calc(100%);
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
         .tag-item {
-            margin-top: 10px;
             display: flex;
             justify-content: space-between;
             .item {

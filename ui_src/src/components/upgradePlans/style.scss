@@ -13,7 +13,15 @@
             margin: 0;
         }
     }
-    .description, .paywall-footer{
+    .paywall-footer
+    {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 14px;
+        color: #667085;
+    }
+    .description, .question-info{
         font-size: 14px;
         color: #667085;
         font-family: 'Inter';
@@ -32,7 +40,7 @@
         overflow: auto;
         padding-right: 24px;
         .stigg-plan-offering-container{
-            padding: 30px !important;
+            padding: 15px 30px !important;
             .stigg-highlight-badge{
                 left: 30%;
                 width: 40%;
@@ -103,7 +111,7 @@
                 height: 1px !important;
             }
             .stigg-plan-entitlements-container{
-                gap: 10px !important;
+                gap: 8px !important;
                 .stigg-plan-entitlements-title{
                     color: black !important;
                     font-family: 'Inter' !important;

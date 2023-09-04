@@ -160,9 +160,13 @@
                 min-width: 430px;
                 align-content: space-between;
             }
+            .free-cloud {
+                display: grid;
+                grid-template-rows: 46% 27% 23%;
+            }
             .cloud {
                 display: grid;
-                grid-template-rows: 43% 30% 23%;
+                grid-template-rows: 49% 32% 15%;
             }
 
             .system-components-wrapper {

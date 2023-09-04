@@ -76,6 +76,7 @@ const App = withRouter(() => {
     const firebase_id_token = urlParams.get('firebase_id_token');
     const firebase_organization_id = urlParams.get('firebase_organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+    const [refreshPlan, setRefreshPlan] = useState(isCloud() ? true : false);
     const [persistedNotifications, setPersistedNotifications] = useState(() => {
         const storedNotifications = JSON.parse(localStorage.getItem('persistedNotifications'));
         return storedNotifications || [];
@@ -124,6 +125,7 @@ const App = withRouter(() => {
             history.push('/overview');
             setCloudLogedIn(true);
         } catch (error) {
+            setCloudLogedIn(true);
             console.log(error);
         }
     };
@@ -183,7 +185,7 @@ const App = withRouter(() => {
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {
-                        return;
+                        throw new Error(error);
                     }
                 }
                 return true;
@@ -193,13 +195,30 @@ const App = withRouter(() => {
         }
     }, []);
 
+    const handleUpdatePlan = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.REFRESH_BILLING_PLAN);
+            dispatch({ type: 'SET_ENTITLEMENTS', payload: data });
+            setRefreshPlan(false);
+            showMessages('success', 'Your plan has been successfully updated.');
+        } catch (error) {
+            setRefreshPlan(false);
+        }
+    };
+
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const checkout_completed = urlParams.get('checkoutCompleted');
-        if (checkout_completed === null) return;
+        if (checkout_completed === null) {
+            setRefreshPlan(false);
+            return;
+        }
         if (checkout_completed === 'true') {
-            showMessages('success', 'Your plan has been successfully updatead.');
+            setTimeout(() => {
+                handleUpdatePlan();
+            }, 3000);
         } else {
+            setRefreshPlan(false);
             showMessages('error', 'Something went wrong. Please try again.');
         }
     }, []);
@@ -354,12 +373,13 @@ const App = withRouter(() => {
 
     return (
         <div className="app-container">
-            {!cloudLogedIn && <Loader />}
+            {(!cloudLogedIn || refreshPlan) && <Loader />}
             {systemMessage?.length > 0 && displaySystemMessage()}
             <div>
                 {' '}
                 {!authCheck &&
                     cloudLogedIn &&
+                    !refreshPlan &&
                     (!isCloud() ? (
                         <Switch>
                             <Route exact path={pathDomains.signup} component={Signup} />

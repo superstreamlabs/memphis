@@ -99,6 +99,7 @@ export const ApiEndpoints = {
     //Cloud
     GET_BILLING_DETAILS: '/billing/getBill',
     UPGRADE_PLAN: '/billing/upgradePlan',
+    REFRESH_BILLING_PLAN: '/billing/refreshBillingPlan',
     DOWNGRADE_CHECK: '/billing/downgradeCheck',
     GET_BILLING_ALERT: '/billing/getBillingAlert',
     UPDATE_BILLING_ALERT: '/billing/setBillingAlert',

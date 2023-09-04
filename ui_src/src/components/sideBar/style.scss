@@ -132,6 +132,7 @@
                 margin-bottom: 10px;
                 cursor: pointer;
                 p{
+                    line-height: 12px;
                     margin: 0;
                     font-family: 'InterSemiBold';
                     font-size: 12px;
@@ -170,11 +171,12 @@
         justify-content: center;
         padding-left: 10px;
         gap: 5px;
-        p{
+        .username{
             margin: 0;
             font-size: 13px;
             line-height: 13px;
             font-family: 'InterSemiBold';
+            text-transform: capitalize;
         }
         span{
             font-size: 12px;

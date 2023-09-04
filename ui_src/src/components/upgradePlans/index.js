@@ -150,16 +150,16 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                     <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-starter-new" />
                     <div className="paywall-footer">
                         <label>*Coming soon</label>
-                    </div>
-                    <div className="paywall-footer">
-                        <HiQuestionMarkCircle />
-                        <label>
-                            Questions? We are here to help! Please reach us via the
-                            <a className="a-link" href="https://memphis.dev/contact-us/?inquiry=sales">
-                                support page
-                            </a>
-                        </label>
-                        <FiArrowUpRight />
+                        <div className="question-info">
+                            <HiQuestionMarkCircle />
+                            <label>
+                                Questions? We are here to help! Please reach us via the
+                                <a className="a-link" href="https://memphis.dev/contact-us/?inquiry=sales">
+                                    support page
+                                </a>
+                            </label>
+                            <FiArrowUpRight />
+                        </div>
                     </div>
                 </Fragment>
             </Modal>

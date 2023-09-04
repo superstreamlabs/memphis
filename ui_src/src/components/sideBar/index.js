@@ -158,7 +158,7 @@ function SideBar() {
                     </span>
                 </span>
                 <div className="account-details">
-                    <p>
+                    <p className="username">
                         {localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== 'undefined' && localStorage.getItem(LOCAL_STORAGE_FULL_NAME) !== ''
                             ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
                             : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}

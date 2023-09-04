@@ -141,15 +141,13 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             <div className="station-meta">
                                 <div className="header">
                                     <PartitionIcon />
-                                    <label className="data-labels total">Partition</label>
+                                    <label className="data-labels total">Partitions</label>
                                 </div>
 
                                 <p className="data-info">
-                                    {station?.station?.partitions_list[0] === 0 ? (
-                                        <MinusOutlined style={{ color: '#2E2C34' }} />
-                                    ) : (
-                                        station?.station?.partitions_list[0].toLocaleString()
-                                    )}
+                                    {!station?.station?.partitions_list || station?.station?.partitions_list?.length === 0
+                                        ? 1
+                                        : station?.station?.partitions_list?.length?.toLocaleString()}
                                 </p>
                             </div>
                             <div className="station-meta poison">

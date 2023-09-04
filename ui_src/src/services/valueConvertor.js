@@ -127,6 +127,7 @@ function isFloat(n) {
 export const convertBytesToGb = (bytes) => {
     return bytes / 1024 / 1024 / 1024;
 };
+
 export const convertBytes = (bytes, round) => {
     const KB = 1024;
     const MB = KB * 1024;
