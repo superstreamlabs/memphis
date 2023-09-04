@@ -22,7 +22,7 @@ const Usage = () => {
 
     const actual = state?.monitor_data?.billing_details?.actual_usage || 0;
     const total = state?.monitor_data?.billing_details?.total_included || 1;
-    const widthInPercentage = (actual / total) * 100;
+    const widthInPercentage = (actual / total) * 100 > 100 ? 100 : (actual / total) * 100;
 
     const dataStyle = {
         width: `${widthInPercentage}%`,
@@ -45,7 +45,10 @@ const Usage = () => {
                 </div>
                 <div className="usage-body">
                     <div className="usageLeft-side">
-                        <div className="usageLeft-label" style={{ paddingLeft: `${widthInPercentage}%` }}>
+                        <div
+                            className="usageLeft-label"
+                            style={{ paddingLeft: `${widthInPercentage}%`, marginLeft: widthInPercentage > 99.5 ? '-1px' : widthInPercentage < 0.1 ? '1px' : '0px' }}
+                        >
                             <div className="dividerContainer">
                                 <span className="labelMain">Current usage</span>
                                 <span className="labelSecondary">{`${actual} GB`}</span>

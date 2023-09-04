@@ -26,6 +26,7 @@ $animation-type: ease-in-out;
                 justify-content: center;
                 cursor: pointer;
                 p {
+                    line-height: 12px;
                     margin: 0;
                     font-family: 'InterSemiBold';
                     font-size: 12px;
@@ -58,7 +59,6 @@ $animation-type: ease-in-out;
                     border-left: 1px solid #d2d2d2;
                     padding-left: 8px;
                     padding-bottom: 19px;
-                    margin-left: 1px;
                     .labelMain {
                         display: inline;
                         color: #2e2c34;
