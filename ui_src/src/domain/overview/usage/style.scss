@@ -18,13 +18,12 @@ $animation-type: ease-in-out;
             .upgrade-button-wrapper {
                 background: var(--yellow);
                 width: fit-content;
-                padding: 0px 5px;
+                padding: 0px 8px;
                 border-radius: 32px;
                 height: 24px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                margin-bottom: 10px;
                 cursor: pointer;
                 p {
                     margin: 0;
@@ -32,7 +31,7 @@ $animation-type: ease-in-out;
                     font-size: 12px;
                 }
             }
-            .upgrade-button-wrapper:hover{
+            .upgrade-button-wrapper:hover {
                 opacity: 0.9;
             }
         }
@@ -42,7 +41,7 @@ $animation-type: ease-in-out;
         flex-grow: 1;
         width: 100%;
         flex-direction: row;
-        gap: 8px;
+        gap: 10px;
         .usageLeft-side {
             display: flex;
             flex-grow: 1;
@@ -51,6 +50,7 @@ $animation-type: ease-in-out;
             .usageLeft-label {
                 margin-bottom: -5px;
                 transition: padding-left $animation-time $animation-type;
+                transition: transformX(-2px);
 
                 .dividerContainer {
                     display: flex;
@@ -58,7 +58,7 @@ $animation-type: ease-in-out;
                     border-left: 1px solid #d2d2d2;
                     padding-left: 8px;
                     padding-bottom: 19px;
-
+                    margin-left: 1px;
                     .labelMain {
                         display: inline;
                         color: #2e2c34;
@@ -67,6 +67,7 @@ $animation-type: ease-in-out;
                         font-style: normal;
                         font-weight: 700;
                         line-height: 20px;
+                        white-space: nowrap;
                     }
                     .labelSecondary {
                         display: inline;
@@ -101,6 +102,7 @@ $animation-type: ease-in-out;
             justify-content: flex-end;
             align-items: flex-start;
             gap: 3px;
+            padding-right: 18px;
             .mainText {
                 color: #2e2c34;
                 font-family: 'Inter';
