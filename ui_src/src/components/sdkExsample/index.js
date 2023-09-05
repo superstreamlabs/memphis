@@ -30,7 +30,7 @@ import noCodeExample from '../../assets/images/noCodeExample.svg';
 import codeIcon from '../../assets/images/codeIcon.svg';
 import refresh from '../../assets/images/refresh.svg';
 import addUserIcon from '../../assets/images/addUserIcon.svg';
-import { Collapse } from 'antd';
+import { Collapse, Typography } from 'antd';
 
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
 import SelectComponent from '../select';
@@ -43,6 +43,9 @@ import SegmentButton from '../segmentButton';
 import CreateUserDetails from '../../domain/users/createUserDetails';
 import { Divider, Form } from 'antd';
 import { FiMinusCircle, FiPlus } from 'react-icons/fi';
+import { httpRequest } from '../../services/http';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import CustomSelect from '../customSelect';
 
 loader.init();
 loader.config({ monaco });
@@ -53,6 +56,7 @@ const selectProtocolOption = ['NATS', 'HTTP (REST)'];
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
+    const [listofUsers, setListOfUsers] = useState([]);
     const [langSelected, setLangSelected] = useState('Go');
     const [protocolSelected, setProtocolSelected] = useState('NATS');
     const [codeExample, setCodeExample] = useState({
@@ -78,6 +82,17 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const createUserRef = useRef(null);
     const { Panel } = Collapse;
+
+    const getListOfUsers = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_USERS);
+            setListOfUsers(data.application_users.map((item) => ({ ...item, name: item.username })));
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        getListOfUsers();
+    }, [addUserModalIsOpen]);
 
     useEffect(() => {
         protocolSelected === 'NATS' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
@@ -497,31 +512,27 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         <div className="parameters-section">
                                             {(tabValue === 'NATS' || tabValueRest === 'Generate token') && (
                                                 <>
-                                                    {withHeader && (
+                                                    {/* {withHeader && (
                                                         <div className="new-user">
                                                             <div className="generate-action" onClick={() => addUserModalFlip(true)}>
                                                                 <FiPlus />
                                                                 <span>Create new user</span>
                                                             </div>
                                                         </div>
-                                                    )}
+                                                    )} */}
                                                     <div className="username-section">
                                                         <span className="input-item">
                                                             <TitleComponent headerTitle="Username" typeTitle="sub-header" />
                                                             <Form.Item>
-                                                                <Input
-                                                                    placeholder="Type user name"
-                                                                    type="text"
-                                                                    fontSize="14px"
-                                                                    maxLength="220"
-                                                                    radiusType="semi-round"
-                                                                    colorType="black"
-                                                                    backgroundColorType="white"
-                                                                    borderColorType="gray"
-                                                                    height="40px"
-                                                                    onBlur={(e) => updateFormFields('userName', e.target.value)}
-                                                                    onChange={(e) => updateFormFields('userName', e.target.value)}
+                                                                <CustomSelect
+                                                                    placeholder={formFields.userName || 'Select user name'}
                                                                     value={formFields.userName}
+                                                                    options={listofUsers}
+                                                                    onChange={(e) => {
+                                                                        updateFormFields('userName', e);
+                                                                    }}
+                                                                    type="user"
+                                                                    handleCreateNew={() => addUserModalFlip(true)}
                                                                 />
                                                             </Form.Item>
                                                         </span>
