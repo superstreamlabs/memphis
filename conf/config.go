@@ -49,6 +49,7 @@ type Configuration struct {
 	USER_CACHE_LIFE_MINUTES  int
 	USER_CACHE_CLEAN_MINUTES int
 	USER_CACHE_MAX_SIZE_MB   int
+	K8S_NAMESPACE            string
 }
 
 func GetConfig() Configuration {
