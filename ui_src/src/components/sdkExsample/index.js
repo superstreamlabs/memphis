@@ -510,22 +510,14 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         }
                                     >
                                         <div className="parameters-section">
-                                            {(tabValue === 'NATS' || tabValueRest === 'Generate token') && (
+                                            {(tabValue === 'NATS' || tabValueRest === 'Generate token') && withHeader && (
                                                 <>
-                                                    {/* {withHeader && (
-                                                        <div className="new-user">
-                                                            <div className="generate-action" onClick={() => addUserModalFlip(true)}>
-                                                                <FiPlus />
-                                                                <span>Create new user</span>
-                                                            </div>
-                                                        </div>
-                                                    )} */}
                                                     <div className="username-section">
                                                         <span className="input-item">
                                                             <TitleComponent headerTitle="Username" typeTitle="sub-header" />
                                                             <Form.Item>
                                                                 <CustomSelect
-                                                                    placeholder={formFields.userName || 'Select user name'}
+                                                                    placeholder={'Select user name'}
                                                                     value={formFields.userName}
                                                                     options={listofUsers}
                                                                     onChange={(e) => {

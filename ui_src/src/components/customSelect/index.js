@@ -37,12 +37,15 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
     const createNew = () => {
         history.push(`${pathDomains.schemaverse}/create`);
     };
+
+    const displayValue = value === '' || value === null ? null : value;
+
     return (
         <div className="select-schema-container">
             <Select
                 className="select"
                 placeholder={placeholder}
-                value={value}
+                value={displayValue}
                 bordered={false}
                 suffixIcon={<ArrowDropDownRounded className="drop-down-icon" />}
                 onChange={handleChange}
