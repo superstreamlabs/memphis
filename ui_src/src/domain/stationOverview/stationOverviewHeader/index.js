@@ -36,7 +36,7 @@ import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
-import SdkExample from '../../../components/sdkExsample';
+import SdkExample from '../../../components/sdkExample';
 import { httpRequest } from '../../../services/http';
 import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
