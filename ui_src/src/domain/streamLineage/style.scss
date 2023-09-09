@@ -26,6 +26,13 @@ $grid-color: rgba(150, 150, 150, .3);
                 color: #b4b4b4;
                 font-family: 'InterMedium';
             }
+            .flex{
+                display: flex;
+                gap: 5px;
+                img{
+                    cursor: pointer;
+                }
+            }
         }
         .refresh-wrapper{
             display: flex;

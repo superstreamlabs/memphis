@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { Component } from 'react';
+import React from 'react';
 import { HiOutlineChartSquareBar } from 'react-icons/hi';
 
 const Connection = ({ id, producers, consumers }) => {
@@ -20,7 +20,7 @@ const Connection = ({ id, producers, consumers }) => {
         <div className="connection-wrapper">
             <div className="connection-header">
                 <HiOutlineChartSquareBar />
-                <div className="connection-id">Connection</div>
+                <div className="connection-id">Application</div>
             </div>
             {producers?.length > 0 &&
                 producers?.map((producer, index) => (

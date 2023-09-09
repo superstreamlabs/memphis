@@ -344,7 +344,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <img src={typeIcon} alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
+                        {schemaDetails?.type === 'json' ? <span className="capitalize">JSON schema</span> : <span className="capitalize"> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
                         <img src={createdByIcon} alt="createdByIcon" />
@@ -514,7 +514,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             placeholder={
                                 <div className="attach-button">
                                     <AddRounded className="add" />
-                                    <span>Enforce to Station</span>
+                                    <span>Enforce on Station</span>
                                 </div>
                             }
                             radiusType="semi-round"

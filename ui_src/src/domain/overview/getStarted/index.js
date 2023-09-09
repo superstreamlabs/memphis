@@ -75,7 +75,7 @@ const initialState = {
         storage_type: 'file',
         replicas: 'No HA (1)',
         partitions_number: 1,
-        days: 7,
+        days: 1,
         hours: 0,
         minutes: 0,
         seconds: 0,

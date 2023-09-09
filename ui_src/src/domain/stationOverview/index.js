@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
 import { useHistory } from 'react-router-dom';
 
-import { parsingDate } from '../../services/valueConvertor';
+import { extractValueFromURL, parsingDate } from '../../services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -36,7 +36,7 @@ let sub;
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
-    const stationName = url.split('stations/')[1];
+    const stationName = extractValueFromURL(url, 'name');
     const history = useHistory();
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);

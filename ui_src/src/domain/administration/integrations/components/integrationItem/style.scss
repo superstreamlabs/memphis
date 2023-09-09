@@ -95,6 +95,9 @@ integ-item{
         padding: 0 15px;
         display: flex;
         align-items: center;
+        .tag-wrapper{
+            max-width: 160px !important;
+        }
     }
 }
 

@@ -507,3 +507,40 @@ export const generateJSONWithMaxLength = (maxLength) => {
     }
     return result;
 };
+
+export const extractValueFromURL = (url, type) => {
+    const regex = /\/stations\/([^/?]+)(?:\/(\d+))?/;
+
+    const match = url.match(regex);
+
+    if (match && match.length >= 2) {
+        const stationName = match[1];
+
+        if (type === 'name') {
+            return stationName;
+        } else if (type === 'id' && match.length >= 3) {
+            const stationID = match[2];
+            return stationID;
+        }
+    }
+
+    return null;
+};
+
+export const isCheckoutCompletedTrue = (url) => {
+    const urlObj = new URL(url);
+    const searchParams = urlObj.searchParams;
+    let found = false;
+    for (const value of searchParams.values()) {
+        if (value === 'true') {
+            return true;
+        }
+        if (value === 'false') {
+            found = true;
+        }
+    }
+    if (found) {
+        return false;
+    }
+    return null;
+};
