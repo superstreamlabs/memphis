@@ -214,7 +214,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             } else if (tabValue === 'Consumer') {
                 codeEx.consumer = codeEx.consumer?.replaceAll('<consumer-name>', formFields.producerConsumerName);
             }
-            if (!formFields.blocking && tabValue === 'Producer' && langSelected === 'Python') {
+            if (formFields.blocking && tabValue === 'Producer' && langSelected === 'Python') {
                 codeEx.producer = codeEx.producer?.replaceAll('<blocking>', `, blocking=True`);
             } else codeEx.producer = codeEx.producer?.replaceAll('<blocking>', '');
             if (formFields.async && tabValue === 'Producer' && langSelected !== 'Python') {
@@ -687,10 +687,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </>
                                             )}
-                                            {langSelected === 'Python' && (
+                                            {langSelected === 'Python' && tabValueRest === 'Produce' && (
                                                 <div className="username-section">
                                                     <TitleComponent
-                                                        headerTitle="Non-blocking/Bloking"
+                                                        headerTitle="Bloking"
                                                         typeTitle="sub-header"
                                                         headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
                                                     />
@@ -700,10 +700,10 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {langSelected !== 'Python' && (
+                                            {langSelected !== 'Python' && tabValueRest === 'Produce' && (
                                                 <div className="username-section">
                                                     <TitleComponent
-                                                        headerTitle="Sync/Async"
+                                                        headerTitle="Async"
                                                         typeTitle="sub-header"
                                                         headerDescription="For better performance, the client won't block requests while waiting for an acknowledgment"
                                                     />
