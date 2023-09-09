@@ -49,12 +49,12 @@ loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
 const tabsProtocol = ['Generate token', 'Produce data'];
-const selectProtocolOption = ['NATS', 'HTTP (REST)'];
+const selectProtocolOption = ['SDK', 'REST'];
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
 const SdkExample = ({ consumer, showTabs = true, stationName, username, connectionCreds, withHeader = false }) => {
     const [langSelected, setLangSelected] = useState('Go');
-    const [protocolSelected, setProtocolSelected] = useState('NATS');
+    const [protocolSelected, setProtocolSelected] = useState('SDK');
     const [codeExample, setCodeExample] = useState({
         producer: '',
         consumer: ''
@@ -80,11 +80,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const { Panel } = Collapse;
 
     useEffect(() => {
-        protocolSelected === 'NATS' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+        protocolSelected === 'SDK' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
     }, []);
 
     useEffect(() => {
-        protocolSelected === 'NATS' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+        protocolSelected === 'SDK' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
     }, [formFields, tabValue]);
 
     const updateFormFields = (field, value) => {
@@ -132,7 +132,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
 
     const handleSelectProtocol = (e) => {
         setProtocolSelected(e);
-        if (e === 'HTTP (REST)') {
+        if (e === 'REST') {
             changeProtocolDynamicCode('cURL');
             setLangSelected('cURL');
         } else {
@@ -428,7 +428,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 <div className="code-generator-container" style={{ height: withHeader ? 'calc(100% - 150px)' : '700px' }}>
                     <div className="username-section">
                         <span className="input-item">
-                            <p className="field-title">Protocol</p>
+                            <p className="field-title">Communication type</p>
                             <SelectComponent
                                 value={protocolSelected}
                                 fontSize="14px"
@@ -452,15 +452,15 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 borderColorType="gray"
                                 radiusType="semi-round"
                                 height="42px"
-                                options={protocolSelected === 'NATS' ? selectLngOption : selectProtocolLngOptions}
-                                onChange={(e) => (protocolSelected === 'NATS' ? handleSelectLang(e) : handleSelectLang(e, false))}
+                                options={protocolSelected === 'SDK' ? selectLngOption : selectProtocolLngOptions}
+                                onChange={(e) => (protocolSelected === 'SDK' ? handleSelectLang(e) : handleSelectLang(e, false))}
                                 popupClassName="select-options"
                             />
                         </span>
                     </div>
 
                     <>
-                        {protocolSelected === 'NATS' && (
+                        {protocolSelected === 'SDK' && (
                             <>
                                 <div className="installation">
                                     <p className="field-title">Package installation</p>
@@ -475,7 +475,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 </div>
                             </>
                         )}
-                        {protocolSelected === 'HTTP (REST)' && (
+                        {protocolSelected === 'REST' && (
                             <SegmentButton value={tabValueRest} options={tabsProtocol} onChange={(tabValueRest) => setTabValueRest(tabValueRest)} size="medium" />
                         )}
 
@@ -495,7 +495,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         }
                                     >
                                         <div className="parameters-section">
-                                            {(tabValue === 'NATS' || tabValueRest === 'Generate token') && (
+                                            {(tabValue === 'SDK' || tabValueRest === 'Generate token') && (
                                                 <>
                                                     {withHeader && (
                                                         <div className="new-user">
@@ -546,7 +546,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </div>
                                                 </>
                                             )}
-                                            {protocolSelected === 'NATS' && (
+                                            {protocolSelected === 'SDK' && (
                                                 <>
                                                     <TitleComponent
                                                         headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
@@ -573,7 +573,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </>
                                             )}
-                                            {protocolSelected === 'HTTP (REST)' && tabValueRest === 'Generate token' && (
+                                            {protocolSelected === 'REST' && tabValueRest === 'Generate token' && (
                                                 <>
                                                     <div className="username-section">
                                                         <span className="input-item">
@@ -625,7 +625,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </div>
                                                 </>
                                             )}
-                                            {protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data' && (
+                                            {protocolSelected === 'REST' && tabValueRest === 'Produce data' && (
                                                 <>
                                                     <TitleComponent
                                                         headerTitle="JWT"
@@ -651,15 +651,15 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
 
                                                     <TitleComponent
                                                         headerTitle={`${
-                                                            (protocolSelected === 'NATS' && tabValue === 'Producer') ||
-                                                            (protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data')
+                                                            (protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                                            (protocolSelected === 'REST' && tabValueRest === 'Produce data')
                                                                 ? 'Producer'
                                                                 : 'Consumer'
                                                         } name`}
                                                         typeTitle="sub-header"
                                                         headerDescription={`To be able to recognize a specific ${
-                                                            (protocolSelected === 'NATS' && tabValue === 'Producer') ||
-                                                            (protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data')
+                                                            (protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                                            (protocolSelected === 'REST' && tabValueRest === 'Produce data')
                                                                 ? 'producer'
                                                                 : 'consumer'
                                                         } across the system`}
@@ -667,8 +667,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     <Form.Item>
                                                         <Input
                                                             placeholder={`Type ${
-                                                                (protocolSelected === 'NATS' && tabValue === 'Producer') ||
-                                                                (protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data')
+                                                                (protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                                                (protocolSelected === 'REST' && tabValueRest === 'Produce data')
                                                                     ? 'producer'
                                                                     : 'consumer'
                                                             } name`}
@@ -713,8 +713,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {((protocolSelected === 'NATS' && tabValue === 'Producer') ||
-                                                (protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data')) && (
+                                            {((protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                                (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
                                                 <div className="username-section">
                                                     <TitleComponent headerTitle="Headers" typeTitle="sub-header" headerDescription="Add header to the message" />
                                                     <Form.Item>
@@ -726,8 +726,8 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                 </div>
                                             )}
                                             {formFields.useHeaders &&
-                                                ((protocolSelected === 'NATS' && tabValue === 'Producer') ||
-                                                    (protocolSelected === 'HTTP (REST)' && tabValueRest === 'Produce data')) && (
+                                                ((protocolSelected === 'SDK' && tabValue === 'Producer') ||
+                                                    (protocolSelected === 'REST' && tabValueRest === 'Produce data')) && (
                                                     <div>
                                                         {formFields.headersList.map((header, index) => (
                                                             <div className="username-section" key={index}>
@@ -845,7 +845,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     <p>Code Output</p>
                     <label>Copy code example to your IDE</label>
                 </div>
-                {protocolSelected === 'NATS' && SDK_CODE_EXAMPLE[langSelected]?.link && (
+                {protocolSelected === 'SDK' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">
                         <img src={noCodeExample} />
                         <div className="content">
@@ -857,7 +857,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         </div>
                     </div>
                 )}
-                {protocolSelected === 'NATS' && !SDK_CODE_EXAMPLE[langSelected]?.link && (
+                {protocolSelected === 'SDK' && !SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <>
                         <div className="tabs">
                             <div className="code-example">
@@ -868,7 +868,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         </div>
                     </>
                 )}
-                {protocolSelected === 'HTTP (REST)' && (
+                {protocolSelected === 'REST' && (
                     <>
                         {tabValueRest === 'Generate token' && (
                             <div className="installation">
