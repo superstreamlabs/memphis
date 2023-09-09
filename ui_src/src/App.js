@@ -40,7 +40,7 @@ import errorIcon from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
 import Administration from './domain/administration';
 import { ApiEndpoints } from './const/apiEndpoints';
-import { isCloud } from './services/valueConvertor';
+import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
 import warnIcon from './assets/images/warnIcon.svg';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
@@ -95,6 +95,7 @@ const App = withRouter(() => {
                 stigg.setCustomerId(data.account_name);
                 localStorage.setItem(USER_IMAGE, data.user_image);
                 AuthService.saveToLocalStorage(data);
+                dispatch({ type: 'SET_USER_DATA', payload: data });
                 try {
                     const ws_port = data.ws_port;
                     const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
@@ -120,7 +121,6 @@ const App = withRouter(() => {
                 } catch (error) {
                     throw new Error(error);
                 }
-                dispatch({ type: 'SET_USER_DATA', payload: data });
             }
             history.push('/overview');
             setCloudLogedIn(true);
@@ -207,13 +207,13 @@ const App = withRouter(() => {
     };
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const checkout_completed = urlParams.get('checkoutCompleted');
+        const url = window.location.href;
+        const checkout_completed = isCheckoutCompletedTrue(url);
         if (checkout_completed === null) {
             setRefreshPlan(false);
             return;
         }
-        if (checkout_completed === 'true') {
+        if (checkout_completed) {
             setTimeout(() => {
                 handleUpdatePlan();
             }, 3000);
@@ -670,9 +670,8 @@ const App = withRouter(() => {
                                 component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
                             <PrivateRoute exact path={`${pathDomains.administration}/usage`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
-                            {state?.userData?.user_type === 'root' && (
-                                <PrivateRoute exact path={`${pathDomains.administration}/payments`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
-                            )}
+                            <PrivateRoute exact path={`${pathDomains.administration}/payments`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
+
                             <PrivateRoute
                                 path="/"
                                 component={

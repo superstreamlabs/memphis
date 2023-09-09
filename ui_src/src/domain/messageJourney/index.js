@@ -16,7 +16,7 @@ import React, { useEffect, useContext, useState } from 'react';
 import { StringCodec, JSONCodec } from 'nats.ws';
 import { useHistory } from 'react-router-dom';
 
-import { convertBytes, parsingDate } from '../../services/valueConvertor';
+import { convertBytes, extractValueFromURL, parsingDate } from '../../services/valueConvertor';
 import PoisonMessage from './components/poisonMessage';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import BackIcon from '../../assets/images/backIcon.svg';
@@ -32,8 +32,8 @@ import { showMessages } from '../../services/genericServices';
 const MessageJourney = () => {
     const [state, dispatch] = useContext(Context);
     const url = window.location.href;
-    const messageId = parseInt(url.split('stations/')[1].split('/')[1]);
-    const stationName = url.split('stations/')[1].split('/')[0];
+    const messageId = extractValueFromURL(url, 'id');
+    const stationName = extractValueFromURL(url, 'name');
     const [isLoading, setisLoading] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [messageData, setMessageData] = useState({});

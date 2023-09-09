@@ -150,7 +150,7 @@ const Integrations = () => {
 
                         const key = integrationItem.name;
                         const integrationElement = (
-                            <IntegrationItem lockFeature={integrationItem.name === 'S3' && storageTiringLimits} key={key} value={integrationItem} />
+                            <IntegrationItem lockFeature={isCloud() && integrationItem.name === 'S3' && storageTiringLimits} key={key} value={integrationItem} />
                         );
 
                         if (integrationItem.comingSoon) {

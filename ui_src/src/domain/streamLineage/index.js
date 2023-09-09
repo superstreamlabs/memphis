@@ -16,20 +16,20 @@ import React, { useEffect, useContext, useState, useRef } from 'react';
 import { BsZoomIn, BsZoomOut } from 'react-icons/bs';
 import { Canvas, Node, Edge, Label } from 'reaflow';
 import { IoRefresh } from 'react-icons/io5';
-import { StringCodec, JSONCodec } from 'nats.ws';
 import { MdZoomOutMap } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { Divider } from 'antd';
 
-import { ApiEndpoints } from '../../const/apiEndpoints';
 import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import BackIcon from '../../assets/images/backIcon.svg';
+import LockFeature from '../../components/lockFeature';
 import { httpRequest } from '../../services/http';
 import Connection from './components/connection';
+import Button from '../../components/button';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Station from './components/station';
-import Button from '../../components/button';
-import LockFeature from '../../components/lockFeature';
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -51,51 +51,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     useEffect(() => {
         getGraphData();
     }, []);
-
-    useEffect(() => {
-        const sc = StringCodec();
-        const jc = JSONCodec();
-        let sub;
-
-        const subscribeToOverviewData = async () => {
-            try {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_graph_overview`, sc.encode('SUB'));
-
-                if (rawBrokerName) {
-                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                    sub = state.socket?.subscribe(`$memphis_ws_pubs.get_graph_overview.${brokerName}`);
-                    listenForUpdates();
-                }
-            } catch (err) {
-                console.error('Error subscribing to overview data:', err);
-            }
-        };
-
-        const listenForUpdates = async () => {
-            try {
-                if (sub) {
-                    for await (const msg of sub) {
-                        let data = jc.decode(msg.data);
-                        arrangeData(data);
-                    }
-                }
-            } catch (err) {
-                console.error('Error receiving graph data updates:', err);
-            }
-        };
-
-        expend && subscribeToOverviewData();
-
-        return () => {
-            if (sub) {
-                try {
-                    sub.unsubscribe();
-                } catch (err) {
-                    console.error('Error unsubscribing from graph data:', err);
-                }
-            }
-        };
-    }, [state.socket, expend]);
 
     const arrangeData = (data) => {
         let nodesList = [];
@@ -198,10 +153,14 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
         >
             <div className="title-wrapper">
                 <div className="overview-components-header">
-                    <p>System overview</p>
+                    <div className="flex">
+                        {expend && <img src={BackIcon} onClick={() => setExpended(false)} alt="backIcon" />}
+
+                        <p>System overview</p>
+                    </div>
                     <label>A dynamic, self-built graph visualization of your main system components</label>
                 </div>
-                {!expend && nodes?.length > 0 && (
+                {nodes?.length > 0 && (
                     <div className="refresh-wrapper" onClick={() => getGraphData()}>
                         <IoRefresh />
                     </div>
@@ -257,7 +216,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         zoomable={state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] ? true : false}
                         maxZoom={0.1}
                         minZoom={-0.9}
-                        maxHeight={nodes.length * 350}
+                        maxHeight={nodes.length > 3 ? nodes.length * 350 : 900}
                         node={
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (

@@ -26,6 +26,7 @@ import DebeziumIntegration from '../../administration/integrations/components/de
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import LockFeature from '../../../components/lockFeature';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -33,10 +34,11 @@ const Integrations = () => {
     const [integrations, setIntegrations] = useState([
         { name: 'Slack', logo: slackLogo, value: {} },
         { name: 'S3', logo: s3Logo, value: {} },
-        { name: 'Debezium and Postgres', logo: debeziumIcon, value: {} }
+        { name: 'Debezium', logo: debeziumIcon, value: {} }
     ]);
     const history = useHistory();
     const ref = useRef();
+    const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
 
     useEffect(() => {
         getallIntegration();
@@ -96,7 +98,7 @@ const Integrations = () => {
                         value={integrations[1]?.value}
                     />
                 );
-            case 'Debezium and Postgres':
+            case 'Debezium':
                 return (
                     <DebeziumIntegration
                         close={(value) => {
@@ -126,11 +128,19 @@ const Integrations = () => {
                                 className="integration-item"
                                 key={index}
                                 onClick={() => {
-                                    ref.current = integration.name;
-                                    modalFlip(true);
+                                    if (storageTiringLimits && integration.name === 'S3') {
+                                        return;
+                                    } else {
+                                        ref.current = integration.name;
+                                        modalFlip(true);
+                                    }
                                 }}
                             >
-                                {integrations[index]?.value && Object.keys(integrations[index]?.value).length > 0 && <CheckCircleIcon className="connected" />}
+                                {storageTiringLimits && integration.name === 'S3' ? (
+                                    <LockFeature header={'Storage tiering'} />
+                                ) : (
+                                    integrations[index]?.value && Object.keys(integrations[index]?.value).length > 0 && <CheckCircleIcon className="connected" />
+                                )}
                                 <img className="img-icon" src={integration.logo} alt={integration.name} />
                                 <label className="integration-name">{integration.name}</label>
                             </div>
@@ -138,7 +148,7 @@ const Integrations = () => {
                     })}
                 </div>
             </div>
-            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Modal className="integration-modal" height="96vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 {modalContent()}
             </Modal>
         </div>
