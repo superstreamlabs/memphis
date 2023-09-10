@@ -163,7 +163,7 @@ function SideBar() {
                             ? localStorage.getItem(LOCAL_STORAGE_FULL_NAME)
                             : localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
                     </p>
-                    <span className="company-name">{state?.userData?.account_name || localStorage.getItem(LOCAL_STORAGE_ACCOUNT_NAME)}</span>
+                    {isCloud() && <span className="company-name">{state?.userData?.account_name || localStorage.getItem(LOCAL_STORAGE_ACCOUNT_NAME)}</span>}
                 </div>
             </div>
             <Divider />
