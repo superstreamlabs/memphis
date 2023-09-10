@@ -5,7 +5,7 @@ import CloudOnly from '../cloudOnly';
 import { isCloud } from '../../services/valueConvertor';
 
 const TitleComponent = (props) => {
-    const { headerTitle, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link, cloudOnly = false } = props;
+    const { headerTitle, spanHeader, typeTitle = 'header', headerDescription, style, img, finish, required, learnMore = false, link, cloudOnly = false } = props;
 
     return (
         <div className="title-container" style={style?.container}>
@@ -26,6 +26,7 @@ const TitleComponent = (props) => {
                     <p className="sub-header-title" style={style?.header}>
                         {required && <span>* </span>}
                         {headerTitle}
+                        <span className="span-header">{spanHeader}</span>
                     </p>
                 )}
                 {cloudOnly && !isCloud() && <CloudOnly position={'relative'} />}
