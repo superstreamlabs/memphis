@@ -1607,10 +1607,15 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 	mainOverviewData := &MainOverviewData{}
 	generalErr := new(error)
 
+	streams, err := serv.memphisAllStreamsInfo(tenantName)
+	if err != nil {
+		return MainOverviewData{}, err
+	}
+
 	wg.Add(4)
-	go func() {
+	go func(streamsInfo []*StreamInfo) {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName, streamsInfo)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1623,7 +1628,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		mainOverviewData.TotalDlsMessages = totalDlsMsgs
 		mu.Unlock()
 		wg.Done()
-	}()
+	}(streams)
 
 	go func() {
 		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
@@ -1652,9 +1657,9 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		wg.Done()
 	}()
 
-	go func() {
+	go func(streamsInfo []*StreamInfo) {
 		consumersHandler := ConsumersHandler{S: mh.S}
-		delayedConsumersMap, err := consumersHandler.GetDelayedCgsByTenant(tenantName)
+		delayedConsumersMap, err := consumersHandler.GetDelayedCgsByTenant(tenantName, streamsInfo)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1664,7 +1669,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		mainOverviewData.DelayedCgs = delayedConsumersMap
 		mu.Unlock()
 		wg.Done()
-	}()
+	}(streams)
 	wg.Wait()
 	if *generalErr != nil {
 		return MainOverviewData{}, *generalErr
@@ -1995,7 +2000,7 @@ func updateSystemLiveness() {
 	shouldSend, _ := shouldSendAnalytics()
 	if shouldSend {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "", nil)
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: %v", err.Error())
 			return

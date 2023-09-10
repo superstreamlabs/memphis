@@ -972,7 +972,7 @@ func GetAuditLogsByStation(name string, tenantName string) ([]models.AuditLog, e
 	query := `SELECT * FROM audit_logs AS a
 		WHERE a.station_name = $1 AND a.tenant_name = $2
 		ORDER BY a.created_at DESC
-		LIMIT 5000;`
+		LIMIT 1000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
@@ -1487,7 +1487,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 
 	query := `
 	SELECT s.*,
-	(EXISTS (SELECT 1 FROM producers WHERE station_id = s.id AND is_active = true) OR EXISTS (SELECT 1 FROM consumers WHERE station_id = s.id AND is_active = true)) AS is_active
+	false AS is_active
 	FROM stations AS s
 	WHERE s.is_deleted = false AND s.tenant_name = $1
 	ORDER BY s.updated_at DESC
@@ -2425,7 +2425,7 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 				FROM producers AS p
 				WHERE p.tenant_name = $1
 				ORDER BY p.name, p.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
@@ -2960,11 +2960,11 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
+	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id, c.is_active
 				FROM consumers AS c
 				WHERE c.tenant_name = $1
 				ORDER BY c.name, c.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err

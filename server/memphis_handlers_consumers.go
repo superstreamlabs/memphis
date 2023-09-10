@@ -445,11 +445,7 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 	return connectedCgs, disconnectedCgs, deletedCgs, nil
 }
 
-func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string) ([]models.DelayedCgResp, error) {
-	streams, err := ch.S.memphisAllStreamsInfo(tenantName)
-	if err != nil {
-		return []models.DelayedCgResp{}, err
-	}
+func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*StreamInfo) ([]models.DelayedCgResp, error) {
 	consumers := make(map[string]map[string]models.DelayedCg, 0)
 	consumerNames := []string{}
 	for _, stream := range streams {
