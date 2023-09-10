@@ -1,5 +1,6 @@
 .title-container {
     margin-bottom: 15px;
+    
     .header-title-container {
         display: flex;
         align-items: center;
@@ -30,6 +31,13 @@
             width: 30px;
             margin-right: 10px;
         }
+    }
+    .span-header{
+        font-family: 'Inter';
+        font-size: 14px;
+        color: #b4b4b4;
+        margin: 0;
+        margin-left: 5px;
     }
     .header-description {
         font-family: 'Inter';

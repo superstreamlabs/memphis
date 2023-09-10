@@ -16,7 +16,7 @@ import Editor, { loader } from '@monaco-editor/react';
 import React, { useEffect, useState, useRef } from 'react';
 import * as monaco from 'monaco-editor';
 
-import { PROTOCOL_CODE_EXAMPLE, SDK_CODE_EXAMPLE, selectLngOption, selectProtocolLngOptions } from '../../const/codeExample';
+import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from '../../const/codeExample';
 import {
     LOCAL_STORAGE_ACCOUNT_ID,
     LOCAL_STORAGE_BROKER_HOST,
@@ -48,7 +48,7 @@ loader.init();
 loader.config({ monaco });
 
 const tabs = ['Producer', 'Consumer'];
-const tabsProtocol = ['Generate token', 'Produce data'];
+const tabsProtocol = ['Generate token', 'Produce data', 'Consume data'];
 const selectProtocolOption = ['SDK', 'REST'];
 const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
@@ -66,13 +66,16 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         userName: '',
         password: '',
         producerConsumerName: '',
+        consumerGroupName: '',
         blocking: true,
         async: true,
         useHeaders: true,
         headersList: [{ key: '', value: '' }],
         jwt: '',
-        tokenExpiry: '',
-        refreshToken: ''
+        tokenExpiry: 100,
+        refreshToken: 100,
+        batchSize: 10,
+        batchTimeout: 1000
     });
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
@@ -80,11 +83,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     const { Panel } = Collapse;
 
     useEffect(() => {
-        protocolSelected === 'SDK' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+        protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);
     }, []);
 
     useEffect(() => {
-        protocolSelected === 'SDK' ? changeDynamicCode(langSelected) : changeProtocolDynamicCode(langSelected);
+        protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);
     }, [formFields, tabValue]);
 
     const updateFormFields = (field, value) => {
@@ -127,17 +130,18 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
 
     const handleSelectLang = (e, isSdk = true) => {
         setLangSelected(e);
-        isSdk ? changeDynamicCode(e) : changeProtocolDynamicCode(e);
+        isSdk ? changeSDKDynamicCode(e) : changeRestDynamicCode(e);
     };
 
     const handleSelectProtocol = (e) => {
         setProtocolSelected(e);
         if (e === 'REST') {
-            changeProtocolDynamicCode('cURL');
+            changeRestDynamicCode('cURL');
             setLangSelected('cURL');
         } else {
+            setTabValueRest('Generate token');
             setLangSelected('Go');
-            changeDynamicCode('Go');
+            changeSDKDynamicCode('Go');
         }
     };
 
@@ -146,7 +150,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             ? `http://localhost:${localStorage.getItem(LOCAL_STORAGE_REST_GW_PORT)}`
             : localStorage.getItem(LOCAL_STORAGE_REST_GW_HOST);
 
-    const changeDynamicCode = (lang) => {
+    const changeSDKDynamicCode = (lang) => {
         let codeEx = {};
         if (!SDK_CODE_EXAMPLE[lang].link) {
             codeEx.producer = SDK_CODE_EXAMPLE[lang]?.producer;
@@ -209,38 +213,42 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = codeEx.producer?.replaceAll(regexPatterntDotNet, '');
                 codeEx.consumer = codeEx.consumer?.replaceAll(regexPatterntDotNet, '');
             }
-            if (tabValue === 'Producer') {
+            if (tabValue === 'Producer' && formFields.producerConsumerName !== '') {
                 codeEx.producer = codeEx.producer?.replaceAll('<producer-name>', formFields.producerConsumerName);
-            } else if (tabValue === 'Consumer') {
+            }
+            if (tabValue === 'Consumer' && formFields.producerConsumerName !== '') {
                 codeEx.consumer = codeEx.consumer?.replaceAll('<consumer-name>', formFields.producerConsumerName);
             }
-            if (formFields.blocking && tabValue === 'Producer' && langSelected === 'Python') {
+            if (tabValue === 'Consumer' && formFields.consumerGroupName !== '') {
+                codeEx.consumer = codeEx.consumer?.replaceAll('<consumer-group>', formFields.consumerGroupName);
+            }
+            if (formFields.blocking && tabValue === 'Producer' && lang === 'Python') {
                 codeEx.producer = codeEx.producer?.replaceAll('<blocking>', `, blocking=True`);
             } else codeEx.producer = codeEx.producer?.replaceAll('<blocking>', '');
-            if (formFields.async && tabValue === 'Producer' && langSelected !== 'Python') {
-                if (langSelected === 'Go') {
+            if (formFields.async && tabValue === 'Producer' && lang !== 'Python') {
+                if (lang === 'Go') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'memphis.AsyncProduce()');
                 }
-                if (langSelected === 'TypeScript' || langSelected === 'Node.js') {
+                if (lang === 'TypeScript' || lang === 'Node.js') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'asyncProduce: true');
                 }
-                if (langSelected === '.NET (C#)') {
+                if (lang === '.NET (C#)') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'asyncProduceAck: true');
                 }
-            } else if (!formFields.async && tabValue === 'Producer' && langSelected !== 'Python') {
-                if (langSelected === 'Go') {
+            } else if (!formFields.async && tabValue === 'Producer' && lang !== 'Python') {
+                if (lang === 'Go') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'memphis.SyncProduce()');
                 }
-                if (langSelected === 'TypeScript' || langSelected === 'Node.js') {
+                if (lang === 'TypeScript' || lang === 'Node.js') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'asyncProduce: false');
                 }
-                if (langSelected === '.NET (C#)') {
+                if (lang === '.NET (C#)') {
                     codeEx.producer = codeEx.producer?.replaceAll('<producer-async>', 'asyncProduceAck: false');
                 }
             }
             if (formFields?.useHeaders) {
                 {
-                    if (langSelected === 'Go') {
+                    if (lang === 'Go') {
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-declaration>', 'hdrs := memphis.Headers{}');
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'hdrs.New()');
                         codeEx.producer = codeEx.producer?.replaceAll(
@@ -254,7 +262,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 )
                                 .join('\n\t')
                         );
-                    } else if (langSelected === 'Python') {
+                    } else if (lang === 'Python') {
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'headers = Headers()');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
@@ -262,7 +270,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 .map((header) => `headers.add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
                                 .join('\n\t\t')
                         );
-                    } else if (langSelected === '.NET (C#)') {
+                    } else if (lang === '.NET (C#)') {
                         codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-declaration>');
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', 'var commonHeaders = new NameValueCollection();');
                         codeEx.producer = codeEx.producer?.replaceAll(
@@ -271,7 +279,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 .map((header) => `commonHeaders.Add("${header.key === '' ? '<key>' : header.key}", "${header.value === '' ? '<value>' : header.value}")`)
                                 .join('\n\t\t\t\t')
                         );
-                    } else if (langSelected === 'TypeScript' || langSelected === 'Node.js') {
+                    } else if (lang === 'TypeScript' || lang === 'Node.js') {
                         codeEx.producer = codeEx.producer?.replaceAll('<headers-initiation>', '\n\t\tconst headers = memphis.headers()');
                         codeEx.producer = codeEx.producer?.replaceAll(
                             '<headers-addition>',
@@ -285,24 +293,26 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-declaration>');
                 codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-initiation>');
                 codeEx.producer = removeLineWithSubstring(codeEx.producer, '<headers-addition>');
-                if (langSelected === 'Go') codeEx.producer = codeEx.producer?.replaceAll(', memphis.MsgHeaders(hdrs)', '');
-                else if (langSelected === 'Python') codeEx.producer = codeEx.producer?.replaceAll(', headers=headers', '');
-                else if (langSelected === '.NET (C#)') codeEx.producer = codeEx.producer?.replaceAll(', commonHeaders', '');
-                else if (langSelected === 'TypeScript') codeEx.producer = removeLineWithSubstring(codeEx.producer, 'headers: headers');
+                if (lang === 'Go') codeEx.producer = codeEx.producer?.replaceAll(', memphis.MsgHeaders(hdrs)', '');
+                else if (lang === 'Python') codeEx.producer = codeEx.producer?.replaceAll(', headers=headers', '');
+                else if (lang === '.NET (C#)') codeEx.producer = codeEx.producer?.replaceAll(', commonHeaders', '');
+                else if (lang === 'TypeScript') codeEx.producer = removeLineWithSubstring(codeEx.producer, 'headers: headers');
             }
 
             setCodeExample(codeEx);
         }
     };
 
-    const changeProtocolDynamicCode = (lang) => {
+    const changeRestDynamicCode = (lang) => {
         let codeEx = {};
-        codeEx.producer = PROTOCOL_CODE_EXAMPLE[lang].producer;
-        codeEx.tokenGenerate = PROTOCOL_CODE_EXAMPLE[lang].tokenGenerate;
+        codeEx.producer = REST_CODE_EXAMPLE[lang].producer;
+        codeEx.consumer = REST_CODE_EXAMPLE[lang].consumer;
+        codeEx.tokenGenerate = REST_CODE_EXAMPLE[lang].tokenGenerate;
         codeEx.producer = codeEx.producer.replaceAll('localhost', restGWHost);
         codeEx.producer = codeEx.producer.replaceAll('<station-name>', stationName);
+        codeEx.consumer = codeEx.consumer.replaceAll('localhost', restGWHost);
+        codeEx.consumer = codeEx.consumer.replaceAll('<station-name>', stationName);
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll('localhost', restGWHost);
-        codeEx.producer = codeEx.producer.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         codeEx.tokenGenerate = codeEx.tokenGenerate.replaceAll(`"<account-id>"`, parseInt(localStorage.getItem(LOCAL_STORAGE_ACCOUNT_ID)));
         if (username) {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<application type username>', username);
@@ -322,21 +332,47 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         if (formFields.password !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<password>', formFields.password);
         }
+        if (formFields.producerConsumerName !== '') {
+            codeEx.consumer = codeEx.consumer?.replaceAll('<consumer-name>', formFields.producerConsumerName);
+        }
+        if (formFields.consumerGroupName !== '') {
+            codeEx.consumer = codeEx.consumer?.replaceAll('<consumer-group>', formFields.consumerGroupName);
+        }
         if (formFields.tokenExpiry !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<token_expiry_in_minutes>', formFields.tokenExpiry);
         }
         if (formFields.refreshToken !== '') {
             codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<refresh_token_expiry_in_minutes>', formFields.refreshToken);
         }
+        if (formFields.tokenExpiry === '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<token_expiry_in_minutes>', 100);
+        }
+        if (formFields.refreshToken === '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<refresh_token_expiry_in_minutes>', 100);
+        }
+        if (formFields.batchSize !== '') {
+            codeEx.consumer = codeEx.consumer?.replaceAll('<batch-size>', formFields.batchSize);
+        }
+        if (formFields.batchTimeout !== '') {
+            codeEx.consumer = codeEx.consumer?.replaceAll('<batch-max-wait-time-ms>', formFields.batchTimeout);
+        }
+        if (formFields.batchSize === '') {
+            codeEx.consumer = codeEx.consumer?.replaceAll('<batch-size>', 10);
+        }
+        if (formFields.batchTimeout === '') {
+            codeEx.tokenGenerate = codeEx.tokenGenerate?.replaceAll('<batch-max-wait-time-ms>', 1000);
+        }
         if (formFields.jwt !== '') {
             codeEx.producer = codeEx.producer?.replaceAll('<jwt>', formFields.jwt);
+            codeEx.consumer = codeEx.consumer?.replaceAll('<jwt>', formFields.jwt);
         }
+
         if (formFields.useHeaders) {
             if (lang === 'cURL') {
                 codeEx.producer = codeEx.producer?.replaceAll(
                     '<headers-addition>',
                     formFields.headersList
-                        .map((header) => `--header '${header.key === '' ? '<key>' : header.key}: ${header.value === '' ? '<value>' : header.value}'\\`)
+                        .map((header) => `--header '${header.key === '' ? '<key>' : header.key}: ${header.value === '' ? '<value>' : header.value}' \\`)
                         .join(' \n')
                 );
             } else if (lang === 'Node.js') {
@@ -452,7 +488,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 borderColorType="gray"
                                 radiusType="semi-round"
                                 height="42px"
-                                options={protocolSelected === 'SDK' ? selectLngOption : selectProtocolLngOptions}
+                                options={protocolSelected === 'SDK' ? sdkLangOptions : restLangOptions}
                                 onChange={(e) => (protocolSelected === 'SDK' ? handleSelectLang(e) : handleSelectLang(e, false))}
                                 popupClassName="select-options"
                             />
@@ -478,7 +514,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         {protocolSelected === 'REST' && (
                             <SegmentButton value={tabValueRest} options={tabsProtocol} onChange={(tabValueRest) => setTabValueRest(tabValueRest)} size="medium" />
                         )}
-
                         {
                             <div className="code-builder">
                                 <Collapse ghost expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
@@ -546,42 +581,12 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </div>
                                                 </>
                                             )}
-                                            {protocolSelected === 'SDK' && (
-                                                <>
-                                                    <TitleComponent
-                                                        headerTitle={`${tabValue === 'Producer' ? 'Producer' : 'Consumer'} name`}
-                                                        typeTitle="sub-header"
-                                                        headerDescription={`To be able to recognize a specific ${
-                                                            tabValue === 'Producer' ? 'producer' : 'consumer'
-                                                        } across the system`}
-                                                    />
-                                                    <Form.Item>
-                                                        <Input
-                                                            placeholder={`Type ${tabValue === 'Producer' ? 'producer' : 'consumer'} name`}
-                                                            type="text"
-                                                            fontSize="14px"
-                                                            maxLength="128"
-                                                            radiusType="semi-round"
-                                                            colorType="black"
-                                                            backgroundColorType="white"
-                                                            borderColorType="gray"
-                                                            height="40px"
-                                                            onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                            onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                            value={formFields.producerConsumerName}
-                                                        />
-                                                    </Form.Item>
-                                                </>
-                                            )}
+
                                             {protocolSelected === 'REST' && tabValueRest === 'Generate token' && (
                                                 <>
                                                     <div className="username-section">
                                                         <span className="input-item">
-                                                            <TitleComponent
-                                                                headerTitle="Token expiry"
-                                                                headerDescription="Token expiry (In minutes)"
-                                                                typeTitle="sub-header"
-                                                            />
+                                                            <TitleComponent headerTitle="Token expiry" spanHeader="(In minutes)" typeTitle="sub-header" />
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Type token expiry"
@@ -600,11 +605,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             </Form.Item>
                                                         </span>
                                                         <span className="input-item">
-                                                            <TitleComponent
-                                                                headerTitle="Refresh token expiry"
-                                                                headerDescription="Refresh token expiry (In minutes)"
-                                                                typeTitle="sub-header"
-                                                            />
+                                                            <TitleComponent headerTitle="Refresh token expiry" spanHeader="(In minutes)" typeTitle="sub-header" />
                                                             <Form.Item>
                                                                 <Input
                                                                     placeholder="Refresh token expiry"
@@ -625,7 +626,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </div>
                                                 </>
                                             )}
-                                            {protocolSelected === 'REST' && tabValueRest === 'Produce data' && (
+                                            {protocolSelected === 'REST' && tabValueRest !== 'Generate token' && (
                                                 <>
                                                     <TitleComponent
                                                         headerTitle="JWT"
@@ -648,46 +649,106 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             value={formFields.jwt}
                                                         />
                                                     </Form.Item>
-
-                                                    <TitleComponent
-                                                        headerTitle={`${
-                                                            (protocolSelected === 'SDK' && tabValue === 'Producer') ||
-                                                            (protocolSelected === 'REST' && tabValueRest === 'Produce data')
-                                                                ? 'Producer'
-                                                                : 'Consumer'
-                                                        } name`}
-                                                        typeTitle="sub-header"
-                                                        headerDescription={`To be able to recognize a specific ${
-                                                            (protocolSelected === 'SDK' && tabValue === 'Producer') ||
-                                                            (protocolSelected === 'REST' && tabValueRest === 'Produce data')
-                                                                ? 'producer'
-                                                                : 'consumer'
-                                                        } across the system`}
-                                                    />
-                                                    <Form.Item>
-                                                        <Input
-                                                            placeholder={`Type ${
-                                                                (protocolSelected === 'SDK' && tabValue === 'Producer') ||
-                                                                (protocolSelected === 'REST' && tabValueRest === 'Produce data')
-                                                                    ? 'producer'
-                                                                    : 'consumer'
-                                                            } name`}
-                                                            type="text"
-                                                            fontSize="14px"
-                                                            maxLength="128"
-                                                            radiusType="semi-round"
-                                                            colorType="black"
-                                                            backgroundColorType="white"
-                                                            borderColorType="gray"
-                                                            height="40px"
-                                                            onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                            onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
-                                                            value={formFields.producerConsumerName}
-                                                        />
-                                                    </Form.Item>
                                                 </>
                                             )}
-                                            {langSelected === 'Python' && tabValueRest === 'Produce' && (
+                                            {(protocolSelected === 'SDK' || tabValueRest === 'Consume data') && (
+                                                <>
+                                                    <div className="username-section">
+                                                        <span className="input-item">
+                                                            <TitleComponent
+                                                                headerTitle={`${
+                                                                    tabValue === 'Producer' && tabValueRest !== 'Consume data' ? 'Producer' : 'Consumer'
+                                                                } name`}
+                                                                typeTitle="sub-header"
+                                                            />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder={`Type ${
+                                                                        tabValue === 'Producer' && tabValueRest !== 'Consume data' ? 'producer' : 'consumer'
+                                                                    } name`}
+                                                                    type="text"
+                                                                    fontSize="14px"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('producerConsumerName', e.target.value)}
+                                                                    value={formFields.producerConsumerName}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        {(tabValue === 'Consumer' || tabValueRest === 'Consume data') && (
+                                                            <span className="input-item">
+                                                                <TitleComponent headerTitle="Consumer group name" typeTitle="sub-header" />
+                                                                <Form.Item>
+                                                                    <Input
+                                                                        placeholder="Type consumer group name"
+                                                                        type="text"
+                                                                        fontSize="14px"
+                                                                        maxLength="128"
+                                                                        radiusType="semi-round"
+                                                                        colorType="black"
+                                                                        backgroundColorType="white"
+                                                                        borderColorType="gray"
+                                                                        height="40px"
+                                                                        onBlur={(e) => updateFormFields('consumerGroupName', e.target.value)}
+                                                                        onChange={(e) => updateFormFields('consumerGroupName', e.target.value)}
+                                                                        value={formFields.consumerGroupName}
+                                                                    />
+                                                                </Form.Item>
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            )}
+                                            {protocolSelected === 'REST' && tabValueRest === 'Consume data' && (
+                                                <>
+                                                    <div className="username-section">
+                                                        <span className="input-item">
+                                                            <TitleComponent headerTitle="Batch size" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Type batch size"
+                                                                    type="number"
+                                                                    fontSize="14px"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('batchSize', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('batchSize', e.target.value)}
+                                                                    value={formFields.batchSize}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                        <span className="input-item">
+                                                            <TitleComponent headerTitle="Batch timeout" spanHeader="(ms)" typeTitle="sub-header" />
+                                                            <Form.Item>
+                                                                <Input
+                                                                    placeholder="Batch timeout (ms)"
+                                                                    type="text"
+                                                                    fontSize="14px"
+                                                                    maxLength="128"
+                                                                    radiusType="semi-round"
+                                                                    colorType="black"
+                                                                    backgroundColorType="white"
+                                                                    borderColorType="gray"
+                                                                    height="40px"
+                                                                    onBlur={(e) => updateFormFields('batchTimeout', e.target.value)}
+                                                                    onChange={(e) => updateFormFields('batchTimeout', e.target.value)}
+                                                                    value={formFields.batchTimeout}
+                                                                />
+                                                            </Form.Item>
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {protocolSelected === 'SDK' && langSelected === 'Python' && tabValue === 'Producer' && (
                                                 <div className="username-section">
                                                     <TitleComponent
                                                         headerTitle="Bloking"
@@ -700,7 +761,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                     </Form.Item>
                                                 </div>
                                             )}
-                                            {langSelected !== 'Python' && tabValueRest === 'Produce' && (
+                                            {protocolSelected === 'SDK' && langSelected !== 'Python' && tabValue === 'Producer' && (
                                                 <div className="username-section">
                                                     <TitleComponent
                                                         headerTitle="Async"
@@ -873,35 +934,31 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         {tabValueRest === 'Generate token' && (
                             <div className="installation">
                                 <div className="generate-wrapper">
-                                    <p className="field-title">Step 1: Generate a token</p>
+                                    <p className="field-title">Generate a token</p>
                                     <div className="generate-action" onClick={() => setGenerateModal(true)}>
                                         <img src={refresh} width="14" />
                                         <span>Generate JWT token</span>
                                     </div>
                                 </div>
                                 <div className="code-example ce-protoco">
-                                    <div className="code-content">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
+                                    <div className="code-content">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.tokenGenerate)}</div>
                                 </div>
                             </div>
                         )}
                         {tabValueRest === 'Produce data' && (
                             <div className="tabs">
-                                <p className="field-title">{`Step 2: ${consumer ? 'Consume' : 'Produce'} data`}</p>
-                                {consumer ? (
-                                    <div className="guidline">
-                                        <img src={noCodeExample} />
-                                        <div className="content">
-                                            <p>Coming soon</p>
-                                            <span>
-                                                Please <a>upvote</a> to prioritize it!
-                                            </span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="code-example ce-protoco">
-                                        <div className="code-content produce">{generateEditor(PROTOCOL_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
-                                    </div>
-                                )}
+                                <p className="field-title">Produce data</p>
+                                <div className="code-example ce-protoco">
+                                    <div className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.producer)}</div>
+                                </div>
+                            </div>
+                        )}
+                        {tabValueRest === 'Consume data' && (
+                            <div className="tabs">
+                                <p className="field-title">Consumem data</p>
+                                <div className="code-example ce-protoco">
+                                    <div className="code-content produce">{generateEditor(REST_CODE_EXAMPLE[langSelected].langCode, codeExample.consumer)}</div>
+                                </div>
                             </div>
                         )}
                     </>
