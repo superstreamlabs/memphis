@@ -2183,3 +2183,7 @@ func (c *client) AccountConnExceeded() {
 func IsStorageLimitExceeded(tenantName string) bool {
 	return false
 }
+
+func validateProducersCount(stationName, tenantName string) error {
+	return nil
+}
