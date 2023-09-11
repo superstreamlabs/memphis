@@ -13,29 +13,22 @@
 import './style.scss';
 
 import React from 'react';
-import { HiOutlineChartSquareBar } from 'react-icons/hi';
 
-const Connection = ({ id, producers, consumers }) => {
+const Connection = ({ id, producer, consumer }) => {
     return (
         <div className="connection-wrapper">
-            <div className="connection-header">
-                <HiOutlineChartSquareBar />
-                <div className="connection-id">Application</div>
-            </div>
-            {producers?.length > 0 &&
-                producers?.map((producer, index) => (
-                    <div key={index} className="rectangle producer">
-                        <p>{producer.name}</p>
-                        <div className="count">{producer.count}</div>
-                    </div>
-                ))}
-            {consumers?.length > 0 &&
-                consumers.map((consumer, index) => (
-                    <div key={index} className="rectangle consumer">
-                        <p>{consumer.name}</p>
-                        <div className="count">{consumer.count}</div>
-                    </div>
-                ))}
+            {producer && (
+                <div key={id} className="rectangle producer">
+                    <p>{producer.name}</p>
+                    <div className="count">{producer.count}</div>
+                </div>
+            )}
+            {consumer && (
+                <div key={id} className="rectangle consumer">
+                    <p>{consumer.name}</p>
+                    <div className="count">{consumer.count}</div>
+                </div>
+            )}
         </div>
     );
 };

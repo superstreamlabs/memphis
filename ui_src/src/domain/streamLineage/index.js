@@ -88,50 +88,63 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                 };
                 nodesList.push(node);
             });
-            const sortedArray = data['apps']?.slice().sort((a, b) => {
+            const sortedProducers = data['producers']?.slice().sort((a, b) => {
                 return a.app_id.localeCompare(b.app_id);
             });
-            sortedArray?.map((row, index) => {
+            const sortedConsumers = data['consumers']?.slice().sort((a, b) => {
+                return a.app_id.localeCompare(b.app_id);
+            });
+            sortedProducers?.map((producer, index) => {
                 let node = {
-                    id: row.app_id,
-                    text: 'app',
-                    width: 300,
-                    height: 100 + row.producers.length * 30 + row.consumers.length * 30,
+                    id: `${producer.name}-${producer.app_id}`,
+                    text: 'producer',
+                    width: 200,
+                    height: 100,
                     data: {
-                        value: 'app',
-                        producers: row.producers,
-                        consumers: row.consumers
+                        value: 'producer',
+                        producer_details: producer
                     }
                 };
-                row.from.map((from, index) => {
-                    let edge = {
-                        id: `${row.app_id}-${from.station_id}`,
-                        from: from.station_id,
-                        to: row.app_id,
-                        fromPort: `${from.station_id}_east`,
-                        toPort: row.app_id,
-                        selectionDisabled: true,
-                        data: {
-                            active: from.active
-                        }
-                    };
-                    edgesList.push(edge);
-                });
-                row.to.map((to, index) => {
-                    let edge = {
-                        id: `${row.app_id}-${to.station_id}`,
-                        from: row.app_id,
-                        to: to.station_id,
-                        fromPort: row.app_id,
-                        toPort: `${to.station_id}_west`,
-                        selectionDisabled: true,
-                        data: {
-                            active: to.active
-                        }
-                    };
-                    edgesList.push(edge);
-                });
+                let edge = {
+                    id: `${producer.app_id}-${producer.station_id}`,
+                    from: `${producer.name}-${producer.app_id}`,
+                    to: producer.station_id,
+                    // fromPort: row.app_id,
+                    toPort: `${producer.station_id}_west`,
+                    selectionDisabled: true,
+                    data: {
+                        active: true,
+                        is_producer: true
+                    }
+                };
                 nodesList.push(node);
+                edgesList.push(edge);
+            });
+            sortedConsumers?.map((consumer, index) => {
+                let node = {
+                    id: `${consumer.name}-${consumer.app_id}`,
+                    text: 'consumer',
+                    width: 200,
+                    height: 100,
+                    data: {
+                        value: 'consumer',
+                        consumer_details: consumer
+                    }
+                };
+                let edge = {
+                    id: `${consumer.app_id}-${consumer.station_id}`,
+                    from: consumer.station_id,
+                    to: `${consumer.name}-${consumer.app_id}`,
+                    fromPort: `${consumer.station_id}_east`,
+                    // toPort: row.app_id,
+                    selectionDisabled: true,
+                    data: {
+                        active: true,
+                        is_producer: false
+                    }
+                };
+                nodesList.push(node);
+                edgesList.push(edge);
             });
             setEdges(edgesList);
             setNodes(nodesList);
@@ -221,9 +234,8 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (
                                     <foreignObject height={event.height} width={event.width} x={0} y={0} className="node-wrapper">
-                                        {event.node.data.value === 'app' && (
-                                            <Connection id={event.node.id} producers={event.node.data.producers} consumers={event.node.data.consumers} />
-                                        )}
+                                        {event.node.data.value === 'producer' && <Connection id={event.node.id} producer={event.node.data.producer_details} />}
+                                        {event.node.data.value === 'consumer' && <Connection id={event.node.id} consumer={event.node.data.consumer_details} />}
                                         {event.node.data.value === 'station' && (
                                             <Station
                                                 stationName={event.node.data.name}
@@ -237,7 +249,12 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                             </Node>
                         }
                         arrow={null}
-                        edge={(edge) => <Edge {...edge} className={edge?.data?.active === true ? 'edge processing' : 'edge'} />}
+                        edge={(edge) => (
+                            <Edge
+                                {...edge}
+                                className={edge?.data?.active === true ? (edge?.data?.is_producer ? 'edge produce-processing' : 'edge consume-processing') : 'edge'}
+                            />
+                        )}
                     />
                 </div>
             )}
