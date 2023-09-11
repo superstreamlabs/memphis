@@ -2963,9 +2963,9 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id, c.is_active
+	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id
 				FROM consumers AS c
-				WHERE c.tenant_name = $1
+				WHERE c.tenant_name = $1 AND c.is_active = true
 				ORDER BY c.name, c.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
