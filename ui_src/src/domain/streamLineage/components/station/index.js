@@ -42,14 +42,14 @@ const Station = ({ stationName, dls_messages, total_messages, schema_name }) => 
                         <BiSolidEnvelope />
                     </div>
                     <div className="station-messages-title">Messages</div>
-                    <div className="station-messages-count">{total_messages}</div>
+                    <div className="station-messages-count">{total_messages.toLocaleString()}</div>
                 </div>
                 <div className="station-messages">
                     <div className="icon-wrapper">
                         <PiWarningFill />
                     </div>
                     <div className="station-messages-title">Dead-letter</div>
-                    <div className="station-messages-count">{dls_messages}</div>
+                    <div className="station-messages-count">{dls_messages.toLocaleString()}</div>
                 </div>
             </div>
         </div>

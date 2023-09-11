@@ -1,7 +1,5 @@
 .connection-wrapper{
     border-radius: 4px;
-    background: white;
-    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.15);
     width: 98%;
     height: 95%;
     margin: 2px;
@@ -10,26 +8,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
-    .connection-header{
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        font-family: 'InterMedium';
-        font-size: 14px;
-        width: 90%;
-        svg{
-            width: 20px;
-            height: 20px;
-        }
-        .connection-id{
-            width: 90%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-    }
     .rectangle{
-        width: 90%;
+        width: 100%;
         height: 45px;
         display: flex;
         border-radius: 4px;

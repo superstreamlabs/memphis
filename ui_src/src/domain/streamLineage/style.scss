@@ -123,8 +123,13 @@ $grid-color: rgba(150, 150, 150, .3);
             stroke-width: 8;
              stroke: rgba(101,87,255,.1);
         }
-        .processing {
-            stroke: #34C759;
+        .produce-processing {
+            stroke: #FFC633;
+            stroke-dasharray: 5;
+            animation: dashdraw .5s linear infinite;
+        }
+        .consume-processing {
+            stroke: #61DFC6;
             stroke-dasharray: 5;
             animation: dashdraw .5s linear infinite;
         }
