@@ -82,15 +82,18 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants' AND table_schema = 'public'
 		) THEN
-			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '' ;
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS organization_name VARCHAR NOT NULL DEFAULT '';
+			UPDATE tenants SET organization_name = name WHERE organization_name = ''; 
 		END IF;
 	END $$;`
 
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
-		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
+		firebase_organization_id VARCHAR NOT NULL DEFAULT '',
 		internal_ws_pass VARCHAR NOT NULL,
+		organization_name VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -6037,7 +6040,6 @@ func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, e
 		} else {
 			return models.Tenant{}, err
 		}
-
 	}
 
 	newTenant := models.Tenant{
@@ -6269,7 +6271,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6279,7 +6281,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass) VALUES(nextval('tenants_seq'),$1, $2, $3)`
+	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass, organization_name) VALUES(nextval('tenants_seq'),$1, $2, $3, $4)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -6287,7 +6289,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -6463,12 +6465,14 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	defer conn.Release()
 
 	var queries []string
-	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
+	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $2") // TODO change back to $1 once we fixed the producer amount limitation
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
+
+	timeIntervalTemp := time.Now().Add(time.Duration(time.Hour * -time.Duration(2))) // TODO to be deleted
 
 	batch := &pgx.Batch{}
 	for _, q := range queries {
-		batch.Queue(q, timeInterval)
+		batch.Queue(q, timeInterval, timeIntervalTemp) // TODO timeIntervalTemp to be deleted
 	}
 
 	br := conn.SendBatch(ctx, batch)
