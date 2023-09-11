@@ -2184,6 +2184,6 @@ func IsStorageLimitExceeded(tenantName string) bool {
 	return false
 }
 
-func validateProducersCount(stationName, tenantName string) error {
+func validateProducersCount(stationId int, tenantName string) error {
 	return nil
 }

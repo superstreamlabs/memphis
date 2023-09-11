@@ -121,7 +121,7 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
-	err = validateProducersCount(pStationName.Ext(), user.TenantName)
+	err = validateProducersCount(station.ID, user.TenantName)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at validateProducersCount at station %s: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
 		return false, false, err, models.Station{}

@@ -6967,3 +6967,25 @@ func CreateUserIfNotExist(username string, userType string, hashedPassword strin
 	}
 	return newUser, nil
 }
+
+func CountProudcersForStation(stationId int) (int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM producers WHERE station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_producers_for_station", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int64
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
