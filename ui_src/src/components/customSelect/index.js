@@ -18,6 +18,7 @@ import React, { useContext } from 'react';
 import { Select } from 'antd';
 
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
+import plus from '../../assets/images/plus.svg';
 import placeholderSchema from '../../assets/images/placeholderSchema.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import { parsingDate } from '../../services/valueConvertor';
@@ -34,7 +35,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
         onChange(e);
     };
 
-    const createNew = () => {
+    const createNewSchema = () => {
         history.push(`${pathDomains.schemaverse}/create`);
     };
 
@@ -52,49 +53,33 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                 placement="bottomRight"
                 popupClassName="select-schema-options"
                 notFoundContent={
-                    type === 'schema' ? (
-                        <div className="no-schema-to-display">
-                            <img src={placeholderSchema} width="50" height="50" alt="placeholderSchema" />
-                            <p className="title">No schemas yet</p>
-                            <p className="sub-title">Get started by creating your first schema</p>
+                    <div className="no-schema-to-display">
+                        <div className="top">
+                            <p className="no-result-found">No Result Found</p>
+                        </div>
+                        <div className="divider" />
+                        <div className="bottom">
                             <Button
+                                placeholder={
+                                    <div className="create-btn">
+                                        <img src={plus} alt="verifiedIcon" />
+                                        <p>{type === 'schema' ? 'Create schema' : type === 'user' ? 'Create user' : ''}</p>
+                                    </div>
+                                }
                                 className="modal-btn"
-                                width="120px"
-                                height="34px"
-                                placeholder="Create schema"
-                                colorType="white"
+                                width="83px"
+                                height="32px"
+                                colorType="purple"
                                 radiusType="circle"
-                                backgroundColorType="purple"
+                                backgroundColorType={'none'}
                                 fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                aria-controls="usecse-menu"
-                                aria-haspopup="true"
-                                onClick={() => createNew()}
+                                fontWeight="600"
+                                onClick={() => {
+                                    return type === 'schema' ? createNewSchema() : type === 'user' ? handleCreateNew() : null;
+                                }}
                             />
                         </div>
-                    ) : type === 'user' ? (
-                        <div className="no-schema-to-display">
-                            <div className="placeholder-background">
-                                <img src={usersIconActive} width={40} height={40} alt="placeholderSchema" />
-                            </div>
-                            <p className="title">No users yet</p>
-                            <p className="sub-title">Get started by creating your first user</p>
-                            <Button
-                                className="modal-btn"
-                                width="120px"
-                                height="34px"
-                                placeholder="Create user"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                aria-controls="usecse-menu"
-                                aria-haspopup="true"
-                                onClick={handleCreateNew}
-                            />
-                        </div>
-                    ) : null
+                    </div>
                 }
             >
                 {options?.map((schema) => {
