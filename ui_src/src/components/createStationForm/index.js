@@ -26,7 +26,7 @@ import TitleComponent from '../titleComponent';
 import SelectCheckBox from '../selectCheckBox';
 import { Context } from '../../hooks/store';
 import UpgradePlans from '../upgradePlans';
-import SelectSchema from '../selectSchema';
+import SelectSchema from '../customSelect';
 import RadioButton from '../radioButton';
 import LockFeature from '../lockFeature';
 import SelectComponent from '../select';
