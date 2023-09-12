@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.03f35820.css",
-    "main.js": "/static/js/main.f66005c9.js",
+    "main.css": "/static/css/main.4dcb1851.css",
+    "main.js": "/static/js/main.465916bb.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -244,7 +244,6 @@
     "static/media/requestsGray.svg": "/static/media/requestsGray.4353f2c3977ca42e61270d98cf753381.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
     "static/media/requestsColor.svg": "/static/media/requestsColor.4ddd825afdea6ffbeef2e0c3769ed4cc.svg",
-    "static/media/plus.svg": "/static/media/plus.3d4d6eaaf4a5d7ade2a337b489cd5b7e.svg",
     "static/media/BrokerHostname.svg": "/static/media/BrokerHostname.9934a24a7838aaef881a0964af3a7779.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
     "static/media/paymentsGray.svg": "/static/media/paymentsGray.5b47c51db2ea9b6ac864da7c7f1963f8.svg",
@@ -295,7 +294,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.03f35820.css",
-    "static/js/main.f66005c9.js"
+    "static/css/main.4dcb1851.css",
+    "static/js/main.465916bb.js"
   ]
 }
