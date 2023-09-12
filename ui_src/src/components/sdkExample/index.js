@@ -97,7 +97,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         if (!consumer) {
             getAllUsers();
         }
-    }, [consumer]);
+    });
 
     useEffect(() => {
         protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);

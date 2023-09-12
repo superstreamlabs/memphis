@@ -85,25 +85,21 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                 {options?.map((schema) => {
                     return (
                         <Option key={schema?.id} value={schema?.name}>
-                            {type === 'schema' ? (
-                                <>
-                                    <div className="schema-details">
-                                        <img src={SchemaIconSelect} alt="SchemaIconSelect" height="20px" />
-                                        <p className="schema-name">{schema?.name}</p>
-                                    </div>
-                                    <p className="created-by">
-                                        {schema?.type} &#8226; {parsingDate(schema?.created_at)}
-                                    </p>
-                                </>
-                            ) : type === 'user' ? (
-                                <>
-                                    <div className="schema-details">
-                                        <img src={usersIconActive} alt="usersIcon" height={20} width={20} />
-                                        <p className="schema-name">{schema?.name}</p>
-                                    </div>
-                                    <p className="created-by">{parsingDate(schema?.created_at)}</p>
-                                </>
-                            ) : null}
+                            <>
+                                <div className="schema-details">
+                                    <img
+                                        src={type === 'schema' ? SchemaIconSelect : type === 'user' ? usersIconActive : null}
+                                        alt="SchemaIconSelect"
+                                        height={20}
+                                        width={20}
+                                    />
+                                    <p className="schema-name">{schema?.name}</p>
+                                </div>
+                                <p className="created-by">
+                                    {type === 'schema' ? <>{schema?.type} &#8226;</> : null}
+                                    {parsingDate(schema?.created_at)}
+                                </p>
+                            </>
                         </Option>
                     );
                 })}
