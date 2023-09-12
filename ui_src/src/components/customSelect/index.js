@@ -16,13 +16,13 @@ import { ArrowDropDownRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 import React, { useContext } from 'react';
 import { Select } from 'antd';
-
+import { BsPlus } from 'react-icons/bs';
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import { ReactComponent as PlusIcon } from '../../assets/images/plus.svg';
 import placeholderSchema from '../../assets/images/placeholderSchema.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import { parsingDate } from '../../services/valueConvertor';
 import { Context } from '../../hooks/store';
+
 import Button from '../button';
 import pathDomains from '../../router';
 
@@ -62,8 +62,8 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                             <Button
                                 placeholder={
                                     <div className="create-btn">
-                                        <PlusIcon />
-                                        <p>{type === 'schema' ? 'Create schema' : type === 'user' ? 'Create user' : ''}</p>
+                                        <BsPlus style={{ color: '#6557FF', fontSize: '18px' }} />
+                                        <p>Create a {type === 'schema' ? ' schema' : type === 'user' ? 'user' : ''}</p>
                                     </div>
                                 }
                                 className="modal-btn"
