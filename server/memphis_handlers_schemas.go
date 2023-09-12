@@ -945,9 +945,9 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 	}
 
 	if currentSchema.SchemaContent == newSchemaReq.SchemaContent {
-		alreadyExistInDB := fmt.Sprintf("%v already exist in the db", newSchemaReq.Name)
-		s.Errorf(alreadyExistInDB)
-		return errors.New(alreadyExistInDB)
+		alreadyExistInDB := fmt.Sprintf("[tenant: %v][user: %v]%v already exist in the db", tenantName, user.Username, newSchemaReq.Name)
+		s.Warnf(alreadyExistInDB)
+		return nil
 	}
 
 	versionNumber := countVersions + 1
