@@ -43,6 +43,9 @@ import SegmentButton from '../segmentButton';
 import CreateUserDetails from '../../domain/users/createUserDetails';
 import { Divider, Form } from 'antd';
 import { FiMinusCircle, FiPlus } from 'react-icons/fi';
+import CustomSelect from '../customSelect';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
 
 loader.init();
 loader.config({ monaco });
@@ -79,8 +82,22 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
     });
     const [createUserLoader, setCreateUserLoader] = useState(false);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
+    const [users, setUsers] = useState([]);
     const createUserRef = useRef(null);
     const { Panel } = Collapse;
+
+    const getAllUsers = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_USERS);
+            setUsers(data.application_users.map((user) => ({ ...user, name: user.username })));
+        } catch (error) {}
+    };
+
+    useEffect(() => {
+        if (!consumer) {
+            getAllUsers();
+        }
+    }, [consumer]);
 
     useEffect(() => {
         protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);
@@ -530,56 +547,40 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                         }
                                     >
                                         <div className="parameters-section">
-                                            {(tabValue === 'SDK' || tabValueRest === 'Generate token') && (
-                                                <>
-                                                    {withHeader && (
-                                                        <div className="new-user">
-                                                            <div className="generate-action" onClick={() => addUserModalFlip(true)}>
-                                                                <FiPlus />
-                                                                <span>Create new user</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    <div className="username-section">
-                                                        <span className="input-item">
-                                                            <TitleComponent headerTitle="Username" typeTitle="sub-header" />
-                                                            <Form.Item>
-                                                                <Input
-                                                                    placeholder="Type user name"
-                                                                    type="text"
-                                                                    fontSize="14px"
-                                                                    maxLength="220"
-                                                                    radiusType="semi-round"
-                                                                    colorType="black"
-                                                                    backgroundColorType="white"
-                                                                    borderColorType="gray"
-                                                                    height="40px"
-                                                                    onBlur={(e) => updateFormFields('userName', e.target.value)}
-                                                                    onChange={(e) => updateFormFields('userName', e.target.value)}
-                                                                    value={formFields.userName}
-                                                                />
-                                                            </Form.Item>
-                                                        </span>
-                                                        <span className="input-item">
-                                                            <TitleComponent headerTitle="Password" typeTitle="sub-header" />
-                                                            <Form.Item name="password">
-                                                                <Input
-                                                                    placeholder="Type password"
-                                                                    type="password"
-                                                                    fontSize="14px"
-                                                                    radiusType="semi-round"
-                                                                    colorType="black"
-                                                                    backgroundColorType="none"
-                                                                    borderColorType="gray"
-                                                                    height="40px"
-                                                                    onBlur={(e) => updateFormFields('password', e.target.value)}
-                                                                    onChange={(e) => updateFormFields('password', e.target.value)}
-                                                                    value={formFields.password}
-                                                                />
-                                                            </Form.Item>
-                                                        </span>
-                                                    </div>
-                                                </>
+                                            {(tabValue === 'SDK' || tabValueRest === 'Generate token') && withHeader && (
+                                                <div className="username-section">
+                                                    <span className="input-item">
+                                                        <TitleComponent headerTitle="Username" typeTitle="sub-header" />
+                                                        <Form.Item>
+                                                            <CustomSelect
+                                                                placeholder={'Select user'}
+                                                                value={formFields.userName}
+                                                                options={users}
+                                                                onChange={(e) => updateFormFields('userName', e)}
+                                                                type="user"
+                                                                handleCreateNew={() => addUserModalFlip(true)}
+                                                            />
+                                                        </Form.Item>
+                                                    </span>
+                                                    <span className="input-item">
+                                                        <TitleComponent headerTitle="Password" typeTitle="sub-header" />
+                                                        <Form.Item name="password">
+                                                            <Input
+                                                                placeholder="Type password"
+                                                                type="password"
+                                                                fontSize="14px"
+                                                                radiusType="semi-round"
+                                                                colorType="black"
+                                                                backgroundColorType="none"
+                                                                borderColorType="gray"
+                                                                height="40px"
+                                                                onBlur={(e) => updateFormFields('password', e.target.value)}
+                                                                onChange={(e) => updateFormFields('password', e.target.value)}
+                                                                value={formFields.password}
+                                                            />
+                                                        </Form.Item>
+                                                    </span>
+                                                </div>
                                             )}
 
                                             {protocolSelected === 'REST' && tabValueRest === 'Generate token' && (

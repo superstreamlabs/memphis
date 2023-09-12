@@ -18,7 +18,7 @@ import React, { useContext } from 'react';
 import { Select } from 'antd';
 
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import plus from '../../assets/images/plus.svg';
+import { ReactComponent as PlusIcon } from '../../assets/images/plus.svg';
 import placeholderSchema from '../../assets/images/placeholderSchema.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import { parsingDate } from '../../services/valueConvertor';
@@ -62,7 +62,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                             <Button
                                 placeholder={
                                     <div className="create-btn">
-                                        <img src={plus} alt="verifiedIcon" />
+                                        <PlusIcon />
                                         <p>{type === 'schema' ? 'Create schema' : type === 'user' ? 'Create user' : ''}</p>
                                     </div>
                                 }
