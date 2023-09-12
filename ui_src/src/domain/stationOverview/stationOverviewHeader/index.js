@@ -36,7 +36,7 @@ import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
-import SdkExample from '../../../components/sdkExsample';
+import SdkExample from '../../../components/sdkExample';
 import { httpRequest } from '../../../services/http';
 import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
@@ -49,8 +49,8 @@ import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConst
 import { Context } from '../../../hooks/store';
 
 const StationOverviewHeader = () => {
-    const [state, dispatch] = useContext(Context);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [state, dispatch] = useContext(Context);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
@@ -189,7 +189,9 @@ const StationOverviewHeader = () => {
                             </p>
                             {showRetentinViolation && (
                                 <TooltipComponent
-                                    text={`Based on your current subscription plan, messages can be retained for a maximum of ${state?.userData?.entitlements['feature-storage-retention']?.limits} days`}
+                                    text={`Based on your current subscription plan, messages can be retained for a maximum of ${
+                                        (state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-retention']?.limits) || 3
+                                    } days`}
                                     minWidth="35px"
                                 >
                                     <HiOutlineExclamationCircle />
@@ -352,7 +354,7 @@ const StationOverviewHeader = () => {
                     </div>
                 </div>
                 <Modal
-                    width="1100px"
+                    width="1200px"
                     height="780px"
                     clickOutside={() => {
                         setSdkModal(false);

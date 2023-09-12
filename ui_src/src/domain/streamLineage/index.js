@@ -16,20 +16,20 @@ import React, { useEffect, useContext, useState, useRef } from 'react';
 import { BsZoomIn, BsZoomOut } from 'react-icons/bs';
 import { Canvas, Node, Edge, Label } from 'reaflow';
 import { IoRefresh } from 'react-icons/io5';
-import { StringCodec, JSONCodec } from 'nats.ws';
 import { MdZoomOutMap } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { Divider } from 'antd';
 
-import { ApiEndpoints } from '../../const/apiEndpoints';
 import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import BackIcon from '../../assets/images/backIcon.svg';
+import LockFeature from '../../components/lockFeature';
 import { httpRequest } from '../../services/http';
 import Connection from './components/connection';
+import Button from '../../components/button';
 import Loader from '../../components/loader';
 import { Context } from '../../hooks/store';
 import Station from './components/station';
-import Button from '../../components/button';
-import LockFeature from '../../components/lockFeature';
 
 const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [state, dispatch] = useContext(Context);
@@ -51,51 +51,6 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     useEffect(() => {
         getGraphData();
     }, []);
-
-    useEffect(() => {
-        const sc = StringCodec();
-        const jc = JSONCodec();
-        let sub;
-
-        const subscribeToOverviewData = async () => {
-            try {
-                const rawBrokerName = await state.socket?.request(`$memphis_ws_subs.get_graph_overview`, sc.encode('SUB'));
-
-                if (rawBrokerName) {
-                    const brokerName = JSON.parse(sc.decode(rawBrokerName?._rdata))['name'];
-                    sub = state.socket?.subscribe(`$memphis_ws_pubs.get_graph_overview.${brokerName}`);
-                    listenForUpdates();
-                }
-            } catch (err) {
-                console.error('Error subscribing to overview data:', err);
-            }
-        };
-
-        const listenForUpdates = async () => {
-            try {
-                if (sub) {
-                    for await (const msg of sub) {
-                        let data = jc.decode(msg.data);
-                        arrangeData(data);
-                    }
-                }
-            } catch (err) {
-                console.error('Error receiving graph data updates:', err);
-            }
-        };
-
-        expend && subscribeToOverviewData();
-
-        return () => {
-            if (sub) {
-                try {
-                    sub.unsubscribe();
-                } catch (err) {
-                    console.error('Error unsubscribing from graph data:', err);
-                }
-            }
-        };
-    }, [state.socket, expend]);
 
     const arrangeData = (data) => {
         let nodesList = [];
@@ -133,50 +88,63 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                 };
                 nodesList.push(node);
             });
-            const sortedArray = data['apps']?.slice().sort((a, b) => {
+            const sortedProducers = data['producers']?.slice().sort((a, b) => {
                 return a.app_id.localeCompare(b.app_id);
             });
-            sortedArray?.map((row, index) => {
+            const sortedConsumers = data['consumers']?.slice().sort((a, b) => {
+                return a.app_id.localeCompare(b.app_id);
+            });
+            sortedProducers?.map((producer, index) => {
                 let node = {
-                    id: row.app_id,
-                    text: 'app',
-                    width: 300,
-                    height: 100 + row.producers.length * 30 + row.consumers.length * 30,
+                    id: `${producer.name}-${producer.app_id}`,
+                    text: 'producer',
+                    width: 200,
+                    height: 100,
                     data: {
-                        value: 'app',
-                        producers: row.producers,
-                        consumers: row.consumers
+                        value: 'producer',
+                        producer_details: producer
                     }
                 };
-                row.from.map((from, index) => {
-                    let edge = {
-                        id: `${row.app_id}-${from.station_id}`,
-                        from: from.station_id,
-                        to: row.app_id,
-                        fromPort: `${from.station_id}_east`,
-                        toPort: row.app_id,
-                        selectionDisabled: true,
-                        data: {
-                            active: from.active
-                        }
-                    };
-                    edgesList.push(edge);
-                });
-                row.to.map((to, index) => {
-                    let edge = {
-                        id: `${row.app_id}-${to.station_id}`,
-                        from: row.app_id,
-                        to: to.station_id,
-                        fromPort: row.app_id,
-                        toPort: `${to.station_id}_west`,
-                        selectionDisabled: true,
-                        data: {
-                            active: to.active
-                        }
-                    };
-                    edgesList.push(edge);
-                });
+                let edge = {
+                    id: `${producer.app_id}-${producer.station_id}`,
+                    from: `${producer.name}-${producer.app_id}`,
+                    to: producer.station_id,
+                    // fromPort: row.app_id,
+                    toPort: `${producer.station_id}_west`,
+                    selectionDisabled: true,
+                    data: {
+                        active: true,
+                        is_producer: true
+                    }
+                };
                 nodesList.push(node);
+                edgesList.push(edge);
+            });
+            sortedConsumers?.map((consumer, index) => {
+                let node = {
+                    id: `${consumer.name}-${consumer.app_id}`,
+                    text: 'consumer',
+                    width: 200,
+                    height: 100,
+                    data: {
+                        value: 'consumer',
+                        consumer_details: consumer
+                    }
+                };
+                let edge = {
+                    id: `${consumer.app_id}-${consumer.station_id}`,
+                    from: consumer.station_id,
+                    to: `${consumer.name}-${consumer.app_id}`,
+                    fromPort: `${consumer.station_id}_east`,
+                    // toPort: row.app_id,
+                    selectionDisabled: true,
+                    data: {
+                        active: true,
+                        is_producer: false
+                    }
+                };
+                nodesList.push(node);
+                edgesList.push(edge);
             });
             setEdges(edgesList);
             setNodes(nodesList);
@@ -198,10 +166,14 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
         >
             <div className="title-wrapper">
                 <div className="overview-components-header">
-                    <p>System overview</p>
+                    <div className="flex">
+                        {expend && <img src={BackIcon} onClick={() => setExpended(false)} alt="backIcon" />}
+
+                        <p>System overview</p>
+                    </div>
                     <label>A dynamic, self-built graph visualization of your main system components</label>
                 </div>
-                {!expend && nodes?.length > 0 && (
+                {nodes?.length > 0 && (
                     <div className="refresh-wrapper" onClick={() => getGraphData()}>
                         <IoRefresh />
                     </div>
@@ -257,14 +229,13 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                         zoomable={state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview'] ? true : false}
                         maxZoom={0.1}
                         minZoom={-0.9}
-                        maxHeight={nodes.length * 350}
+                        maxHeight={nodes.length > 3 ? nodes.length * 350 : 900}
                         node={
                             <Node style={{ stroke: 'transparent', fill: 'transparent', strokeWidth: 1 }} label={<Label style={{ display: 'none' }} />}>
                                 {(event) => (
                                     <foreignObject height={event.height} width={event.width} x={0} y={0} className="node-wrapper">
-                                        {event.node.data.value === 'app' && (
-                                            <Connection id={event.node.id} producers={event.node.data.producers} consumers={event.node.data.consumers} />
-                                        )}
+                                        {event.node.data.value === 'producer' && <Connection id={event.node.id} producer={event.node.data.producer_details} />}
+                                        {event.node.data.value === 'consumer' && <Connection id={event.node.id} consumer={event.node.data.consumer_details} />}
                                         {event.node.data.value === 'station' && (
                                             <Station
                                                 stationName={event.node.data.name}
@@ -278,7 +249,12 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                             </Node>
                         }
                         arrow={null}
-                        edge={(edge) => <Edge {...edge} className={edge?.data?.active === true ? 'edge processing' : 'edge'} />}
+                        edge={(edge) => (
+                            <Edge
+                                {...edge}
+                                className={edge?.data?.active === true ? (edge?.data?.is_producer ? 'edge produce-processing' : 'edge consume-processing') : 'edge'}
+                            />
+                        )}
                     />
                 </div>
             )}

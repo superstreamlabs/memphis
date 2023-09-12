@@ -82,15 +82,18 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants' AND table_schema = 'public'
 		) THEN
-			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '' ;
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS organization_name VARCHAR NOT NULL DEFAULT '';
+			UPDATE tenants SET organization_name = name WHERE organization_name = ''; 
 		END IF;
 	END $$;`
 
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
-		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
+		firebase_organization_id VARCHAR NOT NULL DEFAULT '',
 		internal_ws_pass VARCHAR NOT NULL,
+		organization_name VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -972,7 +975,7 @@ func GetAuditLogsByStation(name string, tenantName string) ([]models.AuditLog, e
 	query := `SELECT * FROM audit_logs AS a
 		WHERE a.station_name = $1 AND a.tenant_name = $2
 		ORDER BY a.created_at DESC
-		LIMIT 5000;`
+		LIMIT 1000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
@@ -1487,7 +1490,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 
 	query := `
 	SELECT s.*,
-	(EXISTS (SELECT 1 FROM producers WHERE station_id = s.id AND is_active = true) OR EXISTS (SELECT 1 FROM consumers WHERE station_id = s.id AND is_active = true)) AS is_active
+	false AS is_active
 	FROM stations AS s
 	WHERE s.is_deleted = false AND s.tenant_name = $1
 	ORDER BY s.updated_at DESC
@@ -2425,7 +2428,7 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 				FROM producers AS p
 				WHERE p.tenant_name = $1
 				ORDER BY p.name, p.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
@@ -2960,11 +2963,11 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
+	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id
 				FROM consumers AS c
-				WHERE c.tenant_name = $1
+				WHERE c.tenant_name = $1 AND c.is_active = true
 				ORDER BY c.name, c.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err
@@ -6037,7 +6040,6 @@ func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, e
 		} else {
 			return models.Tenant{}, err
 		}
-
 	}
 
 	newTenant := models.Tenant{
@@ -6269,7 +6271,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6279,7 +6281,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass) VALUES(nextval('tenants_seq'),$1, $2, $3)`
+	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass, organization_name) VALUES(nextval('tenants_seq'),$1, $2, $3, $4)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -6287,7 +6289,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -6962,4 +6964,26 @@ func CreateUserIfNotExist(username string, userType string, hashedPassword strin
 		Description:     description,
 	}
 	return newUser, nil
+}
+
+func CountProudcersForStation(stationId int) (int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM producers WHERE station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_producers_for_station", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int64
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

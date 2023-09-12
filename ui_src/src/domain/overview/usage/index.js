@@ -18,9 +18,11 @@ import './style.scss';
 const Usage = () => {
     const [state, dispatch] = useContext(Context);
 
-    const actual = state?.monitor_data?.billing_details?.actual_usage || 0;
-    const total = state?.monitor_data?.billing_details?.total_included || 1;
-    const widthInPercentage = (actual / total) * 100 > 100 ? 100 : (actual / total) * 100;
+    const actual = state?.monitor_data?.billing_details?.actual_usage ?? 0;
+    const total = state?.monitor_data?.billing_details?.total_included || 2;
+    const actualCapped = actual > 2 ? 2 : actual;
+
+    const widthInPercentage = (actualCapped / total) * 100 > 100 ? 100 : (actualCapped / total) * 100;
 
     const dataStyle = {
         width: `${widthInPercentage}%`,
@@ -49,7 +51,7 @@ const Usage = () => {
                         >
                             <div className="dividerContainer">
                                 <span className="labelMain">Current usage</span>
-                                <span className="labelSecondary">{`${actual} GB`}</span>
+                                <span className="labelSecondary">{`${actualCapped} GB`}</span>
                             </div>
                         </div>
                         <div className="totalContainer">

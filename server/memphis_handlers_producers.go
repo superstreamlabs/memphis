@@ -121,6 +121,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
+	err = validateProducersCount(station.ID, user.TenantName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at validateProducersCount at station %s: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
+		return false, false, err, models.Station{}
+	}
+
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
 	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)

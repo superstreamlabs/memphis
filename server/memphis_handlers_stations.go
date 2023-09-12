@@ -725,7 +725,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string) ([]models.ExtendedStationLight, uint64, uint64, error) {
+func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string, streamsInfo []*StreamInfo) ([]models.ExtendedStationLight, uint64, uint64, error) {
 	var stations []models.ExtendedStationLight
 	totalMessages := uint64(0)
 	if tenantName == "" {
@@ -745,16 +745,13 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 	} else {
 		stationTotalMsgs := make(map[string]int)
 		tagsHandler := TagsHandler{S: sh.S}
-		acc, err := sh.S.lookupAccount(tenantName)
-		if err != nil {
-			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		if streamsInfo == nil {
+			streamsInfo, err = serv.memphisAllStreamsInfo(tenantName)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
 		}
-		accName := acc.Name
-		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
-		if err != nil {
-			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
-		}
-		for _, info := range allStreamInfo {
+		for _, info := range streamsInfo {
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
 				totalMessages += info.State.Msgs
@@ -802,6 +799,24 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
 			stations[i].HasDlsMsgs = hasDlsMsgs
 
+			activity := false
+			activeCount, err := db.CountActiveProudcersByStationID(stations[i].ID)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
+			if activeCount > 0 {
+				activity = true
+			} else {
+				activeCount, err = db.CountActiveConsumersByStationID(stations[i].ID)
+				if err != nil {
+					return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+				}
+				if activeCount > 0 {
+					activity = true
+				}
+			}
+
+			stations[i].Activity = activity
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
@@ -840,7 +855,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName)
+	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName, nil)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllStations at GetAllStationsDetails: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

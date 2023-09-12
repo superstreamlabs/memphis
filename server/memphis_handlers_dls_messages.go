@@ -36,7 +36,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	var message JSConsumerDeliveryExceededAdvisory
 	err := json.Unmarshal(msg, &message)
 	if err != nil {
-		serv.Errorf("handleNewUnackedMsg: Error while getting notified about a poison message: %v", err.Error())
+		serv.Errorf("handleNewUnackedMsg at Unmarshal: Error while getting notified about a poison message: %v", err.Error())
 		return err
 	}
 
@@ -71,7 +71,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 	stationName := StationNameFromStreamName(streamName)
 	_, station, err := db.GetStationByName(stationName.Ext(), accountName)
 	if err != nil {
-		serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg at GetStationByName: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
 		return err
 	}
 	if !station.DlsConfigurationPoison {
@@ -88,7 +88,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 			if IsNatsErr(err, JSNoMessageFoundErr) {
 				return nil
 			}
-			serv.Errorf("[tenant: %v]handleNewUnackedMsg: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
+			serv.Errorf("[tenant: %v]handleNewUnackedMsg at memphisGetMessage: station: %v, Error while getting notified about a poison message: %v", accountName, stationName.Ext(), err.Error())
 			return err
 		}
 

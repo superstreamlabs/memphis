@@ -15,6 +15,7 @@ import './App.scss';
 import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { JSONCodec, StringCodec, connect } from 'nats.ws';
+import { useStiggContext } from '@stigg/react-sdk';
 import { useMediaQuery } from 'react-responsive';
 import { useHistory } from 'react-router-dom';
 import { message, notification } from 'antd';
@@ -30,21 +31,23 @@ import {
     USER_IMAGE
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
-import { handleRefreshTokenRequest, httpRequest } from './services/http';
+import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
 import infoNotificationIcon from './assets/images/infoNotificationIcon.svg';
+import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import redirectIcon from './assets/images/redirectIcon.svg';
 import successIcon from './assets/images/successIcon.svg';
 import close from './assets/images/closeNotification.svg';
+import { showMessages } from './services/genericServices';
 import StationOverview from './domain/stationOverview';
 import errorIcon from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
 import Administration from './domain/administration';
 import { ApiEndpoints } from './const/apiEndpoints';
-import { isCloud } from './services/valueConvertor';
 import warnIcon from './assets/images/warnIcon.svg';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SchemaManagment from './domain/schema';
+import Functions from './domain/functions';
 import PrivateRoute from './PrivateRoute';
 import AuthService from './services/auth';
 import Overview from './domain/overview';
@@ -53,9 +56,6 @@ import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
-import Functions from './domain/functions';
-import { useStiggContext } from '@stigg/react-sdk';
-import { showMessages } from './services/genericServices';
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -95,6 +95,7 @@ const App = withRouter(() => {
                 stigg.setCustomerId(data.account_name);
                 localStorage.setItem(USER_IMAGE, data.user_image);
                 AuthService.saveToLocalStorage(data);
+                dispatch({ type: 'SET_USER_DATA', payload: data });
                 try {
                     const ws_port = data.ws_port;
                     const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
@@ -120,7 +121,6 @@ const App = withRouter(() => {
                 } catch (error) {
                     throw new Error(error);
                 }
-                dispatch({ type: 'SET_USER_DATA', payload: data });
             }
             history.push('/overview');
             setCloudLogedIn(true);
@@ -207,13 +207,13 @@ const App = withRouter(() => {
     };
 
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const checkout_completed = urlParams.get('checkoutCompleted');
+        const url = window.location.href;
+        const checkout_completed = isCheckoutCompletedTrue(url);
         if (checkout_completed === null) {
             setRefreshPlan(false);
             return;
         }
-        if (checkout_completed === 'true') {
+        if (checkout_completed) {
             setTimeout(() => {
                 handleUpdatePlan();
             }, 3000);
@@ -670,9 +670,8 @@ const App = withRouter(() => {
                                 component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
                             <PrivateRoute exact path={`${pathDomains.administration}/usage`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
-                            {state?.userData?.user_type === 'root' && (
-                                <PrivateRoute exact path={`${pathDomains.administration}/payments`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
-                            )}
+                            <PrivateRoute exact path={`${pathDomains.administration}/payments`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
+
                             <PrivateRoute
                                 path="/"
                                 component={

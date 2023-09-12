@@ -23,7 +23,7 @@ import playVideoIcon from '../../../../assets/images/playVideoIcon.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import unsupported from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
-import SdkExample from '../../../../components/sdkExsample';
+import SdkExample from '../../../../components/sdkExample';
 import CustomCollapse from '../components/customCollapse';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';

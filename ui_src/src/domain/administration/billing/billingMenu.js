@@ -12,15 +12,13 @@
 
 import '../style.scss';
 
-import React, { useContext } from 'react';
+import React from 'react';
 import PaymentsColor from '../../../assets/images/setting/paymentsColor.svg';
 import PaymentsGray from '../../../assets/images/setting/paymentsGray.svg';
 import RequestsColor from '../../../assets/images/setting/requestsColor.svg';
 import RequestsGray from '../../../assets/images/setting/requestsGray.svg';
-import { Context } from '../../../hooks/store';
 
 function BillingMenu({ selectedMenuItem, setMenuItem }) {
-    const [state, dispatch] = useContext(Context);
     return (
         <div className="side-menu">
             <p className="header">Billing</p>
@@ -29,12 +27,10 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
                 <img src={selectedMenuItem === 'usage' ? RequestsColor : RequestsGray} alt="usage report" />
                 Usage Report
             </div>
-            {state?.userData?.user_type === 'root' && (
-                <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
-                    <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="usage report" />
-                    Payments
-                </div>
-            )}
+            <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
+                <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="usage report" />
+                Payments
+            </div>
         </div>
     );
 }

@@ -21,7 +21,7 @@
         justify-content: space-between;
         .integration-item {
             border: 1px solid #f1f1f1;
-            min-width: 85px;
+            min-width: 30%;
             border-radius: 4px;
             padding: 8px 15px 8px 10px;
             cursor: pointer;
@@ -46,6 +46,13 @@
                 color: #2e2c34;
                 margin-left: 10px;
                 cursor: pointer;
+            }
+            .lock-feature-icon{
+                position: absolute;
+                width: 17px;
+                height: 17px;
+                top: -5px;
+                right: -5px;   
             }
         }
     }
