@@ -57,7 +57,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Key Features [v1.2.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.2.0-latest)
+## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.2.0-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
@@ -66,6 +66,7 @@ And the list continues...<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Data-level observability<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Dead-Letter Queue with automatic message retransmit<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Graph visualization<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Storage tiering<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Kubernetes-native<br>
