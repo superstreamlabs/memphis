@@ -841,11 +841,11 @@ func UpdateProducersCounsumersConnection(connectionId string, isActive bool) (bo
 	defer conn.Release()
 	query := `WITH updated_producers AS (
 		UPDATE producers
-		SET is_active = $1
+		SET is_active = $1, updated_at = NOW()
 		WHERE connection_id = $2
 	  )
 	  UPDATE consumers
-	  SET is_active = $1
+	  SET is_active = $1, updated_at = NOW()
 	  WHERE connection_id = $2;`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
 	if err != nil {
@@ -2424,9 +2424,9 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 		return []models.ProducerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT p.name, p.station_id, p.app_id, p.is_active
+	query := `SELECT p.name, p.station_id, p.app_id
 				FROM producers AS p
-				WHERE p.tenant_name = $1
+				WHERE p.tenant_name = $1 AND p.is_active = true
 				ORDER BY p.name, p.station_id DESC
 				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
@@ -6395,35 +6395,6 @@ func SetTenantSequence(sequence int) error {
 	return nil
 }
 
-func ReliveConectionResources(connectionId string, isActive bool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	var queries []string
-	queries = append(queries, fmt.Sprintf("UPDATE producers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
-	queries = append(queries, fmt.Sprintf("UPDATE consumers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
-
-	batch := &pgx.Batch{}
-	for _, q := range queries {
-		batch.Queue(q)
-	}
-
-	br := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(queries); i++ {
-		_, err = br.Exec()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func GetAllUsersInDB() (bool, []models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -6468,10 +6439,14 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
+	timeIntervalTemp := time.Now().Add(time.Duration(time.Hour * -time.Duration(2))) // TODO to be deleted once we fix the producer limitation
+
 	batch := &pgx.Batch{}
-	for _, q := range queries {
-		batch.Queue(q, timeInterval)
-	}
+	batch.Queue(queries[0], timeIntervalTemp) // TODO to be deleted once we fix the producer limitation
+	batch.Queue(queries[1], timeInterval)     // TODO to be deleted once we fix the producer limitation
+	// for _, q := range queries { // TODO to be returned once we fix the producer limitation
+	// 	batch.Queue(q, timeInterval)
+	// }
 
 	br := conn.SendBatch(ctx, batch)
 

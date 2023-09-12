@@ -189,7 +189,6 @@ func (s *Server) createConsumerDirectCommon(c *client, consumerName, cStationNam
 	}
 
 	message := "Consumer " + name + " connected"
-	serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 	if consumerGroupExist {
 		if requestVersion == 1 {
 			if newConsumer.StartConsumeFromSeq != consumerFromGroup.StartConsumeFromSeq || newConsumer.LastMessages != consumerFromGroup.LastMessages {

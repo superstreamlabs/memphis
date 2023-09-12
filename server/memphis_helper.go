@@ -153,9 +153,11 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 	}
 	reply := s.getJsApiReplySubject()
 
-	// return these lines if there are errors
-	// s.memphis.jsApiMu.Lock()
-	// defer s.memphis.jsApiMu.Unlock()
+	// use buffered lock to limit amount of concurrent jsapi requests
+	if s.memphis.jsApiMu != nil {
+		s.memphis.jsApiMu.Lock()
+		defer s.memphis.jsApiMu.Unlock()
+	}
 
 	timeout := time.After(40 * time.Second)
 	respCh := make(chan []byte)

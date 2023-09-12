@@ -58,6 +58,7 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
+			s.Noticef("aggregateClientConnections: got a reply with connections")
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
 			if err != nil {
@@ -77,8 +78,9 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	}
 
 	// send message to all brokers to get their connections
+	s.Noticef("aggregateClientConnections: Sending message to all brokers to get their connections")
 	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
-	timeout := time.After(50 * time.Second)
+	timeout := time.After(2 * time.Minute)
 	<-timeout
 	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
 	return connectionIds, nil
@@ -121,22 +123,14 @@ func killFunc(s *Server) {
 }
 
 func (s *Server) KillZombieResources() {
-	if s.JetStreamIsClustered() {
-		count := 0
-		for range time.Tick(time.Second * 20) {
-			if s.JetStreamIsLeader() {
-				break
-			} else if count > 3 {
-				return
-			}
-			count++
-		}
-	}
-
 	count := 0
 	firstIteration := true
-	for range time.Tick(time.Minute * 1) {
-		s.Debugf("Killing Zombie resources iteration")
+	for range time.Tick(time.Minute * 15) {
+		if s.JetStreamIsClustered() && !s.JetStreamIsLeader() { // logic happens once only on the leader
+			continue
+		}
+
+		s.Noticef("Killing Zombie resources iteration")
 		if firstIteration {
 			s.removeStaleStations()
 			s.RemoveOldStations()
@@ -149,6 +143,6 @@ func (s *Server) KillZombieResources() {
 			count = 0
 		}
 		firstIteration = false
-		count++
+		count+=15
 	}
 }

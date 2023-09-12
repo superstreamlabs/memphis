@@ -135,7 +135,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err, models.Station{}
 	}
 	message := "Producer " + name + " connected"
-	serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		StationName:       pStationName.Ext(),
