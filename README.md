@@ -57,7 +57,7 @@ And the list continues...<br>
 **Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
 <br>
 
-## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.2.0-latest)
+## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.0-latest)
 
 [**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
 
