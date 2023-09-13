@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/memphisdev/memphis/conf"
 	"github.com/memphisdev/memphis/db"
@@ -51,13 +52,39 @@ type srvMemphis struct {
 	nuid                   *nuid.NUID
 	activateSysLogsPubFunc func()
 	fallbackLogQ           *ipQueue[fallbackLog]
-	// jsApiMu                sync.Mutex
-	ws memphisWS
+	jsApiMu                *BufferedMutex
+	ws                     memphisWS
 }
 
 type memphisWS struct {
 	subscriptions *concurrentMap[memphisWSReqTenantsToFiller]
 	quitCh        chan struct{}
+}
+
+type BufferedMutex struct {
+	mu     sync.Mutex
+	sem    chan struct{}
+	buffer int
+}
+
+func NewBufferedMutex(buffer int) *BufferedMutex {
+	if buffer <= 0 {
+		buffer = 1 // Ensure at least one lock can be acquired
+	}
+	return &BufferedMutex{
+		sem:    make(chan struct{}, buffer),
+		buffer: buffer,
+	}
+}
+
+func (bm *BufferedMutex) Lock() {
+	bm.sem <- struct{}{}
+	bm.mu.Lock()
+}
+
+func (bm *BufferedMutex) Unlock() {
+	bm.mu.Unlock()
+	<-bm.sem
 }
 
 func (s *Server) InitializeMemphisHandlers() {
@@ -103,7 +130,7 @@ func CreateDefaultStation(tenantName string, s *Server, sn StationName, userId i
 }
 
 func CreateDefaultSchema(username, tenantName string, userId int) (string, error) {
-	defaultSchemaName := "default"
+	defaultSchemaName := "demo-schema"
 	defualtSchemaType := "json"
 	defualtSchemaContent := `{
 		"$id": "https://example.com/address.schema.json",
@@ -158,8 +185,8 @@ func CreateDefaultSchema(username, tenantName string, userId int) (string, error
 
 func CreateDefaultTags(tagType string, id int, tenantName string) error {
 	defaultTags := models.CreateTag{Name: "default"}
-
-	err := AddTagsToEntity([]models.CreateTag{defaultTags}, tagType, id, tenantName)
+	color := "0, 165, 255"
+	err := AddTagsToEntity([]models.CreateTag{defaultTags}, tagType, id, tenantName, color)
 	if err != nil {
 		return err
 	}

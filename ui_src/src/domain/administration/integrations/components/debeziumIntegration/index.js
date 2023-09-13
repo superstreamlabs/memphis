@@ -106,7 +106,7 @@ quarkus.log.console.json=false`}</pre>
 
                         <p>
                             In case Debezium is not installed yet, here is a quick Dockerfile to start one <br />
-                            (Don't forget to attach the config file within the container)
+                            (Don't forget to enforce the config file within the container)
                         </p>
                         <div className="editor">
                             <pre>

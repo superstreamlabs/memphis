@@ -115,13 +115,15 @@ const Login = (props) => {
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {
-                        return;
+                        throw new Error(error);
                     }
                     dispatch({ type: 'SET_USER_DATA', payload: data });
                     history.push(referer);
                 }
             } catch (err) {
                 setError(err);
+                setLoadingSubmit(false);
+                console.log(err);
             }
             setLoadingSubmit(false);
         }

@@ -7,39 +7,37 @@ $grid-color: rgba(150, 150, 150, 0.3);
     border-radius: 16px;
     height: calc(100% - 70px);
     background-color: white;
-    background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px);
+    background-image: linear-gradient(rgba(150, 150, 150, 0.1) 2px, transparent 2px), linear-gradient(90deg, rgba(150, 150, 150, 0.1) 2px, transparent 2px);
     background-size: 100px 220px, 220px 100px, 20px 20px, 20px 20px;
     background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
     overflow: hidden;
     .title-wrapper {
         display: flex;
         justify-content: space-between;
-        .bread-crumbs {
-            display: flex;
-            height: 30px;
-            align-items: center;
-            img,
-            svg {
-                margin-right: 10px;
-                cursor: pointer;
-            }
+        .overview-components-header {
             p {
-                margin: 0;
+                align-items: center;
+                font-size: 17px;
                 font-family: 'InterSemiBold';
-                font-size: 20px;
-                line-height: 29px;
-                color: #1d1d1d;
+                margin-bottom: 0;
             }
-            span {
+            label {
+                font-size: 14px;
+                color: #b4b4b4;
                 font-family: 'InterMedium';
-                font-size: 16px;
-                line-height: 29px;
-                color: #667085;
+            }
+            .flex {
+                display: flex;
+                gap: 5px;
+                img,
+                svg {
+                    cursor: pointer;
+                }
             }
         }
         .refresh-wrapper {
             display: flex;
-            margin-right: 55px;
+            margin-right: 45px;
             border-radius: 8px;
             background: var(--box-2, #fff);
             box-shadow: 0px 2px 2px 0px rgba(0, 0, 0, 0.15);
@@ -82,6 +80,11 @@ $grid-color: rgba(150, 150, 150, 0.3);
                 svg:hover {
                     color: var(--purple);
                 }
+                .lock-feature-icon {
+                    position: absolute;
+                    top: -5px;
+                    right: -5px;
+                }
             }
             .zoom-wrapper {
                 width: 40px;
@@ -116,13 +119,18 @@ $grid-color: rgba(150, 150, 150, 0.3);
     }
 
     .canvas-wrapper {
-        height: calc(100% - 20px);
+        height: calc(100% - 40px);
         .edge {
             stroke-width: 8;
             stroke: rgba(101, 87, 255, 0.1);
         }
-        .processing {
-            stroke: #34c759;
+        .produce-processing {
+            stroke: #ffc633;
+            stroke-dasharray: 5;
+            animation: dashdraw 0.5s linear infinite;
+        }
+        .consume-processing {
+            stroke: #61dfc6;
             stroke-dasharray: 5;
             animation: dashdraw 0.5s linear infinite;
         }
@@ -148,7 +156,7 @@ $grid-color: rgba(150, 150, 150, 0.3);
     }
 }
 .lineage-smaller {
-    background-image: linear-gradient($grid-color 2px, transparent 2px), linear-gradient(90deg, $grid-color 2px, transparent 2px) !important;
+    background-image: linear-gradient(rgba(150, 150, 150, 0.1) 2px, transparent 2px), linear-gradient(90deg, rgba(150, 150, 150, 0.1) 2px, transparent 2px) !important;
     background-size: 100px 150px, 150px 100px, 20px 20px, 20px 20px !important;
     background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px !important;
     height: 100% !important;
@@ -158,9 +166,10 @@ $grid-color: rgba(150, 150, 150, 0.3);
     }
 }
 
-.lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd {
-    max-height: 250px !important;
-}
+// .lineage-smaller .Canvas-module_container__22cN4.Canvas-module_pannable__1d7xd{
+//     max-height: 250px !important;
+// }
+
 .lineage-empthy {
     padding: 15px;
     position: relative;
@@ -193,6 +202,8 @@ $grid-color: rgba(150, 150, 150, 0.3);
         flex-direction: column;
         align-items: center;
         gap: 10px;
+        height: calc(100% - 15px);
+        justify-content: center;
         img,
         svg {
             width: 120px;

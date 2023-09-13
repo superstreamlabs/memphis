@@ -3,6 +3,13 @@
     flex-direction: column;
     height: 100%;
     justify-content: space-between;
+    gap: 10px;
+    .user-password-section {
+        display: flex;
+        flex-direction: column;
+        height: 240px;
+        gap: 10px;
+    }
     p {
         margin-bottom: 0;
     }

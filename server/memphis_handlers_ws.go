@@ -39,7 +39,7 @@ const (
 	memphisWS_Subj_AllSchemasData       = "get_all_schema_data"
 	memphisWS_Subj_GetSystemMessages    = "get_system_messages"
 	memphisWS_subj_GetAsyncTasks        = "get_async_tasks"
-	ws_updates_interval_sec             = 5
+	ws_updates_interval_sec             = 20
 	memphisWS_subj_GetAllFunctions      = "get_all_functions"
 	memphisWS_subj_GetGraphOverview     = "get_graph_overview"
 )

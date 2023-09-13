@@ -103,13 +103,18 @@
                         position: relative;
                         top: 1px;
                     }
-                    svg {
+                }
+                .flex-details-wrapper{                
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    svg{
+                        width: 14px;
+                        height: 14px;
                         cursor: pointer;
                         color: #737373;
-                        width: 11px;
-                        margin-left: 5px;
-                        height: 100%;
                     }
+                  
                 }
             }
 

@@ -1,4 +1,5 @@
 @import '~antd/dist/antd.css';
+@import '@stigg/react-sdk/dist/styles.css';
 
 .App {
     text-align: center;
@@ -55,42 +56,6 @@
     background: #bcb7b7;
 }
 
-.ant-message-notice-content {
-    background: #f7f7f7 !important;
-    border-radius: 15px;
-    color: var(--blue);
-    font-family: 'InterBold' !important;
-    font-size: 16px;
-}
-.ant-message-warning .anticon {
-    color: var(--purple);
-}
-.ant-btn > .anticon {
-    line-height: 0;
-}
-
-.circular-progress {
-    color: #6557ff;
-}
-
-.ant-btn-primary {
-    text-shadow: none !important;
-}
-
-//Threedots Menu
-.Menu.MuiPopover-paper {
-    width: 150px;
-    margin-top: 25px;
-    margin-left: 10px;
-    background: #ffffff;
-    border: 1px solid #d8d8d8;
-    box-sizing: border-box;
-    border-radius: 8px;
-}
-.threedots-menu {
-    margin-top: 10px;
-    cursor: pointer;
-}
 .menu-item-icon {
     color: var(--gray);
     font-size: 16px !important;
@@ -120,37 +85,6 @@
     p {
         color: #ff4d4f;
     }
-}
-
-.ant-popover-arrow {
-    display: none;
-}
-
-.a-link {
-    color: var(--purple);
-    margin-left: 5px;
-}
-.a-link:hover {
-    text-decoration: underline;
-    color: var(--purple);
-}
-
-pre {
-    font-family: 'Inter';
-}
-
-.memphis-label {
-    color: rgba(74, 73, 92, 0.8);
-    font-size: 12px;
-
-    a {
-        color: #6557ff;
-        cursor: pointer;
-    }
-}
-
-.ant-divider-vertical {
-    border-left-width: 2px;
 }
 
 .collapse-arrow {
@@ -236,6 +170,89 @@ pre {
 
 .hide-notification .notification-wrapper {
     animation: slide-out 0.5s ease-out forwards;
+}
+
+.a-link {
+    color: var(--purple);
+    margin-left: 5px;
+}
+.a-link:hover {
+    text-decoration: underline;
+    color: var(--purple);
+}
+
+pre {
+    font-family: 'Inter';
+}
+
+.memphis-label {
+    color: rgba(74, 73, 92, 0.8);
+    font-size: 12px;
+
+    a {
+        color: #6557ff;
+        cursor: pointer;
+    }
+}
+
+//antd theam
+
+.ant-message-notice-content {
+    background: #f7f7f7 !important;
+    border-radius: 15px;
+    color: var(--blue);
+    font-family: 'InterBold' !important;
+    font-size: 16px;
+}
+.ant-message-warning .anticon {
+    color: var(--purple);
+}
+.ant-btn > .anticon {
+    line-height: 0;
+}
+
+.circular-progress {
+    color: #6557ff;
+}
+
+.ant-btn-primary {
+    text-shadow: none !important;
+}
+
+.ant-pagination-item-active {
+    border-color: var(--purple);
+    a {
+        color: var(--purple);
+    }
+}
+.ant-pagination-item:hover {
+    border-color: var(--purple);
+    a {
+        color: var(--purple);
+    }
+}
+.ant-popover-arrow {
+    display: none;
+}
+
+.ant-divider-vertical {
+    border-left-width: 2px;
+}
+
+//Threedots Menu
+
+.Menu.MuiPopover-paper {
+    width: 150px;
+    margin-top: 25px;
+    margin-left: 10px;
+    background: #ffffff;
+    border: 1px solid #d8d8d8;
+    box-sizing: border-box;
+    border-radius: 8px;
+}
+.threedots-menu {
+    margin-top: 10px;
+    cursor: pointer;
 }
 
 @keyframes slide-in {

@@ -23,12 +23,13 @@ import { ReactComponent as PlayVideoIcon } from '../../../../assets/images/playV
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
-import SdkExample from '../../../../components/sdkExsample';
+import SdkExample from '../../../../components/sdkExample';
 import CustomCollapse from '../components/customCollapse';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import ProduceMessages from '../../../../components/produceMessages';
+import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
 
 const ProduceConsumList = ({ producer }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -41,11 +42,14 @@ const ProduceConsumList = ({ producer }) => {
     const [openCreateConsumer, setOpenCreateConsumer] = useState(false);
     const produceMessagesRef = useRef(null);
     const [produceloading, setProduceLoading] = useState(false);
+    const [openNoConsumer, setOpenNoConsumer] = useState(false);
+    const [activeConsumerList, setActiveConsumerList] = useState([]);
 
     useEffect(() => {
         if (producer) {
-            let result = concatFunction('producer', stationState?.stationSocketData);
+            let [result, activeConsumers] = concatFunction('producer', stationState?.stationSocketData);
             setProducersList(result);
+            setActiveConsumerList(activeConsumers);
         } else {
             let result = concatFunction('cgs', stationState?.stationSocketData);
             setCgsList(result);
@@ -61,13 +65,17 @@ const ProduceConsumList = ({ producer }) => {
         let deleted = [];
         let disconnected = [];
         let concatArrays = [];
+        let activeConsumers = [];
         if (type === 'producer') {
             connected = data?.connected_producers || [];
             deleted = data?.deleted_producers || [];
             disconnected = data?.disconnected_producers || [];
             concatArrays = connected.concat(disconnected);
             concatArrays = concatArrays.concat(deleted);
-            return concatArrays;
+            activeConsumers = data?.connected_cgs || [];
+            disconnected = data?.disconnected_cgs || [];
+            activeConsumers = activeConsumers.concat(disconnected);
+            return [concatArrays, activeConsumers];
         } else if (type === 'cgs') {
             connected = data?.connected_cgs || [];
             disconnected = data?.disconnected_cgs || [];
@@ -143,7 +151,6 @@ const ProduceConsumList = ({ producer }) => {
     return (
         <div>
             <div className="pubSub-list-container">
-                {' '}
                 <div className="header">
                     {producer && (
                         <>
@@ -298,12 +305,20 @@ const ProduceConsumList = ({ producer }) => {
                     </div>
                 )}
             </div>
-            <Modal width="710px" height="720px" clickOutside={() => setOpenCreateConsumer(false)} open={openCreateConsumer} displayButtons={false}>
-                <SdkExample withHeader={true} showTabs={false} consumer={true} stationName={stationState?.stationMetaData?.name} />
+            <Modal
+                width="1200px"
+                height="780px"
+                clickOutside={() => {
+                    setOpenCreateConsumer(false);
+                }}
+                open={openCreateConsumer}
+                displayButtons={false}
+            >
+                <SdkExample withHeader={true} showTabs={false} stationName={stationState?.stationMetaData?.name} consumer={true} />
             </Modal>
             <Modal
-                width="710px"
-                height="720px"
+                width="1200px"
+                height="780px"
                 clickOutside={() => {
                     setOpenCreateProducer(false);
                 }}
@@ -336,7 +351,13 @@ const ProduceConsumList = ({ producer }) => {
                         Produce
                     </div>
                 }
-                rBtnClick={() => produceMessagesRef.current()}
+                rBtnClick={() => {
+                    if (activeConsumerList.length === 0 && stationState?.stationMetaData?.retention_type === 'ack_based') {
+                        setOpenNoConsumer(true);
+                    } else {
+                        produceMessagesRef.current();
+                    }
+                }}
                 lBtnClick={() => setOpenProduceMessages(false)}
                 lBtnText={'Cancel'}
                 isLoading={produceloading}
@@ -348,6 +369,39 @@ const ProduceConsumList = ({ producer }) => {
                     produceMessagesRef={produceMessagesRef}
                     cancel={() => setOpenProduceMessages(false)}
                 />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <ErrorModalIcon width={45} height={45} />
+                        </div>
+                    </div>
+                }
+                className={'modal-wrapper produce-modal'}
+                width="403px"
+                clickOutside={() => {
+                    setOpenNoConsumer(false);
+                }}
+                open={openNoConsumer}
+                displayButtons={true}
+                rBtnText={
+                    <div className="action-button">
+                        <FiPlayCircle />
+                        Produce
+                    </div>
+                }
+                rBtnClick={() => {
+                    produceMessagesRef.current();
+                    setOpenNoConsumer(false);
+                }}
+                lBtnClick={() => setOpenNoConsumer(false)}
+                lBtnText={'Cancel'}
+                isLoading={produceloading}
+                keyListener={false}
+            >
+                <p className="no-consumer-message--p">The message will not be stored</p>
+                <label className="no-consumer-message--label">When using ack-based retention, a message will not be stored if no consumers are connected.</label>
             </Modal>
         </div>
     );

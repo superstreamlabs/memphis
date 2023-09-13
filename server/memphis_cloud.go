@@ -57,6 +57,8 @@ type LoginSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+var ErrUpgradePlan = errors.New("to continue using Memphis, please upgrade your plan to a paid plan")
+
 type MainOverviewData struct {
 	TotalStations     int                               `json:"total_stations"`
 	TotalMessages     uint64                            `json:"total_messages"`
@@ -104,7 +106,7 @@ func getStationStorageType(storageType string) string {
 	return strings.ToLower(storageType)
 }
 
-func GetStationMaxAge(retentionType string, retentionValue int) time.Duration {
+func GetStationMaxAge(retentionType, tenantName string, retentionValue int) time.Duration {
 	if retentionType == "message_age_sec" && retentionValue > 0 {
 		return time.Duration(retentionValue) * time.Second
 	}
@@ -1224,7 +1226,7 @@ func (umh UserMgmtHandler) Login(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
@@ -1605,10 +1607,15 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 	mainOverviewData := &MainOverviewData{}
 	generalErr := new(error)
 
+	streams, err := serv.memphisAllStreamsInfo(tenantName)
+	if err != nil {
+		return MainOverviewData{}, err
+	}
+
 	wg.Add(4)
-	go func() {
+	go func(streamsInfo []*StreamInfo) {
 		stationsHandler := StationsHandler{S: mh.S}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName)
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, tenantName, streamsInfo)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1621,7 +1628,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		mainOverviewData.TotalDlsMessages = totalDlsMsgs
 		mu.Unlock()
 		wg.Done()
-	}()
+	}(streams)
 
 	go func() {
 		systemComponents, metricsEnabled, err := mh.GetSystemComponents()
@@ -1650,9 +1657,9 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		wg.Done()
 	}()
 
-	go func() {
+	go func(streamsInfo []*StreamInfo) {
 		consumersHandler := ConsumersHandler{S: mh.S}
-		delayedConsumersMap, err := consumersHandler.GetDelayedCgsByTenant(tenantName)
+		delayedConsumersMap, err := consumersHandler.GetDelayedCgsByTenant(tenantName, streamsInfo)
 		if err != nil {
 			*generalErr = err
 			wg.Done()
@@ -1662,7 +1669,7 @@ func (mh MonitoringHandler) getMainOverviewDataDetails(tenantName string) (MainO
 		mainOverviewData.DelayedCgs = delayedConsumersMap
 		mu.Unlock()
 		wg.Done()
-	}()
+	}(streams)
 	wg.Wait()
 	if *generalErr != nil {
 		return MainOverviewData{}, *generalErr
@@ -1736,7 +1743,7 @@ func (umh UserMgmtHandler) RefreshToken(c *gin.Context) {
 
 	domain := ""
 	secure := true
-	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,
@@ -1902,6 +1909,10 @@ func (s *Server) validateAccIdInUsername(username string) bool {
 	return true
 }
 
+func (s *Server) SendBillingAlertWhenNeeded() error {
+	return nil
+}
+
 func shouldSendAnalytics() (bool, error) {
 	if configuration.ENV == "staging" || configuration.ENV == "dev" {
 		return false, nil
@@ -1989,7 +2000,7 @@ func updateSystemLiveness() {
 	shouldSend, _ := shouldSendAnalytics()
 	if shouldSend {
 		stationsHandler := StationsHandler{S: serv}
-		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "")
+		stations, totalMessages, totalDlsMsgs, err := stationsHandler.GetAllStationsDetailsLight(false, "", nil)
 		if err != nil {
 			serv.Warnf("updateSystemLiveness: %v", err.Error())
 			return
@@ -2138,5 +2149,41 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 		return err
 	}
 
+	return nil
+}
+
+func ScheduledCloudCacheRefresh() {
+	return
+}
+
+func ValidataAccessToFeature(tenantName, featureName string) bool {
+	return true
+}
+
+func ValidataUsageLimitOfFeature(tenantName, featureName string, amount int) (bool, int) {
+	return true, 10000 // this is the number of the max partitions
+}
+
+func validateRetentionPolicyUsage(tenantName, retentionType string, retentionValue int) bool {
+	return true
+}
+
+func InitializeCloudComponents() error {
+	return nil
+}
+
+func (s *Server) ListenForCloudCacheUpdates() error {
+	return nil
+}
+
+func (c *client) AccountConnExceeded() {
+	c.sendErrAndErr(ErrTooManyAccountConnections.Error())
+}
+
+func IsStorageLimitExceeded(tenantName string) bool {
+	return false
+}
+
+func validateProducersCount(stationId int, tenantName string) error {
 	return nil
 }

@@ -168,9 +168,16 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.RemoveTenant(tenantName)
+	err = db.DeleteIntegrationsByTenantName(tenantName)
 	if err != nil {
 		return err
+	}
+
+	if tenantName != MEMPHIS_GLOBAL_ACCOUNT {
+		err = db.RemoveTenant(tenantName)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = serv.memphisPurgeResourcesAccount(tenantName)
@@ -384,7 +391,7 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	domain := ""
 	secure := false
-	c.SetCookie("jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
+	c.SetCookie("memphis-jwt-refresh-token", refreshToken, REFRESH_JWT_EXPIRES_IN_MINUTES*60*1000, "/", domain, secure, true)
 	c.IndentedJSON(200, gin.H{
 		"jwt":                     token,
 		"expires_in":              JWT_EXPIRES_IN_MINUTES * 60 * 1000,

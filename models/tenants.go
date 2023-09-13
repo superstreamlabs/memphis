@@ -16,6 +16,7 @@ type Tenant struct {
 	Name                   string `json:"name"`
 	FirebaseOrganizationId string `json:"firebase_organization_id"`
 	InternalWSPass         string `json:"internal_ws_pass"`
+	OrganizationName       string `json:"organization_name"`
 }
 
 type TenantForUpsert struct {

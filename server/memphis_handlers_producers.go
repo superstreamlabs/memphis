@@ -82,7 +82,11 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		var created bool
 		station, created, err = CreateDefaultStation(user.TenantName, s, pStationName, user.ID, user.Username, "", 0)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+			if strings.Contains(err.Error(), "already exists") {
+				serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+			} else {
+				serv.Errorf("[tenant: %v][user: %v]createProducerDirectCommon at CreateDefaultStation: creating default station error - producer %v at station %v: %v", user.TenantName, user.Username, pName, pStationName.external, err.Error())
+			}
 			return false, false, err, models.Station{}
 		}
 		if created {
@@ -117,6 +121,12 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		}
 	}
 
+	err = validateProducersCount(station.ID, user.TenantName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]createProducerDirectCommon at validateProducersCount at station %s: %v", user.TenantName, user.Username, pStationName.Ext(), err.Error())
+		return false, false, err, models.Station{}
+	}
+
 	splitted := strings.Split(c.opts.Lang, ".")
 	sdkName := splitted[len(splitted)-1]
 	newProducer, err := db.InsertNewProducer(name, station.ID, producerType, pConnectionId, station.TenantName, station.PartitionsList, version, sdkName, appId)
@@ -125,7 +135,6 @@ func (s *Server) createProducerDirectCommon(c *client, pName, pType, pConnection
 		return false, false, err, models.Station{}
 	}
 	message := "Producer " + name + " connected"
-	serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
 	var auditLogs []interface{}
 	newAuditLog := models.AuditLog{
 		StationName:       pStationName.Ext(),

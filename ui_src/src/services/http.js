@@ -10,7 +10,6 @@
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
-import { message } from 'antd';
 import axios from 'axios';
 
 import { SERVER_URL, SHOWABLE_ERROR_STATUS_CODE, AUTHENTICATION_ERROR_STATUS_CODE, CLOUD_URL } from '../config';
@@ -20,6 +19,7 @@ import pathDomains from '../router';
 import AuthService from './auth';
 import { isCloud } from './valueConvertor';
 import EmailLink from '../components/emailLink';
+import { showMessages } from './genericServices';
 
 export async function httpRequest(method, endPointUrl, data = {}, headers = {}, queryParams = {}, authNeeded = true, timeout = 0, serverUrl = null) {
     let isSkipGetStarted;
@@ -60,18 +60,12 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
             isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === SHOWABLE_ERROR_STATUS_CODE) {
-            message.warning({
-                key: 'memphisWarningMessage',
-                content: err?.response?.data?.message,
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisWarningMessage')
-            });
+            showMessages('warning', err?.response?.data?.message);
         }
         if (err?.response?.data?.message !== undefined && err?.response?.status === 500) {
-            message.error({
-                key: 'memphisErrorMessage',
-                content: isCloud() ? (
+            showMessages(
+                'error',
+                isCloud() ? (
                     <>
                         We are experiencing some issues. Please contact us at <EmailLink email="support@memphis.dev" /> for assistance.
                     </>
@@ -84,27 +78,17 @@ export async function httpRequest(method, endPointUrl, data = {}, headers = {}, 
                             </a>
                         </>
                     </>
-                ),
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisErrorMessage')
-            });
+                )
+            );
         }
         if (err?.message?.includes('Network Error') && serverUrl) {
-            message.warning({
-                key: 'memphisWarningMessage',
-                content: `${serverUrl} can not be reached`,
-                duration: 5,
-                style: { cursor: 'pointer' },
-                onClick: () => message.destroy('memphisWarningMessage')
-            });
+            showMessages('warning', `${serverUrl} can not be reached`);
         }
         throw err.response;
     }
 }
 
 export async function handleRefreshTokenRequest() {
-    let isSkipGetStarted;
     const HTTP = axios.create({
         withCredentials: true
     });
@@ -112,10 +96,10 @@ export async function handleRefreshTokenRequest() {
         const url = `${SERVER_URL}${ApiEndpoints.REFRESH_TOKEN}`;
         const res = await HTTP({ method: 'POST', url });
         await AuthService.saveToLocalStorage(res.data);
-        return true;
+        return res.data;
     } catch (err) {
         AuthService.clearLocalStorage();
         isCloud() ? window.location.replace(CLOUD_URL) : window.location.assign(pathDomains.login);
-        return false;
+        return '';
     }
 }

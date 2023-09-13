@@ -54,12 +54,12 @@ export const CATEGORY_LIST = {
         name: 'Notifications',
         color: ColorPalette[0]
     },
-    Storage: {
-        name: 'Storage',
+    'Storage Tiering': {
+        name: 'Storage Tiering',
         color: ColorPalette[4]
     },
-    CDC: {
-        name: 'CDC',
+    'Change-Data-Capture': {
+        name: 'Change-Data-Capture',
         color: ColorPalette[11]
     }
     // SourceCode: {
@@ -256,7 +256,7 @@ export const INTEGRATION_LIST = {
         description:
             'S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.',
         date: 'Jan 1, 2023',
-        category: CATEGORY_LIST['Storage'],
+        category: CATEGORY_LIST['Storage Tiering'],
         header: (
             <div className="header-left-side">
                 <S3Logo alt="s3Logo" />
@@ -395,7 +395,7 @@ export const INTEGRATION_LIST = {
         icon: <DebeziumIcon alt="debeziumIcon" />,
         description:
             'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
-        category: CATEGORY_LIST['CDC'],
+        category: CATEGORY_LIST['Change-Data-Capture'],
         header: (
             <div className="header-left-side">
                 <DebeziumIcon alt="debeziumIcon" />

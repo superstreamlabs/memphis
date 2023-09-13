@@ -6,9 +6,11 @@
     flex-direction: column;
     justify-content: space-between;
     .tags-items-container {
-        height: calc(100% - 30px);
+        height: calc(100%);
+        margin-top: 10px;
+        display: flex;
+        flex-direction: column;
         .tag-item {
-            margin-top: 10px;
             display: flex;
             justify-content: space-between;
             .item {
@@ -19,6 +21,9 @@
                     font-size: 12px;
                     color: rgba(74, 73, 92, 0.8);
                     margin-right: 10px;
+                }
+                .tag-wrapper{
+                    max-width: unset !important;
                 }
             }
             .attached-component {

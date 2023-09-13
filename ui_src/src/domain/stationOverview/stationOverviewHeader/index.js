@@ -13,9 +13,10 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { Add, FiberManualRecord, InfoOutlined } from '@material-ui/icons';
-import { useHistory } from 'react-router-dom';
+import { Add, FiberManualRecord } from '@material-ui/icons';
+import { HiOutlineExclamationCircle } from 'react-icons/hi';
 import { MinusOutlined } from '@ant-design/icons';
+import { useHistory } from 'react-router-dom';
 
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
@@ -33,7 +34,7 @@ import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { ReactComponent as BackIcon } from '../../../assets/images/backIcon.svg';
 import UseSchemaModal from '../components/useSchemaModal';
-import SdkExample from '../../../components/sdkExsample';
+import SdkExample from '../../../components/sdkExample';
 import { httpRequest } from '../../../services/http';
 import TagsList from '../../../components/tagList';
 import Button from '../../../components/button';
@@ -43,9 +44,11 @@ import AsyncTasks from '../../../components/asyncTasks';
 import pathDomains from '../../../router';
 import { StationStoreContext } from '..';
 import { TIERED_STORAGE_UPLOAD_INTERVAL } from '../../../const/localStorageConsts';
+import { Context } from '../../../hooks/store';
 
 const StationOverviewHeader = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const [state, dispatch] = useContext(Context);
     const [updateSchemaModal, setUpdateSchemaModal] = useState(false);
     const [modalDeleteIsOpen, modalDeleteFlip] = useState(false);
     const [useSchemaModal, setUseSchemaModal] = useState(false);
@@ -56,6 +59,7 @@ const StationOverviewHeader = () => {
     const [auditModal, setAuditModal] = useState(false);
     const [sdkModal, setSdkModal] = useState(false);
     const history = useHistory();
+    const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
 
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
@@ -69,7 +73,7 @@ const StationOverviewHeader = () => {
                 setRetentionValue(`${stationState?.stationMetaData?.retention_value?.toLocaleString()} messages`);
                 break;
             case 'ack_based':
-                setRetentionValue('Ack based');
+                setRetentionValue('Ack');
                 break;
             default:
                 break;
@@ -177,9 +181,21 @@ const StationOverviewHeader = () => {
             <div className="details">
                 <div className="main-details">
                     <div className="left-side">
-                        <p>
-                            <b>Retention:</b> {retentionValue}
-                        </p>
+                        <div className="flex-details-wrapper">
+                            <p>
+                                <b>Retention:</b> {retentionValue}
+                            </p>
+                            {showRetentinViolation && (
+                                <TooltipComponent
+                                    text={`Based on your current subscription plan, messages can be retained for a maximum of ${
+                                        (state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-retention']?.limits) || 3
+                                    } days`}
+                                    minWidth="35px"
+                                >
+                                    <HiOutlineExclamationCircle />
+                                </TooltipComponent>
+                            )}
+                        </div>
                         <div className="storage-section">
                             {!isCloud() && (
                                 <p>
@@ -195,14 +211,16 @@ const StationOverviewHeader = () => {
                             <p>
                                 <b>Local Storage:</b> {stationState?.stationMetaData?.storage_type}
                             </p>
-                            <p>
-                                <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
-                                {stationState?.stationMetaData?.tiered_storage_enabled && (
-                                    <TooltipComponent text={`Iterate every ${localStorage.getItem(TIERED_STORAGE_UPLOAD_INTERVAL)} seconds.`} minWidth="35px">
-                                        <InfoOutlined />
-                                    </TooltipComponent>
-                                )}
-                            </p>
+                            <div className="flex-details-wrapper">
+                                <p>
+                                    <b>Remote Storage:</b> {stationState?.stationMetaData?.tiered_storage_enabled ? 'S3' : <MinusOutlined style={{ color: '#2E2C34' }} />}
+                                    {stationState?.stationMetaData?.tiered_storage_enabled && (
+                                        <TooltipComponent text={`Iterate every ${localStorage.getItem(TIERED_STORAGE_UPLOAD_INTERVAL)} seconds`} minWidth="35px">
+                                            <HiOutlineExclamationCircle />
+                                        </TooltipComponent>
+                                    )}
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -333,8 +351,8 @@ const StationOverviewHeader = () => {
                     </div>
                 </div>
                 <Modal
-                    width="710px"
-                    height="720px"
+                    width="1200px"
+                    height="780px"
                     clickOutside={() => {
                         setSdkModal(false);
                     }}
@@ -348,7 +366,7 @@ const StationOverviewHeader = () => {
                         <div className="audit-header">
                             <p className="title">Audit</p>
                             <div className="msg">
-                                <InfoOutlined />
+                                <HiOutlineExclamationCircle />
                                 <p>Showing last 5 days</p>
                             </div>
                         </div>

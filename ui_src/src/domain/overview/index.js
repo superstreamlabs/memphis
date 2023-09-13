@@ -36,6 +36,7 @@ import GenericDetails from './genericDetails';
 import Stations from './stations';
 import Tags from './tags';
 import Integrations from './integrations';
+import Usage from './usage';
 import Loader from '../../components/loader';
 import Button from '../../components/button';
 import { Context } from '../../hooks/store';
@@ -45,6 +46,7 @@ import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
+import StorageLeft from '../../components/storageLeft';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -255,10 +257,10 @@ function OverView() {
                                         <StreamLineage createStationTrigger={(e) => modalFlip(e)} setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                                         <Throughput />
                                     </div>
-                                    <div className="right-side cloud">
+                                    <div className={state?.monitor_data?.billing_details?.is_free_plan ? 'right-side free-cloud' : 'right-side cloud'}>
                                         <Stations createStationTrigger={(e) => modalFlip(e)} />
                                         <Tags />
-                                        <Integrations />
+                                        {state?.monitor_data?.billing_details?.is_free_plan ? <Usage /> : <Integrations />}
                                     </div>
                                 </div>
                             ) : (

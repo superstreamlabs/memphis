@@ -122,7 +122,7 @@ func Authenticate(c *gin.Context) {
 
 		shouldCheckUser = true
 	} else if path == refreshTokenRoute {
-		tokenString, err = c.Cookie("jwt-refresh-token")
+		tokenString, err = c.Cookie("memphis-jwt-refresh-token")
 		if err != nil {
 			c.AbortWithStatusJSON(401, gin.H{"message": "Unauthorized"})
 			return

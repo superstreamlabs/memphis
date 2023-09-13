@@ -189,6 +189,24 @@
     }
 }
 
+.no-consumer-message--p {
+    color: var(--gray-900, #101828);
+    font-family: 'InterSemiBold';
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 28px;
+}
+
+.np-consumer-message--label {
+    color: var(--gray-900, #101828);
+    font-family: 'InterSemiBold';
+    font-size: 18px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 28px;
+}
+
 @keyframes blinker {
     from {
         opacity: 1;

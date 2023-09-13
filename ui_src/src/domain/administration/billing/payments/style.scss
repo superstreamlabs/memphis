@@ -1,5 +1,6 @@
 .payments-container {
     height: 100%;
+    overflow: auto;
     .header-preferences {
         display: flex;
         justify-content: space-between;
@@ -9,6 +10,24 @@
             font-family: 'InterSemiBold';
             font-size: 24px;
             margin-bottom: 0;
+        }
+        .header{
+            position: relative;
+            width: 100%;
+            .header-flex{
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                .billinig-alert-button{
+                    cursor: pointer;
+                    display: flex;
+                    gap:5px;
+                    label{
+                        cursor: pointer;
+                    }
+                }
+            }
+            
         }
     }
 
@@ -24,5 +43,18 @@
             border: 1.4px solid #ebeaed;
             border-radius: 12px;
         }
+    }
+}
+
+.billing-alert-modal{
+    .form-field{
+        p{
+            margin: 0;
+            font-family: 'InterMedium';
+        }
+    }
+    .form-button{
+        display: flex;
+        justify-content: space-between;
     }
 }

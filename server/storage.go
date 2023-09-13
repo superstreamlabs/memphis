@@ -25,22 +25,30 @@ import (
 
 func flushMapToTier2Storage() error {
 	for t, tenant := range tieredStorageMsgsMap.m {
-		for k, f := range StorageFunctionsMap {
-			switch k {
-			case "s3":
-				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(t); !ok {
-					continue
-				} else {
-					if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
-						err := f.(func(string, map[string][]StoredMsg) error)(t, tenant)
-						if err != nil {
-							return err
+		if IsStorageLimitExceeded(t) {
+			serv.Warnf("[tenant:%s]flushMapToTier2Storage: %s", t, ErrUpgradePlan.Error())
+			continue
+		}
+		if ValidataAccessToFeature(t, "feature-storage-tiering") {
+			for k, f := range StorageFunctionsMap {
+				switch k {
+				case "s3":
+					if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(t); !ok {
+						continue
+					} else {
+						if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
+							err := f.(func(string, map[string][]StoredMsg) error)(t, tenant)
+							if err != nil {
+								return err
+							}
 						}
 					}
+				default:
+					return errors.New("failed uploading to tiered storage : unsupported integration")
 				}
-			default:
-				return errors.New("failed uploading to tiered storage : unsupported integration")
 			}
+		} else {
+			serv.Warnf("[tenant: %v]flushMapToTier2Storage: Has no access to feature-storage-tiering in its Plan", t)
 		}
 	}
 	return nil
@@ -61,39 +69,45 @@ func (s *Server) sendToTier2Storage(storageType interface{}, buf []byte, seq uin
 		tenantName = memStore.account.Name
 	}
 
-	for k := range StorageFunctionsMap {
-		switch k {
-		case "s3":
-			if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
-				continue
-			} else {
-				if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
-					msgId := map[string]string{}
-					seqNumber := strconv.Itoa(int(seq))
-					msgId["msg-id"] = streamName + seqNumber
-					if tenantName == "" {
-						tenantName = serv.MemphisGlobalAccountString()
-					}
-					subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)
-					// TODO: if the stream is not exists save the messages in buffer
-					if TIERED_STORAGE_STREAM_CREATED {
-						tierStorageMsg := TieredStorageMsg{
-							Buf:         buf,
-							StationName: streamName,
-							TenantName:  tenantName,
-						}
+	if IsStorageLimitExceeded(tenantName) {
+		serv.Warnf("[tenant:%s]sendToTier2Storage: %s", tenantName, ErrUpgradePlan.Error())
+		return nil
+	}
 
-						msg, err := json.Marshal(tierStorageMsg)
-						if err != nil {
-							return err
+	for k := range StorageFunctionsMap {
+		if ValidataAccessToFeature(tenantName, "feature-storage-tiering") {
+			switch k {
+			case "s3":
+				if tenantIntegrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
+					continue
+				} else {
+					if _, ok = tenantIntegrations["s3"].(models.Integration); ok {
+						msgId := map[string]string{}
+						seqNumber := strconv.Itoa(int(seq))
+						msgId["msg-id"] = streamName + seqNumber
+						if tenantName == "" {
+							tenantName = serv.MemphisGlobalAccountString()
 						}
-						s.sendInternalAccountMsgWithHeadersWithEcho(s.MemphisGlobalAccount(), subject, msg, msgId)
+						subject := fmt.Sprintf("%s.%s.%s", tieredStorageStream, streamName, tenantName)
+						// TODO: if the stream is not exists save the messages in buffer
+						if TIERED_STORAGE_STREAM_CREATED {
+							tierStorageMsg := TieredStorageMsg{
+								Buf:         buf,
+								StationName: streamName,
+								TenantName:  tenantName,
+							}
+
+							msg, err := json.Marshal(tierStorageMsg)
+							if err != nil {
+								return err
+							}
+							s.sendInternalAccountMsgWithHeadersWithEcho(s.MemphisGlobalAccount(), subject, msg, msgId)
+						}
 					}
 				}
+			default:
+				return errors.New("failed send to tiered storage : unsupported integration")
 			}
-
-		default:
-			return errors.New("failed send to tiered storage : unsupported integration")
 		}
 	}
 	return nil

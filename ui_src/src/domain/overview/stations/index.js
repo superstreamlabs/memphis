@@ -49,7 +49,7 @@ const Stations = ({ createStationTrigger }) => {
                             <div className={!isCloud() ? 'coulmns-table' : 'coulmns-table coulmns-table-cloud'}>
                                 <span className="station-name">Name</span>
                                 {!isCloud() && <span>Creation date</span>}
-                                <span className="title-center">Mssages</span>
+                                <span className="title-center">Messages</span>
                                 <span className="title-center">Partitions</span>
                                 <span className="title-center">Status</span>
                                 <span></span>
@@ -72,14 +72,13 @@ const Stations = ({ createStationTrigger }) => {
                                             <OverflowTip className="station-details total" text={station.total_messages?.toLocaleString()}>
                                                 <span className="centered">{station.total_messages?.toLocaleString()}</span>
                                             </OverflowTip>
-                                            <OverflowTip
-                                                className="station-details total"
-                                                text={station?.partitions_list?.length === 0 ? 1 : station?.partitions_list?.length?.toLocaleString()}
-                                            >
+                                            <div className="station-details total">
                                                 <span className="centered">
-                                                    {station?.partitions_list?.length === 0 ? 1 : station?.partitions_list?.length?.toLocaleString()}
+                                                    {!station?.partitions_list || station?.partitions_list?.length === 0
+                                                        ? 1
+                                                        : station?.partitions_list?.length?.toLocaleString()}
                                                 </span>
-                                            </OverflowTip>
+                                            </div>
                                             <div className={!isCloud() ? 'centered lottie' : 'centered lottie-cloud'}>
                                                 {station?.has_dls_messages ? (
                                                     station?.activity ? (

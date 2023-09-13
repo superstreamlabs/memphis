@@ -255,8 +255,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
-	if (csr.PartitionsNumber > MAX_PARTITIONS || csr.PartitionsNumber < 1) && isNative {
-		errMsg := fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, MAX_PARTITIONS, csr.StationName)
+	canCreate, partitionLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-partitions-per-station", csr.PartitionsNumber)
+
+	if (!canCreate || csr.PartitionsNumber < 1) && isNative {
+		var errMsg error
+		if canCreate {
+			errMsg = fmt.Errorf("cannot create station with %v partitions (max:%v min:1): Station -  %v, ", csr.PartitionsNumber, partitionLimit, csr.StationName)
+		} else {
+			errMsg = fmt.Errorf("This amount of partitions you are trying to create for a single station is not supported on your pricing plan")
+		}
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect %v", csr.TenantName, csr.Username, errMsg)
 		jsApiResp.Error = NewJSStreamCreateError(errMsg)
 		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
@@ -302,6 +309,13 @@ func (s *Server) createStationDirectIntern(c *client,
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect at validateRetentionType: %v", csr.TenantName, csr.Username, err.Error())
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+
+		if !validateRetentionPolicyUsage(csr.TenantName, retentionType, csr.RetentionValue) {
+			serv.Warnf("[tenant: %v][user:%v]createStationDirect at validateRetentionType: Retention Type or Value is not supported in the plan", csr.TenantName, csr.Username)
+			jsApiResp.Error = NewJSStreamCreateError(fmt.Errorf("This retention type or value is not supported in your pricing plan"))
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, fmt.Errorf("Retention Type or Value is not supported in the plan"))
 			return
 		}
 
@@ -711,7 +725,7 @@ func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName s
 	}
 }
 
-func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string) ([]models.ExtendedStationLight, uint64, uint64, error) {
+func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string, streamsInfo []*StreamInfo) ([]models.ExtendedStationLight, uint64, uint64, error) {
 	var stations []models.ExtendedStationLight
 	totalMessages := uint64(0)
 	if tenantName == "" {
@@ -731,16 +745,13 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 	} else {
 		stationTotalMsgs := make(map[string]int)
 		tagsHandler := TagsHandler{S: sh.S}
-		acc, err := sh.S.lookupAccount(tenantName)
-		if err != nil {
-			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+		if streamsInfo == nil {
+			streamsInfo, err = serv.memphisAllStreamsInfo(tenantName)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
 		}
-		accName := acc.Name
-		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
-		if err != nil {
-			return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
-		}
-		for _, info := range allStreamInfo {
+		for _, info := range streamsInfo {
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
 				totalMessages += info.State.Msgs
@@ -788,6 +799,24 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
 			stations[i].HasDlsMsgs = hasDlsMsgs
 
+			activity := false
+			activeCount, err := db.CountActiveProudcersByStationID(stations[i].ID)
+			if err != nil {
+				return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+			}
+			if activeCount > 0 {
+				activity = true
+			} else {
+				activeCount, err = db.CountActiveConsumersByStationID(stations[i].ID)
+				if err != nil {
+					return []models.ExtendedStationLight{}, totalMessages, totalDlsMessages, err
+				}
+				if activeCount > 0 {
+					activity = true
+				}
+			}
+
+			stations[i].Activity = activity
 			extStations = append(extStations, stations[i])
 		}
 		return extStations, totalMessages, totalDlsMessages, nil
@@ -826,7 +855,7 @@ func (sh StationsHandler) GetAllStations(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName)
+	stations, _, _, err := sh.GetAllStationsDetailsLight(true, user.TenantName, nil)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]GetAllStations at GetAllStationsDetails: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -851,10 +880,17 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
-	if body.PartitionsNumber > MAX_PARTITIONS || body.PartitionsNumber < 1 {
-		errMsg := fmt.Errorf("cannot create station with %v replicas (max:%v min:1): Station %v", body.PartitionsNumber, MAX_PARTITIONS, body.Name)
+	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
+
+	if !canCreate || body.PartitionsNumber < 1 {
+		var errMsg error
+		if canCreate {
+			errMsg = fmt.Errorf("cannot create station with %v replicas (max:%v min:1): Station %v", body.PartitionsNumber, partitionLimit, body.Name)
+		} else {
+			errMsg = fmt.Errorf("this amount of partitions you are trying to create for a single station is not supported on your pricing plan")
+		}
 		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg.Error()})
 		return
 	}
 	partitionsList := make([]int, 0)
@@ -916,6 +952,12 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		if err != nil {
 			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionType: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+
+		if !validateRetentionPolicyUsage(tenantName, retentionType, body.RetentionValue) {
+			serv.Warnf("[tenant: %v][user: %v]CreateStation at validateRetentionPolicyUsage: Retention Type or Value is not supported in the plan", user.TenantName, user.Username)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This retention type or value is not supported in your pricing plan"})
 			return
 		}
 
@@ -998,7 +1040,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	if len(body.Tags) > 0 {
-		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName)
+		err = AddTagsToEntity(body.Tags, "station", newStation.ID, newStation.TenantName, "")
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]CreateStation: : Station %v Failed adding tags: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1461,6 +1503,12 @@ func (sh StationsHandler) ResendPoisonMessages(c *gin.Context) {
 	if err != nil {
 		serv.Errorf("ResendPoisonMessages at getUserDetailsFromMiddleware: At station %v: %v", body.StationName, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	if IsStorageLimitExceeded(user.TenantName) {
+		serv.Warnf("[tenant: %v][user: %v]ResendPoisonMessages at IsStorageLimitExceeded: %s", user.TenantName, user.Username, ErrUpgradePlan.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": ErrUpgradePlan.Error()})
 		return
 	}
 

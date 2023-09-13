@@ -1569,10 +1569,17 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 	// being lost, there is no reason to attempt to flush again during the
 	// teardown when the writeLoop exits.
 	var skipFlush bool
+	// ** added by Memphis
+	skipCloseWs := false
+	// added by Memphis **
 	switch reason {
 	case ReadError, WriteError, SlowConsumerPendingBytes, SlowConsumerWriteDeadline, TLSHandshakeError:
 		c.flags.set(skipFlushOnClose)
 		skipFlush = true
+		// ** added by Memphis
+	case MaxAccountConnectionsExceeded:
+		skipCloseWs = true
+		// added by Memphis **
 	}
 	if c.flags.isSet(connMarkedClosed) {
 		return
@@ -1580,7 +1587,7 @@ func (c *client) markConnAsClosed(reason ClosedState) {
 	c.flags.set(connMarkedClosed)
 	// For a websocket client, unless we are told not to flush, enqueue
 	// a websocket CloseMessage based on the reason.
-	if !skipFlush && c.isWebsocket() && !c.ws.closeSent {
+	if !skipFlush && c.isWebsocket() && !c.ws.closeSent && !skipCloseWs { // ** skipCloseWs added by Memphis
 		c.wsEnqueueCloseMessage(reason)
 	}
 	// Be consistent with the creation: for routes, gateways and leaf,
@@ -1921,6 +1928,13 @@ func (c *client) sendErrAndDebug(err string) {
 	c.Debugf(err)
 }
 
+// *** added by Memphis
+func (c *client) sendErrAndWarn(funcName, err string) {
+	c.sendErr(err)
+	c.Warnf("[tenant: %s]%s: %s", c.acc.GetName(), funcName, err)
+}
+// added by Memphis ***
+
 func (c *client) authTimeout() {
 	c.sendErrAndDebug("Authentication Timeout")
 	c.closeConnection(AuthenticationTimeout)
@@ -1941,6 +1955,7 @@ func (c *client) accountIdErr() {
 	c.sendErrAndDebug("Wrong / missing account ID")
 	c.closeConnection(MissingAccount)
 }
+
 // added by Memphis ***
 
 func (c *client) authViolation() {
@@ -1977,7 +1992,12 @@ func (c *client) authViolation() {
 }
 
 func (c *client) maxAccountConnExceeded() {
-	c.sendErrAndErr(ErrTooManyAccountConnections.Error())
+	// ** removed by Memphis
+	// c.sendErrAndErr(ErrTooManyAccountConnections.Error())
+	// removed by Memphis **
+	// ** added by Memphis
+	c.AccountConnExceeded()
+	// added by Memphis **
 	c.closeConnection(MaxAccountConnectionsExceeded)
 }
 
@@ -3556,6 +3576,15 @@ func (c *client) processInboundClientMsg(msg []byte) (bool, bool) {
 	// The msg includes the CR_LF, so pull back out for accounting.
 	c.in.msgs++
 	c.in.bytes += int32(len(msg) - LEN_CR_LF)
+
+	// *** added by Memphis
+	accName := c.Account().GetName()
+	subj := string(c.pa.subject)
+	if !strings.HasPrefix(subj, "$JS") && !strings.HasPrefix(subj, "_INBOX") && accName != MEMPHIS_GLOBAL_ACCOUNT && accName != globalAccountName && accName != DEFAULT_SYSTEM_ACCOUNT {
+		hdrBytes, msgBytes := c.msgParts(msg)
+		IncrementEventCounter(accName, "produced_event", 0, 1, subj, msgBytes, hdrBytes)
+	}
+	// added by Memphis ***
 
 	// Check that client (could be here with SYSTEM) is not publishing on reserved "$GNR" prefix.
 	if c.kind == CLIENT && hasGWRoutedReplyPrefix(c.pa.subject) {

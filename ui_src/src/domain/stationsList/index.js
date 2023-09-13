@@ -159,7 +159,7 @@ const StationsList = () => {
                             Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
                         </label>
                         <span className="memphis-label">
-                            Stations stores events. More&nbsp;
+                            A station is a distributed unit that stores messages. More&nbsp;
                             <a className="learn-more" href=" https://docs.memphis.dev/memphis/memphis/key-concepts/station" target="_blank">
                                 here.
                             </a>

@@ -2300,9 +2300,6 @@ func (fs *fileStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts in
 	if fs.closed {
 		return ErrStoreClosed
 	}
-	// *** added by memphis
-	IncrementEventCounter(fs.account.GetName(), "produced_event", 0, 1, subj, msg, hdr)
-	// added by memphis ***
 	// Per subject max check needed.
 	mmp := uint64(fs.cfg.MaxMsgsPer)
 	var psmc uint64

@@ -31,6 +31,7 @@
     .station-meta {
         display: flex;
         flex-direction: column;
+        gap: 10px;
         .header {
             display: flex;
             align-items: center;
@@ -43,7 +44,6 @@
         margin-bottom: 0px;
         text-transform: capitalize;
         margin-left: 1px;
-        margin-top: 10px;
         font-family: 'InterSemiBold';
         cursor: pointer !important;
         .anticon svg {
@@ -56,6 +56,9 @@
             width: 7px;
             height: 20px;
         }
+    }
+    .no-text-transform {
+        text-transform: none;
     }
     .retention-info {
         text-transform: none;
@@ -70,21 +73,21 @@
         justify-content: space-between;
         display: flex;
         flex-direction: row;
-        width: calc(100%);
-        min-height: 101px;
-        padding-top: 19px;
-        padding-bottom: 19px;
+        width: 100%;
+        min-height: 90px;
+        padding-top: 15px;
+        padding-bottom: 10px;
         .left-section {
-            padding-right: 40px;
-            display: flex;
+            padding-right: 20px;
             flex-direction: column;
-            align-items: flex-start;
-            gap: 11px;
+            align-items: center;
+            justify-content: center;
+            min-width: 240px;
             .check-box {
                 display: flex;
                 flex-direction: row;
                 align-items: center;
-                gap: 11px;
+                gap: 10px;
                 .station-name {
                     font-size: 17px;
                     font-family: 'InterSemiBold';
@@ -99,13 +102,6 @@
                     }
                 }
             }
-            .date {
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                display: inline-block;
-                max-width: 300px;
-            }
         }
         .middle-section {
             border-left: 1px solid #e9e9e9;
@@ -117,12 +113,6 @@
             padding-right: 40px;
             .station-created {
                 margin-right: 40px;
-            }
-            .tags-list {
-                margin-bottom: 0px;
-                margin-left: 1px;
-                margin-top: 10px;
-                max-width: 230px;
             }
         }
         .right-section {
@@ -166,25 +156,26 @@
     .bottom-section {
         min-height: 42px;
         border-top: 1px solid rgba(101, 87, 255, 0.15);
-        background: rgba(101, 87, 255, 0.1);
+        background: rgba(166, 158, 252, 0.03);
         display: flex;
         flex-direction: row;
         justify-content: flex-start;
         align-items: center;
         gap: 28px;
-        .meta-container {
+        .meta-container,
+        .tags-list {
             display: flex;
             align-items: center;
             gap: 4px;
         }
+        .tags-list {
+            max-width: 230px;
+            margin-left: auto;
+        }
     }
     &:hover {
-        .action {
-            display: flex !important;
-        }
         border-radius: 8px;
-        outline: 2px solid #6557ff;
-        background: #ecebff;
+        outline: 1px solid #dedbf9;
     }
 }
 

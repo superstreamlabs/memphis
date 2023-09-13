@@ -15,6 +15,7 @@ import './App.scss';
 import { Switch, Route, withRouter } from 'react-router-dom';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { JSONCodec, StringCodec, connect } from 'nats.ws';
+import { useStiggContext } from '@stigg/react-sdk';
 import { useMediaQuery } from 'react-responsive';
 import { useHistory } from 'react-router-dom';
 import { message, notification } from 'antd';
@@ -30,11 +31,13 @@ import {
     USER_IMAGE
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
-import { handleRefreshTokenRequest, httpRequest } from './services/http';
+import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
 import { ReactComponent as InfoNotificationIcon } from './assets/images/infoNotificationIcon.svg';
+import { handleRefreshTokenRequest, httpRequest } from './services/http';
 import { ReactComponent as RedirectIcon } from './assets/images/redirectIcon.svg';
 import { ReactComponent as SuccessIcon } from './assets/images/successIcon.svg';
 import { ReactComponent as CloseIcon } from './assets/images/closeNotification.svg';
+import { showMessages } from './services/genericServices';
 import StationOverview from './domain/stationOverview';
 import { ReactComponent as ErrorIcon } from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
@@ -45,6 +48,7 @@ import { ReactComponent as WarnIcon } from './assets/images/warnIcon.svg';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SchemaManagment from './domain/schema';
+import Functions from './domain/functions';
 import PrivateRoute from './PrivateRoute';
 import AuthService from './services/auth';
 import Overview from './domain/overview';
@@ -66,7 +70,7 @@ if (!isCloud()) {
     Signup = require('./domain/signup').default;
 }
 
-const App = withRouter((props) => {
+const App = withRouter(() => {
     const [state, dispatch] = useContext(Context);
     const isMobile = useMediaQuery({ maxWidth: 849 });
     const [authCheck, setAuthCheck] = useState(true);
@@ -75,12 +79,14 @@ const App = withRouter((props) => {
     const firebase_id_token = urlParams.get('firebase_id_token');
     const firebase_organization_id = urlParams.get('firebase_organization_id');
     const [cloudLogedIn, setCloudLogedIn] = useState(isCloud() ? false : true);
+    const [refreshPlan, setRefreshPlan] = useState(isCloud() ? true : false);
     const [persistedNotifications, setPersistedNotifications] = useState(() => {
         const storedNotifications = JSON.parse(localStorage.getItem('persistedNotifications'));
         return storedNotifications || [];
     });
     const [displayedNotifications, setDisplayedNotifications] = useState([]);
     const [systemMessage, setSystemMessage] = useState([]);
+    const { stigg } = isCloud() && useStiggContext();
 
     const stateRef = useRef([]);
     stateRef.current = [cloudLogedIn, persistedNotifications];
@@ -89,8 +95,10 @@ const App = withRouter((props) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.LOGIN, { firebase_id_token, firebase_organization_id }, {}, {}, false);
             if (data) {
+                stigg.setCustomerId(data.account_name);
                 localStorage.setItem(USER_IMAGE, data.user_image);
                 AuthService.saveToLocalStorage(data);
+                dispatch({ type: 'SET_USER_DATA', payload: data });
                 try {
                     const ws_port = data.ws_port;
                     const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
@@ -114,13 +122,15 @@ const App = withRouter((props) => {
                     }
                     dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                 } catch (error) {
-                    return;
+                    throw new Error(error);
                 }
-                dispatch({ type: 'SET_USER_DATA', payload: data });
             }
             history.push('/overview');
             setCloudLogedIn(true);
-        } catch (error) {}
+        } catch (error) {
+            setCloudLogedIn(true);
+            console.log(error);
+        }
     };
 
     useEffect(() => {
@@ -152,8 +162,10 @@ const App = withRouter((props) => {
         } else if (localStorage.getItem(LOCAL_STORAGE_TOKEN)) {
             const ws_port = localStorage.getItem(LOCAL_STORAGE_WS_PORT);
             const SOCKET_URL = ENVIRONMENT === 'production' ? `${WS_PREFIX}://${WS_SERVER_URL_PRODUCTION}:${ws_port}` : `${WS_PREFIX}://localhost:${ws_port}`;
-            const handleRefreshStatus = await handleRefreshTokenRequest();
-            if (handleRefreshStatus) {
+            const handleRefreshData = await handleRefreshTokenRequest();
+            dispatch({ type: 'SET_USER_DATA', payload: handleRefreshData });
+            isCloud() && stigg.setCustomerId(handleRefreshData.account_name);
+            if (handleRefreshData !== '') {
                 if (firstTime) {
                     try {
                         let conn;
@@ -176,13 +188,41 @@ const App = withRouter((props) => {
                         }
                         dispatch({ type: 'SET_SOCKET_DETAILS', payload: conn });
                     } catch (error) {
-                        return;
+                        throw new Error(error);
                     }
                 }
                 return true;
             }
         } else {
             isCloud() ? window.location.replace(CLOUD_URL) : history.push(pathDomains.signup);
+        }
+    }, []);
+
+    const handleUpdatePlan = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.REFRESH_BILLING_PLAN);
+            dispatch({ type: 'SET_ENTITLEMENTS', payload: data });
+            setRefreshPlan(false);
+            showMessages('success', 'Your plan has been successfully updated.');
+        } catch (error) {
+            setRefreshPlan(false);
+        }
+    };
+
+    useEffect(() => {
+        const url = window.location.href;
+        const checkout_completed = isCheckoutCompletedTrue(url);
+        if (checkout_completed === null) {
+            setRefreshPlan(false);
+            return;
+        }
+        if (checkout_completed) {
+            setTimeout(() => {
+                handleUpdatePlan();
+            }, 3000);
+        } else {
+            setRefreshPlan(false);
+            showMessages('error', 'Something went wrong. Please try again.');
         }
     }, []);
 
@@ -336,12 +376,13 @@ const App = withRouter((props) => {
 
     return (
         <div className="app-container">
-            {!cloudLogedIn && <Loader />}
+            {(!cloudLogedIn || refreshPlan) && <Loader />}
             {systemMessage?.length > 0 && displaySystemMessage()}
             <div>
                 {' '}
                 {!authCheck &&
                     cloudLogedIn &&
+                    !refreshPlan &&
                     (!isCloud() ? (
                         <Switch>
                             <Route exact path={pathDomains.signup} component={Signup} />
@@ -398,32 +439,6 @@ const App = withRouter((props) => {
                                     ></AppWrapper>
                                 }
                             />
-                            {/* <PrivateRoute
-                                exact
-                                path={`${pathDomains.functions}`}
-                                component={
-                                    <AppWrapper
-                                        content={
-                                            <div>
-                                                <Functions />
-                                            </div>
-                                        }
-                                    ></AppWrapper>
-                                }
-                            />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.functions}/:name`}
-                                component={
-                                    <AppWrapper
-                                        content={
-                                            <div>
-                                                <Functions />
-                                            </div>
-                                        }
-                                    ></AppWrapper>
-                                }
-                            /> */}
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.schemaverse}/create`}
@@ -490,20 +505,16 @@ const App = withRouter((props) => {
                                 }
                             />
                             <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.administration}/integrations`}
-                                component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
-                            />
+                            <PrivateRoute exact path={`${pathDomains.administration}/integrations`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.administration}/cluster_configuration`}
-                                component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                                component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.administration}/version_upgrade`}
-                                component={<AppWrapper content={<Administration step={'version_upgrade'} />}></AppWrapper>}
+                                component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
                             <PrivateRoute
                                 path="/"
@@ -655,26 +666,15 @@ const App = withRouter((props) => {
                             />
 
                             <PrivateRoute exact path={pathDomains.profile} component={<AppWrapper content={<Profile />}></AppWrapper>} />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.administration}/integrations`}
-                                component={<AppWrapper content={<Administration step={'integrations'} />}></AppWrapper>}
-                            />
+                            <PrivateRoute exact path={`${pathDomains.administration}/integrations`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
                             <PrivateRoute
                                 exact
                                 path={`${pathDomains.administration}/cluster_configuration`}
-                                component={<AppWrapper content={<Administration step={'cluster_configuration'} />}></AppWrapper>}
+                                component={<AppWrapper content={<Administration />}></AppWrapper>}
                             />
-                            <PrivateRoute
-                                exact
-                                path={`${pathDomains.administration}/usage`}
-                                component={<AppWrapper content={<Administration step={'usage'} />}></AppWrapper>}
-                            />
-                            {/* <PrivateRoute
-                            exact
-                            path={`${pathDomains.administration}/payments`}
-                            component={<AppWrapper content={<Administration step={'payments'} />}></AppWrapper>}
-                        /> */}
+                            <PrivateRoute exact path={`${pathDomains.administration}/usage`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
+                            <PrivateRoute exact path={`${pathDomains.administration}/payments`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
+
                             <PrivateRoute
                                 path="/"
                                 component={

@@ -161,9 +161,13 @@
                 min-width: 430px;
                 align-content: space-between;
             }
+            .free-cloud {
+                display: grid;
+                grid-template-rows: 46% 27% 23%;
+            }
             .cloud {
                 display: grid;
-                grid-template-rows: 49% 30% 17%;
+                grid-template-rows: 49% 32% 15%;
             }
 
             .system-components-wrapper {
@@ -172,7 +176,7 @@
             }
         }
         .overview-components-cloud {
-            height: calc(100% - 110px) !important;
+            height: calc(100% - 185px) !important;
         }
     }
     .no-data {
@@ -184,8 +188,8 @@
         height: 100%;
         img,
         svg {
-            width: 90px;
-            height: 90px;
+            width: 70px;
+            height: 70px;
         }
         p {
             margin-bottom: 10px;

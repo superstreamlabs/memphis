@@ -66,7 +66,7 @@ const TransitionsModal = ({
             wrapClassName={className || 'modal-wrapper'}
             title={header}
             open={open}
-            width={width}
+            width={width || 'fit-content'}
             onCancel={() => clickOutside()}
             bodyStyle={contentStyle}
             centered

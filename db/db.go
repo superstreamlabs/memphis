@@ -82,15 +82,18 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		IF EXISTS (
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'tenants' AND table_schema = 'public'
 		) THEN
-			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '' ;
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS firebase_organization_id VARCHAR NOT NULL DEFAULT '';
+			ALTER TABLE tenants ADD COLUMN IF NOT EXISTS organization_name VARCHAR NOT NULL DEFAULT '';
+			UPDATE tenants SET organization_name = name WHERE organization_name = ''; 
 		END IF;
 	END $$;`
 
 	tenantsTable := `CREATE TABLE IF NOT EXISTS tenants(
 		id SERIAL NOT NULL,
 		name VARCHAR NOT NULL UNIQUE DEFAULT '$memphis',
-		firebase_organization_id VARCHAR NOT NULL DEFAULT '' ,
+		firebase_organization_id VARCHAR NOT NULL DEFAULT '',
 		internal_ws_pass VARCHAR NOT NULL,
+		organization_name VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id));`
 
 	alterAuditLogsTable := `
@@ -838,11 +841,11 @@ func UpdateProducersCounsumersConnection(connectionId string, isActive bool) (bo
 	defer conn.Release()
 	query := `WITH updated_producers AS (
 		UPDATE producers
-		SET is_active = $1
+		SET is_active = $1, updated_at = NOW()
 		WHERE connection_id = $2
 	  )
 	  UPDATE consumers
-	  SET is_active = $1
+	  SET is_active = $1, updated_at = NOW()
 	  WHERE connection_id = $2;`
 	stmt, err := conn.Conn().Prepare(ctx, "update_connection", query)
 	if err != nil {
@@ -972,7 +975,7 @@ func GetAuditLogsByStation(name string, tenantName string) ([]models.AuditLog, e
 	query := `SELECT * FROM audit_logs AS a
 		WHERE a.station_name = $1 AND a.tenant_name = $2
 		ORDER BY a.created_at DESC
-		LIMIT 5000;`
+		LIMIT 1000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_audit_logs_by_station", query)
 	if err != nil {
 		return []models.AuditLog{}, err
@@ -1487,7 +1490,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 
 	query := `
 	SELECT s.*,
-	(EXISTS (SELECT 1 FROM producers WHERE station_id = s.id AND is_active = true) OR EXISTS (SELECT 1 FROM consumers WHERE station_id = s.id AND is_active = true)) AS is_active
+	false AS is_active
 	FROM stations AS s
 	WHERE s.is_deleted = false AND s.tenant_name = $1
 	ORDER BY s.updated_at DESC
@@ -2421,11 +2424,11 @@ func GetProducersForGraph(tenantName string) ([]models.ProducerForGraph, error) 
 		return []models.ProducerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT p.name, p.station_id, p.app_id, p.is_active
+	query := `SELECT p.name, p.station_id, p.app_id
 				FROM producers AS p
-				WHERE p.tenant_name = $1
+				WHERE p.tenant_name = $1 AND p.is_active = true
 				ORDER BY p.name, p.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_producers_for_graph", query)
 	if err != nil {
 		return []models.ProducerForGraph{}, err
@@ -2960,11 +2963,11 @@ func GetConsumersForGraph(tenantName string) ([]models.ConsumerForGraph, error) 
 		return []models.ConsumerForGraph{}, err
 	}
 	defer conn.Release()
-	query := `SELECT c.consumers_group, c.station_id, c.app_id, c.is_active
+	query := `SELECT c.name, c.consumers_group, c.station_id, c.app_id
 				FROM consumers AS c
-				WHERE c.tenant_name = $1
+				WHERE c.tenant_name = $1 AND c.is_active = true
 				ORDER BY c.name, c.station_id DESC
-				LIMIT 40000;`
+				LIMIT 10000;`
 	stmt, err := conn.Conn().Prepare(ctx, "get_consumers_for_graph", query)
 	if err != nil {
 		return []models.ConsumerForGraph{}, err
@@ -4127,7 +4130,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]interface
 }
 
 // User Functions
-func UpdtaePendingUser(tenantName, username string, pending bool) error {
+func UpdatePendingUser(tenantName, username string, pending bool) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -4929,7 +4932,7 @@ func InsertNewTag(name string, color string, stationArr []int, schemaArr []int, 
 	return newTag, nil
 }
 
-func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName string) error {
+func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName, color string) error {
 	var entityDBList string
 	switch entity {
 	case "station":
@@ -4946,14 +4949,26 @@ func InsertEntityToTag(tagName string, entity string, entity_id int, tenantName 
 		return err
 	}
 	defer conn.Release()
-	query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2 AND tenant_name = $3`
-	stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName)
-	if err != nil {
-		return err
+	if color == "" {
+		query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) WHERE name = $2 AND tenant_name = $3`
+		stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName)
+		if err != nil {
+			return err
+		}
+	} else {
+		query := `UPDATE tags SET ` + entityDBList + ` = ARRAY_APPEND(` + entityDBList + `, $1) , color = $4 WHERE name = $2 AND tenant_name = $3`
+		stmt, err := conn.Conn().Prepare(ctx, "insert_entity_to_tag", query)
+		if err != nil {
+			return err
+		}
+		_, err = conn.Conn().Query(ctx, stmt.Name, entity_id, tagName, tenantName, color)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -6025,7 +6040,6 @@ func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, e
 		} else {
 			return models.Tenant{}, err
 		}
-
 	}
 
 	newTenant := models.Tenant{
@@ -6171,6 +6185,31 @@ func GetAllTenantsWithoutGlobal() ([]models.Tenant, error) {
 	return tenants, nil
 }
 
+func IsTenantExists(tenantName string) (bool, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, err
+	}
+	defer conn.Release()
+
+	query := `SELECT EXISTS(SELECT 1 FROM tenants WHERE name = $1 LIMIT 1)`
+	stmt, err := conn.Conn().Prepare(ctx, "is_tenant_exists", query)
+	if err != nil {
+		return false, err
+	}
+
+	var exists bool
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func GetTenantById(id int) (bool, models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -6232,7 +6271,7 @@ func GetTenantByName(name string) (bool, models.Tenant, error) {
 	return true, tenants[0], nil
 }
 
-func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) (models.Tenant, error) {
+func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -6242,7 +6281,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass) VALUES(nextval('tenants_seq'),$1, $2, $3)`
+	query := `INSERT INTO tenants (id, name, firebase_organization_id, internal_ws_pass, organization_name) VALUES(nextval('tenants_seq'),$1, $2, $3, $4)`
 
 	stmt, err := conn.Conn().Prepare(ctx, "create_new_tenant", query)
 	if err != nil {
@@ -6250,7 +6289,7 @@ func CreateTenant(name, firebaseOrganizationId, encryptrdInternalWSPass string) 
 	}
 
 	var tenantId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, firebaseOrganizationId, encryptrdInternalWSPass, organizationName)
 	if err != nil {
 		return models.Tenant{}, err
 	}
@@ -6356,35 +6395,6 @@ func SetTenantSequence(sequence int) error {
 	return nil
 }
 
-func ReliveConectionResources(connectionId string, isActive bool) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	var queries []string
-	queries = append(queries, fmt.Sprintf("UPDATE producers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
-	queries = append(queries, fmt.Sprintf("UPDATE consumers SET is_active = %v WHERE connection_id = '%v';", isActive, connectionId))
-
-	batch := &pgx.Batch{}
-	for _, q := range queries {
-		batch.Queue(q)
-	}
-
-	br := conn.SendBatch(ctx, batch)
-	for i := 0; i < len(queries); i++ {
-		_, err = br.Exec()
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func GetAllUsersInDB() (bool, []models.User, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -6429,10 +6439,14 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
+	timeIntervalTemp := time.Now().Add(time.Duration(time.Hour * -time.Duration(2))) // TODO to be deleted once we fix the producer limitation
+
 	batch := &pgx.Batch{}
-	for _, q := range queries {
-		batch.Queue(q, timeInterval)
-	}
+	batch.Queue(queries[0], timeIntervalTemp) // TODO to be deleted once we fix the producer limitation
+	batch.Queue(queries[1], timeInterval)     // TODO to be deleted once we fix the producer limitation
+	// for _, q := range queries { // TODO to be returned once we fix the producer limitation
+	// 	batch.Queue(q, timeInterval)
+	// }
 
 	br := conn.SendBatch(ctx, batch)
 
@@ -6546,6 +6560,31 @@ func DeleteConfByTenantName(tenantName string) error {
 	WHERE tenant_name=$1`
 
 	stmt, err := conn.Conn().Prepare(ctx, "remove_conf_by_tenant_name", query)
+	if err != nil {
+		return err
+	}
+	tenantName = strings.ToLower(tenantName)
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteIntegrationsByTenantName(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `DELETE FROM integrations
+	WHERE tenant_name=$1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_integrations_by_tenant_name", query)
 	if err != nil {
 		return err
 	}
@@ -6900,4 +6939,26 @@ func CreateUserIfNotExist(username string, userType string, hashedPassword strin
 		Description:     description,
 	}
 	return newUser, nil
+}
+
+func CountProudcersForStation(stationId int) (int64, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM producers WHERE station_id=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_producers_for_station", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int64
+	err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

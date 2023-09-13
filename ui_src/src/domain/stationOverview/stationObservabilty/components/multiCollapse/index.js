@@ -40,7 +40,7 @@ const MultiCollapse = ({ data, header, defaultOpen, tooltip = null }) => {
     return (
         <>
             {header !== undefined ? (
-                <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi">
+                <Collapse ghost defaultActiveKey={activeKey} onChange={onChange} className="custom-collapse multi" showArrow={false}>
                     <Panel
                         showArrow={false}
                         collapsible={collapseData?.length === 0 ? 'disabled' : null}

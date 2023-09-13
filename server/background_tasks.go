@@ -46,6 +46,7 @@ var tieredStorageMapLock sync.Mutex
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
+			s.Noticef("ListenForZombieConnCheckRequests: got request to return connections")
 			connInfo := &ConnzOptions{Limit: s.MemphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
@@ -64,6 +65,7 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
+			s.Noticef("ListenForZombieConnCheckRequests: local connections sent")
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -311,6 +313,11 @@ func (s *Server) StartBackgroundTasks() error {
 		return errors.New("Failed to subscribing for cache updates" + err.Error())
 	}
 
+	err = s.ListenForCloudCacheUpdates()
+	if err != nil {
+		return errors.New("Failed to subscribing for cloud cache updates" + err.Error())
+	}
+
 	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
 	go s.ConsumeTieredStorageMsgs()
@@ -320,6 +327,8 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.UploadTenantUsageToDB()
 	go s.RefreshFirebaseFunctionsKey()
 	go s.RemoveOldProducersAndConsumers()
+	go ScheduledCloudCacheRefresh()
+	go s.SendBillingAlertWhenNeeded()
 
 	return nil
 }
@@ -624,6 +633,5 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 
 			}
 		}
-
 	}
 }

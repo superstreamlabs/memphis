@@ -450,6 +450,7 @@ function CreateSchema({ createNew }) {
                             <Input
                                 placeholder="Type schema name"
                                 type="text"
+                                maxLength="32"
                                 radiusType="semi-round"
                                 colorType="gray"
                                 backgroundColorType="white"

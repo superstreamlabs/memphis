@@ -2,6 +2,9 @@
     position: relative;
     height: 100%;
     padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
     .integrations-header {
         display: flex;
         justify-content: space-between;
@@ -16,13 +19,15 @@
     .integrations-list {
         display: flex;
         justify-content: space-between;
-        margin-top: 10px;
         .integration-item {
             border: 1px solid #f1f1f1;
+            min-width: 30%;
             border-radius: 4px;
             padding: 8px 15px 8px 10px;
             cursor: pointer;
             position: relative;
+            display: flex;
+            justify-content: center;
             .connected {
                 position: absolute;
                 top: 1px;
@@ -41,6 +46,13 @@
                 color: #2e2c34;
                 margin-left: 10px;
                 cursor: pointer;
+            }
+            .lock-feature-icon{
+                position: absolute;
+                width: 17px;
+                height: 17px;
+                top: -5px;
+                right: -5px;   
             }
         }
     }

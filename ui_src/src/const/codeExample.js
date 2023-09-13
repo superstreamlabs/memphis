@@ -9,7 +9,7 @@
 //
 // Additional Use Grant: You may make use of the Licensed Work (i) only as part of your own product or service, provided it is not a message broker or a message queue product or service; and (ii) provided that you do not use, provide, distribute, or make available the Licensed Work as a Service.
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
-export const selectLngOption = ['Go', 'Node.js', 'TypeScript', 'NestJS', 'Python', '.NET (C#)'];
+export const sdkLangOptions = ['Go', 'Node.js', 'TypeScript', 'NestJS', 'Python', '.NET (C#)'];
 
 export const SDK_CODE_EXAMPLE = {
     'Node.js': {
@@ -32,12 +32,13 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+        <headers-initiation>
+        <headers-addition>
 
-        const headers = memphis.headers()
-        headers.add('key', 'value')
         await producer.produce({
             message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-            headers: headers
+            headers: headers,
+            <producer-async>
         });
 
         memphisConnection.close();
@@ -63,7 +64,7 @@ export const SDK_CODE_EXAMPLE = {
         const consumer = await memphisConnection.consumer({
             stationName: '<station-name>',
             consumerName: '<consumer-name>',
-            consumerGroup: ''
+            consumerGroup: "<consumer-group>",
         });
 
         consumer.setContext({ key: "value" });
@@ -108,12 +109,13 @@ export const SDK_CODE_EXAMPLE = {
             stationName: '<station-name>',
             producerName: '<producer-name>'
         });
+            <headers-initiation>
+            <headers-addition>
 
-            const headers = memphis.headers()
-            headers.add('key', 'value');
             await producer.produce({
                 message: Buffer.from("Message: Hello world"), // you can also send JS object - {}
-                headers: headers
+                headers: headers,
+                <producer-async>
             });
 
         memphisConnection.close();
@@ -139,7 +141,7 @@ export const SDK_CODE_EXAMPLE = {
         const consumer = await memphisConnection.consumer({
             stationName: '<station-name>',
             consumerName: '<consumer-name>',
-            consumerGroup: ''
+            consumerGroup: "<consumer-group>",
         });
 
         consumer.setContext({ key: "value" });
@@ -182,16 +184,12 @@ func main() {
         fmt.Printf("Producer failed: %v", err)
         os.Exit(1)
     }
+    
+    <headers-declaration>
+    <headers-initiation>
+    <headers-addition>
 
-    hdrs := memphis.Headers{}
-    hdrs.New()
-    err = hdrs.Add("key", "value")
-    if err != nil {
-        fmt.Printf("Header failed: %v", err)
-        os.Exit(1)
-    }
-
-    err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs))
+    err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs), <producer-async>)
     if err != nil {
         fmt.Printf("Produce failed: %v", err)
         os.Exit(1)
@@ -215,7 +213,7 @@ func main() {
     }
     defer conn.Close()
 
-    consumer, err := conn.CreateConsumer("<station-name>", "<consumer-name>", memphis.PullInterval(15*time.Second))
+    consumer, err := conn.CreateConsumer("<station-name>", "<consumer-name>",memphis.ConsumerGroup("<consumer-group>"), memphis.PullInterval(15*time.Second))
     if err != nil {
         fmt.Printf("Consumer creation failed: %v", err)
         os.Exit(1)
@@ -259,10 +257,12 @@ async def main():
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
         producer = await memphis.producer(station_name="<station-name>", producer_name="<producer-name>") # you can send the message parameter as dict as well
-        headers = Headers()
-        headers.add("key", "value") 
+        
+        <headers-initiation>
+        <headers-addition>
+    
         for i in range(5):
-            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers)
+            await producer.produce(bytearray("Message #" + str(i) + ": Hello world", "utf-8"), headers=headers<blocking>)
         
     except (MemphisError, MemphisConnectError, MemphisHeaderError, MemphisSchemaError) as e:
         print(e)
@@ -292,7 +292,7 @@ async def main():
         memphis = Memphis()
         await memphis.connect(host="<memphis-host>", username="<application type username>", connection_token="<broker-token>", account_id="<account-id>")
         
-        consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="")
+        consumer = await memphis.consumer(station_name="<station-name>", consumer_name="<consumer-name>", consumer_group="<consumer-group>")
         consumer.set_context({"key": "value"})
         consumer.consume(msg_handler)
         # Keep your main thread alive so the consumer will keep receiving data
@@ -338,14 +338,19 @@ namespace Producer
                     GenerateUniqueSuffix = true
                 });
 
-                var commonHeaders = new NameValueCollection();
-                commonHeaders.Add("key-1", "value-1");
+                <headers-declaration>
+                
+                
+
+
+                <headers-initiation>
+                <headers-addition>
 
                 for (int i = 0; i < 10_000000; i++)
                 {
                     await Task.Delay(1_000);
                     var text = $"Message #{i}: Welcome to Memphis";
-                    await producer.ProduceAsync(Encoding.UTF8.GetBytes(text), commonHeaders);
+                    await producer.ProduceAsync(Encoding.UTF8.GetBytes(text), commonHeaders, <producer-async>);
                     Console.WriteLine($"Message #{i} sent successfully");
                 }
 
@@ -383,7 +388,7 @@ namespace Consumer
                 {
                     StationName = "<station-name>",
                     ConsumerName = "<consumer-name>",
-                    ConsumerGroup = "<consumer-group-name>",
+                    ConsumerGroup = "<consumer-group>",
                 });
 
                 consumer.MessageReceived += (sender, args) =>
@@ -431,22 +436,31 @@ namespace Consumer
     }
 };
 
-export const selectProtocolLngOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
-export const PROTOCOL_CODE_EXAMPLE = {
+export const restLangOptions = ['cURL', 'Go', 'Node.js', 'Python', 'Java', 'JavaScript - Fetch', 'JavaScript - jQuery'];
+export const REST_CODE_EXAMPLE = {
     cURL: {
         langCode: 'apex',
         producer: `curl --location --request POST 'localhost/stations/<station-name>/produce/single' \\
 --header 'Authorization: Bearer <jwt>' \\
 --header 'Content-Type: application/json' \\
+<headers-addition>
 --data-raw '{"message": "New Message"}'`,
+        consumer: `curl --location --request POST 'localhost/stations/<station-name>/consume/batch' \\
+--header 'Authorization: Bearer <jwt>' \\
+--header 'Content-Type: application/json' \\
+--data-raw '{
+    "consumer_name": "<consumer-name>",
+    "consumer_group": "<consumer-group>",
+    "batch_size": <batch-size>,
+    "batch_max_wait_time_ms": <batch-max-wait-time-ms>\n}'`,
         tokenGenerate: `curl --location --request POST 'localhost/auth/authenticate' \\
 --header 'Content-Type: application/json' \\
 --data-raw '{
     "username": "<application type username>",
     "connection_token": "<broker-token>",
-    "accountId": "<account-id>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092\n}'`
+    "account_id": "<account-id>",
+    "token_expiry_in_minutes": <token_expiry_in_minutes>,
+    "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>\n}'`
     },
     Go: {
         langCode: 'go',
@@ -475,7 +489,53 @@ export const PROTOCOL_CODE_EXAMPLE = {
         }
         req.Header.Add("Authorization", "Bearer <jwt>")
         req.Header.Add("Content-Type", "application/json")
+        <headers-addition>
+
+        res, err := client.Do(req)
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        defer res.Body.Close()
       
+        body, err := io.ReadAll(res.Body)
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        fmt.Println(string(body))
+    }`,
+        consumer: `package main
+    import (
+      "fmt"
+      "strings"
+      "net/http"
+      "io"
+    )
+    
+    func main() {
+    
+        url := "localhost/stations/<station-name>/consume/batch"
+        method := "POST"
+      
+        payload := strings.NewReader('{
+            "consumer_name": "<consumer-name>",
+            "consumer_group": "<consumer-group>",
+            "batch_size": <batch-size>,
+            "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+        })
+      
+        client := &http.Client {
+        }
+        req, err := http.NewRequest(method, url, payload)
+      
+        if err != nil {
+            fmt.Println(err)
+            return
+        }
+        req.Header.Add("Authorization", "Bearer <jwt>")
+        req.Header.Add("Content-Type", "application/json")
+
         res, err := client.Do(req)
         if err != nil {
             fmt.Println(err)
@@ -503,12 +563,12 @@ export const PROTOCOL_CODE_EXAMPLE = {
         url := "localhost/auth/authenticate"
         method := "POST"
       
-        payload := strings.NewReader({
+        payload := strings.NewReader('{
           "username": "<application type username>",
           "connection_token": "<broker-token>",
-          "accountId": "<account-id>",
-          "token_expiry_in_minutes": 123,
-          "refresh_token_expiry_in_minutes": 10000092
+          "account_id": "<account-id>",
+          "token_expiry_in_minutes": <token_expiry_in_minutes>,
+          "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
       })
       
         client := &http.Client {
@@ -548,7 +608,34 @@ var config = {
   url: 'localhost/stations/<station-name>/produce/single',
   headers: { 
     'Authorization': 'Bearer <jwt>', 
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    <headers-addition>
+  },
+  data : data
+};
+
+axios(config)
+.then(function (response) {
+  console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+  console.log(error);
+});
+        `,
+        consumer: `var axios = require('axios');
+        var data = JSON.stringify({
+            "consumer_name": "<consumer-name>",
+            "consumer_group": "<consumer-group>",
+            "batch_size": <batch-size>,
+            "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+          });
+
+var config = {
+  method: 'post',
+  url: 'localhost/stations/<station-name>/consume/batch',
+  headers: {
+    'Authorization': 'Bearer <jwt>', 
+    'Content-Type': 'application/json',
   },
   data : data
 };
@@ -565,9 +652,9 @@ axios(config)
 var data = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "account_id": "<account-id>",
+  "token_expiry_in_minutes": <token_expiry_in_minutes>,
+  "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
 });
 
 var config = {
@@ -600,7 +687,28 @@ payload = json.dumps({
 })
 headers = {
   'Authorization': 'Bearer <jwt>',
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  <headers-addition>
+}
+
+response = requests.request("POST", url, headers=headers, data=payload)
+
+print(response.text)
+`,
+        consumer: `import requests
+import json
+
+url = "localhost/stations/<station-name>/consume/batch"
+
+payload = json.dumps({
+    "consumer_name": "<consumer-name>",
+    "consumer_group": "<consumer-group>",
+    "batch_size": <batch-size>,
+    "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+  })
+headers = {
+  'Authorization': 'Bearer <jwt>',
+  'Content-Type': 'application/json',
 }
 
 response = requests.request("POST", url, headers=headers, data=payload)
@@ -615,9 +723,9 @@ url = "localhost/auth/authenticate"
 payload = json.dumps({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "account_id": "<account-id>",
+  "token_expiry_in_minutes": <token_expiry_in_minutes>,
+  "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
 })
 headers = {
   'Content-Type': 'application/json'
@@ -639,12 +747,25 @@ Request request = new Request.Builder()
   .method("POST", body)
   .addHeader("Authorization", "Bearer <jwt>")
   .addHeader("Content-Type", "application/json")
+  <headers-addition>
   .build();
+Response response = client.newCall(request).execute();`,
+        consumer: `OkHttpClient client = new OkHttpClient().newBuilder()
+.build();
+MediaType mediaType = MediaType.parse("application/json");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"consumer_name\": \"<consumer-name>\",\n\t\"consumer_group\": \"<consumer-group>\",\n    \"batch_size\": <batch-size>,\n    \"batch_max_wait_time_ms\": <batch-max-wait-time-ms>\n}");
+Request request = new Request.Builder()
+.url("localhost/stations/<station-name>/consume/batch")
+.method("POST", body)
+.addHeader("Authorization", "Bearer <jwt>")
+.addHeader("Content-Type", "application/json")
+<headers-addition>
+.build();
 Response response = client.newCall(request).execute();`,
         tokenGenerate: `OkHttpClient client = new OkHttpClient().newBuilder()
   .build();
 MediaType mediaType = MediaType.parse("application/json");
-RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": 123,\n    \"refresh_token_expiry_in_minutes\": 10000092\n}");
+RequestBody body = RequestBody.create(mediaType, "{\n    \"username\": \"<application type username>\",\n\t\"connection_token\": \"<broker-token>\",\n    \"token_expiry_in_minutes\": <token_expiry_in_minutes>,\n    \"refresh_token_expiry_in_minutes\": <refresh_token_expiry_in_minutes>\n    \"account_id\": \"<account-id>\"\n}");
 Request request = new Request.Builder()
   .url("localhost/auth/authenticate")
   .method("POST", body)
@@ -654,9 +775,11 @@ Response response = client.newCall(request).execute();`
     },
     'JavaScript - Fetch': {
         langCode: 'javascript',
-        producer: `var myHeaders = new Headers();
+        producer: `const fetch = require('node-fetch');
+const myHeaders = new fetch.Headers();
 myHeaders.append("Authorization", "Bearer <jwt>");
 myHeaders.append("Content-Type", "application/json");
+<headers-addition>
 
 var raw = JSON.stringify({
   "message": "New Message"
@@ -673,15 +796,39 @@ fetch("localhost/stations/<station-name>/produce/single", requestOptions)
   .then(response => response.text())
   .then(result => console.log(result))
   .catch(error => console.log('error', error));`,
-        tokenGenerate: `var myHeaders = new Headers();
+        consumer: `const fetch = require('node-fetch');
+  const myHeaders = new fetch.Headers();
+  myHeaders.append("Authorization", "Bearer <jwt>");
+  myHeaders.append("Content-Type", "application/json");
+  
+  var raw = JSON.stringify({
+    "consumer_name": "<consumer-name>",
+    "consumer_group": "<consumer-group>",
+    "batch_size": <batch-size>,
+    "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+  });
+  
+  var requestOptions = {
+    method: 'POST',
+    headers: myHeaders,
+    body: raw,
+    redirect: 'follow'
+  };
+  
+  fetch("localhost/stations/<station-name>/consume/batch", requestOptions)
+    .then(response => response.text())
+    .then(result => console.log(result))
+    .catch(error => console.log('error', error));`,
+        tokenGenerate: `const fetch = require('node-fetch');
+const myHeaders = new fetch.Headers();
 myHeaders.append("Content-Type", "application/json");
 
 var raw = JSON.stringify({
   "username": "<application type username>",
   "connection_token": "<broker-token>",
-  "accountId": "<account-id>",
-  "token_expiry_in_minutes": 123,
-  "refresh_token_expiry_in_minutes": 10000092
+  "account_id": "<account-id>",
+  "token_expiry_in_minutes": <token_expiry_in_minutes>,
+  "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
 });
 
 var requestOptions = {
@@ -704,8 +851,8 @@ fetch("localhost/auth/authenticate", requestOptions)
   "timeout": 0,
   "headers": {
     "Authorization": "Bearer <jwt>",
-    "Content-Type": "application/json"
-  },
+    "Content-Type": "application/json",
+    <headers-addition>
   "data": JSON.stringify({
     "message": "New Message"
   }),
@@ -714,6 +861,24 @@ fetch("localhost/auth/authenticate", requestOptions)
 $.ajax(settings).done(function (response) {
 console.log(response);
 });`,
+        consumer: `var settings = {
+    "url": "localhost/stations/<station-name>/consume/batch",
+    "method": "POST",
+    "timeout": 0,
+    "headers": {
+      "Authorization": "Bearer <jwt>",
+      "Content-Type": "application/json",
+    "data": JSON.stringify({
+        "consumer_name": "<consumer-name>",
+        "consumer_group": "<consumer-group>",
+        "batch_size": <batch-size>,
+        "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+    }),
+  };
+  
+  $.ajax(settings).done(function (response) {
+  console.log(response);
+  });`,
         tokenGenerate: `var settings = {
   "url": "localhost/auth/authenticate",
   "method": "POST",
@@ -724,8 +889,9 @@ console.log(response);
   "data": JSON.stringify({
     "username": "<application type username>",
     "connection_token": "<broker-token>",
-    "token_expiry_in_minutes": 123,
-    "refresh_token_expiry_in_minutes": 10000092
+    "account_id": "<account-id>",
+    "token_expiry_in_minutes": <token_expiry_in_minutes>,
+    "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
   }),
   };
 
@@ -758,6 +924,32 @@ internal class Program
     }
 }
         `,
+        consumer: `using System;
+        using System.Net.Http;
+        using System.Threading.Tasks;
+        
+        internal class Program
+        {
+            private static async Task Main(string[] args)
+            {
+                var client = new HttpClient();
+                var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:4444/stations/test/consume/batch");
+                request.Headers.Add("Authorization", "Bearer <jwt>");
+                var content = new StringContent("""
+                { 
+                    "consumer_name": "<consumer-name>",
+                    "consumer_group": "<consumer-group>",
+                    "batch_size": <batch-size>,
+                    "batch_max_wait_time_ms": <batch-max-wait-time-ms>
+                }
+                """, null, "application/json");
+                request.Content = content;
+                var response = await client.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                Console.WriteLine(await response.Content.ReadAsStringAsync());
+            }
+        }
+                `,
         tokenGenerate: `using System;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -772,8 +964,8 @@ internal class Program
         { 
             "username": "<application type username>",    
             "password": "<password>",
-            "token_expiry_in_minutes": 123,
-            "refresh_token_expiry_in_minutes": 10000092
+            "token_expiry_in_minutes": <token_expiry_in_minutes>,
+            "refresh_token_expiry_in_minutes": <refresh_token_expiry_in_minutes>
         }
         """, null, "application/json");
         request.Content = content;

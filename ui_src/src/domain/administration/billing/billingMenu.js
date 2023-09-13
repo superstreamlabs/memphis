@@ -25,6 +25,10 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
                 {selectedMenuItem === 'usage' ? <RequestsColorIcon alt="usage report" /> : <RequestsGrayIcon alt="usage report" />}
                 Usage Report
             </div>
+            <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
+                <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="usage report" />
+                Payments
+            </div>
         </div>
     );
 }

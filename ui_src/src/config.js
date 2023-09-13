@@ -45,3 +45,13 @@ export const CLOUD_URL = isCloud()
         ? 'https://cloud-staging.memphis.dev/signin'
         : 'https://cloud.memphis.dev'
     : null;
+
+export const STIGG_CLIENT_ID = isCloud()
+    ? window.location.href?.includes('localhost')
+        ? 'client-becd87e7-8dba-4c0a-8e9f-bb10d5b0a1ff:04308cac-952e-4f75-a503-b3d93be85c9a'
+        : window.location.href?.includes('cloud-qa')
+        ? 'client-0abc22d6-1a09-40d4-bed8-2b682df63149:04308cac-952e-4f75-a503-b3d93be85c9a'
+        : window.location.href?.includes('cloud-staging')
+        ? 'client-05a500b6-81d3-4af5-afd9-8ea72f727edf:04308cac-952e-4f75-a503-b3d93be85c9a'
+        : 'client-da938764-f7b9-406b-8d02-d2f834a795b4:04308cac-952e-4f75-a503-b3d93be85c9a'
+    : null;

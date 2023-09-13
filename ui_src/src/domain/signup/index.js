@@ -139,6 +139,7 @@ const Signup = (props) => {
                 }
             } catch (err) {
                 setError(err);
+                setLoadingSubmit(false);
             }
             setLoadingSubmit(false);
         }

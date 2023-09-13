@@ -17,7 +17,6 @@ import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import React, { useContext, useEffect, useState } from 'react';
 import Schema from 'protocol-buffers-schema';
-import { message } from 'antd';
 
 import { getUnique, isThereDiff, parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
@@ -48,6 +47,7 @@ import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { validate, parse, buildASTSchema } from 'graphql';
 import SegmentButton from '../../../../components/segmentButton';
 import AttachStationModal from '../attachStationModal';
+import { showMessages } from '../../../../services/genericServices';
 const avro = require('avro-js');
 
 loader.init();
@@ -163,13 +163,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
             });
             if (data) {
                 arrangeData(data);
-                message.success({
-                    key: 'memphisSuccessMessage',
-                    content: 'Your selected version is now the primary version',
-                    duration: 5,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisSuccessMessage')
-                });
+                showMessages('success', 'Your selected version is now the primary version');
                 setRollBackModal(false);
                 setActivateVersionModal(false);
                 if (schemaDetails?.used_stations?.length > 0) {
@@ -350,7 +344,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                     <div className="wrapper">
                         <TypeIcon alt="typeIcon" />
                         <p>Type:</p>
-                        {schemaDetails?.type === 'json' ? <span>JSON schema</span> : <span> {schemaDetails?.type}</span>}
+                        {schemaDetails?.type === 'json' ? <span className="capitalize">JSON schema</span> : <span className="capitalize"> {schemaDetails?.type}</span>}
                     </div>
                     <div className="wrapper">
                         <CreatedByIcon alt="createdByIcon" />
@@ -520,7 +514,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                             placeholder={
                                 <div className="attach-button">
                                     <AddRounded className="add" />
-                                    <span>Enforce to Station</span>
+                                    <span>Enforce on Station</span>
                                 </div>
                             }
                             radiusType="semi-round"

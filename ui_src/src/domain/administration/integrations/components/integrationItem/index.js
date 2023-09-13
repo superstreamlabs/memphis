@@ -26,8 +26,9 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
+import LockFeature from '../../../../../components/lockFeature';
 
-const IntegrationItem = ({ value }) => {
+const IntegrationItem = ({ value, lockFeature }) => {
     const [state] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrateValue, setIntegrateValue] = useState({});
@@ -119,12 +120,20 @@ const IntegrationItem = ({ value }) => {
 
     return (
         <>
-            <integ-item is="3xd" onClick={() => (value?.comingSoon ? null : modalFlip(true))}>
+            <integ-item is="3xd" onClick={() => (value?.comingSoon || lockFeature ? null : modalFlip(true))}>
                 {value?.banner}
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
                     <div className="integrate-icon">
                         <IntegratedIcon />
                         <p>Integrated</p>
+                    </div>
+                )}
+                {lockFeature && (
+                    <div className="lock-wrapper">
+                        <div className="opacity-background" />
+                        <div className="lock-integration">
+                            <LockFeature header="Storage tiering" />
+                        </div>
                     </div>
                 )}
                 <div className="integration-name">

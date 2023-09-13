@@ -14,7 +14,6 @@ import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
 import { InfoOutlined } from '@material-ui/icons';
-import { message } from 'antd';
 
 import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/localStorageConsts';
 import { ReactComponent as DeadLetterPlaceholderIcon } from '../../../../assets/images/deadLetterPlaceholder.svg';
@@ -40,6 +39,7 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import { Virtuoso } from 'react-virtuoso';
+import { showMessages } from '../../../../services/genericServices';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -160,23 +160,11 @@ const Messages = () => {
             if (isCheck.length > 0) {
                 setTimeout(() => {
                     setResendProcced(false);
-                    message.success({
-                        key: 'memphisSuccessMessage',
-                        content: isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully',
-                        duration: 5,
-                        style: { cursor: 'pointer' },
-                        onClick: () => message.destroy('memphisSuccessMessage')
-                    });
+                    showMessages('success', isCheck.length === 1 ? 'The message was sent successfully' : 'The messages were sent successfully');
                     setIsCheck([]);
                 }, 1500);
             } else {
-                message.success({
-                    key: 'memphisSuccessMessage',
-                    content: `All DLS messages are being resent asynchronously. We'll let you know upon completion`,
-                    duration: 3,
-                    style: { cursor: 'pointer' },
-                    onClick: () => message.destroy('memphisSuccessMessage')
-                });
+                showMessages('success', 'All DLS messages are being resent asynchronously. We will let you know upon completion');
                 setTimeout(() => {
                     setResendProcced(false);
                     setIsCheck([]);

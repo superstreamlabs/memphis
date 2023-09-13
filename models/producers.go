@@ -47,27 +47,10 @@ type LightProducer struct {
 	Count       int    `json:"count"`
 }
 
-type GetAllProducersByStationSchema struct {
-	StationName string `form:"station_name" binding:"required"`
-}
-
-type CreateProducerSchema struct {
-	Name         string `json:"name" binding:"required"`
-	StationName  string `json:"station_name" binding:"required"`
-	ConnectionId string `json:"connection_id" binding:"required"`
-	ProducerType string `json:"producer_type" binding:"required"`
-}
-
-type DestroyProducerSchema struct {
-	Name        string `json:"name" binding:"required"`
-	StationName string `json:"station_name" binding:"required"`
-}
-
 type ProducerForGraph struct {
 	Name      string `json:"name"`
 	StationId int    `json:"station_id"`
 	AppId     string `json:"app_id"`
-	IsActive  string `json:"is_active"`
 }
 
 type ProducerForGraphWithCount struct {

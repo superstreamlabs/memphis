@@ -19,16 +19,22 @@
                 height: 25px;
                 width: 25px;
             }
+            .headerIcon{
+                height: 25px;
+                width: 25px;
+                color: var(--purple);
+            }
         }
         p {
             margin-bottom: 0;
-            font-family: 'InterSemiBold';
+            font-family: 'InterMedium';
+            font-size: 20px;
         }
         label {
             font-family: 'Inter';
             font-weight: 400;
             font-size: 14px;
-            color: #475467;
+            color: #667085;
         }
     }
     .ant-modal-body {

@@ -19,7 +19,7 @@ const initialState = {
         retention_value: 3600,
         storage_type: 'file',
         replicas: 1,
-        days: 7,
+        days: 1,
         hours: 0,
         minutes: 0,
         seconds: 0,

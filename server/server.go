@@ -3832,6 +3832,14 @@ func (s *Server) AcceptWSConnections() {
 }
 
 func (s *Server) initializeMemphis() {
+	maxConcurrentJsApiRequests := 50
+	if os.Getenv("MAX_CONCURRENT_JS_API_REQUESTS") != "" {
+		max, err := strconv.Atoi(os.Getenv("MAX_CONCURRENT_JS_API_REQUESTS"))
+		if err == nil {
+			maxConcurrentJsApiRequests = max
+		}
+	}
+	s.memphis.jsApiMu = NewBufferedMutex(maxConcurrentJsApiRequests)
 	err := TenantSeqInitialize()
 	if err != nil {
 		s.Errorf("Failed to initialize tenants sequence %v", err.Error())
@@ -3843,10 +3851,6 @@ func (s *Server) initializeMemphis() {
 	err = s.InitializeEventCounter()
 	if err != nil {
 		s.Errorf("Failed initializing event counter: " + err.Error())
-	}
-	err = s.InitializeCloudComponents()
-	if err != nil {
-		s.Errorf("Failed initializing firestore: " + err.Error())
 	}
 
 	err = InitializeIntegrations()

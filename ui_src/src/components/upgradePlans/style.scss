@@ -1,0 +1,231 @@
+.pricing-plans-modal {
+    .ant-modal-body{
+        padding-right: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding-bottom: 10px !important;
+    }
+    .paywall-header{
+        p{
+            font-family: 'InterSemiBold' !important;
+            font-size: 28px;
+            margin: 0;
+        }
+    }
+    .paywall-footer
+    {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-size: 14px;
+        color: #667085;
+    }
+    .description, .question-info{
+        font-size: 14px;
+        color: #667085;
+        font-family: 'Inter';
+        display: flex;
+        align-items: center;
+        svg{
+            width: 18px;
+            height: 18px;
+            margin-left: 2px;
+            margin-right: 5px;
+            color: var(--purple);
+        }
+    }
+    .emcdfp60{
+        position: relative;
+        overflow: auto;
+        padding-right: 24px;
+        .stigg-plan-offering-container{
+            padding: 15px 30px !important;
+            .stigg-highlight-badge{
+                left: 30%;
+                width: 40%;
+                display: flex;
+                justify-content: center;
+                p{
+                    font-family: 'InterSemiBold' !important;
+                }
+            }
+            .stigg-header-wrapper{
+                .stigg-plan-header{
+                    font-family: 'InterSemiBold' !important;
+                    color: black !important;
+                }
+                .typography-level-1{
+                    font-family: 'InterSemiBold' !important;
+                    color: black !important;
+                }
+                .stigg-starting-at-text, .typography-level-3{
+                    font-family: 'InterMedium' !important;
+                    color: #6C727F !important;
+                }
+                .stigg-price-text, .stigg-price-unit-and-billing-period-text{
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .stigg-paywall-plan-button-layout{
+                    button{
+                        border-radius: 32px !important;
+                    }
+                    .stigg-paywall-plan-button{
+                        background: transparent !important;
+                        border-color: var(--purple) !important;
+                        p{
+                            color: var(--purple) !important;
+                        }
+                    }
+                    .stigg-paywall-plan-button:hover{
+                        background: var(--purple) !important;
+                        opacity: 1 !important;
+                        p{
+                            color: white !important;
+                        }
+                    }
+                    button[disabled]{
+                        background: #F0EFF0 !important;
+                        border-color: #84818A !important;
+                        border-radius: 32px !important;
+                        opacity: unset;
+                        p{
+                            color: #84818A !important;
+                        }
+                    }
+                    button[disabled]:hover{
+                        background: #F0EFF0 !important;
+                        border-color: #84818A !important;
+                        border-radius: 32px !important;
+                        opacity: unset;
+                        p{
+                            color: #84818A !important;
+                        }
+                    }
+                }
+            }
+            .stigg-plan-header-divider{
+                margin-bottom: 20px !important;
+                height: 1px !important;
+            }
+            .stigg-plan-entitlements-container{
+                gap: 8px !important;
+                .stigg-plan-entitlements-title{
+                    color: black !important;
+                    font-family: 'Inter' !important;
+                    font-size: 16px !important;
+                }
+                .stigg-entitlement-name {
+                    color: #6C727F !important;
+                    font-family: 'InterMedium' !important;
+                    font-size: 14px !important;
+                }
+                svg path{
+                    fill: var(--purple) !important;
+                }
+            }
+        }
+        .stigg-plan-offering-container:nth-last-child(1){
+            display: none;
+        }
+        .stigg-current-plan{
+            background: transparent !important;
+        }
+        .stigg-watermark{
+            display: none;
+        }
+    }
+}
+.instructions-modal{
+    .ant-modal-body{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    p{
+        margin: 0;
+    }
+    .instructions-redirect{
+        min-height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        .redirect-section{
+            border: 1px solid #E7E7E7;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            .violation-title{
+                font-family: 'InterSemibold';
+                font-size: 16px;
+            }
+            .flex-line{
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                cursor: pointer;
+                span{
+                    font-family: 'InterMedium';
+                    font-size: 14px;
+                    color: var(--purple);
+                }
+            }
+            .hint-line{
+                display: flex;
+                align-items: center;
+                color: #B0B7C3;
+                font-family: 'InterMedium';
+            }
+            .violations-list{
+                border-radius: 4px;
+                background: rgba(112, 112, 112, 0.10);
+                padding: 8px 15px;
+                margin-top: 5px;
+            }
+        }
+    }
+    .instructions-button{
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+    }
+}
+.downgrade-modal{
+    .ant-modal-body{
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    p{
+        margin: 0;
+    }
+    
+    .downgrade-reasons{
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        font-family: 'InterSemiBold';
+    }
+    .downgrade-box{
+        margin-top: 5px;
+        p{
+            font-family: 'InterSemibold';
+            font-family: 14px;
+        }
+        span{
+            color: #A9A9A9;
+            font-family: 'Inter';
+        }
+    }
+    .instructions-button{
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        
+    }
+}

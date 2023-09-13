@@ -90,11 +90,6 @@ function Profile() {
                             return (
                                 <div
                                     key={index}
-                                    // className={
-                                    //     (localStorage.getItem(USER_IMAGE) === 'undefined' || !localStorage.getItem(USER_IMAGE)) && avatar === item + 1
-                                    //         ? 'avatar-img selected'
-                                    //         : 'avatar-img'
-                                    // }
                                     className={
                                         localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined'
                                             ? 'avatar-img avatar-disable'
@@ -145,18 +140,14 @@ function Profile() {
                     <div className="delete-account-checkbox">
                         <Checkbox
                             checked={checkboxdeleteAccount}
-                            disabled={isCloud() ? userType !== 'root' : userType === 'root'}
+                            disabled={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root')}
                             onChange={() => setCheckboxdeleteAccount(!checkboxdeleteAccount)}
                             name="delete-account"
-                        />
-                        <p
-                            className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}
-                            onClick={() =>
-                                ((isCloud() && userType === 'root') || (!isCloud() && userType !== 'root')) && setCheckboxdeleteAccount(!checkboxdeleteAccount)
-                            }
                         >
-                            Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
-                        </p>
+                            <p className={(isCloud() && userType !== 'root') || (!isCloud() && userType === 'root') ? 'disabled' : ''}>
+                                Confirm that I want to delete my {isCloud() ? 'organization' : 'account'}.
+                            </p>
+                        </Checkbox>
                     </div>
                     <Button
                         className="modal-btn"

@@ -120,10 +120,6 @@ func (ms *memStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts int
 	if ms.msgs == nil {
 		return ErrStoreClosed
 	}
-	// *** added by memphis
-	IncrementEventCounter(ms.account.GetName(), "produced_event", 0, 1, subj, msg, hdr)
-	// added by memphis ***
-
 	// Tracking by subject.
 	var ss *SimpleState
 	var asl bool
