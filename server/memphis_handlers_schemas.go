@@ -900,7 +900,9 @@ func (s *Server) createSchemaDirect(c *client, reply string, msg []byte) {
 		if existedSchema.Type == csr.Type {
 			err = s.updateSchemaVersion(existedSchema.ID, tenantName, csr)
 			if err != nil {
-				s.Errorf("[tenant: %v]createSchemaDirect at updateSchemaVersion - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
+				if !strings.Contains(err.Error(), "already exist") {
+					s.Errorf("[tenant: %v]createSchemaDirect at updateSchemaVersion - failed creating Schema: %v : %v", tenantName, csr.Name, err.Error())
+				}
 				respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 				return
 			}
@@ -946,7 +948,7 @@ func (s *Server) updateSchemaVersion(schemaID int, tenantName string, newSchemaR
 
 	if currentSchema.SchemaContent == newSchemaReq.SchemaContent {
 		alreadyExistInDB := fmt.Sprintf("%v already exist in the db", newSchemaReq.Name)
-		s.Errorf(alreadyExistInDB)
+		s.Warnf("[tenant: %v][user: %v]at updateSchemaVersion, %v already exist in the db", tenantName, user.Username, newSchemaReq.Name)
 		return errors.New(alreadyExistInDB)
 	}
 

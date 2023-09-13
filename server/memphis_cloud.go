@@ -1457,8 +1457,6 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		return
 	}
 
-	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
-
 	exist, userToRemove, err := memphis_cache.GetUser(username, user.TenantName, false)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]RemoveUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
@@ -1489,6 +1487,8 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
+
+	SendUserDeleteCacheUpdate([]string{username}, user.TenantName)
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
