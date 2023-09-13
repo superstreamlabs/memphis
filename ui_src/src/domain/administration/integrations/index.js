@@ -18,8 +18,8 @@ import { message } from 'antd';
 
 import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
-import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
-import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
+import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
+import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { isCloud } from '../../../services/valueConvertor';

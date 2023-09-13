@@ -13,6 +13,8 @@
 import React from 'react';
 import { ReactComponent as RequestsColorIcon } from '../../../assets/images/setting/requestsColor.svg';
 import { ReactComponent as RequestsGrayIcon } from '../../../assets/images/setting/requestsGray.svg';
+import { ReactComponent as PaymentsColorIcon } from '../../../assets/images/setting/paymentsColor.svg';
+import { ReactComponent as PaymentsGrayIcon } from '../../../assets/images/setting/paymentsGray.svg';
 
 import '../style.scss';
 
@@ -26,7 +28,7 @@ function BillingMenu({ selectedMenuItem, setMenuItem }) {
                 Usage Report
             </div>
             <div className={selectedMenuItem === 'payments' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('payments')}>
-                <img src={selectedMenuItem === 'payments' ? PaymentsColor : PaymentsGray} alt="usage report" />
+                {selectedMenuItem === 'payments' ? <PaymentsColorIcon alt="payments" /> : <PaymentsGrayIcon alt="payments" />}
                 Payments
             </div>
         </div>
