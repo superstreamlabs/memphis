@@ -558,9 +558,11 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 					msgs = append(msgs, SchemaDlsMsg)
 					if len(msgs) == amount {
 						stop = true
+						s.Debugf("ConsumeSchemaverseDlsMessages: finished appending %v messages", len(msgs))
 					}
 				case <-timeout.C:
 					stop = true
+					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer")
 				}
 			}
 			for _, message := range msgs {
@@ -572,6 +574,7 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 				}
 			}
 		} else {
+			s.Warnf("ConsumeSchemaverseDlsMessages: waiting for consumer and stream to be created")
 			time.Sleep(2 * time.Second)
 		}
 	}
