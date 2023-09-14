@@ -53,7 +53,6 @@ const GitHubIntegration = ({ close, value }) => {
         const images = [];
         images.push(INTEGRATION_LIST['GitHub'].banner.props.src);
         images.push(INTEGRATION_LIST['GitHub'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['GitHub'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

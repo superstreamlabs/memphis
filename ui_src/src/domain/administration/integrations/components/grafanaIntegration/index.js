@@ -38,7 +38,6 @@ const GrafanaIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Grafana'].banner.props.src);
         images.push(INTEGRATION_LIST['Grafana'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Grafana'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

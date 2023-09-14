@@ -356,7 +356,6 @@ const Messages = () => {
 
             {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
-                    <img width={100} src={waitingMessages} alt="waitingMessages" />
                     <WaitingMessagesIcon width={100} alt="waitingMessages" />
                     <p>No messages</p>
                     <span className="des">{getDescriptin()}</span>

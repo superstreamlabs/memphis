@@ -348,7 +348,11 @@ function SideBar() {
                     onMouseLeave={() => setHoveredItem('')}
                     onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
                 >
-                    {hoveredItem === 'integrations' ? <IntegrationColorIcon alt="IntegrationColorIcon" /> : <IntegrationIcon alt="IntegrationIcon" />}
+                    {hoveredItem === 'integrations' ? (
+                        <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
+                    ) : (
+                        <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
+                    )}
                     <label className="icon-name">Integrations</label>
                 </div>
                 {isCloud() && (

@@ -24,7 +24,7 @@ import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import { ReactComponent as PageDutyIcon } from '../assets/images/pagerDutyIcon.svg';
-import githubIntegrationIcon from '../assets/images/githubIntegrationIcon.svg';
+import { ReactComponent as GithubIntegrationIcon } from '../assets/images/githubIntegrationIcon.svg';
 import githubBannerPopup from '../assets/images/githubBannerPopup.webp';
 import githubBanner from '../assets/images/githubBanner.webp';
 import { ReactComponent as NewRelicIcon } from '../assets/images/newrelicIcon.svg';
@@ -61,11 +61,11 @@ export const CATEGORY_LIST = {
     'Change-Data-Capture': {
         name: 'Change-Data-Capture',
         color: ColorPalette[11]
+    },
+    SourceCode: {
+        name: 'Source Code',
+        color: ColorPalette[6]
     }
-    // SourceCode: {
-    //     name: 'Source Code',
-    //     color: ColorPalette[6]
-    // }
 };
 
 export const REGIONS_OPTIONS = [
@@ -276,34 +276,34 @@ export const INTEGRATION_LIST = {
             </div>
         )
     },
-    // GitHub: {
-    //     name: 'Github',
-    //     by: 'memphis',
-    //     banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
-    //     insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
-    //     icon: <img src={githubIntegrationIcon} alt="gitHubIcon" />,
-    //     description:
-    //         'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
-    //     category: CATEGORY_LIST['SourceCode'],
-    //     header: (
-    //         <div className="header-left-side">
-    //             <img src={githubIntegrationIcon} alt="gitHubLogo" />
-    //             <div className="details">
-    //                 <p>GitHub</p>
-    //                 <span>by memphis</span>
-    //             </div>
-    //         </div>
-    //     ),
-    //     integrateDesc: (
-    //         <div className="integrate-description">
-    //             <p>Description</p>
-    //             <span className="content">
-    //                 GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
-    //                 and Functions source code.
-    //             </span>
-    //         </div>
-    //     )
-    // },
+    GitHub: {
+        name: 'Github',
+        by: 'memphis',
+        banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
+        insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
+        icon: <GithubIntegrationIcon alt="gitHubIcon" />,
+        description:
+            'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
+        category: CATEGORY_LIST['SourceCode'],
+        header: (
+            <div className="header-left-side">
+                <GithubIntegrationIcon alt="gitHubLogo" />
+                <div className="details">
+                    <p>GitHub</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
+                    and Functions source code.
+                </span>
+            </div>
+        )
+    },
     Elasticsearch: {
         name: 'Elasticsearch observability',
         by: 'memphis',

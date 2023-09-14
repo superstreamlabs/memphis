@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import { AddRounded, CheckCircleOutlineRounded, Create, ErrorOutlineRounded } from '@material-ui/icons';
+import { AddRounded, CheckCircleOutlineRounded, ErrorOutlineRounded } from '@material-ui/icons';
 import Editor, { DiffEditor, loader } from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import React, { useContext, useEffect, useState } from 'react';
@@ -419,7 +419,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                                 height="28px"
                                 placeholder={
                                     <div className="validate-placeholder">
-                                        ] <VerifiedIcon alt="verifiedIcon" />
+                                        <VerifiedIcon alt="verifiedIcon" />
                                         <p>Validate</p>
                                     </div>
                                 }
@@ -669,7 +669,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        = <StationsActiveIcon alt="stationsIconActive" />
+                        <StationsActiveIcon alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

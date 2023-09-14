@@ -35,7 +35,6 @@ const DebeziumIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Debezium and Postgres'].banner.props.src);
         images.push(INTEGRATION_LIST['Debezium and Postgres'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Debezium and Postgres'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

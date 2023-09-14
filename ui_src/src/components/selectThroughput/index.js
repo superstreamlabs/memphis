@@ -26,7 +26,6 @@ const selectThroughput = ({ options, onChange, value }) => {
 
     return (
         <div className="select-throughput-container">
-            <img src={ComponentIcon} alt="ComponentIcon" height="18px" className="prefixImg" />
             <ComponentIcon alt="ComponentIcon" height={18} className="prefixImg" />
 
             <Select

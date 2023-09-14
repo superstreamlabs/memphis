@@ -71,7 +71,8 @@
                     display: none;
                 }
             }
-            .img:hover svg {
+            .img:hover,
+            svg:hover {
                 display: inline;
             }
             .editor {

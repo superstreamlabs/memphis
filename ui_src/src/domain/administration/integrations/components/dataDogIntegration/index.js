@@ -39,7 +39,6 @@ const DataDogIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Datadog'].banner.props.src);
         images.push(INTEGRATION_LIST['Datadog'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Datadog'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

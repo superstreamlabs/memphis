@@ -15,9 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/placeholderSchema.svg';
 import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
@@ -27,9 +25,8 @@ import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
-import { Place } from '@material-ui/icons';
 
 function SchemaList({ createNew }) {
     const history = useHistory();

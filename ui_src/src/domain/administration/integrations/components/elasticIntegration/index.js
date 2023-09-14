@@ -35,7 +35,6 @@ const ElasticIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Elasticsearch'].banner.props.src);
         images.push(INTEGRATION_LIST['Elasticsearch'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Elasticsearch'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

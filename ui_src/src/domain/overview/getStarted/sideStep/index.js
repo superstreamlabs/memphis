@@ -25,7 +25,6 @@ import { ReactComponent as GrayProduceDataIcon } from '../../../../assets/images
 import { ReactComponent as GrayConsumeDataIcon } from '../../../../assets/images/grayConsumeDataImg.svg';
 import { ReactComponent as GrayfinishStepIcon } from '../../../../assets/images/grayFinish.svg';
 import { ReactComponent as CompletedStepIcon } from '../../../../assets/images/checkIcon.svg';
-import Finish from '../finish';
 
 const Step = ({ stepNumber, stepName, currentStep, completedSteps, stepsDescription, onSideBarClick }) => {
     const docLinks = {

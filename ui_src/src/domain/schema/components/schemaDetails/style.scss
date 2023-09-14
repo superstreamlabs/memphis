@@ -18,9 +18,10 @@ schema-details {
                     color: #2e2c34;
                     font-size: 14px;
                 }
-                img,
                 svg {
                     padding-right: 6px;
+                    width: 18px;
+                    height: 18px;
                 }
                 p {
                     color: #84818a;
@@ -287,6 +288,7 @@ schema-details {
             display: flex;
             background: rgba(101, 87, 255, 0.1);
             justify-content: center;
+            align-items: center;
             border-radius: 50%;
             img,
             svg {

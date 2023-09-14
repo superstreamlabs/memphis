@@ -57,7 +57,6 @@ const SlackIntegration = ({ close, value }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Slack'].banner.props.src);
         images.push(INTEGRATION_LIST['Slack'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Slack'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {
