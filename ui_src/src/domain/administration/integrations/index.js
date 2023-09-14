@@ -14,7 +14,6 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 import { CloudQueueRounded } from '@material-ui/icons';
-import { message } from 'antd';
 
 import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
@@ -50,7 +49,6 @@ const Integrations = () => {
         Object.values(INTEGRATION_LIST).forEach((integration) => {
             images.push(integration.banner.props.src);
             images.push(integration.insideBanner.props.src);
-            images.push(integration.icon.props.src);
         });
         const promises = [];
 

@@ -12,7 +12,7 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-import { Col, Collapse } from 'antd';
+import { Collapse } from 'antd';
 
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import { ReactComponent as WarningCircleIcon } from '../../../../../assets/images/warningCircle.svg';

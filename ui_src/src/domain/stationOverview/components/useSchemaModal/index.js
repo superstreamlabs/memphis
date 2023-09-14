@@ -13,15 +13,12 @@
 import './style.scss';
 
 import React, { useContext, useEffect, useState } from 'react';
-import { AddRounded, Place } from '@material-ui/icons';
+import { AddRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
-import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
 import { ReactComponent as PlaceholderSchemaIcon } from '../../../../assets/images/placeholderSchema.svg';
-import stopUsingIcon from '../../../../assets/images/stopUsingIcon.svg';
 import { ReactComponent as StopUsingIcon } from '../../../../assets/images/stopUsingIcon.svg';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';

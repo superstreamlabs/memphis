@@ -27,7 +27,6 @@ import { StationStoreContext } from '../../..';
 import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 import StatusIndication from '../../../../../components/indication';
-import { Place } from '@material-ui/icons';
 
 const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
     const url = window.location.href;

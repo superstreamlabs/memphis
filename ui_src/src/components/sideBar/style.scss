@@ -79,6 +79,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 15px;
+            height: auto;
             .icon-name {
                 font-size: 11px;
                 color: rgba(74, 73, 92, 0.8);
@@ -86,9 +87,9 @@
                 margin: 0;
                 cursor: pointer;
             }
-            img,
             svg {
-                width: 18px;
+                width: 20px;
+                height: 20px;
             }
         }
         .integration-icon-wrapper:hover {
@@ -96,7 +97,7 @@
                 color: var(--purple);
             }
         }
-        version {
+        .version {
             margin-bottom: 10px;
             background: rgba(132, 129, 138, 0.1);
             border-radius: 4px;
@@ -121,9 +122,9 @@
                 right: -2px;
             }
         }
-        .upgrade-plans-container{
+        .upgrade-plans-container {
             width: 85%;
-            .upgrade-button-wrapper{
+            .upgrade-button-wrapper {
                 background: var(--yellow);
                 border-radius: 32px;
                 height: 24px;
@@ -132,14 +133,14 @@
                 justify-content: center;
                 margin-bottom: 10px;
                 cursor: pointer;
-                p{
+                p {
                     line-height: 12px;
                     margin: 0;
                     font-family: 'InterSemiBold';
                     font-size: 12px;
                 }
             }
-            .upgrade-button-wrapper:hover{
+            .upgrade-button-wrapper:hover {
                 opacity: 0.9;
             }
         }
@@ -166,24 +167,24 @@
         align-items: center;
         position: relative;
     }
-    .account-details{
+    .account-details {
         display: flex;
         flex-direction: column;
         justify-content: center;
         padding-left: 10px;
         gap: 5px;
-        .username{
+        .username {
             margin: 0;
             font-size: 13px;
             line-height: 13px;
             font-family: 'InterSemiBold';
             text-transform: capitalize;
         }
-        span{
+        span {
             font-size: 12px;
             line-height: 12px;
             font-family: 'Inter';
-            color: var(--purple)
+            color: var(--purple);
         }
     }
     .company-logo {

@@ -140,7 +140,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                 <div className="generate-wrapper">
                     <p className="field-title">JSON-based value</p>
                     <div className="generate-action" onClick={() => generateMessage()}>
-                        = <RefreshIcon width={14} />
+                        <RefreshIcon width={14} />
                         <span>Generate example</span>
                     </div>
                 </div>
