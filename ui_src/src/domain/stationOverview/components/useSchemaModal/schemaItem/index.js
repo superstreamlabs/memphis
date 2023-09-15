@@ -15,9 +15,10 @@ import './style.scss';
 import { CloseRounded, FiberManualRecord } from '@material-ui/icons';
 import React from 'react';
 import schemaItemIcon from '../../../../../assets/images/schemaItemIcon.svg';
+import { ReactComponent as StationIcon } from '../../../../../assets/images/stationsIconActive.svg';
 import { parsingDate } from '../../../../../services/valueConvertor';
 
-const SchemaItem = ({ schema, handleSelectedItem, selected, handleStopUseSchema }) => {
+const SchemaItem = ({ schema, handleSelectedItem, selected, type, handleStopUseSchema }) => {
     return (
         <div
             key={schema?.id}
@@ -26,7 +27,8 @@ const SchemaItem = ({ schema, handleSelectedItem, selected, handleStopUseSchema 
         >
             <div className="content">
                 <div className="name-wrapper">
-                    <img src={schemaItemIcon} />
+                    {type === 'dls' ? <StationIcon /> : <img src={schemaItemIcon} />}
+
                     <p className="name">{schema?.name}</p>
                 </div>
                 <div className="details">

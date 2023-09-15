@@ -1,81 +1,107 @@
-.use-schema-modal-container{
-        height: 100%;
-        .search-input-container{
-            border: 1.5px solid var(--purple);
-            border-radius: 35px;
-            margin: 0px 15px;
-            height: 40px;
+.use-schema-modal-container {
+    height: 100%;
+    .search-input-container {
+        border: 1.5px solid var(--purple);
+        border-radius: 35px;
+        margin: 0px 15px;
+        height: 40px;
+    }
+    .schemas-list {
+        margin-top: 10px;
+        height: calc(100% - 162px);
+        overflow: auto;
+    }
+    .buttons {
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        p {
+            margin: 0;
         }
-        .schemas-list{
-            margin-top: 10px;
-            height: calc(100% - 162px);
-            overflow: auto;
-        }
-        .buttons{
-            height: 120px;
-            p{
-                margin: 0;
-            }
-            .add-schema{
-                display: flex;
-                padding: 15px;
-                border-bottom: 1px solid #EFEFEF;
-                border-top: 1px solid #efefef;
-                align-items: center;
-                cursor: pointer;
-                p{
-                    font-family:'InterMedium';
-                    font-size: 13px;
-                    line-height: 12px;
-                    color: #4a495c;
-                }
-                svg{
-                    margin-right:10px
-                }        
-            }
-            .button-container{
-                padding: 15px;
-            }
-        }
-        .no-schema-to-display {
-            position: relative;
+        .add-schema {
             display: flex;
-            flex-direction: column;
+            padding: 15px;
+            border-bottom: 1px solid #efefef;
+            border-top: 1px solid #efefef;
             align-items: center;
-            height: 100%;
-            justify-content: center;
-            width: 100%;
-            img {
-                margin-bottom: 30px;
+            cursor: pointer;
+            p {
+                font-family: 'InterMedium';
+                font-size: 13px;
+                line-height: 12px;
+                color: #4a495c;
             }
-            .title {
-                color: #1D1D1D ;
-                font-family: 'InterSemiBold';
-                font-size: 18px;
-                line-height: 18px;
-            }
-            .sub-title {
-                font-family: 'Inter';
-                font-size: 14px;
-                line-height: 17px;
-                margin-bottom: 30px;
-                color: #8F8F8F;
-
+            svg {
+                margin-right: 10px;
             }
         }
+        .button-container {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        .btn-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            flex-grow: 1;
+            .button-container {
+                padding: 15px;
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    }
+    .no-schema-to-display {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+        justify-content: center;
+        width: 100%;
+        img {
+            margin-bottom: 30px;
+        }
+        .title {
+            color: #1d1d1d;
+            font-family: 'InterSemiBold';
+            font-size: 18px;
+            line-height: 18px;
+        }
+        .sub-title {
+            font-family: 'Inter';
+            font-size: 14px;
+            line-height: 17px;
+            margin-bottom: 30px;
+            color: #8f8f8f;
+        }
+    }
 }
 
-.use-schema-modal{
-    .ant-modal-content{
-        background: #FFFFFF;
-        border: 1px solid #E4E4E4;
+.use-schema-modal {
+    .ant-modal-content {
+        background: #ffffff;
+        border: 1px solid #e4e4e4;
         box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.14);
         border-radius: 8px;
     }
-    .ant-modal-header{
+    .ant-modal-header {
         border-radius: 8px 8px 0 0;
-        div{
+        div {
             font-family: 'InterSemiBold';
+        }
+        p {
+            margin-bottom: 0;
+            font-family: 'InterMedium';
+            font-size: 20px;
+        }
+        label {
+            font-family: 'Inter';
+            font-weight: 400;
+            font-size: 14px;
+            color: #667085;
         }
     }
     .ant-modal-body {

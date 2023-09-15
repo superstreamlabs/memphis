@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AddRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
@@ -28,26 +28,31 @@ import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import { StationStoreContext } from '../..';
 import SchemaItem from './schemaItem';
+import stationImg from '../../../../assets/images/stationsIconActive.svg';
+import CreateStationForm from '../../../../components/createStationForm';
 
-const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
+const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
+    const createStationRef = useRef(null);
+
     const [detachLoader, setDetachLoader] = useState(false);
     const [schemaList, setSchemasList] = useState([]);
-    const [copyOfSchemaList, setCopyOfSchemaList] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [selected, setSelected] = useState();
     const [useschemaLoading, setUseschemaLoading] = useState(false);
     const [deleteModal, setDeleteModal] = useState(false);
+    const [newStationModal, setNewStationModal] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
+
     const history = useHistory();
 
     const getAllSchema = async () => {
         try {
             setIsLoading(true);
-            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
+            const data = type === 'dls' ? await httpRequest('GET', ApiEndpoints.GET_ALL_STATIONS) : await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             if (data) {
                 setSchemasList(data);
-                setCopyOfSchemaList(data);
             }
         } catch (error) {}
         setIsLoading(false);
@@ -57,14 +62,9 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
         getAllSchema();
     }, []);
 
-    useEffect(() => {
-        if (searchInput.length > 1) {
-            const results = schemaList.filter((schema) => schema?.name?.toLowerCase()?.includes(searchInput));
-            setSchemasList(results);
-        } else {
-            setSchemasList(copyOfSchemaList);
-        }
-    }, [searchInput]);
+    const listOfValues = useMemo(() => {
+        return searchInput.length > 0 ? schemaList.filter((schema) => schema?.name?.toLowerCase()?.includes(searchInput)) : schemaList;
+    }, [searchInput, schemaList]);
 
     const useSchema = async () => {
         try {
@@ -97,10 +97,15 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
+        console.log(e.target.value);
     };
 
     const createNew = () => {
-        history.push(`${pathDomains.schemaverse}/create`);
+        if (type === 'dls') {
+            setNewStationModal(true);
+        } else {
+            history.push(`${pathDomains.schemaverse}/create`);
+        }
     };
     return (
         <div className="use-schema-modal-container">
@@ -119,7 +124,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                         height="35px"
                     />
                     <div className="schemas-list">
-                        {schemaList?.map((schema) => {
+                        {listOfValues?.map((schema) => {
                             return (
                                 <SchemaItem
                                     key={schema.name}
@@ -127,6 +132,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                                     selected={selected}
                                     handleSelectedItem={(id) => setSelected(id)}
                                     handleStopUseSchema={() => setDeleteModal(true)}
+                                    type={type}
                                 />
                             );
                         })}
@@ -134,21 +140,51 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                     <div className="buttons">
                         <div className="add-schema" onClick={() => createNew()}>
                             <AddRounded />
-                            <p>Add new schema</p>
+                            <p>Add new {type === 'dls' ? 'station' : 'schema'}</p>
                         </div>
-                        <Button
-                            width="100%"
-                            height="35px"
-                            placeholder="Enforce"
-                            colorType="white"
-                            radiusType="circle"
-                            backgroundColorType="purple"
-                            fontSize="13px"
-                            fontFamily="InterSemiBold"
-                            disabled={selected === ''}
-                            isLoading={useschemaLoading}
-                            onClick={useSchema}
-                        />
+                        {type === 'dls' ? (
+                            <div className="btn-container">
+                                <Button
+                                    width="101px"
+                                    height="35px"
+                                    placeholder="Close"
+                                    border="gray-light"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="13px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={close}
+                                />
+                                <Button
+                                    width="101px"
+                                    height="35px"
+                                    placeholder="Consume"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="13px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={selected === ''}
+                                    isLoading={useschemaLoading}
+                                    onClick={useSchema}
+                                />
+                            </div>
+                        ) : (
+                            <Button
+                                width="100%"
+                                height="35px"
+                                placeholder="Enforce"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="13px"
+                                fontFamily="InterSemiBold"
+                                disabled={selected === ''}
+                                isLoading={useschemaLoading}
+                                onClick={useSchema}
+                            />
+                        )}
                     </div>
                 </>
             )}
@@ -161,7 +197,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                         className="modal-btn"
                         width="160px"
                         height="34px"
-                        placeholder="Create new schema"
+                        placeholder={`Create new ${type === 'dls' ? 'station' : 'schema'}`}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -189,6 +225,33 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close }) => {
                     handleDeleteSelected={handleStopUseSchema}
                     loader={detachLoader}
                 />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <img className="headerImage" src={stationImg} alt="stationImg" />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
+                height="65vh"
+                width="1020px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    setNewStationModal(false);
+                }}
+                rBtnClick={() => {
+                    createStationRef.current();
+                    setNewStationModal(false);
+                }}
+                clickOutside={() => setNewStationModal(false)}
+                open={newStationModal}
+                isLoading={creatingProsessd}
+            >
+                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
         </div>
     );

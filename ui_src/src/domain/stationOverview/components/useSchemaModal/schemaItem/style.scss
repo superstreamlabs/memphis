@@ -1,47 +1,48 @@
-.schema-item-container{
+.schema-item-container {
     padding: 15px;
-    border-bottom: 1px solid #EFEFEF;
+    border-bottom: 1px solid #efefef;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    p{
+    p {
         margin: 0;
     }
-    .name-wrapper{
+    .name-wrapper {
         display: flex;
-        .name{
+        align-items: center;
+        .name {
             font-family: 'InterSemiBold';
             font-size: 14px;
         }
-        img{
+        img,
+        svg {
             width: 18px;
             margin-right: 10px;
         }
     }
-    .details{
+    .details {
         margin-left: 28px;
         display: flex;
         align-items: center;
-        p{
-            color: rgba(74,73,92,0.6);
+        p {
+            color: rgba(74, 73, 92, 0.6);
             font-size: 12px;
         }
-        svg{
+        svg {
             width: 10px;
             margin: 0px 10px;
-            color: rgba(74,73,92,0.8);
+            color: rgba(74, 73, 92, 0.8);
         }
     }
     .delete-icon svg {
         display: none;
     }
 }
-.sch-item-selected{
+.sch-item-selected {
     background: rgba(101, 87, 255, 0.1);
     .delete-icon svg {
         width: 14px;
         display: unset;
-
     }
 }

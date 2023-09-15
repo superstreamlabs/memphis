@@ -25,13 +25,15 @@ import stopUsingIcon from '../../../assets/images/stopUsingIcon.svg';
 import schemaIconActive from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
 import PartitionsFilter from '../../../components/partitionsFilter';
-
-import awaitingIcon from '../../../assets/images/awaitingIcon.svg';
+import { ReactComponent as DlsIcon } from '../../../assets/images/stationDlsIcon.svg';
+import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as UpRightArrow } from '../../../assets/images/upRightCorner.svg';
+import { ReactComponent as DisconnectIcon } from '../../../assets/images/disconnectDls.svg';
+import { ReactComponent as DisableIcon } from '../../../assets/images/disableIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import redirectIcon from '../../../assets/images/redirectIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
-import deleteIcon from '../../../assets/images/deleteIcon.svg';
 import ActiveBadge from '../../../components/activeBadge';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import BackIcon from '../../../assets/images/backIcon.svg';
@@ -60,6 +62,10 @@ const StationOverviewHeader = () => {
     const [deleteModal, setDeleteModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
     const [sdkModal, setSdkModal] = useState(false);
+    const [isDls, setIsDls] = useState(true);
+    const [useDlsModal, setUseDlsModal] = useState(false);
+    const [disableModal, setDisableModal] = useState(false);
+    const [disableLoader, setDisableLoader] = useState(false);
     const history = useHistory();
     const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
 
@@ -131,6 +137,10 @@ const StationOverviewHeader = () => {
             setDetachLoader(false);
             setDeleteModal(false);
         }
+    };
+
+    const handleDisableDls = async () => {
+        setDisableModal(false);
     };
 
     return (
@@ -318,11 +328,37 @@ const StationOverviewHeader = () => {
                     </div>
                     <div className="details-wrapper middle">
                         <div className="icon">
-                            <img src={awaitingIcon} width={22} height={44} alt="awaitingIcon" />
+                            <DlsIcon width={50} height={50} alt="awaitingIcon" />
                         </div>
                         <div className="more-details">
-                            <p className="title">Total messages</p>
-                            <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
+                            <div className="topRow">
+                                <p className="title">Poison messages</p>
+                                {isDls && <RedirectIcon className="redirect" />}
+                            </div>
+                            <div className="midRow">
+                                <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
+                                {isDls && <p className="tag">Station_2</p>}
+                            </div>
+                            <div className="bottomRow">
+                                <Button
+                                    width="123px"
+                                    height="16px"
+                                    placeholder={
+                                        <div className="use-dls-button">
+                                            {isDls ? <DisconnectIcon /> : <UpRightArrow />}
+                                            <p>{isDls ? 'Disable' : 'Enable'} Consumption</p>
+                                        </div>
+                                    }
+                                    colorType={isDls ? 'white' : 'black'}
+                                    radiusType="circle"
+                                    backgroundColorType={isDls ? 'red' : 'orange'}
+                                    fontSize="10px"
+                                    fontFamily="InterSemiBold"
+                                    fontWeight={600}
+                                    disabled={!stationState?.stationMetaData?.is_native}
+                                    onClick={() => (isDls ? setDisableModal(true) : setUseDlsModal(true))}
+                                />
+                            </div>
                         </div>
                     </div>
                     <div className="details-wrapper pointer">
@@ -399,7 +435,30 @@ const StationOverviewHeader = () => {
                             setSchema(schema);
                             setUseSchemaModal(false);
                         }}
-                        close={() => setUseSchemaModal(false)}
+                    />
+                </Modal>
+                <Modal
+                    header={
+                        <div className="modal-header">
+                            <p>Consume via another station</p>
+                            <label>Only new messages will be able to be consumed.</label>
+                        </div>
+                    }
+                    displayButtons={false}
+                    height="400px"
+                    width="352px"
+                    clickOutside={() => setUseDlsModal(false)}
+                    open={useDlsModal}
+                    hr={true}
+                    className="use-schema-modal"
+                >
+                    <UseSchemaModal
+                        stationName={null}
+                        handleSetDls={(dls) => {
+                            setUseDlsModal(false);
+                        }}
+                        type="dls"
+                        close={() => setUseDlsModal(false)}
                     />
                 </Modal>
                 <Modal
@@ -452,6 +511,27 @@ const StationOverviewHeader = () => {
                         textToConfirm="detach"
                         handleDeleteSelected={handleStopUseSchema}
                         loader={detachLoader}
+                    />
+                </Modal>
+                <Modal
+                    header={<DisableIcon alt="stopUsingIcon" />}
+                    width="520px"
+                    height="240px"
+                    displayButtons={false}
+                    clickOutside={() => setDisableModal(false)}
+                    open={disableModal}
+                >
+                    <DeleteItemsModal
+                        title="Disabling dead-letter consumption will stop pushing new poison messages"
+                        desc={
+                            <span>
+                                Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>station </strong>.
+                            </span>
+                        }
+                        buttontxt="I understand, disable consumption"
+                        textToConfirm="disable"
+                        handleDeleteSelected={handleDisableDls}
+                        loader={disableLoader}
                     />
                 </Modal>
             </div>
