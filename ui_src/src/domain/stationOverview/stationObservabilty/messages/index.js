@@ -39,6 +39,11 @@ import Modal from '../../../../components/modal';
 import { StationStoreContext } from '../..';
 import { Virtuoso } from 'react-virtuoso';
 import { showMessages } from '../../../../services/genericServices';
+import { ReactComponent as UpRightArrow } from '../../../../assets/images/upRightCorner.svg';
+import { ReactComponent as DisconnectIcon } from '../../../../assets/images/disconnectDls.svg';
+import UseSchemaModal from '../../components/useSchemaModal';
+import DeleteItemsModal from '../../../../components/deleteItemsModal';
+import { ReactComponent as DisableIcon } from '../../../../assets/images/disableIcon.svg';
 
 const Messages = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -51,6 +56,11 @@ const Messages = () => {
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
+    const [isDls, setIsDls] = useState(false);
+    const [useDlsModal, setUseDlsModal] = useState(false);
+    const [disableModal, setDisableModal] = useState(false);
+    const [disableLoader, setDisableLoader] = useState(false);
+
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
         { name: 'Unacked', disabled: false },
@@ -65,6 +75,10 @@ const Messages = () => {
         setSelectedRowPartition(partition);
         stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: id });
         stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: partition });
+    };
+
+    const handleDisableDls = async () => {
+        setDisableModal(false);
     };
 
     const handleCheckedClick = (e) => {
@@ -372,7 +386,29 @@ const Messages = () => {
                 <div className="details">
                     <DetailBox
                         img={dlsEnableIcon}
-                        title={'Dead-letter station configuration'}
+                        title={
+                            <>
+                                <span>Dead-letter station configuration</span>
+                                <Button
+                                    width="123px"
+                                    height="16px"
+                                    placeholder={
+                                        <div className="use-dls-button">
+                                            {isDls ? <DisconnectIcon /> : <UpRightArrow />}
+                                            <p>{isDls ? 'Disable' : 'Enable'} Consumption</p>
+                                        </div>
+                                    }
+                                    colorType={isDls ? 'white' : 'black'}
+                                    radiusType="circle"
+                                    backgroundColorType={isDls ? 'red' : 'orange'}
+                                    fontSize="10px"
+                                    fontFamily="InterSemiBold"
+                                    fontWeight={600}
+                                    disabled={!stationState?.stationMetaData?.is_native}
+                                    onClick={() => (isDls ? setDisableModal(true) : setUseDlsModal(true))}
+                                />
+                            </>
+                        }
                         desc="Triggers for storing messages in the dead-letter station."
                         rightSection={false}
                     >
@@ -458,6 +494,51 @@ const Messages = () => {
                     cancel={() => modalPurgeFlip(false)}
                     msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
                     dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
+                />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <p>Consume via another station</p>
+                        <label>Only new messages will be able to be consumed.</label>
+                    </div>
+                }
+                displayButtons={false}
+                height="400px"
+                width="352px"
+                clickOutside={() => setUseDlsModal(false)}
+                open={useDlsModal}
+                hr={true}
+                className="use-schema-modal"
+            >
+                <UseSchemaModal
+                    stationName={null}
+                    handleSetDls={(dls) => {
+                        setUseDlsModal(false);
+                    }}
+                    type="dls"
+                    close={() => setUseDlsModal(false)}
+                />
+            </Modal>
+            <Modal
+                header={<DisableIcon alt="stopUsingIcon" />}
+                width="520px"
+                height="240px"
+                displayButtons={false}
+                clickOutside={() => setDisableModal(false)}
+                open={disableModal}
+            >
+                <DeleteItemsModal
+                    title="Disabling dead-letter consumption will stop pushing new poison messages"
+                    desc={
+                        <span>
+                            Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>station </strong>.
+                        </span>
+                    }
+                    buttontxt="I understand, disable consumption"
+                    textToConfirm="disable"
+                    handleDeleteSelected={handleDisableDls}
+                    loader={disableLoader}
                 />
             </Modal>
         </div>
