@@ -158,7 +158,7 @@ const StationOverviewHeader = () => {
                     </div>
                     <span className="created-by">
                         Created by <b>{stationState?.stationMetaData?.created_by_username}</b> at {stationState?.stationMetaData?.created_at}{' '}
-                        {!stationState?.stationMetaData?.is_native && '(non-native)'}
+                        {!stationState?.stationMetaData?.is_native && '(NATS-Compatible)'}
                     </span>
                 </div>
                 <div className="station-buttons">
