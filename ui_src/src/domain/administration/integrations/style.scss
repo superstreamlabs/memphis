@@ -51,6 +51,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
+                z-index: 3;
                 img {
                     position: absolute;
                     left: -8px;
@@ -81,6 +82,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 3;
             img {
                 position: absolute;
                 left: -8px;
