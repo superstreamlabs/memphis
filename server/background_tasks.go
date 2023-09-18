@@ -46,7 +46,6 @@ var tieredStorageMapLock sync.Mutex
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			s.Noticef("ListenForZombieConnCheckRequests: got request to return connections")
 			connInfo := &ConnzOptions{Limit: s.MemphisGlobalAccount().MaxActiveConnections()}
 			conns, _ := s.Connz(connInfo)
 			connectionIds := make(map[string]string)
@@ -65,7 +64,6 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 					s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), reply, _EMPTY_, nil, bytes, true)
 				}
 			}
-			s.Noticef("ListenForZombieConnCheckRequests: local connections sent")
 		}(copyBytes(msg))
 	})
 	if err != nil {
@@ -558,9 +556,11 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 					msgs = append(msgs, SchemaDlsMsg)
 					if len(msgs) == amount {
 						stop = true
+						s.Debugf("ConsumeSchemaverseDlsMessages: finished appending %v messages", len(msgs))
 					}
 				case <-timeout.C:
 					stop = true
+					s.Debugf("ConsumeSchemaverseDlsMessages: finished because of timer")
 				}
 			}
 			for _, message := range msgs {
@@ -572,6 +572,7 @@ func (s *Server) ConsumeSchemaverseDlsMessages() {
 				}
 			}
 		} else {
+			s.Warnf("ConsumeSchemaverseDlsMessages: waiting for consumer and stream to be created")
 			time.Sleep(2 * time.Second)
 		}
 	}

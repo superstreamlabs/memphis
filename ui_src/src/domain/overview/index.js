@@ -46,7 +46,6 @@ import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
-import StorageLeft from '../../components/storageLeft';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,

@@ -287,12 +287,12 @@ const ProduceConsumList = ({ producer }) => {
                     <div className="unsupported-placeholder">
                         <div className="placeholder-wrapper">
                             <UnsupportedIcon />
-                            <p>For the full Memphis experience, Memphis SDK is needed</p>
+                            <p>Some features are limited to Memphis SDK only</p>
                             <Button
                                 className="open-sdk"
                                 width="200px"
                                 height="37px"
-                                placeholder="View Memphis SDK's"
+                                placeholder="Create your Memphis client"
                                 colorType={'white'}
                                 radiusType="circle"
                                 border={'none'}

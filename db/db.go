@@ -5784,7 +5784,7 @@ func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.D
 		return []models.DlsMessage{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 1000`
+	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 2000`
 	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
 	if err != nil {
 		return []models.DlsMessage{}, err
@@ -5803,6 +5803,37 @@ func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.D
 	}
 
 	return dlsMsgs, nil
+}
+
+func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) from dls_messages where station_id=$1`
+	if partitionNumber > -1 {
+		query = `SELECT COUNT(*) from dls_messages where station_id=$1 AND partition_number = $2`
+	}
+
+	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition", query)
+	if err != nil {
+		return 0, err
+	}
+
+	var count uint64
+	if partitionNumber == -1 {
+		err = conn.Conn().QueryRow(ctx, stmt.Name, stationId).Scan(&count)
+	} else {
+		err = conn.Conn().QueryRow(ctx, stmt.Name, stationId, partitionNumber).Scan(&count)
+	}
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
 
 func GetDlsMessageById(messageId int) (bool, models.DlsMessage, error) {

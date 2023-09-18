@@ -16,16 +16,18 @@
         align-items: center;
         .left-side {
             display: flex;
+            flex-direction: column;
+            gap: 5px;
             max-width: 410px;
-            align-items: center;
             .title {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
+                line-height: 14px;
                 margin: 0;
             }
             .messages-amount {
                 display: flex;
-                margin-left: 5px;
+                line-height: 10px;
                 color: #737373;
                 align-items: center;
                 svg {

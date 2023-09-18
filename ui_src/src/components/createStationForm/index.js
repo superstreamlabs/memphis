@@ -112,7 +112,6 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         { name: 'Local storage tier', checked: true },
         { name: 'Remote storage tier', checked: selectedTier2Option || false }
     ];
-    const isRoot = state?.userData?.user_type === 'root';
     useEffect(() => {
         if (!isCloud()) {
             getAvailableReplicas();
