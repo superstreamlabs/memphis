@@ -71,7 +71,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 <div className="check-box">
                                     <CheckboxComponent checked={isCheck} id={station?.station?.name} onChange={handleCheckedClick} name={station?.station?.name} />
                                     <OverflowTip className="station-name" text={station?.station?.name} maxWidth="190px">
-                                        {station?.station?.name} <label className="non-native-label">{!station?.station?.is_native && '(non-native)'}</label>
+                                        {station?.station?.name} <label className="non-native-label">{!station?.station?.is_native && '(NATS-Compatible)'}</label>
                                     </OverflowTip>
                                 </div>
                             </div>
