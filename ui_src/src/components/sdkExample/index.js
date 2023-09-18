@@ -474,7 +474,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         <div className="header-img-container">
                             <img className="headerImage" src={codeIcon} alt="codeIcon" />
                         </div>
-                        <p>Code example</p>
+                        <p>Code generator</p>
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
@@ -639,7 +639,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             placeholder="JWT"
                                                             type="text"
                                                             fontSize="14px"
-                                                            maxLength="128"
                                                             radiusType="semi-round"
                                                             colorType="black"
                                                             backgroundColorType="white"
@@ -905,7 +904,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             <div>
                 <div className={`code-output-title ${withHeader && 'code-output-title-code-example'}`}>
                     <p>Code Output</p>
-                    <label>Copy code example to your IDE</label>
+                    <label>Copy code generator to your IDE</label>
                 </div>
                 {protocolSelected === 'SDK' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">

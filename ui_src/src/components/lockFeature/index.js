@@ -12,19 +12,16 @@
 
 import './style.scss';
 
-import React, { useContext, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { HiLockClosed } from 'react-icons/hi';
 
 import TooltipComponent from '../tooltip/tooltip';
-import { Context } from '../../hooks/store';
 import UpgradePlans from '../upgradePlans';
 
 const LockFeature = ({ position, header }) => {
-    const [state, dispatch] = useContext(Context);
     const style = {
         position: position || 'absolute'
     };
-    const isRoot = state?.userData?.user_type === 'root';
 
     const tooltipRef = useRef(null);
 
@@ -40,7 +37,7 @@ const LockFeature = ({ position, header }) => {
                     <span>Please upgrade your plan to unlock this feature</span>
                     <UpgradePlans
                         content={
-                            <div className="upgrade-button-wrapper" onClick={() => (isRoot ? tooltipRef.current() : null)}>
+                            <div className="upgrade-button-wrapper" onClick={() => tooltipRef.current()}>
                                 <p className="upgrade-plan">Upgrade now</p>
                             </div>
                         }
