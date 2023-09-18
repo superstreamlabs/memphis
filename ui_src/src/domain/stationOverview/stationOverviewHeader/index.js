@@ -339,7 +339,7 @@ const StationOverviewHeader = () => {
                 </div>
                 <div className="info-buttons">
                     <div className="sdk">
-                        <p>Code examples</p>
+                        <p>Code generator</p>
                         <span
                             onClick={() => {
                                 setSdkModal(true);

@@ -89,7 +89,6 @@ function SideBar() {
             }
         } catch (error) {}
     }, []);
-    const isRoot = state?.userData?.user_type === 'root';
 
     const getSystemVersion = useCallback(async () => {
         try {
