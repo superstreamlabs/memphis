@@ -14,14 +14,13 @@ import './style.scss';
 
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-import React, { useContext } from 'react';
-import { Select } from 'antd';
 import { BsPlus } from 'react-icons/bs';
+import { Select } from 'antd';
+import React from 'react';
+
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
-import placeholderSchema from '../../assets/images/placeholderSchema.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import { parsingDate } from '../../services/valueConvertor';
-import { Context } from '../../hooks/store';
 
 import Button from '../button';
 import pathDomains from '../../router';
