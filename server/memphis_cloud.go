@@ -2040,7 +2040,7 @@ func (sh StationsHandler) Produce(c *gin.Context) {
 
 	user, err := getUserDetailsFromMiddleware(c)
 	if err != nil {
-		serv.Errorf("Produסce: could not get user from middleware: %v", err.Error())
+		serv.Errorf("Produce: could not get user from middleware: %v", err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

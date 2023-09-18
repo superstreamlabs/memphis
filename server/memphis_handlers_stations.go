@@ -170,6 +170,11 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		serv.Errorf("[tenant: %v]removeStationResources: Station %v: %v", station.TenantName, station.Name, err.Error())
 	}
 
+	err = db.RemoveDlsStationFromAllStations(station.Name, station.TenantName)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -384,7 +389,6 @@ func (s *Server) createStationDirectIntern(c *client,
 			partitionsList = append(partitionsList, p)
 		}
 	}
-
 	exist, user, err := memphis_cache.GetUser(username, csr.TenantName, false)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at memphis_cache.GetUser: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -396,8 +400,57 @@ func (s *Server) createStationDirectIntern(c *client,
 		respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
 		return
 	}
+	if csr.DlsStation != "" {
+		exist, _, err := db.GetStationByName(csr.DlsStation, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS GetStationByName: %v", csr.TenantName, csr.Username, err.Error())
+			respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+			return
+		}
+		if !exist {
+			var created bool
+			dlsStationName, err := StationNameFromStr(csr.DlsStation)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS StationNameFromStr: %v", csr.TenantName, csr.Username, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
+			_, created, err = CreateDefaultStation(user.TenantName, s, dlsStationName, user.ID, user.Username, "", 0)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]createStationDirect at DLS CreateDefaultStation: %v", csr.TenantName, csr.Username, err.Error())
+				respondWithErr(s.MemphisGlobalAccountString(), s, reply, err)
+				return
+			}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1)
+			if created {
+				message := fmt.Sprintf("Station %v has been created by user %v", dlsStationName.Ext(), user.Username)
+				serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
+				var auditLogs []interface{}
+				newAuditLog := models.AuditLog{
+					StationName:       dlsStationName.Ext(),
+					Message:           message,
+					CreatedBy:         user.ID,
+					CreatedByUsername: user.Username,
+					CreatedAt:         time.Now(),
+					TenantName:        user.TenantName,
+				}
+				auditLogs = append(auditLogs, newAuditLog)
+				err = CreateAuditLogs(auditLogs)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user:%v]createStationDirect: Station %v - create DLS audit logs error: %v", csr.TenantName, csr.Username, csr.DlsStation, err.Error())
+				}
+
+				shouldSendAnalytics, _ := shouldSendAnalytics()
+				if shouldSendAnalytics {
+					analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "storage-type": "disk"}
+					analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
+				}
+
+			}
+		}
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1, csr.DlsStation)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -1024,7 +1077,57 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		partitionsList = append(partitionsList, p)
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 1)
+	if body.DlsStation != "" {
+		exist, _, err := db.GetStationByName(body.DlsStation, user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS GetStationByName: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !exist {
+			var created bool
+			dlsStationName, err := StationNameFromStr(body.DlsStation)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS StationNameFromStr: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			_, created, err = CreateDefaultStation(user.TenantName, sh.S, dlsStationName, user.ID, user.Username, "", 0)
+			if err != nil {
+				serv.Errorf("[tenant: %v][user:%v]CreateStation at DLS CreateDefaultStation: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			if created {
+				message := fmt.Sprintf("Station %v has been created by user %v", dlsStationName.Ext(), user.Username)
+				serv.Noticef("[tenant: %v][user: %v]: %v", user.TenantName, user.Username, message)
+				var auditLogs []interface{}
+				newAuditLog := models.AuditLog{
+					StationName:       dlsStationName.Ext(),
+					Message:           message,
+					CreatedBy:         user.ID,
+					CreatedByUsername: user.Username,
+					CreatedAt:         time.Now(),
+					TenantName:        user.TenantName,
+				}
+				auditLogs = append(auditLogs, newAuditLog)
+				err = CreateAuditLogs(auditLogs)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user:%v]CreateStation: Station %v - create DLS audit logs error: %v", user.TenantName, user.Username, body.DlsStation, err.Error())
+				}
+
+				shouldSendAnalytics, _ := shouldSendAnalytics()
+				if shouldSendAnalytics {
+					analyticsParams := map[string]interface{}{"station-name": stationName.Ext(), "storage-type": "disk"}
+					analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station-sdk")
+				}
+
+			}
+		}
+	}
+
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 1, body.DlsStation)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1077,47 +1180,123 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-create-station")
 	}
 
-	if schemaName != "" {
-		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_username":           user.Username,
-			"created_at":                    time.Now(),
-			"last_update":                   time.Now(),
-			"is_deleted":                    false,
-			"schema_name":                   schemaName,
-			"schema_version_number":         schemaVersionNumber,
-			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
-			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
-			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
-			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
-			"resend_disabled":               newStation.ResendDisabled,
-		})
-	} else {
-		c.IndentedJSON(200, gin.H{
-			"id":                            newStation.ID,
-			"name":                          stationName.Ext(),
-			"retention_type":                retentionType,
-			"retention_value":               body.RetentionValue,
-			"storage_type":                  storageTypeForResponse,
-			"replicas":                      body.Replicas,
-			"created_by_username":           user.Username,
-			"created_at":                    time.Now(),
-			"last_update":                   time.Now(),
-			"is_deleted":                    false,
-			"schema_name":                   schemaName,
-			"schema_version_number":         schemaVersionNumber,
-			"idempotency_window_in_ms":      newStation.IdempotencyWindow,
-			"dls_configuration_poison":      newStation.DlsConfigurationPoison,
-			"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
-			"tiered_storage_enabled":        newStation.TieredStorageEnabled,
-			"resend_disabled":               newStation.ResendDisabled,
-		})
+	c.IndentedJSON(200, gin.H{
+		"id":                            newStation.ID,
+		"name":                          stationName.Ext(),
+		"retention_type":                retentionType,
+		"retention_value":               body.RetentionValue,
+		"storage_type":                  storageTypeForResponse,
+		"replicas":                      body.Replicas,
+		"created_by_username":           user.Username,
+		"created_at":                    time.Now(),
+		"last_update":                   time.Now(),
+		"is_deleted":                    false,
+		"schema_name":                   schemaName,
+		"schema_version_number":         schemaVersionNumber,
+		"idempotency_window_in_ms":      newStation.IdempotencyWindow,
+		"dls_configuration_poison":      newStation.DlsConfigurationPoison,
+		"dls_configuration_schemaverse": newStation.DlsConfigurationSchemaverse,
+		"tiered_storage_enabled":        newStation.TieredStorageEnabled,
+		"resend_disabled":               newStation.ResendDisabled,
+		"dls_station":                   newStation.DlsStation,
+	})
+}
+
+func (sh StationsHandler) AddDlsStation(c *gin.Context) {
+	var body models.AddRemoveDlsStationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
 	}
+
+	user, err := getUserDetailsFromMiddleware(c)
+	tenantName := user.TenantName
+	if err != nil {
+		serv.Errorf("AddDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, station, err := db.GetStationByName(body.Name, tenantName)
+	if err != nil {
+		serv.Warnf("[tenant: %v][user: %v]AddDlsStation at GetStationByName: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+		return
+	}
+
+	if !exist {
+		stationName, err := StationNameFromStr(body.Name)
+		if err != nil {
+			serv.Warnf("[tenant: %v][user: %v]AddDlsStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+			return
+		}
+
+		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user.ID, user.Username, "", 0)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]AddDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
+	storageTypeForResponse := "disk"
+	if station.StorageType == "memory" {
+		storageTypeForResponse = station.StorageType
+	}
+
+	err = db.UpdateStationsDls(body.StationNames, body.Name, tenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]AddDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{
+		"id":                            station.ID,
+		"name":                          station.Name,
+		"retention_type":                station.RetentionType,
+		"retention_value":               station.RetentionValue,
+		"storage_type":                  storageTypeForResponse,
+		"replicas":                      station.Replicas,
+		"created_by_username":           user.Username,
+		"created_at":                    time.Now(),
+		"last_update":                   time.Now(),
+		"is_deleted":                    false,
+		"schema_name":                   station.SchemaName,
+		"schema_version_number":         station.SchemaVersionNumber,
+		"idempotency_window_in_ms":      station.IdempotencyWindow,
+		"dls_configuration_poison":      station.DlsConfigurationPoison,
+		"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
+		"tiered_storage_enabled":        station.TieredStorageEnabled,
+		"resend_disabled":               station.ResendDisabled,
+		"dls_station":                   station.DlsStation,
+	})
+}
+
+func (sh StationsHandler) RemoveDlsStation(c *gin.Context) {
+	var body models.AddRemoveDlsStationSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+
+	user, err := getUserDetailsFromMiddleware(c)
+	tenantName := user.TenantName
+	if err != nil {
+		serv.Errorf("AddDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	err = db.UpdateStationsDls(body.StationNames, "", tenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]AddDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }
 
 func (sh StationsHandler) RemoveStation(c *gin.Context) {

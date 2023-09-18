@@ -358,6 +358,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS resend_disabled BOOL NOT NULL DEFAULT false;
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS dls_station VARCHAR NOT NULL DEFAULT '';
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -389,6 +390,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		resend_disabled BOOL NOT NULL DEFAULT false,
 		partitions INTEGER[],
 		version INTEGER NOT NULL DEFAULT 0,
+		dls_station VARCHAR NOT NULL DEFAULT '',
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -1198,7 +1200,8 @@ func InsertNewStation(
 	tieredStorageEnabled bool,
 	tenantName string,
 	partitionsList []int,
-	version int) (models.Station, int64, error) {
+	version int,
+	dlsStationName string) (models.Station, int64, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 
@@ -1228,9 +1231,10 @@ func InsertNewStation(
 		tiered_storage_enabled,
 		tenant_name,
 		partitions,
-		version
+		version,
+		dls_station
 		) 
-    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20) RETURNING id`
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_station", query)
 	if err != nil {
@@ -1245,7 +1249,7 @@ func InsertNewStation(
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name,
 		stationName, retentionType, retentionValue, storageType, replicas, userId, username, createAt, updatedAt,
-		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsList, version)
+		false, schemaName, schemaVersionUpdate, idempotencyWindow, isNative, dlsConfiguration.Poison, dlsConfiguration.Schemaverse, tieredStorageEnabled, tenantName, partitionsList, version, dlsStationName)
 	if err != nil {
 		return models.Station{}, 0, err
 	}
@@ -1299,6 +1303,7 @@ func InsertNewStation(
 		TenantName:                  tenantName,
 		PartitionsList:              partitionsList,
 		Version:                     version,
+		DlsStation:                  dlsStationName,
 	}
 
 	rowsAffected := rows.CommandTag().RowsAffected()
@@ -1534,6 +1539,7 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.ResendDisabled,
 			&stationRes.PartitionsList,
 			&stationRes.Version,
+			&stationRes.DlsStation,
 			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
@@ -2213,6 +2219,55 @@ func GetDeletedStations() ([]models.Station, error) {
 		return []models.Station{}, err
 	}
 	return stations, nil
+}
+
+func UpdateStationsDls(stationNames []string, dlsName, tenantName string) error {
+	if len(stationNames) == 0 {
+		return nil
+	}
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	query := `UPDATE stations SET dls_station = $1 WHERE name = ANY($2) AND tenant_name=$3`
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	stmt, err := conn.Conn().Prepare(ctx, "update_stations_dls", query)
+	if err != nil {
+		return err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, dlsName, stationNames, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func RemoveDlsStationFromAllStations(name, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	query := `UPDATE stations SET dls_station = '' WHERE dls_station = $1 AND tenant_name=$2`
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	stmt, err := conn.Conn().Prepare(ctx, "remove_dls_station_from_all_stations", query)
+	if err != nil {
+		return err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Producer Functions

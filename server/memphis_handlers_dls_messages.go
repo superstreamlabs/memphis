@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
@@ -132,6 +133,12 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
 	}
+	err = s.sendToDlsStation(station, data, headersJson)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
+		return err
+	}
+
 	if dlsMsgId == 0 { // nothing to do
 		return nil
 	}
@@ -173,6 +180,16 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 	_, err = db.InsertSchemaverseDlsMsg(station.ID, 0, message.Producer.Name, []string{}, models.MessagePayload(message.Message), message.ValidationError, tenantName, message.PartitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg: %v", tenantName, err.Error())
+		return
+	}
+	data, err := hex.DecodeString(message.Message.Data)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
+		return
+	}
+	err = s.sendToDlsStation(station, data, message.Message.Headers)
+	if err != nil {
+		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return
 	}
 }
@@ -404,4 +421,40 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 	})
 
 	return poisonedCgs, nil
+}
+
+func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string) error {
+	if station.DlsStation != "" {
+		exist, dlsStation, err := db.GetStationByName(station.DlsStation, station.TenantName)
+		if err != nil {
+			return err
+		}
+		if exist {
+			dlsStationName, err := StationNameFromStr(dlsStation.Name)
+			if err != nil {
+				return err
+			}
+			subject := ""
+			shouldRoundRobin := false
+			if dlsStation.Version == 0 {
+				subject = fmt.Sprintf("%s.final", dlsStationName.Intern())
+			} else {
+				shouldRoundRobin = true
+			}
+
+			if shouldRoundRobin {
+				rand.Seed(time.Now().UnixNano())
+				randomIndex := rand.Intn(len(dlsStation.PartitionsList))
+				subject = fmt.Sprintf("%s$%v.final", dlsStationName.Intern(), station.PartitionsList[randomIndex])
+			}
+
+			acc, err := s.LookupAccount(station.TenantName)
+			if err != nil {
+				return err
+			}
+			headers["station"] = station.Name
+			s.sendInternalAccountMsgWithHeadersWithEcho(acc, subject, messagePayload, headers)
+		}
+	}
+	return nil
 }
