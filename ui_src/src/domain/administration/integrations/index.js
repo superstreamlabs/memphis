@@ -155,7 +155,7 @@ const Integrations = () => {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <CloudeBadgeIcon alt="cloud badge" />
+                                        <CloudeBadgeIcon className="cloud-badge" alt="cloud badge" />
                                         <div className="cloud-icon">
                                             <CloudQueueRounded />
                                         </div>
