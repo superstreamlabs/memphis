@@ -21,13 +21,9 @@ import { isCloud, messageParser, msToUnits } from '../../../../services/valueCon
 import { ReactComponent as PurgeWrapperIcon } from '../../../../assets/images/purgeWrapperIcon.svg';
 import { ReactComponent as WaitingMessagesIcon } from '../../../../assets/images/waitingMessages.svg';
 import { ReactComponent as IdempotencyIcon } from '../../../../assets/images/idempotencyIcon.svg';
-import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
 import { ReactComponent as DlsEnableIcon } from '../../../../assets/images/dls_enable_icon.svg';
-import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
 import { ReactComponent as FollowersIcon } from '../../../../assets/images/followersDetails.svg';
-import followersImg from '../../../../assets/images/followersDetails.svg';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
-import leaderImg from '../../../../assets/images/leaderDetails.svg';
 import { ReactComponent as LeaderIcon } from '../../../../assets/images/leaderDetails.svg';
 import PurgeStationModal from '../components/purgeStationModal';
 import CheckboxComponent from '../../../../components/checkBox';
@@ -36,7 +32,6 @@ import MessageDetails from '../components/messageDetails';
 import DetailBox from '../../../../components/detailBox';
 import DlsConfig from '../../../../components/dlsConfig';
 import { httpRequest } from '../../../../services/http';
-import purge from '../../../../assets/images/purge.svg';
 import { ReactComponent as PurgeIcon } from '../../../../assets/images/purge.svg';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
@@ -376,7 +371,6 @@ const Messages = () => {
             {tabValue === tabs[2] && (
                 <div className="details">
                     <DetailBox
-                        // img={dlsEnableIcon}
                         icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
                         title={'Dead-letter station configuration'}
                         desc="Triggers for storing messages in the dead-letter station."
@@ -385,7 +379,6 @@ const Messages = () => {
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
-                        // img={purge}
                         icon={<PurgeIcon width={24} alt="purgeIcon" />}
                         title={'Purge'}
                         desc="Clean station from messages."
@@ -406,7 +399,6 @@ const Messages = () => {
                     ></DetailBox>
                     {!isCloud() && stationState?.stationPartition !== -1 && (
                         <DetailBox
-                            // img={leaderImg}
                             icon={<LeaderIcon width={24} alt="leaderIcon" />}
                             title={'Leader'}
                             desc={
@@ -422,7 +414,6 @@ const Messages = () => {
                     )}
                     {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
                         <DetailBox
-                            // img={followersImg}
                             icon={<FollowersIcon width={24} alt="followersImg" />}
                             title={'Followers'}
                             desc={
@@ -438,7 +429,6 @@ const Messages = () => {
                     )}
 
                     <DetailBox
-                        // img={idempotencyIcon}
                         icon={<IdempotencyIcon width={24} alt="idempotencyIcon" />}
                         title={'Idempotency'}
                         desc={
