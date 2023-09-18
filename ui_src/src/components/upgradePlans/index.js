@@ -15,7 +15,6 @@ import './style.scss';
 import { Paywall, useStiggContext } from '@stigg/react-sdk';
 import { FiArrowUpRight, FiArrowDownLeft } from 'react-icons/fi';
 import { HiQuestionMarkCircle, HiOutlineExclamationCircle } from 'react-icons/hi';
-import { PiAsteriskSimpleFill } from 'react-icons/pi';
 import React, { Fragment, useContext, useState } from 'react';
 import { BsCheckLg } from 'react-icons/bs';
 import { Link } from 'react-router-dom';
@@ -34,7 +33,7 @@ import { Context } from '../../hooks/store';
 const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Performance', 'Limitations', 'Not using anymore', 'I switched to a competitor', 'Other'];
 
 const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
-    const [state, dispatch] = useContext(Context);
+    const [_, dispatch] = useContext(Context);
     const { refreshData, isInitialized } = useStiggContext();
     const [instructionsModalOpen, setInstructionsModalOpen] = useState(false);
     const [downgradeModalOpen, setDowngradeModalOpen] = useState(false);
@@ -45,7 +44,6 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
     const [downgradeReaon, setReasonDowngrade] = useState('');
     const [planSelected, setPlanSelected] = useState({});
     const [textInput, setTextInput] = useState('');
-    const isRoot = state?.userData?.user_type === 'root';
 
     const success_url = window.location.href;
     const cancel_url = window.location.href;
@@ -113,7 +111,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
         if (!isInitialized) {
             showMessages('warning', 'Oh no! We are experiencing some issues with our new billing model. Please check again in a few minutes.');
         } else {
-            isRoot ? setUpgradeModalOpen(true) : showMessages('warning', 'Upgrade is allowed by an owner user only.');
+            setUpgradeModalOpen(true);
         }
     };
 

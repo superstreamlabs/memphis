@@ -35,7 +35,6 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
         password: ''
     });
     const [userType, setUserType] = useState(clientType ? 'application' : 'management');
-    const isRoot = state?.userData?.user_type === 'root';
     const [userViolation, setUserViolation] = useState(false);
     const [passwordType, setPasswordType] = useState(0);
     const userTypeOptions = [

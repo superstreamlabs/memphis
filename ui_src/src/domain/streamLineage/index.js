@@ -96,7 +96,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             });
             sortedProducers?.map((producer, index) => {
                 let node = {
-                    id: `${producer.name}-${producer.app_id}`,
+                    id: `${producer.name}-${producer.station_id}`,
                     text: 'producer',
                     width: 200,
                     height: 100,
@@ -106,10 +106,9 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                     }
                 };
                 let edge = {
-                    id: `${producer.app_id}-${producer.station_id}`,
-                    from: `${producer.name}-${producer.app_id}`,
+                    id: `${producer.name}-${producer.station_id}`,
+                    from: `${producer.name}-${producer.station_id}`,
                     to: producer.station_id,
-                    // fromPort: row.app_id,
                     toPort: `${producer.station_id}_west`,
                     selectionDisabled: true,
                     data: {
@@ -122,7 +121,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             });
             sortedConsumers?.map((consumer, index) => {
                 let node = {
-                    id: `${consumer.name}-${consumer.app_id}`,
+                    id: `${consumer.name}-${consumer.station_id}`,
                     text: 'consumer',
                     width: 200,
                     height: 100,
@@ -132,11 +131,10 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                     }
                 };
                 let edge = {
-                    id: `${consumer.app_id}-${consumer.station_id}`,
+                    id: `${consumer.name}-${consumer.station_id}`,
                     from: consumer.station_id,
-                    to: `${consumer.name}-${consumer.app_id}`,
+                    to: `${consumer.name}-${consumer.station_id}`,
                     fromPort: `${consumer.station_id}_east`,
-                    // toPort: row.app_id,
                     selectionDisabled: true,
                     data: {
                         active: true,
