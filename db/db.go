@@ -5523,56 +5523,56 @@ func GetMsgByStationIdAndMsgSeq(stationId, messageSeq, partitionNumber int) (boo
 	return true, message[0], nil
 }
 
-func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, error) {
+func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName string, poisonedCgs []string, messageDetails models.MessagePayload, tenantName string, partitionNumber int) (int, bool, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
-
+	updated := false
 	connection, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	defer connection.Release()
 
 	tx, err := connection.Conn().Begin(ctx)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	defer tx.Rollback(ctx)
 
 	query := `SELECT EXISTS(SELECT 1 FROM consumers WHERE tenant_name = $1 AND consumers_group = $2)`
 	stmt, err := tx.Prepare(ctx, "check_if_consumer_exists", query)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
 	checkRows, err := tx.Query(ctx, stmt.Name, tenantName, cgName)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	var exists bool
 	for checkRows.Next() {
 		checkRows.Scan(&exists)
 	}
 	if !exists {
-		return 0, err
+		return 0, updated, err
 	}
 	checkRows.Close()
 
 	query = `SELECT * FROM dls_messages WHERE station_id = $1 AND message_seq = $2 AND tenant_name =$3 AND partition_number = $4 LIMIT 1 FOR UPDATE`
 	stmt, err = tx.Prepare(ctx, "handle_insert_dls_message", query)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, tenantName, partitionNumber)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 
 	message, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 	defer rows.Close()
 
@@ -5595,7 +5595,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 
 		stmt, err := tx.Prepare(ctx, "insert_dls_message", query)
 		if err != nil {
-			return 0, err
+			return 0, updated, err
 		}
 		updatedAt := time.Now()
 		if tenantName != conf.GlobalAccount {
@@ -5603,14 +5603,14 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		}
 		rows, err := tx.Query(ctx, stmt.Name, stationId, messageSeq, producerName, poisonedCgs, messageDetails, updatedAt, "poison", "", tenantName, partitionNumber)
 		if err != nil {
-			return 0, err
+			return 0, updated, err
 		}
 		defer rows.Close()
 
 		for rows.Next() {
 			err := rows.Scan(&dlsMsgId)
 			if err != nil {
-				return 0, err
+				return 0, updated, err
 			}
 		}
 		if err := rows.Err(); err != nil {
@@ -5618,22 +5618,22 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
 					if !strings.Contains(pgErr.Detail, "already exists") {
-						return 0, errors.New("dls_messages row already exists")
+						return 0, updated, errors.New("dls_messages row already exists")
 					} else {
-						return 0, errors.New(pgErr.Detail)
+						return 0, updated, errors.New(pgErr.Detail)
 					}
 				} else {
-					return 0, errors.New(pgErr.Message)
+					return 0, updated, errors.New(pgErr.Message)
 				}
 			} else {
-				return 0, err
+				return 0, updated, err
 			}
 		}
 	} else { // then update
 		query = `UPDATE dls_messages SET poisoned_cgs = ARRAY_APPEND(poisoned_cgs, $1), updated_at = $4 WHERE station_id=$2 AND message_seq=$3 AND not($1 = ANY(poisoned_cgs)) AND tenant_name=$5 RETURNING id`
 		stmt, err := tx.Prepare(ctx, "update_poisoned_cgs", query)
 		if err != nil {
-			return 0, err
+			return 0, updated, err
 		}
 		updatedAt := time.Now()
 		if tenantName != conf.GlobalAccount {
@@ -5641,32 +5641,32 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 		}
 		rows, err = tx.Query(ctx, stmt.Name, poisonedCgs[0], stationId, messageSeq, updatedAt, tenantName)
 		if err != nil {
-			return 0, err
+			return 0, updated, err
 		}
 		defer rows.Close()
 
 		for rows.Next() {
 			err := rows.Scan(&dlsMsgId)
 			if err != nil {
-				return 0, err
+				return 0, updated, err
 			}
 		}
 		if err := rows.Err(); err != nil {
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) {
-				return 0, errors.New(pgErr.Message)
+				return 0, updated, errors.New(pgErr.Message)
 			} else {
-				return 0, err
+				return 0, updated, err
 			}
 		}
 	}
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return 0, err
+		return 0, updated, err
 	}
 
-	return dlsMsgId, nil
+	return dlsMsgId, updated, nil
 }
 
 func GetTotalPoisonMsgsPerCg(cgName string, stationId int) (int, error) {

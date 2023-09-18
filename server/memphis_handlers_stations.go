@@ -1203,8 +1203,8 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	})
 }
 
-func (sh StationsHandler) AddDlsStation(c *gin.Context) {
-	var body models.AddRemoveDlsStationSchema
+func (sh StationsHandler) AttachDlsStation(c *gin.Context) {
+	var body models.AttachDetachDlsStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1213,14 +1213,14 @@ func (sh StationsHandler) AddDlsStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	tenantName := user.TenantName
 	if err != nil {
-		serv.Errorf("AddDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
+		serv.Errorf("AttachDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	exist, station, err := db.GetStationByName(body.Name, tenantName)
 	if err != nil {
-		serv.Warnf("[tenant: %v][user: %v]AddDlsStation at GetStationByName: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		serv.Warnf("[tenant: %v][user: %v]AttachDlsStation at GetStationByName: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 		return
 	}
@@ -1228,14 +1228,14 @@ func (sh StationsHandler) AddDlsStation(c *gin.Context) {
 	if !exist {
 		stationName, err := StationNameFromStr(body.Name)
 		if err != nil {
-			serv.Warnf("[tenant: %v][user: %v]AddDlsStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Warnf("[tenant: %v][user: %v]AttachDlsStation at StationNameFromStr: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
 			return
 		}
 
 		station, _, err = CreateDefaultStation(tenantName, sh.S, stationName, user.ID, user.Username, "", 0)
 		if err != nil {
-			serv.Errorf("[tenant: %v][user: %v]AddDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			serv.Errorf("[tenant: %v][user: %v]AttachDlsStation at CreateDefaultStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -1248,7 +1248,7 @@ func (sh StationsHandler) AddDlsStation(c *gin.Context) {
 
 	err = db.UpdateStationsDls(body.StationNames, body.Name, tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]AddDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]AttachDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
@@ -1275,8 +1275,8 @@ func (sh StationsHandler) AddDlsStation(c *gin.Context) {
 	})
 }
 
-func (sh StationsHandler) RemoveDlsStation(c *gin.Context) {
-	var body models.AddRemoveDlsStationSchema
+func (sh StationsHandler) DetachDlsStation(c *gin.Context) {
+	var body models.AttachDetachDlsStationSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
 		return
@@ -1285,14 +1285,14 @@ func (sh StationsHandler) RemoveDlsStation(c *gin.Context) {
 	user, err := getUserDetailsFromMiddleware(c)
 	tenantName := user.TenantName
 	if err != nil {
-		serv.Errorf("AddDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
+		serv.Errorf("DetachDlsStation at getUserDetailsFromMiddleware: At station %v: %v", body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
 
 	err = db.UpdateStationsDls(body.StationNames, "", tenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]AddDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		serv.Errorf("[tenant: %v][user: %v]DetachDlsStation at UpdateStationsDls: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}

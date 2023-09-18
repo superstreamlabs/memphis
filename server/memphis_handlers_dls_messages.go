@@ -128,15 +128,17 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		Headers:  headersJson,
 	}
 
-	dlsMsgId, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName, partitionNumber)
+	dlsMsgId, updated, err := db.StorePoisonMsg(station.ID, int(messageSeq), cgName, producedByHeader, poisonedCgs, messageDetails, station.TenantName, partitionNumber)
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleNewUnackedMsg at StorePoisonMsg: Error while getting notified about a poison message: %v", station.TenantName, err.Error())
 		return err
 	}
-	err = s.sendToDlsStation(station, data, headersJson)
-	if err != nil {
-		serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
-		return err
+	if !updated {
+		err = s.sendToDlsStation(station, data, headersJson, "unacked")
+		if err != nil {
+			serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
+			return err
+		}
 	}
 
 	if dlsMsgId == 0 { // nothing to do
@@ -187,7 +189,7 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
 		return
 	}
-	err = s.sendToDlsStation(station, data, message.Message.Headers)
+	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema")
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return
@@ -429,7 +431,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 	return poisonedCgs, nil
 }
 
-func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string) error {
+func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType string) error {
 	if station.DlsStation != "" {
 		exist, dlsStation, err := db.GetStationByName(station.DlsStation, station.TenantName)
 		if err != nil {
@@ -459,6 +461,7 @@ func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte,
 				return err
 			}
 			headers["station"] = station.Name
+			headers["type"] = dlsType
 			s.sendInternalAccountMsgWithHeadersWithEcho(acc, subject, messagePayload, headers)
 		}
 	}

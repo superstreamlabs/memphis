@@ -188,7 +188,7 @@ type CreateStationSchema struct {
 	DlsStation           string           `json:"dls_station"`
 }
 
-type AddRemoveDlsStationSchema struct {
+type AttachDetachDlsStationSchema struct {
 	Name         string   `json:"name" binding:"required,min=1,max=128"`
 	StationNames []string `json:"station_names" binding:"required"`
 }
