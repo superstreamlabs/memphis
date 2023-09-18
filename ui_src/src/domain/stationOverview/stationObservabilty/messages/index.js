@@ -19,13 +19,16 @@ import { DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS } from '../../../../const/loc
 import { ReactComponent as DeadLetterPlaceholderIcon } from '../../../../assets/images/deadLetterPlaceholder.svg';
 import { isCloud, messageParser, msToUnits } from '../../../../services/valueConvertor';
 import { ReactComponent as PurgeWrapperIcon } from '../../../../assets/images/purgeWrapperIcon.svg';
-import waitingMessages from '../../../../assets/images/waitingMessages.svg';
 import { ReactComponent as WaitingMessagesIcon } from '../../../../assets/images/waitingMessages.svg';
+import { ReactComponent as IdempotencyIcon } from '../../../../assets/images/idempotencyIcon.svg';
 import idempotencyIcon from '../../../../assets/images/idempotencyIcon.svg';
+import { ReactComponent as DlsEnableIcon } from '../../../../assets/images/dls_enable_icon.svg';
 import dlsEnableIcon from '../../../../assets/images/dls_enable_icon.svg';
+import { ReactComponent as FollowersIcon } from '../../../../assets/images/followersDetails.svg';
 import followersImg from '../../../../assets/images/followersDetails.svg';
 import TooltipComponent from '../../../../components/tooltip/tooltip';
 import leaderImg from '../../../../assets/images/leaderDetails.svg';
+import { ReactComponent as LeaderIcon } from '../../../../assets/images/leaderDetails.svg';
 import PurgeStationModal from '../components/purgeStationModal';
 import CheckboxComponent from '../../../../components/checkBox';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -34,6 +37,7 @@ import DetailBox from '../../../../components/detailBox';
 import DlsConfig from '../../../../components/dlsConfig';
 import { httpRequest } from '../../../../services/http';
 import purge from '../../../../assets/images/purge.svg';
+import { ReactComponent as PurgeIcon } from '../../../../assets/images/purge.svg';
 import CustomTabs from '../../../../components/Tabs';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
@@ -372,7 +376,8 @@ const Messages = () => {
             {tabValue === tabs[2] && (
                 <div className="details">
                     <DetailBox
-                        img={dlsEnableIcon}
+                        // img={dlsEnableIcon}
+                        icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
                         title={'Dead-letter station configuration'}
                         desc="Triggers for storing messages in the dead-letter station."
                         rightSection={false}
@@ -380,7 +385,8 @@ const Messages = () => {
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
-                        img={purge}
+                        // img={purge}
+                        icon={<PurgeIcon width={24} alt="purgeIcon" />}
                         title={'Purge'}
                         desc="Clean station from messages."
                         data={[
@@ -400,7 +406,8 @@ const Messages = () => {
                     ></DetailBox>
                     {!isCloud() && stationState?.stationPartition !== -1 && (
                         <DetailBox
-                            img={leaderImg}
+                            // img={leaderImg}
+                            icon={<LeaderIcon width={24} alt="leaderIcon" />}
                             title={'Leader'}
                             desc={
                                 <span>
@@ -415,7 +422,8 @@ const Messages = () => {
                     )}
                     {stationState?.stationSocketData?.followers?.length > 0 && !isCloud() && stationState?.stationPartition !== -1 && (
                         <DetailBox
-                            img={followersImg}
+                            // img={followersImg}
+                            icon={<FollowersIcon width={24} alt="followersImg" />}
                             title={'Followers'}
                             desc={
                                 <span>
@@ -430,7 +438,8 @@ const Messages = () => {
                     )}
 
                     <DetailBox
-                        img={idempotencyIcon}
+                        // img={idempotencyIcon}
+                        icon={<IdempotencyIcon width={24} alt="idempotencyIcon" />}
                         title={'Idempotency'}
                         desc={
                             <span>

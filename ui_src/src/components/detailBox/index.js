@@ -12,12 +12,13 @@
 import './style.scss';
 import React from 'react';
 
-const DetailBox = ({ img, title, desc, data, children, rightSection = true }) => {
+const DetailBox = ({ icon, title, desc, data, children, rightSection = true }) => {
     return (
         <div className="detail-box-container">
             <div className="detail-box-wrapper">
                 <div className="detail-img">
-                    <img width={24} src={img} alt="leader" />
+                    {/* <img width={24} src={img} alt="leader" /> */}
+                    {icon}
                 </div>
                 <div className="detail-title-wrapper">
                     <div className="detail-title">{title}</div>
