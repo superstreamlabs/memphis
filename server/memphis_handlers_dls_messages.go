@@ -216,7 +216,13 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	}
 
 	lenPoison, lenSchema := len(poisonMessages), len(schemaMessages)
-	totalDlsAmount := lenPoison + lenSchema
+	totalDlsAmount := 0
+	if len(dlsMsgs) >= 0 {
+		totalDlsAmount, err = db.CountDlsMsgsByStationAndPartition(station.ID, partitionNumber)
+		if err != nil {
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+		}
+	}
 
 	sort.Slice(poisonMessages, func(i, j int) bool {
 		return poisonMessages[i].Message.TimeSent.After(poisonMessages[j].Message.TimeSent)
