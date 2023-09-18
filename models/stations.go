@@ -86,6 +86,7 @@ type GetStationResponseSchema struct {
 	ResendDisabled       bool             `json:"resend_disabled"`
 	PartitionsList       []int            `json:"partitions_list"`
 	PartitionsNumber     int              `json:"partitions_number"`
+	DlsStation           string           `json:"dls_station"`
 }
 
 type ExtendedStation struct {

@@ -565,6 +565,7 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		ResendDisabled:       station.ResendDisabled,
 		PartitionsList:       station.PartitionsList,
 		PartitionsNumber:     len(station.PartitionsList),
+		DlsStation:           station.DlsStation,
 	}
 
 	c.IndentedJSON(200, stationResponse)
