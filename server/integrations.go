@@ -73,17 +73,6 @@ func InitializeConnections() error {
 	return nil
 }
 
-func CacheDetails(integrationType string, keys map[string]interface{}, properties map[string]bool, tenantName string) {
-	switch integrationType {
-	case "slack":
-		cacheDetailsSlack(keys, properties, tenantName)
-	case "s3":
-		cacheDetailsS3(keys, properties, tenantName)
-	case "github":
-		cacheDetailsGithub(keys, properties, tenantName)
-	}
-}
-
 func EncryptOldUnencryptedValues() error {
 	tenants, err := db.GetAllTenants()
 	if err != nil {
