@@ -16,10 +16,10 @@ import React, { useContext, useEffect, useMemo, useState, useRef } from 'react';
 import { AddRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
 
-import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
-import stopUsingIcon from '../../../../assets/images/stopUsingIcon.svg';
+import { ReactComponent as PlaceholderSchemaIcon } from '../../../../assets/images/placeholderSchema.svg';
+import { ReactComponent as StopUsingIcon } from '../../../../assets/images/stopUsingIcon.svg';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
+import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
@@ -117,7 +117,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                         backgroundColorType="none"
                         borderRadiusType="circle"
                         borderColorType="search-input"
-                        iconComponent={<img alt="search tag" src={searchIcon} />}
+                        iconComponent={<SearchIcon />}
                         onChange={handleSearch}
                         value={searchInput}
                         width="100%"
@@ -190,7 +190,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
             )}
             {!isLoading && schemaList?.length === 0 && (
                 <div className="no-schema-to-display">
-                    <img src={placeholderSchema} width="50" alt="placeholderSchema" />
+                    <PlaceholderSchemaIcon width={50} alt="placeholderSchema" />
                     <p className="title">No schemas yet</p>
                     <p className="sub-title">Get started by creating your first schema</p>
                     <Button
@@ -210,7 +210,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                 </div>
             )}
             <Modal
-                header={<img src={stopUsingIcon} alt="stopUsingIcon" />}
+                header={<StopUsingIcon alt="stopUsingIcon" />}
                 width="520px"
                 height="240px"
                 displayButtons={false}

@@ -58,7 +58,6 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	replySubject := CONN_STATUS_SUBJ + "_reply_" + s.memphis.nuid.Next()
 	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			s.Noticef("aggregateClientConnections: got a reply with connections")
 			var incomingConnIds map[string]string
 			err := json.Unmarshal(msg, &incomingConnIds)
 			if err != nil {
@@ -78,7 +77,6 @@ func aggregateClientConnections(s *Server) (map[string]string, error) {
 	}
 
 	// send message to all brokers to get their connections
-	s.Noticef("aggregateClientConnections: Sending message to all brokers to get their connections")
 	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, replySubject, nil, _EMPTY_, true)
 	timeout := time.After(2 * time.Minute)
 	<-timeout
@@ -109,7 +107,7 @@ func killFunc(s *Server) {
 		}
 
 		if len(zombieConnections) > 0 {
-			serv.Warnf("Zombie connections found, killing")
+			serv.Warnf("%v zombie connections found, killing", len(zombieConnections))
 			err = db.KillProducersByConnections(zombieConnections)
 			if err != nil {
 				serv.Errorf("killFunc: killProducersByConnections: %v", err.Error())

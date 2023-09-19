@@ -17,8 +17,8 @@ import { useHistory } from 'react-router-dom';
 import React, { useState } from 'react';
 import { Badge, Divider } from 'antd';
 
-import stationsIconActive from '../../../assets/images/stationsIconActive.svg';
-import redirectIcon from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as StationsActiveIcon } from '../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
 
 const ExpandIcon = ({ isActive }) => <KeyboardArrowUpRounded className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} />;
 
@@ -38,10 +38,10 @@ const StationLagCollapse = ({ station, index }) => {
         <div className="station-lag-wrapper" key={index}>
             <div className="station-lag-header" onClick={() => redirectToStation()}>
                 <div className="left">
-                    <img alt="stationsIconActive" src={stationsIconActive} />
+                    <StationsActiveIcon alt="stationsIconActive" />
                     <p>{station?.station_name}</p>
                 </div>
-                <img alt="redirectIcon" width={14} src={redirectIcon} />
+                <RedirectIcon alt="redirectIcon" width={14} />
             </div>
             <div className="station-lag-content">
                 {!isOpen && (

@@ -14,9 +14,10 @@ import './style.scss';
 
 import { ArrowDropDownRounded } from '@material-ui/icons';
 import { useHistory } from 'react-router-dom';
-import React, { useContext } from 'react';
-import { Select } from 'antd';
 import { BsPlus } from 'react-icons/bs';
+import { Select } from 'antd';
+import React from 'react';
+
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
 import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';

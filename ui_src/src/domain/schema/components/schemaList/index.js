@@ -13,11 +13,9 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import placeholderSchema from '../../../../assets/images/placeholderSchema.svg';
-import deleteWrapperIcon from '../../../../assets/images/deleteWrapperIcon.svg';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
+import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/placeholderSchema.svg';
+import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
@@ -27,7 +25,7 @@ import Modal from '../../../../components/modal';
 import SchemaBox from '../schemaBox';
 import { filterArray } from '../../../../services/valueConvertor';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
-import { Link, useHistory } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import pathDomains from '../../../../router';
 
 function SchemaList({ createNew }) {
@@ -174,7 +172,7 @@ function SchemaList({ createNew }) {
                     })}
                 {!isLoading && state.schemaList?.length === 0 && (
                     <div className="no-schema-to-display">
-                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
+                        <PlaceholderSchema alt="placeholderSchema" width={100} height={100} />
                         <p className="title">No schemas yet</p>
                         <p className="sub-title">Get started by creating your first schema</p>
                         <Button
@@ -195,14 +193,14 @@ function SchemaList({ createNew }) {
                 )}
                 {!isLoading && state.schemaList?.length > 0 && state.schemaFilteredList?.length === 0 && (
                     <div className="no-schema-to-display">
-                        <img src={placeholderSchema} width="100" height="100" alt="placeholderSchema" />
+                        <PlaceholderSchema alt="placeholderSchema" width={100} height={100} />
                         <p className="title">No schemas found</p>
                         <p className="sub-title">Please try to search again</p>
                     </div>
                 )}
             </div>
             <Modal
-                header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                 width="520px"
                 height="240px"
                 displayButtons={false}

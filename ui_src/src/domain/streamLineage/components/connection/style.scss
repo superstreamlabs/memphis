@@ -1,4 +1,4 @@
-.connection-wrapper{
+.connection-wrapper {
     border-radius: 4px;
     width: 98%;
     height: 95%;
@@ -8,7 +8,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: space-around;
-    .rectangle{
+    .rectangle {
         width: 100%;
         height: 45px;
         display: flex;
@@ -16,12 +16,16 @@
         justify-content: space-between;
         align-items: center;
         padding: 0px 10px;
-        p{
+        p {
             margin: 0;
             font-family: 'InterMedium';
             font-size: 14px;
+            max-width: 140px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
-        .count{
+        .count {
             display: flex;
             padding: 3px 10px;
             align-items: flex-start;
@@ -31,16 +35,16 @@
             font-size: 14px;
         }
     }
-    .consumer{
-        background:  #61DFC6;
-        .count{
-            background: #9DF1E0;
+    .consumer {
+        background: #61dfc6;
+        .count {
+            background: #9df1e0;
         }
     }
-    .producer{
-        background: #FFC633;
-        .count{
-            background: #FFE193;
+    .producer {
+        background: #ffc633;
+        .count {
+            background: #ffe193;
         }
     }
 }

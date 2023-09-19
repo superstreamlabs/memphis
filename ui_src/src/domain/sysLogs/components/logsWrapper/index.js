@@ -17,7 +17,7 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 import { Virtuoso } from 'react-virtuoso';
 import Lottie from 'lottie-react';
 
-import attachedPlaceholder from '../../../../assets/images/attachedPlaceholder.svg';
+import { ReactComponent as AttachedPlaceholderIcon } from '../../../../assets/images/attachedPlaceholder.svg';
 import animationData from '../../../../assets/lotties/MemphisGif.json';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -256,7 +256,7 @@ const LogsWrapper = () => {
                 )}
                 {!loader && logs?.length === 0 && (
                     <div className="placeholder">
-                        <img src={attachedPlaceholder} alt="attachedPlaceholder" />
+                        <AttachedPlaceholderIcon />
                         <p>No logs found</p>
                     </div>
                 )}

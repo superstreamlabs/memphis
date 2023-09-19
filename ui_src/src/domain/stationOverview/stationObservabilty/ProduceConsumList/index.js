@@ -17,11 +17,11 @@ import { Space } from 'antd';
 import { Virtuoso } from 'react-virtuoso';
 import { FiPlayCircle } from 'react-icons/fi';
 
-import waitingProducer from '../../../../assets/images/waitingProducer.svg';
-import waitingConsumer from '../../../../assets/images/waitingConsumer.svg';
-import playVideoIcon from '../../../../assets/images/playVideoIcon.svg';
+import { ReactComponent as WaitingProducerIcon } from '../../../../assets/images/waitingProducer.svg';
+import { ReactComponent as WaitingConsumerIcon } from '../../../../assets/images/waitingConsumer.svg';
+import { ReactComponent as PlayVideoIcon } from '../../../../assets/images/playVideoIcon.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import unsupported from '../../../../assets/images/unsupported.svg';
+import { ReactComponent as UnsupportedIcon } from '../../../../assets/images/unsupported.svg';
 import StatusIndication from '../../../../components/indication';
 import SdkExample from '../../../../components/sdkExample';
 import CustomCollapse from '../components/customCollapse';
@@ -161,7 +161,7 @@ const ProduceConsumList = ({ producer }) => {
                                 height="30px"
                                 placeholder={
                                     <div className="producer-placeholder">
-                                        <img src={playVideoIcon} width={18} alt="playVideoIcon" />
+                                        <PlayVideoIcon width={18} alt="playVideoIcon" />
                                         <span>Produce</span>
                                     </div>
                                 }
@@ -264,7 +264,7 @@ const ProduceConsumList = ({ producer }) => {
                 )}
                 {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
                     <div className="waiting-placeholder">
-                        <img width={62} src={producer ? waitingProducer : waitingConsumer} alt="producer" />
+                        {producer ? <WaitingProducerIcon width={62} alt="producer" /> : <WaitingConsumerIcon width={62} alt="producer" />}
                         <p>Waiting for the 1st {producer ? 'producer' : 'consumer'}</p>
                         {producer && <span className="des">A producer is the source application that pushes data to the station</span>}
                         {!producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
@@ -286,13 +286,13 @@ const ProduceConsumList = ({ producer }) => {
                 {!stationState?.stationMetaData?.is_native && (
                     <div className="unsupported-placeholder">
                         <div className="placeholder-wrapper">
-                            <img src={unsupported} alt="unsupported" />
-                            <p>For the full Memphis experience, Memphis SDK is needed</p>
+                            <UnsupportedIcon />
+                            <p>Some features are limited to Memphis SDK only</p>
                             <Button
                                 className="open-sdk"
                                 width="200px"
                                 height="37px"
-                                placeholder="View Memphis SDK's"
+                                placeholder="Create your Memphis client"
                                 colorType={'white'}
                                 radiusType="circle"
                                 border={'none'}
@@ -331,7 +331,7 @@ const ProduceConsumList = ({ producer }) => {
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={playVideoIcon} alt="stationImg" />
+                            <PlayVideoIcon className="headerImage" alt="stationImg" />
                         </div>
                         <p>Produce a message</p>
                         <label>Produce a message through the Console.</label>

@@ -103,7 +103,7 @@
                     p {
                         margin: 0;
                     }
-                    img {
+                    svg {
                         width: 16px;
                     }
                 }
@@ -185,7 +185,8 @@
         justify-content: center;
         align-items: center;
         height: 100%;
-        img {
+        img,
+        svg {
             width: 70px;
             height: 70px;
         }

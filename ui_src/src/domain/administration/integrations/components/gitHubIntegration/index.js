@@ -14,7 +14,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Form, message, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
-import tickCircle from '../../../../../assets/images/tickCircle.svg';
+import { ReactComponent as TickCircleIcon } from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
@@ -53,7 +53,6 @@ const GitHubIntegration = ({ close, value }) => {
         const images = [];
         images.push(INTEGRATION_LIST['GitHub'].banner.props.src);
         images.push(INTEGRATION_LIST['GitHub'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['GitHub'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {
@@ -251,7 +250,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     <p>API Token</p>
                                     {isIntegrated ? (
                                         <div className="connected-to-gh">
-                                            <img src={tickCircle} className="connected" alt="connected" />
+                                            <TickCircleIcon className="connected" alt="connected" />
                                             &nbsp;Connected
                                         </div>
                                     ) : (

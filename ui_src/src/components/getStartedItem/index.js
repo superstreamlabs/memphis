@@ -16,8 +16,10 @@ import React, { useContext } from 'react';
 
 import { GetStartedStoreContext } from '../../domain/overview/getStarted';
 import bgGetStartedBottom from '../../assets/images/bgGetStartedBottom.svg';
+import { ReactComponent as BgGetStartedBottomIcon } from '../../assets/images/bgGetStartedBottom.svg';
 import { CONNECT_APP_VIDEO, CONNECT_CLI_VIDEO } from '../../config';
 import bgGetStarted from '../../assets/images/bgGetStarted.svg';
+import { ReactComponent as BgGetStartedIcon } from '../../assets/images/bgGetStarted.svg';
 import ConnectBG from '../../assets/images/connectBG.webp';
 import InstallingBG from '../../assets/images/installingBG.webp';
 import VideoPlayer from '../videoPlayer';
@@ -30,7 +32,7 @@ const GetStartedItem = ({ headerImage, headerTitle, headerDescription, children,
         <div className="get-started-wrapper">
             {getStartedState?.currentStep !== 5 && (
                 <>
-                    <img className="get-started-bg-img" src={bgGetStarted} alt="bgGetStarted" />
+                    <BgGetStartedIcon className="get-started-bg" alt="bgGetStarted" />
                     <div className="get-started-top">
                         <div className="get-started-top-header">
                             <img className="header-image" src={headerImage} alt={headerImage} />
@@ -43,7 +45,7 @@ const GetStartedItem = ({ headerImage, headerTitle, headerDescription, children,
             )}
             {getStartedState?.currentStep === 5 && (
                 <>
-                    <img className="get-started-bg-img-bottom" src={bgGetStartedBottom} alt="bgGetStartedBottom"></img>
+                    <BgGetStartedBottomIcon className="get-started-bg-img-bottom" alt="bgGetStartedBottom" />
                     <div className="get-started-top">
                         <div className="video-container">
                             <div className="video-section">

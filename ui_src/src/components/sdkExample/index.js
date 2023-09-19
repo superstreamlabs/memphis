@@ -12,8 +12,10 @@
 
 import './style.scss';
 
-import Editor, { loader } from '@monaco-editor/react';
 import React, { useEffect, useState, useRef } from 'react';
+import { FiMinusCircle, FiPlus } from 'react-icons/fi';
+import Editor, { loader } from '@monaco-editor/react';
+import { Divider, Form, Collapse } from 'antd';
 import * as monaco from 'monaco-editor';
 
 import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE, sdkLangOptions, restLangOptions } from '../../const/codeExample';
@@ -26,26 +28,22 @@ import {
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
 } from '../../const/localStorageConsts';
 import GenerateTokenModal from '../../domain/stationOverview/components/generateTokenModal';
-import noCodeExample from '../../assets/images/noCodeExample.svg';
-import codeIcon from '../../assets/images/codeIcon.svg';
-import refresh from '../../assets/images/refresh.svg';
-import addUserIcon from '../../assets/images/addUserIcon.svg';
-import { Collapse } from 'antd';
-
+import { ReactComponent as NoCodeExampleIcon } from '../../assets/images/noCodeExample.svg';
+import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
+import { ReactComponent as RefreshIcon } from '../../assets/images/refresh.svg';
+import { ReactComponent as CodeIcon } from '../../assets/images/codeIcon.svg';
+import CreateUserDetails from '../../domain/users/createUserDetails';
 import CollapseArrow from '../../assets/images/collapseArrow.svg';
-import SelectComponent from '../select';
+import { ApiEndpoints } from '../../const/apiEndpoints';
 import TitleComponent from '../titleComponent/index';
+import { httpRequest } from '../../services/http';
+import SegmentButton from '../segmentButton';
+import CustomSelect from '../customSelect';
+import SelectComponent from '../select';
+import Switcher from '../switcher';
 import Modal from '../modal';
 import Input from '../Input';
-import Switcher from '../switcher';
 import Copy from '../copy';
-import SegmentButton from '../segmentButton';
-import CreateUserDetails from '../../domain/users/createUserDetails';
-import { Divider, Form } from 'antd';
-import { FiMinusCircle, FiPlus } from 'react-icons/fi';
-import CustomSelect from '../customSelect';
-import { ApiEndpoints } from '../../const/apiEndpoints';
-import { httpRequest } from '../../services/http';
 
 loader.init();
 loader.config({ monaco });
@@ -97,7 +95,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
         if (!consumer) {
             getAllUsers();
         }
-    });
+    }, []);
 
     useEffect(() => {
         protocolSelected === 'SDK' ? changeSDKDynamicCode(langSelected) : changeRestDynamicCode(langSelected);
@@ -472,9 +470,9 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 {withHeader && (
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={codeIcon} alt="codeIcon" />
+                            <CodeIcon className="headerImage" alt="codeIcon" />
                         </div>
-                        <p>Code example</p>
+                        <p>Code generator</p>
                         <label>We'll provide you with snippets that you can easily connect your application with Memphis</label>
                     </div>
                 )}
@@ -639,7 +637,6 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                                             placeholder="JWT"
                                                             type="text"
                                                             fontSize="14px"
-                                                            maxLength="128"
                                                             radiusType="semi-round"
                                                             colorType="black"
                                                             backgroundColorType="white"
@@ -868,7 +865,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                     header={
                         <div className="modal-header">
                             <div className="header-img-container">
-                                <img className="headerImage" src={addUserIcon} alt="stationImg" />
+                                <AddUserIcon className="headerImage" alt="stationImg" />
                             </div>
                             <p>Add a new user</p>
                             <label>Enter user details to get started</label>
@@ -905,11 +902,11 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
             <div>
                 <div className={`code-output-title ${withHeader && 'code-output-title-code-example'}`}>
                     <p>Code Output</p>
-                    <label>Copy code example to your IDE</label>
+                    <label>Copy code generator to your IDE</label>
                 </div>
                 {protocolSelected === 'SDK' && SDK_CODE_EXAMPLE[langSelected]?.link && (
                     <div className="guidline">
-                        <img src={noCodeExample} />
+                        <NoCodeExampleIcon />
                         <div className="content">
                             <p>{SDK_CODE_EXAMPLE[langSelected].title}</p>
                             <span>{SDK_CODE_EXAMPLE[langSelected].desc}</span>
@@ -937,7 +934,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                                 <div className="generate-wrapper">
                                     <p className="field-title">Generate a token</p>
                                     <div className="generate-action" onClick={() => setGenerateModal(true)}>
-                                        <img src={refresh} width="14" />
+                                        <RefreshIcon width="14" />
                                         <span>Generate JWT token</span>
                                     </div>
                                 </div>

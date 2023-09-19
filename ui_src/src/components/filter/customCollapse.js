@@ -19,7 +19,7 @@ import { Checkbox } from 'antd';
 import { Divider } from 'antd';
 import Tag from '../tag';
 
-import CollapseArrow from '../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
 import Button from '../button';
 import DatePicker from '../datePicker';
 import RadioButton from '../radioButton';
@@ -217,9 +217,8 @@ const CustomCollapse = ({ cancel, apply, clear }) => {
                                 )}
                                 <div className="filter-header">
                                     <label className="title">{filterGroup.value}</label>
-                                    <img
+                                    <CollapseArrowIcon
                                         className={activeKey?.includes(filterGroupIndex.toString()) ? 'collapse-arrow open' : 'collapse-arrow'}
-                                        src={CollapseArrow}
                                         alt="collapse-arrow"
                                     />
                                 </div>

@@ -15,10 +15,10 @@ import React, { useEffect, useState } from 'react';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import { convertBytes } from '../../../../services/valueConvertor';
-import Consumed from '../../../../assets/images/setting/consumed.svg';
-import Redeliver from '../../../../assets/images/setting/redeliver.svg';
-import DeadLetter from '../../../../assets/images/setting/deadLetter.svg';
-import Storage from '../../../../assets/images/setting/storage.svg';
+import { ReactComponent as ConsumedIcon } from '../../../../assets/images/setting/consumed.svg';
+import { ReactComponent as RedeliverIcon } from '../../../../assets/images/setting/redeliver.svg';
+import { ReactComponent as DeadLetterIcon } from '../../../../assets/images/setting/deadLetter.svg';
+import { ReactComponent as StorageIcon } from '../../../../assets/images/setting/storage.svg';
 import DatePickerComponent from '../../../../components/datePicker';
 import Loader from '../../../../components/loader';
 import { ReactComponent as DataInIcon } from '../../../../assets/images/dataIn.svg';
@@ -123,7 +123,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge lavander"></div>
                                 <div className="circle-img">
-                                    <img src={Consumed} alt="Consumed" />
+                                    <ConsumedIcon alt="Consumed" />
                                 </div>
 
                                 <div>
@@ -137,7 +137,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge lavander"></div>
                                 <div className="circle-img">
-                                    <img src={Redeliver} alt="Consumed" />
+                                    <RedeliverIcon alt="Redelivered" />
                                 </div>
 
                                 <div>
@@ -151,7 +151,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge lavander"></div>
                                 <div className="circle-img">
-                                    <img src={Storage} alt="Storage" />
+                                    <StorageIcon alt="Storage" />
                                 </div>
 
                                 <div>
@@ -165,7 +165,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge lavander"></div>
                                 <div className="circle-img">
-                                    <img src={DeadLetter} alt="Consumed" />
+                                    <DeadLetterIcon alt="Dead-letter" />
                                 </div>
 
                                 <div>
@@ -183,7 +183,7 @@ function Requests() {
                             <div className="requests-item">
                                 <div className="box-edge lavander"></div>
                                 <div className="circle-img">
-                                    <img src={Consumed} alt="Consumed" />
+                                    <ConsumedIcon alt="Consumed" />
                                 </div>
 
                                 <div>

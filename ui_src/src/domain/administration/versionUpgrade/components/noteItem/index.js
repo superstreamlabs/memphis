@@ -14,7 +14,7 @@ import './style.scss';
 
 import React, { useEffect, useState } from 'react';
 
-import star from '../../../../../assets/images/star.svg';
+import { ReactComponent as StarIcon } from '../../../../../assets/images/star.svg';
 import ReactMarkdown from 'react-markdown';
 
 const NoteItem = ({ feature }) => {
@@ -27,7 +27,7 @@ const NoteItem = ({ feature }) => {
 
     return (
         <div className="feature-container">
-            <img src={star} alt="star" />
+            <StarIcon alt="star" />
             <ReactMarkdown linkTarget={'_blank'} className="markdown">
                 {featureConvertor}
             </ReactMarkdown>

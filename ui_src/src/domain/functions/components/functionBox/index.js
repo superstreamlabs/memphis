@@ -21,8 +21,8 @@ import { Drawer } from 'antd';
 
 import { parsingDate } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
-import codeIconBlack from '../../../../assets/images/codeIconBlack.svg';
-import githubBranchIcon from '../../../../assets/images/githubBranchIcon.svg';
+import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
+import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
@@ -75,7 +75,7 @@ function FunctionBox({ funcDetails }) {
                     </div>
                     <div className="function-details">
                         <div className="function-repo">
-                            <img src={githubBranchIcon} alt="github-branch-icon" />
+                            <GithubBranchIcon alt="github-branch-icon" />
                             <OverflowTip text={functionDetails?.repository - functionDetails?.branch} maxWidth={'150px'}>
                                 <span>
                                     {functionDetails?.repository} - {functionDetails?.branch}
@@ -83,7 +83,7 @@ function FunctionBox({ funcDetails }) {
                             </OverflowTip>
                         </div>
                         <div className="function-code-type">
-                            <img src={codeIconBlack} alt="code-icon" />
+                            <CodeBlackIcon alt="code-icon" />
                             <OverflowTip text={functionDetails?.language} maxWidth={'150px'}>
                                 <span>{functionDetails?.language}</span>
                             </OverflowTip>

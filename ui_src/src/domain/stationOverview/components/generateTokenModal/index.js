@@ -16,7 +16,7 @@ import React, { useEffect, useState } from 'react';
 
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import SelectComponent from '../../../../components/select';
-import refresh from '../../../../assets/images/refresh.svg';
+import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Input from '../../../../components/Input';
@@ -201,7 +201,7 @@ const GenerateTokenModal = ({ host, close, returnToken }) => {
                                     <Copy data={userToken?.jwt_refresh_token} width={20} />
                                 </div>
                                 <div className="generate-again" onClick={() => setUserToken({})}>
-                                    <img src={refresh} width="14" />
+                                    <RefreshIcon width={14} />
                                     <span>Generate again</span>
                                 </div>
                             </div>

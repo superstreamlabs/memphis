@@ -15,7 +15,7 @@ import './style.scss';
 import React, { useEffect, useContext, useState } from 'react';
 
 import { LOCAL_STORAGE_ACCOUNT_ID, LOCAL_STORAGE_AVATAR_ID, LOCAL_STORAGE_USER_TYPE, USER_IMAGE } from '../../const/localStorageConsts';
-import deleteWrapperIcon from '../../assets/images/deleteWrapperIcon.svg';
+import { ReactComponent as DeleteWrapperIcon } from '../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { isCloud } from '../../services/valueConvertor';
 import { httpRequest } from '../../services/http';
@@ -167,7 +167,7 @@ function Profile() {
                     />
                 </div>
                 <Modal
-                    header={<img src={deleteWrapperIcon} alt="deleteWrapperIcon" />}
+                    header={<DeleteWrapperIcon alt="deleteWrapperIcon" />}
                     width="520px"
                     height="270px"
                     displayButtons={false}

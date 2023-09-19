@@ -14,7 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { Divider, Form } from 'antd';
 import { FiMinusCircle } from 'react-icons/fi';
 
-import githubBranchIcon from '../../../../../assets/images/githubBranchIcon.svg';
+import { ReactComponent as GithubBranchIcon } from '../../../../../assets/images/githubBranchIcon.svg';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import SelectComponent from '../../../../../components/select';
@@ -67,7 +67,7 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
     return (
         <div>
             <div className="repos-item" repo={repo}>
-                <img src={githubBranchIcon} alt="githubBranchIcon" />
+                <GithubBranchIcon alt="githubBranchIcon" />
                 <Form.Item className="button-container">
                     <SelectComponent
                         colorType="black"

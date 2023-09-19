@@ -1,21 +1,21 @@
-.station-graph-wrapper{
+.station-graph-wrapper {
     display: flex;
     position: relative;
     justify-content: center;
     place-items: center;
     cursor: pointer;
-    .yellow-background{
+    .yellow-background {
         border-radius: 4px;
-        background: #FFC633;
+        background: #ffc633;
         width: 100%;
         height: 70%;
         position: absolute;
         z-index: -1;
     }
-    .station-details{
+    .station-details {
         position: relative;
         border-radius: 8px;
-        background: #6557FF;
+        background: #6557ff;
         box-shadow: 0px 2px 2px 1px rgba(0, 0, 0, 0.25);
         width: 70%;
         display: flex;
@@ -23,15 +23,15 @@
         align-items: center;
         gap: 10px;
         height: 100%;
-        justify-content:space-between;
+        justify-content: space-between;
         padding: 10px 0;
-        img{
+        svg {
             display: none;
             position: absolute;
             right: 10px;
             width: 12px;
         }
-        .station-name{
+        .station-name {
             font-family: 'InterMedium';
             font-size: 15px;
             color: white;
@@ -40,18 +40,18 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .station-messages{
+        .station-messages {
             width: 80%;
             height: 90px;
             border-radius: 4px;
-            background: rgba(255, 255, 255, 0.20);
+            background: rgba(255, 255, 255, 0.2);
             display: flex;
             flex-direction: column;
             gap: 5px;
             align-items: center;
             padding: 5px 0;
             justify-content: space-around;
-            .icon-wrapper{
+            .icon-wrapper {
                 background-color: white;
                 border-radius: 50%;
                 width: 20px;
@@ -59,35 +59,35 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                svg{
+                svg {
                     color: var(--purple);
                 }
             }
-            .station-messages-title{
-                color: #A199FF;
+            .station-messages-title {
+                color: #a199ff;
                 font-family: 'InterMedium';
                 font-size: 13px;
             }
-            .station-messages-count{
+            .station-messages-count {
                 font-family: 'InterSemiBold';
                 font-size: 15px;
                 color: white;
             }
-            .schema-attached-title{
+            .schema-attached-title {
                 font-family: 'InterMedium';
                 font-size: 12px;
                 color: white;
             }
         }
-        .schema-attached{
+        .schema-attached {
             height: 25px;
-            
         }
     }
 }
-.station-graph-wrapper:hover{
-    .station-details{
-        img{
+.station-graph-wrapper:hover {
+    .station-details {
+        img,
+        svg {
             display: block;
         }
     }

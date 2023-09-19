@@ -14,8 +14,8 @@ import './style.scss';
 
 import React, { useContext, useState } from 'react';
 import { Divider, Popover } from 'antd';
-import partitionIcon from '../../assets/images/partitionIcon.svg';
-import CollapseArrow from '../../assets/images/collapseArrow.svg';
+import { ReactComponent as PartitionIcon } from '../../assets/images/partitionIcon.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
 import { StationStoreContext } from '../../domain/stationOverview';
 
 const PartitionsFilter = ({ partitions_number }) => {
@@ -39,7 +39,8 @@ const PartitionsFilter = ({ partitions_number }) => {
             elements.push(
                 <div className="partition-item" key={i} onClick={() => handleApply(i)}>
                     <span>
-                        <img src={partitionIcon} alt="PartitionIcon" /> {i == 0 ? 'All partitions' : `Partition ${i}`}
+                        <PartitionIcon alt="PartitionIcon" />
+                        {i == 0 ? 'All partitions' : `Partition ${i}`}
                     </span>
                 </div>
             );
@@ -54,9 +55,9 @@ const PartitionsFilter = ({ partitions_number }) => {
         <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
             <div className="filter-partition-btn">
                 <div className="filter-partition-container">
-                    <img src={partitionIcon} alt="PartitionIcon" className="partition-icon" />
+                    <PartitionIcon alt="PartitionIcon" className="partition-icon" />
                     <div>{selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}</div>
-                    <img src={CollapseArrow} alt="CollapseArrow" />
+                    <CollapseArrowIcon alt="CollapseArrow" />
                 </div>
             </div>
         </Popover>

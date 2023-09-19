@@ -12,22 +12,22 @@
     }
     .users-list-container {
         margin-top: 30px;
-        .ant-table-thead .ant-table-cell{
+        .ant-table-thead .ant-table-cell {
             background: white;
-            border-top: 1px solid #E4E6E9;
+            border-top: 1px solid #e4e6e9;
         }
-        .table-header{
+        .table-header {
             display: flex;
-            align-items:center;
-            p{
+            align-items: center;
+            p {
                 margin-bottom: 0;
                 margin-right: 10px;
                 font-family: 'InterMedium';
                 font-size: 14px;
             }
         }
-        .user-row{
-            p{
+        .user-row {
+            p {
                 margin: 0;
                 font-family: 'InterMedium';
                 font-size: 14px;
@@ -45,41 +45,40 @@
                     align-items: center;
                     justify-content: center;
                     margin-right: 20px;
-                    svg{
-                        color: var(--purple)
+                    svg {
+                        color: var(--purple);
                     }
                 }
-                .badgeOrange{
+                .badgeOrange {
                     min-width: unset !important;
                     border-radius: 32px;
                     height: 20px;
                     margin-left: 10px;
-                    
                 }
             }
-            .status{
-                .version-badge{
+            .status {
+                .version-badge {
                     justify-content: center;
                     height: 24px;
                     min-width: unset;
                     max-width: 70px;
                 }
             }
-            .created-column{
+            .created-column {
                 font-family: 'Inter' !important;
                 color: rgba(74, 73, 92, 0.8);
             }
-            .full-name{
+            .full-name {
                 text-transform: capitalize;
             }
-            .user-action{
+            .user-action {
                 display: flex;
                 gap: 10px;
-                .action-button{
+                .action-button {
                     display: flex;
                     position: relative;
                     align-items: center;
-                    img{
+                    svg {
                         margin-right: 5px;
                     }
                 }

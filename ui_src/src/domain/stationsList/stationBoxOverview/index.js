@@ -22,11 +22,11 @@ import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import noActiveAndUnhealthy from '../../../assets/lotties/noActiveAndUnhealthy.json';
 import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json';
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
-import redirectIcon from '../../../assets/images/redirectIcon.svg';
-import replicasIcon from '../../../assets/images/replicasIcon.svg';
-import totalMsgIcon from '../../../assets/images/totalMsgIcon.svg';
-import poisonMsgIcon from '../../../assets/images/poisonMsgIcon.svg';
-import remoteStorage from '../../../assets/images/remoteStorage.svg';
+import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
+import { ReactComponent as ReplicasIcon } from '../../../assets/images/replicasIcon.svg';
+import { ReactComponent as TotalMsgIcon } from '../../../assets/images/totalMsgIcon.svg';
+import { ReactComponent as PoisonMsgIcon } from '../../../assets/images/poisonMsgIcon.svg';
+import { ReactComponent as RemoteStorageIcon } from '../../../assets/images/remoteStorage.svg';
 import { ReactComponent as ClockIcon } from '../../../assets/images/timeFill.svg';
 import { ReactComponent as UserIcon } from '../../../assets/images/userPerson.svg';
 import { ReactComponent as SchemaIcon } from '../../../assets/images/schemaIconActive.svg';
@@ -71,7 +71,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                                 <div className="check-box">
                                     <CheckboxComponent checked={isCheck} id={station?.station?.name} onChange={handleCheckedClick} name={station?.station?.name} />
                                     <OverflowTip className="station-name" text={station?.station?.name} maxWidth="190px">
-                                        {station?.station?.name} <label className="non-native-label">{!station?.station?.is_native && '(non-native)'}</label>
+                                        {station?.station?.name} <label className="non-native-label">{!station?.station?.is_native && '(NATS-Compatible)'}</label>
                                     </OverflowTip>
                                 </div>
                             </div>
@@ -103,7 +103,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </div>
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={remoteStorage} alt="storage" />
+                                    <RemoteStorageIcon />
                                     <label className="data-labels storage">Storage type</label>
                                 </div>
 
@@ -112,7 +112,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             {!isCloud() && (
                                 <div className="station-meta">
                                     <div className="header">
-                                        <img src={replicasIcon} alt="replicas" />
+                                        <ReplicasIcon />
                                         <label className="data-labels replicas">Replicas</label>
                                     </div>
                                     <p className="data-info">{station?.station?.replicas}</p>
@@ -120,7 +120,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             )}
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={totalMsgIcon} alt="total messages" />
+                                    <TotalMsgIcon />
                                     <label className="data-labels total">Total messages</label>
                                 </div>
 
@@ -130,7 +130,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </div>
                             <div className="station-meta">
                                 <div className="header">
-                                    <img src={poisonMsgIcon} alt="poison messages" />
+                                    <PoisonMsgIcon />
                                     <label className="data-labels total">Poison messages</label>
                                 </div>
 
@@ -152,7 +152,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </div>
                             <div className="station-meta poison">
                                 <div className="header">
-                                    <img src={poisonMsgIcon} alt="poison messages" />
+                                    <PoisonMsgIcon />
                                     <label className="data-labels">Status</label>
                                 </div>
                                 <div className="health-icon">
@@ -171,7 +171,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             </div>
                             <div className="station-actions">
                                 <div className="action">
-                                    <img src={redirectIcon} alt="redirectIcon" />
+                                    <RedirectIcon />
                                 </div>
                             </div>
                         </div>
