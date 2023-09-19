@@ -52,7 +52,11 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
             setIsLoading(true);
             const data = type === 'dls' ? await httpRequest('GET', ApiEndpoints.GET_ALL_STATIONS) : await httpRequest('GET', ApiEndpoints.GET_ALL_SCHEMAS);
             if (data) {
-                setSchemasList(data);
+                if (type === 'dls') {
+                    setSchemasList(data?.filter((station) => station.name !== stationName));
+                } else {
+                    setSchemasList(data);
+                }
             }
         } catch (error) {}
         setIsLoading(false);
@@ -167,7 +171,11 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                                     fontFamily="InterSemiBold"
                                     disabled={selected === ''}
                                     isLoading={useschemaLoading}
-                                    onClick={useSchema}
+                                    onClick={() => {
+                                        setUseschemaLoading(true);
+                                        handleSetSchema(selected);
+                                        setUseschemaLoading(false);
+                                    }}
                                 />
                             </div>
                         ) : (

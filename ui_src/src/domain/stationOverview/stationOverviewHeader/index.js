@@ -30,8 +30,8 @@ import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectI
 import { ReactComponent as UpRightArrow } from '../../../assets/images/upRightCorner.svg';
 import { ReactComponent as DisconnectIcon } from '../../../assets/images/disconnectDls.svg';
 import { ReactComponent as DisableIcon } from '../../../assets/images/disableIcon.svg';
+import { ReactComponent as AwaitingIcon } from '../../../assets/images/awaitingIcon.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
-import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
 import OverflowTip from '../../../components/tooltip/overflowtip';
 import UpdateSchemaModal from '../components/updateSchemaModal';
 import ActiveBadge from '../../../components/activeBadge';
@@ -62,13 +62,13 @@ const StationOverviewHeader = () => {
     const [deleteModal, setDeleteModal] = useState(false);
     const [auditModal, setAuditModal] = useState(false);
     const [sdkModal, setSdkModal] = useState(false);
-    const [isDls, setIsDls] = useState(true);
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
+
     const history = useHistory();
     const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
-
+    const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     useEffect(() => {
         switch (stationState?.stationMetaData?.retention_type) {
             case 'message_age_sec':
@@ -109,6 +109,32 @@ const StationOverviewHeader = () => {
         stationDispatch({ type: 'SET_SCHEMA', payload: schema });
     };
 
+    const setDls = (dls) => {
+        stationDispatch({ type: 'SET_DLS', payload: dls });
+    };
+
+    const handleSetDls = async (dls) => {
+        try {
+            await httpRequest('POST', ApiEndpoints.ATTACH_DLS, { name: dls, station_names: [stationState?.stationMetaData?.name] });
+            setDls(dls);
+            setUseDlsModal(false);
+        } catch (error) {
+            setUseDlsModal(false);
+        }
+    };
+
+    const handleDetachDls = async () => {
+        setDetachLoader(true);
+        try {
+            await httpRequest('DELETE', ApiEndpoints.DETACH_DLS, { name: dls, station_names: [stationState?.stationMetaData?.name] });
+            setDls('');
+            setDisableModal(false);
+            setDisableLoader(false);
+        } catch (error) {
+            setDetachLoader(false);
+            setDisableModal(false);
+        }
+    };
     const handleDeleteStation = async () => {
         setDeleteLoader(true);
         try {
@@ -137,10 +163,6 @@ const StationOverviewHeader = () => {
             setDetachLoader(false);
             setDeleteModal(false);
         }
-    };
-
-    const handleDisableDls = async () => {
-        setDisableModal(false);
     };
 
     return (
@@ -332,11 +354,11 @@ const StationOverviewHeader = () => {
                         <div className="more-details">
                             <div className="topRow">
                                 <p className="title">Poison messages</p>
-                                {isDls && <RedirectIcon className="redirect" />}
+                                {dls && <RedirectIcon width={15} height={15} className="redirect" />}
                             </div>
                             <div className="midRow">
-                                <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
-                                {isDls && <p className="tag">Station_2</p>}
+                                <p className="number">{stationState?.stationSocketData?.total_dls_messages?.toLocaleString() || 0}</p>
+                                {dls && <p className="tag">{dls}</p>}
                             </div>
                             <div className="bottomRow">
                                 <Button
@@ -344,31 +366,39 @@ const StationOverviewHeader = () => {
                                     height="16px"
                                     placeholder={
                                         <div className="use-dls-button">
-                                            {isDls ? <DisconnectIcon /> : <UpRightArrow />}
-                                            <p>{isDls ? 'Disable' : 'Enable'} Consumption</p>
+                                            {dls ? <DisconnectIcon /> : <UpRightArrow />}
+                                            <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
                                         </div>
                                     }
-                                    colorType={isDls ? 'white' : 'black'}
+                                    colorType={dls ? 'white' : 'black'}
                                     radiusType="circle"
-                                    backgroundColorType={isDls ? 'red' : 'orange'}
+                                    backgroundColorType={dls ? 'red' : 'orange'}
                                     fontSize="10px"
                                     fontFamily="InterSemiBold"
                                     fontWeight={600}
                                     disabled={!stationState?.stationMetaData?.is_native}
-                                    onClick={() => (isDls ? setDisableModal(true) : setUseDlsModal(true))}
+                                    onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
                                 />
                             </div>
                         </div>
                     </div>
                     <div className="details-wrapper pointer">
                         <div className="icon">
-                            <AverageMesIcon width={24} height={24} alt="averageMesIcon" />
+                            <AwaitingIcon width={22} alt="averageMesIcon" />
                         </div>
                         <div className="more-details ">
-                            <p className="title">Av. message size</p>
-                            <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
-                                <p className="number">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
-                            </TooltipComponent>
+                            <div className="topRow">
+                                <p className="title">Total messages</p>
+                            </div>
+                            <div className="midRow">
+                                <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
+                            </div>
+                            <div className="bottomRow">
+                                <p className="title">Av. message size</p>
+                                <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
+                                    <p className="number2">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
+                                </TooltipComponent>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -451,14 +481,7 @@ const StationOverviewHeader = () => {
                     hr={true}
                     className="use-schema-modal"
                 >
-                    <UseSchemaModal
-                        stationName={null}
-                        handleSetDls={(dls) => {
-                            setUseDlsModal(false);
-                        }}
-                        type="dls"
-                        close={() => setUseDlsModal(false)}
-                    />
+                    <UseSchemaModal stationName={stationState?.stationMetaData?.name} handleSetSchema={handleSetDls} type="dls" close={() => setUseDlsModal(false)} />
                 </Modal>
                 <Modal
                     header="Update schema"
@@ -529,7 +552,7 @@ const StationOverviewHeader = () => {
                         }
                         buttontxt="I understand, disable consumption"
                         textToConfirm="disable"
-                        handleDeleteSelected={handleDisableDls}
+                        handleDeleteSelected={handleDetachDls}
                         loader={disableLoader}
                     />
                 </Modal>

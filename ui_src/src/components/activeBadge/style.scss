@@ -10,18 +10,19 @@
         font-family: 'InterMedium';
         font-size: 11px;
         line-height: 12px;
+        white-space: nowrap;
     }
 }
 .badgeGreen {
-    background: #D6F5E3;
+    background: #d6f5e3;
     p {
-        color: #27AE60;
+        color: #27ae60;
     }
 }
 .badgeOrange {
-    background: #FFE5CC;
+    background: #ffe5cc;
     min-width: 106px;
     p {
-        color: #FF7D00;
+        color: #ff7d00;
     }
 }

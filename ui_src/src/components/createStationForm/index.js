@@ -495,7 +495,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </div>
 
                     {dlsConfiguration && (
-                        <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
+                        <Form.Item name="dlsStation" initialValue={null}>
                             <SelectSchema
                                 placeholder={creationForm.dlsStation || 'None'}
                                 value={creationForm.dlsStation || stations[0]}

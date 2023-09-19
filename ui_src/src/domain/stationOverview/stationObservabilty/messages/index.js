@@ -56,11 +56,12 @@ const Messages = () => {
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
-    const [isDls, setIsDls] = useState(false);
+    // const [isDls, setIsDls] = useState(false);
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);
 
+    const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Details'];
     const subTabs = [
         { name: 'Unacked', disabled: false },
@@ -81,6 +82,32 @@ const Messages = () => {
         setDisableModal(false);
     };
 
+    const setDls = (dls) => {
+        stationDispatch({ type: 'SET_DLS', payload: dls });
+    };
+
+    const handleSetDls = async (dls) => {
+        try {
+            await httpRequest('POST', ApiEndpoints.ATTACH_DLS, { name: dls, station_names: [stationState?.stationMetaData?.name] });
+            setDls(dls);
+            setUseDlsModal(false);
+        } catch (error) {
+            setUseDlsModal(false);
+        }
+    };
+
+    const handleDetachDls = async () => {
+        setDisableLoader(true);
+        try {
+            await httpRequest('DELETE', ApiEndpoints.DETACH_DLS, { name: dls, station_names: [stationState?.stationMetaData?.name] });
+            setDls('');
+            setDisableModal(false);
+            setDisableLoader(false);
+        } catch (error) {
+            setDisableLoader(false);
+            setDisableModal(false);
+        }
+    };
     const handleCheckedClick = (e) => {
         const { id, checked } = e.target;
         let checkedList = [];
@@ -394,18 +421,18 @@ const Messages = () => {
                                     height="16px"
                                     placeholder={
                                         <div className="use-dls-button">
-                                            {isDls ? <DisconnectIcon /> : <UpRightArrow />}
-                                            <p>{isDls ? 'Disable' : 'Enable'} Consumption</p>
+                                            {dls ? <DisconnectIcon /> : <UpRightArrow />}
+                                            <p>{dls ? 'Disable' : 'Enable'} Consumption</p>
                                         </div>
                                     }
-                                    colorType={isDls ? 'white' : 'black'}
+                                    colorType={dls ? 'white' : 'black'}
                                     radiusType="circle"
-                                    backgroundColorType={isDls ? 'red' : 'orange'}
+                                    backgroundColorType={dls ? 'red' : 'orange'}
                                     fontSize="10px"
                                     fontFamily="InterSemiBold"
                                     fontWeight={600}
                                     disabled={!stationState?.stationMetaData?.is_native}
-                                    onClick={() => (isDls ? setDisableModal(true) : setUseDlsModal(true))}
+                                    onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
                                 />
                             </>
                         }
@@ -511,14 +538,7 @@ const Messages = () => {
                 hr={true}
                 className="use-schema-modal"
             >
-                <UseSchemaModal
-                    stationName={null}
-                    handleSetDls={(dls) => {
-                        setUseDlsModal(false);
-                    }}
-                    type="dls"
-                    close={() => setUseDlsModal(false)}
-                />
+                <UseSchemaModal stationName={stationState?.stationMetaData?.name} handleSetSchema={handleSetDls} type="dls" close={() => setUseDlsModal(false)} />
             </Modal>
             <Modal
                 header={<DisableIcon alt="stopUsingIcon" />}
@@ -537,7 +557,7 @@ const Messages = () => {
                     }
                     buttontxt="I understand, disable consumption"
                     textToConfirm="disable"
-                    handleDeleteSelected={handleDisableDls}
+                    handleDeleteSelected={handleDetachDls}
                     loader={disableLoader}
                 />
             </Modal>
