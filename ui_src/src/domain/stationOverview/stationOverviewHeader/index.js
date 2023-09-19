@@ -349,6 +349,25 @@ const StationOverviewHeader = () => {
                     </div>
                     <div className="details-wrapper middle">
                         <div className="icon">
+                            <AwaitingIcon width={22} alt="averageMesIcon" />
+                        </div>
+                        <div className="more-details ">
+                            <div className="topRow">
+                                <p className="title">Total messages</p>
+                            </div>
+                            <div className="midRow">
+                                <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
+                            </div>
+                            <div className="bottomRow">
+                                <p className="average-title">Av. message size</p>
+                                <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
+                                    <p className="number2">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
+                                </TooltipComponent>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="details-wrapper pointer">
+                        <div className="icon">
                             <DlsIcon width={50} height={50} alt="awaitingIcon" />
                         </div>
                         <div className="more-details">
@@ -379,25 +398,6 @@ const StationOverviewHeader = () => {
                                     disabled={!stationState?.stationMetaData?.is_native}
                                     onClick={() => (dls ? setDisableModal(true) : setUseDlsModal(true))}
                                 />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="details-wrapper pointer">
-                        <div className="icon">
-                            <AwaitingIcon width={22} alt="averageMesIcon" />
-                        </div>
-                        <div className="more-details ">
-                            <div className="topRow">
-                                <p className="title">Total messages</p>
-                            </div>
-                            <div className="midRow">
-                                <p className="number">{stationState?.stationSocketData?.total_messages?.toLocaleString() || 0}</p>
-                            </div>
-                            <div className="bottomRow">
-                                <p className="title">Av. message size</p>
-                                <TooltipComponent text="Gross size. Payload + headers + Memphis metadata">
-                                    <p className="number2">{convertBytes(stationState?.stationSocketData?.average_message_size)}</p>
-                                </TooltipComponent>
                             </div>
                         </div>
                     </div>

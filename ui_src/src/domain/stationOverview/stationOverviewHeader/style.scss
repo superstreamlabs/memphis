@@ -210,8 +210,12 @@
                             }
                         }
                     }
-                    .title,
-                    .topRow .title {
+                    .title{
+                        font-family: 'InterSemiBold';
+                        font-size: 14px;
+                        margin-bottom: 0;
+                    }
+                    .average-title{
                         font-size: 12px;
                         margin: 0;
                         color: #b5b5b5;
