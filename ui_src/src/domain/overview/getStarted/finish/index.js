@@ -16,11 +16,11 @@ import React, { useContext, useEffect, useState } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 
 import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
-import slackColors from '../../../../assets/images/slackColors.svg';
-import discordLogo from '../../../../assets/images/discordLogo.svg';
-import GithubLogo from '../../../../assets/images/githubLogo.svg';
+import { ReactComponent as SlackColorsIcon } from '../../../../assets/images/slackColors.svg';
+import { ReactComponent as DiscordLogoIcon } from '../../../../assets/images/discordLogo.svg';
+import { ReactComponent as GithubLogoIcon } from '../../../../assets/images/githubLogo.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import docsLogo from '../../../../assets/images/docsLogo.svg';
+import { ReactComponent as DocsLogoIcon } from '../../../../assets/images/docsLogo.svg';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import { GetStartedStoreContext } from '..';
@@ -74,7 +74,7 @@ const Finish = ({ createStationFormRef }) => {
                         height="42px"
                         placeholder={
                             <div className="slack-button">
-                                <img src={slackColors} />
+                                <SlackColorsIcon />
                                 <p>Integrate Slack</p>
                             </div>
                         }
@@ -109,13 +109,13 @@ const Finish = ({ createStationFormRef }) => {
             <div className="container-icons-finish">
                 <p className="link-finish-header">Link to our channels</p>
                 <Link className="icon-image" to={{ pathname: 'https://docs.memphis.dev' }} target="_blank">
-                    <img src={docsLogo} width="25px" height="25px" alt="slack-icon"></img>
+                    <DocsLogoIcon width={25} height={25} alt="slack-icon" />
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://github.com/memphisdev' }} target="_blank">
-                    <img src={GithubLogo} width="25px" height="25px" alt="github-icon"></img>
+                    <GithubLogoIcon width={25} height={25} alt="github-icon" />
                 </Link>
                 <Link className="icon-image" to={{ pathname: 'https://discord.com/invite/WZpysvAeTf' }} target="_blank">
-                    <img src={discordLogo} width="25px" height="25px" alt="discord_icon"></img>
+                    <DiscordLogoIcon width={25} height={25} alt="discord-icon" />
                 </Link>
             </div>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>

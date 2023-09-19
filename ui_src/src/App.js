@@ -32,22 +32,21 @@ import {
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
-import infoNotificationIcon from './assets/images/infoNotificationIcon.svg';
+import { ReactComponent as InfoNotificationIcon } from './assets/images/infoNotificationIcon.svg';
 import { handleRefreshTokenRequest, httpRequest } from './services/http';
-import redirectIcon from './assets/images/redirectIcon.svg';
-import successIcon from './assets/images/successIcon.svg';
-import close from './assets/images/closeNotification.svg';
+import { ReactComponent as RedirectIcon } from './assets/images/redirectIcon.svg';
+import { ReactComponent as SuccessIcon } from './assets/images/successIcon.svg';
+import { ReactComponent as CloseIcon } from './assets/images/closeNotification.svg';
 import { showMessages } from './services/genericServices';
 import StationOverview from './domain/stationOverview';
-import errorIcon from './assets/images/errorIcon.svg';
+import { ReactComponent as ErrorIcon } from './assets/images/errorIcon.svg';
 import MessageJourney from './domain/messageJourney';
 import Administration from './domain/administration';
 import { ApiEndpoints } from './const/apiEndpoints';
-import warnIcon from './assets/images/warnIcon.svg';
+import { ReactComponent as WarnIcon } from './assets/images/warnIcon.svg';
 import AppWrapper from './components/appWrapper';
 import StationsList from './domain/stationsList';
 import SchemaManagment from './domain/schema';
-import Functions from './domain/functions';
 import PrivateRoute from './PrivateRoute';
 import AuthService from './services/auth';
 import Overview from './domain/overview';
@@ -56,6 +55,8 @@ import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
+import Functions from './domain/functions';
+import { Close, Info } from '@material-ui/icons';
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -294,7 +295,7 @@ const App = withRouter(() => {
     const notificationHandler = (id, type, message, duration) => {
         const defaultAntdField = {
             className: 'notification-wrapper',
-            closeIcon: <img src={close} alt="close" />,
+            closeIcon: <CloseIcon alt="close" />,
             message: 'System Message',
             onClose: () => {
                 const updatedNotifications = stateRef.current[1].map((n) => (n.id === id ? { ...n, read: true } : n));
@@ -306,7 +307,7 @@ const App = withRouter(() => {
             case 'info':
                 notification.info({
                     ...defaultAntdField,
-                    icon: <img src={infoNotificationIcon} alt="info" />,
+                    icon: <InfoNotificationIcon alt="info" />,
                     description: message,
                     duration: duration
                 });
@@ -315,7 +316,7 @@ const App = withRouter(() => {
                 notification.warning({
                     ...defaultAntdField,
 
-                    icon: <img src={warnIcon} alt="warn" />,
+                    icon: <WarnIcon alt="warn" />,
                     description: message,
                     duration: duration
                 });
@@ -323,7 +324,7 @@ const App = withRouter(() => {
             case 'error':
                 notification.error({
                     ...defaultAntdField,
-                    icon: <img src={errorIcon} alt="error" />,
+                    icon: <ErrorIcon alt="error" />,
                     description: message,
                     duration: duration
                 });
@@ -331,7 +332,7 @@ const App = withRouter(() => {
             case 'success':
                 notification.success({
                     ...defaultAntdField,
-                    icon: <img src={successIcon} alt="success" />,
+                    icon: <SuccessIcon alt="success" />,
                     description: message,
                     duration: duration
                 });
@@ -363,7 +364,7 @@ const App = withRouter(() => {
                     {systemMessage[0]?.link_url && (
                         <a className="a-link" href={systemMessage[0]?.link_url} target="_blank" rel="noreferrer">
                             {systemMessage[0]?.link_content}
-                            <img src={redirectIcon} alt="redirectIcon" />
+                            <RedirectIcon alt="redirectIcon" />
                         </a>
                     )}
                 </div>

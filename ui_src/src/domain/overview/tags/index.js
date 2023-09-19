@@ -16,7 +16,7 @@ import React, { useContext } from 'react';
 import Tag from '../../../components/tag';
 import { Divider } from 'antd';
 import { Context } from '../../../hooks/store';
-import noTagsFound from '../../../assets/images/noTagsFound.svg';
+import { ReactComponent as NoTagsFoundIcon } from '../../../assets/images/noTagsFound.svg';
 
 const Tags = () => {
     const [state, dispatch] = useContext(Context);
@@ -50,7 +50,7 @@ const Tags = () => {
                 </div>
             ) : (
                 <div className="no-data">
-                    <img src={noTagsFound} alt="no data found" />
+                    <NoTagsFoundIcon alt="no data found" />
                     <p>No tags yet</p>
                     <label>Tags are a great way to identify your different assets as you grow.</label>
                 </div>

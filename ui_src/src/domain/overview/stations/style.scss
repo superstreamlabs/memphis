@@ -91,9 +91,9 @@
                     padding-left: 20px;
                     display: flex;
                     flex-direction: column;
-                    span{
+                    span {
                         font-size: 10px;
-                        color: var(--black, rgba(74, 73, 92, 0.80));
+                        color: var(--black, rgba(74, 73, 92, 0.8));
                     }
                 }
             }
@@ -117,10 +117,11 @@
                 }
             }
         }
-        .rows-wrapper-cloud .stations-row, .coulmns-table-cloud{
+        .rows-wrapper-cloud .stations-row,
+        .coulmns-table-cloud {
             grid-template-columns: 30% 15% 15% 13% 10% !important;
         }
-        .rows-wrapper-cloud .stations-row{
+        .rows-wrapper-cloud .stations-row {
             height: 50px;
         }
         .centered {
@@ -156,7 +157,7 @@
                 width: 90px !important;
             }
         }
-        .lottie-cloud{
+        .lottie-cloud {
             svg {
                 width: 60px !important;
             }
@@ -169,7 +170,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        img {
+        svg {
             width: 11vh;
             cursor: pointer;
         }

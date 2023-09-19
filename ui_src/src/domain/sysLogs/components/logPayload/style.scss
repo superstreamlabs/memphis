@@ -10,7 +10,7 @@
     padding: 10px;
     margin-bottom: 3px;
     text-align: start;
-    .title{
+    .title {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -18,39 +18,39 @@
         font-family: 'InterSemiBold';
         font-size: 14px;
     }
-    .created-date{
+    .created-date {
         font-family: 'Inter';
         font-size: 11px;
-        color:rgba(74, 73, 92, 0.8);
+        color: rgba(74, 73, 92, 0.8);
     }
-    .log-info{
+    .log-info {
         display: flex;
         justify-content: space-between;
-        .source{
+        .source {
             display: flex;
             min-width: 90px;
             max-width: 160px;
             height: 25px;
             display: flex;
-            border: 1px solid #EEEEEE;
+            border: 1px solid #eeeeee;
             border-radius: 4px;
-            align-items:center;
+            align-items: center;
             padding-right: 8px;
-            img{
+            svg {
                 width: 14px;
                 margin-left: 8px;
             }
-            p{
-                color: #6557FF;
+            p {
+                color: #6557ff;
                 font-size: 12px;
                 font-family: 'InterSemiBold';
                 margin-left: 4px;
-                line-height:12px
+                line-height: 12px;
             }
         }
     }
-    .selected{
-        background: #6557FF;
+    .selected {
+        background: #6557ff;
         border-radius: 0px 10px 10px 0px;
         position: absolute;
         height: 100%;
@@ -62,9 +62,9 @@
 .log-payload:hover {
     opacity: 0.8;
 }
-.log-selected{
-    background: #EBEBFF !important;
+.log-selected {
+    background: #ebebff !important;
 }
-.log-selected:hover{
+.log-selected:hover {
     opacity: 1 !important;
 }

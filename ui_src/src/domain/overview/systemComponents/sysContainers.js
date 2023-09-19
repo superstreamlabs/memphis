@@ -16,8 +16,8 @@ import './style.scss';
 import React from 'react';
 import { Divider } from 'antd';
 import { Progress } from 'antd';
-import SysContainer from '../../../assets/images/sysContainer.svg';
-import errorindication from '../../../assets/images/errorindication.svg';
+import { ReactComponent as SysContainerIcon } from '../../../assets/images/sysContainer.svg';
+import { ReactComponent as ErrorIndicationIcon } from '../../../assets/images/errorindication.svg';
 import TooltipComponent from '../../../components/tooltip/tooltip';
 import { convertBytes } from '../../../services/valueConvertor';
 
@@ -57,7 +57,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
             {(!component.healthy || !metricsEnabled) && (
                 <div className="warn-msg">
                     <div className="msg-wrapper">
-                        <img src={errorindication} />
+                        <ErrorIndicationIcon />
                         {!component.healthy ? (
                             k8sEnv ? (
                                 <p>Pod {index + 1} is down</p>
@@ -77,7 +77,7 @@ const SysContainers = ({ component, k8sEnv, metricsEnabled, index }) => {
             )}
             <div className={!component.healthy ? 'blury' : !metricsEnabled ? 'blury' : null}>
                 <div className="system-container-header">
-                    <img src={SysContainer} alt="SysContainer" width="15" height="15" />
+                    <SysContainerIcon alt="syscontainer" width={15} height={15} />
                     <div className="cont-tls">
                         <p>{component?.name}</p>
                         <label>{k8sEnv ? `POD ${index + 1}` : `CONTAINER`}</label>

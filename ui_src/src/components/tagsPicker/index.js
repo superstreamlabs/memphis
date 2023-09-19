@@ -22,14 +22,14 @@
 import './style.scss';
 import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import SearchInput from '../searchInput';
-import searchIcon from '../../assets/images/searchIcon.svg';
+import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
 import Modal from '../../components/modal';
 import { httpRequest } from '../../services/http';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import NewTagGenerator from './newTagGenerator';
 import { AddRounded, Check } from '@material-ui/icons';
 import { Divider } from 'antd';
-import emptyTags from '../../assets/images/emptyTags.svg';
+import { ReactComponent as EmptyTagsIcon } from '../../assets/images/emptyTags.svg';
 import Loader from '../loader';
 
 const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTagList, newEntity = false }, ref) => {
@@ -143,7 +143,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                             backgroundColorType="none"
                             borderRadiusType="circle"
                             borderColorType="search-input"
-                            iconComponent={<img alt="search tag" src={searchIcon} />}
+                            iconComponent={<SearchIcon alt="search tag" />}
                             onChange={handleSearch}
                             value={searchInput}
                         />
@@ -162,7 +162,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
                             ))
                         ) : (
                             <div className="no-tags">
-                                <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
+                                <EmptyTagsIcon className="no-tags-image" alt="empty-tags-list" width={80} height={80} />
                                 <span className="no-tags-message">No tags found</span>
                             </div>
                         )}
@@ -181,7 +181,7 @@ const TagsPicker = forwardRef(({ tags, entity_name, entity_type, handleUpdatedTa
             )}
             {!getTagsLoading && allTags?.length === 0 && (
                 <div className="no-tags">
-                    <img className="no-tags-image" alt="empty-tags-list" src={emptyTags} width={80} height={80} />
+                    <EmptyTagsIcon className="no-tags-image" alt="empty-tags-list" width={80} height={80} />
                     <span className="no-tags-message">No tags exist</span>
                     <span className="tags-info-message">Tags will help you control, group, search, and filter your different entities</span>
                     <div className="create-new-tag-empty" onClick={() => setNewTagModal(true)}>

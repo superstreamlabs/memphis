@@ -17,13 +17,15 @@ import ReactPlayer from 'react-player';
 
 import playVideoIcon from '../../assets/images/playVideoIcon.svg';
 import Img404 from '../../assets/images/404.svg';
+import { ReactComponent as PlayVideoIcon } from '../../assets/images/playVideoIcon.svg';
+import { ReactComponent as Img404Icon } from '../../assets/images/404.svg';
 
 const VideoPlayer = ({ url, bgImg }) => {
     const [playState, setPlayState] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
 
     return isOffline ? (
-        <img className="not-connected" src={Img404} alt="not connected" />
+        <Img404Icon className="not-connected" alt="not-connected" />
     ) : (
         <ReactPlayer
             className="video-player"
@@ -32,7 +34,7 @@ const VideoPlayer = ({ url, bgImg }) => {
             light={true}
             playIcon={
                 <div onClick={() => setPlayState(true)}>
-                    <img alt="play-video-icon" src={playVideoIcon} />
+                    <PlayVideoIcon className="play-video-icon" />
                 </div>
             }
             height="250px"

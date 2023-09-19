@@ -49,7 +49,6 @@ const S3Integration = ({ close, value }) => {
         const images = [];
         images.push(INTEGRATION_LIST['S3'].banner.props.src);
         images.push(INTEGRATION_LIST['S3'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['S3'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

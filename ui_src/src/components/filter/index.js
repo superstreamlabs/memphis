@@ -17,9 +17,9 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 import { Popover } from 'antd';
 
 import { filterType, labelType, CircleLetterColor } from '../../const/globalConst';
-import searchIcon from '../../assets/images/searchIcon.svg';
+import { ReactComponent as SearchIcon } from '../../assets/images/searchIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import filterImg from '../../assets/images/filter.svg';
+import { ReactComponent as FilterImgIcon } from '../../assets/images/filter.svg';
 import { httpRequest } from '../../services/http';
 import CustomCollapse from './customCollapse';
 import { Context } from '../../hooks/store';
@@ -454,7 +454,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     borderColorType="none"
                     boxShadowsType="none"
                     borderRadiusType="circle"
-                    iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                    iconComponent={<SearchIcon alt="searchIcon" />}
                     onChange={handleSearch}
                     value={searchInput}
                 />
@@ -466,7 +466,7 @@ const Filter = ({ filterComponent, height, applyFilter }) => {
                     height={height}
                     placeholder={
                         <div className="filter-container">
-                            <img src={filterImg} width="25" alt="filter" />
+                            <FilterImgIcon alt="filter" width={25} />
                             <label className="filter-title">Filters</label>
                             {filterTerms?.length > 0 && filterState?.counter > 0 && <div className="filter-counter">{filterState?.counter}</div>}
                         </div>

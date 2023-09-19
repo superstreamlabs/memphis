@@ -17,7 +17,9 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import React, { useState, useContext, useEffect } from 'react';
 
 import removeFunctionIcon from '../../assets/images/removeFunctionIcon.svg';
+import { ReactComponent as RemoveFunctionIcon } from '../../assets/images/removeFunctionIcon.svg';
 import arrowFunction from '../../assets/images/arrowFunction.svg';
+import { ReactComponent as ArrowFunctionIcon } from '../../assets/images/arrowFunction.svg';
 import OverflowTip from '../tooltip/overflowtip';
 
 const FunctionsOverview = (props) => {
@@ -34,7 +36,7 @@ const FunctionsOverview = (props) => {
                         <div className="func-wrapper">
                             {editable && (
                                 <div className="remove-button" onClick={() => handleRemoveFunction(index)}>
-                                    <img src={removeFunctionIcon} alt="edit" width="8px" height="8px" />
+                                    <RemoveFunctionIcon alt="edit" width={8} height={8} />
                                 </div>
                             )}
                             <div
@@ -55,7 +57,7 @@ const FunctionsOverview = (props) => {
                             </div>
                         </div>
                         {index < functions?.length - 1 && (
-                            <img src={arrowFunction} alt="edit" width="4vw" style={{ transform: !horizontal && 'rotate(90deg)', margin: '15px' }} />
+                            <ArrowFunctionIcon alt="edit" width="4vw" style={{ transform: !horizontal && 'rotate(90deg)', margin: '15px' }} />
                         )}
                     </div>
                 );

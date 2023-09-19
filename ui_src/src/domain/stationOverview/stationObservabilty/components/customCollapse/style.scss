@@ -25,7 +25,7 @@
             justify-content: space-between;
             .title {
                 display: flex;
-                .validation-image{
+                .validation-image {
                     width: 20px !important;
                 }
             }
@@ -69,7 +69,7 @@
         max-height: 190px;
         overflow: scroll;
         padding-right: 10px;
-        img {
+        svg {
             cursor: pointer;
             width: 16px !important;
             position: absolute;
@@ -98,23 +98,24 @@
             color: #1d1d1d;
             font-size: 13px;
 
-            img {
+            img,
+            svg {
                 top: 0;
                 right: 0;
             }
         }
     }
-    .consumer-list-header{
-.ant-collapse-content-box{
-    padding: 0;
-}
-        .collapse-child-with-count{
+    .consumer-list-header {
+        .ant-collapse-content-box {
+            padding: 0;
+        }
+        .collapse-child-with-count {
             display: flex;
             justify-content: space-between;
-            color: #84818A;
+            color: #84818a;
             font-size: 12px;
             padding: 12px;
-            border-bottom: 1px solid #F1F1F1;
+            border-bottom: 1px solid #f1f1f1;
             align-items: center;
         }
     }

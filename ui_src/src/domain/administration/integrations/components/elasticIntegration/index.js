@@ -16,7 +16,7 @@ import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 
 import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
@@ -24,7 +24,7 @@ import Loader from '../../../../../components/loader';
 
 const { Panel } = Collapse;
 
-const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+const ExpandIcon = ({ isActive }) => <CollapseArrowIcon className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} alt="collapse-arrow" />;
 
 const ElasticIntegration = ({ close }) => {
     const elasticConfiguration = INTEGRATION_LIST['Elasticsearch'];
@@ -35,7 +35,6 @@ const ElasticIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Elasticsearch'].banner.props.src);
         images.push(INTEGRATION_LIST['Elasticsearch'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Elasticsearch'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

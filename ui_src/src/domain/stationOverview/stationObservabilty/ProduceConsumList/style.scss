@@ -28,7 +28,7 @@
         .producer-placeholder {
             display: flex;
             align-items: center;
-            img {
+            svg {
                 margin-right: 5px;
             }
         }
@@ -107,7 +107,8 @@
                         width: 15px;
                         color: #adadad;
                     }
-                    img {
+                    img,
+                    svg {
                         width: 12px;
                         display: block;
                         cursor: pointer;

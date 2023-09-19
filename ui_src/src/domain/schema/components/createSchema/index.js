@@ -28,11 +28,11 @@ import Ajv2020 from 'ajv/dist/2020';
 import { Form } from 'antd';
 
 import { generateName, getUnique } from '../../../../services/valueConvertor';
-import schemaTypeIcon from '../../../../assets/images/schemaTypeIcon.svg';
-import stationsIconActive from '../../../../assets/images/stationsIconActive.svg';
-import errorModal from '../../../../assets/images/errorModal.svg';
-import BackIcon from '../../../../assets/images/backIcon.svg';
-import tagsIcon from '../../../../assets/images/tagsIcon.svg';
+import { ReactComponent as SchemaTypeIcon } from '../../../../assets/images/schemaTypeIcon.svg';
+import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
+import { ReactComponent as BackIcon } from '../../../../assets/images/backIcon.svg';
+import { ReactComponent as TagsIcon } from '../../../../assets/images/tagsIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
@@ -420,7 +420,7 @@ function CreateSchema({ createNew }) {
                 <div className="left-side">
                     <div className="header">
                         <div className="flex-title">
-                            <img src={BackIcon} onClick={() => goBack()} alt="backIcon" />
+                            <BackIcon onClick={() => goBack()} alt="backIcon" />
                             <p>Create schema</p>
                         </div>
                         <span>
@@ -467,7 +467,7 @@ function CreateSchema({ createNew }) {
                     <Form.Item name="tags">
                         <div className="schema-field tags">
                             <div className="title-icon-img">
-                                <img className="icon" src={tagsIcon} />
+                                <TagsIcon className="icon" alt="tagsIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Tags</p>
                                     <p className="desc">Tags will help you control, group, search, and filter your different entities</p>
@@ -491,7 +491,7 @@ function CreateSchema({ createNew }) {
                     <Form.Item name="type" initialValue={formFields.type}>
                         <div className="schema-field type">
                             <div className="title-icon-img">
-                                <img className="icon" src={schemaTypeIcon} alt="schemaTypeIcon" />
+                                <SchemaTypeIcon className="icon" alt="schemaTypeIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Data format</p>
                                     <p className="desc">
@@ -601,7 +601,7 @@ function CreateSchema({ createNew }) {
                 </div>
             </Form>
             <Modal
-                header={<img src={errorModal} alt="errorModal" />}
+                header={<ErrorModalIcon alt="errorModal" />}
                 width="400px"
                 height="280px"
                 displayButtons={false}
@@ -658,7 +658,7 @@ function CreateSchema({ createNew }) {
                 className="attach-station-modal"
                 header={
                     <div className="img-wrapper">
-                        <img src={stationsIconActive} alt="stationsIconActive" />
+                        <StationsActiveIcon alt="stationsIconActive" />
                     </div>
                 }
                 width="400px"

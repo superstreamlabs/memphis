@@ -23,9 +23,9 @@ import {
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH
 } from '../../const/localStorageConsts';
-import FullLogo from '../../assets/images/fullLogo.svg';
+import { ReactComponent as FullLogo } from '../../assets/images/fullLogo.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import sharps from '../../assets/images/sharps.svg';
+import { ReactComponent as SharpsIcon } from '../../assets/images/sharps.svg';
 import { httpRequest } from '../../services/http';
 import AuthService from '../../services/auth';
 import Button from '../../components/button';
@@ -137,7 +137,7 @@ const Login = (props) => {
                     <div className="desktop-container">
                         <div className="desktop-content">
                             <div className="logoImg">
-                                <img alt="logo" src={FullLogo}></img>
+                                <FullLogo alt="logo" />
                             </div>
                             <div className="title">
                                 <p>Hey Memphiser,</p>
@@ -236,7 +236,7 @@ const Login = (props) => {
                             </div>
                         </div>
                         <div className="brand-shapes">
-                            <img alt="sharps" src={sharps}></img>
+                            <SharpsIcon alt="sharps" />
                         </div>
                     </div>
                 </section>

@@ -15,10 +15,9 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import typeIcon from '../../../../assets/images/typeIcon.svg';
-import createdByIcon from '../../../../assets/images/createdByIcon.svg';
-import schemaItemIcon from '../../../../assets/images/schemaItemIcon.svg';
-
+import { ReactComponent as TypeIcon } from '../../../../assets/images/typeIcon.svg';
+import { ReactComponent as CreatedByIcon } from '../../../../assets/images/createdByIcon.svg';
+import { ReactComponent as SchemaItemIcon } from '../../../../assets/images/schemaItemIcon.svg';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Copy from '../../../../components/copy';
@@ -73,7 +72,7 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
         <div className="update-schema-modal-container">
             <div className="scrollable-wrapper">
                 <div className="schema-name">
-                    <img src={schemaItemIcon} />
+                    <SchemaItemIcon />
                     <div className="name-wrapper">
                         <p className="title">Schema name</p>
                         <p className="name">{schemaSelected}</p>
@@ -81,12 +80,12 @@ const UpdateSchemaModal = ({ stationName, dispatch, close, schemaSelected }) => 
                 </div>
                 <div className="type-created">
                     <div className="wrapper">
-                        <img src={typeIcon} alt="typeIcon" />
+                        <TypeIcon alt="typeIcon" />
                         <p>Type:</p>
                         {schemaDetails.type === 'json' ? <p className="schema-json-name">JSON schema</p> : <span> {schemaDetails.type}</span>}
                     </div>
                     <div className="wrapper">
-                        <img src={createdByIcon} alt="createdByIcon" />
+                        <CreatedByIcon alt="createdByIcon" />
                         <p>Created by:</p>
                         <span>{activeVersion?.created_by_username}</span>
                     </div>

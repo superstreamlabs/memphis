@@ -23,9 +23,8 @@ import noActiveAndHealthy from '../../../assets/lotties/noActiveAndHealthy.json'
 import activeAndUnhealthy from '../../../assets/lotties/activeAndUnhealthy.json';
 import activeAndHealthy from '../../../assets/lotties/activeAndHealthy.json';
 import OverflowTip from '../../../components/tooltip/overflowtip';
-import NoStations from '../../../assets/images/noStations.svg';
+import { ReactComponent as NoStationsIcon } from '../../../assets/images/noStations.svg';
 import Button from '../../../components/button';
-import Filter from '../../../components/filter';
 import { Context } from '../../../hooks/store';
 import pathDomains from '../../../router';
 import { Virtuoso } from 'react-virtuoso';
@@ -106,7 +105,7 @@ const Stations = ({ createStationTrigger }) => {
                         </>
                     ) : (
                         <div className="empty-stations-container">
-                            <img src={NoStations} alt="no stations" onClick={() => createStationTrigger(true)} />
+                            <NoStationsIcon alt="no stations" onClick={() => createStationTrigger(true)} />
                             <p>No stations yet</p>
                             <Button
                                 className="modal-btn"

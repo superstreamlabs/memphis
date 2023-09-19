@@ -17,11 +17,11 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 import { Divider, Popover } from 'antd';
 import { parsingDate } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
-import asyncIcon from '../../assets/images/asyncIcon.svg';
-import taskIcon from '../../assets/images/task.svg';
+import { ReactComponent as AsyncIcon } from '../../assets/images/asyncIcon.svg';
+import { ReactComponent as TaskIcon } from '../../assets/images/task.svg';
 import { httpRequest } from '../../services/http';
 import Button from '../button';
-import CollapseArrow from '../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
 import { Context } from '../../hooks/store';
 
 const AsyncTasks = ({ height, overView }) => {
@@ -110,7 +110,7 @@ const AsyncTasks = ({ height, overView }) => {
                             <div>
                                 <div className="task-item" key={index}>
                                     <div>
-                                        <img src={taskIcon} alt="taskIcon" />
+                                        <TaskIcon alt="taskIcon" />
                                     </div>
                                     <div>
                                         <p className="task-title">
@@ -155,12 +155,12 @@ const AsyncTasks = ({ height, overView }) => {
             <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
                 <div className="async-btn-container">
                     <div className="async-btn">
-                        <img src={asyncIcon} alt="AsyncIcon" />
+                        <AsyncIcon alt="AsyncIcon" />
                         <div>
                             <label className="async-title">Async tasks </label>
                             <label className="async-number">{asyncTasks.length}</label>
                         </div>
-                        <img src={CollapseArrow} alt="CollapseArrow" />
+                        <CollapseArrowIcon alt="CollapseArrowIcon" />
                     </div>
                 </div>
             </Popover>

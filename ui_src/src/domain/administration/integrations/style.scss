@@ -52,7 +52,7 @@
                 align-items: center;
                 justify-content: center;
                 z-index: 3;
-                img {
+                .cloud-badge {
                     position: absolute;
                     left: -8px;
                     top: 8px;
@@ -83,7 +83,7 @@
             align-items: center;
             justify-content: center;
             z-index: 3;
-            img {
+            svg {
                 position: absolute;
                 left: -8px;
                 top: 8px;
@@ -215,7 +215,8 @@ dynamic-integration {
                     .option-name {
                         display: flex;
                         align-items: flex-start;
-                        img {
+                        img,
+                        svg {
                             width: 35px;
                             margin-right: 10px;
                         }
@@ -292,14 +293,15 @@ dynamic-integration {
                 position: relative;
             }
             .remove-icon {
-                color: #A9A9A9;
+                color: #a9a9a9;
                 cursor: pointer;
                 width: 17px;
                 line-height: 17px;
                 height: 17px;
             }
         }
-        .repos-item > img:first-child {
+        .repos-item > img:first-child,
+        .repos-item > svg:first-child {
             margin-left: 18px;
         }
         .add-more-repos {

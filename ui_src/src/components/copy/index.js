@@ -11,9 +11,8 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState } from 'react';
-
-import copy from '../../assets/images/copy.svg';
-import copiedIcon from '../../assets/images/copied.svg';
+import { ReactComponent as CopyIcon } from '../../assets/images/copy.svg';
+import { ReactComponent as CopiedIcon } from '../../assets/images/copied.svg';
 
 const Copy = ({ data, key, width = '16' }) => {
     const [copied, setCopied] = useState(null);
@@ -25,6 +24,7 @@ const Copy = ({ data, key, width = '16' }) => {
             setCopied(null);
         }, 3000);
     };
+
     const handleCopy = (data) => {
         setCopied(true);
         data && navigator.clipboard.writeText(data);
@@ -32,12 +32,10 @@ const Copy = ({ data, key, width = '16' }) => {
             setCopied(false);
         }, 3000);
     };
-    return (
-        <>
-            {key && <img alt="copy" width={width} style={{ cursor: 'pointer' }} src={copied === key ? copiedIcon : copy} onClick={() => handleCopyWithKey(key, data)} />}
-            {!key && <img alt="copy" width={width} style={{ cursor: 'pointer' }} src={copied ? copiedIcon : copy} onClick={() => handleCopy(data)} />}
-        </>
-    );
+
+    const CopyComponent = key ? (copied === key ? CopiedIcon : CopyIcon) : copied ? CopiedIcon : CopyIcon;
+
+    return <CopyComponent alt="copy" width={width} style={{ cursor: 'pointer' }} onClick={() => (key ? handleCopyWithKey(key, data) : handleCopy(data))} />;
 };
 
 export default Copy;

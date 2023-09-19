@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.dc9edc27.css",
-    "main.js": "/static/js/main.2cffd6e4.js",
+    "main.css": "/static/css/main.89119d89.css",
+    "main.js": "/static/js/main.83a511f0.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -100,11 +100,11 @@
     "static/media/grafanaps.png": "/static/media/grafanaps.a1064265cbe0c53f0d01.png",
     "static/media/datadogMetricsps.png": "/static/media/datadogMetricsps.1499ed3dd93864f786d4.png",
     "static/media/grafanaIcon.svg": "/static/media/grafanaIcon.fab6c489e404c8b49be8da7181a654bb.svg",
-    "static/media/slackLogo.svg": "/static/media/slackLogo.7463b20d2ce1f3d754a6ccafe02f193d.svg",
+    "static/media/slackLogo.svg": "/static/media/slackLogo.85c9e715c432e8d73f13b4b860378f32.svg",
     "static/media/codicon.ttf": "/static/media/codicon.b797181c93b3755f4fa1.ttf",
     "static/media/datadogIcon.svg": "/static/media/datadogIcon.50af3f4d4c0af10fbedefe809eebd0e1.svg",
     "static/media/connectBG.webp": "/static/media/connectBG.c791a876015cb58bbcad.webp",
-    "static/media/influxDBIcon.svg": "/static/media/influxDBIcon.2fce40a716f24b22b0cdf4e339e2461b.svg",
+    "static/media/influxDBIcon.svg": "/static/media/influxDBIcon.2e7bbdf6ca01a76a16d98ed6158fc316.svg",
     "static/media/s3BannerPopup.webp": "/static/media/s3BannerPopup.aae5ce355880849e7fc7.webp",
     "static/media/debeziumBannerPopup.webp": "/static/media/debeziumBannerPopup.53a679a5b798dbd7e6e8.webp",
     "static/media/debeziumIcon.svg": "/static/media/debeziumIcon.52902e6efbd3484a8d18b47662d1326e.svg",
@@ -121,7 +121,7 @@
     "static/media/s3Banner.webp": "/static/media/s3Banner.109692d273c709febfbb.webp",
     "static/media/experimentalIcon.svg": "/static/media/experimentalIcon.c8d428c18177f56f052c5c655702d6f5.svg",
     "static/media/placeholderFunctions.svg": "/static/media/placeholderFunctions.9b988fbb50f7f9cd41e1af813eaa1029.svg",
-    "static/media/pagerDutyIcon.svg": "/static/media/pagerDutyIcon.3125f9535963570c1b3fcffb2fc31cf4.svg",
+    "static/media/pagerDutyIcon.svg": "/static/media/pagerDutyIcon.79e6dfa497ce14051cd80e5229efca85.svg",
     "static/media/uptodateIcon.svg": "/static/media/uptodateIcon.9e422510ad1f8c01f74e90ce91c9817b.svg",
     "static/media/githubBanner.webp": "/static/media/githubBanner.45709cc90340feff943f.webp",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
@@ -174,7 +174,6 @@
     "static/media/TieredStorageInterval.svg": "/static/media/TieredStorageInterval.456b755bab0bde86d6f78f37ac9b2807.svg",
     "static/media/bgGetStarted.svg": "/static/media/bgGetStarted.1db75bcd048189e22af661908cfdd4e0.svg",
     "static/media/verifiedIcon.svg": "/static/media/verifiedIcon.0d8d050883148eadba2c89769a9a3d46.svg",
-    "static/media/signupInfo.svg": "/static/media/signupInfo.b9c2b723742579de9fa69a8f6beb6614.svg",
     "static/media/bgGetStartedBottom.svg": "/static/media/bgGetStartedBottom.d9ae09290b703d605d1aa1b9c885fed8.svg",
     "static/media/newrelicBanner.webp": "/static/media/newrelicBanner.7ac3fcee8ec773e5fa4c.webp",
     "static/media/sharps.svg": "/static/media/sharps.2972a151b1a17897c4e67e6ff24b414c.svg",
@@ -221,7 +220,6 @@
     "static/media/messageIcon.svg": "/static/media/messageIcon.4cc0325f976f4989d1d815bd3032bdc0.svg",
     "static/media/task.svg": "/static/media/task.e71baa37fcbd85f3c691d282c9276b84.svg",
     "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
-    "static/media/functionsIconActive.svg": "/static/media/functionsIconActive.d78e7df2228cec87552c5f52d0de75b8.svg",
     "static/media/tagsIcon.svg": "/static/media/tagsIcon.105d4c97471f48d8cae78fa570b12475.svg",
     "static/media/star.svg": "/static/media/star.8699de919483296eb55b8a677dbb5c7e.svg",
     "static/media/userCheck.svg": "/static/media/userCheck.877e388ce6d0f982a147a6bf3b4335b0.svg",
@@ -294,7 +292,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.dc9edc27.css",
-    "static/js/main.2cffd6e4.js"
+    "static/css/main.89119d89.css",
+    "static/js/main.83a511f0.js"
   ]
 }

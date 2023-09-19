@@ -14,9 +14,9 @@ import './style.scss';
 
 import React from 'react';
 
-import unhealthyIcon from '../../assets/images/unhealthyIcon.svg';
-import checkIcon from '../../assets/images/checkIcon.svg';
-import riskyIcon from '../../assets/images/riskyIcon.svg';
+import { ReactComponent as UnhealthyIcon } from '../../assets/images/unhealthyIcon.svg';
+import { ReactComponent as CheckIcon } from '../../assets/images/checkIcon.svg';
+import { ReactComponent as RiskyIcon } from '../../assets/images/riskyIcon.svg';
 
 const HealthyBadge = ({ status, icon }) => {
     const generateStatus = () => {
@@ -24,28 +24,28 @@ const HealthyBadge = ({ status, icon }) => {
             case 'healthy':
                 return (
                     <div className={icon ? 'healthy no-bg' : 'healthy'}>
-                        <img className="badge-icon" src={checkIcon} />
+                        <CheckIcon className="badge-icon" />
                         {!icon && <p>Healthy</p>}
                     </div>
                 );
             case 'risky':
                 return (
                     <div className="risky">
-                        <img className="badge-icon" src={riskyIcon} alt="riskyIcon" />
+                        <RiskyIcon className="badge-icon" alt="riskyIcon" />
                         <p>Risky</p>
                     </div>
                 );
             case 'unhealthy':
                 return (
                     <div className={icon ? 'unhealthy no-bg' : 'unhealthy'}>
-                        <img className="badge-icon" src={unhealthyIcon} alt="unhealthyIcon" />
+                        <UnhealthyIcon className="badge-icon" alt="unhealthyIcon" />
                         {!icon && <p>Unhealthy</p>}
                     </div>
                 );
             default:
                 return (
                     <div className={icon ? 'healthy no-bg' : 'healthy'}>
-                        <img className="badge-icon" src={checkIcon} />
+                        <CheckIcon className="badge-icon" />
                         {!icon && <p>Healthy</p>}
                     </div>
                 );

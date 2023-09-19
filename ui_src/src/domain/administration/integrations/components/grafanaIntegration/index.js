@@ -16,7 +16,7 @@ import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import grafanaps from '../../../../../assets/images/grafanaps.png';
 
 import Button from '../../../../../components/button';
@@ -26,7 +26,7 @@ import { ZoomInRounded } from '@material-ui/icons';
 import Loader from '../../../../../components/loader';
 const { Panel } = Collapse;
 
-const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+const ExpandIcon = ({ isActive }) => <CollapseArrowIcon className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} alt="collapse-arrow" />;
 
 const GrafanaIntegration = ({ close }) => {
     const grafanaConfiguration = INTEGRATION_LIST['Grafana'];
@@ -38,7 +38,6 @@ const GrafanaIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Grafana'].banner.props.src);
         images.push(INTEGRATION_LIST['Grafana'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Grafana'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

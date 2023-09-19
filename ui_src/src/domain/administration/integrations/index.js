@@ -14,12 +14,11 @@ import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
 import { CloudQueueRounded } from '@material-ui/icons';
-import { message } from 'antd';
 
-import integrationRequestIcon from '../../../assets/images/integrationRequestIcon.svg';
+import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
-import experimentalIcon from '../../../assets/images/experimentalIcon.svg';
-import cloudeBadge from '../../../assets/images/cloudeBadge.svg';
+import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
+import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { isCloud } from '../../../services/valueConvertor';
@@ -50,7 +49,6 @@ const Integrations = () => {
         Object.values(INTEGRATION_LIST).forEach((integration) => {
             images.push(integration.banner.props.src);
             images.push(integration.insideBanner.props.src);
-            images.push(integration.icon.props.src);
         });
         const promises = [];
 
@@ -157,7 +155,7 @@ const Integrations = () => {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <img src={cloudeBadge} alt="cloud badge" />
+                                        <CloudeBadgeIcon className="cloud-badge" alt="cloud badge" />
                                         <div className="cloud-icon">
                                             <CloudQueueRounded />
                                         </div>
@@ -171,7 +169,7 @@ const Integrations = () => {
                             return (
                                 <div key={key}>
                                     <div className="experimental-badge">
-                                        <img src={experimentalIcon} alt="experimental" />
+                                        <ExperimentalIcon alt="experimental" />
                                     </div>
                                     {integrationElement}
                                 </div>
@@ -184,7 +182,7 @@ const Integrations = () => {
             )}
             <Modal
                 className="request-integration-modal"
-                header={<img src={integrationRequestIcon} alt="errorModal" />}
+                header={<IntegrationRequestIcon alt="errorModal" />}
                 height="250px"
                 width="450px"
                 displayButtons={false}

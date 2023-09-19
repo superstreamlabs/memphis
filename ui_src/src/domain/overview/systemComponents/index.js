@@ -18,7 +18,7 @@ import SysContainers from './sysContainers';
 import Component from './components/component';
 import { Context } from '../../../hooks/store';
 import { Tree } from 'antd';
-import CollapseArrow from '../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../assets/images/collapseArrow.svg';
 
 const SysComponents = () => {
     const [state, dispatch] = useContext(Context);
@@ -72,9 +72,7 @@ const SysComponents = () => {
                                 selectable={childrenData?.length > 0}
                                 expandedKeys={expandedNodes}
                                 switcherIcon={({ expanded }) =>
-                                    childrenData.length > 0 && (
-                                        <img className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} src={CollapseArrow} alt="collapse-arrow" />
-                                    )
+                                    childrenData.length > 0 && <CollapseArrowIcon className={expanded ? 'collapse-arrow open' : 'collapse-arrow'} alt="collapse-arrow" />
                                 }
                                 rootClassName={!expandedNodes?.includes(`0-${i}`) && 'divided'}
                                 onSelect={(_, info) => {

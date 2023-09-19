@@ -22,6 +22,7 @@ import { Divider } from 'antd';
 
 import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
+import { ReactComponent as GraphPlaceholder } from '../../assets/images/graphPlaceholder.svg';
 import BackIcon from '../../assets/images/backIcon.svg';
 import LockFeature from '../../components/lockFeature';
 import { httpRequest } from '../../services/http';
@@ -258,7 +259,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             )}
             {!isLoading && nodes?.length === 0 && (
                 <div className="empty-connections-container">
-                    <img src={graphPlaceholder} alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
+                    <GraphPlaceholder alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
                     <p>There are no entities to display</p>
                     <span className="desc">Please create at least one entity, such as a station, to display the graph overview.</span>
                     <Button

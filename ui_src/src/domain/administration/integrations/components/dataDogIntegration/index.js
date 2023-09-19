@@ -16,7 +16,7 @@ import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST } from '../../../../../const/integrationList';
-import CollapseArrow from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
 
 import Button from '../../../../../components/button';
@@ -27,7 +27,7 @@ import Loader from '../../../../../components/loader';
 
 const { Panel } = Collapse;
 
-const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+const ExpandIcon = ({ isActive }) => <CollapseArrowIcon className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} alt="collapse-arrow" />;
 
 const DataDogIntegration = ({ close }) => {
     const dataDogConfiguration = INTEGRATION_LIST['Datadog'];
@@ -39,7 +39,6 @@ const DataDogIntegration = ({ close }) => {
         const images = [];
         images.push(INTEGRATION_LIST['Datadog'].banner.props.src);
         images.push(INTEGRATION_LIST['Datadog'].insideBanner.props.src);
-        images.push(INTEGRATION_LIST['Datadog'].icon.props.src);
         const promises = [];
 
         images.forEach((imageUrl) => {

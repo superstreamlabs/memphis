@@ -17,9 +17,9 @@ import { JSONCodec, StringCodec } from 'nats.ws';
 import { useHistory } from 'react-router-dom';
 
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
-import placeholderFunctions from '../../../../assets/images/placeholderFunctions.svg';
-import integratedIcon from '../../../../assets/images/integratedIcon.svg';
-import searchIcon from '../../../../assets/images/searchIcon.svg';
+import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
+import { ReactComponent as IntegratedIcon } from '../../../../assets/images/integratedIcon.svg';
+import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -136,7 +136,7 @@ function FunctionList() {
                         </label>
                         {integrated && (
                             <div className="integrated-wrapper">
-                                <img src={integratedIcon} alt="integratedIcon" />
+                                <IntegratedIcon alt="integratedIcon" />
                                 <OverflowTip text={'Integrated with GitHub'} maxWidth={'180px'}>
                                     <span>{'Integrated with GitHub'}</span>
                                 </OverflowTip>
@@ -155,7 +155,7 @@ function FunctionList() {
                         borderRadiusType="circle"
                         borderColorType="none"
                         boxShadowsType="none"
-                        iconComponent={<img src={searchIcon} alt="searchIcon" />}
+                        iconComponent={<SearchIcon alt="searchIcon" />}
                         onChange={handleSearch}
                         value={searchInput}
                     />
@@ -174,7 +174,7 @@ function FunctionList() {
                     })}
                 {!isLoading && functionList?.length === 0 && (
                     <div className="no-function-to-display">
-                        <img src={placeholderFunctions} width="150" alt="placeholderFunctions" />
+                        <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
                         <p className="title">No functions yet</p>
                         <p className="sub-title">Functions will start to sync and appear once an integration with a git repository is established.</p>
                         {!integrated && (
@@ -197,7 +197,7 @@ function FunctionList() {
                 )}
                 {!isLoading && functionList?.length > 0 && copyOfFunctionList?.length === 0 && (
                     <div className="no-function-to-display">
-                        <img src={placeholderFunctions} width="150" alt="placeholderFunctions" />
+                        <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
                         <p className="title">No functions found</p>
                         <p className="sub-title">Please try to search again</p>
                     </div>
