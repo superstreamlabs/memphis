@@ -63,6 +63,7 @@ type Station struct {
 	ResendDisabled              bool      `json:"resend_disabled"`
 	PartitionsList              []int     `json:"partitions_list"`
 	Version                     int       `json:"version"`
+	DlsStation                  string    `json:"dls_station"`
 }
 
 type GetStationResponseSchema struct {
@@ -85,6 +86,7 @@ type GetStationResponseSchema struct {
 	ResendDisabled       bool             `json:"resend_disabled"`
 	PartitionsList       []int            `json:"partitions_list"`
 	PartitionsNumber     int              `json:"partitions_number"`
+	DlsStation           string           `json:"dls_station"`
 }
 
 type ExtendedStation struct {
@@ -140,6 +142,7 @@ type ExtendedStationLight struct {
 	ResendDisabled              bool        `json:"resend_disabled"`
 	PartitionsList              []int       `json:"partitions_list"`
 	Version                     int         `json:"version"`
+	DlsStation                  string      `json:"dls_station"`
 }
 
 type StationLight struct {
@@ -182,6 +185,12 @@ type CreateStationSchema struct {
 	DlsConfiguration     DlsConfiguration `json:"dls_configuration"`
 	TieredStorageEnabled bool             `json:"tiered_storage_enabled"`
 	PartitionsNumber     int              `json:"partitions_number"`
+	DlsStation           string           `json:"dls_station"`
+}
+
+type AttachDetachDlsStationSchema struct {
+	Name         string   `json:"name" binding:"required,min=1,max=128"`
+	StationNames []string `json:"station_names" binding:"required"`
 }
 
 type DlsConfiguration struct {

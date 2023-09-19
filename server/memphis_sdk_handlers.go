@@ -38,6 +38,7 @@ type createStationRequest struct {
 	TieredStorageEnabled bool                    `json:"tiered_storage_enabled"`
 	TenantName           string                  `json:"tenant_name"`
 	PartitionsNumber     int                     `json:"partitions_number"`
+	DlsStation           string                  `json:"dls_station"`
 }
 
 type destroyStationRequest struct {
