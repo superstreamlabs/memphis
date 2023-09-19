@@ -417,8 +417,8 @@ const Messages = () => {
                             <>
                                 <span>Dead-letter station configuration</span>
                                 <Button
-                                    width="123px"
-                                    height="16px"
+                                    width="130px"
+                                    height="25px"
                                     placeholder={
                                         <div className="use-dls-button">
                                             {dls ? <DisconnectIcon /> : <UpRightArrow />}
@@ -448,7 +448,7 @@ const Messages = () => {
                         data={[
                             <Button
                                 width="80px"
-                                height="32px"
+                                height="25px"
                                 placeholder="Purge"
                                 colorType="white"
                                 radiusType="circle"
