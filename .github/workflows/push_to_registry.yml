@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - "push_to_reg"
+env:
+  PR_NUMBER: ${{ github.event.number }}
 
 jobs:
   docker:
@@ -31,4 +33,4 @@ jobs:
           push: true
           tags: |
             memphisos/memphis-qa:${{ github.ref_name}}
-            memphisos/memphis-qa:${{ github.event.pull_request.number }}
+            memphisos/memphis-qa:$PR_NUMBER
