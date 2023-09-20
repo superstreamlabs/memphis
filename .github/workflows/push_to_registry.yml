@@ -1,14 +1,15 @@
 name: ci
-
 on:
-  pull_request:
-    branches:
-      - "push_to_reg"
+  pull_request_review:
+    types: [submitted]
 
 jobs:
-  docker:
+  approved:
+    if: github.event.review.state == 'approved'
     runs-on: ubuntu-latest
     steps:
+      - name: Starting
+        run: echo "This PR was approved"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
