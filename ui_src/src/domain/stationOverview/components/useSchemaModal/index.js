@@ -115,7 +115,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
             {!isLoading && schemaList?.length > 0 && (
                 <>
                     <SearchInput
-                        placeholder="Search schema"
+                        placeholder={`Search ${type === 'dls' ? 'station' : 'schema'}`}
                         colorType="navy"
                         backgroundColorType="none"
                         borderRadiusType="circle"
