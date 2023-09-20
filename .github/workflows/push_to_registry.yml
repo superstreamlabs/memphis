@@ -35,4 +35,4 @@ jobs:
           push: true
           tags: |
             memphisos/memphis-qa:${{ github.ref_name}}
-            memphisos/memphis-qa:${{ env.PULL_NUMBER }}
+            memphisos/memphis-qa:${{ env.PR_NUMBER }}
