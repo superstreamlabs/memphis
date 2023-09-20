@@ -21,14 +21,15 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Get Pull Request Number
+        run: echo "PULL_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')" >> $GITHUB_ENV
+        shell: bash
       - name: Build and push
         uses: docker/build-push-action@v5
-        env:
-          PR_NUMBER: ${{ github.event.number }}
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             memphisos/memphis-qa:latest
-            memphisos/memphis-qa:${{ env.PR_NUMBER }}
+            memphisos/memphis-qa:${{ env.PULL_NUMBER }}
