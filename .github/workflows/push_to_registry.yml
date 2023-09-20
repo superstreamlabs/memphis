@@ -1,7 +1,9 @@
-name: ci
+name: build and push image for QA
 on:
   pull_request_review:
     types: [submitted]
+    branches:
+      - "master"
 
 jobs:
   approved:
