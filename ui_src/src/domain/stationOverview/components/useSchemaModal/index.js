@@ -28,7 +28,7 @@ import Modal from '../../../../components/modal';
 import pathDomains from '../../../../router';
 import { StationStoreContext } from '../..';
 import SchemaItem from './schemaItem';
-import stationImg from '../../../../assets/images/stationsIconActive.svg';
+import { ReactComponent as StationIcon } from '../../../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../../../components/createStationForm';
 
 const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }) => {
@@ -64,7 +64,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
 
     useEffect(() => {
         getAllSchema();
-    }, []);
+    }, [creatingProsessd]);
 
     const listOfValues = useMemo(() => {
         return searchInput.length > 0 ? schemaList.filter((schema) => schema?.name?.toLowerCase()?.includes(searchInput)) : schemaList;
@@ -101,7 +101,6 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
-        console.log(e.target.value);
     };
 
     const createNew = () => {
@@ -198,9 +197,13 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
             )}
             {!isLoading && schemaList?.length === 0 && (
                 <div className="no-schema-to-display">
-                    <PlaceholderSchemaIcon width={50} alt="placeholderSchema" />
-                    <p className="title">No schemas yet</p>
-                    <p className="sub-title">Get started by creating your first schema</p>
+                    {type === 'dls' ? <StationIcon width={50} height={50} /> : <PlaceholderSchemaIcon width={50} alt="placeholderSchema" />}
+
+                    <p className="title">{type === 'dls' ? 'No stations yet' : ' No schemas yet'}</p>
+                    <p className="sub-title">
+                        Get started by creating your first
+                        {type === 'dls' ? ' station ' : ' schema'}
+                    </p>
                     <Button
                         className="modal-btn"
                         width="160px"
@@ -238,7 +241,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
-                            <img className="headerImage" src={stationImg} alt="stationImg" />
+                            <StationIcon className="headerImage" alt="stationImg" />
                         </div>
                         <p>Create new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>

@@ -463,8 +463,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </Form.Item>
                 </div>
                 {!getStarted && (
-                    <div className="schema-type">
-                        <div className="toggle-add-schema">
+                    <div>
+                        <div className="toggle-add">
                             <TitleComponent
                                 headerTitle="Enforce schema"
                                 typeTitle="sub-header"
@@ -484,8 +484,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                     </div>
                 )}
-                <div className="schema-type">
-                    <div className="toggle-add-schema">
+                <div>
+                    <div className="toggle-add">
                         <TitleComponent
                             headerTitle="Dead-letter station"
                             typeTitle="sub-header"

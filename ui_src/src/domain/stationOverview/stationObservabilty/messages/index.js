@@ -56,7 +56,6 @@ const Messages = () => {
     const [subTabValue, setSubTabValue] = useState('Unacked');
     const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
-    // const [isDls, setIsDls] = useState(false);
     const [useDlsModal, setUseDlsModal] = useState(false);
     const [disableModal, setDisableModal] = useState(false);
     const [disableLoader, setDisableLoader] = useState(false);

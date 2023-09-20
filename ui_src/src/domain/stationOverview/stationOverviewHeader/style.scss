@@ -13,7 +13,6 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
-                img,
                 svg {
                     cursor: pointer;
                 }
@@ -167,6 +166,10 @@
                         justify-content: flex-start;
                         align-items: center;
                         gap: 10px;
+
+                        .redirect {
+                            cursor: pointer;
+                        }
                     }
                     .midRow {
                         display: flex;
@@ -210,12 +213,12 @@
                             }
                         }
                     }
-                    .title{
+                    .title {
                         font-family: 'InterSemiBold';
                         font-size: 14px;
                         margin-bottom: 0;
                     }
-                    .average-title{
+                    .average-title {
                         font-size: 12px;
                         margin: 0;
                         color: #b5b5b5;
@@ -276,7 +279,6 @@
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    img,
                     svg {
                         cursor: pointer;
                     }

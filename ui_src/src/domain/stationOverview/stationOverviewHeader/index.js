@@ -20,7 +20,6 @@ import { useHistory } from 'react-router-dom';
 
 import { convertBytes, convertSecondsToDate, isCloud, replicasConvertor } from '../../../services/valueConvertor';
 import { ReactComponent as DeleteWrapperIcon } from '../../../assets/images/deleteWrapperIcon.svg';
-import { ReactComponent as AverageMesIcon } from '../../../assets/images/averageMesIcon.svg';
 import { ReactComponent as StopUsingIcon } from '../../../assets/images/stopUsingIcon.svg';
 import { ReactComponent as SchemaIconActive } from '../../../assets/images/schemaIconActive.svg';
 import DeleteItemsModal from '../../../components/deleteItemsModal';
@@ -67,6 +66,7 @@ const StationOverviewHeader = () => {
     const [disableLoader, setDisableLoader] = useState(false);
 
     const history = useHistory();
+
     const showRetentinViolation = isCloud() && stationState?.stationMetaData?.retention_type !== 'message_age_sec';
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     useEffect(() => {
@@ -373,7 +373,16 @@ const StationOverviewHeader = () => {
                         <div className="more-details">
                             <div className="topRow">
                                 <p className="title">Poison messages</p>
-                                {dls && <RedirectIcon width={15} height={15} className="redirect" />}
+                                {dls && (
+                                    <RedirectIcon
+                                        width={15}
+                                        height={15}
+                                        className="redirect"
+                                        onClick={() => {
+                                            history.push(`${pathDomains.stations}/${dls}`);
+                                        }}
+                                    />
+                                )}
                             </div>
                             <div className="midRow">
                                 <p className="number">{stationState?.stationSocketData?.total_dls_messages?.toLocaleString() || 0}</p>
@@ -547,7 +556,7 @@ const StationOverviewHeader = () => {
                         title="Disabling dead-letter consumption will stop pushing new poison messages"
                         desc={
                             <span>
-                                Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>station </strong>.
+                                Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>{dls} </strong>.
                             </span>
                         }
                         buttontxt="I understand, disable consumption"
