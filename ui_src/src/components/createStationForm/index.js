@@ -88,7 +88,7 @@ const storageTierTwoOptions = [
 
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
-const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
+const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading, noRedirect }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [creationForm] = Form.useForm();
@@ -232,7 +232,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
+                if (!getStarted) !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
                 else finishUpdate(data);
             }
         } catch (error) {

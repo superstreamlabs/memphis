@@ -77,10 +77,6 @@ const Messages = () => {
         stationDispatch({ type: 'SET_SELECTED_ROW_PARTITION', payload: partition });
     };
 
-    const handleDisableDls = async () => {
-        setDisableModal(false);
-    };
-
     const setDls = (dls) => {
         stationDispatch({ type: 'SET_DLS', payload: dls });
     };
@@ -551,7 +547,7 @@ const Messages = () => {
                     title="Disabling dead-letter consumption will stop pushing new poison messages"
                     desc={
                         <span>
-                            Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>station </strong>.
+                            Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>{dls} </strong>.
                         </span>
                     }
                     buttontxt="I understand, disable consumption"

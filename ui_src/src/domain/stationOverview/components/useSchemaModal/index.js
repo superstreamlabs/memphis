@@ -262,7 +262,7 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                 open={newStationModal}
                 isLoading={creatingProsessd}
             >
-                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
+                <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} noRedirect={true} />
             </Modal>
         </div>
     );
