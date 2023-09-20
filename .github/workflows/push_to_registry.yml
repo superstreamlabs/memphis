@@ -23,7 +23,7 @@ jobs:
       - name: Get Pull Request Number
         run: |
           echo "PULL_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')" >> $GITHUB_ENV
-          echo "PULL_NUMBER=$(echo "$GITHUB_REF" | awk -F / '{print $3}')"
+          echo "PULL_NUMBER=$(echo "$GITHUB_REF" )"
         shell: bash
       - name: Build and push
         uses: docker/build-push-action@v5
