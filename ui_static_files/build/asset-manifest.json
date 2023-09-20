@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.afb2a66e.css",
-    "main.js": "/static/js/main.89ce2e60.js",
+    "main.css": "/static/css/main.dfecd4a0.css",
+    "main.js": "/static/js/main.bcb4233a.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -281,7 +281,6 @@
     "static/media/emptyStation.svg": "/static/media/emptyStation.e0e376034c4e4cd7190b3ab96c76ad30.svg",
     "static/media/dataProduced.svg": "/static/media/dataProduced.03d54b444822878e2891f208c7b0eeab.svg",
     "static/media/fullStation.svg": "/static/media/fullStation.006ff890d0e967fee3c89b565058d8bf.svg",
-    "static/media/averageMesIcon.svg": "/static/media/averageMesIcon.6bfdde7a20f90f7b8bb9972bf5ee60cc.svg",
     "static/media/grayProduceDataImg.svg": "/static/media/grayProduceDataImg.4086800cd66ca7582a8ae3f48bf9233b.svg",
     "static/media/stationIcon.svg": "/static/media/stationIcon.218e9eabe5a6ba97097ddd3f1f0026f1.svg",
     "static/media/overviewIconActive.svg": "/static/media/overviewIconActive.87e0603aa2a72b6523c00503b6b6555c.svg",
@@ -296,7 +295,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.afb2a66e.css",
-    "static/js/main.89ce2e60.js"
+    "static/css/main.dfecd4a0.css",
+    "static/js/main.bcb4233a.js"
   ]
 }
