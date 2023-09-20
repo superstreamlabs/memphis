@@ -5,9 +5,6 @@ on:
     branches:
       - "push_to_reg"
 
-env:
-  PR_NUMBER: ${{ github.event.number }}
-
 jobs:
   docker:
     runs-on: ubuntu-latest
@@ -34,4 +31,4 @@ jobs:
           push: true
           tags: |
             memphisos/memphis-qa:${{ github.ref_name}}
-            memphisos/memphis-qa:${{ env.PR_NUMBER }}
+            memphisos/memphis-qa:${{ github.event.pull_request.number }}
