@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Starting
-        run: echo "This PR was approved"
+        run: echo "This PR was approveddddd"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
