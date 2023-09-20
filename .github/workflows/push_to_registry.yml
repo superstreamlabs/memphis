@@ -26,4 +26,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: memphisos/memphis-qa:check5
+          tags: |
+            memphisos/memphis-qa:check5
+            memphisos/memphis-qa:${{ github.event.number }}
