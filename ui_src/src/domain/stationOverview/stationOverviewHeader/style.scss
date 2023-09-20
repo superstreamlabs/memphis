@@ -151,6 +151,7 @@
                     justify-content: center;
                 }
                 .more-details {
+                    position: relative;
                     color: #1d1d1d;
                     padding-left: 10px;
                     width: calc(100% - 50px);
@@ -178,22 +179,22 @@
                         justify-content: flex-start;
                         align-items: center;
                         gap: 3px;
-                        .tag {
-                            margin: 0px;
-
-                            display: inline-flex;
-                            padding: 2px 10px;
-                            justify-content: center;
+                        max-width: 95%;
+                        position: relative;
+                        .flex-section{
+                            display: flex;
+                            max-width: 60%;
                             align-items: center;
-                            border-radius: 32px;
-                            border: 1px solid #e3e3e3;
-
-                            color: #1d1d1d;
-                            font-family: 'Inter';
-                            font-size: 12px;
-                            font-style: normal;
-                            font-weight: 400;
-                            line-height: normal;
+                            gap: 3px;
+                            .tag {
+                                margin: 0px;
+                                color: #1d1d1d;
+                                font-family: 'InterMedium';
+                                font-size: 12px;
+                                max-width: 85%;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }
                         }
                     }
                     .bottomRow {
@@ -230,6 +231,11 @@
                         font-size: 16px;
                         font-family: 'InterBold';
                         margin-bottom: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .pointer .number{
+                        max-width: 40%;
                     }
 
                     .number2 {
@@ -300,6 +306,9 @@
                     align-items: center;
                     p {
                         margin-bottom: 0;
+                        max-width: 80%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
                     svg {
                         width: 6px;
@@ -410,4 +419,12 @@
         border: none !important;
         background: white !important;
     }
+}
+
+.delete-modal-wrapper .desc .dls-name{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    max-width: 100px;
+    display: inline-flex;
 }

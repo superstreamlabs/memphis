@@ -12,13 +12,14 @@
 
 import './style.scss';
 
-import { CloseRounded, FiberManualRecord } from '@material-ui/icons';
+import { FiberManualRecord } from '@material-ui/icons';
 import React from 'react';
+
 import { ReactComponent as SchemaItemIcon } from '../../../../../assets/images/schemaItemIcon.svg';
 import { ReactComponent as StationIcon } from '../../../../../assets/images/stationsIconActive.svg';
 import { parsingDate } from '../../../../../services/valueConvertor';
 
-const SchemaItem = ({ schema, handleSelectedItem, selected, type, handleStopUseSchema }) => {
+const SchemaItem = ({ schema, handleSelectedItem, selected, type }) => {
     return (
         <div
             key={schema?.id}

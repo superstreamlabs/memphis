@@ -386,7 +386,12 @@ const StationOverviewHeader = () => {
                             </div>
                             <div className="midRow">
                                 <p className="number">{stationState?.stationSocketData?.total_dls_messages?.toLocaleString() || 0}</p>
-                                {dls && <p className="tag">{dls}</p>}
+                                {dls && (
+                                    <div className="flex-section">
+                                        <UpRightArrow />
+                                        <p className="tag">{dls}</p>
+                                    </div>
+                                )}
                             </div>
                             <div className="bottomRow">
                                 <Button
@@ -556,7 +561,7 @@ const StationOverviewHeader = () => {
                         title="Disabling dead-letter consumption will stop pushing new poison messages"
                         desc={
                             <span>
-                                Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>{dls} </strong>.
+                                Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong className="dls-name">{dls} </strong>.
                             </span>
                         }
                         buttontxt="I understand, disable consumption"
