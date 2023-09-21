@@ -108,7 +108,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                     <p className="schema-name">{schema?.name}</p>
                                 </div>
                                 <p className="created-by">
-                                    {type === 'schema' ? <>{schema?.type} &#8226;</> : null}
+                                    {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
                                     {parsingDate(schema?.created_at)}
                                 </p>
                             </>
