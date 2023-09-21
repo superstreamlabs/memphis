@@ -20,19 +20,24 @@ import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { message as messageAnt } from 'antd';
 
-const PoisonMessage = ({ messageId, details, message, headers, processing, returnBack, schemaType }) => {
+const PoisonMessage = ({ stationName, messageId, details, message, headers, processing, returnBack, schemaType }) => {
     const [resendProcess, setResendProcess] = useState(false);
     const [ignoreProcess, setIgnoreProcess] = useState(false);
-    const url = window.location.href;
-    const stationName = url.split('stations/')[1].split('/')[0];
 
     const handleIgnore = async () => {
         setIgnoreProcess(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [messageId], station_name: stationName });
+            await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, { dls_type: 'poison', dls_message_ids: [Number(messageId)], station_name: stationName });
             setTimeout(() => {
                 setIgnoreProcess(false);
                 returnBack();
+                messageAnt.success({
+                    key: 'memphisSuccessMessage',
+                    content: 'The message was drop successfully',
+                    duration: 5,
+                    style: { cursor: 'pointer' },
+                    onClick: () => message.destroy('memphisSuccessMessage')
+                });
             }, 1500);
         } catch (error) {
             setIgnoreProcess(false);
@@ -43,7 +48,7 @@ const PoisonMessage = ({ messageId, details, message, headers, processing, retur
         setResendProcess(true);
         processing(true);
         try {
-            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [messageId], station_name: stationName });
+            await httpRequest('POST', `${ApiEndpoints.RESEND_POISON_MESSAGE_JOURNEY}`, { poison_message_ids: [Number(messageId)], station_name: stationName });
             setTimeout(() => {
                 setResendProcess(false);
                 processing(false);

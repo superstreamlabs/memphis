@@ -161,12 +161,16 @@
                     cursor: pointer;
                     .left {
                         display: flex;
+                        align-items: center;
                         svg {
                             width: 20px;
                             margin-right: 5px;
                         }
                         p {
                             font-family: 'InterMedium';
+                            max-width: 240px;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
                         }
                     }
                 }

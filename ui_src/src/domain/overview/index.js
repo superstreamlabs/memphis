@@ -77,6 +77,17 @@ function OverView() {
 
     const arrangeData = (data) => {
         data.stations?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        data.delayed_cgs?.sort(function (a, b) {
+            let nameA = a.station_name.toUpperCase();
+            let nameB = b.station_name.toUpperCase();
+            if (nameA < nameB) {
+                return -1;
+            }
+            if (nameA > nameB) {
+                return 1;
+            }
+            return 0;
+        });
         data.system_components?.sort(function (a, b) {
             let nameA = a.name.toUpperCase();
             let nameB = b.name.toUpperCase();
@@ -157,7 +168,6 @@ function OverView() {
         };
 
         subscribeToOverviewData();
-
         return () => {
             if (sub) {
                 try {

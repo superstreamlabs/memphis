@@ -26,7 +26,7 @@ import TitleComponent from '../titleComponent';
 import SelectCheckBox from '../selectCheckBox';
 import { Context } from '../../hooks/store';
 import UpgradePlans from '../upgradePlans';
-import SelectSchema from '../customSelect';
+import CustomSelect from '../customSelect';
 import RadioButton from '../radioButton';
 import LockFeature from '../lockFeature';
 import SelectComponent from '../select';
@@ -474,7 +474,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                         {!getStarted && useSchema && (
                             <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
-                                <SelectSchema
+                                <CustomSelect
                                     placeholder={creationForm.schemaValue || 'Select schema'}
                                     value={creationForm.schemaValue || schemas[0]}
                                     options={schemas}
@@ -496,7 +496,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
 
                     {dlsConfiguration && (
                         <Form.Item name="dlsStation" initialValue={null}>
-                            <SelectSchema
+                            <CustomSelect
                                 placeholder={creationForm.dlsStation || 'None'}
                                 value={creationForm.dlsStation || stations[0]}
                                 options={stations}
