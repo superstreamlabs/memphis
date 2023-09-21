@@ -12,6 +12,7 @@
 
 const Reducer = (stationState, action) => {
     let updatedSocketState = stationState?.stationSocketData;
+    let updatedMetdaDataState = stationState?.stationMetaData;
     switch (action.type) {
         case 'SET_STATION_META_DATA':
             return {
@@ -57,6 +58,12 @@ const Reducer = (stationState, action) => {
             return {
                 ...stationState,
                 stationSocketData: updatedSocketState
+            };
+        case 'SET_DLS':
+            updatedMetdaDataState.dls_station = action.payload;
+            return {
+                ...stationState,
+                stationMetaData: updatedMetdaDataState
             };
         case 'SET_SELECTED_ROW_ID':
             return {

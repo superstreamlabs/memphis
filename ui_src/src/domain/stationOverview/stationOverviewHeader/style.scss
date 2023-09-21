@@ -13,7 +13,6 @@
                 margin-right: 5px;
                 display: flex;
                 gap: 5px;
-                img,
                 svg {
                     cursor: pointer;
                 }
@@ -104,17 +103,16 @@
                         top: 1px;
                     }
                 }
-                .flex-details-wrapper{                
+                .flex-details-wrapper {
                     display: flex;
                     align-items: center;
                     gap: 5px;
-                    svg{
+                    svg {
                         width: 14px;
                         height: 14px;
                         cursor: pointer;
                         color: #737373;
                     }
-                  
                 }
             }
 
@@ -131,7 +129,7 @@
             display: flex;
             height: 100%;
             display: grid;
-            grid-template-columns: 40% 30% 30%;
+            grid-template-columns: 33% 33% 33%;
             position: relative;
             background: #ffffff;
             border-radius: 8px;
@@ -142,6 +140,7 @@
                 height: 100%;
                 justify-content: space-between;
                 align-items: center;
+                flex: 1;
                 .icon {
                     width: 50px;
                     height: 50px;
@@ -152,6 +151,7 @@
                     justify-content: center;
                 }
                 .more-details {
+                    position: relative;
                     color: #1d1d1d;
                     padding-left: 10px;
                     width: calc(100% - 50px);
@@ -159,9 +159,68 @@
                     display: flex;
                     flex-direction: column;
                     justify-content: space-evenly;
+                    gap: 5px;
+                    .topRow {
+                        display: flex;
+                        flex-direction: row;
+                        flex-grow: 1;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 10px;
+
+                        .redirect {
+                            cursor: pointer;
+                        }
+                    }
+                    .midRow {
+                        display: flex;
+                        flex-direction: row;
+                        flex-grow: 1;
+                        justify-content: flex-start;
+                        align-items: center;
+                        gap: 3px;
+                        max-width: 95%;
+                        position: relative;
+                        .flex-section{
+                            display: flex;
+                            max-width: 60%;
+                            align-items: center;
+                            gap: 3px;
+                            .tag {
+                                margin: 0px;
+                                color: #1d1d1d;
+                                font-family: 'InterMedium';
+                                font-size: 12px;
+                                max-width: 85%;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }
+                        }
+                    }
+                    .bottomRow {
+                        display: flex;
+                        direction: row;
+                        gap: 5px;
+                        justify-content: flex-start;
+                        align-items: center;
+                        .use-dls-button {
+                            display: flex;
+                            flex-direction: row;
+                            justify-content: flex-start;
+                            align-items: center;
+                            gap: 3px;
+                            p {
+                                margin: 0px;
+                            }
+                        }
+                    }
                     .title {
+                        font-family: 'InterSemiBold';
+                        font-size: 14px;
+                        margin-bottom: 0;
+                    }
+                    .average-title {
                         font-size: 12px;
-                        line-height: 24px;
                         margin: 0;
                         color: #b5b5b5;
                         font-family: 'Inter';
@@ -170,8 +229,22 @@
                     .number {
                         color: #1d1d1d;
                         font-size: 16px;
-                        line-height: 19px;
                         font-family: 'InterBold';
+                        margin-bottom: 0;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .pointer .number{
+                        max-width: 40%;
+                    }
+
+                    .number2 {
+                        color: #1d1d1d;
+                        font-family: 'Inter';
+                        font-size: 10px;
+                        font-style: normal;
+                        font-weight: 600;
+                        line-height: normal;
                         margin-bottom: 0;
                     }
 
@@ -206,13 +279,12 @@
                     }
                 }
                 .schema-box {
-                    min-width: 210px;
+                    min-width: 160px;
                 }
                 .schema-header {
                     display: flex;
                     align-items: center;
                     gap: 10px;
-                    img,
                     svg {
                         cursor: pointer;
                     }
@@ -234,6 +306,9 @@
                     align-items: center;
                     p {
                         margin-bottom: 0;
+                        max-width: 80%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
                     svg {
                         width: 6px;
@@ -244,6 +319,10 @@
             .middle {
                 border-left: 1px solid #f3f3f3;
                 border-right: 1px solid #f3f3f3;
+
+                .redirect {
+                    cursor: pointer;
+                }
             }
             .pointer .number {
                 cursor: pointer;
@@ -340,4 +419,12 @@
         border: none !important;
         background: white !important;
     }
+}
+
+.delete-modal-wrapper .desc .dls-name{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    position: relative;
+    max-width: 100px;
+    display: inline-flex;
 }

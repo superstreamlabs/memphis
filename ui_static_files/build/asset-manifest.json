@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.89119d89.css",
-    "main.js": "/static/js/main.83a511f0.js",
+    "main.css": "/static/css/main.66c3273e.css",
+    "main.js": "/static/js/main.0832c90b.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -209,12 +209,14 @@
     "static/media/grayAppUserIcon.svg": "/static/media/grayAppUserIcon.9401d63d3a38a3310942a1db6bb09bf1.svg",
     "static/media/integrated.svg": "/static/media/integrated.d41f7d8e37e5b9404c9156672c0469fe.svg",
     "static/media/journey.svg": "/static/media/journey.d33d5d460049fb64a1c3b972f2b5c965.svg",
+    "static/media/disableIcon.svg": "/static/media/disableIcon.f950d5c0e68f76432d0000536f990553.svg",
     "static/media/awaitingIcon.svg": "/static/media/awaitingIcon.59904187bbec884701238d6235024deb.svg",
     "static/media/clusterConfGray.svg": "/static/media/clusterConfGray.d6689ce49c492c73ab1f86759fbfbdf1.svg",
     "static/media/copied.svg": "/static/media/copied.9d395f7b95bb22fc0a0ff05fe091b25b.svg",
     "static/media/copy.svg": "/static/media/copy.739f1c8fdf5b5cdea5087f8f9565f203.svg",
     "static/media/clusterConfColor.svg": "/static/media/clusterConfColor.a76b9a325a5af536e03d7b1e458a2565.svg",
     "static/media/createdByIcon.svg": "/static/media/createdByIcon.fed5e9f39160ffeb36aa209e79e20933.svg",
+    "static/media/disconnectDls.svg": "/static/media/disconnectDls.5919be2177c77e749c1d7265961db0a3.svg",
     "static/media/functionsIcon.svg": "/static/media/functionsIcon.1052ea4c00c13b94c6241fba568acb26.svg",
     "static/media/redeliver.svg": "/static/media/redeliver.3caf70ae4dec01ad025a11d1408c6a4f.svg",
     "static/media/messageIcon.svg": "/static/media/messageIcon.4cc0325f976f4989d1d815bd3032bdc0.svg",
@@ -241,6 +243,7 @@
     "static/media/remoteStorage.svg": "/static/media/remoteStorage.db23172541bec67ae83be84924574645.svg",
     "static/media/requestsGray.svg": "/static/media/requestsGray.4353f2c3977ca42e61270d98cf753381.svg",
     "static/media/integrationRequestIcon.svg": "/static/media/integrationRequestIcon.506de0d8af164310e144f90a3858c1cf.svg",
+    "static/media/upRightCorner.svg": "/static/media/upRightCorner.048496064b0ca5d80bdb4026c7ac0c59.svg",
     "static/media/requestsColor.svg": "/static/media/requestsColor.4ddd825afdea6ffbeef2e0c3769ed4cc.svg",
     "static/media/BrokerHostname.svg": "/static/media/BrokerHostname.9934a24a7838aaef881a0964af3a7779.svg",
     "static/media/poisonMsgIcon.svg": "/static/media/poisonMsgIcon.ca0bc995ed577664e18c000ee7e2d95d.svg",
@@ -272,12 +275,12 @@
     "static/media/schemaItemIcon.svg": "/static/media/schemaItemIcon.c6af0b5dadd1a92922cfec49255241fa.svg",
     "static/media/dataIn.svg": "/static/media/dataIn.e9044a8849316f51885d4f19477df5ca.svg",
     "static/media/dataOut.svg": "/static/media/dataOut.79a02611ec5ae087b3cdf2b05a40d5b5.svg",
+    "static/media/stationDlsIcon.svg": "/static/media/stationDlsIcon.7f81f33afc4ce8b9a5b15b1d42ac2287.svg",
     "static/media/replicasIcon.svg": "/static/media/replicasIcon.8da6d8a33af6c5c9206c0e767efd1917.svg",
     "static/media/grayConsumeDataImg.svg": "/static/media/grayConsumeDataImg.122e0da3ac6c7851476ececc0a23449f.svg",
     "static/media/emptyStation.svg": "/static/media/emptyStation.e0e376034c4e4cd7190b3ab96c76ad30.svg",
     "static/media/dataProduced.svg": "/static/media/dataProduced.03d54b444822878e2891f208c7b0eeab.svg",
     "static/media/fullStation.svg": "/static/media/fullStation.006ff890d0e967fee3c89b565058d8bf.svg",
-    "static/media/averageMesIcon.svg": "/static/media/averageMesIcon.6bfdde7a20f90f7b8bb9972bf5ee60cc.svg",
     "static/media/grayProduceDataImg.svg": "/static/media/grayProduceDataImg.4086800cd66ca7582a8ae3f48bf9233b.svg",
     "static/media/stationIcon.svg": "/static/media/stationIcon.218e9eabe5a6ba97097ddd3f1f0026f1.svg",
     "static/media/overviewIconActive.svg": "/static/media/overviewIconActive.87e0603aa2a72b6523c00503b6b6555c.svg",
@@ -292,7 +295,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.89119d89.css",
-    "static/js/main.83a511f0.js"
+    "static/css/main.66c3273e.css",
+    "static/js/main.0832c90b.js"
   ]
 }

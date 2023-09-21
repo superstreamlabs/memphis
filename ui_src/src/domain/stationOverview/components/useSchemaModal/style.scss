@@ -13,6 +13,8 @@
     }
     .buttons {
         height: 120px;
+        display: flex;
+        flex-direction: column;
         p {
             margin: 0;
         }
@@ -35,6 +37,20 @@
         }
         .button-container {
             padding: 15px;
+            flex-grow: 1;
+        }
+        .btn-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            flex-grow: 1;
+            .button-container {
+                padding: 15px;
+                flex-grow: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
         }
     }
     .no-schema-to-display {
@@ -45,8 +61,7 @@
         height: 100%;
         justify-content: center;
         width: 100%;
-        img,
-        svg {
+        img {
             margin-bottom: 30px;
         }
         .title {
@@ -76,6 +91,17 @@
         border-radius: 8px 8px 0 0;
         div {
             font-family: 'InterSemiBold';
+        }
+        p {
+            margin-bottom: 0;
+            font-family: 'InterMedium';
+            font-size: 20px;
+        }
+        label {
+            font-family: 'Inter';
+            font-weight: 400;
+            font-size: 14px;
+            color: #667085;
         }
     }
     .ant-modal-body {

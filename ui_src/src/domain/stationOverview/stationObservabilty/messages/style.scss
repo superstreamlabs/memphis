@@ -280,7 +280,17 @@
         display: flex;
         flex-direction: column;
         gap: 20px;
-        height: calc(100% - 100px);
+        height: calc(100% - 70px);
         overflow: scroll;
+    }
+    .use-dls-button {
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 3px;
+        p {
+            margin: 0px;
+        }
     }
 }
