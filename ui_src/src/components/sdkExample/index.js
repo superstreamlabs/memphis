@@ -531,7 +531,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         )}
                         {
                             <div className="code-builder">
-                                <Collapse ghost defaultActiveKey={['0']} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                                <Collapse ghost defaultActiveKey={'0'} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
                                     <Panel
                                         header={
                                             <div className="header">
