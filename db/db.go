@@ -7085,7 +7085,7 @@ func CountProudcersForStation(stationId int) (int64, error) {
 	return count, nil
 }
 
-// AccessToken unctions
+// AccessToken Functions
 func InsertNewAccessToken(generatedBy int, accessKeyID, hashedSecretKey, description, tenantName string) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()

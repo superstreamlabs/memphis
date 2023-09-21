@@ -20,6 +20,6 @@ import (
 func InitializeAccessTokenRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	accessTokenHandler := h.AccessToken
 	accessTokenRoutes := router.Group("/accessToken")
-	accessTokenRoutes.POST("/generateAccessToken", accessTokenHandler.CreateAccessToken)
+	accessTokenRoutes.POST("/createNewAccessToken", accessTokenHandler.CreateNewAccessToken)
 	accessTokenRoutes.GET("/getAllAccessTokens", accessTokenHandler.GetAllAccessTokens)
 }

@@ -32,15 +32,6 @@ const (
 	accessKeyLen   = 30
 )
 
-func CreateAccessToken(generatedBy int, accessKeyID, secretKey, description, tenantName string) error {
-	err := db.InsertNewAccessToken(generatedBy, accessKeyID, secretKey, description, tenantName)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func generateRandomString(n int) string {
 	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
@@ -90,7 +81,7 @@ func generateAccessToken(userName, description, tenantName string) (*createAcces
 	}, nil
 }
 
-func (at AccessTokenHandler) CreateAccessToken(c *gin.Context) {
+func (at AccessTokenHandler) CreateNewAccessToken(c *gin.Context) {
 	var body models.CreateAccessTokenSchema
 	ok := utils.Validate(c, &body, false, nil)
 	if !ok {
@@ -105,15 +96,15 @@ func (at AccessTokenHandler) CreateAccessToken(c *gin.Context) {
 		return
 	}
 
-	resp, err := generateAccessToken(user.Username, body.Description, tenantName)
+	accessTokenData, err := generateAccessToken(user.Username, body.Description, tenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateNewAccessToken at generateAccessToken: AccessToken: %v", tenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"access_key_id": resp.AccessKeyID,
-		"secret_key":    resp.SecretKey,
+		"access_key_id": accessTokenData.AccessKeyID,
+		"secret_key":    accessTokenData.SecretKey,
 	})
 }
 
