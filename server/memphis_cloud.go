@@ -2187,3 +2187,6 @@ func IsStorageLimitExceeded(tenantName string) bool {
 func validateProducersCount(stationId int, tenantName string) error {
 	return nil
 }
+
+func InitializeCloudFunctionRoutes(functionsHandler FunctionsHandler, functionsRoutes *gin.RouterGroup) {
+}
