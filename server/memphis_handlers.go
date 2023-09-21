@@ -42,6 +42,7 @@ type Handlers struct {
 	userMgmt       UserMgmtHandler
 	AsyncTasks     AsyncTasksHandler
 	Functions      FunctionsHandler
+	AccessToken    AccessTokenHandler
 }
 
 var serv *Server

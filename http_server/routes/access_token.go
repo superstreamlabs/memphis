@@ -12,41 +12,14 @@
 package routes
 
 import (
-	"github.com/memphisdev/memphis/middlewares"
 	"github.com/memphisdev/memphis/server"
-	ui "github.com/memphisdev/memphis/ui_static_files"
-	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitializeHttpRoutes(handlers *server.Handlers) *gin.Engine {
-	router := gin.New()
-	router.Use(gin.Recovery())
-	server.SetCors(router)
-	mainRouter := router.Group("/api")
-	mainRouter.Use(middlewares.Authenticate)
-
-	utils.InitializeValidations()
-	InitializeUserMgmtRoutes(mainRouter)
-	InitializeStationsRoutes(mainRouter, handlers)
-	InitializeMonitoringRoutes(mainRouter, handlers)
-	InitializeTagsRoutes(mainRouter, handlers)
-	InitializeAccessTokenRoutes(mainRouter, handlers)
-	InitializeSchemasRoutes(mainRouter, handlers)
-	InitializeIntegrationsRoutes(mainRouter, handlers)
-	InitializeConfigurationsRoutes(mainRouter, handlers)
-	server.InitializeTenantsRoutes(mainRouter, handlers)
-	server.InitializeBillingRoutes(mainRouter, handlers)
-	InitializeAsyncTasksRoutes(mainRouter, handlers)
-	InitializeFunctionsRoutes(mainRouter, handlers)
-	ui.InitializeUIRoutes(router)
-
-	mainRouter.GET("/status", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Ok",
-		})
-	})
-
-	return router
+func InitializeAccessTokenRoutes(router *gin.RouterGroup, h *server.Handlers) {
+	accessTokenHandler := h.AccessToken
+	accessTokenRoutes := router.Group("/accessToken")
+	accessTokenRoutes.POST("/generateAccessToken", accessTokenHandler.CreateAccessToken)
+	accessTokenRoutes.GET("/getAllAccessTokens", accessTokenHandler.GetAllAccessTokens)
 }

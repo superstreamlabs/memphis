@@ -188,6 +188,27 @@ type CreateSchemaReq struct {
 	MessageStructName string `json:"message_struct_name"`
 }
 
+type createAccessTokenReq struct {
+	Description string `json:"description"`
+	Username    string `json:"username"`
+}
+
+type createAccessTokenResp struct {
+	AccessKeyID string `json:"access_key_id"`
+	SecretKey   string `json:"secret_key"`
+	Err         string `json:"error"`
+}
+
+type validateAccessTokenReq struct {
+	AccessKeyID string `json:"access_key_id"`
+	SecretKey   string `json:"secret_key"`
+}
+
+type validateAccessTokenResp struct {
+	IsValid bool   `json:"is_valid"`
+	Err     string `json:"error"`
+}
+
 type SchemaResponse struct {
 	Err string `json:"error"`
 }
@@ -201,6 +222,14 @@ func (ccr *createConsumerResponse) SetError(err error) {
 }
 
 func (ccr *createConsumerResponseV1) SetError(err error) {
+	ccr.Err = err.Error()
+}
+
+func (ccr *createAccessTokenResp) SetError(err error) {
+	ccr.Err = err.Error()
+}
+
+func (ccr *validateAccessTokenResp) SetError(err error) {
 	ccr.Err = err.Error()
 }
 
@@ -248,6 +277,13 @@ func (s *Server) initializeSDKHandlers() {
 		"memphis_schema_creations_listeners_group",
 		createSchemaHandler(s))
 
+	// accessToken
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_access_token_generation",
+		"$memphis_access_token_generation_listeners_group",
+		createAccessToken(s))
+	s.queueSubscribe(s.MemphisGlobalAccountString(), "$memphis_access_token_validation",
+		"$memphis_access_token_validation_listeners_group",
+		validateAccessToken(s))
 }
 
 func createSchemaHandler(s *Server) simplifiedMsgHandler {
@@ -301,6 +337,18 @@ func attachSchemaHandler(s *Server) simplifiedMsgHandler {
 func detachSchemaHandler(s *Server) simplifiedMsgHandler {
 	return func(c *client, subject, reply string, msg []byte) {
 		go s.removeSchemaFromStationDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func createAccessToken(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.createAccessTokenDirect(c, reply, copyBytes(msg))
+	}
+}
+
+func validateAccessToken(s *Server) simplifiedMsgHandler {
+	return func(c *client, subject, reply string, msg []byte) {
+		go s.validateAccessTokenDirect(c, reply, copyBytes(msg))
 	}
 }
 
