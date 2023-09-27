@@ -26,7 +26,7 @@ import TitleComponent from '../titleComponent';
 import SelectCheckBox from '../selectCheckBox';
 import { Context } from '../../hooks/store';
 import UpgradePlans from '../upgradePlans';
-import SelectSchema from '../customSelect';
+import CustomSelect from '../customSelect';
 import RadioButton from '../radioButton';
 import LockFeature from '../lockFeature';
 import SelectComponent from '../select';
@@ -88,7 +88,7 @@ const storageTierTwoOptions = [
 
 const idempotencyOptions = ['Milliseconds', 'Seconds', 'Minutes', 'Hours'];
 
-const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading }) => {
+const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpdate, updateFormState, getStarted, setLoading, noRedirect }) => {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const [creationForm] = Form.useForm();
@@ -97,6 +97,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
     const [retentionType, setRetentionType] = useState(retanionOptions[0].value);
     const [idempotencyType, setIdempotencyType] = useState(idempotencyOptions[2]);
     const [schemas, setSchemas] = useState([]);
+    const [stations, setStations] = useState([]);
     const [useSchema, setUseSchema] = useState(false);
     const [dlsConfiguration, setDlsConfiguration] = useState(true);
     const [tabValue, setTabValue] = useState('Local storage tier');
@@ -118,6 +119,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         }
         getAllSchemas();
         getIntegration();
+        getStations();
         if (getStarted && getStartedStateRef?.completedSteps > 0) setAllowEdit(false);
         if (getStarted && getStartedStateRef?.formFieldsCreateStation?.retention_type) setRetentionType(getStartedStateRef.formFieldsCreateStation.retention_type);
         createStationFormRef.current = onFinish;
@@ -184,10 +186,18 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 poison: dlsConfiguration,
                 schemaverse: dlsConfiguration
             },
+            dls_station: formFields.dlsStation,
             partitions_number: Number(formFields.partitions_number)
         };
         if ((getStarted && getStartedStateRef?.completedSteps === 0) || !getStarted) createStation(bodyRequest);
         else finishUpdate();
+    };
+
+    const getStations = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_STATIONS);
+            setStations(data);
+        } catch (error) {}
     };
 
     const getAvailableReplicas = async () => {
@@ -222,7 +232,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                if (!getStarted) history.push(`${pathDomains.stations}/${data.name}`);
+                if (!getStarted) !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
                 else finishUpdate(data);
             }
         } catch (error) {
@@ -453,8 +463,8 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     </Form.Item>
                 </div>
                 {!getStarted && (
-                    <div className="schema-type">
-                        <div className="toggle-add-schema">
+                    <div>
+                        <div className="toggle-add">
                             <TitleComponent
                                 headerTitle="Enforce schema"
                                 typeTitle="sub-header"
@@ -464,7 +474,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                         {!getStarted && useSchema && (
                             <Form.Item name="schemaValue" initialValue={schemas?.length > 0 ? schemas[0]?.name : null}>
-                                <SelectSchema
+                                <CustomSelect
                                     placeholder={creationForm.schemaValue || 'Select schema'}
                                     value={creationForm.schemaValue || schemas[0]}
                                     options={schemas}
@@ -474,13 +484,27 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         )}
                     </div>
                 )}
-                <div className="toggle-add-schema">
-                    <TitleComponent
-                        headerTitle="Dead-letter station"
-                        typeTitle="sub-header"
-                        headerDescription="Dead-letter stations are useful for debugging your application"
-                    />
-                    <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
+                <div>
+                    <div className="toggle-add">
+                        <TitleComponent
+                            headerTitle="Dead-letter station"
+                            typeTitle="sub-header"
+                            headerDescription="Dead-letter stations are useful for debugging your application"
+                        />
+                        <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
+                    </div>
+
+                    {dlsConfiguration && (
+                        <Form.Item name="dlsStation" initialValue={null}>
+                            <CustomSelect
+                                placeholder={creationForm.dlsStation || 'None'}
+                                value={creationForm.dlsStation || stations[0]}
+                                options={stations}
+                                onChange={(e) => creationForm.setFieldsValue({ dlsStation: e })}
+                                type={'dls'}
+                            />
+                        </Form.Item>
+                    )}
                 </div>
             </div>
             <div className="right-side">

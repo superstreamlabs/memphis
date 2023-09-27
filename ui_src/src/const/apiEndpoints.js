@@ -48,6 +48,8 @@ export const ApiEndpoints = {
     TIERD_STORAGE_CLICKED: '/stations/tierdStorageClicked',
     UPDATE_DLS_CONFIGURATION: '/stations/updateDlsConfig',
     PRODUCE: '/stations/produce',
+    ATTACH_DLS: '/stations/attachDlsStation',
+    DETACH_DLS: '/stations/detachDlsStation',
 
     //Async Tasks
     GET_ASYNC_TASKS: '/asyncTasks/getAsyncTasks',

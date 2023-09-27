@@ -19,6 +19,7 @@ import { Select } from 'antd';
 import React from 'react';
 
 import SchemaIconSelect from '../../assets/images/schemaIconSelect.svg';
+import stationsIconActive from '../../assets/images/stationsIconActive.svg';
 import usersIconActive from '../../assets/images/usersIconActive.svg';
 import { parsingDate } from '../../services/valueConvertor';
 
@@ -56,38 +57,50 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                         <div className="top">
                             <p className="no-result-found">No Result Found</p>
                         </div>
-                        <div className="divider" />
-                        <div className="bottom">
-                            <Button
-                                placeholder={
-                                    <div className="create-btn">
-                                        <BsPlus style={{ color: '#6557FF', fontSize: '18px' }} />
-                                        <p>Create a {type === 'schema' ? ' schema' : type === 'user' ? 'user' : ''}</p>
-                                    </div>
-                                }
-                                className="modal-btn"
-                                width="83px"
-                                height="32px"
-                                colorType="purple"
-                                radiusType="circle"
-                                backgroundColorType={'none'}
-                                fontSize="12px"
-                                fontWeight="600"
-                                onClick={() => {
-                                    return type === 'schema' ? createNewSchema() : type === 'user' ? handleCreateNew() : null;
-                                }}
-                            />
-                        </div>
+
+                        {type !== 'dls' && (
+                            <>
+                                <div className="divider" />
+                                <div className="bottom">
+                                    <Button
+                                        placeholder={
+                                            <div className="create-btn">
+                                                <BsPlus style={{ color: '#6557FF', fontSize: '18px' }} />
+                                                <p>Create a {type === 'schema' ? ' schema' : type === 'user' ? 'user' : ''}</p>
+                                            </div>
+                                        }
+                                        className="modal-btn"
+                                        width="83px"
+                                        height="32px"
+                                        colorType="purple"
+                                        radiusType="circle"
+                                        backgroundColorType={'none'}
+                                        fontSize="12px"
+                                        fontWeight="600"
+                                        onClick={() => {
+                                            return type === 'schema' ? createNewSchema() : type === 'user' ? handleCreateNew() : null;
+                                        }}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
                 }
             >
+                {type === 'dls' && options.length > 0 && (
+                    <Option value={null}>
+                        <div className="schema-details">
+                            <p className="schema-name">None</p>
+                        </div>
+                    </Option>
+                )}
                 {options?.map((schema) => {
                     return (
                         <Option key={schema?.id} value={schema?.name}>
                             <>
                                 <div className="schema-details">
                                     <img
-                                        src={type === 'schema' ? SchemaIconSelect : type === 'user' ? usersIconActive : null}
+                                        src={type === 'schema' ? SchemaIconSelect : type === 'user' ? usersIconActive : type === 'dls' ? stationsIconActive : null}
                                         alt="SchemaIconSelect"
                                         height={20}
                                         width={20}
@@ -95,7 +108,7 @@ const CustomSelect = ({ options, onChange, value, placeholder, type = 'schema', 
                                     <p className="schema-name">{schema?.name}</p>
                                 </div>
                                 <p className="created-by">
-                                    {type === 'schema' ? <>{schema?.type} &#8226;</> : null}
+                                    {type === 'schema' ? <>{schema?.type} &#8226; </> : null}
                                     {parsingDate(schema?.created_at)}
                                 </p>
                             </>

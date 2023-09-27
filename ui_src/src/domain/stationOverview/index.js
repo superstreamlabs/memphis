@@ -87,7 +87,7 @@ const StationOverview = () => {
         if (socketOn) {
             getStationDetails();
         }
-    }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages]);
+    }, [stationState?.stationPartition || stationState?.stationSocketData?.total_messages || stationState?.stationSocketData?.total_dls_messages, stationName]);
 
     useEffect(() => {
         setisLoading(true);
@@ -95,7 +95,7 @@ const StationOverview = () => {
         getStaionMetaData();
         getStationDetails();
         stationDispatch({ type: 'SET_STATION_PARTITION', payload: -1 });
-    }, []);
+    }, [stationName]);
 
     const startListen = async () => {
         const jc = JSONCodec();
@@ -150,14 +150,14 @@ const StationOverview = () => {
         return () => {
             stopListen();
         };
-    }, [state.socket]);
+    }, [state.socket, stationName]);
 
     useEffect(() => {
         if (sub && socketOn) {
             stopListen();
             startListen();
         }
-    }, [stationState?.stationPartition]);
+    }, [stationState?.stationPartition, stationName]);
 
     return (
         <StationStoreContext.Provider value={[stationState, stationDispatch]}>

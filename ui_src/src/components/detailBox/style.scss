@@ -29,7 +29,7 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-align:center;
+            text-align: center;
             .detail-data-row {
                 font-family: 'InterSemiBold';
                 font-size: 14px;
@@ -44,6 +44,10 @@
                 font-size: 16px;
                 color: #1d1d1d;
                 padding-bottom: 6px;
+                display: flex;
+                align-items: center;
+                flex-direction: row;
+                justify-content: space-between;
             }
             .detail-description {
                 font-family: 'Inter';

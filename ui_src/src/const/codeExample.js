@@ -309,7 +309,7 @@ if __name__ == "__main__":
     },
 
     '.NET (C#)': {
-        langCode: 'C#',
+        langCode: 'cpp',
         installation: `dotnet add package Memphis.Client`,
         producer: `using System.Collections.Specialized;
 using System.Text;
@@ -327,7 +327,7 @@ namespace Producer
                 var options = MemphisClientFactory.GetDefaultOptions();
                 options.Host = "<memphis-host>";
                 options.Username = "<application type username>";
-                options.Password = "<password>";
+                options.Password = "<broker-token>";
                 var client = await MemphisClientFactory.CreateClient(options);
                 options.AccountId = "<account-id>";
 
@@ -380,7 +380,7 @@ namespace Consumer
                 var options = MemphisClientFactory.GetDefaultOptions();
                 options.Host = "<memphis-host>";
                 options.Username = "<application type username>";
-                options.Password = "<password>";
+                options.Password = "<broker-token>";
                 var client = await MemphisClientFactory.CreateClient(options);
                 options.AccountId = "<account-id>";
 
@@ -900,7 +900,7 @@ console.log(response);
 });`
     },
     '.NET (C#)': {
-        langCode: 'C#',
+        langCode: 'cpp',
         producer: `using System;
 using System.Net.Http;
 using System.Threading.Tasks;

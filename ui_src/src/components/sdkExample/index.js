@@ -311,7 +311,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                 if (lang === 'Go') codeEx.producer = codeEx.producer?.replaceAll(', memphis.MsgHeaders(hdrs)', '');
                 else if (lang === 'Python') codeEx.producer = codeEx.producer?.replaceAll(', headers=headers', '');
                 else if (lang === '.NET (C#)') codeEx.producer = codeEx.producer?.replaceAll(', commonHeaders', '');
-                else if (lang === 'TypeScript') codeEx.producer = removeLineWithSubstring(codeEx.producer, 'headers: headers');
+                else if (lang === 'TypeScript' || lang === 'Node.js') codeEx.producer = removeLineWithSubstring(codeEx.producer, 'headers: headers');
             }
 
             setCodeExample(codeEx);
@@ -531,7 +531,7 @@ const SdkExample = ({ consumer, showTabs = true, stationName, username, connecti
                         )}
                         {
                             <div className="code-builder">
-                                <Collapse ghost expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                                <Collapse ghost defaultActiveKey={['0']} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
                                     <Panel
                                         header={
                                             <div className="header">

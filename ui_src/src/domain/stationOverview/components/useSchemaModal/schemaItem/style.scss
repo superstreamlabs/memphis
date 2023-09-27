@@ -8,11 +8,20 @@
     p {
         margin: 0;
     }
+    .content{
+        position: relative;
+        width: 100%;
+    }
     .name-wrapper {
         display: flex;
+        align-items: center;
         .name {
             font-family: 'InterSemiBold';
             font-size: 14px;
+            width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-wrap: nowrap;
         }
         svg {
             width: 18px;
@@ -30,6 +39,7 @@
         svg {
             width: 10px;
             margin: 0px 10px;
+            color: rgba(74, 73, 92, 0.8);
             color: rgba(74, 73, 92, 0.8);
         }
     }
