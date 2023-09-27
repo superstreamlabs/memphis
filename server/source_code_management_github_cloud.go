@@ -10,11 +10,16 @@ import (
 	"github.com/google/go-github/github"
 )
 
+const (
+	memphisDevFunctionsRepoName  = "memphis-dev-functions"
+	memphisDevFunctionsOwnerName = "memphisdev"
+)
+
 var memphisFunctions = map[string]interface{}{
-	"repo_name":  "memphis-dev-functions",
+	"repo_name":  memphisDevFunctionsRepoName,
 	"branch":     "master",
 	"type":       "functions",
-	"repo_owner": "memphisdev",
+	"repo_owner": memphisDevFunctionsOwnerName,
 }
 
 type githubRepoDetails struct {
