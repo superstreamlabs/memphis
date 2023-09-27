@@ -29,3 +29,45 @@ type functionDetails struct {
 	IntegrationName string                    `json:"integration_name"`
 	Owner           string                    `json:"owner"`
 }
+
+func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails []functionDetails) ([]functionDetails, error) {
+	var err error
+	contentDetails, err = GetGithubContentFromConnectedRepo(connectedRepo, contentDetails)
+	if err != nil {
+		return contentDetails, err
+	}
+
+	return contentDetails, nil
+}
+
+func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, bool) {
+	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
+	scmIntegrated := false
+	selectedRepos := []interface{}{}
+	memphisFunctionRepo := map[string]interface{}{
+		"repo_name":  "memphis-dev-functions",
+		"branch":     "master",
+		"type":       "functions",
+		"repo_owner": "memphisdev",
+	}
+	selectedRepos = append(selectedRepos, memphisFunctionRepo)
+	selectedReposPerSourceCodeIntegration["memphis_functions"] = selectedRepos
+
+	return selectedReposPerSourceCodeIntegration, scmIntegrated
+}
+
+func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool) {
+	contentDetails := []functionDetails{}
+	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
+	var err error
+	for _, connectedRepoPerIntegration := range connectedRepos {
+		for _, connectedRepo := range connectedRepoPerIntegration {
+			connectedRepoRes := connectedRepo.(map[string]interface{})
+			contentDetails, err = GetContentOfSelectedRepo(connectedRepoRes, contentDetails)
+			if err != nil {
+				continue
+			}
+		}
+	}
+	return contentDetails, scmIntegrated
+}

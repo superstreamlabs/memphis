@@ -12,6 +12,8 @@
 package server
 
 import (
+	"fmt"
+
 	"github.com/memphisdev/memphis/models"
 
 	"github.com/gin-gonic/gin"
@@ -20,10 +22,109 @@ import (
 type FunctionsHandler struct{}
 
 func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
-	c.JSON(401, "Unautorized")
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetAllFunctions at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	functionsResult, err := fh.GetFunctions(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "functions": functionsResult.Functions})
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
-	allFunctions := models.FunctionsRes{}
+	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName)
+	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
+	if err != nil {
+		return models.FunctionsRes{}, err
+	}
+	allFunctions := models.FunctionsRes{
+		Functions:     functions,
+		ScmIntegrated: scmIntegrated,
+	}
+
 	return allFunctions, nil
+}
+
+func validateYamlContent(yamlMap map[string]interface{}) error {
+	requiredFields := []string{"function_name", "runtime", "dependencies"}
+	missingFields := make([]string, 0)
+	for _, field := range requiredFields {
+		if _, exists := yamlMap[field]; !exists {
+			missingFields = append(missingFields, field)
+		}
+	}
+
+	if len(missingFields) > 0 {
+		return fmt.Errorf("Missing fields: %v\n", missingFields)
+	}
+	return nil
+}
+
+func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.FunctionsResult, error) {
+	functions := []models.FunctionsResult{}
+	for _, functionDetails := range functionsDetails {
+		fucntionContentMap := functionDetails.ContentMap
+		commit := functionDetails.Commit
+		fileContent := functionDetails.Content
+		repo := functionDetails.RepoName
+		branch := functionDetails.Branch
+		owner := functionDetails.Owner
+		tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
+		tagsStrings := []string{}
+		if ok {
+			tagsStrings = make([]string, len(fucntionContentMap["tags"].([]interface{})))
+			for i, tag := range tagsInterfaceSlice {
+				tagMap := tag.(map[interface{}]interface{})
+				for _, v := range tagMap {
+					if str, ok := v.(string); ok {
+						tagsStrings[i] = str
+					}
+				}
+			}
+		}
+
+		var environmentVarsStrings map[string]string
+		environmentVarsInterfaceSlice, ok := fucntionContentMap["environment_vars"].([]interface{})
+		if ok {
+			environmentVarsStrings = make(map[string]string, len(fucntionContentMap["environment_vars"].([]interface{})))
+			for _, environmentVar := range environmentVarsInterfaceSlice {
+				environmentVarMap := environmentVar.(map[interface{}]interface{})
+				for k, v := range environmentVarMap {
+					if str, ok := v.(string); ok {
+						environmentVarsStrings[k.(string)] = str
+					}
+				}
+			}
+		}
+		description, ok := fucntionContentMap["description"].(string)
+		if !ok {
+			description = ""
+		}
+
+		functionDetails := models.FunctionsResult{
+			FunctionName:    fucntionContentMap["function_name"].(string),
+			Description:     description,
+			Tags:            tagsStrings,
+			RunTime:         fucntionContentMap["runtime"].(string),
+			LastCommit:      *commit.Commit.Committer.Date,
+			Link:            *fileContent.HTMLURL,
+			Repository:      repo,
+			Branch:          branch,
+			Owner:           owner,
+			Memory:          fucntionContentMap["memory"].(int),
+			Storgae:         fucntionContentMap["storage"].(int),
+			EnvironmentVars: environmentVarsStrings,
+		}
+
+		functions = append(functions, functionDetails)
+	}
+	return functions, nil
 }
