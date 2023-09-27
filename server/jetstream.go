@@ -1335,8 +1335,6 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_UNACKED_CONSUMER_CREATED = true
 		case dlsSchemaverseStream:
 			DLS_SCHEMAVERSE_CONSUMER_CREATED = true
-		// case integrationsAuditLogsStream:
-		// 	INTEGRATIONS_AUDIT_LOGS_CONSUMER_CREATED = true
 		}
 		// added by Memphis ***
 
