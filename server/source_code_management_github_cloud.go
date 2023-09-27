@@ -10,6 +10,13 @@ import (
 	"github.com/google/go-github/github"
 )
 
+var memphisFunctions = map[string]interface{}{
+	"repo_name":  "memphis-dev-functions",
+	"branch":     "master",
+	"type":       "functions",
+	"repo_owner": "memphisdev",
+}
+
 type githubRepoDetails struct {
 	RepoName  string `json:"repo_name"`
 	Branch    string `json:"branch"`

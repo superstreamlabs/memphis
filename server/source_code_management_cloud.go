@@ -49,13 +49,7 @@ func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, b
 	selectedReposPerSourceCodeIntegration := map[string][]interface{}{}
 	scmIntegrated := false
 	selectedRepos := []interface{}{}
-	memphisFunctionRepo := map[string]interface{}{
-		"repo_name":  "memphis-dev-functions",
-		"branch":     "master",
-		"type":       "functions",
-		"repo_owner": "memphisdev",
-	}
-	selectedRepos = append(selectedRepos, memphisFunctionRepo)
+	selectedRepos = append(selectedRepos, memphisFunctions)
 	selectedReposPerSourceCodeIntegration["memphis_functions"] = selectedRepos
 
 	return selectedReposPerSourceCodeIntegration, scmIntegrated
