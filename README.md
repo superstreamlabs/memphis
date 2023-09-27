@@ -3,28 +3,6 @@
 
 </div>
 
-<div align="center">
-
-  <h4>
-
-**[Memphis](https://memphis.dev)** is an intelligent, frictionless message broker.<br>Made to enable developers to build real-time and streaming apps fast.
-
-  </h4>
-  
-  <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
-  
-</div>
-
-<div align="center">
-  
-  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/color/cncf-member-silver-color.svg#gh-light-mode-only">
-  
-</div>
- 
- <p align="center">
-  <a href="https://memphis.dev/pricing/">Cloud - </a><a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">Twitter</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
-</p>
-
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
@@ -34,83 +12,37 @@
 <img src="https://img.shields.io/github/last-commit/memphisdev/memphis?color=61dfc6&label=last%20commit">
 </p>
 
-Memphis.dev is more than a broker. It's a new streaming stack.<br><br>
-It significantly accelerates the development of real-time applications that require a streaming platform with<br>
-high throughput, low latency, easy troubleshooting, fast time-to-value,<br>minimal platform operations, and all the observability you can think of.<br>
-
-## 🫣 A world without Memphis
-When your application requires a message broker or a queue,<br>
-Implementing one will require you to -
-- Build a dead-letter queue, create observability, and a retry mechanism
-- Build a scalable environment
-- Create client wrappers
-- Tag events to achieve multi-tenancy
-- Enforce schemas and handle transformations
-- Handle back pressure. Client or queue side
-- Configure monitoring and real-time alerts
-- Create a cloud-agnostic implementation
-- Create config alignment between production to a dev environment
-- Spent weeks and months learning the internals through archival documentation, ebooks, and courses
-- Onboard your developers<br>
-And the list continues...<br>
-
-**Or, you can just use [Memphis](https://memphis.dev)** and focus your resources on tasks that matter 😎
-<br>
-
-## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.0-latest)
-
-[**Roadmap**](https://github.com/orgs/memphisdev/projects/2/views/1)
-
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Production-ready message broker in under 3 minutes<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Easy-to-use UI, CLI, and SDKs<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Data-level observability<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Dead-Letter Queue with automatic message retransmit<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Graph visualization<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Storage tiering<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Kubernetes-native<br>
-![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
+<div align="center">
+  
+  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/color/cncf-member-silver-color.svg#gh-light-mode-only">
+  <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
+  
+</div>
+ 
+ <b><p align="center">
+  <a href="https://memphis.dev/pricing/">Cloud - </a><a href="https://memphis.dev/docs/">Docs</a> - <a href="https://twitter.com/Memphis_Dev">X</a> - <a href="https://www.youtube.com/channel/UCVdMDLCSxXOqtgrBaRUHKKg">YouTube</a>
+</p></b>
 
 <div align="center">
-<img src="https://user-images.githubusercontent.com/70286779/225559098-726d57bd-96f6-40d4-bc35-c2648a5c463a.png" style="width:800px;">
+
+  <h4>
+
+**[Memphis.dev](https://memphis.dev)** is a highly scalable, painless, and effortless data streaming platform.<br>
+Made to enable developers and data teams to collaborate and build<br>
+real-time and streaming apps fast.
+
+  </h4>
+  
 </div>
 
-## Public case studies
-- [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
-- [KELA - Real-time cyber threats identification](https://memphis.dev/blog/how-kela-is-using-memphis-dev-for-real-time-cyber-threats-identification/)
-- [Handling millions of discord messages](https://memphis.dev/blog/how-cactusfire-handles-millions-of-daily-discord-messages-using-memphis-dev/)
-
 ## 🚀 Getting Started
-Helm for Kubernetes☸
+[Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials) | [Videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br>
+### ☸ Helm for Kubernetes
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
 helm install my-memphis memphis/memphis --create-namespace --namespace memphis
 ```
-Docker🐳 Compose
-```shell
-curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
-docker compose -f docker-compose.yml -p memphis up
-```
-
-<p align="center">
-<a href="https://youtu.be/-5YmxYRQsdw"><img align="center" alt="connect your first app" src="https://img.youtube.com/vi/-5YmxYRQsdw/0.jpg"></a>
-</p>
-
-[Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials)<br>
-[Installation videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br><br>
-
-## High-Level Architecture
-
-<a href="https://docs.memphis.dev/memphis/memphis/architecture">
-<p align="center">
-<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/229371674-35a5e4cc-d3f5-413e-982d-d1081b18d82a.jpeg">
-
-</p>
-</a>
-
-## Local access
-### Via Kubernetes
+**Establish a local access**
 ```shell
 To access Memphis using UI/CLI/SDK from localhost, run the below commands:
 
@@ -124,15 +56,45 @@ Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666 (Client Connections)
 REST gateway: localhost:4444 (Data + Mgmt)
 ```
-
-**For Production Environments**
-Please expose the UI, Cluster, and Control-plane via k8s ingress / load balancer / nodeport
-
-### Via Docker
+### 🐳 Docker Compose
+```shell
+curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
+docker compose -f docker-compose.yml -p memphis up
+```
+**Establish a local access**
 ```shell
 Dashboard/CLI: http://localhost:9000
 Broker: localhost:6666
 ```
+
+## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.0-latest)
+
+[**Take part in our roadmap!**](https://memphis.dev/roadmap)
+
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Production-ready message broker in under 3 minutes<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Easy-to-use UI, CLI, and SDKs<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Data-level observability<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Dead-Letter Queue with automatic message retransmit<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Schemaverse - Embedded schema management for produced data (Protobuf/JSON/GraphQL/Avro)<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Graph visualization<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Storage tiering<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) SDKs: Node.JS, Go, Python, Typescript, NestJS, REST, .NET, Kotlin<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Kubernetes-native<br>
+![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
+
+## Public case studies
+- [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
+- [KELA - Real-time cyber threats identification](https://memphis.dev/blog/how-kela-is-using-memphis-dev-for-real-time-cyber-threats-identification/)
+- [Handling millions of discord messages](https://memphis.dev/blog/how-cactusfire-handles-millions-of-daily-discord-messages-using-memphis-dev/)
+
+## Network diagram
+
+<a href="https://docs.memphis.dev/memphis/memphis/architecture">
+<p align="center">
+<img height="500" alt="memphis.dev Architecture" src="https://user-images.githubusercontent.com/70286779/229371674-35a5e4cc-d3f5-413e-982d-d1081b18d82a.jpeg">
+
+</p>
+</a>
 
 ## SDKs supported features
                     
