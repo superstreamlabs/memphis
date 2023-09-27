@@ -13,6 +13,7 @@ package server
 
 import (
 	"github.com/google/go-github/github"
+	"github.com/memphisdev/memphis/models"
 )
 
 type GetSourceCodeBranchesSchema struct {
@@ -28,6 +29,10 @@ type functionDetails struct {
 	Branch          string                    `json:"branch"`
 	IntegrationName string                    `json:"integration_name"`
 	Owner           string                    `json:"owner"`
+}
+
+func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
+	return models.Integration{}, map[string]string{}, nil
 }
 
 func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails []functionDetails) ([]functionDetails, error) {

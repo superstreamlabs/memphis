@@ -17,6 +17,18 @@ type githubRepoDetails struct {
 	RepoOwner string `json:"repo_owner"`
 }
 
+func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
+	return models.Integration{}, 0, nil
+}
+
+func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, body models.CreateIntegrationSchema) (models.Integration, int, error) {
+	return models.Integration{}, 0, nil
+
+}
+func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
+	return
+}
+
 func getGithubClientWithoutAccessToken() *github.Client {
 	client := github.NewClient(nil)
 	return client
@@ -121,4 +133,15 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 	}
 
 	return functionsDetails, nil
+}
+
+func deleteInstallationForAuthenticatedGithubApp(tenantName string) error {
+	return nil
+}
+func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, repo, branch, repoType string) map[string]interface{} {
+	return map[string]interface{}{}
+}
+
+func retrieveGithubAppName() string {
+	return ""
 }
