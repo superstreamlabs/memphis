@@ -37,6 +37,8 @@ const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
+const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
+const INTEGRATIONS_AUDIT_LOGS_SUBJ = "$memphis_integrations_audit_logs"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
