@@ -320,13 +320,11 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
 	if !exist {
 		serv.Warnf("[tenant: %v][user: %v]GetIntegrationDetails : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-
 	applicationName := retrieveGithubAppName()
 	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
 	if err != nil {
