@@ -24,9 +24,11 @@ import (
 )
 
 func flushMapToTier2Storage() error {
+	it := IntegrationsHandler{S: serv}
 	for t, tenant := range tieredStorageMsgsMap.m {
 		if IsStorageLimitExceeded(t) {
 			serv.Warnf("[tenant:%s]flushMapToTier2Storage: %s", t, ErrUpgradePlan.Error())
+			it.Warnf("s3", t, "Exceeded storage limit")
 			continue
 		}
 		if ValidataAccessToFeature(t, "feature-storage-tiering") {
@@ -41,6 +43,7 @@ func flushMapToTier2Storage() error {
 							if err != nil {
 								return err
 							}
+							it.Noticef(k, t, "Uploaded a batch of messages to tiered storage successfully")
 						}
 					}
 				default:

@@ -12,6 +12,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/slack-go/slack"
 )
 
@@ -62,4 +64,15 @@ type Notification struct {
 
 type RequestIntegrationSchema struct {
 	RequestContent string `json:"request_content"`
+}
+
+type GetIntegrationsAuditLogsSchema struct {
+	Name string `form:"name" json:"name" binding:"required"`
+}
+
+type IntegrationsAuditLog struct {
+	ID         uint64    `json:"id"`
+	Message    string    `json:"message"`
+	CreatedAt  time.Time `json:"created_at"`
+	TenantName string    `json:"tenant_name"`
 }

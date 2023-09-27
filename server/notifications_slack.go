@@ -291,7 +291,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	keys["auth_token"] = hideSlackAuthToken(cloneKeys["auth_token"])
 	slackIntegration.Keys = keys
 	slackIntegration.Properties = properties
-	return models.Integration{}, nil
+	return slackIntegration, nil
 }
 
 func testSlackIntegration(authToken string, channelID string, message string) error {

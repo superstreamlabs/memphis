@@ -14,7 +14,10 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/memphisdev/memphis/analytics"
 	"github.com/memphisdev/memphis/db"
@@ -27,6 +30,12 @@ import (
 const sendNotificationType = "send_notification"
 
 type IntegrationsHandler struct{ S *Server }
+
+var integrationsAuditLogLabelToSubjectMap = map[string]string{
+	"slack":  integrationsAuditLogsStream + ".%s.slack",
+	"s3":     integrationsAuditLogsStream + ".%s.s3",
+	"github": integrationsAuditLogsStream + ".%s.github",
+}
 
 func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	var message string
@@ -64,8 +73,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -83,8 +94,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -97,8 +110,10 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -109,7 +124,8 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
 		return
 	}
-
+	auditLog := fmt.Sprintf("Integration %v created successfully", integrationType)
+	it.Noticef(integrationType, user.TenantName, auditLog)
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		user, _ := getUserDetailsFromMiddleware(c)
@@ -145,7 +161,8 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	}
 	var integration models.Integration
 	var message string
-	switch strings.ToLower(body.Name) {
+	integrationType := strings.ToLower(body.Name)
+	switch integrationType {
 	case "slack":
 		slackIntegration, errorCode, err := it.handleUpdateSlackIntegration(user.TenantName, "slack", body)
 		if err != nil {
@@ -153,8 +170,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -167,8 +186,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -181,8 +202,10 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 				serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = "Server error"
 			} else {
-				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, err.Error())
 				message = err.Error()
+				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, message)
+				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
 			return
@@ -195,6 +218,8 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		return
 	}
 
+	auditLog := fmt.Sprintf("Integration %v updated successfully", integrationType)
+	it.Noticef(integrationType, user.TenantName, auditLog)
 	c.IndentedJSON(200, integration)
 }
 
@@ -421,6 +446,9 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analyticsParams := make(map[string]interface{})
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
+
+	go it.S.purgeIntegrationAuditLogs(integrationType, user.TenantName)
+
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -439,4 +467,166 @@ func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{})
+}
+
+func (it IntegrationsHandler) GetIntegrationAuditLogs(c *gin.Context) {
+	var body models.GetIntegrationsAuditLogsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetIntegrationAuditLogs at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	integrationType := strings.ToLower(body.Name)
+	auditLogs, err := it.S.getIntegrationAuditLogs(integrationType, user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationAuditLogs at getIntegrationAuditLogs: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, auditLogs)
+}
+
+func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]models.IntegrationsAuditLog, error) {
+	filterSubject, ok := integrationsAuditLogLabelToSubjectMap[integrationType]
+	if !ok {
+		return []models.IntegrationsAuditLog{}, fmt.Errorf("Unsupported integration type - %v", integrationType)
+	}
+	filterSubject = fmt.Sprintf(filterSubject, tenantName)
+	streamInfo, err := s.memphisStreamInfo(s.MemphisGlobalAccountString(), integrationsAuditLogsStream)
+	if err != nil {
+		return []models.IntegrationsAuditLog{}, err
+	}
+
+	amount := streamInfo.State.Msgs
+	const timeout = 500 * time.Millisecond
+	uid := s.memphis.nuid.Next()
+	msgs := []StoredMsg{}
+	durableName := "$memphis_integrations_audit_logs_consumer_" + uid
+	cc := ConsumerConfig{
+		DeliverPolicy: DeliverAll,
+		AckPolicy:     AckExplicit,
+		Durable:       durableName,
+		Replicas:      1,
+		FilterSubject: filterSubject,
+	}
+
+	err = s.memphisAddConsumer(s.MemphisGlobalAccountString(), integrationsAuditLogsStream, &cc)
+	if err != nil {
+		return []models.IntegrationsAuditLog{}, err
+	}
+
+	responseChan := make(chan StoredMsg)
+	subject := fmt.Sprintf(JSApiRequestNextT, integrationsAuditLogsStream, durableName)
+	reply := durableName + "_reply"
+	req := []byte(strconv.FormatUint(amount, 10))
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), reply, reply+"_sid", func(_ *client, subject, reply string, msg []byte) {
+		go func(respCh chan StoredMsg, subject, reply string, msg []byte) {
+			// ack
+			s.sendInternalAccountMsg(s.MemphisGlobalAccount(), reply, []byte(_EMPTY_))
+			rawTs := tokenAt(reply, 8)
+			seq, _, _ := ackReplyInfo(reply)
+
+			intTs, err := strconv.Atoi(rawTs)
+			if err != nil {
+				s.Errorf("GetSystemLogs: %v", err.Error())
+				return
+			}
+
+			respCh <- StoredMsg{
+				Subject:  subject,
+				Sequence: uint64(seq),
+				Data:     msg,
+				Time:     time.Unix(0, int64(intTs)),
+			}
+		}(responseChan, subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return []models.IntegrationsAuditLog{}, err
+	}
+
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, reply, nil, req, true)
+
+	timer := time.NewTimer(timeout)
+	for i := uint64(0); i < amount; i++ {
+		select {
+		case <-timer.C:
+			goto cleanup
+		case msg := <-responseChan:
+			msgs = append(msgs, msg)
+		}
+	}
+
+cleanup:
+	timer.Stop()
+	s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+	time.AfterFunc(500*time.Millisecond, func() {
+		serv.memphisRemoveConsumer(s.MemphisGlobalAccountString(), integrationsAuditLogsStream, durableName)
+	})
+
+	resMsgs := []models.IntegrationsAuditLog{}
+	for _, msg := range msgs {
+		data := string(msg.Data)
+		resMsgs = append(resMsgs, models.IntegrationsAuditLog{
+			ID:         msg.Sequence,
+			Message:    data,
+			CreatedAt:  msg.Time,
+			TenantName: tenantName,
+		})
+	}
+
+	sort.Slice(resMsgs, func(i, j int) bool {
+		return resMsgs[i].ID < resMsgs[j].ID
+	})
+
+	return resMsgs, nil
+}
+
+func (s *Server) sendIntegrationAuditLogToSubject(integrationType, tenantName string, log string) {
+	filterSubject, ok := integrationsAuditLogLabelToSubjectMap[integrationType]
+	if !ok {
+		return
+	}
+	filterSubject = fmt.Sprintf(filterSubject, tenantName)
+	s.sendInternalAccountMsg(s.MemphisGlobalAccount(), filterSubject, []byte(log))
+}
+
+func (it IntegrationsHandler) Errorf(integrationType, tenantName string, log string) {
+	it.S.sendIntegrationAuditLogToSubject(integrationType, tenantName, "[ERR] "+log)
+}
+
+func (it IntegrationsHandler) Warnf(integrationType, tenantName string, log string) {
+	it.S.sendIntegrationAuditLogToSubject(integrationType, tenantName, "[WRN] "+log)
+}
+
+func (it IntegrationsHandler) Noticef(integrationType, tenantName string, log string) {
+	it.S.sendIntegrationAuditLogToSubject(integrationType, tenantName, "[INF] "+log)
+}
+
+func (s *Server) purgeIntegrationAuditLogs(integrationType, tenantName string) {
+	auditLogs, err := s.getIntegrationAuditLogs(integrationType, tenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at getIntegrationAuditLogs: Integration %v: %v", tenantName, integrationType, err.Error())
+		return
+	}
+
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, INTEGRATIONS_AUDIT_LOGS_SUBJ)
+	for _, log := range auditLogs {
+		var resp JSApiMsgDeleteResponse
+		req := JSApiMsgDeleteRequest{Seq: log.ID}
+		reqj, _ := json.Marshal(req)
+		err := jsApiRequest(tenantName, s, requestSubject, kindDeleteMessage, reqj, &resp)
+		if err != nil {
+			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at jsApiRequest: Integration %v: %v", tenantName, integrationType, err.Error())
+		}
+		respErr := resp.ToError()
+		if respErr != nil {
+			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at respErr: Integration %v: %v", tenantName, integrationType, respErr.Error())
+		}
+	}
 }

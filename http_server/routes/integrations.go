@@ -27,4 +27,5 @@ func InitializeIntegrationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	integrationsRoutes.GET("/getSourceCodeBranches", integrationsHandler.GetSourecCodeBranches)
 	integrationsRoutes.GET("/getAllIntegrations", integrationsHandler.GetAllIntegrations)
 	integrationsRoutes.POST("/requestIntegration", integrationsHandler.RequestIntegration) // TODO to be deleted
+	integrationsRoutes.GET("/getAuditLogs", integrationsHandler.GetIntegrationAuditLogs)
 }
