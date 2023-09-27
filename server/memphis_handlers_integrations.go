@@ -495,7 +495,7 @@ func (s *Server) getIntegrationAuditLogs(integrationType, tenantName string) ([]
 	const timeout = 500 * time.Millisecond
 	uid := s.memphis.nuid.Next()
 	msgs := []StoredMsg{}
-	durableName := "$memphis_integrations_audit_logs_consumer_" + uid
+	durableName := INTEGRATIONS_AUDIT_LOGS_CONSUMER + "_" + uid
 	cc := ConsumerConfig{
 		DeliverPolicy: DeliverAll,
 		AckPolicy:     AckExplicit,
@@ -603,7 +603,7 @@ func (s *Server) purgeIntegrationAuditLogs(integrationType, tenantName string) {
 		return
 	}
 
-	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, INTEGRATIONS_AUDIT_LOGS_SUBJ)
+	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, integrationsAuditLogsStream)
 	for _, log := range auditLogs {
 		var resp JSApiMsgDeleteResponse
 		req := JSApiMsgDeleteRequest{Seq: log.ID}
