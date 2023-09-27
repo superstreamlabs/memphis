@@ -127,18 +127,17 @@ const (
 
 // errors
 var (
-	ErrBadHeader                             = errors.New("could not decode header")
-	TIERED_STORAGE_CONSUMER_CREATED          bool
-	TIERED_STORAGE_STREAM_CREATED            bool
-	DLS_UNACKED_CONSUMER_CREATED             bool
-	DLS_UNACKED_STREAM_CREATED               bool
-	DLS_SCHEMAVERSE_STREAM_CREATED           bool
-	DLS_SCHEMAVERSE_CONSUMER_CREATED         bool
-	SYSLOGS_STREAM_CREATED                   bool
-	THROUGHPUT_STREAM_CREATED                bool
-	THROUGHPUT_LEGACY_STREAM_EXIST           bool
-	INTEGRATIONS_AUDIT_LOGS_CONSUMER_CREATED bool
-	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED   bool
+	ErrBadHeader                           = errors.New("could not decode header")
+	TIERED_STORAGE_CONSUMER_CREATED        bool
+	TIERED_STORAGE_STREAM_CREATED          bool
+	DLS_UNACKED_CONSUMER_CREATED           bool
+	DLS_UNACKED_STREAM_CREATED             bool
+	DLS_SCHEMAVERSE_STREAM_CREATED         bool
+	DLS_SCHEMAVERSE_CONSUMER_CREATED       bool
+	SYSLOGS_STREAM_CREATED                 bool
+	THROUGHPUT_STREAM_CREATED              bool
+	THROUGHPUT_LEGACY_STREAM_EXIST         bool
+	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
 )
 
 type Messages []models.MessageDetails
