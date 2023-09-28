@@ -226,6 +226,11 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	if integrationType == "github" {
 		err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
 		if err != nil {
+			if strings.Contains(err.Error(), "does not exist") {
+				serv.Warnf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+				return
+			}
 			serv.Errorf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
