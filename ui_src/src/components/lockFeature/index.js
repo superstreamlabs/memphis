@@ -17,6 +17,7 @@ import { HiLockClosed } from 'react-icons/hi';
 
 import TooltipComponent from '../tooltip/tooltip';
 import UpgradePlans from '../upgradePlans';
+import { showUpgradePlan } from '../../services/valueConvertor';
 
 const LockFeature = ({ position, header }) => {
     const style = {
@@ -35,14 +36,16 @@ const LockFeature = ({ position, header }) => {
                 <div className="lock-tooltip-text">
                     <p>{header || 'Upgrade needed'}</p>
                     <span>Please upgrade your plan to unlock this feature</span>
-                    <UpgradePlans
-                        content={
-                            <div className="upgrade-button-wrapper" onClick={() => tooltipRef.current()}>
-                                <p className="upgrade-plan">Upgrade now</p>
-                            </div>
-                        }
-                        isExternal={false}
-                    />
+                    {showUpgradePlan() && (
+                        <UpgradePlans
+                            content={
+                                <div className="upgrade-button-wrapper" onClick={() => tooltipRef.current()}>
+                                    <p className="upgrade-plan">Upgrade now</p>
+                                </div>
+                            }
+                            isExternal={false}
+                        />
+                    )}
                 </div>
             }
         >

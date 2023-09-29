@@ -37,6 +37,7 @@ export const LOCAL_STORAGE_WS_PORT = 'ws_port';
 export const LOCAL_STORAGE_USER_ID = 'user_id';
 export const LOCAL_STORAGE_TOKEN = 'jwt';
 export const LOCAL_STORAGE_ENV = 'env';
+export const LOCAL_STORAGE_PLAN = 'plan';
 export const LOCAL_STORAGE_ENTITLEMENTS = 'entitlements';
 export const DEAD_LETTERED_MESSAGES_RETENTION_IN_HOURS = 'dls_retention';
 export const LOGS_RETENTION_IN_DAYS = 'logs_retention';

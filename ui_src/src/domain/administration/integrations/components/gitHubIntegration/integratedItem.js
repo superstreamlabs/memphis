@@ -18,8 +18,10 @@ import { ReactComponent as GithubBranchIcon } from '../../../../../assets/images
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import SelectComponent from '../../../../../components/select';
+import Button from '../../../../../components/button';
+import { FiPlus } from 'react-icons/fi';
 
-const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo }) => {
+const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo, type, updateIntegration, addIsLoading }) => {
     const [isEditting, setIsEditting] = useState(false);
     const [formFields, setFormFields] = useState({
         type: 'functions',
@@ -78,6 +80,7 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         width={'90%'}
                         popupClassName="select-options"
                         value={formFields?.repo_name}
+                        disabled={!type}
                         onChange={(e) => {
                             updateRepo(e);
                         }}
@@ -96,12 +99,39 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         value={formFields?.branch}
                         options={branches || []}
                         popupClassName="select-options"
+                        disabled={!type}
                         onChange={(e) => {
                             updateBranch(e);
                         }}
                     />
                 </Form.Item>
-                <FiMinusCircle className="remove-icon" onClick={() => removeRepo(index)} />
+                {!type ? (
+                    <FiMinusCircle
+                        className="remove-icon"
+                        onClick={() => {
+                            removeRepo(index);
+                            updateIntegration();
+                        }}
+                    />
+                ) : (
+                    <Button
+                        height={'30px'}
+                        width={'90px'}
+                        placeholder={
+                            <div className="add-repo-button">
+                                <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
+                            </div>
+                        }
+                        colorType={'white'}
+                        radiusType={'circle'}
+                        backgroundColorType="purple"
+                        fontSize="14px"
+                        fontFamily="InterSemiBold"
+                        isLoading={addIsLoading}
+                        disabled={!formFields?.repo_name || !formFields?.branch}
+                        onClick={() => updateIntegration()}
+                    />
+                )}
             </div>
             <Divider />
         </div>

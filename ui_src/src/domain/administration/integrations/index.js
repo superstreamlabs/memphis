@@ -30,6 +30,7 @@ import Modal from '../../../components/modal';
 import Input from '../../../components/Input';
 import Tag from '../../../components/tag';
 import { showMessages } from '../../../services/genericServices';
+import { useLocation } from 'react-router-dom';
 
 const Integrations = () => {
     const [state, dispatch] = useContext(Context);
@@ -38,10 +39,32 @@ const Integrations = () => {
     const [categoryFilter, setCategoryFilter] = useState('All');
     const [filterList, setFilterList] = useState(INTEGRATION_LIST);
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [githubModalIsOpen, setGithubModalIsOpen] = useState(false);
+    const location = useLocation();
+    const queryParameters = new URLSearchParams(location.search);
+
     const storageTiringLimits = state?.userData?.entitlements && state?.userData?.entitlements['feature-storage-tiering'] ? false : true;
 
     useEffect(() => {
-        getallIntegration();
+        const process = async () => {
+            const installationId = queryParameters.get('installation_id');
+            if (installationId) {
+                window.history.replaceState({}, null, location.pathname);
+                try {
+                    const res = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, { name: 'github', keys: { installation_id: installationId } });
+                    setTimeout(async () => {
+                        dispatch({ type: 'ADD_INTEGRATION', payload: res });
+                        await getallIntegration();
+                        setGithubModalIsOpen(true);
+                    }, 2000);
+                } catch (err) {
+                    console.log(err);
+                }
+            } else {
+                getallIntegration();
+            }
+        };
+        process();
     }, []);
 
     useEffect(() => {
@@ -142,13 +165,18 @@ const Integrations = () => {
                         const integrationItem = filterList[integration];
                         const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
 
-                        if (isCloudAndOsOnly) {
+                        if (isCloudAndOsOnly || (!isCloud() && !integrationItem.osOnly)) {
                             return null;
                         }
 
                         const key = integrationItem.name;
                         const integrationElement = (
-                            <IntegrationItem lockFeature={isCloud() && integrationItem.name === 'S3' && storageTiringLimits} key={key} value={integrationItem} />
+                            <IntegrationItem
+                                lockFeature={isCloud() && integrationItem.name === 'S3' && storageTiringLimits}
+                                key={key}
+                                value={integrationItem}
+                                isOpen={integration === 'GitHub' ? githubModalIsOpen : false}
+                            />
                         );
 
                         if (integrationItem.comingSoon) {
