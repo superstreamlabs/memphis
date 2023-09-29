@@ -29,6 +29,7 @@ import Modal from '../modal';
 import Input from '../Input';
 import CheckboxComponent from '../checkBox';
 import { Context } from '../../hooks/store';
+import { LOCAL_STORAGE_PLAN } from '../../const/localStorageConsts';
 
 const reasons = ['Price is too high', 'Missing feature', 'Bad support', 'Performance', 'Limitations', 'Not using anymore', 'I switched to a competitor', 'Other'];
 
@@ -86,6 +87,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 await refreshData();
                 showMessages('success', 'Your plan has been successfully updatead.');
                 isExternal ? onClose() : setUpgradeModalOpen(false);
+                localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }
         } catch (error) {}
         if (withReason) {
