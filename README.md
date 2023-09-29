@@ -83,6 +83,7 @@ Broker: localhost:6666
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
 
 ## Public case studies
+- [Dstny - Building the next-gen in-house communication using Memphis.dev](https://memphis.dev/blog/how-dstny-building-the-future-of-in-house-communication-using-memphis-dev/)
 - [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
 - [KELA - Real-time cyber threats identification](https://memphis.dev/blog/how-kela-is-using-memphis-dev-for-real-time-cyber-threats-identification/)
 - [Handling millions of discord messages](https://memphis.dev/blog/how-cactusfire-handles-millions-of-daily-discord-messages-using-memphis-dev/)
