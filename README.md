@@ -82,6 +82,77 @@ Broker: localhost:6666
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Kubernetes-native<br>
 ![20](https://user-images.githubusercontent.com/70286779/220196529-abb958d2-5c58-4c33-b5e0-40f5446515ad.png) Community driven<br>
 
+<table>
+  
+  <tr>
+    <th>
+      <a href="https://docs.memphis.dev">End-to-end Observability</a>
+    </th>
+    <th>
+      <a href="https://docs.memphis.dev">"Feel" your producers, consumers, and records</a>
+    </th>
+
+  </tr>
+
+   <tr>
+    <td width="50%">
+      <a href="https://docs.memphis.dev">
+        <img src="https://github.com/memphisdev/memphis/assets/70286779/5763319d-1c06-4478-b0ee-582f37acf2b8" />
+      </a>
+    </td>
+    <td width="50%">
+        <a href="https://docs.memphis.dev">
+          <img width="1512" alt="Screenshot 2023-09-29 at 10 17 01" src="https://github.com/memphisdev/memphis/assets/70286779/1fd5358d-adb8-4aa5-9b19-9640bdfd2417">
+        </a>
+    </td>
+  </tr>
+
+  <tr>
+    <th>
+      <a href="https://docs.memphis.dev">Quickly analyze system health using a graph overview</a>
+    </th>
+    <th>
+      <a href="https://docs.memphis.dev">Never lose a message with automatic dead-letter</a>
+    </th>
+</tr>
+
+ <tr>
+    <td width="50%">
+        <a href="https://docs.memphis.dev">
+            <img src="https://github.com/memphisdev/memphis/assets/70286779/1be9768b-b658-4bb3-89bd-ee814a8813b9" />
+        </a>
+    </td>
+    <td width="50%">
+      <a href="https://docs.memphis.dev">
+        <img width="1512" alt="Screenshot 2023-09-29 at 10 17 12" src="https://github.com/memphisdev/memphis/assets/70286779/2d6638d8-d1f1-4aba-8e36-7b7a57e76f16">
+      </a>
+    </td>
+ </tr>
+
+ <tr>
+    <th>
+      <a href="https://docs.memphis.dev/memphis/memphis-broker/concepts/storage-and-redundancy">Save up 96% storage costs with Storage tiering</a>
+    </th>
+    <th>
+      <a href="https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management">Increase data quality with schemas</a>
+    </th>
+  </tr>
+
+ <tr>
+    <td width="50%">
+        <a href="https://docs.memphis.dev">
+          <img width="1512" alt="Screenshot 2023-09-29 at 10 17 58" src="https://github.com/memphisdev/memphis/assets/70286779/beeaec9f-c8a5-4f6a-b520-a810eb68aa13">
+        </a>
+    </td>
+    <td width="50%">
+        <a href="https://docs.memphis.dev">
+        <img width="1512" alt="Screenshot 2023-09-29 at 10 16 40" src="https://github.com/memphisdev/memphis/assets/70286779/7c62977a-2d83-4c54-b233-084958be1411">
+        </a>
+    </td>
+  </tr>
+
+</table>
+
 ## Public case studies
 - [Dstny - Building the next-gen in-house communication using Memphis.dev](https://memphis.dev/blog/how-dstny-building-the-future-of-in-house-communication-using-memphis-dev/)
 - [Gastromatic - Synchronizing data using Memphis.dev](https://medium.com/gastromatic/synchronizing-data-using-memphis-dev-a-case-study-2e6e9a7b5512)
