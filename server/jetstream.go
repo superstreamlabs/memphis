@@ -1303,6 +1303,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			THROUGHPUT_LEGACY_STREAM_EXIST = true
 		case dlsSchemaverseStream:
 			DLS_SCHEMAVERSE_STREAM_CREATED = true
+		case integrationsAuditLogsStream:
+			INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 

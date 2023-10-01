@@ -45,19 +45,20 @@ const (
 )
 
 const (
-	syslogsStreamName      = "$memphis_syslogs"
-	syslogsExternalSubject = "extern.*"
-	syslogsInfoSubject     = "extern.info"
-	syslogsWarnSubject     = "extern.warn"
-	syslogsErrSubject      = "extern.err"
-	syslogsSysSubject      = "intern.sys"
-	dlsStreamName          = "$memphis-%s-dls"
-	dlsUnackedStream       = "$memphis_dls_unacked"
-	dlsSchemaverseStream   = "$memphis_dls_schemaverse"
-	tieredStorageStream    = "$memphis_tiered_storage"
-	throughputStreamName   = "$memphis-throughput"
-	throughputStreamNameV1 = "$memphis-throughput-v1"
-	MEMPHIS_GLOBAL_ACCOUNT = "$memphis"
+	syslogsStreamName           = "$memphis_syslogs"
+	syslogsExternalSubject      = "extern.*"
+	syslogsInfoSubject          = "extern.info"
+	syslogsWarnSubject          = "extern.warn"
+	syslogsErrSubject           = "extern.err"
+	syslogsSysSubject           = "intern.sys"
+	dlsStreamName               = "$memphis-%s-dls"
+	dlsUnackedStream            = "$memphis_dls_unacked"
+	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
+	tieredStorageStream         = "$memphis_tiered_storage"
+	throughputStreamName        = "$memphis-throughput"
+	throughputStreamNameV1      = "$memphis-throughput-v1"
+	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
+	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
 )
 
 var noLimit = -1
@@ -81,6 +82,7 @@ var memphisExportString = `[
 	{service: "$memphis_schemaverse_dls"},
 	{service: "$memphis_pm_acks"},
 	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
+	{service: "$memphis_integrations_audit_logs"},
 	{stream: "$memphis_ws_pubs.>"},
 	]
 `
@@ -101,6 +103,7 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
 	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
+	{service: {account: "$memphis", subject: "$memphis_integrations_audit_logs"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
 	]
 `
@@ -124,16 +127,17 @@ const (
 
 // errors
 var (
-	ErrBadHeader                     = errors.New("could not decode header")
-	TIERED_STORAGE_CONSUMER_CREATED  bool
-	TIERED_STORAGE_STREAM_CREATED    bool
-	DLS_UNACKED_CONSUMER_CREATED     bool
-	DLS_UNACKED_STREAM_CREATED       bool
-	DLS_SCHEMAVERSE_STREAM_CREATED   bool
-	DLS_SCHEMAVERSE_CONSUMER_CREATED bool
-	SYSLOGS_STREAM_CREATED           bool
-	THROUGHPUT_STREAM_CREATED        bool
-	THROUGHPUT_LEGACY_STREAM_EXIST   bool
+	ErrBadHeader                           = errors.New("could not decode header")
+	TIERED_STORAGE_CONSUMER_CREATED        bool
+	TIERED_STORAGE_STREAM_CREATED          bool
+	DLS_UNACKED_CONSUMER_CREATED           bool
+	DLS_UNACKED_STREAM_CREATED             bool
+	DLS_SCHEMAVERSE_STREAM_CREATED         bool
+	DLS_SCHEMAVERSE_CONSUMER_CREATED       bool
+	SYSLOGS_STREAM_CREATED                 bool
+	THROUGHPUT_STREAM_CREATED              bool
+	THROUGHPUT_LEGACY_STREAM_EXIST         bool
+	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
 )
 
 type Messages []models.MessageDetails
@@ -505,8 +509,29 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			successCh <- err
 			return
 		}
-		TIERED_STORAGE_STREAM_CREATED = true
+		THROUGHPUT_STREAM_CREATED = true
 	}
+
+	// create integrations audit logs stream
+	if !INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         integrationsAuditLogsStream,
+			Subjects:     []string{integrationsAuditLogsStream + ".>"},
+			Retention:    LimitsPolicy,
+			MaxAge:       time.Hour * 24 * 7, // 7 days
+			MaxConsumers: -1,
+			MaxMsgsPer:   200,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
+	}
+
 	successCh <- nil
 }
 
