@@ -176,4 +176,40 @@ integ-item {
             font-size: 12px;
         }
     }
+    .ant-tabs-tab {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-left: 20px;
+        .tabs-name {
+            font-size: 12px;
+        }
+    }
+}
+.integration-log-content-wrapper {
+    background: white;
+    box-shadow: 0px 6px 18px rgb(0 0 0 / 6%);
+    border-radius: 8px;
+    height: 100%;
+    // width: calc(100% - 450px);
+    width: 100%;
+    min-height: 400px;
+
+    log-content {
+        margin: 15px;
+        padding: 15px;
+        height: calc(100% - 150px);
+        display: flex;
+        border: 1px solid #efefef;
+        border-radius: 8px;
+        overflow: auto;
+        color: #84818a;
+        place-content: space-between;
+        margin-bottom: 0px;
+        .copy-button {
+            cursor: pointer;
+            img {
+                width: 20px;
+            }
+        }
+    }
 }

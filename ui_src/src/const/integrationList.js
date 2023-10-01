@@ -185,6 +185,7 @@ export const INTEGRATION_LIST = {
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <DatadogIcon alt="datadogIcon" />
@@ -229,6 +230,7 @@ export const INTEGRATION_LIST = {
         icon: <SlackLogo alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         category: CATEGORY_LIST['Notifications'],
+        hasLogs: true,
         header: (
             <div className="header-left-side">
                 <SlackLogo alt="slackLogo" />
@@ -257,6 +259,7 @@ export const INTEGRATION_LIST = {
             'S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage Tiering'],
+        hasLogs: true,
         header: (
             <div className="header-left-side">
                 <S3Logo alt="s3Logo" />
@@ -286,6 +289,7 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <ElasticIcon alt="elasticIcon" />
@@ -329,6 +333,7 @@ export const INTEGRATION_LIST = {
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <GrafanaIcon alt="grafanaIcon" />
@@ -368,6 +373,7 @@ export const INTEGRATION_LIST = {
         description:
             'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
         category: CATEGORY_LIST['Change-Data-Capture'],
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <DebeziumIcon alt="debeziumIcon" />
@@ -407,6 +413,7 @@ export const INTEGRATION_LIST = {
             'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
         category: CATEGORY_LIST['SourceCode'],
         cloudOnly: true,
+        hasLogs: true,
         header: (
             <div className="header-left-side">
                 <GithubIntegrationIcon alt="gitHubLogo" />
@@ -436,6 +443,7 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <PageDutyIcon alt="pagerDutyIcon" />
@@ -464,6 +472,7 @@ export const INTEGRATION_LIST = {
         comingSoon: true,
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <NewRelicIcon alt="newrelicIcon" />
@@ -492,6 +501,7 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <InfluxDBIcon alt="influxDBIcon" />
