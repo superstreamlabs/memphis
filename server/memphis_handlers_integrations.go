@@ -305,8 +305,6 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
 
-	go it.S.purgeIntegrationAuditLogs(integrationType, user.TenantName)
-
 	c.IndentedJSON(200, gin.H{})
 }
 
@@ -594,27 +592,4 @@ func (it IntegrationsHandler) Warnf(integrationType, tenantName string, log stri
 
 func (it IntegrationsHandler) Noticef(integrationType, tenantName string, log string) {
 	it.S.sendIntegrationAuditLogToSubject(integrationType, tenantName, "[INF] "+log)
-}
-
-func (s *Server) purgeIntegrationAuditLogs(integrationType, tenantName string) {
-	auditLogs, err := s.getIntegrationAuditLogs(integrationType, tenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at getIntegrationAuditLogs: Integration %v: %v", tenantName, integrationType, err.Error())
-		return
-	}
-
-	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, integrationsAuditLogsStream)
-	for _, log := range auditLogs {
-		var resp JSApiMsgDeleteResponse
-		req := JSApiMsgDeleteRequest{Seq: log.ID}
-		reqj, _ := json.Marshal(req)
-		err := jsApiRequest(tenantName, s, requestSubject, kindDeleteMessage, reqj, &resp)
-		if err != nil {
-			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at jsApiRequest: Integration %v: %v", tenantName, integrationType, err.Error())
-		}
-		respErr := resp.ToError()
-		if respErr != nil {
-			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at respErr: Integration %v: %v", tenantName, integrationType, respErr.Error())
-		}
-	}
 }
