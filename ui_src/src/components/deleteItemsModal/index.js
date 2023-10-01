@@ -21,7 +21,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
 
     useEffect(() => {
         const keyDownHandler = (event) => {
-            if (event.key === 'Enter' && confirm === (textToConfirm || 'permanently delete')) {
+            if (event.key === 'Enter' && confirm === (textToConfirm || 'delete')) {
                 handleDeleteSelected();
             }
         };
@@ -37,10 +37,10 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
             <p className="desc">{desc}</p>
             <div className="confirm-section">
                 <p>
-                    Please type <b>{textToConfirm || 'permanently delete'}</b> to confirm.
+                    Please type <b>{textToConfirm || 'delete'}</b> to confirm.
                 </p>
                 <Input
-                    placeholder={textToConfirm || 'permanently delete'}
+                    placeholder={textToConfirm || 'delete'}
                     autoFocus={true}
                     type="text"
                     radiusType="semi-round"
@@ -63,7 +63,7 @@ const DeleteItemsModal = ({ title, desc, handleDeleteSelected, buttontxt, textTo
                     backgroundColorType="purple"
                     fontSize="12px"
                     fontFamily="InterSemiBold"
-                    disabled={confirm !== (textToConfirm || 'permanently delete') || loader}
+                    disabled={confirm !== (textToConfirm || 'delete') || loader}
                     isLoading={loader}
                     onClick={() => handleDeleteSelected()}
                 />

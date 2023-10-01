@@ -61,11 +61,11 @@ export const CATEGORY_LIST = {
     'Change-Data-Capture': {
         name: 'Change-Data-Capture',
         color: ColorPalette[11]
+    },
+    SourceCode: {
+        name: 'Source Code',
+        color: ColorPalette[6]
     }
-    // SourceCode: {
-    //     name: 'Source Code',
-    //     color: ColorPalette[6]
-    // }
 };
 
 export const REGIONS_OPTIONS = [
@@ -276,34 +276,6 @@ export const INTEGRATION_LIST = {
             </div>
         )
     },
-    // GitHub: {
-    //     name: 'Github',
-    //     by: 'memphis',
-    //     banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
-    //     insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
-    //     icon: <GithubIntegrationIcon alt="gitHubIcon" />,
-    //     description:
-    //         'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
-    //     category: CATEGORY_LIST['SourceCode'],
-    //     header: (
-    //         <div className="header-left-side">
-    //             <GithubIntegrationIcon alt="gitHubLogo" />
-    //             <div className="details">
-    //                 <p>GitHub</p>
-    //                 <span>by memphis</span>
-    //             </div>
-    //         </div>
-    //     ),
-    //     integrateDesc: (
-    //         <div className="integrate-description">
-    //             <p>Description</p>
-    //             <span className="content">
-    //                 GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
-    //                 and Functions source code.
-    //             </span>
-    //         </div>
-    //     )
-    // },
     Elasticsearch: {
         name: 'Elasticsearch observability',
         by: 'memphis',
@@ -424,6 +396,35 @@ export const INTEGRATION_LIST = {
                 key: 1
             }
         ]
+    },
+    GitHub: {
+        name: 'Github',
+        by: 'memphis',
+        banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
+        insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
+        icon: <GithubIntegrationIcon alt="gitHubIcon" />,
+        description:
+            'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
+        category: CATEGORY_LIST['SourceCode'],
+        cloudOnly: true,
+        header: (
+            <div className="header-left-side">
+                <GithubIntegrationIcon alt="gitHubLogo" />
+                <div className="details">
+                    <p>GitHub</p>
+                    <span>by memphis</span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas
+                    and Functions source code.
+                </span>
+            </div>
+        )
     },
     PagerDuty: {
         name: 'PagerDuty',

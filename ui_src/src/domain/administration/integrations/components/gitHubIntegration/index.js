@@ -25,12 +25,11 @@ import Input from '../../../../../components/Input';
 import Loader from '../../../../../components/loader';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
-
 const GitHubIntegration = ({ close, value }) => {
-    const isValue = value && Object?.keys(value)?.length !== 0;
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
     const [creationForm] = Form.useForm();
     const [state, dispatch] = useContext(Context);
+    const [applicationName, setApplicationName] = useState(null);
     const [formFields, setFormFields] = useState({
         name: 'github',
         keys: {
@@ -38,7 +37,6 @@ const GitHubIntegration = ({ close, value }) => {
             connected_repos: []
         }
     });
-    const [loadingCreate, setLoadingCreate] = useState(false);
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [loadingRepos, setLoadingRepos] = useState(true);
@@ -69,7 +67,7 @@ const GitHubIntegration = ({ close, value }) => {
             setImagesLoaded(true);
         });
         getIntegration();
-    }, []);
+    }, [value]);
 
     function areEqual(arr1, arr2) {
         if (arr1?.length !== arr2?.length) {
@@ -100,7 +98,6 @@ const GitHubIntegration = ({ close, value }) => {
             updatedValue.connected_repos.push(repo);
         }
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
-        setAddNew(false);
     };
 
     const cleanEmptyFields = () => {
@@ -127,6 +124,8 @@ const GitHubIntegration = ({ close, value }) => {
             disconnect ? setLoadingDisconnect(false) : setLoadingSubmit(false);
         }, 1000);
         close(data);
+        setIsIntagrated(false);
+
         showMessages('success', disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully');
     };
 
@@ -136,22 +135,11 @@ const GitHubIntegration = ({ close, value }) => {
         try {
             const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, updatedFields);
             dispatch({ type: 'UPDATE_INTEGRATION', payload: data });
-            closeModal(data);
+            setAddNew(false);
+            await getIntegration();
         } catch (err) {
+        } finally {
             setLoadingSubmit(false);
-        }
-    };
-
-    const createIntegration = async () => {
-        try {
-            setLoadingCreate(true);
-            const data = await httpRequest('POST', ApiEndpoints.CREATE_INTEGRATION, formFields);
-            dispatch({ type: 'ADD_INTEGRATION', payload: data });
-            getIntegration();
-            setLoadingCreate(false);
-            setIsIntagrated(true);
-        } catch (err) {
-            setLoadingCreate(false);
         }
     };
 
@@ -159,8 +147,15 @@ const GitHubIntegration = ({ close, value }) => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
             if (data) {
-                updateKeysState('connected_repos', data?.integaraion?.keys?.connected_repos || []);
+                if (data?.integration) {
+                    setIsIntagrated(true);
+                } else {
+                    setIsIntagrated(false);
+                }
+
+                updateKeysState('connected_repos', data?.integration?.keys?.connected_repos || []);
                 setRepos(data?.repos);
+                setApplicationName(data?.application_name);
             } else
                 setFormFields({
                     name: 'github',
@@ -169,14 +164,15 @@ const GitHubIntegration = ({ close, value }) => {
                         connected_repos: []
                     }
                 });
-            setLoadingRepos(false);
         } catch (error) {
+        } finally {
             setLoadingRepos(false);
         }
     };
 
     const disconnect = async () => {
         setLoadingDisconnect(true);
+
         try {
             await httpRequest('DELETE', ApiEndpoints.DISCONNECT_INTEGRATION, {
                 name: formFields.name
@@ -211,8 +207,20 @@ const GitHubIntegration = ({ close, value }) => {
                     {githubConfiguration?.insideBanner}
                     <div className="integrate-header">
                         {githubConfiguration.header}
-                        <div className={!isIntegrated ? 'action-buttons flex-end' : 'action-buttons'}>
-                            {isIntegrated && (
+                        <div className={'action-buttons flex-end'}>
+                            <Button
+                                width="140px"
+                                height="35px"
+                                placeholder="Integration guide"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                border="none"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
+                            />
+                            {isIntegrated ? (
                                 <Button
                                     width="100px"
                                     height="35px"
@@ -226,76 +234,25 @@ const GitHubIntegration = ({ close, value }) => {
                                     isLoading={loadingDisconnect}
                                     onClick={() => disconnect()}
                                 />
+                            ) : (
+                                <Button
+                                    height="35px"
+                                    placeholder="Connect"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    border="none"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={!applicationName}
+                                    onClick={() => window.location.assign('https://github.com/apps/memphis-cloud-dev/installations/select_target')}
+                                />
                             )}
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
-                            />
                         </div>
                     </div>
                     {githubConfiguration.integrateDesc}
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
                         <div className="api-details">
-                            <p className="title">API Details</p>
-                            <div className="api-key">
-                                <span className="connect-bth-gh">
-                                    <p>API Token</p>
-                                    {isIntegrated ? (
-                                        <div className="connected-to-gh">
-                                            <TickCircleIcon className="connected" alt="connected" />
-                                            &nbsp;Connected
-                                        </div>
-                                    ) : (
-                                        <Button
-                                            width="80px"
-                                            height="22px"
-                                            placeholder={'Connect'}
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="purple"
-                                            fontSize="12px"
-                                            fontFamily="InterSemiBold"
-                                            disabled={!formFields.keys?.token}
-                                            onClick={createIntegration}
-                                            isLoading={loadingCreate}
-                                        />
-                                    )}
-                                </span>
-
-                                <span className="desc">The secret key associated with the access key.</span>
-                                <Form.Item
-                                    name="token"
-                                    rules={[
-                                        {
-                                            required: !value?.keys?.token,
-                                            message: 'Please insert a token.'
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.token}
-                                >
-                                    <Input
-                                        placeholder={value?.keys?.token || 'ghp_****'}
-                                        type="text"
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="purple"
-                                        borderColorType="none"
-                                        height="40px"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateKeysState('token', e.target.value)}
-                                        onChange={(e) => updateKeysState('token', e.target.value)}
-                                        value={formFields?.keys?.token}
-                                    />
-                                </Form.Item>
-                            </div>
                             {isIntegrated && (
                                 <div className="input-field">
                                     <p className="title">Repos</p>
@@ -322,22 +279,28 @@ const GitHubIntegration = ({ close, value }) => {
                                                         removeRepo={(i) => {
                                                             removeRepoItem(i);
                                                         }}
+                                                        type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
+                                                        updateIntegration={updateIntegration}
+                                                        addIsLoading={loadingSubmit}
                                                     />
                                                 );
                                             })}
-                                            {addNew ? (
-                                                <IntegrationItem
-                                                    index={formFields?.keys?.connected_repos?.length}
-                                                    repo={''}
-                                                    reposList={repos || []}
-                                                    updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
-                                                    removeRepo={(i) => {
-                                                        removeRepoItem(i);
-                                                        setAddNew(false);
+                                            {!addNew && (
+                                                <div
+                                                    className="add-more-repos"
+                                                    onClick={() => {
+                                                        updateKeysConnectedRepos(
+                                                            {
+                                                                type: 'functions',
+                                                                repo_name: '',
+                                                                repo_owner: '',
+                                                                branch: ''
+                                                            },
+                                                            formFields.keys?.connected_repos?.length
+                                                        );
+                                                        setAddNew((prev) => !prev);
                                                     }}
-                                                />
-                                            ) : (
-                                                <div className="add-more-repos" onClick={() => setAddNew(!addNew)}>
+                                                >
                                                     <FiPlus /> <label> {formFields?.keys?.connected_repos?.length === 0 ? `Add the first repo` : `Add more repos`}</label>
                                                 </div>
                                             )}
@@ -347,7 +310,8 @@ const GitHubIntegration = ({ close, value }) => {
                             )}
                         </div>
                         <Form.Item className="button-container">
-                            <div className="button-wrapper">
+                            <div className="button-wrapper button-wrapper-single-item  ">
+                                <div></div>
                                 <Button
                                     width="80%"
                                     height="45px"
@@ -359,19 +323,6 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontSize="14px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => close(value)}
-                                />
-                                <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder={'Update'}
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    isLoading={loadingSubmit}
-                                    onClick={updateIntegration}
-                                    disabled={!isIntegrated || (formFields?.keys?.token === '' && !isChanged)}
                                 />
                             </div>
                         </Form.Item>

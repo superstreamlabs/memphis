@@ -188,7 +188,6 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			return
 		}
 		integration = githubIntegration
-
 	default:
 		serv.Warnf("[tenant: %v]UpdateIntegration: Unsupported integration type - %v", user.TenantName, body.Name)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
@@ -196,161 +195,6 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, integration)
-}
-
-func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle, token, repo, branch, repoType, repoOwner string) (map[string]interface{}, map[string]bool) {
-	keys := make(map[string]interface{})
-	properties := make(map[string]bool)
-	switch integrationType {
-	case "slack":
-		keys["auth_token"] = authToken
-		keys["channel_id"] = channelID
-		properties[PoisonMAlert] = pmAlert
-		properties[SchemaVAlert] = svfAlert
-		properties[DisconEAlert] = disconnectAlert
-	case "s3":
-		keys["access_key"] = accessKey
-		keys["secret_key"] = secretKey
-		keys["bucket_name"] = bucketName
-		keys["s3_path_style"] = forceS3PathStyle
-		keys["region"] = region
-		keys["url"] = url
-	case "github":
-		keys["token"] = token
-		keys["connected_repos"] = []githubRepoDetails{}
-		if repoOwner != "" {
-			keys["connected_repos"] = []githubRepoDetails{{RepoName: repo, Branch: branch, Type: repoType, RepoOwner: repoOwner}}
-		}
-	}
-
-	return keys, properties
-}
-
-func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
-	var body models.GetIntegrationDetailsSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	exist, _, err := db.GetTenantByName(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if !exist {
-		serv.Warnf("[tenant: %v][user: %v]GetIntegrationDetails : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.GetIntegration: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	} else if !exist {
-		c.IndentedJSON(200, nil)
-		return
-	}
-
-	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
-		integration.Keys["auth_token"] = "xoxb-****"
-	}
-
-	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
-		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
-	}
-
-	sourceCodeIntegration, branchesMap, err := getSourceCodeDetails(user.TenantName, body, "get_all_repos")
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-	if integration.Name == "github" {
-		integration = sourceCodeIntegration
-		c.IndentedJSON(200, gin.H{"integration": integration, "repos": branchesMap})
-		return
-	}
-	c.IndentedJSON(200, integration)
-}
-
-func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
-	var body GetSourceCodeBranchesSchema
-	ok := utils.Validate(c, &body, false, nil)
-	if !ok {
-		return
-	}
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		serv.Errorf("GetSourecCodeBranches at getUserDetailsFromMiddleware: Integration %v: %v", body.RepoName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	integration, branches, err := getSourceCodeDetails(user.TenantName, body, "get_all_branches")
-	if err != nil {
-		if strings.Contains(err.Error(), "does not exist") {
-			serv.Warnf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
-			return
-		}
-		serv.Errorf("[tenant: %v][user: %v]GetSourecCodeBranches at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.RepoName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	if integration.Name == "" {
-		c.IndentedJSON(200, nil)
-		return
-	}
-
-	c.IndentedJSON(200, gin.H{"integration": integration, "branches": branches})
-}
-
-func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
-	user, err := getUserDetailsFromMiddleware(c)
-	if err != nil {
-		message := fmt.Sprintf("GetAllIntegrations at getUserDetailsFromMiddleware: %v", err.Error())
-		serv.Errorf(message)
-		c.AbortWithStatusJSON(500, gin.H{"message": message})
-		return
-	}
-
-	_, integrations, err := db.GetAllIntegrationsByTenant(user.TenantName)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetAllIntegrations at db.GetAllIntegrationsByTenant: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
-	for i := 0; i < len(integrations); i++ {
-		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
-			integrations[i].Keys["auth_token"] = "xoxb-****"
-		}
-		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
-			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
-		}
-		if integrations[i].Name == "github" && integrations[i].Keys["token"] != "" {
-			integrations[i].Keys["token"] = hideIntegrationSecretKey(integrations[i].Keys["token"].(string))
-		}
-	}
-
-	shouldSendAnalytics, _ := shouldSendAnalytics()
-	if shouldSendAnalytics {
-		user, _ := getUserDetailsFromMiddleware(c)
-		analyticsParams := make(map[string]interface{})
-		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-integration-page")
-	}
-
-	c.IndentedJSON(200, integrations)
 }
 
 func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
@@ -379,6 +223,20 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 	}
 
 	integrationType := strings.ToLower(body.Name)
+	if integrationType == "github" {
+		err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
+		if err != nil {
+			if strings.Contains(err.Error(), "does not exist") {
+				serv.Warnf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+				return
+			}
+			serv.Errorf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+
 	err = db.DeleteIntegration(integrationType, user.TenantName)
 	if err != nil {
 		serv.Errorf("[tenant: %v]DisconnectIntegration at db.DeleteIntegration: Integration %v: %v", user.TenantName, body.Name, err.Error())
@@ -422,6 +280,136 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
 	c.IndentedJSON(200, gin.H{})
+}
+
+func createIntegrationsKeysAndProperties(integrationType, authToken string, channelID string, pmAlert bool, svfAlert bool, disconnectAlert bool, accessKey, secretKey, bucketName, region, url, forceS3PathStyle string, githubIntegrationDetails map[string]interface{}, repo, branch, repoType, repoOwner string) (map[string]interface{}, map[string]bool) {
+	keys := make(map[string]interface{})
+	properties := make(map[string]bool)
+	switch integrationType {
+	case "slack":
+		keys["auth_token"] = authToken
+		keys["channel_id"] = channelID
+		properties[PoisonMAlert] = pmAlert
+		properties[SchemaVAlert] = svfAlert
+		properties[DisconEAlert] = disconnectAlert
+	case "s3":
+		keys["access_key"] = accessKey
+		keys["secret_key"] = secretKey
+		keys["bucket_name"] = bucketName
+		keys["s3_path_style"] = forceS3PathStyle
+		keys["region"] = region
+		keys["url"] = url
+	case "github":
+		keys = getGithubKeys(githubIntegrationDetails, repoOwner, repo, branch, repoType)
+	}
+
+	return keys, properties
+}
+
+func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
+	var body models.GetIntegrationDetailsSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetIntegrationDetails at getUserDetailsFromMiddleware: Integration %v: %v", body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	exist, _, err := db.GetTenantByName(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at GetTenantByName: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user: %v]GetIntegrationDetails : tenant %v does not exist", user.TenantName, user.Username, user.TenantName)
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	applicationName := retrieveGithubAppName()
+	exist, integration, err := db.GetIntegration(strings.ToLower(body.Name), user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at db.GetIntegration: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	} else if !exist {
+		if body.Name == "github" {
+			c.IndentedJSON(200, gin.H{"application_name": applicationName})
+			return
+		} else {
+			c.IndentedJSON(200, nil)
+			return
+		}
+	}
+
+	if integration.Name == "slack" && integration.Keys["auth_token"] != "" {
+		integration.Keys["auth_token"] = "xoxb-****"
+	}
+
+	if integration.Name == "s3" && integration.Keys["secret_key"] != "" {
+		integration.Keys["secret_key"] = hideIntegrationSecretKey(integration.Keys["secret_key"].(string))
+	}
+
+	sourceCodeIntegration, branchesMap, err := getSourceCodeDetails(user.TenantName, body, "get_all_repos")
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at getSourceCodeDetails: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if integration.Name == "github" {
+		githubIntegration := models.Integration{}
+		githubIntegration.Keys = map[string]interface{}{}
+		githubIntegration.Name = sourceCodeIntegration.Name
+		githubIntegration.TenantName = sourceCodeIntegration.TenantName
+		githubIntegration.Keys["connected_repos"] = sourceCodeIntegration.Keys["connected_repos"]
+		githubIntegration.Keys["memphis_functions"] = integration.Keys["memphis_functions"]
+		githubIntegration.Keys["application_name"] = applicationName
+		c.IndentedJSON(200, gin.H{"integration": githubIntegration, "repos": branchesMap})
+		return
+	}
+	c.IndentedJSON(200, integration)
+}
+
+func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		message := fmt.Sprintf("GetAllIntegrations at getUserDetailsFromMiddleware: %v", err.Error())
+		serv.Errorf(message)
+		c.AbortWithStatusJSON(500, gin.H{"message": message})
+		return
+	}
+
+	_, integrations, err := db.GetAllIntegrationsByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetAllIntegrations at db.GetAllIntegrationsByTenant: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	for i := 0; i < len(integrations); i++ {
+		if integrations[i].Name == "slack" && integrations[i].Keys["auth_token"] != "" {
+			integrations[i].Keys["auth_token"] = "xoxb-****"
+		}
+		if integrations[i].Name == "s3" && integrations[i].Keys["secret_key"] != "" {
+			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
+		}
+		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != "" {
+			delete(integrations[i].Keys, "installation_id")
+		}
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		user, _ := getUserDetailsFromMiddleware(c)
+		analyticsParams := make(map[string]interface{})
+		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-enter-integration-page")
+	}
+
+	c.IndentedJSON(200, integrations)
 }
 
 func (it IntegrationsHandler) RequestIntegration(c *gin.Context) {
