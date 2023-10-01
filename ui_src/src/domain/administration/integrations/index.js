@@ -165,7 +165,7 @@ const Integrations = () => {
                         const integrationItem = filterList[integration];
                         const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
 
-                        if (isCloudAndOsOnly || (!isCloud() && !integrationItem.osOnly)) {
+                        if (isCloudAndOsOnly) {
                             return null;
                         }
 
@@ -179,7 +179,7 @@ const Integrations = () => {
                             />
                         );
 
-                        if (integrationItem.comingSoon) {
+                        if (integrationItem.comingSoon || (!isCloud() && integrationItem.cloudOnly)) {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
