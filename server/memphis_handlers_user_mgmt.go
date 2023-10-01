@@ -178,6 +178,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		if err != nil {
 			return err
 		}
+		serv.PurgeIntegrationsAuditLogs(tenantName)
 	}
 
 	err = serv.memphisPurgeResourcesAccount(tenantName)
