@@ -67,3 +67,9 @@ export const labelType = {
     BADGE: 'label',
     CIRCLEDLETTER: 'circle'
 };
+
+export const planType = {
+    BUSINESS: 'plan-cloud-business',
+    STARTER: 'plan-cloud-starter',
+    FREE: 'plan-cloud-free'
+};
