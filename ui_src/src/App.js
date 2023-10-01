@@ -28,7 +28,8 @@ import {
     LOCAL_STORAGE_TOKEN,
     LOCAL_STORAGE_USER_PASS_BASED_AUTH,
     LOCAL_STORAGE_WS_PORT,
-    USER_IMAGE
+    USER_IMAGE,
+    LOCAL_STORAGE_PLAN
 } from './const/localStorageConsts';
 import { CLOUD_URL, ENVIRONMENT, HANDLE_REFRESH_INTERVAL, WS_PREFIX, WS_SERVER_URL_PRODUCTION } from './config';
 import { isCheckoutCompletedTrue, isCloud } from './services/valueConvertor';
@@ -55,8 +56,6 @@ import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
 import Users from './domain/users';
-import Functions from './domain/functions';
-import { Close, Info } from '@material-ui/icons';
 
 let SysLogs = undefined;
 let Login = undefined;
@@ -163,6 +162,7 @@ const App = withRouter(() => {
             const handleRefreshData = await handleRefreshTokenRequest();
             dispatch({ type: 'SET_USER_DATA', payload: handleRefreshData });
             isCloud() && stigg.setCustomerId(handleRefreshData.account_name);
+            isCloud() && localStorage.setItem(LOCAL_STORAGE_PLAN, handleRefreshData.plan);
             if (handleRefreshData !== '') {
                 if (firstTime) {
                     try {

@@ -16,7 +16,15 @@ import { useHistory } from 'react-router-dom';
 import { HiLockClosed } from 'react-icons/hi';
 import { Form } from 'antd';
 
-import { convertDateToSeconds, generateName, idempotencyValidator, isCloud, partitionsValidator, replicasConvertor } from '../../services/valueConvertor';
+import {
+    convertDateToSeconds,
+    generateName,
+    idempotencyValidator,
+    isCloud,
+    partitionsValidator,
+    replicasConvertor,
+    showUpgradePlan
+} from '../../services/valueConvertor';
 import S3Integration from '../../domain/administration/integrations/components/s3Integration';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
@@ -392,14 +400,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <HiLockClosed className="lock-feature-icon" />
                                         <p>Your current plan allows {state?.userData?.entitlements['feature-partitions-per-station']?.limits} partitions</p>
                                     </div>
-                                    <UpgradePlans
-                                        content={
-                                            <div className="upgrade-button-wrapper">
-                                                <p className="upgrade-plan">Upgrade now</p>
-                                            </div>
-                                        }
-                                        isExternal={false}
-                                    />
+                                    {showUpgradePlan() && (
+                                        <UpgradePlans
+                                            content={
+                                                <div className="upgrade-button-wrapper">
+                                                    <p className="upgrade-plan">Upgrade now</p>
+                                                </div>
+                                            }
+                                            isExternal={false}
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -658,14 +668,16 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                         <HiLockClosed className="lock-feature-icon" />
                                         <p>Your current plan allows {state?.userData?.entitlements['feature-storage-retention']?.limits} retention days</p>
                                     </div>
-                                    <UpgradePlans
-                                        content={
-                                            <div className="upgrade-button-wrapper">
-                                                <p className="upgrade-plan">Upgrade now</p>
-                                            </div>
-                                        }
-                                        isExternal={false}
-                                    />
+                                    {showUpgradePlan() && (
+                                        <UpgradePlans
+                                            content={
+                                                <div className="upgrade-button-wrapper">
+                                                    <p className="upgrade-plan">Upgrade now</p>
+                                                </div>
+                                            }
+                                            isExternal={false}
+                                        />
+                                    )}
                                 </div>
                             )}
                         </div>

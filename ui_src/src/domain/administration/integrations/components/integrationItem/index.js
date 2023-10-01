@@ -28,7 +28,7 @@ import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
 import LockFeature from '../../../../../components/lockFeature';
 
-const IntegrationItem = ({ value, lockFeature }) => {
+const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     const [state] = useContext(Context);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrateValue, setIntegrateValue] = useState({});
@@ -36,6 +36,9 @@ const IntegrationItem = ({ value, lockFeature }) => {
     const ref = useRef();
     ref.current = integrateValue;
 
+    useEffect(() => {
+        modalFlip(isOpen);
+    }, [isOpen]);
     useEffect(() => {
         if (state.integrationsList?.length > 0) {
             checkIfUsed();
@@ -148,7 +151,7 @@ const IntegrationItem = ({ value, lockFeature }) => {
                     <Tag tag={value?.category} />
                 </div>
             </integ-item>
-            <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Modal className="integration-modal" width="720px" height={'95vh'} displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 {modalContent()}
             </Modal>
         </>

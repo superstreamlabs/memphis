@@ -14,15 +14,18 @@ package models
 import "time"
 
 type FunctionsResult struct {
-	FunctionName string    `json:"function_name"`
-	Description  string    `json:"description"`
-	Tags         []string  `json:"tags"`
-	Language     string    `json:"language"`
-	LastCommit   time.Time `json:"last_commit"`
-	Link         string    `json:"link"`
-	Repository   string    `json:"repository"`
-	Branch       string    `json:"branch"`
-	Owner        string    `json:"owner"`
+	FunctionName    string            `json:"function_name"`
+	Description     string            `json:"description"`
+	Tags            []string          `json:"tags"`
+	RunTime         string            `json:"runtime"`
+	Memory          int               `json:"memory"`
+	Storgae         int               `json:"storgae"`
+	LastCommit      time.Time         `json:"last_commit"`
+	Link            string            `json:"link"`
+	Repository      string            `json:"repository"`
+	Branch          string            `json:"branch"`
+	Owner           string            `json:"owner"`
+	EnvironmentVars map[string]string `json:"environment_vars"`
 }
 
 type FunctionsRes struct {

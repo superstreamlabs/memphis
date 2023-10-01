@@ -41,7 +41,8 @@ import {
     TIERED_STORAGE_UPLOAD_INTERVAL,
     USER_IMAGE,
     LOCAL_STORAGE_ACCOUNT_NAME,
-    LOCAL_STORAGE_ENTITLEMENTS
+    LOCAL_STORAGE_ENTITLEMENTS,
+    LOCAL_STORAGE_PLAN
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 import { isCloud } from './valueConvertor';
@@ -79,6 +80,7 @@ const AuthService = (function () {
         localStorage.setItem(LOGS_RETENTION_IN_DAYS, userData.logs_retention);
         localStorage.setItem(TIERED_STORAGE_UPLOAD_INTERVAL, userData.tiered_storage_time_sec);
         isCloud() && localStorage.setItem(LOCAL_STORAGE_ENTITLEMENTS, JSON.stringify(userData.entitlements));
+        isCloud() && localStorage.setItem(LOCAL_STORAGE_PLAN, userData.plan);
         if (userData.already_logged_in === false) {
             localStorage.setItem(LOCAL_STORAGE_WELCOME_MESSAGE, true);
         }

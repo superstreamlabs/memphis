@@ -2190,3 +2190,9 @@ func validateProducersCount(stationId int, tenantName string) error {
 
 func InitializeCloudFunctionRoutes(functionsHandler FunctionsHandler, functionsRoutes *gin.RouterGroup) {
 }
+
+// Integrations
+
+func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
+	c.IndentedJSON(401, "Unautorized")
+}

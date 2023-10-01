@@ -24,6 +24,7 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_COMPANY_LOGO,
     LOCAL_STORAGE_FULL_NAME,
+    LOCAL_STORAGE_PLAN,
     LOCAL_STORAGE_USER_NAME,
     USER_IMAGE
 } from '../../const/localStorageConsts';
@@ -31,7 +32,7 @@ import { ReactComponent as IntegrationColorIcon } from '../../assets/images/inte
 import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
 import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
 import { ReactComponent as DocumentActiveIcon } from '../../assets/images/documentIconActive.svg';
-import { compareVersions, isCloud } from '../../services/valueConvertor';
+import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueConvertor';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
@@ -412,7 +413,7 @@ function SideBar() {
                         <p>v{state.currentVersion}</p>
                     </version>
                 )}
-                {isCloud() && (
+                {showUpgradePlan() && (
                     <UpgradePlans
                         content={
                             <div className="upgrade-button-wrapper">

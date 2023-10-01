@@ -23,7 +23,7 @@ import { ApiEndpoints } from '../../../const/apiEndpoints';
 import SelectCheckBox from '../../../components/selectCheckBox';
 import { generator } from '../../../services/generator';
 import { LOCAL_STORAGE_USER_PASS_BASED_AUTH } from '../../../const/localStorageConsts';
-import { isCloud } from '../../../services/valueConvertor';
+import { isCloud, showUpgradePlan } from '../../../services/valueConvertor';
 import { Context } from '../../../hooks/store';
 import UpgradePlans from '../../../components/upgradePlans';
 
@@ -389,14 +389,16 @@ const CreateUserDetails = ({ createUserRef, closeModal, handleLoader, userList, 
                             <HiLockClosed className="lock-feature-icon" />
                             <p>Your current plan allows {state?.userData?.entitlements['feature-management-users']?.limits} management users</p>
                         </div>
-                        <UpgradePlans
-                            content={
-                                <div className="upgrade-button-wrapper">
-                                    <p className="upgrade-plan">Upgrade now</p>
-                                </div>
-                            }
-                            isExternal={false}
-                        />
+                        {showUpgradePlan() && (
+                            <UpgradePlans
+                                content={
+                                    <div className="upgrade-button-wrapper">
+                                        <p className="upgrade-plan">Upgrade now</p>
+                                    </div>
+                                }
+                                isExternal={false}
+                            />
+                        )}
                     </div>
                 )}
             </Form>

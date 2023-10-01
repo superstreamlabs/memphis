@@ -245,6 +245,9 @@ dynamic-integration {
             margin: 0 20px;
             border-top: 1px solid #dedede;
         }
+        .button-wrapper-single-item {
+            grid-template-columns: 2fr 50%;
+        }
     }
 }
 
@@ -283,10 +286,18 @@ dynamic-integration {
         .repos-item {
             width: 100%;
             display: grid;
-            grid-template-columns: 8% 43% 43% 6%;
+            grid-template-columns: 8% 39% 39% 14%;
             align-items: center;
             position: relative;
             margin: 10px 0px;
+            max-height: 35vh;
+            overflow-y: auto;
+            .add-repo-button {
+                display: flex;
+                flex-wrap: row;
+                align-items: center;
+                justify-content: center;
+            }
             .select-repo-span {
                 width: 100%;
                 display: flex;
