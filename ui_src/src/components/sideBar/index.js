@@ -410,7 +410,7 @@ function SideBar() {
                         onClick={() => (!state.isLatest ? history.replace(`${pathDomains.administration}/version_upgrade`) : null)}
                     >
                         {!state.isLatest && <div className="update-note" />}
-                        <p>{state.currentVersion}</p>
+                        <p>v{state.currentVersion}</p>
                     </version>
                 )}
                 {showUpgradePlan() && (
