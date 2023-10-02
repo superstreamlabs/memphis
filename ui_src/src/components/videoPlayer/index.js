@@ -20,7 +20,7 @@ import Img404 from '../../assets/images/404.svg';
 import { ReactComponent as PlayVideoIcon } from '../../assets/images/playVideoIcon.svg';
 import { ReactComponent as Img404Icon } from '../../assets/images/404.svg';
 
-const VideoPlayer = ({ url, bgImg }) => {
+const VideoPlayer = ({ url, bgImg, width, height }) => {
     const [playState, setPlayState] = useState(false);
     const [isOffline, setIsOffline] = useState(false);
 
@@ -37,8 +37,8 @@ const VideoPlayer = ({ url, bgImg }) => {
                     <PlayVideoIcon className="play-video-icon" />
                 </div>
             }
-            height="250px"
-            width="24vw"
+            height={height || '250px'}
+            width={width || '24vw'}
             url={url}
             onError={() => setIsOffline(true)}
             style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}

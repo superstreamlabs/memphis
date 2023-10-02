@@ -198,11 +198,14 @@ const SlackIntegration = ({ close, value }) => {
                         </div>
                     </div>
                     <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
-                    {tabValue === 'Details' && <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />}
-                    {tabValue === 'Configuration' && (
-                        <>
-                            <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />
-                            <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
+
+                    <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'slack'} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="integration-body">
+                                <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />
+
                                 <div className="api-details">
                                     <p className="title">API details</p>
                                     <div className="api-key">
@@ -320,39 +323,38 @@ const SlackIntegration = ({ close, value }) => {
                                         </>
                                     </div>
                                 </div>
-                                <Form.Item className="button-container">
-                                    <div className="button-wrapper">
-                                        <Button
-                                            width="80%"
-                                            height="45px"
-                                            placeholder="Close"
-                                            colorType="black"
-                                            radiusType="circle"
-                                            backgroundColorType="white"
-                                            border="gray-light"
-                                            fontSize="14px"
-                                            fontFamily="InterSemiBold"
-                                            onClick={() => close(value)}
-                                        />
-                                        <Button
-                                            width="80%"
-                                            height="45px"
-                                            placeholder={isValue ? 'Update' : 'Connect'}
-                                            colorType="white"
-                                            radiusType="circle"
-                                            backgroundColorType="purple"
-                                            fontSize="14px"
-                                            fontFamily="InterSemiBold"
-                                            isLoading={loadingSubmit}
-                                            disabled={isValue && !creationForm.isFieldsTouched()}
-                                            onClick={handleSubmit}
-                                        />
-                                    </div>
-                                </Form.Item>
-                            </Form>
-                        </>
-                    )}
-                    {tabValue === 'Logs' && <IntegrationLogs integrationName={'slack'} />}
+                            </div>
+                        )}
+                        <Form.Item className="button-container">
+                            <div className="button-wrapper">
+                                <Button
+                                    width="80%"
+                                    height="45px"
+                                    placeholder="Close"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    border="gray-light"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => close(value)}
+                                />
+                                <Button
+                                    width="80%"
+                                    height="45px"
+                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="14px"
+                                    fontFamily="InterSemiBold"
+                                    isLoading={loadingSubmit}
+                                    disabled={isValue && !creationForm.isFieldsTouched()}
+                                    onClick={handleSubmit}
+                                />
+                            </div>
+                        </Form.Item>
+                    </Form>
                 </>
             )}
         </dynamic-integration>

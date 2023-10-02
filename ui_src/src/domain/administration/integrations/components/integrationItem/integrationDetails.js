@@ -12,12 +12,17 @@
 
 import React from 'react';
 
-const IntegrationDetails = ({ integrateDesc }) => {
+import VideoPlayer from '../../../../../components/videoPlayer';
+
+const IntegrationDetails = ({ integrateDesc, videoUrl, backGroundImage }) => {
     return (
-        <description is="3xd" className="i">
+        <description is="3xd" className="integration-body">
             {integrateDesc}
 
-            {/* <div>Video here</div> */}
+            {/* <p className="video-title">Getting started</p>
+            <span className="video-container">
+                <VideoPlayer url={videoUrl} width="600px" height="300px" bgImg={backGroundImage} />
+            </span> */}
         </description>
     );
 };

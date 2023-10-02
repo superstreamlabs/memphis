@@ -16,23 +16,239 @@ import React, { useState, useEffect } from 'react';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Copy from '../../../../../components/copy';
-
+import Item from 'antd/lib/list/Item';
+import { parsingDate } from '../../../../../services/valueConvertor';
+import OverflowTip from '../../../../../components/tooltip/overflowtip';
 const IntegrationLogs = ({ integrationName }) => {
-    const [logs, setLogs] = useState([]);
+    const [logsList, setLogsList] = useState([]);
+    const data = [
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        },
+        {
+            id: 3,
+            message: '[INF] Integration slack created successfully\r\n',
+            created_at: '2023-10-01T22:49:25.756204+03:00',
+            tenant_name: '$memphis'
+        }
+    ];
     const getIntegrationLogs = async () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_LOGS}?name=${integrationName}`);
-            const logList = data?.map((log) => {
-                return (
-                    <div>
-                        <p style={{ display: 'flex', alignItems: 'center' }}>
-                            <lavel style={{ fontSize: 6 }}>{'\u2B24'} </lavel>
-                            {`${log?.created_at} ${log?.message}`}
-                        </p>
-                    </div>
-                );
-            });
-            setLogs(logList);
+            setLogsList(data);
         } catch (err) {
             return;
         }
@@ -42,13 +258,50 @@ const IntegrationLogs = ({ integrationName }) => {
     }, []);
 
     return (
-        <div className="integration-log-content-wrapper">
-            <log-content is="3xd">
-                <>{logs}</>
-                <div className="copy-button">
-                    <Copy data={logs} />
+        <div className="integration-body">
+            <div className="integrate-description logs-header">
+                <p>Logs Details</p>
+                <Copy data={JSON.stringify(logsList)} text="Copy Logs" />
+            </div>
+            <div className="generic-list-wrapper">
+                <div className="list">
+                    <div className="coulmns-table">
+                        {[
+                            {
+                                key: '1',
+                                title: 'Message',
+                                width: '400px'
+                            },
+                            {
+                                key: '2',
+                                title: 'Date',
+                                width: '200px'
+                            }
+                        ]?.map((column, index) => {
+                            return (
+                                <span key={index} style={{ width: column.width }}>
+                                    {column.title}
+                                </span>
+                            );
+                        })}
+                    </div>
+                    <div className="rows-wrapper">
+                        {data?.map((row, index) => {
+                            return (
+                                <div className="pubSub-row" key={index}>
+                                    <OverflowTip text={row?.message || row?.tenant_name} width={'400px'}>
+                                        {row?.message || row?.tenant_name}
+                                    </OverflowTip>
+
+                                    <OverflowTip text={parsingDate(row?.created_at)} width={'200px'}>
+                                        {parsingDate(row?.created_at)}
+                                    </OverflowTip>
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
-            </log-content>
+            </div>
         </div>
     );
 };
