@@ -103,12 +103,27 @@
         padding-top: 0px;
     }
 }
-
+.integration-guid-body {
+    height: calc(100% - 400px);
+    position: relative;
+    .stepper-container {
+        height: calc(100% - 60px);
+        position: relative;
+        overflow-y: auto;
+    }
+    .close-btn {
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #dedede;
+        padding: 10px 20px;
+    }
+}
 dynamic-integration {
     display: flex;
     flex-direction: column;
     height: 100%;
     position: relative;
+    overflow-y: hidden;
     p {
         margin: 0;
     }

@@ -16,15 +16,19 @@ import { LoadingOutlined } from '@ant-design/icons';
 
 import { ReactComponent as TickCircleIcon } from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
+import CustomTabs from '../../../../../components/Tabs';
 import Loader from '../../../../../components/loader';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
+import IntegrationDetails from '../integrationItem/integrationDetails';
+import IntegrationLogs from '../integrationItem/integrationLogs';
+
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
     const [creationForm] = Form.useForm();
@@ -45,6 +49,8 @@ const GitHubIntegration = ({ close, value }) => {
     const [addNew, setAddNew] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('GitHub');
 
     useEffect(() => {
         value && Object.keys(value).length > 0 && setIsIntagrated(true);
@@ -250,65 +256,73 @@ const GitHubIntegration = ({ close, value }) => {
                             )}
                         </div>
                     </div>
-                    {githubConfiguration.integrateDesc}
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
-                        <div className="api-details">
-                            {isIntegrated && (
-                                <div className="input-field">
-                                    <p className="title">Repos</p>
-                                    <div className="repos-container">
-                                        <div className="repos-header">
-                                            <label></label>
-                                            <label>REPO NAME</label>
-                                            <label>BRANCH</label>
-                                        </div>
-                                        <div className="repos-body">
-                                            {loadingRepos && (
-                                                <div className="repos-loader">
-                                                    <Spin indicator={antIcon} />
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'github'} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="integration-body">
+                                <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
+                                <div className="api-details">
+                                    {isIntegrated && (
+                                        <div className="input-field">
+                                            <p className="title">Repos</p>
+                                            <div className="repos-container">
+                                                <div className="repos-header">
+                                                    <label></label>
+                                                    <label>REPO NAME</label>
+                                                    <label>BRANCH</label>
                                                 </div>
-                                            )}
-                                            {formFields?.keys?.connected_repos?.map((repo, index) => {
-                                                return (
-                                                    <IntegrationItem
-                                                        key={index}
-                                                        index={index}
-                                                        repo={repo}
-                                                        reposList={repos || []}
-                                                        updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
-                                                        removeRepo={(i) => {
-                                                            removeRepoItem(i);
-                                                        }}
-                                                        type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
-                                                        updateIntegration={updateIntegration}
-                                                        addIsLoading={loadingSubmit}
-                                                    />
-                                                );
-                                            })}
-                                            {!addNew && (
-                                                <div
-                                                    className="add-more-repos"
-                                                    onClick={() => {
-                                                        updateKeysConnectedRepos(
-                                                            {
-                                                                type: 'functions',
-                                                                repo_name: '',
-                                                                repo_owner: '',
-                                                                branch: ''
-                                                            },
-                                                            formFields.keys?.connected_repos?.length
+                                                <div className="repos-body">
+                                                    {loadingRepos && (
+                                                        <div className="repos-loader">
+                                                            <Spin indicator={antIcon} />
+                                                        </div>
+                                                    )}
+                                                    {formFields?.keys?.connected_repos?.map((repo, index) => {
+                                                        return (
+                                                            <IntegrationItem
+                                                                key={index}
+                                                                index={index}
+                                                                repo={repo}
+                                                                reposList={repos || []}
+                                                                updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
+                                                                removeRepo={(i) => {
+                                                                    removeRepoItem(i);
+                                                                }}
+                                                                type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
+                                                                updateIntegration={updateIntegration}
+                                                                addIsLoading={loadingSubmit}
+                                                            />
                                                         );
-                                                        setAddNew((prev) => !prev);
-                                                    }}
-                                                >
-                                                    <FiPlus /> <label> {formFields?.keys?.connected_repos?.length === 0 ? `Add the first repo` : `Add more repos`}</label>
+                                                    })}
+                                                    {!addNew && (
+                                                        <div
+                                                            className="add-more-repos"
+                                                            onClick={() => {
+                                                                updateKeysConnectedRepos(
+                                                                    {
+                                                                        type: 'functions',
+                                                                        repo_name: '',
+                                                                        repo_owner: '',
+                                                                        branch: ''
+                                                                    },
+                                                                    formFields.keys?.connected_repos?.length
+                                                                );
+                                                                setAddNew((prev) => !prev);
+                                                            }}
+                                                        >
+                                                            <FiPlus />
+                                                            <label> {formFields?.keys?.connected_repos?.length === 0 ? `Add the first repo` : `Add more repos`}</label>
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                         <Form.Item className="button-container">
                             <div className="button-wrapper button-wrapper-single-item  ">
                                 <div></div>

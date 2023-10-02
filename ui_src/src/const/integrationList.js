@@ -40,6 +40,10 @@ import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
 
+export const getTabList = (intgrationName) => {
+    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs'] : ['Configuration'];
+};
+
 export const CATEGORY_LIST = {
     All: {
         name: 'All',

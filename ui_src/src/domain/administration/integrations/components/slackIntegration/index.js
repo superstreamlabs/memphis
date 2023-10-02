@@ -18,7 +18,7 @@ import { Form, message } from 'antd';
 import { ReactComponent as PoisionAlertIcon } from '../../../../../assets/images/poisionAlertIcon.svg';
 import { ReactComponent as DisconAlertIcon } from '../../../../../assets/images/disconAlertIcon.svg';
 import { ReactComponent as SchemaAlertIcon } from '../../../../../assets/images/schemaAlertIcon.svg';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Switcher from '../../../../../components/switcher';
@@ -55,8 +55,8 @@ const SlackIntegration = ({ close, value }) => {
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
-    const [tabValue, setTabValue] = useState('Details');
-    const tabs = ['Details', 'Configuration', 'Logs'];
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('Slack');
 
     useEffect(() => {
         const images = [];
