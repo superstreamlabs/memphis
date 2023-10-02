@@ -254,6 +254,8 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 			if strings.Contains(err.Error(), "does not exist") {
 				serv.Warnf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": err.Error()})
+				auditLog := fmt.Sprintf("Failed to disconnect %v integration: %v", integrationType, err.Error())
+				it.Errorf(integrationType, user.TenantName, auditLog)
 				return
 			}
 			serv.Errorf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
@@ -289,7 +291,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		return
 	}
 
-	switch body.Name {
+	switch integrationType {
 	case "slack":
 		update := models.SdkClientsUpdates{
 			Type:   sendNotificationType,
@@ -305,7 +307,8 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
 
-	go it.S.purgeIntegrationAuditLogs(integrationType, user.TenantName)
+	auditLog := fmt.Sprintf("Integration %v disconnected by user %v", integrationType, user.Username)
+	it.Noticef(integrationType, user.TenantName, auditLog)
 
 	c.IndentedJSON(200, gin.H{})
 }
@@ -596,25 +599,18 @@ func (it IntegrationsHandler) Noticef(integrationType, tenantName string, log st
 	it.S.sendIntegrationAuditLogToSubject(integrationType, tenantName, "[INF] "+log)
 }
 
-func (s *Server) purgeIntegrationAuditLogs(integrationType, tenantName string) {
-	auditLogs, err := s.getIntegrationAuditLogs(integrationType, tenantName)
+func (s *Server) PurgeIntegrationsAuditLogs(tenantName string) {
+	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, integrationsAuditLogsStream)
+	subj := fmt.Sprintf("%s.%s.*", integrationsAuditLogsStream, tenantName)
+	var resp JSApiStreamPurgeResponse
+	req := JSApiStreamPurgeRequest{Subject: subj}
+	reqj, _ := json.Marshal(req)
+	err := jsApiRequest(MEMPHIS_GLOBAL_ACCOUNT, s, requestSubject, kindDeleteMessage, reqj, &resp)
 	if err != nil {
-		serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at getIntegrationAuditLogs: Integration %v: %v", tenantName, integrationType, err.Error())
-		return
+		serv.Errorf("[tenant: %v]PurgeIntegrationsAuditLogs at jsApiRequest: %v", tenantName, err.Error())
 	}
-
-	requestSubject := fmt.Sprintf(JSApiMsgDeleteT, integrationsAuditLogsStream)
-	for _, log := range auditLogs {
-		var resp JSApiMsgDeleteResponse
-		req := JSApiMsgDeleteRequest{Seq: log.ID}
-		reqj, _ := json.Marshal(req)
-		err := jsApiRequest(tenantName, s, requestSubject, kindDeleteMessage, reqj, &resp)
-		if err != nil {
-			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at jsApiRequest: Integration %v: %v", tenantName, integrationType, err.Error())
-		}
-		respErr := resp.ToError()
-		if respErr != nil {
-			serv.Errorf("[tenant: %v]purgeIntegrationAuditLogs at respErr: Integration %v: %v", tenantName, integrationType, respErr.Error())
-		}
+	respErr := resp.ToError()
+	if respErr != nil {
+		serv.Errorf("[tenant: %v]PurgeIntegrationsAuditLogs at respErr: %v", tenantName, respErr.Error())
 	}
 }
