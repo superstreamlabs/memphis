@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	memphisDevFunctionsRepoName  = "memphis-dev-functions"
-	memphisDevFunctionsOwnerName = "memphisdev"
+	memphisDevFunctionsRepoName   = "memphis-dev-functions"
+	memphisDevFunctionsOwnerName  = "memphisdev"
+	memphisDevFunctionsBranchName = "master"
 )
 
 var memphisFunctions = map[string]interface{}{
@@ -44,6 +45,11 @@ func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool,
 func getGithubClientWithoutAccessToken() *github.Client {
 	client := github.NewClient(nil)
 	return client
+}
+
+func getGithubClient(tenantName string) (string, string, *github.Client, error) {
+	client := getGithubClientWithoutAccessToken()
+	return "", "", client, nil
 }
 
 func (s *Server) getGithubRepositories(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {

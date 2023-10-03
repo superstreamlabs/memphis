@@ -397,7 +397,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		githubIntegration.Name = sourceCodeIntegration.Name
 		githubIntegration.TenantName = sourceCodeIntegration.TenantName
 		githubIntegration.Keys["connected_repos"] = sourceCodeIntegration.Keys["connected_repos"]
-		githubIntegration.Keys["memphis_functions"] = integration.Keys["memphis_functions"]
+		githubIntegration.Keys["memphis_functions"] = memphisFunctions
 		githubIntegration.Keys["application_name"] = applicationName
 		c.IndentedJSON(200, gin.H{"integration": githubIntegration, "repos": branchesMap})
 		return
@@ -429,6 +429,7 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
 		}
 		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != "" {
+			integrations[i].Keys["memphis_functions"] = memphisFunctions
 			delete(integrations[i].Keys, "installation_id")
 		}
 	}
