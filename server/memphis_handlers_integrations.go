@@ -396,6 +396,7 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		githubIntegration.Keys = map[string]interface{}{}
 		githubIntegration.Name = sourceCodeIntegration.Name
 		githubIntegration.TenantName = sourceCodeIntegration.TenantName
+		githubIntegration.IsValid = integration.IsValid
 		githubIntegration.Keys["connected_repos"] = sourceCodeIntegration.Keys["connected_repos"]
 		githubIntegration.Keys["memphis_functions"] = memphisFunctions
 		githubIntegration.Keys["application_name"] = applicationName
