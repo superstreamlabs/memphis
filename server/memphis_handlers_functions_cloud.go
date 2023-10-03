@@ -120,7 +120,7 @@ func (fh FunctionsHandler) GetFunctionDetails(c *gin.Context) {
 	if !isIntegrationConnected {
 		githubClient = getGithubClientWithoutAccessToken()
 	}
-	if (body.Type != "file" && body.Type != "dir") || !isIntegrationConnected && body.Type == "dir" {
+	if (body.Type != "file" && body.Type != "dir") || body.Path == "" {
 		getRepoContentURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/?ref=%s", body.Owner, body.Repository, body.Branch)
 		response, err = getRepoContent(getRepoContentURL, accessToken, body)
 		if err != nil {
@@ -139,7 +139,7 @@ func (fh FunctionsHandler) GetFunctionDetails(c *gin.Context) {
 		if err != nil {
 			if strings.Contains(err.Error(), "404 Not Found") || strings.Contains(err.Error(), "No commit found for the ref test") {
 				serv.Warnf("GetFunctionDetails at githubClient.Repositories.GetContents: %v", err.Error())
-				message := fmt.Sprintf("The file %s in repository %s in branch %s not found", body.Path, body.Repository, body.Branch)
+				message := fmt.Sprintf("The file %s in repository %s in branch %s in organization %s not found", body.Path, body.Repository, body.Branch, body.Owner)
 				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": message})
 				return
 			}
