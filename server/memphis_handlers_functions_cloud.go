@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 
 	"strings"
 
@@ -242,11 +243,19 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 			description = ""
 		}
 
+		runtime := fucntionContentMap["runtime"].(string)
+		regex := regexp.MustCompile(`[0-9]+|\\.$`)
+		language := regex.ReplaceAllString(runtime, "")
+		language = strings.TrimRight(language, ".")
+		if strings.Contains(language, "-edge") {
+			language = strings.Trim(language, ".-edge")
+		}
+
 		functionDetails := models.FunctionsResult{
 			FunctionName:    fucntionContentMap["function_name"].(string),
 			Description:     description,
 			Tags:            tagsStrings,
-			RunTime:         fucntionContentMap["runtime"].(string),
+			RunTime:         runtime,
 			LastCommit:      *commit.Commit.Committer.Date,
 			Link:            *fileContent.HTMLURL,
 			Repository:      repo,
@@ -255,6 +264,7 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 			Memory:          fucntionContentMap["memory"].(int),
 			Storgae:         fucntionContentMap["storage"].(int),
 			EnvironmentVars: environmentVarsStrings,
+			Language:        language,
 		}
 
 		functions = append(functions, functionDetails)

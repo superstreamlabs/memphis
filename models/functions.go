@@ -27,6 +27,7 @@ type FunctionsResult struct {
 	Owner           string            `json:"owner"`
 	EnvironmentVars map[string]string `json:"environment_vars"`
 	ScmType         string            `json:"scm_type"`
+	Language        string            `json:"language"`
 }
 
 type FunctionsRes struct {
