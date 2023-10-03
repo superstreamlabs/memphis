@@ -37,35 +37,22 @@ real-time and streaming apps fast.
 
 ## 🚀 Getting Started
 [Tutorials](https://docs.memphis.dev/memphis/getting-started/tutorials) | [Videos](https://www.youtube.com/playlist?list=PL_7iYjqhtXpWpZT2U0zDYo2eGOoGmg2mm)<br>
-### ☸ Helm for Kubernetes
+#### ☸ Kubernetes
 ```shell
 helm repo add memphis https://k8s.memphis.dev/charts/ --force-update && \
 helm install my-memphis memphis/memphis --create-namespace --namespace memphis
 ```
-**Establish a local access**
-```shell
-To access Memphis using UI/CLI/SDK from localhost, run the below commands:
-
-  - kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis > /dev/null &
-
-For interacting with the broker via HTTP:
-
-  - kubectl port-forward service/memphis-rest-gateway 4444:4444 --namespace memphis > /dev/null &
-
-Dashboard/CLI: http://localhost:9000
-Broker: localhost:6666 (Client Connections)
-REST gateway: localhost:4444 (Data + Mgmt)
-```
-### 🐳 Docker Compose
+#### 🐳 Docker Compose
 ```shell
 curl -s https://memphisdev.github.io/memphis-docker/docker-compose.yml -o docker-compose.yml && \
 docker compose -f docker-compose.yml -p memphis up
 ```
-**Establish a local access**
-```shell
-Dashboard/CLI: http://localhost:9000
-Broker: localhost:6666
-```
+
+<div align="center">
+
+  <img style="width: 50%" src="https://github.com/memphisdev/memphis/assets/70286779/38c7cee0-964e-40bd-ab3c-0ea5aeefc513" />
+
+</div>
 
 ## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.0-latest)
 
