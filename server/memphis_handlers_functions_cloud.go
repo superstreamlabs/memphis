@@ -12,9 +12,16 @@
 package server
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 
+	"strings"
+
+	"github.com/google/go-github/github"
 	"github.com/memphisdev/memphis/models"
+	"github.com/memphisdev/memphis/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,9 +38,15 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 
 	functionsResult, err := fh.GetFunctions(user.TenantName)
 	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
+		if strings.Contains(err.Error(), "403 API rate limit exceeded") {
+			serv.Warnf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "GitHub actions has rate limits for making requests to the GitHub API"})
+			return
+		} else {
+			serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
 	}
 
 	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "functions": functionsResult.Functions})
@@ -66,6 +79,126 @@ func validateYamlContent(yamlMap map[string]interface{}) error {
 		return fmt.Errorf("Missing fields: %v\n", missingFields)
 	}
 	return nil
+}
+
+func (fh FunctionsHandler) GetFunctionDetails(c *gin.Context) {
+	var body models.GetFunctionDetails
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetFunctionDetails at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	var accessToken string
+	var githubClient *github.Client
+	var response interface{}
+	isIntegrationConnected := false
+	if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(user.TenantName); ok {
+		if _, ok := tenantInetgrations[body.Scm].(models.Integration); ok {
+			_, accessToken, githubClient, err = getGithubClient(user.TenantName)
+			if err != nil {
+				serv.Errorf("GetFunctionDetails at getGithubClient: %v", err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			isIntegrationConnected = true
+		} else {
+			body.Repository = memphisDevFunctionsRepoName
+			body.Owner = memphisDevFunctionsOwnerName
+			body.Branch = memphisDevFunctionsBranchName
+		}
+	} else {
+		body.Repository = memphisDevFunctionsRepoName
+		body.Owner = memphisDevFunctionsOwnerName
+		body.Branch = memphisDevFunctionsBranchName
+	}
+	if !isIntegrationConnected {
+		githubClient = getGithubClientWithoutAccessToken()
+	}
+	if (body.Type != "file" && body.Type != "dir") || !isIntegrationConnected && body.Type == "dir" {
+		getRepoContentURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/?ref=%s", body.Owner, body.Repository, body.Branch)
+		response, err = getRepoContent(getRepoContentURL, accessToken, body)
+		if err != nil {
+			serv.Errorf("GetFunctionDetails at getRepoContent: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !isIntegrationConnected {
+			c.IndentedJSON(200, gin.H{"content": response})
+			return
+		}
+	} else if body.Type == "file" {
+		filePath := body.Path
+		fileContent, _, _, err := githubClient.Repositories.GetContents(context.Background(), body.Owner, body.Repository, filePath, &github.RepositoryContentGetOptions{
+			Ref: body.Branch})
+		if err != nil {
+			if strings.Contains(err.Error(), "404 Not Found") || strings.Contains(err.Error(), "No commit found for the ref test") {
+				serv.Warnf("GetFunctionDetails at githubClient.Repositories.GetContents: %v", err.Error())
+				message := fmt.Sprintf("The file %s in repository %s in branch %s not found", body.Path, body.Repository, body.Branch)
+				c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": message})
+				return
+			}
+			serv.Errorf("GetFunctionDetails at githubClient.Repositories.GetContents: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if fileContent != nil {
+			content, err := fileContent.GetContent()
+			if err != nil {
+				serv.Errorf("GetFunctionDetails at fileContent.GetContent: %v", err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+
+			response = content
+		}
+
+	} else if body.Type == "dir" {
+		getRepoContentURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s?ref=%s", body.Owner, body.Repository, body.Path, body.Branch)
+		response, err = getRepoContent(getRepoContentURL, accessToken, body)
+		if err != nil {
+			serv.Errorf("GetFunctionDetails at getRepoContent: %v", err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+	}
+	c.IndentedJSON(200, gin.H{"content": response})
+}
+
+func getRepoContent(url, accessToken string, body models.GetFunctionDetails) (interface{}, error) {
+	var response interface{}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return response, err
+	}
+
+	if body.Repository != memphisDevFunctionsRepoName {
+		req.Header.Set("Authorization", "token "+accessToken)
+	}
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
+
+	httpClient := &http.Client{}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return response, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return response, err
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		return response, err
+	}
+
+	return response, nil
 }
 
 func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.FunctionsResult, error) {

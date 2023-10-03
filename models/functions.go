@@ -26,9 +26,19 @@ type FunctionsResult struct {
 	Branch          string            `json:"branch"`
 	Owner           string            `json:"owner"`
 	EnvironmentVars map[string]string `json:"environment_vars"`
+	ScmType         string            `json:"scm_type"`
 }
 
 type FunctionsRes struct {
 	Functions     []FunctionsResult `json:"functions"`
 	ScmIntegrated bool              `json:"scm_integrated"`
+}
+
+type GetFunctionDetails struct {
+	Repository string `form:"repo" json:"repo"`
+	Branch     string `form:"branch" json:"branch"`
+	Owner      string `form:"owner" json:"owner"`
+	Scm        string `form:"scm" json:"scm"`
+	Type       string `form:"type" json:"type"`
+	Path       string `form:"path" json:"path"`
 }
