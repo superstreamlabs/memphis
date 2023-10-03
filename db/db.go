@@ -4195,7 +4195,7 @@ func UpdateIsValidIntegration(tenantName, integrationName string, isValid bool) 
 	}
 	defer conn.Release()
 	query := `UPDATE integrations SET is_valid = $2 WHERE name = $1 AND tenant_name=$3`
-	stmt, err := conn.Conn().Prepare(ctx, "update_pending_user", query)
+	stmt, err := conn.Conn().Prepare(ctx, "update_is_valid_integration", query)
 	if err != nil {
 		return err
 	}
@@ -4206,12 +4206,8 @@ func UpdateIsValidIntegration(tenantName, integrationName string, isValid bool) 
 	if err != nil {
 		return err
 	}
-
 	return nil
-
 }
-
-//
 
 // User Functions
 func UpdatePendingUser(tenantName, username string, pending bool) error {
