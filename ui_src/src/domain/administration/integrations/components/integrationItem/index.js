@@ -127,14 +127,14 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
             <integ-item is="3xd" onClick={() => (value?.comingSoon || lockFeature ? null : modalFlip(true))}>
                 {value?.banner}
                 {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
-                    // <div className="integrate-icon">
-                    //     <IntegratedIcon />
-                    //     <p>Integrated</p>
-                    // </div>
-                    <div className="broken-integration-icon">
-                        <IntegrationFailedIcon />
-                        <p>Integration Failed</p>
+                    <div className="integrate-icon">
+                        <IntegratedIcon />
+                        <p>Integrated</p>
                     </div>
+                    // <div className="broken-integration-icon">
+                    //     <IntegrationFailedIcon />
+                    //     <p>Integration Failed</p>
+                    // </div>
                 )}
                 {lockFeature && (
                     <div className="lock-wrapper">
