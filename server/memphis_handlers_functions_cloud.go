@@ -41,7 +41,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 	if err != nil {
 		if strings.Contains(err.Error(), "403 API rate limit exceeded") {
 			serv.Warnf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
-			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "GitHub actions has rate limits for making requests to the GitHub API"})
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Github's rate limit has been reached, please try again in 1 hour"})
 			return
 		} else {
 			serv.Errorf("[tenant: %v][user: %v]GetAllFunctions at GetFunctions: %v", user.TenantName, user.Username, err.Error())
@@ -54,7 +54,10 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
-	contentDetailsOfSelectedRepos, scmIntegrated := GetContentOfSelectedRepos(tenantName)
+	contentDetailsOfSelectedRepos, scmIntegrated, err := GetContentOfSelectedRepos(tenantName)
+	if err != nil {
+		return models.FunctionsRes{}, err
+	}
 	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
 	if err != nil {
 		return models.FunctionsRes{}, err
@@ -158,7 +161,6 @@ func (fh FunctionsHandler) GetFunctionDetails(c *gin.Context) {
 
 			response = content
 		}
-
 	} else if body.Type == "dir" {
 		getRepoContentURL := fmt.Sprintf("https://api.github.com/repos/%s/%s/contents/%s?ref=%s", body.Owner, body.Repository, body.Path, body.Branch)
 		response, err = getRepoContent(getRepoContentURL, accessToken, body)
