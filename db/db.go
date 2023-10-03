@@ -197,6 +197,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			SELECT 1 FROM information_schema.tables WHERE table_name = 'integrations' AND table_schema = 'public'
 		) THEN
 		ALTER TABLE integrations ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE integrations ADD COLUMN IF NOT EXISTS is_valid BOOL NOT NULL DEFAULT true;
 	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS integrations_name_key;
 	ALTER TABLE integrations DROP CONSTRAINT IF EXISTS tenant_name_name;
 	ALTER TABLE integrations ADD CONSTRAINT tenant_name_name UNIQUE(name, tenant_name);
@@ -209,6 +210,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		keys JSON NOT NULL DEFAULT '{}',
 		properties JSON NOT NULL DEFAULT '{}',
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+		is_valid BOOL NOT NULL DEFAULT true,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name
 			FOREIGN KEY(tenant_name)
@@ -4183,6 +4185,33 @@ func UpdateIntegration(tenantName string, name string, keys map[string]interface
 	}
 	return integrations[0], nil
 }
+
+func UpdateIsValidIntegration(tenantName, integrationName string, isValid bool) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE integrations SET is_valid = $2 WHERE name = $1 AND tenant_name=$3`
+	stmt, err := conn.Conn().Prepare(ctx, "update_pending_user", query)
+	if err != nil {
+		return err
+	}
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, integrationName, isValid, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
+//
 
 // User Functions
 func UpdatePendingUser(tenantName, username string, pending bool) error {

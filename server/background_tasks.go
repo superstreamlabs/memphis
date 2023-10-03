@@ -12,11 +12,15 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
 
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/memphis_cache"
 	"github.com/memphisdev/memphis/models"
@@ -328,6 +332,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.RemoveOldProducersAndConsumers()
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
+	go s.CheckBrokenConnectedIntegration()
 
 	return nil
 }
@@ -636,4 +641,128 @@ func (s *Server) RemoveOldProducersAndConsumers() {
 			}
 		}
 	}
+}
+
+func (s *Server) CheckBrokenConnectedIntegration() error {
+	ticker := time.NewTicker(15 * time.Minute)
+	for range ticker.C {
+		_, integrations, err := db.GetAllIntegrations()
+		if err != nil {
+			serv.Errorf("CheckBrokenConnectedIntegration at GetAllIntegrations: %v", err.Error())
+		}
+
+		for _, integration := range integrations {
+			switch integration.Name {
+			case "github":
+				if _, ok := integration.Keys["installation_id"].(string); !ok {
+					integration.Keys["installation_id"] = ""
+				}
+				err := testGithubIntegration(integration.Keys["installation_id"].(string))
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at testGithubIntegration: %v", err.Error())
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				} else {
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				}
+			case "slack":
+				key := getAESKey()
+				if _, ok := integration.Keys["auth_token"].(string); !ok {
+					integration.Keys["auth_token"] = ""
+				}
+				if _, ok := integration.Keys["channel_id"].(string); !ok {
+					integration.Keys["channel_id"] = ""
+				}
+				authToken, err := DecryptAES(key, integration.Keys["auth_token"].(string))
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at DecryptAES: %v", err.Error())
+				}
+				err = testSlackIntegration(authToken, integration.Keys["channel_id"].(string), "Slack integration sanity test for broken connected integration was successfully")
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at testSlackIntegration: %v", err.Error())
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				} else {
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				}
+			case "s3":
+				key := getAESKey()
+				if _, ok := integration.Keys["access_key"].(string); !ok {
+					integration.Keys["access_key"] = ""
+				}
+				if _, ok := integration.Keys["secret_key"].(string); !ok {
+					integration.Keys["secret_key"] = ""
+				}
+				if _, ok := integration.Keys["region"].(string); !ok {
+					integration.Keys["region"] = ""
+				}
+				if _, ok := integration.Keys["url"].(string); !ok {
+					integration.Keys["url"] = ""
+				}
+				if _, ok := integration.Keys["s3_path_style"].(string); !ok {
+					integration.Keys["s3_path_style"] = ""
+				}
+				if _, ok := integration.Keys["bucket_name"].(string); !ok {
+					integration.Keys["bucket_name"] = ""
+				}
+				accessKey := integration.Keys["access_key"].(string)
+				secretKey, err := DecryptAES(key, integration.Keys["secret_key"].(string))
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at DecryptAES: %v", err.Error())
+				}
+
+				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
+				_, err = provider.Retrieve(context.Background())
+				if err != nil {
+					if strings.Contains(err.Error(), "static credentials are empty") {
+						serv.Errorf("CheckBrokenConnectedIntegration at provider.Retrieve: credentials are empty %v", err.Error())
+					} else {
+						serv.Errorf("CheckBrokenConnectedIntegration at provider.Retrieve: %v", err.Error())
+					}
+				}
+				cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
+					awsconfig.WithCredentialsProvider(provider),
+					awsconfig.WithRegion(integration.Keys["region"].(string)),
+					awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(integration.Keys["region"].(string), integration.Keys["url"].(string))),
+				)
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at awsconfig.LoadDefaultConfig: %v", err.Error())
+				}
+				var usePathStyle bool
+				svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
+					switch integration.Keys["s3_path_style"].(string) {
+					case "true":
+						usePathStyle = true
+					case "false":
+						usePathStyle = false
+					}
+					o.UsePathStyle = usePathStyle
+				})
+				_, err = testS3Integration(svc, integration.Keys["bucket_name"].(string), integration.Keys["url"].(string))
+				if err != nil {
+					serv.Errorf("CheckBrokenConnectedIntegration at testS3Integration: %v", err.Error())
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				} else {
+					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
+					if err != nil {
+						serv.Errorf("CheckBrokenConnectedIntegration at UpdateIsValidIntegration: %v", err.Error())
+					}
+				}
+			}
+		}
+	}
+	return nil
 }

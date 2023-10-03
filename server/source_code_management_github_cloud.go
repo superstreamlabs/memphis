@@ -52,6 +52,10 @@ func getGithubClient(tenantName string) (string, string, *github.Client, error) 
 	return "", "", client, nil
 }
 
+func testGithubIntegration(installationId string) error {
+	return nil
+}
+
 func (s *Server) getGithubRepositories(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {
 	return models.Integration{}, nil, nil
 }
