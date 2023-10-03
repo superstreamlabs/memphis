@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	memphisDevFunctionsRepoName  = "memphis-dev-functions"
-	memphisDevFunctionsOwnerName = "memphisdev"
+	memphisDevFunctionsRepoName   = "memphis-dev-functions"
+	memphisDevFunctionsOwnerName  = "memphisdev"
+	memphisDevFunctionsBranchName = "master"
 )
 
 var memphisFunctions = map[string]interface{}{
@@ -46,6 +47,11 @@ func getGithubClientWithoutAccessToken() *github.Client {
 	return client
 }
 
+func getGithubClient(tenantName string) (string, string, *github.Client, error) {
+	client := getGithubClientWithoutAccessToken()
+	return "", "", client, nil
+}
+
 func (s *Server) getGithubRepositories(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {
 	return models.Integration{}, nil, nil
 }
@@ -71,14 +77,16 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 	var client *github.Client
 	var err error
 	client = getGithubClientWithoutAccessToken()
-	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", nil)
+	_, repoContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, "", &github.RepositoryContentGetOptions{
+		Ref: branch})
 	if err != nil {
 		return functionsDetails, err
 	}
 
 	for _, directoryContent := range repoContent {
 		if directoryContent.GetType() == "dir" {
-			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, nil)
+			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, &github.RepositoryContentGetOptions{
+				Ref: branch})
 			if err != nil {
 				continue
 			}
@@ -89,7 +97,8 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 				var commit *github.RepositoryCommit
 				var contentMap map[string]interface{}
 				if *fileContent.Type == "file" && *fileContent.Name == "memphis.yaml" {
-					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, nil)
+					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, &github.RepositoryContentGetOptions{
+						Ref: branch})
 					if err != nil {
 						continue
 					}

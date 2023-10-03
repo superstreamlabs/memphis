@@ -22,13 +22,13 @@ type GetSourceCodeBranchesSchema struct {
 }
 
 type functionDetails struct {
-	Content         *github.RepositoryContent `json:"content"`
-	Commit          *github.RepositoryCommit  `json:"commit"`
-	ContentMap      map[string]interface{}    `json:"content_map"`
-	RepoName        string                    `json:"repo_name"`
-	Branch          string                    `json:"branch"`
-	IntegrationName string                    `json:"integration_name"`
-	Owner           string                    `json:"owner"`
+	Content    *github.RepositoryContent `json:"content"`
+	Commit     *github.RepositoryCommit  `json:"commit"`
+	ContentMap map[string]interface{}    `json:"content_map"`
+	RepoName   string                    `json:"repo_name"`
+	Branch     string                    `json:"branch"`
+	Scm        string                    `json:"scm"`
+	Owner      string                    `json:"owner"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
@@ -55,7 +55,7 @@ func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, b
 	return selectedReposPerSourceCodeIntegration, scmIntegrated
 }
 
-func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool) {
+func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool, error) {
 	contentDetails := []functionDetails{}
 	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
 	var err error
@@ -64,9 +64,9 @@ func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool) {
 			connectedRepoRes := connectedRepo.(map[string]interface{})
 			contentDetails, err = GetContentOfSelectedRepo(connectedRepoRes, contentDetails)
 			if err != nil {
-				continue
+				return contentDetails, scmIntegrated, err
 			}
 		}
 	}
-	return contentDetails, scmIntegrated
+	return contentDetails, scmIntegrated, nil
 }
