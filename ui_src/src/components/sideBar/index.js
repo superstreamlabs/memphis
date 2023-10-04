@@ -33,6 +33,7 @@ import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overvi
 import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
 import { ReactComponent as DocumentActiveIcon } from '../../assets/images/documentIconActive.svg';
 import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueConvertor';
+import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
@@ -229,7 +230,6 @@ function SideBar() {
                     alt="logo"
                     onClick={() => history.replace(pathDomains.overview)}
                 />
-
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('overview')}
@@ -264,7 +264,6 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
                 </div>
-
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('schemaverse')}
@@ -282,19 +281,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                {/* <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('functions')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.functions)}
-                >
-                    {state.route === 'functions' ? (
-                        <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
-                    ) : (
-                        <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
-                    )}
-                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div> */}
+
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('users')}
@@ -332,12 +319,20 @@ function SideBar() {
                     </div>
                 )}
                 {isCloud() && (
-                    <div className="item-wrapper">
-                        <div className="icon not-available">
-                            <FunctionsIcon alt="FunctionsIcon" width={20} height={20} />
-                        </div>
-                        <p className="not-available">Functions</p>
-                        <p className="coming-soon">Soon</p>
+                    <div
+                        className="item-wrapper"
+                        onMouseEnter={() => setHoveredItem('functions')}
+                        onMouseLeave={() => setHoveredItem('')}
+                        onClick={() => history.replace(pathDomains.functions)}
+                    >
+                        {state.route === 'functions' ? (
+                            <FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'functions' ? (
+                            <FunctionsActiveIcon alt="functionsIcon" width="20" height="20" />
+                        ) : (
+                            <FunctionsIcon alt="functionsIcon" width="20" height="20" />
+                        )}
+                        <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
                     </div>
                 )}
             </div>
