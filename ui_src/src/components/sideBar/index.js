@@ -24,7 +24,6 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_COMPANY_LOGO,
     LOCAL_STORAGE_FULL_NAME,
-    LOCAL_STORAGE_PLAN,
     LOCAL_STORAGE_USER_NAME,
     USER_IMAGE
 } from '../../const/localStorageConsts';
@@ -281,7 +280,21 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-
+                <div
+                    className="item-wrapper"
+                    onMouseEnter={() => setHoveredItem('functions')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    onClick={() => history.replace(pathDomains.functions)}
+                >
+                    {state.route === 'functions' ? (
+                        <FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />
+                    ) : hoveredItem === 'functions' ? (
+                        <FunctionsActiveIcon alt="functionsIcon" width="20" height="20" />
+                    ) : (
+                        <FunctionsIcon alt="functionsIcon" width="20" height="20" />
+                    )}
+                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
+                </div>
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('users')}
@@ -316,23 +329,6 @@ function SideBar() {
                             )}
                         </div>
                         <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                    </div>
-                )}
-                {isCloud() && (
-                    <div
-                        className="item-wrapper"
-                        onMouseEnter={() => setHoveredItem('functions')}
-                        onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.replace(pathDomains.functions)}
-                    >
-                        {state.route === 'functions' ? (
-                            <FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'functions' ? (
-                            <FunctionsActiveIcon alt="functionsIcon" width="20" height="20" />
-                        ) : (
-                            <FunctionsIcon alt="functionsIcon" width="20" height="20" />
-                        )}
-                        <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
                     </div>
                 )}
             </div>
