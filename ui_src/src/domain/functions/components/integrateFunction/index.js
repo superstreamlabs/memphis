@@ -12,36 +12,18 @@
 
 import './style.scss';
 
-import React, { useState } from 'react';
-import ReactPlayer from 'react-player';
+import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
 
-import { ReactComponent as PlayVideoIcon } from '../../assets/images/playVideoIcon.svg';
-import { ReactComponent as Img404Icon } from '../../assets/images/404.svg';
-
-const VideoPlayer = ({ url, bgImg, height = '250px', width = '24vw' }) => {
-    const [playState, setPlayState] = useState(false);
-    const [isOffline, setIsOffline] = useState(false);
-
-    return isOffline ? (
-        <Img404Icon className="not-connected" alt="not-connected" />
-    ) : (
-        <ReactPlayer
-            className="video-player"
-            controls={true}
-            playing={playState}
-            light={true}
-            playIcon={
-                <div onClick={() => setPlayState(true)}>
-                    <PlayVideoIcon className="play-video-icon" />
-                </div>
-            }
-            height={height}
-            width={width}
-            url={url}
-            onError={() => setIsOffline(true)}
-            style={{ backgroundImage: `url(${bgImg})`, backgroundRepeat: 'no-repeat', backgroundSize: 'cover' }}
-        ></ReactPlayer>
+const IntegrateFunction = ({ onClick }) => {
+    return (
+        <div className="itegrate-box-wrapper" onClick={onClick}>
+            <FunctionIntegrateIcon />
+            <div className="text-wrapper">
+                <p className="main-text">Start to integrate</p>
+                <p className="sub-text">Donec dictum tristique porta. Etiam convallis lorem lobortis nulla molestie</p>
+            </div>
+        </div>
     );
 };
 
-export default VideoPlayer;
+export default IntegrateFunction;
