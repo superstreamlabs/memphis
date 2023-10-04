@@ -23,6 +23,7 @@ type Integration struct {
 	Keys       map[string]interface{} `json:"keys"`
 	Properties map[string]bool        `json:"properties"`
 	TenantName string                 `json:"tenant_name"`
+	IsValid    bool                   `json:"is_valid"`
 }
 
 type SlackIntegration struct {
