@@ -108,12 +108,40 @@ function FunctionList() {
     );
 
     const renderFunctionBoxes = () => (
-        <div className="cards-wrapper">
+        <>
             {filteredData?.map((func, index) => (
                 <FunctionBox key={index} funcDetails={func} />
             ))}
-        </div>
+        </>
     );
+
+    const renderContent = () => {
+        const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
+
+        const functionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes()}</div> : null;
+
+        if (!integrated) {
+            if (isCloud()) {
+                if (filteredData?.length === 0 && searchInput.length === 0) {
+                    return (
+                        <div className="cards-wrapper">
+                            <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
+                        </div>
+                    );
+                }
+                return (
+                    <>
+                        {noFunctionsContent}
+                        {functionBoxesContent}
+                    </>
+                );
+            } else {
+                return functionBoxesContent || noFunctionsContent;
+            }
+        } else {
+            return functionBoxesContent || noFunctionsContent;
+        }
+    };
 
     return (
         <div className="function-container">
@@ -190,17 +218,7 @@ function FunctionList() {
                         <Loader />
                     </div>
                 )}
-                {!isLoading && (
-                    <>
-                        {!integrated &&
-                            (isCloud() ? (
-                                <div className="cards-wrapper">{!integrated && <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />}</div>
-                            ) : (
-                                <>{filteredData?.length === 0 ? renderNoFunctionsFound() : renderFunctionBoxes()}</>
-                            ))}
-                        {integrated && <> {filteredData?.length === 0 ? renderNoFunctionsFound() : renderFunctionBoxes()}</>}
-                    </>
-                )}
+                {!isLoading && renderContent()}
             </div>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 <GitHubIntegration
