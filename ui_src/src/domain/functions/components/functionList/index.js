@@ -33,6 +33,7 @@ import CustomTabs from '../../../../components/Tabs';
 import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../cloneModal';
 import { OWNER } from '../../../../const/globalConst';
+import { isCloud } from '../../../../services/valueConvertor';
 const TABS = ['All', 'Memphis', 'Custom'];
 
 function FunctionList() {
@@ -97,6 +98,22 @@ function FunctionList() {
         handleCloseFunctionModal();
         modalFlip(true);
     };
+
+    const renderNoFunctionsFound = () => (
+        <div className="no-function-to-display">
+            <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
+            <p className="title">No functions found</p>
+            <p className="sub-title">Please try to search again</p>
+        </div>
+    );
+
+    const renderFunctionBoxes = () => (
+        <div className="cards-wrapper">
+            {filteredData?.map((func, index) => (
+                <FunctionBox key={index} funcDetails={func} />
+            ))}
+        </div>
+    );
 
     return (
         <div className="function-container">
@@ -175,21 +192,13 @@ function FunctionList() {
                 )}
                 {!isLoading && (
                     <>
-                        {!integrated && <div className="cards-wrapper">{!integrated && <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />}</div>}
-                        {integrated && filteredData?.length > 0 && (
-                            <div className="cards-wrapper">
-                                {filteredData?.map((func, index) => {
-                                    return <FunctionBox key={index} funcDetails={func} />;
-                                })}
-                            </div>
-                        )}
-                        {integrated && filteredData?.length === 0 && (
-                            <div className="no-function-to-display">
-                                <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
-                                <p className="title">No functions found</p>
-                                <p className="sub-title">Please try to search again</p>
-                            </div>
-                        )}
+                        {!integrated &&
+                            (isCloud() ? (
+                                <div className="cards-wrapper">{!integrated && <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />}</div>
+                            ) : (
+                                <>{filteredData?.length === 0 ? renderNoFunctionsFound() : renderFunctionBoxes()}</>
+                            ))}
+                        {integrated && <> {filteredData?.length === 0 ? renderNoFunctionsFound() : renderFunctionBoxes()}</>}
                     </>
                 )}
             </div>
