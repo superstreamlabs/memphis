@@ -185,15 +185,15 @@ func validateMessageStructName(messageStructName string) error {
 	return nil
 }
 
-func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdateInit, error) {
+func generateSchemaUpdateInit(schema models.Schema) (*models.SchemaUpdateInit, error) {
 	activeVersion, err := getActiveVersionBySchemaId(schema.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.ProducerSchemaUpdateInit{
+	return &models.SchemaUpdateInit{
 		SchemaName: schema.Name,
-		ActiveVersion: models.ProducerSchemaUpdateVersion{
+		ActiveVersion: models.SchemaUpdateVersion{
 			VersionNumber:     activeVersion.VersionNumber,
 			Descriptor:        activeVersion.Descriptor,
 			Content:           activeVersion.SchemaContent,
@@ -203,7 +203,7 @@ func generateSchemaUpdateInit(schema models.Schema) (*models.ProducerSchemaUpdat
 	}, nil
 }
 
-func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.ProducerSchemaUpdateInit, error) {
+func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.SchemaUpdateInit, error) {
 	schema, err := getSchemaByStationName(sn, tenantName)
 	if err != nil {
 		return nil, err
@@ -212,7 +212,7 @@ func getSchemaUpdateInitFromStation(sn StationName, tenantName string) (*models.
 	return generateSchemaUpdateInit(schema)
 }
 
-func (s *Server) updateStationProducersOfSchemaChange(tenantName string, sn StationName, schemaUpdate models.ProducerSchemaUpdate) {
+func (s *Server) updateStationProducersOfSchemaChange(tenantName string, sn StationName, schemaUpdate models.SchemaUpdate) {
 	subject := fmt.Sprintf(schemaUpdatesSubjectTemplate, sn.Intern())
 	msg, err := json.Marshal(schemaUpdate)
 	if err != nil {

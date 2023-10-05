@@ -1971,7 +1971,7 @@ func (sh StationsHandler) UseSchema(c *gin.Context) {
 			serv.Errorf("[tenant: %v][user: %v]UseSchema at generateSchemaUpdateInit: Schema %v at station %v : %v", user.TenantName, user.Username, body.SchemaName, stationName.Ext(), err.Error())
 			return
 		}
-		update := models.ProducerSchemaUpdate{
+		update := models.SchemaUpdate{
 			UpdateType: models.SchemaUpdateTypeInit,
 			Init:       *updateContent,
 		}
@@ -2085,7 +2085,7 @@ func (s *Server) useSchemaDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	update := models.ProducerSchemaUpdate{
+	update := models.SchemaUpdate{
 		UpdateType: models.SchemaUpdateTypeInit,
 		Init:       *updateContent,
 	}
@@ -2110,7 +2110,7 @@ func removeSchemaFromStation(s *Server, sn StationName, updateDB bool, tenantNam
 		}
 	}
 
-	update := models.ProducerSchemaUpdate{
+	update := models.SchemaUpdate{
 		UpdateType: models.SchemaUpdateTypeDrop,
 	}
 

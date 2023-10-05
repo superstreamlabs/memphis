@@ -81,25 +81,25 @@ type ExtendedSchemaDetails struct {
 	CreatedByUsername string          `json:"created_by_username"`
 }
 
-type ProducerSchemaUpdateType int
+type SchemaUpdateType int
 
 const (
-	SchemaUpdateTypeInit ProducerSchemaUpdateType = iota + 1
+	SchemaUpdateTypeInit SchemaUpdateType = iota + 1
 	SchemaUpdateTypeDrop
 )
 
-type ProducerSchemaUpdate struct {
-	UpdateType ProducerSchemaUpdateType
-	Init       ProducerSchemaUpdateInit `json:"init,omitempty"`
+type SchemaUpdate struct {
+	UpdateType SchemaUpdateType
+	Init       SchemaUpdateInit `json:"init,omitempty"`
 }
 
-type ProducerSchemaUpdateInit struct {
-	SchemaName    string                      `json:"schema_name"`
-	ActiveVersion ProducerSchemaUpdateVersion `json:"active_version"`
-	SchemaType    string                      `json:"type"`
+type SchemaUpdateInit struct {
+	SchemaName    string              `json:"schema_name"`
+	ActiveVersion SchemaUpdateVersion `json:"active_version"`
+	SchemaType    string               `json:"type"`
 }
 
-type ProducerSchemaUpdateVersion struct {
+type SchemaUpdateVersion struct {
 	VersionNumber     int    `json:"version_number"`
 	Descriptor        string `json:"descriptor"`
 	Content           string `json:"schema_content"`
