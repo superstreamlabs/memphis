@@ -31,6 +31,7 @@ func InitializeHttpServer(s *server.Server) {
 		Integrations:   server.IntegrationsHandler{S: s},
 		Tenants:        server.TenantHandler{S: s},
 		Billing:        server.BillingHandler{S: s},
+		AccessToken:    server.AccessTokenHandler{S: s},
 	}
 
 	httpServer := routes.InitializeHttpRoutes(&handlers)

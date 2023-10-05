@@ -575,10 +575,46 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		END IF;
 	END $$;`
 
+	alterAccessTokenTable := `
+	DO $$
+	BEGIN
+		IF EXISTS (
+			SELECT 1 FROM information_schema.tables WHERE table_name = 'accessTokens' AND table_schema = 'public'
+		) THEN
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS is_active BOOL NOT NULL DEFAULT false;
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS generated_by INTEGER NOT NULL;
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS access_key_id VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS secret_key VARCHAR(200) NOT NULL DEFAULT '';
+		ALTER TABLE accessTokens ADD COLUMN IF NOT EXISTS description VARCHAR NOT NULL DEFAULT '';
+		CREATE INDEX IF NOT EXISTS access_token_access_key_id ON accessTokens(access_key_id);
+		END IF;
+	END $$;`
+
+	accessTokensTable := `
+		CREATE TABLE IF NOT EXISTS accessTokens(
+			id SERIAL NOT NULL,
+			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
+			is_active BOOL NOT NULL DEFAULT true,
+			generated_by INTEGER NOT NULL,
+			access_key_id VARCHAR NOT NULL,
+			secret_key VARCHAR(200) NOT NULL,
+			created_at TIMESTAMPTZ NOT NULL,
+			description VARCHAR NOT NULL DEFAULT '',
+			PRIMARY KEY (id),
+			CONSTRAINT fk_tenant_name
+				FOREIGN KEY(tenant_name)
+				REFERENCES tenants(name),
+			CONSTRAINT fk_generated_by
+				FOREIGN KEY(generated_by)
+				REFERENCES users(id)
+			);
+			CREATE INDEX IF NOT EXISTS access_token_access_key_id ON accessTokens(access_key_id);`
+
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, alterAccessTokenTable, accessTokensTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -7072,4 +7108,122 @@ func CountProudcersForStation(stationId int) (int64, error) {
 	}
 
 	return count, nil
+}
+
+// AccessToken Functions
+func InsertNewAccessToken(generatedBy int, accessKeyID, hashedSecretKey, description, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `INSERT INTO accessTokens( 
+		tenant_name,
+		is_active,
+		generated_by,
+		access_key_id,
+		secret_key,
+		created_at,
+		description) 
+    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id`
+
+	stmt, err := conn.Conn().Prepare(ctx, "insert_new_access_token", query)
+	if err != nil {
+		return err
+	}
+
+	createdAt := time.Now()
+
+	var accessTokenId int
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, tenantName, true, generatedBy, accessKeyID, hashedSecretKey, createdAt, description)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&accessTokenId)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Detail != "" {
+				return errors.New(pgErr.Detail)
+			} else {
+				return errors.New(pgErr.Message)
+			}
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GetAccessTokenByAccessKeyId(accessKeyId string) (bool, models.AccessToken, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, models.AccessToken{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM accessTokens WHERE access_key_id=$1 LIMIT 1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_access_token_by_secret_key_id", query)
+	if err != nil {
+		return false, models.AccessToken{}, err
+	}
+
+	rows, err := conn.Conn().Query(ctx, stmt.Name, accessKeyId)
+	if err != nil {
+		return false, models.AccessToken{}, err
+	}
+	defer rows.Close()
+	accessTokens, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AccessToken])
+	if err != nil {
+		return false, models.AccessToken{}, err
+	}
+	if len(accessTokens) == 0 {
+		return false, models.AccessToken{}, nil
+	}
+	return true, accessTokens[0], nil
+}
+
+func GetAllAccessTokens() ([]models.AccessToken, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.AccessToken{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM accessTokens`
+	stmt, err := conn.Conn().Prepare(ctx, "get_all_access_tokens", query)
+	if err != nil {
+		return []models.AccessToken{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.AccessToken{}, err
+	}
+	defer rows.Close()
+	accessTokens, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AccessToken])
+	if err != nil {
+		return []models.AccessToken{}, err
+	}
+	if len(accessTokens) == 0 {
+		return []models.AccessToken{}, nil
+	}
+
+	return accessTokens, nil
 }
