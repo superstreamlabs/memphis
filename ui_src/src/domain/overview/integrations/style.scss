@@ -35,6 +35,13 @@
                 color: #27ae60;
                 font-size: 14px;
             }
+            .broken {
+                position: absolute;
+                top: 1px;
+                right: 1px;
+                color: #f7685b;
+                font-size: 14px;
+            }
             .img-icon {
                 height: 20px;
                 width: 20px;
@@ -47,12 +54,12 @@
                 margin-left: 10px;
                 cursor: pointer;
             }
-            .lock-feature-icon{
+            .lock-feature-icon {
                 position: absolute;
                 width: 17px;
                 height: 17px;
                 top: -5px;
-                right: -5px;   
+                right: -5px;
             }
         }
     }

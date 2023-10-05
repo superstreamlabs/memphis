@@ -40,6 +40,7 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     useEffect(() => {
         modalFlip(isOpen);
     }, [isOpen]);
+
     useEffect(() => {
         if (state.integrationsList?.length > 0) {
             checkIfUsed();
@@ -126,16 +127,19 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
         <>
             <integ-item is="3xd" onClick={() => (value?.comingSoon || lockFeature ? null : modalFlip(true))}>
                 {value?.banner}
-                {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
+                {integrateValue && Object.keys(integrateValue)?.length !== 0 && integrateValue?.is_valid && (
                     <div className="integrate-icon">
                         <IntegratedIcon />
                         <p>Integrated</p>
                     </div>
-                    // <div className="broken-integration-icon">
-                    //     <IntegrationFailedIcon />
-                    //     <p>Integration Failed</p>
-                    // </div>
                 )}
+                {integrateValue && Object.keys(integrateValue)?.length !== 0 && !integrateValue?.is_valid && (
+                    <div className="broken-integration-icon">
+                        <IntegrationFailedIcon />
+                        <p>Integration Failed</p>
+                    </div>
+                )}
+
                 {lockFeature && (
                     <div className="lock-wrapper">
                         <div className="opacity-background" />
