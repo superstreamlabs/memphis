@@ -43,3 +43,24 @@ type GetFunctionDetails struct {
 	Type       string `form:"type" json:"type"`
 	Path       string `form:"path" json:"path"`
 }
+
+type InstallFunction struct {
+	ID              int                      `json:"id"`
+	FunctionName    string                   `json:"function_name"`
+	Description     string                   `json:"description"`
+	Tags            []string                 `json:"tags"`
+	Runtime         string                   `json:"runtime"`
+	Dependencies    string                   `json:"dependencies"`
+	EnvironmentVars []map[string]interface{} `json:"environment_vars"`
+	Memory          int                      `json:"memory"`
+	Storage         int                      `json:"storage"`
+	Handler         interface{}              `json:"handler"`
+	TenantName      string                   `json:"tenant_name"`
+	Scm             string                   `json:"scm"`
+	Owner           string                   `json:"owner"`
+	Repo            string                   `json:"repo"`
+	Branch          string                   `json:"branch"`
+	UpdatedAt       time.Time                `json:"updated_at"`
+	Version         int                      `json:"version"`
+	InProgress      bool                     `json:"in_progress"`
+}

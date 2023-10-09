@@ -12,3 +12,4 @@
 package db
 
 const testEventsTable = ``
+const installedFunctionsTable = ``
