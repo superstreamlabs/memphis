@@ -1,5 +1,5 @@
 
-[![Docs (1)](https://github.com/memphisdev/memphis/assets/107035359/3cd1b243-ab5c-44ab-9057-f68ebb4af8db)](https://memphis.dev/memphis-functions-private-beta/)
+<a href="https://memphis.dev/memphis-functions-private-beta"><img src="https://github.com/memphisdev/memphis/assets/107035359/3cd1b243-ab5c-44ab-9057-f68ebb4af8db"></a>
 
 </div>
 
