@@ -1,9 +1,4 @@
-<p align="center">
-
-  <a href="https://memphis.dev/memphis-functions-private-beta"><img src="https://github.com/memphisdev/memphis/assets/107035359/3cd1b243-ab5c-44ab-9057-f68ebb4af8db"></a>
-
-</p>
-
+<a href="https://memphis.dev/memphis-functions-private-beta"><img src="https://gcdnb.pbrd.co/images/v0fx7khYZiRh.png?o=1" alt="Docs-1" border="0"></a>
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
