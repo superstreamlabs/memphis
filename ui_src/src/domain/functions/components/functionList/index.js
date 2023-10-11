@@ -34,8 +34,20 @@ import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../cloneModal';
 import { OWNER } from '../../../../const/globalConst';
 import { isCloud } from '../../../../services/valueConvertor';
-const TABS = ['All', 'Memphis', 'Custom'];
-
+const TABS = [
+    {
+        name: 'All',
+        disabled: false
+    },
+    {
+        name: 'Memphis',
+        disabled: false
+    },
+    {
+        name: 'Custom',
+        disabled: !isCloud()
+    }
+];
 function FunctionList() {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
@@ -56,6 +68,7 @@ function FunctionList() {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data.scm_integrated);
+
             setFunctionList(data?.functions);
             setTimeout(() => {
                 setisLoading(false);
@@ -122,10 +135,11 @@ function FunctionList() {
 
         if (!integrated) {
             if (isCloud()) {
-                if (filteredData?.length === 0 && searchInput.length === 0) {
+                if (searchInput.length === 0) {
                     return (
                         <div className="cards-wrapper">
                             <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
+                            {renderFunctionBoxes()}
                         </div>
                     );
                 }
