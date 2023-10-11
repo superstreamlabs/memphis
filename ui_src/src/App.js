@@ -52,6 +52,7 @@ import PrivateRoute from './PrivateRoute';
 import AuthService from './services/auth';
 import Overview from './domain/overview';
 import Loader from './components/loader';
+import Functions from './domain/functions';
 import { Context } from './hooks/store';
 import Profile from './domain/profile';
 import pathDomains from './router';
@@ -478,6 +479,19 @@ const App = withRouter(() => {
                             />
                             <PrivateRoute
                                 exact
+                                path={`${pathDomains.functions}`}
+                                component={
+                                    <AppWrapper
+                                        content={
+                                            <div>
+                                                <Functions />
+                                            </div>
+                                        }
+                                    ></AppWrapper>
+                                }
+                            />
+                            <PrivateRoute
+                                exact
                                 path={pathDomains.users}
                                 component={
                                     <AppWrapper
@@ -584,7 +598,7 @@ const App = withRouter(() => {
                                     ></AppWrapper>
                                 }
                             />
-                            {/* <PrivateRoute
+                            <PrivateRoute
                                 exact
                                 path={`${pathDomains.functions}`}
                                 component={
@@ -597,7 +611,7 @@ const App = withRouter(() => {
                                     ></AppWrapper>
                                 }
                             />
-                            <PrivateRoute
+                            {/* <PrivateRoute
                                 exact
                                 path={`${pathDomains.functions}/:name`}
                                 component={
