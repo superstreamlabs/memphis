@@ -682,7 +682,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				if err != nil {
 					serv.Errorf("CheckBrokenConnectedIntegrations at DecryptAES: %v", err.Error())
 				}
-				err = testSlackIntegration(authToken, integration.Keys["channel_id"].(string), "Slack integration sanity test for broken connected integration was successful")
+				err = testSlackIntegration(authToken)
 				if err != nil {
 					serv.Errorf("CheckBrokenConnectedIntegrations at testSlackIntegration: %v", err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)

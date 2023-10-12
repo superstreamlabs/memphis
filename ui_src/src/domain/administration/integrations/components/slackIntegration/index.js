@@ -18,16 +18,19 @@ import { Form, message } from 'antd';
 import { ReactComponent as PoisionAlertIcon } from '../../../../../assets/images/poisionAlertIcon.svg';
 import { ReactComponent as DisconAlertIcon } from '../../../../../assets/images/disconAlertIcon.svg';
 import { ReactComponent as SchemaAlertIcon } from '../../../../../assets/images/schemaAlertIcon.svg';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Switcher from '../../../../../components/switcher';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import Input from '../../../../../components/Input';
+import CustomTabs from '../../../../../components/Tabs';
 import { URL } from '../../../../../config';
 import Loader from '../../../../../components/loader';
 import { showMessages } from '../../../../../services/genericServices';
+import IntegrationDetails from '../integrationItem/integrationDetails';
+import IntegrationLogs from '../integrationItem/integrationLogs';
 
 const urlSplit = URL.split('/', 3);
 
@@ -52,6 +55,8 @@ const SlackIntegration = ({ close, value }) => {
     const [loadingSubmit, setLoadingSubmit] = useState(false);
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('Slack');
 
     useEffect(() => {
         const images = [];
@@ -192,123 +197,134 @@ const SlackIntegration = ({ close, value }) => {
                             />
                         </div>
                     </div>
-                    {slackConfiguration.integrateDesc}
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
+
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
-                        <div className="api-details">
-                            <p className="title">API details</p>
-                            <div className="api-key">
-                                <p>API KEY</p>
-                                <span className="desc">Copy and paste your slack 'Bot User OAuth Token' here</span>
-                                <Form.Item
-                                    name="auth_token"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please insert auth token.'
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.auth_token}
-                                >
-                                    <Input
-                                        placeholder="xoxb-****"
-                                        type="text"
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="purple"
-                                        borderColorType="none"
-                                        height="40px"
-                                        fontSize="12px"
-                                        onBlur={(e) => updateKeysState('auth_token', e.target.value)}
-                                        onChange={(e) => updateKeysState('auth_token', e.target.value)}
-                                        value={formFields?.keys?.auth_token}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="input-field">
-                                <p>Channel ID</p>
-                                <span className="desc">To which slack channel should Memphis push notifications?</span>
-                                <Form.Item
-                                    name="channel_id"
-                                    rules={[
-                                        {
-                                            required: true,
-                                            message: 'Please insert channel id'
-                                        }
-                                    ]}
-                                    initialValue={formFields?.keys?.channel_id}
-                                >
-                                    <Input
-                                        placeholder="C0P4ISJH06K"
-                                        type="text"
-                                        fontSize="12px"
-                                        radiusType="semi-round"
-                                        colorType="black"
-                                        backgroundColorType="none"
-                                        borderColorType="gray"
-                                        height="40px"
-                                        onBlur={(e) => updateKeysState('channel_id', e.target.value)}
-                                        onChange={(e) => updateKeysState('channel_id', e.target.value)}
-                                        value={formFields.keys?.channel_id}
-                                    />
-                                </Form.Item>
-                            </div>
-                            <div className="notification-option">
-                                <p>Notify me when:</p>
-                                <span className="desc">Memphis will send only the selected triggers</span>
-                                <>
-                                    <div className="option-wrapper">
-                                        <div className="option-name">
-                                            <PoisionAlertIcon />
-                                            <div className="name-des">
-                                                <p>New unacked message</p>
-                                                <span>
-                                                    Messages that cause a consumer group to repeatedly require a delivery (possibly due to a consumer failure) such that
-                                                    the message is never processed completely and acknowledged
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <Form.Item name="poison_message_alert">
-                                            <Switcher
-                                                onChange={() => updatePropertiesState('poison_message_alert', !formFields.properties.poison_message_alert)}
-                                                checked={formFields.properties?.poison_message_alert}
-                                            />
-                                        </Form.Item>
-                                    </div>
-                                    <div className="option-wrapper">
-                                        <div className="option-name">
-                                            <SchemaAlertIcon />
-                                            <div className="name-des">
-                                                <p>Schema validation failure</p>
-                                                <span>Triggered once a client fails in schema validation</span>
-                                            </div>
-                                        </div>
-                                        <Form.Item name="schema_validation_fail_alert">
-                                            <Switcher
-                                                onChange={() =>
-                                                    updatePropertiesState('schema_validation_fail_alert', !formFields.properties.schema_validation_fail_alert)
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'slack'} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="integration-body">
+                                <IntegrationDetails integrateDesc={slackConfiguration.integrateDesc} />
+
+                                <div className="api-details">
+                                    <p className="title">API details</p>
+                                    <div className="api-key">
+                                        <p>API KEY</p>
+                                        <span className="desc">Copy and paste your slack 'Bot User OAuth Token' here</span>
+                                        <Form.Item
+                                            name="auth_token"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: 'Please insert auth token.'
                                                 }
-                                                checked={formFields.properties?.schema_validation_fail_alert}
+                                            ]}
+                                            initialValue={formFields?.keys?.auth_token}
+                                        >
+                                            <Input
+                                                placeholder="xoxb-****"
+                                                type="text"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="purple"
+                                                borderColorType="none"
+                                                height="40px"
+                                                fontSize="12px"
+                                                onBlur={(e) => updateKeysState('auth_token', e.target.value)}
+                                                onChange={(e) => updateKeysState('auth_token', e.target.value)}
+                                                value={formFields?.keys?.auth_token}
                                             />
                                         </Form.Item>
                                     </div>
-                                    <div className="option-wrapper">
-                                        <div className="option-name">
-                                            <DisconAlertIcon />
-                                            <div className="name-des">
-                                                <p>Disconnected clients</p>
-                                                <span>Triggered once a producer/consumer get disconnected</span>
+                                    <div className="input-field">
+                                        <p>Channel ID</p>
+                                        <span className="desc">To which slack channel should Memphis push notifications?</span>
+                                        <Form.Item
+                                            name="channel_id"
+                                            rules={[
+                                                {
+                                                    required: true,
+                                                    message: 'Please insert channel id'
+                                                }
+                                            ]}
+                                            initialValue={formFields?.keys?.channel_id}
+                                        >
+                                            <Input
+                                                placeholder="C0P4ISJH06K"
+                                                type="text"
+                                                fontSize="12px"
+                                                radiusType="semi-round"
+                                                colorType="black"
+                                                backgroundColorType="none"
+                                                borderColorType="gray"
+                                                height="40px"
+                                                onBlur={(e) => updateKeysState('channel_id', e.target.value)}
+                                                onChange={(e) => updateKeysState('channel_id', e.target.value)}
+                                                value={formFields.keys?.channel_id}
+                                            />
+                                        </Form.Item>
+                                    </div>
+                                    <div className="notification-option">
+                                        <p>Notify me when:</p>
+                                        <span className="desc">Memphis will send only the selected triggers</span>
+                                        <>
+                                            <div className="option-wrapper">
+                                                <div className="option-name">
+                                                    <PoisionAlertIcon />
+                                                    <div className="name-des">
+                                                        <p>New unacked message</p>
+                                                        <span>
+                                                            Messages that cause a consumer group to repeatedly require a delivery (possibly due to a consumer failure)
+                                                            such that the message is never processed completely and acknowledged
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Form.Item name="poison_message_alert">
+                                                    <Switcher
+                                                        onChange={() => updatePropertiesState('poison_message_alert', !formFields.properties.poison_message_alert)}
+                                                        checked={formFields.properties?.poison_message_alert}
+                                                    />
+                                                </Form.Item>
                                             </div>
-                                        </div>
-                                        <Form.Item name="schema_validation_fail_alert">
-                                            <Switcher
-                                                onChange={() => updatePropertiesState('disconnection_events_alert', !formFields.properties.disconnection_events_alert)}
-                                                checked={formFields.properties?.disconnection_events_alert}
-                                            />
-                                        </Form.Item>
+                                            <div className="option-wrapper">
+                                                <div className="option-name">
+                                                    <SchemaAlertIcon />
+                                                    <div className="name-des">
+                                                        <p>Schema validation failure</p>
+                                                        <span>Triggered once a client fails in schema validation</span>
+                                                    </div>
+                                                </div>
+                                                <Form.Item name="schema_validation_fail_alert">
+                                                    <Switcher
+                                                        onChange={() =>
+                                                            updatePropertiesState('schema_validation_fail_alert', !formFields.properties.schema_validation_fail_alert)
+                                                        }
+                                                        checked={formFields.properties?.schema_validation_fail_alert}
+                                                    />
+                                                </Form.Item>
+                                            </div>
+                                            <div className="option-wrapper">
+                                                <div className="option-name">
+                                                    <DisconAlertIcon />
+                                                    <div className="name-des">
+                                                        <p>Disconnected clients</p>
+                                                        <span>Triggered once a producer/consumer get disconnected</span>
+                                                    </div>
+                                                </div>
+                                                <Form.Item name="schema_validation_fail_alert">
+                                                    <Switcher
+                                                        onChange={() =>
+                                                            updatePropertiesState('disconnection_events_alert', !formFields.properties.disconnection_events_alert)
+                                                        }
+                                                        checked={formFields.properties?.disconnection_events_alert}
+                                                    />
+                                                </Form.Item>
+                                            </div>
+                                        </>
                                     </div>
-                                </>
+                                </div>
                             </div>
-                        </div>
+                        )}
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
                                 <Button

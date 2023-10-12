@@ -14,12 +14,14 @@ import React, { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import Button from '../../../../../components/button';
 import Loader from '../../../../../components/loader';
 import Copy from '../../../../../components/copy';
 import pathDomains from '../../../../../router';
+import CustomTabs from '../../../../../components/Tabs';
+import IntegrationDetails from '../integrationItem/integrationDetails';
 
 const { Panel } = Collapse;
 
@@ -30,6 +32,8 @@ const DebeziumIntegration = ({ close }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const history = useHistory();
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('Debezium and Postgres');
 
     useEffect(() => {
         const images = [];
@@ -186,22 +190,30 @@ CMD ./run.sh`}
                             />
                         </div>
                     </div>
-                    {debeziumConfiguration.integrateDesc}
-                    <div className="integration-guid-stepper">
-                        <Collapse
-                            activeKey={currentStep}
-                            onChange={(key) => setCurrentStep(Number(key))}
-                            accordion={true}
-                            expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
-                        >
-                            {debeziumConfiguration?.steps?.map((step) => {
-                                return (
-                                    <Panel header={step.title} key={step.key}>
-                                        {getContent(step.key)}
-                                    </Panel>
-                                );
-                            })}
-                        </Collapse>
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
+                    <div className="integration-guid-body">
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={debeziumConfiguration.integrateDesc} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="stepper-container">
+                                <IntegrationDetails integrateDesc={debeziumConfiguration.integrateDesc} />
+                                <div className="integration-guid-stepper">
+                                    <Collapse
+                                        activeKey={currentStep}
+                                        onChange={(key) => setCurrentStep(Number(key))}
+                                        accordion={true}
+                                        expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
+                                    >
+                                        {debeziumConfiguration?.steps?.map((step) => {
+                                            return (
+                                                <Panel header={step.title} key={step.key}>
+                                                    {getContent(step.key)}
+                                                </Panel>
+                                            );
+                                        })}
+                                    </Collapse>
+                                </div>
+                            </div>
+                        )}
                         <div className="close-btn">
                             <Button
                                 width="300px"
