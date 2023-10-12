@@ -1453,6 +1453,10 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		return nil, err
 	}
 
+	if opts.DlsRetentionHours == nil { // for cases the broker started without config file
+		opts.DlsRetentionHours = make(map[string]int)
+	}
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
