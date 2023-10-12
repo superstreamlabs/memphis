@@ -1,8 +1,4 @@
-
-![Banner- Memphis dev streaming ](https://github.com/memphisdev/memphis/assets/107035359/ffa62f72-c494-4143-a416-a704649e646b)
-
-</div>
-
+<a href="https://memphis.dev/memphis-functions-private-beta"><img src="https://gcdnb.pbrd.co/images/v0fx7khYZiRh.png?o=1" alt="Docs-1" border="0"></a>
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
@@ -15,7 +11,7 @@
 <div align="center">
   
   <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/color/cncf-member-silver-color.svg#gh-light-mode-only">
-  <a href="https://landscape.cncf.io/?selected=memphis"><img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only"></a>
+  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only">
   
 </div>
  

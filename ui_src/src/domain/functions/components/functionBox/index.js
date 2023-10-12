@@ -23,15 +23,16 @@ import { parsingDate } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
+import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
 import CustomTabs from '../../../../components/Tabs';
 import pathDomains from '../../../../router';
 import Tag from '../../../../components/tag';
+import { OWNER } from '../../../../const/globalConst';
 
 function FunctionBox({ funcDetails }) {
-    const history = useHistory();
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
@@ -51,7 +52,7 @@ function FunctionBox({ funcDetails }) {
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
-        // setOpen(flag);
+        setOpen(flag);
         // if (flag) {
         //     history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
         //     setSelectedFunction(functionDetails?.function_name);
@@ -68,23 +69,25 @@ function FunctionBox({ funcDetails }) {
                 className={selectedFunction === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
             >
                 <header is="x3d" onClick={() => handleDrawer(true)}>
-                    <div className="function-name">
-                        <OverflowTip text={functionDetails?.function_name} maxWidth={'300px'}>
-                            <span>{functionDetails?.function_name}</span>
-                        </OverflowTip>
+                    <div className="name-wrapper">
+                        <div className="function-name">
+                            <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                {functionDetails?.function_name}
+                            </OverflowTip>
+                        </div>
+                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" />}
                     </div>
+
                     <div className="function-details">
                         <div className="function-repo">
                             <GithubBranchIcon alt="github-branch-icon" />
-                            <OverflowTip text={functionDetails?.repository - functionDetails?.branch} maxWidth={'150px'}>
-                                <span>
-                                    {functionDetails?.repository} - {functionDetails?.branch}
-                                </span>
+                            <OverflowTip text={`${functionDetails?.repository} - ${functionDetails?.branch}`} maxWidth={'150px'}>
+                                {functionDetails?.repository} - {functionDetails?.branch}
                             </OverflowTip>
                         </div>
                         <div className="function-code-type">
                             <CodeBlackIcon alt="code-icon" />
-                            <OverflowTip text={functionDetails?.language} maxWidth={'150px'}>
+                            <OverflowTip text={`${functionDetails?.language}`} maxWidth={'150px'}>
                                 <span>{functionDetails?.language}</span>
                             </OverflowTip>
                         </div>
@@ -105,7 +108,6 @@ function FunctionBox({ funcDetails }) {
                         <FiGitCommit />
                         <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
                     </div>
-                    <Tag editable={false} tag={{ name: 'Custom', color: '101, 87, 255' }} rounded={true} />
                 </date>
             </div>
             <Drawer
@@ -120,7 +122,7 @@ function FunctionBox({ funcDetails }) {
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
-                open={false}
+                open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             ></Drawer>

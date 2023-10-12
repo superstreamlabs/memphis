@@ -37,6 +37,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/graph-gophers/graphql-go v1.5.0
 	github.com/hamba/avro/v2 v2.13.0
+	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v5 v5.3.1
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0
 	github.com/slack-go/slack v0.11.4
@@ -46,6 +47,7 @@ require (
 
 require (
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect

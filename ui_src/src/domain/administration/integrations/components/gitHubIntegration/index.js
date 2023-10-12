@@ -251,7 +251,7 @@ const GitHubIntegration = ({ close, value }) => {
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     disabled={!applicationName}
-                                    onClick={() => window.location.assign('https://github.com/apps/memphis-cloud-dev/installations/select_target')}
+                                    onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
                                 />
                             )}
                         </div>

@@ -73,3 +73,10 @@ export const planType = {
     STARTER: 'plan-cloud-starter',
     FREE: 'plan-cloud-free'
 };
+
+export const githubUrls = {
+    DOWNLOAD_URL: 'https://github.com/memphisdev/memphis/archive/refs/heads/master.zip',
+    MEMPHIS_GIT: 'https://github.com/memphisdev/memphis.git'
+};
+
+export const OWNER = 'memphisdev';
