@@ -15,12 +15,13 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
-
+import CustomTabs from '../../../../../components/Tabs';
 import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
 import Loader from '../../../../../components/loader';
+import IntegrationDetails from '../integrationItem/integrationDetails';
 
 const { Panel } = Collapse;
 
@@ -30,6 +31,8 @@ const ElasticIntegration = ({ close }) => {
     const elasticConfiguration = INTEGRATION_LIST['Elasticsearch'];
     const [currentStep, setCurrentStep] = useState(0);
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('Elasticsearch');
 
     useEffect(() => {
         const images = [];
@@ -132,22 +135,31 @@ const ElasticIntegration = ({ close }) => {
                             />
                         </div>
                     </div>
-                    {elasticConfiguration.integrateDesc}
-                    <div className="integration-guid-stepper">
-                        <Collapse
-                            activeKey={currentStep}
-                            onChange={(key) => setCurrentStep(Number(key))}
-                            accordion={true}
-                            expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
-                        >
-                            {elasticConfiguration?.steps?.map((step) => {
-                                return (
-                                    <Panel header={step.title} key={step.key}>
-                                        {getContent(step.key)}
-                                    </Panel>
-                                );
-                            })}
-                        </Collapse>
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
+
+                    <div className="integration-guid-body">
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={elasticConfiguration.integrateDesc} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="stepper-container">
+                                <IntegrationDetails integrateDesc={elasticConfiguration.integrateDesc} />
+                                <div className="integration-guid-stepper">
+                                    <Collapse
+                                        activeKey={currentStep}
+                                        onChange={(key) => setCurrentStep(Number(key))}
+                                        accordion={true}
+                                        expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
+                                    >
+                                        {elasticConfiguration?.steps?.map((step) => {
+                                            return (
+                                                <Panel header={step.title} key={step.key}>
+                                                    {getContent(step.key)}
+                                                </Panel>
+                                            );
+                                        })}
+                                    </Collapse>
+                                </div>
+                            </div>
+                        )}
                         <div className="close-btn">
                             <Button
                                 width="300px"

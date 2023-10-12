@@ -90,6 +90,7 @@ export const ApiEndpoints = {
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
     REQUEST_INTEGRATION: '/integrations/requestIntegration',
     GET_SOURCE_CODE_BRANCHES: '/integrations/getSourceCodeBranches',
+    GET_INTEGRATION_LOGS: '/integrations/getAuditLogs',
 
     //Configuration
     GET_CLUSTER_CONFIGURATION: '/configurations/getClusterConfig',

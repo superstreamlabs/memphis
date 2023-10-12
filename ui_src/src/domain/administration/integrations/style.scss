@@ -103,12 +103,27 @@
         padding-top: 0px;
     }
 }
-
+.integration-guid-body {
+    height: calc(100% - 400px);
+    position: relative;
+    .stepper-container {
+        height: calc(100% - 60px);
+        position: relative;
+        overflow-y: auto;
+    }
+    .close-btn {
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #dedede;
+        padding: 10px 20px;
+    }
+}
 dynamic-integration {
     display: flex;
     flex-direction: column;
     height: 100%;
-    min-height: 550px;
+    position: relative;
+    overflow-y: hidden;
     p {
         margin: 0;
     }
@@ -118,10 +133,21 @@ dynamic-integration {
     }
     form {
         position: relative;
-        height: calc(100% - 460px);
-
+        height: calc(100% - 390px);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .integration-body {
+            height: calc(100% - 100px);
+            position: relative;
+            .generic-list-wrapper {
+                height: calc(100% - 20px);
+                width: 100%;
+                padding: 10px;
+            }
+        }
         .api-details {
-            height: calc(100% - 36px);
+            height: calc(100% - 80px);
             overflow: scroll;
             margin: 0 20px;
             margin-right: 2px;
@@ -240,9 +266,9 @@ dynamic-integration {
             grid-template-columns: 50% 50%;
             text-align: -moz-center;
             text-align: -webkit-center;
-            height: 90px;
             align-items: center;
             margin: 0 20px;
+            padding-top: 20px;
             border-top: 1px solid #dedede;
         }
         .button-wrapper-single-item {

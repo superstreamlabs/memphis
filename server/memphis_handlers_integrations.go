@@ -75,7 +75,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateSlackIntegration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with Slack: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -96,7 +96,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateS3Integration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with S3: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -112,7 +112,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant: %v][user: %v]CreateIntegration at handleCreateGithubIntegration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with Github: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -124,7 +124,7 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + integrationType})
 		return
 	}
-	auditLog := fmt.Sprintf("Integration %v created successfully", integrationType)
+	auditLog := fmt.Sprintf("Integration with %v created successfully", integrationType)
 	it.Noticef(integrationType, user.TenantName, auditLog)
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
@@ -172,7 +172,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant:%v][user: %v]UpdateIntegration at handleUpdateSlackIntegration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with Slack: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -188,7 +188,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateS3Integration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with S3: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -204,7 +204,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 			} else {
 				message = err.Error()
 				serv.Warnf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, message)
-				auditLog := fmt.Sprintf("CreateIntegration: %v", message)
+				auditLog := fmt.Sprintf("Error while trying to connect with Github: %v", message)
 				it.Errorf(integrationType, user.TenantName, auditLog)
 			}
 			c.AbortWithStatusJSON(errorCode, gin.H{"message": message})
@@ -217,7 +217,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		return
 	}
 
-	auditLog := fmt.Sprintf("Integration %v updated successfully", integrationType)
+	auditLog := fmt.Sprintf("Integration with %v updated successfully", integrationType)
 	it.Noticef(integrationType, user.TenantName, auditLog)
 	c.IndentedJSON(200, integration)
 }
@@ -307,7 +307,7 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 		analytics.SendEvent(user.TenantName, user.Username, analyticsParams, "user-disconnect-integration-"+integrationType)
 	}
 
-	auditLog := fmt.Sprintf("Integration %v disconnected by user %v", integrationType, user.Username)
+	auditLog := fmt.Sprintf("Integration with %v has been disconnected by user %v", integrationType, user.Username)
 	it.Noticef(integrationType, user.TenantName, auditLog)
 
 	c.IndentedJSON(200, gin.H{})

@@ -17,11 +17,31 @@ integ-item {
     .integrate-icon {
         display: flex;
         justify-content: center;
+        align-items: center;
         position: absolute;
         margin: 10px;
         box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
         border-radius: 8px;
         background: var(--purple);
+        padding: 3px 7px;
+        color: white;
+        svg {
+            width: 18px;
+        }
+        p {
+            margin-left: 5px;
+            font-family: 'InterMedium';
+        }
+    }
+    .broken-integration-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        margin: 10px;
+        box-shadow: 0px 4px 8px rgba(38, 38, 38, 0.2);
+        border-radius: 8px;
+        background: #f7685b;
         padding: 3px 7px;
         color: white;
         svg {
@@ -176,4 +196,35 @@ integ-item {
             font-size: 12px;
         }
     }
+    .video-title {
+        font-family: 'InterMedium';
+        font-size: 15px;
+        margin: 20px 0px 10px 20px;
+    }
+    .video-container {
+        width: calc(100% - 30px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .logs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 30px;
+    }
+    .ant-tabs-tab {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        margin-left: 20px;
+        .tabs-name {
+            font-size: 12px;
+        }
+    }
+}
+.loader-wrapper {
+    width: 100%;
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
 }

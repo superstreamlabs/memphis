@@ -26,6 +26,7 @@ import DebeziumIntegration from '../../administration/integrations/components/de
 import { httpRequest } from '../../../services/http';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
+import ErrorRoundedIcon from '@material-ui/icons/ErrorRounded';
 import LockFeature from '../../../components/lockFeature';
 
 const Integrations = () => {
@@ -74,6 +75,10 @@ const Integrations = () => {
         if (index !== -1) {
             return state.integrationsList[index];
         } else return;
+    };
+
+    const isValidIndication = (indicator) => {
+        return indicator ? <CheckCircleIcon className="connected" /> : <ErrorRoundedIcon className="broken" />;
     };
 
     const modalContent = () => {
@@ -139,7 +144,9 @@ const Integrations = () => {
                                 {storageTiringLimits && integration.name === 'S3' ? (
                                     <LockFeature header={'Storage tiering'} />
                                 ) : (
-                                    integrations[index]?.value && Object.keys(integrations[index]?.value).length > 0 && <CheckCircleIcon className="connected" />
+                                    integrations[index]?.value &&
+                                    Object.keys(integrations[index]?.value).length > 0 &&
+                                    isValidIndication(integrations[index]?.value?.is_valid)
                                 )}
                                 <img className="img-icon" src={integration.logo} alt={integration.name} />
                                 <label className="integration-name">{integration.name}</label>
