@@ -681,98 +681,100 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                                 </div>
                             )}
                         </div>
-                        <div className="storage-container">
-                            <TitleComponent
-                                headerTitle="Storage type"
-                                typeTitle="sub-header"
-                                headerDescription={
-                                    tabValue === tabs[0].name ? (
-                                        <span>
-                                            Type of storage for short retention.&nbsp;
-                                            <a
-                                                className="learn-more"
-                                                href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
-                                                target="_blank"
-                                            >
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    ) : (
-                                        <span>
-                                            Type of storage for long retention.&nbsp;
-                                            <a
-                                                className="learn-more"
-                                                href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
-                                                target="_blank"
-                                            >
-                                                Learn more
-                                            </a>
-                                        </span>
-                                    )
-                                }
-                            />
-                            <Form.Item
-                                name="storage_type"
-                                initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}
-                                style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}
-                            >
-                                {tabValue === tabs[0].name && (
-                                    <SelectCheckBox
-                                        selectOptions={storageTierOneOptions}
-                                        allowEdit={allowEdit}
-                                        handleOnClick={(e) => SelectedLocalStorageOption(e)}
-                                        selectedOption={selectedOption}
-                                    />
-                                )}
-                            </Form.Item>
-                            <Form.Item
-                                name="tiered_storage_enabled"
-                                initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
-                                style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}
-                            >
-                                {tabValue === tabs[1].name &&
-                                    storageTierTwoOptions.map((value) => {
-                                        return (
-                                            <SelectCheckBox
-                                                hideCircle={true}
-                                                selectOptions={storageTierTwoOptions}
-                                                allowEdit={allowEdit}
-                                                handleOnClick={(e) =>
-                                                    integrateValue && allowEdit
-                                                        ? selectedTier2Option
-                                                            ? SelectedRemoteStorageOption(false, false)
-                                                            : SelectedRemoteStorageOption(true, true)
-                                                        : (isCloud() && storageTiringLimits) || !isCloud()
-                                                        ? modalFlip(true)
-                                                        : null
-                                                }
-                                                selectedOption={selectedTier2Option}
-                                                button={
-                                                    (isCloud() && storageTiringLimits) || !isCloud() ? (
-                                                        <Button
-                                                            width="90px"
-                                                            height="30px"
-                                                            placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
-                                                            colorType="white"
-                                                            border="none"
-                                                            radiusType="circle"
-                                                            backgroundColorType="purple"
-                                                            fontSize="12px"
-                                                            htmlType="button"
-                                                            fontWeight="bold"
-                                                            boxShadowStyle="none"
-                                                            disabled={!allowEdit}
-                                                            onClick={() => null}
-                                                        />
-                                                    ) : (
-                                                        <LockFeature header="Storage tiering" />
-                                                    )
-                                                }
-                                            />
-                                        );
-                                    })}
-                            </Form.Item>
-                        </div>
+                        {(!isCloud() || (isCloud() && tabValue === tabs[1].name)) && (
+                            <div className="storage-container">
+                                <TitleComponent
+                                    headerTitle="Storage type"
+                                    typeTitle="sub-header"
+                                    headerDescription={
+                                        tabValue === tabs[0].name ? (
+                                            <span>
+                                                Type of storage for short retention.&nbsp;
+                                                <a
+                                                    className="learn-more"
+                                                    href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
+                                                    target="_blank"
+                                                >
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        ) : (
+                                            <span>
+                                                Type of storage for long retention.&nbsp;
+                                                <a
+                                                    className="learn-more"
+                                                    href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
+                                                    target="_blank"
+                                                >
+                                                    Learn more
+                                                </a>
+                                            </span>
+                                        )
+                                    }
+                                />
+                                <Form.Item
+                                    name="storage_type"
+                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}
+                                    style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}
+                                >
+                                    {tabValue === tabs[0].name && (
+                                        <SelectCheckBox
+                                            selectOptions={storageTierOneOptions}
+                                            allowEdit={allowEdit}
+                                            handleOnClick={(e) => SelectedLocalStorageOption(e)}
+                                            selectedOption={selectedOption}
+                                        />
+                                    )}
+                                </Form.Item>
+                                <Form.Item
+                                    name="tiered_storage_enabled"
+                                    initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.tiered_storage_enabled : false}
+                                    style={{ display: tabValue === tabs[1].name ? 'block' : 'none' }}
+                                >
+                                    {tabValue === tabs[1].name &&
+                                        storageTierTwoOptions.map((value) => {
+                                            return (
+                                                <SelectCheckBox
+                                                    hideCircle={true}
+                                                    selectOptions={storageTierTwoOptions}
+                                                    allowEdit={allowEdit}
+                                                    handleOnClick={(e) =>
+                                                        integrateValue && allowEdit
+                                                            ? selectedTier2Option
+                                                                ? SelectedRemoteStorageOption(false, false)
+                                                                : SelectedRemoteStorageOption(true, true)
+                                                            : (isCloud() && storageTiringLimits) || !isCloud()
+                                                            ? modalFlip(true)
+                                                            : null
+                                                    }
+                                                    selectedOption={selectedTier2Option}
+                                                    button={
+                                                        (isCloud() && storageTiringLimits) || !isCloud() ? (
+                                                            <Button
+                                                                width="90px"
+                                                                height="30px"
+                                                                placeholder={integrateValue ? (selectedTier2Option ? 'Disable' : 'Enable') : 'Connect'}
+                                                                colorType="white"
+                                                                border="none"
+                                                                radiusType="circle"
+                                                                backgroundColorType="purple"
+                                                                fontSize="12px"
+                                                                htmlType="button"
+                                                                fontWeight="bold"
+                                                                boxShadowStyle="none"
+                                                                disabled={!allowEdit}
+                                                                onClick={() => null}
+                                                            />
+                                                        ) : (
+                                                            <LockFeature header="Storage tiering" />
+                                                        )
+                                                    }
+                                                />
+                                            );
+                                        })}
+                                </Form.Item>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

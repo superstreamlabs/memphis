@@ -40,7 +40,8 @@ const Input = (props) => {
         fontSize,
         onPressEnter,
         autoFocus = false,
-        maxLength
+        maxLength,
+        suffixIconComponent
     } = props;
 
     const handleBlurChange = (e) => (onBlur ? onBlur(e) : '');
@@ -80,8 +81,8 @@ const Input = (props) => {
         autoFocus,
         onPressEnter
     };
-    const suffix = iconComponent !== undefined ? <div className="icon">{iconComponent}</div> : <span />;
-
+    const prefix = iconComponent !== undefined ? <div className="icon ">{iconComponent}</div> : null;
+    const suffix = suffixIconComponent !== undefined ? <div className="icon ">{suffixIconComponent}</div> : null;
     return (
         <div className="input-component-container">
             {type === 'textArea' ? (
@@ -90,11 +91,8 @@ const Input = (props) => {
                 </div>
             ) : (
                 <div className="input-container">
-                    {type === 'password' && <InputDesign.Password {...fieldProps} prefix={suffix}></InputDesign.Password>}
-                    {(type === 'text' || type === 'email' || type === 'number') && iconComponent !== undefined && (
-                        <InputDesign {...fieldProps} prefix={suffix}></InputDesign>
-                    )}
-                    {(type === 'text' || type === 'email' || type === 'number') && iconComponent === undefined && <InputDesign {...fieldProps}></InputDesign>}
+                    {type === 'password' && <InputDesign.Password {...fieldProps} prefix={prefix} suffix={suffix}></InputDesign.Password>}
+                    {(type === 'text' || type === 'email' || type === 'number') && <InputDesign {...fieldProps} prefix={prefix} suffix={suffix}></InputDesign>}
                 </div>
             )}
         </div>
