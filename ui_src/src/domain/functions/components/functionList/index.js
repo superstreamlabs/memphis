@@ -48,6 +48,7 @@ const TABS = [
         disabled: !isCloud()
     }
 ];
+
 function FunctionList() {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
@@ -233,6 +234,7 @@ function FunctionList() {
                     </div>
                 )}
                 {!isLoading && renderContent()}
+                <FunctionBox key={0} funcDetails={{}} />
             </div>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 <GitHubIntegration

@@ -7,6 +7,7 @@
     border-radius: 8px;
     width: 100%;
     height: 100%;
+
     cursor: pointer;
     p {
         margin: 0;
@@ -113,6 +114,24 @@
         border-radius: 8px;
         background: #fff;
         box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14);
+        .button-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            .gradient {
+                margin-left: 10px;
+                opacity: 0.3;
+                background: radial-gradient(163199.99% 35.29% at 50% 50%, #1d1d1d 41.46%, rgba(255, 255, 255, 0) 100%);
+                width: 1px;
+                height: 20px;
+            }
+            svg {
+                margin-left: 7px;
+                width: 20px;
+                height: 20px;
+            }
+        }
     }
     .ant-drawer-header {
         padding-bottom: 0px !important;
