@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.b430387a.css",
-    "main.js": "/static/js/main.7e524ed3.js",
+    "main.css": "/static/css/main.ac640b16.css",
+    "main.js": "/static/js/main.3da02d60.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -126,6 +126,7 @@
     "static/media/githubBanner.webp": "/static/media/githubBanner.45709cc90340feff943f.webp",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
     "static/media/elasticBanner.webp": "/static/media/elasticBanner.5137ba7446b120da38b2.webp",
+    "static/media/emptyEvents.svg": "/static/media/emptyEvents.fbfba73c785f06b4d3b018b1b882aa5e.svg",
     "static/media/graphPlaceholder.svg": "/static/media/graphPlaceholder.b250ab6ee837fc52e8721fe43efe74c6.svg",
     "static/media/grafanaBannerPopup.webp": "/static/media/grafanaBannerPopup.04ea20c13ab4520bc130.webp",
     "static/media/datadogBannerPopup.webp": "/static/media/datadogBannerPopup.5c4ebccdb6a2be226735.webp",
@@ -160,6 +161,7 @@
     "static/media/grafanaBanner.webp": "/static/media/grafanaBanner.3de6be0653754ff1052e.webp",
     "static/media/usersIcon.svg": "/static/media/usersIcon.accd97b0fbfc2baf2c5ed1fcb1f8f46c.svg",
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
+    "static/media/binIcon.svg": "/static/media/binIcon.b4f1f1d4ef1c74747e553e7bffe3ee8e.svg",
     "static/media/TotalMessages.svg": "/static/media/TotalMessages.6d75ac5bd3a106f6ac4e37800d4c25aa.svg",
     "static/media/pagerdutyBanner.webp": "/static/media/pagerdutyBanner.3a702b9db3201eba99a4.webp",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
@@ -199,6 +201,7 @@
     "static/media/logsIcon.svg": "/static/media/logsIcon.523c7dfba8286920ef9f710678e327da.svg",
     "static/media/asyncIcon.svg": "/static/media/asyncIcon.263cde6ac835b02e46217b9561d11eee.svg",
     "static/media/purge.svg": "/static/media/purge.138eb15dd4ab408a29c28c77b2616b8e.svg",
+    "static/media/testEventModalcon.svg": "/static/media/testEventModalcon.b9dc3f9d81be21e5f73506754cb64a58.svg",
     "static/media/consumeLagIcon.svg": "/static/media/consumeLagIcon.67333d12e2fa8213ea1d0231a1d9f170.svg",
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
     "static/media/UIHostname.svg": "/static/media/UIHostname.b2ab65aacef8f92173d8a888cfba0978.svg",
@@ -269,6 +272,7 @@
     "static/media/followersDetails.svg": "/static/media/followersDetails.e74daec8aa834097602a239809774351.svg",
     "static/media/checkIcon.svg": "/static/media/checkIcon.b8dcbac926b46e866e90f5a752109035.svg",
     "static/media/tickCircle.svg": "/static/media/tickCircle.63b9019007eb7cb5ff1b563821133393.svg",
+    "static/media/statusIcon.svg": "/static/media/statusIcon.467d50bd45147a0b7f2025f839f921c9.svg",
     "static/media/errorIcon.svg": "/static/media/errorIcon.144c977e7c2255ab2320f8551b518bca.svg",
     "static/media/infoNotificationIcon.svg": "/static/media/infoNotificationIcon.b2cae38850a86ae5ffa748e2a6954074.svg",
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
@@ -303,7 +307,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.b430387a.css",
-    "static/js/main.7e524ed3.js"
+    "static/css/main.ac640b16.css",
+    "static/js/main.3da02d60.js"
   ]
 }
