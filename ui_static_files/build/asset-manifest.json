@@ -1,12 +1,7 @@
 {
   "files": {
-<<<<<<< HEAD
-    "main.css": "/static/css/main.8d726ed9.css",
-    "main.js": "/static/js/main.bfba5921.js",
-=======
-    "main.css": "/static/css/main.ac640b16.css",
-    "main.js": "/static/js/main.3da02d60.js",
->>>>>>> origin/master
+    "main.css": "/static/css/main.ec516046.css",
+    "main.js": "/static/js/main.ff59b84b.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -277,11 +272,7 @@
     "static/media/sysContainer.svg": "/static/media/sysContainer.a0ad8ac03ca4516375b97d94b7630cb4.svg",
     "static/media/followersDetails.svg": "/static/media/followersDetails.e74daec8aa834097602a239809774351.svg",
     "static/media/checkIcon.svg": "/static/media/checkIcon.b8dcbac926b46e866e90f5a752109035.svg",
-<<<<<<< HEAD
-=======
-    "static/media/tickCircle.svg": "/static/media/tickCircle.63b9019007eb7cb5ff1b563821133393.svg",
     "static/media/statusIcon.svg": "/static/media/statusIcon.467d50bd45147a0b7f2025f839f921c9.svg",
->>>>>>> origin/master
     "static/media/errorIcon.svg": "/static/media/errorIcon.144c977e7c2255ab2320f8551b518bca.svg",
     "static/media/infoNotificationIcon.svg": "/static/media/infoNotificationIcon.b2cae38850a86ae5ffa748e2a6954074.svg",
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
@@ -316,12 +307,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-<<<<<<< HEAD
-    "static/css/main.8d726ed9.css",
-    "static/js/main.bfba5921.js"
-=======
-    "static/css/main.ac640b16.css",
-    "static/js/main.3da02d60.js"
->>>>>>> origin/master
+    "static/css/main.ec516046.css",
+    "static/js/main.ff59b84b.js"
   ]
 }
