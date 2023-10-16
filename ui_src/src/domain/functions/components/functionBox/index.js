@@ -18,8 +18,8 @@ import { useHistory } from 'react-router-dom';
 import { FiGitCommit } from 'react-icons/fi';
 import { FaCode } from 'react-icons/fa';
 import { Drawer } from 'antd';
-
-import { parsingDate } from '../../../../services/valueConvertor';
+import Button from '../../../../components/button';
+import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
@@ -31,12 +31,16 @@ import CustomTabs from '../../../../components/Tabs';
 import pathDomains from '../../../../router';
 import Tag from '../../../../components/tag';
 import { OWNER } from '../../../../const/globalConst';
+import { FiChevronDown } from 'react-icons/fi';
+import TestFunctionModal from '../testFunctionModal';
+import Modal from '../../../../components/modal';
 
 function FunctionBox({ funcDetails }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
     const [tabValue, setTabValue] = useState('Code');
+    const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
@@ -125,7 +129,25 @@ function FunctionBox({ funcDetails }) {
                 open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
-            ></Drawer>
+            >
+                <Button
+                    placeholder={
+                        <div className="button-content">
+                            <span>Test</span>
+                            <div className="gradient" />
+                            <FiChevronDown />
+                        </div>
+                    }
+                    backgroundColorType={'orange'}
+                    colorType={'black'}
+                    radiusType={'circle'}
+                    onClick={() => setIsTestFunctionModalOpen(true)}
+                    disabled={!isCloud()}
+                />
+            </Drawer>
+            <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
+                <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
+            </Modal>
         </>
     );
 }

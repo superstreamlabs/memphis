@@ -48,6 +48,7 @@ const TABS = [
         disabled: !isCloud()
     }
 ];
+
 function FunctionList() {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
