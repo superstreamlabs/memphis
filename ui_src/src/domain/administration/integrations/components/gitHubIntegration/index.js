@@ -16,7 +16,6 @@ import { LoadingOutlined } from '@ant-design/icons';
 
 import { FiPlus } from 'react-icons/fi';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
-import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
