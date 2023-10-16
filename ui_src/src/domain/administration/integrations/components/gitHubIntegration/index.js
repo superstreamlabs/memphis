@@ -14,20 +14,19 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Form, message, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
-import { ReactComponent as TickCircleIcon } from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
-import Input from '../../../../../components/Input';
 import CustomTabs from '../../../../../components/Tabs';
 import Loader from '../../../../../components/loader';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
+import { ReactComponent as GithubNoConnectionIcon } from '../../../../../assets/images/noConnectionIcon.svg';
 
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
@@ -226,7 +225,7 @@ const GitHubIntegration = ({ close, value }) => {
                                 fontFamily="InterSemiBold"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
                             />
-                            {isIntegrated ? (
+                            {isIntegrated && (
                                 <Button
                                     width="100px"
                                     height="35px"
@@ -240,19 +239,6 @@ const GitHubIntegration = ({ close, value }) => {
                                     isLoading={loadingDisconnect}
                                     onClick={() => disconnect()}
                                 />
-                            ) : (
-                                <Button
-                                    height="35px"
-                                    placeholder="Connect"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    border="none"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    disabled={!applicationName}
-                                    onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
-                                />
                             )}
                         </div>
                     </div>
@@ -264,6 +250,26 @@ const GitHubIntegration = ({ close, value }) => {
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
                                 <div className="api-details">
+                                    {!isIntegrated && (
+                                        <div className="noConnection-wrapper">
+                                            <GithubNoConnectionIcon />
+                                            <p className="noConnection-title">Connect to get more details</p>
+                                            <p className="noConnection-subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+
+                                            <Button
+                                                height="35px"
+                                                placeholder="Connect"
+                                                colorType="white"
+                                                radiusType="circle"
+                                                backgroundColorType="purple"
+                                                border="none"
+                                                fontSize="12px"
+                                                fontFamily="InterSemiBold"
+                                                disabled={!applicationName}
+                                                onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
+                                            />
+                                        </div>
+                                    )}
                                     {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
