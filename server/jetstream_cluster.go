@@ -1244,6 +1244,9 @@ func (js *jetStream) applyMetaSnapshot(buf []byte, ru *recoveryUpdates, isRecove
 			return err
 		}
 		if err = json.Unmarshal(jse, &wsas); err != nil {
+			// ** added by Memphis
+			js.srv.Errorf("applyMetaSnapshot: ", err)
+			// added by Memphis **
 			return err
 		}
 	}
@@ -2585,6 +2588,9 @@ func (js *jetStream) applyStreamEntries(mset *stream, ce *CommittedEntry, isReco
 			if !isRecovering && mset != nil {
 				var snap streamSnapshot
 				if err := json.Unmarshal(e.Data, &snap); err != nil {
+					// ** added by Memphis
+					js.srv.Errorf("applyStreamEntries: ", err)
+					// added by Memphis **
 					return err
 				}
 				if !mset.IsLeader() {
@@ -2596,6 +2602,9 @@ func (js *jetStream) applyStreamEntries(mset *stream, ce *CommittedEntry, isReco
 				// On recovery, reset CLFS/FAILED.
 				var snap streamSnapshot
 				if err := json.Unmarshal(e.Data, &snap); err != nil {
+					// ** added by Memphis
+					js.srv.Errorf("applyStreamEntries 2: ", err)
+					// added by Memphis **
 					return err
 				}
 
@@ -6309,6 +6318,9 @@ func decodeStreamAssignment(buf []byte) (*streamAssignment, error) {
 	var sa streamAssignment
 	err := json.Unmarshal(buf, &sa)
 	if err != nil {
+		// ** added by Memphis
+		serv.Errorf("decodeStreamAssignment: ", err)
+		// added by Memphis **
 		return nil, err
 	}
 	fixCfgMirrorWithDedupWindow(sa.Config)
@@ -6626,6 +6638,11 @@ func encodeDeleteConsumerAssignment(ca *consumerAssignment) []byte {
 func decodeConsumerAssignment(buf []byte) (*consumerAssignment, error) {
 	var ca consumerAssignment
 	err := json.Unmarshal(buf, &ca)
+	// ** added by Memphis
+	if err != nil {
+		serv.Errorf("decodeStreamAssignment: ", err)
+	}
+	// added by Memphis **
 	return &ca, err
 }
 
@@ -6648,6 +6665,11 @@ func decodeConsumerAssignmentCompressed(buf []byte) (*consumerAssignment, error)
 		return nil, err
 	}
 	err = json.Unmarshal(js, &ca)
+	// ** added by Memphis
+	if err != nil {
+		serv.Errorf("decodeConsumerAssignmentCompressed: ", err)
+	}
+	// added by Memphis **
 	return &ca, err
 }
 

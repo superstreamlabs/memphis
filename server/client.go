@@ -1676,6 +1676,9 @@ func (c *client) traceOp(format, op string, arg []byte) {
 func (c *client) processInfo(arg []byte) error {
 	info := Info{}
 	if err := json.Unmarshal(arg, &info); err != nil {
+		// ** added by Memphis
+		c.Errorf("processInfo: ", err)
+		// added by Memphis **
 		return err
 	}
 	switch c.kind {
@@ -1788,6 +1791,9 @@ func (c *client) processConnect(arg []byte) error {
 	// the client's lock, so unmarshalling the options outside of the lock
 	// would cause data RACEs.
 	if err := json.Unmarshal(arg, &c.opts); err != nil {
+		// ** added by Memphis
+		c.Errorf("processConnect: ", err)
+		// added by Memphis **
 		c.mu.Unlock()
 		return err
 	}
@@ -1931,7 +1937,7 @@ func (c *client) sendErrAndDebug(err string) {
 // *** added by Memphis
 func (c *client) sendErrAndWarn(funcName, err string) {
 	c.sendErr(err)
-	c.Warnf("[tenant: %s]%s: %s", c.acc.GetName(), funcName, err)
+	// c.Warnf("[tenant: %s]%s: %s", c.acc.GetName(), funcName, err)
 }
 // added by Memphis ***
 
@@ -1952,10 +1958,9 @@ func (c *client) accountAuthExpired() {
 
 // *** added by Memphis
 func (c *client) accountIdErr() {
-	c.sendErrAndDebug("Wrong / missing account ID")
+	c.sendErrAndDebug("Authorization Violation: Wrong / missing account ID")
 	c.closeConnection(MissingAccount)
 }
-
 // added by Memphis ***
 
 func (c *client) authViolation() {

@@ -1208,6 +1208,9 @@ func (s *Server) remoteServerShutdown(sub *subscription, c *client, _ *Account, 
 	// We have an optional serverInfo here, remove from nodeToX lookups.
 	var si ServerInfo
 	if err := json.Unmarshal(msg, &si); err != nil {
+		// ** added by Memphis
+		s.Errorf("remoteServerShutdown: ", err)
+		// added by Memphis **
 		s.Debugf("Received bad server info for remote server shutdown")
 		return
 	}
@@ -1233,6 +1236,9 @@ func (s *Server) remoteServerUpdate(sub *subscription, c *client, _ *Account, su
 		s.Debugf("Received empty server info for remote server update")
 		return
 	} else if err := json.Unmarshal(msg, &ssm); err != nil {
+		// ** added by Memphis
+		s.Errorf("remoteServerUpdate: ", err)
+		// added by Memphis **
 		s.Debugf("Received bad server info for remote server update")
 		return
 	}

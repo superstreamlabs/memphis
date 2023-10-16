@@ -926,6 +926,9 @@ func (s *Server) getRequestInfo(c *client, raw []byte) (pci *ClientInfo, acc *Ac
 
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(getHeader(ClientInfoHdr, hdr), &ci); err != nil {
+			// ** added by Memphis
+			s.Errorf("getRequestInfo: ", err)
+			// added by Memphis **
 			return nil, nil, nil, nil, err
 		}
 	}
