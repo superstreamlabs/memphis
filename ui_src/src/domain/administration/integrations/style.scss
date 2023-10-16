@@ -152,6 +152,46 @@ dynamic-integration {
             margin: 0 20px;
             margin-right: 2px;
             padding-right: 13px;
+
+            .noConnection-wrapper {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                height: 100%;
+                justify-content: flex-start;
+                align-items: center;
+
+                border-radius: 8px;
+                border: 1px solid #e6e6e6;
+                padding: 16px;
+
+                overflow-y: auto;
+                svg {
+                    width: 186px !important;
+                    height: 152px !important;
+                    flex-shrink: 0;
+                    padding-bottom: 26px;
+                }
+
+                .noConnection-title {
+                    color: #99a1b2;
+                    font-family: 'InterSemiBold';
+                    font-size: 24px;
+                    padding-bottom: 13px;
+                    margin-bottom: 0px;
+                }
+
+                .noConnection-subtitle {
+                    color: #9ba4b4;
+                    text-align: center;
+                    font-family: 'Inter';
+                    font-size: 14px;
+                    padding-bottom: 26px;
+                    max-width: 400px;
+                    margin-bottom: 0px;
+                }
+            }
+
             .connected-to-gh {
                 border-radius: 50px;
                 color: rgb(255, 255, 255);
@@ -318,11 +358,12 @@ dynamic-integration {
             margin: 10px 0px;
             max-height: 35vh;
             overflow-y: auto;
-            .add-repo-button {
+            .repo-button {
                 display: flex;
                 flex-wrap: row;
                 align-items: center;
                 justify-content: center;
+                gap: 4px;
             }
             .select-repo-span {
                 width: 100%;
