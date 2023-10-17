@@ -68,8 +68,8 @@ const Support = ({ closeModal }) => {
                 <p className="support-content-header">If you have any questions or need assistance, please don't hesitate to reach out to our support team.</p>
                 <div className="support-span">
                     <div className="support-content">
-                        <div className="flex">
-                            = <DocumentIcon alt="documentIcon" />
+                        <div className="flex align-items-center">
+                            <DocumentIcon alt="documentIcon" />
                             <p>Link to Documentation</p>
                         </div>
                         <a href={DOC_URL} target="_blank" rel="noreferrer">
@@ -77,7 +77,7 @@ const Support = ({ closeModal }) => {
                         </a>
                     </div>
                     <div className="support-content">
-                        <div className="flex">
+                        <div className="flex align-items-center">
                             <MailsendIcon alt="mailsendIcon" />
                             <p>Support Email</p>
                         </div>

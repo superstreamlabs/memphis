@@ -46,6 +46,8 @@ import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
+import pathDomains from '../../router';
+import { useHistory } from 'react-router-dom';
 
 const dataSentences = [
     `“Data is the new oil” — Clive Humby`,
@@ -66,6 +68,7 @@ function OverView() {
     const [lineageExpend, setExpend] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
+    const history = useHistory();
 
     const getRandomInt = (max) => {
         return Math.floor(Math.random() * max);
@@ -203,12 +206,13 @@ function OverView() {
                         <div className="header-welcome">
                             <div className="bot-wrapper">
                                 <img
-                                    className="avatar-image"
+                                    className="avatar-image cursor-pointer"
                                     src={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? localStorage.getItem(USER_IMAGE) : botUrl}
                                     referrerPolicy="no-referrer"
                                     width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     alt="avatar"
+                                    onClick={() => history.push(pathDomains.profile)}
                                 ></img>
                             </div>
                             <div className="dynamic-sentences">

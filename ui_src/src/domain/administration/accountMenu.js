@@ -31,6 +31,15 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
             <p className="header">Administration</p>
             <p className="sub-header">Modify environment configuration</p>
             <div className="side-menu administration">
+                {!isCloud() && (
+                    <>
+                        <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
+                            {selectedMenuItem === 'version_upgrade' ? <VersionUpgradeColorIcon alt="versionUpgrade" /> : <VersionUpgradeGrayIcon alt="versionUpgrade" />}
+                            System information
+                            {!state.isLatest && <div className="update-available">New version!</div>}
+                        </div>
+                    </>
+                )}
                 <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
                     {selectedMenuItem === 'integrations' ? <IntegrationColorIcon alt="notifications" /> : <IntegrationGrayIcon alt="notifications" />}
                     Integrations
@@ -43,15 +52,6 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                     )}
                     Environment configuration
                 </div>
-                {!isCloud() && (
-                    <>
-                        <div className={selectedMenuItem === 'version_upgrade' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('version_upgrade')}>
-                            {selectedMenuItem === 'version_upgrade' ? <VersionUpgradeColorIcon alt="versionUpgrade" /> : <VersionUpgradeGrayIcon alt="versionUpgrade" />}
-                            System information
-                            {!state.isLatest && <div className="update-available">Update available</div>}
-                        </div>
-                    </>
-                )}
             </div>
         </>
     );
