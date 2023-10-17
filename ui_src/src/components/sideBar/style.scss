@@ -8,6 +8,22 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+
+    .mb-15 {
+        margin-bottom: 15px;
+    }
+
+    .sidebar-title {
+        font-size: 11px;
+        color: rgba(74, 73, 92, 0.8);
+        font-family: "InterSemiBold";
+        margin: 0;
+        cursor: pointer;
+        &.ms-active {
+            color: var(--purple);
+        }
+    }
+
     .upper-icons {
         .logoimg {
             margin-top: 1vh;
@@ -326,6 +342,9 @@
         .flex {
             display: flex;
             gap: 5px;
+        }
+        .align-items-center {
+            align-items: center;
         }
         a {
             text-decoration: underline;

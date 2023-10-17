@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.ec516046.css",
-    "main.js": "/static/js/main.ff59b84b.js",
+    "main.css": "/static/css/main.563f0b96.css",
+    "main.js": "/static/js/main.7b04e1b6.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -114,8 +114,8 @@
     "static/media/elasticIcon.svg": "/static/media/elasticIcon.19ffd4bcb1035607a0e575bfc13b8aca.svg",
     "static/media/s3Logo.svg": "/static/media/s3Logo.e6d961e07879a322092e36018c83e2d6.svg",
     "static/media/newrelicIcon.svg": "/static/media/newrelicIcon.19afaa28b0521e1eb85f844d4e2be949.svg",
+    "static/media/upgradeBanner.svg": "/static/media/upgradeBanner.2be3c6b95abef06e5a889715a023742d.svg",
     "static/media/noConnectionIcon.svg": "/static/media/noConnectionIcon.b7c3723fd4bdeafd56882991b238e548.svg",
-    "static/media/upgradeBanner.svg": "/static/media/upgradeBanner.f70fc974b2fc32868d9f61efa9ba73ed.svg",
     "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
     "static/media/debeziumBanner.webp": "/static/media/debeziumBanner.4a7864f2d7e5839b7bd4.webp",
@@ -307,7 +307,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.ec516046.css",
-    "static/js/main.ff59b84b.js"
+    "static/css/main.563f0b96.css",
+    "static/js/main.7b04e1b6.js"
   ]
 }
