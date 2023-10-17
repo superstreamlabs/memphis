@@ -29,6 +29,7 @@ import { ReactComponent as FunnctionBoxIcon } from '../../../../assets/images/fu
 import { ReactComponent as DownloadIcon } from '../../../../assets/images/donwloadIcon.svg';
 import { ReactComponent as StarFullIcon } from '../../../../assets/images/fullStarIcon.svg';
 import { ReactComponent as StarEmptyIcon } from '../../../../assets/images/emptyStarIcon.svg';
+import FunctionDetails from '../functionDetails';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
@@ -61,22 +62,26 @@ function FunctionBox({ funcDetails }) {
         console.log(functionDetails);
     }, [funcDetails]);
 
+    useEffect(() => {
+        console.log(selectedFunction);
+    }, [selectedFunction]);
+
     const handleDrawer = (flag) => {
         setOpen(flag);
-        // if (flag) {
-        //     history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
-        //     setSelectedFunction(functionDetails?.function_name);
-        // } else {
-        //     history.push(`${pathDomains.functions}`);
-        //     setSelectedFunction('');
-        // }
+        if (flag) {
+            // history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
+            setSelectedFunction(functionDetails);
+        } else {
+            // history.push(`${pathDomains.functions}`);
+            setSelectedFunction('');
+        }
     };
 
     return (
         <>
             <div
                 key={functionDetails?.function_name}
-                className={selectedFunction === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
             >
                 <header is="x3d" onClick={() => handleDrawer(true)}>
                     <div className="function-box-header">
@@ -114,7 +119,7 @@ function FunctionBox({ funcDetails }) {
                             <Button
                                 width="100px"
                                 height="34px"
-                                placeholder={'install'}
+                                placeholder={'Install'}
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
@@ -142,78 +147,7 @@ function FunctionBox({ funcDetails }) {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <div className="function-drawer-container">
-                    <div className="drawer-header">
-                        <div className="icon-wrapper">
-                            <FunnctionBoxIcon alt="function-box-icon" />
-                        </div>
-                        <div className="right-side">
-                            <div className="title">Sentiment analysis</div>
-                            <div className="details-wrapper">
-                                <span>Memphis</span>
-                                <MemphisFunctionIcon width={16} height={16} alt="memphsi function icon" />
-                                <span className="purple">Memphis.dev</span>
-                                <div className="bar" />
-                                <span>
-                                    <DownloadIcon /> 1940
-                                </span>
-                                <div className="bar" />
-                                <span>
-                                    <StarFullIcon />
-                                    <StarFullIcon />
-                                    <StarFullIcon />
-                                    <StarFullIcon />
-                                    <StarFullIcon />
-                                    (98)
-                                </span>
-                                <div className="bar" />
-                                <date is="x3d" onClick={() => handleDrawer(true)}>
-                                    <div className="flex">
-                                        <FiGitCommit />
-                                        <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
-                                    </div>
-                                </date>
-                            </div>
-                            <div className="description">
-                                Donec dictum tristique porta. Etiam convallis lorem lobortis nulla molestie, nec tincidunt est ultrices. Donec dictum tristique porta.
-                                Etiam convallis lorem lobortis nulla molestie, nec tincidunt est ultrices.
-                            </div>
-
-                            <Button
-                                placeholder={
-                                    <div className="button-content">
-                                        <span>Install</span>
-                                        <div className="gradient" />
-                                        <FiChevronDown />
-                                    </div>
-                                }
-                                backgroundColorType={'purple'}
-                                colorType={'white'}
-                                radiusType={'circle'}
-                                onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!isCloud()}
-                            />
-                        </div>
-                    </div>
-                    <div>
-                        {/* <p>{functionDetails?.function_name}</p> */}
-                        <CustomTabs tabs={['Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                        <Button
-                            placeholder={
-                                <div className="button-content">
-                                    <span>Test</span>
-                                    <div className="gradient" />
-                                    <FiChevronDown />
-                                </div>
-                            }
-                            backgroundColorType={'orange'}
-                            colorType={'black'}
-                            radiusType={'circle'}
-                            onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!isCloud()}
-                        />
-                    </div>
-                </div>
+                <FunctionDetails selectedFunction={selectedFunction} />
             </Drawer>
             <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
                 <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />

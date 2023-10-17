@@ -278,7 +278,6 @@ function FunctionList() {
                     </div>
                 )}
                 {!isLoading && renderContent()}
-                <FunctionBox funcDetails={{}} />
             </div>
             <Modal className="integration-modal" height="95vh" width="720px" displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
                 <GitHubIntegration
