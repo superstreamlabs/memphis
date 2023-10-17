@@ -17,13 +17,14 @@ import React, { useState, useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 import { FiGitCommit } from 'react-icons/fi';
 import { FaCode } from 'react-icons/fa';
-import { Drawer } from 'antd';
-
+import { BiDownload } from 'react-icons/bi';
+import { Divider, Drawer, Rate } from 'antd';
 import { parsingDate } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
+import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
@@ -31,6 +32,7 @@ import CustomTabs from '../../../../components/Tabs';
 import pathDomains from '../../../../router';
 import Tag from '../../../../components/tag';
 import { OWNER } from '../../../../const/globalConst';
+import Button from '../../../../components/button';
 
 function FunctionBox({ funcDetails }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
@@ -49,6 +51,7 @@ function FunctionBox({ funcDetails }) {
 
     useEffect(() => {
         setFunctionDetils(funcDetails);
+        console.log(functionDetails);
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
@@ -69,46 +72,58 @@ function FunctionBox({ funcDetails }) {
                 className={selectedFunction === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
             >
                 <header is="x3d" onClick={() => handleDrawer(true)}>
-                    <div className="name-wrapper">
-                        <div className="function-name">
-                            <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
-                                {functionDetails?.function_name}
-                            </OverflowTip>
+                    <div className="function-box-header">
+                        <FunctionIcon alt="Function icon" height="40px" />
+                        <div>
+                            <div className="function-name">
+                                <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                    {functionDetails?.function_name}
+                                </OverflowTip>
+                            </div>
+                            <deatils is="x3d">
+                                <div className="function-owner">
+                                    {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                    <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                                </div>
+                                <Divider type="vertical" />
+                                <downloads is="x3d">
+                                    <BiDownload className="download-icon" />
+                                    <label>{Number(1940).toLocaleString()}</label>
+                                </downloads>
+                                <Divider type="vertical" />
+                                <rate is="x3d">
+                                    <Rate disabled defaultValue={2} className="stars-rate" />
+                                    <label>(93)</label>
+                                </rate>
+                                <Divider type="vertical" />
+                                <commits is="x3d">
+                                    <FiGitCommit />
+                                    <label>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                </commits>
+                            </deatils>
                         </div>
-                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" />}
-                    </div>
 
-                    <div className="function-details">
-                        <div className="function-repo">
-                            <GithubBranchIcon alt="github-branch-icon" />
-                            <OverflowTip text={`${functionDetails?.repository} - ${functionDetails?.branch}`} maxWidth={'150px'}>
-                                {functionDetails?.repository} - {functionDetails?.branch}
-                            </OverflowTip>
-                        </div>
-                        <div className="function-code-type">
-                            <CodeBlackIcon alt="code-icon" />
-                            <OverflowTip text={`${functionDetails?.language}`} maxWidth={'150px'}>
-                                <span>{functionDetails?.language}</span>
-                            </OverflowTip>
+                        <div>
+                            <Button
+                                width="100px"
+                                height="34px"
+                                placeholder={'install'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                // disabled={confirm !== (textToConfirm || 'delete') || loader}
+                                // isLoading={loader}
+                                onClick={() => console.log('clicked')}
+                            />
                         </div>
                     </div>
                 </header>
+                <description is="x3d">{functionDetails?.description}</description>
                 <tags is="x3d">
                     <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
                 </tags>
-                <description is="x3d" onClick={() => handleDrawer(true)}>
-                    <span>
-                        <OverflowTip text={functionDetails?.description} maxWidth={'300px'}>
-                            <span>{functionDetails?.description}</span>
-                        </OverflowTip>
-                    </span>
-                </description>
-                <date is="x3d" onClick={() => handleDrawer(true)}>
-                    <div className="flex">
-                        <FiGitCommit />
-                        <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
-                    </div>
-                </date>
             </div>
             <Drawer
                 title={

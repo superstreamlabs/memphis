@@ -1,79 +1,86 @@
 .function-box-wrapper {
     box-sizing: border-box;
     margin: 0;
-
+    margin-bottom: 15px;
     background: #ffffff;
     border: 1px solid #e9e9e9;
     border-radius: 8px;
     width: 100%;
-    height: 100%;
+    height: 140px;
+    box-shadow: 0px 6px 18px 0px #0000000f;
     cursor: pointer;
     p {
         margin: 0;
     }
     header {
-        padding: 20px 16px 10px 16px;
-        border-bottom: 1px solid #f5f5f5;
+        padding: 16px 16px 0px 16px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        .name-wrapper {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+        .function-box-header {
+            display: grid;
+            grid-template-columns: 5% 85% 10%;
             .function-name {
                 font-family: 'InterSemiBold';
-                font-size: 20px;
+                font-size: 18px;
                 line-height: 20px;
             }
-        }
-
-        .function-details {
-            height: 26px;
-            display: flex;
-            gap: 7px;
-            .function-repo,
-            .function-code-type {
+            deatils {
                 display: flex;
-                padding: 3px 10px;
                 align-items: center;
-                border-radius: 32px;
-                border: 1px solid #e1e1e1;
-                gap: 3px;
-                font-size: 14px;
-                color: #737373;
-                svg {
-                    color: black;
-                    width: 15px;
-                    height: 15px;
+                gap: 8px;
+                margin-top: 5px;
+                .ant-divider-vertical {
+                    margin: 0px;
+                    border-left-width: 1px;
+                    height: 18px;
+                    color: #e0e0e0;
+                }
+                .function-owner {
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
+                    color: #6557ff;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                downloads,
+                commits,
+                rate {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: #737373;
+                    font-size: 14px;
+                    .download-icon {
+                        color: #b0b0b0;
+                        font-size: 14px;
+                    }
+                    .stars-rate {
+                        font-size: 14px;
+                        color: #ffb10b;
+                    }
+                    .ant-rate-star:not(:last-child) {
+                        margin-right: 4px;
+                    }
                 }
             }
         }
     }
     description {
-        display: flex;
-        padding-left: 20px;
-        padding-right: 20px;
-        height: 49px;
-        border-bottom: 1px solid #f5f5f5;
-        overflow-x: auto;
-        align-items: center;
-        span {
-            font-family: 'Inter';
-            font-size: 12px;
-            color: rgba(74, 73, 92, 0.8);
-        }
+        padding-left: 16px;
+        color: #737373;
+        font-size: 14px;
     }
     tags {
         display: flex;
-        padding-left: 20px;
-        padding-right: 20px;
-        height: 40px;
-        border-bottom: 1px solid #f5f5f5;
+        margin-top: 5px;
+        padding: 10px 16px;
+
+        border-top: 1px solid #f5f5f5;
         overflow-x: auto;
-        .tag-wrapper {
-            max-width: 95px !important;
-        }
+        // .tag-wrapper {
+        //     max-width: 95px !important;
+        // }
     }
     date {
         display: flex;
@@ -85,9 +92,7 @@
         color: #737373;
         font-size: 12px;
         justify-content: space-between;
-        .flex {
-            display: flex;
-        }
+
         svg {
             width: 18px;
             height: 18px;

@@ -48,12 +48,12 @@
 
         .cards-wrapper {
             width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: repeat(auto-fill, 320px);
-            grid-auto-rows: 210px;
-            gap: 15px;
-            align-items: center;
+            // height: 100%;
+            // // display: grid;
+            // // grid-template-columns: repeat(auto-fill, 320px);
+            // // grid-auto-rows: 210px;
+            // // gap: 15px;
+            // align-items: center;
             overflow-y: auto;
         }
         .no-function-to-display {

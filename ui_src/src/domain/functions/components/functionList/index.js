@@ -66,9 +66,53 @@ function FunctionList() {
     const getAllFunctions = async () => {
         setisLoading(true);
         try {
-            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
+            // const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
+            const data = {
+                functions: [
+                    {
+                        function_name: 'Example function',
+                        description: 'This is a description',
+                        tags: ['tag1', 'tag2', 'tag3'],
+                        runtime: 'go1.19',
+                        memory: 128,
+                        storgae: 128,
+                        last_commit: '2023-10-01T08:43:23Z',
+                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function/memphis.yaml',
+                        repository: 'memphis-dev-functions',
+                        branch: 'master',
+                        owner: 'memphisdev',
+                        environment_vars: {
+                            name: 'ENV_1',
+                            value: 'env2'
+                        },
+                        scm_type: '',
+                        language: 'go',
+                        isInstalled: true
+                    },
+                    {
+                        function_name: 'function2',
+                        description: 'This is a description',
+                        tags: ['tag1', 'tag2', 'tag3'],
+                        runtime: 'go1.19',
+                        memory: 128,
+                        storgae: 128,
+                        last_commit: '2023-10-01T08:43:23Z',
+                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
+                        repository: 'memphis-dev-functions',
+                        branch: 'master',
+                        owner: 'memphisdev',
+                        environment_vars: {
+                            name: 'ENV_1',
+                            value: 'env2'
+                        },
+                        scm_type: '',
+                        language: 'go',
+                        isInstalled: false
+                    }
+                ],
+                scm_integrated: false
+            };
             setIntegrated(data.scm_integrated);
-
             setFunctionList(data?.functions);
             setTimeout(() => {
                 setisLoading(false);
