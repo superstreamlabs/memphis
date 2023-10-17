@@ -239,19 +239,6 @@ function FunctionList() {
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
-                    <SearchInput
-                        placeholder="Search here"
-                        colorType="navy"
-                        backgroundColorType="gray-dark"
-                        width="288px"
-                        height="34px"
-                        borderRadiusType="circle"
-                        borderColorType="none"
-                        boxShadowsType="none"
-                        iconComponent={<SearchIcon alt="searchIcon" />}
-                        onChange={handleSearch}
-                        value={searchInput}
-                    />
                     <Button
                         width="166px"
                         height="34px"
@@ -270,6 +257,19 @@ function FunctionList() {
             <div className="function-tabs">
                 <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
+            <SearchInput
+                placeholder="Search here"
+                colorType="navy"
+                backgroundColorType="gray-dark"
+                width="100%"
+                height="34px"
+                borderRadiusType="circle"
+                borderColorType="none"
+                boxShadowsType="none"
+                iconComponent={<SearchIcon alt="searchIcon" />}
+                onChange={handleSearch}
+                value={searchInput}
+            />
             <div className="function-list">
                 {isLoading && (
                     <div className="loader-uploading">
