@@ -181,7 +181,11 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 		return fmt.Errorf("[tenant name: %v]jsapi request timeout for request type %q on %q", tenantName, kind, subject)
 	}
 
-	return json.Unmarshal(rawResp, resp)
+	err = json.Unmarshal(rawResp, resp)
+	if err != nil {
+		s.Errorf("jsApiRequest: ", err)
+	}
+	return err
 }
 
 func (s *Server) getJsApiReplySubject() string {
@@ -1492,6 +1496,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 	hdr := getHeader(ClientInfoHdr, msg)
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(hdr, &ci); err != nil {
+			s.Errorf("getTenantNameAndMessage: ", err)
 			return tenantName, message, err
 		}
 		tenantName = ci.Account

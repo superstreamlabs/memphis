@@ -81,6 +81,11 @@ export const ApiEndpoints = {
 
     //Functions
     GET_ALL_FUNCTIONS: '/functions/getAllFunctions',
+    GET_ALL_TEST_EVENTS: '/functions/events/getAllEvents',
+    CREATE_TEST_EVENT: '/functions/events/addEvent',
+    DELETE_TEST_EVENT: '/functions/events/deleteEvent',
+    GET_TEST_EVENT: '/functions/events/getEvent',
+    UPDATE_TEST_EVENT: '/functions/events/editEvent',
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',

@@ -2543,6 +2543,9 @@ func nextReqFromMsg(msg []byte) (time.Time, int, int, bool, time.Duration, time.
 	case req[0] == '{':
 		var cr JSApiConsumerGetNextRequest
 		if err := json.Unmarshal(req, &cr); err != nil {
+			// ** added by Memphis
+			serv.Errorf("nextReqFromMsg: ", err)
+			// added by Memphis **
 			return time.Time{}, -1, 0, false, 0, time.Time{}, err
 		}
 		var hbt time.Time

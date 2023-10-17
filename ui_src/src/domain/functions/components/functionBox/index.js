@@ -14,17 +14,29 @@ import './style.scss';
 
 import { IoClose, IoGitBranch } from 'react-icons/io5';
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
 import { FiGitCommit } from 'react-icons/fi';
 import { FaCode } from 'react-icons/fa';
+<<<<<<< HEAD
 import { BiDownload } from 'react-icons/bi';
 import { Divider, Drawer, Rate } from 'antd';
 import { parsingDate } from '../../../../services/valueConvertor';
+=======
+import { Drawer } from 'antd';
+import Button from '../../../../components/button';
+import { isCloud, parsingDate } from '../../../../services/valueConvertor';
+>>>>>>> ec6a0b18c24ea6338992c46c59c9eebfcd207681
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
+<<<<<<< HEAD
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
+=======
+import { ReactComponent as FunnctionBoxIcon } from '../../../../assets/images/functionBoxIcon.svg';
+import { ReactComponent as DownloadIcon } from '../../../../assets/images/donwloadIcon.svg';
+import { ReactComponent as StarFullIcon } from '../../../../assets/images/fullStarIcon.svg';
+import { ReactComponent as StarEmptyIcon } from '../../../../assets/images/emptyStarIcon.svg';
+>>>>>>> ec6a0b18c24ea6338992c46c59c9eebfcd207681
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
@@ -32,13 +44,20 @@ import CustomTabs from '../../../../components/Tabs';
 import pathDomains from '../../../../router';
 import Tag from '../../../../components/tag';
 import { OWNER } from '../../../../const/globalConst';
+<<<<<<< HEAD
 import Button from '../../../../components/button';
+=======
+import { FiChevronDown } from 'react-icons/fi';
+import TestFunctionModal from '../testFunctionModal';
+import Modal from '../../../../components/modal';
+>>>>>>> ec6a0b18c24ea6338992c46c59c9eebfcd207681
 
 function FunctionBox({ funcDetails }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
     const [tabValue, setTabValue] = useState('Code');
+    const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
@@ -126,13 +145,7 @@ function FunctionBox({ funcDetails }) {
                 </tags>
             </div>
             <Drawer
-                title={
-                    <div>
-                        <p>{functionDetails?.function_name}</p>
-                        <CustomTabs tabs={['Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                    </div>
-                }
-                placement="bottom"
+                placement="right"
                 size={'large'}
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
@@ -140,7 +153,83 @@ function FunctionBox({ funcDetails }) {
                 open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
-            ></Drawer>
+            >
+                <div className="function-drawer-container">
+                    <div className="drawer-header">
+                        <div className="icon-wrapper">
+                            <FunnctionBoxIcon alt="function-box-icon" />
+                        </div>
+                        <div className="right-side">
+                            <div className="title">Sentiment analysis</div>
+                            <div className="details-wrapper">
+                                <span>Memphis</span>
+                                <MemphisFunctionIcon width={16} height={16} alt="memphsi function icon" />
+                                <span className="purple">Memphis.dev</span>
+                                <div className="bar" />
+                                <span>
+                                    <DownloadIcon /> 1940
+                                </span>
+                                <div className="bar" />
+                                <span>
+                                    <StarFullIcon />
+                                    <StarFullIcon />
+                                    <StarFullIcon />
+                                    <StarFullIcon />
+                                    <StarFullIcon />
+                                    (98)
+                                </span>
+                                <div className="bar" />
+                                <date is="x3d" onClick={() => handleDrawer(true)}>
+                                    <div className="flex">
+                                        <FiGitCommit />
+                                        <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
+                                    </div>
+                                </date>
+                            </div>
+                            <div className="description">
+                                Donec dictum tristique porta. Etiam convallis lorem lobortis nulla molestie, nec tincidunt est ultrices. Donec dictum tristique porta.
+                                Etiam convallis lorem lobortis nulla molestie, nec tincidunt est ultrices.
+                            </div>
+
+                            <Button
+                                placeholder={
+                                    <div className="button-content">
+                                        <span>Install</span>
+                                        <div className="gradient" />
+                                        <FiChevronDown />
+                                    </div>
+                                }
+                                backgroundColorType={'purple'}
+                                colorType={'white'}
+                                radiusType={'circle'}
+                                onClick={() => setIsTestFunctionModalOpen(true)}
+                                disabled={!isCloud()}
+                            />
+                        </div>
+                    </div>
+                    <div>
+                        {/* <p>{functionDetails?.function_name}</p> */}
+                        <CustomTabs tabs={['Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                        <Button
+                            placeholder={
+                                <div className="button-content">
+                                    <span>Test</span>
+                                    <div className="gradient" />
+                                    <FiChevronDown />
+                                </div>
+                            }
+                            backgroundColorType={'orange'}
+                            colorType={'black'}
+                            radiusType={'circle'}
+                            onClick={() => setIsTestFunctionModalOpen(true)}
+                            disabled={!isCloud()}
+                        />
+                    </div>
+                </div>
+            </Drawer>
+            <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
+                <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
+            </Modal>
         </>
     );
 }

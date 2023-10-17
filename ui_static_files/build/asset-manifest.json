@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.b430387a.css",
-    "main.js": "/static/js/main.7e524ed3.js",
+    "main.css": "/static/css/main.4588b4ec.css",
+    "main.js": "/static/js/main.0449d10b.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -114,6 +114,7 @@
     "static/media/elasticIcon.svg": "/static/media/elasticIcon.19ffd4bcb1035607a0e575bfc13b8aca.svg",
     "static/media/s3Logo.svg": "/static/media/s3Logo.e6d961e07879a322092e36018c83e2d6.svg",
     "static/media/newrelicIcon.svg": "/static/media/newrelicIcon.19afaa28b0521e1eb85f844d4e2be949.svg",
+    "static/media/noConnectionIcon.svg": "/static/media/noConnectionIcon.b7c3723fd4bdeafd56882991b238e548.svg",
     "static/media/upgradeBanner.svg": "/static/media/upgradeBanner.f70fc974b2fc32868d9f61efa9ba73ed.svg",
     "static/media/fullLogo.svg": "/static/media/fullLogo.64576cea4e4d8598370f3e03920a2604.svg",
     "static/media/404.svg": "/static/media/404.9e16e4461a6da4e6a1562ae4ced0939f.svg",
@@ -126,6 +127,7 @@
     "static/media/githubBanner.webp": "/static/media/githubBanner.45709cc90340feff943f.webp",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
     "static/media/elasticBanner.webp": "/static/media/elasticBanner.5137ba7446b120da38b2.webp",
+    "static/media/emptyEvents.svg": "/static/media/emptyEvents.fbfba73c785f06b4d3b018b1b882aa5e.svg",
     "static/media/graphPlaceholder.svg": "/static/media/graphPlaceholder.b250ab6ee837fc52e8721fe43efe74c6.svg",
     "static/media/grafanaBannerPopup.webp": "/static/media/grafanaBannerPopup.04ea20c13ab4520bc130.webp",
     "static/media/datadogBannerPopup.webp": "/static/media/datadogBannerPopup.5c4ebccdb6a2be226735.webp",
@@ -151,6 +153,7 @@
     "static/media/editIcon.svg": "/static/media/editIcon.1bc57053f82f152a5ea3301ae06862cd.svg",
     "static/media/githubBranchIcon.svg": "/static/media/githubBranchIcon.584358d0c1bebd525947ddc5abc29bf3.svg",
     "static/media/githubLogo.svg": "/static/media/githubLogo.aa20dd0db39627180b1dd60632b32f52.svg",
+    "static/media/emptyStarIcon.svg": "/static/media/emptyStarIcon.2db4d97ce11c99cddec67ba5e7f8ac60.svg",
     "static/media/schemaIcon.svg": "/static/media/schemaIcon.0a6892a86a18f11ccf9f3b88dcb32d8f.svg",
     "static/media/placeholderSchema.svg": "/static/media/placeholderSchema.cde9d3484259f8c40b67644cd987432c.svg",
     "static/media/schemaAlertIcon.svg": "/static/media/schemaAlertIcon.7fd559db477880ec74a0bf5a1ba2ccfd.svg",
@@ -160,8 +163,10 @@
     "static/media/grafanaBanner.webp": "/static/media/grafanaBanner.3de6be0653754ff1052e.webp",
     "static/media/usersIcon.svg": "/static/media/usersIcon.accd97b0fbfc2baf2c5ed1fcb1f8f46c.svg",
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
+    "static/media/binIcon.svg": "/static/media/binIcon.b4f1f1d4ef1c74747e553e7bffe3ee8e.svg",
     "static/media/TotalMessages.svg": "/static/media/TotalMessages.6d75ac5bd3a106f6ac4e37800d4c25aa.svg",
     "static/media/pagerdutyBanner.webp": "/static/media/pagerdutyBanner.3a702b9db3201eba99a4.webp",
+    "static/media/donwloadIcon.svg": "/static/media/donwloadIcon.f3ca104494e5dee5e3a41d05d230cb3a.svg",
     "static/media/information.svg": "/static/media/information.a47649741da6f2594fc6e0dc6027168a.svg",
     "static/media/discordLogo.svg": "/static/media/discordLogo.7bee7136bbef2a491cc4560f894011e2.svg",
     "static/media/waitingMessages.svg": "/static/media/waitingMessages.b6dc0edb44eea832a6bc4e9f8357b215.svg",
@@ -186,6 +191,7 @@
     "static/media/slackBanner.webp": "/static/media/slackBanner.568424be397fd884f5a6.webp",
     "static/media/LogsRetentionInDays.svg": "/static/media/LogsRetentionInDays.0a0864bd090b1a520492507a2bf1d5ea.svg",
     "static/media/sourceIcon.svg": "/static/media/sourceIcon.861e550f98f7961a69d58df1977bae8d.svg",
+    "static/media/functionBoxIcon.svg": "/static/media/functionBoxIcon.d3173f46eb5168e96a1098960f4b2c17.svg",
     "static/media/deadLetterPlaceholder.svg": "/static/media/deadLetterPlaceholder.e81a59abbe86b8b18fa9bb9c1475fd4f.svg",
     "static/media/dls_enable_icon.svg": "/static/media/dls_enable_icon.03a3706804e0d1fc7b44336af88b1314.svg",
     "static/media/finishFlag.svg": "/static/media/finishFlag.cdd2d450a2a93dbfa465c9e00803394f.svg",
@@ -199,6 +205,7 @@
     "static/media/logsIcon.svg": "/static/media/logsIcon.523c7dfba8286920ef9f710678e327da.svg",
     "static/media/asyncIcon.svg": "/static/media/asyncIcon.263cde6ac835b02e46217b9561d11eee.svg",
     "static/media/purge.svg": "/static/media/purge.138eb15dd4ab408a29c28c77b2616b8e.svg",
+    "static/media/testEventModalcon.svg": "/static/media/testEventModalcon.b9dc3f9d81be21e5f73506754cb64a58.svg",
     "static/media/consumeLagIcon.svg": "/static/media/consumeLagIcon.67333d12e2fa8213ea1d0231a1d9f170.svg",
     "static/media/rollBackIcon.svg": "/static/media/rollBackIcon.d27a828890f2a4e685738694d53dbfb5.svg",
     "static/media/UIHostname.svg": "/static/media/UIHostname.b2ab65aacef8f92173d8a888cfba0978.svg",
@@ -258,6 +265,7 @@
     "static/media/paymentsGray.svg": "/static/media/paymentsGray.5b47c51db2ea9b6ac864da7c7f1963f8.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.fd4af1a8971f8bd9499888ffd8dd2a43.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
+    "static/media/fullStarIcon.svg": "/static/media/fullStarIcon.c75dfe97be9d76c59962b810965bca0f.svg",
     "static/media/paymentsColor.svg": "/static/media/paymentsColor.5d1339878ec45e734fff414b719b1124.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
     "static/media/stopUsingIcon.svg": "/static/media/stopUsingIcon.7e0db2ab31e9777c5ec29a204dd7a982.svg",
@@ -268,7 +276,7 @@
     "static/media/sysContainer.svg": "/static/media/sysContainer.a0ad8ac03ca4516375b97d94b7630cb4.svg",
     "static/media/followersDetails.svg": "/static/media/followersDetails.e74daec8aa834097602a239809774351.svg",
     "static/media/checkIcon.svg": "/static/media/checkIcon.b8dcbac926b46e866e90f5a752109035.svg",
-    "static/media/tickCircle.svg": "/static/media/tickCircle.63b9019007eb7cb5ff1b563821133393.svg",
+    "static/media/statusIcon.svg": "/static/media/statusIcon.467d50bd45147a0b7f2025f839f921c9.svg",
     "static/media/errorIcon.svg": "/static/media/errorIcon.144c977e7c2255ab2320f8551b518bca.svg",
     "static/media/infoNotificationIcon.svg": "/static/media/infoNotificationIcon.b2cae38850a86ae5ffa748e2a6954074.svg",
     "static/media/redirectWhite.svg": "/static/media/redirectWhite.a7fe5174002203ec6fbbe70642f1635b.svg",
@@ -303,7 +311,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.b430387a.css",
-    "static/js/main.7e524ed3.js"
+    "static/css/main.4588b4ec.css",
+    "static/js/main.0449d10b.js"
   ]
 }
