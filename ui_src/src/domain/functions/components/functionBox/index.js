@@ -120,7 +120,7 @@ function FunctionBox({ funcDetails, integrated }) {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                // disabled={confirm !== (textToConfirm || 'delete') || loader}
+                                disabled={(isCloud() && !integrated) || !isCloud()}
                                 // isLoading={loader}
                                 onClick={() => console.log('clicked')}
                             />
