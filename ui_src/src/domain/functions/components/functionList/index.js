@@ -61,13 +61,10 @@ function FunctionList() {
     const [integrated, setIntegrated] = useState(false);
     const [functionList, setFunctionList] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
-    const [installedFilteredData, setInstalledFilteredData] = useState([]);
-    const [otherFilteredData, setOtherFilteredData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [tabValue, setTabValue] = useState('All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
-    const [activeKey, setActiveKey] = useState(['1']);
     const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
     useEffect(() => {
@@ -161,7 +158,7 @@ function FunctionList() {
                         is_installed: false
                     }
                 ],
-                scm_integrated: true
+                scm_integrated: true //if intefrated with github
             };
             setIntegrated(data.scm_integrated);
             setFunctionList(data?.functions);
@@ -215,7 +212,13 @@ function FunctionList() {
     );
 
     const renderFunctionBoxes = (filter) =>
-        filter === 'installed' ? (
+        !integrated ? (
+            <>
+                {filteredData?.map((func, index) => (
+                    <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                ))}
+            </>
+        ) : filter === 'installed' ? (
             <>
                 {filteredData
                     .filter((func) => func?.is_installed)
@@ -233,6 +236,27 @@ function FunctionList() {
             </>
         );
 
+    const drawCollapse = () => {
+        const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
+        const installedFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
+        const otherFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
+
+        if (!installedFunctionBoxesContent && !otherFunctionBoxesContent) return null;
+        return (
+            <div>
+                <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                    <Panel header={<div className="panel-header">Installed</div>} key={1}>
+                        <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
+                    </Panel>
+                </Collapse>
+                <Collapse accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                    <Panel header={<div className="panel-header">Other</div>} key={2}>
+                        <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                    </Panel>
+                </Collapse>
+            </div>
+        );
+    };
     const renderContent = () => {
         const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
 
@@ -259,22 +283,7 @@ function FunctionList() {
             } else {
                 return functionBoxesContent || noFunctionsContent;
             }
-        } else {
-            return (
-                <div>
-                    <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
-                        <Panel header={<div className="panel-header">Installed</div>} key={1}>
-                            <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
-                        </Panel>
-                    </Collapse>
-                    <Collapse accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
-                        <Panel header={<div className="panel-header">Other</div>} key={2}>
-                            <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
-                        </Panel>
-                    </Collapse>
-                </div>
-            );
-        }
+        } else return drawCollapse() || noFunctionsContent;
     };
 
     return (
