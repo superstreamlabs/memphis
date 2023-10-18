@@ -87,6 +87,22 @@
             padding-left: 20px;
         }
     }
+    .ant-collapse {
+        background-color: transparent;
+        border: 0px;
+    }
+    // .ant-collapse > .ant-collapse-item
+    .ant-collapse-item {
+        border: 0px;
+        background-color: transparent;
+    }
+    .ant-collapse-content {
+        background-color: transparent;
+        border: 0px;
+    }
+    .ant-collapse-content-box {
+        padding: 0;
+    }
 }
 
 .loader-uploading {

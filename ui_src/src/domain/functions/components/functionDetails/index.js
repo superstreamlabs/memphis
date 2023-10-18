@@ -29,9 +29,9 @@ import { GoRepo } from 'react-icons/go';
 
 import { Language } from '@material-ui/icons';
 
-function FunctionDetails({ selectedFunction }) {
+function FunctionDetails({ selectedFunction, integrated }) {
     const [open, setOpen] = useState(false);
-    const [tabValue, setTabValue] = useState('Code Function');
+    const [tabValue, setTabValue] = useState('Details');
     const [codeTabValue, setCodeTabValue] = useState('Code');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
@@ -64,29 +64,8 @@ function FunctionDetails({ selectedFunction }) {
                             </commits>
                         </deatils>
                     </div>
-                    <description is="x3d">{selectedFunction?.description}</description>
 
-                    <Button
-                        placeholder={
-                            <div className="button-content">
-                                <span>Install</span>
-                                <div className="gradient" />
-                                <FiChevronDown />
-                            </div>
-                        }
-                        backgroundColorType={'purple'}
-                        colorType={'white'}
-                        radiusType={'circle'}
-                        onClick={() => setIsTestFunctionModalOpen(true)}
-                        disabled={!isCloud()}
-                    />
-                </div>
-            </div>
-            <div>
-                <CustomTabs tabs={['Code Function']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                <info is="x3d">
-                    <div className="func-details">
-                        <name is="x3d">{selectedFunction?.function_name}</name>
+                    <info is="x3d">
                         <repo is="x3d">
                             <GoRepo />
                             <label>{selectedFunction?.repository}</label>
@@ -99,8 +78,26 @@ function FunctionDetails({ selectedFunction }) {
                             <CodeBlackIcon />
                             <label>{selectedFunction?.language}</label>
                         </language>
-                    </div>
+                    </info>
+                    <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
+                        <Button
+                            placeholder={
+                                <div className="button-content">
+                                    <span>Install</span>
+                                    <div className="gradient" />
+                                    <FiChevronDown />
+                                </div>
+                            }
+                            backgroundColorType={'purple'}
+                            colorType={'white'}
+                            radiusType={'circle'}
+                            onClick={() => {
+                                // installFunction() - not implemented yet
+                                return;
+                            }}
+                            disabled={isCloud() && !integrated}
+                        />
                         <Button
                             placeholder={
                                 <div className="button-content">
@@ -113,28 +110,13 @@ function FunctionDetails({ selectedFunction }) {
                             colorType={'black'}
                             radiusType={'circle'}
                             onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!isCloud()}
-                        />
-                        <Button
-                            placeholder={
-                                <div className="button-content">
-                                    <span>Deploy</span>
-                                    <div className="gradient" />
-                                    <FiChevronDown />
-                                </div>
-                            }
-                            backgroundColorType={'purple'}
-                            colorType={'white'}
-                            radiusType={'circle'}
-                            onClick={() => {
-                                return;
-                            }}
-                            disabled={!isCloud()}
+                            disabled={!selectedFunction?.is_installed}
                         />
                     </actions>
-                </info>
-                <div className="func-description">There are many variations of passages of Lorem</div>
-                <Divider />
+                </div>
+            </div>
+            <div>
+                <CustomTabs tabs={['Details', 'Code Function']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
                 <CustomTabs tabs={['Code', 'Versions']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
         </div>

@@ -41,7 +41,7 @@ import { FiChevronDown } from 'react-icons/fi';
 import TestFunctionModal from '../testFunctionModal';
 import Modal from '../../../../components/modal';
 
-function FunctionBox({ funcDetails }) {
+function FunctionBox({ funcDetails, integrated }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
@@ -147,7 +147,7 @@ function FunctionBox({ funcDetails }) {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <FunctionDetails selectedFunction={selectedFunction} />
+                <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} />
             </Drawer>
             <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
                 <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />

@@ -20,6 +20,9 @@ import { ReactComponent as GithubActiveConnectionIcon } from '../../../../assets
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
 import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
+import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
+import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
+
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -34,6 +37,9 @@ import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../cloneModal';
 import { OWNER } from '../../../../const/globalConst';
 import { isCloud } from '../../../../services/valueConvertor';
+import { Collapse } from 'antd';
+const { Panel } = Collapse;
+
 const TABS = [
     {
         name: 'All',
@@ -55,10 +61,14 @@ function FunctionList() {
     const [integrated, setIntegrated] = useState(false);
     const [functionList, setFunctionList] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
+    const [installedFilteredData, setInstalledFilteredData] = useState([]);
+    const [otherFilteredData, setOtherFilteredData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [tabValue, setTabValue] = useState('All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+    const [activeKey, setActiveKey] = useState(['1']);
+    const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
 
     useEffect(() => {
         getAllFunctions();
@@ -88,7 +98,7 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'go',
-                        isInstalled: true
+                        is_installed: true //check after implementing the backend
                     },
                     {
                         function_name: 'function2',
@@ -108,10 +118,10 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'go',
-                        isInstalled: false
+                        is_installed: false
                     }
                 ],
-                scm_integrated: false
+                scm_integrated: true
             };
             setIntegrated(data.scm_integrated);
             setFunctionList(data?.functions);
@@ -130,7 +140,6 @@ function FunctionList() {
 
     useEffect(() => {
         let results = functionList;
-
         if (tabValue === 'Custom') {
             results = results.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
@@ -165,18 +174,31 @@ function FunctionList() {
         </div>
     );
 
-    const renderFunctionBoxes = () => (
-        <>
-            {filteredData?.map((func, index) => (
-                <FunctionBox key={index} funcDetails={func} />
-            ))}
-        </>
-    );
+    const renderFunctionBoxes = (filter) =>
+        filter === 'installed' ? (
+            <>
+                {filteredData
+                    .filter((func) => func?.is_installed)
+                    ?.map((func, index) => (
+                        <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                    ))}
+            </>
+        ) : (
+            <>
+                {filteredData
+                    .filter((func) => !func?.is_installed)
+                    ?.map((func, index) => (
+                        <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                    ))}
+            </>
+        );
 
     const renderContent = () => {
         const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
 
         const functionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes()}</div> : null;
+        const installedFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
+        const otherFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
 
         if (!integrated) {
             if (isCloud()) {
@@ -198,7 +220,29 @@ function FunctionList() {
                 return functionBoxesContent || noFunctionsContent;
             }
         } else {
-            return functionBoxesContent || noFunctionsContent;
+            return (
+                <div>
+                    <Collapse accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                        <Panel header={'Installed'} key={1}>
+                            <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
+                        </Panel>
+                    </Collapse>
+                    <Collapse accordion={true}>
+                        <Panel header={'Other'} key={2}>
+                            <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                        </Panel>
+                    </Collapse>
+                </div>
+                // <div>
+                //     <div>
+                //         <label>Installed</label>
+                //         <CollapseArrowIcon alt="CollapseArrowIcon" />
+                //     </div>
+                //     <div>{functionBoxesContent || noFunctionsContent}</div>
+                //     <label>Other</label>
+                //     <div>{functionBoxesContent || noFunctionsContent}</div>
+                // </div>
+            );
         }
     };
 

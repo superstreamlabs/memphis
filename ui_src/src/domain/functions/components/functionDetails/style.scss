@@ -112,23 +112,24 @@
     }
 
     .drawer-header {
-        height: 140px;
+        height: 160px;
         display: flex;
         align-items: center;
         justify-content: flex-start;
         padding-left: 35px;
         padding-right: 24px;
-        margin-top: 10px;
+        margin-top: 20px;
+        margin-bottom: 20px;
         gap: 24px;
         width: 100%;
         min-width: 750px;
+
         .right-side {
             display: flex;
-            flex-grow: 1;
+            gap: 6px;
             flex-direction: column;
             align-items: flex-start;
             justify-content: flex-start;
-
             .title {
                 color: #2e2c34;
                 font-family: 'InterSemiBold';
@@ -176,10 +177,32 @@
                     }
                 }
             }
+            info {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                repo,
+                branch,
+                language {
+                    display: flex;
+                    justify-content: space-evenly;
+                    align-items: center;
+                    gap: 4px;
+                    border-radius: 32px;
+                    border: 1px #e1e1e1 solid;
+                    padding: 3px, 0px;
+                    svg {
+                        margin-left: 6px;
+                    }
+                    label {
+                        margin-right: 6px;
+                    }
+                }
+            }
             description {
                 color: #737373;
                 font-size: 14px;
-                margin-bottom: 10px;
+                margin-bottom: 0px;
                 overflow: hidden;
                 max-width: 35vw;
                 white-space: nowrap;
@@ -193,51 +216,11 @@
             margin: 0 10px;
         }
     }
-    info {
-        padding-left: 35px;
-        padding-right: 35px;
+
+    actions {
         display: flex;
-        justify-content: space-between;
-        .func-details {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            name {
-                color: #2e2c34;
-                font-family: 'InterSemiBold';
-                font-size: 20px;
-            }
-            repo,
-            branch,
-            language {
-                display: flex;
-                justify-content: space-evenly;
-                align-items: center;
-                gap: 4px;
-                border-radius: 32px;
-                border: 1px #e1e1e1 solid;
-                padding: 3px, 0px;
-                svg {
-                    margin-left: 6px;
-                }
-                label {
-                    margin-right: 6px;
-                }
-            }
-        }
-        actions {
-            display: flex;
-            align-items: center;
-            justify-content: end;
-            gap: 10px;
-        }
-    }
-    .func-description {
-        margin-left: 35px;
-        color: #737373;
-        font-size: 14px;
-    }
-    .ant-divider-horizontal {
-        margin: 10px 0;
+        align-items: center;
+        justify-content: end;
+        gap: 10px;
     }
 }
