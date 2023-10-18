@@ -46,12 +46,18 @@
                 }
                 downloads,
                 commits,
+                branch,
+                repo,
                 rate {
                     display: flex;
                     align-items: center;
                     gap: 5px;
                     color: #737373;
                     font-size: 14px;
+                    cursor: pointer;
+                    label {
+                        cursor: pointer;
+                    }
                     .download-icon {
                         color: #b0b0b0;
                         font-size: 14px;
@@ -179,6 +185,7 @@
                 font-family: 'InterSemiBold';
                 font-size: 18px;
                 line-height: 20px;
+                cursor: pointer;
             }
             deatils {
                 display: flex;

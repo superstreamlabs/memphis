@@ -191,11 +191,17 @@
                     border-radius: 32px;
                     border: 1px #e1e1e1 solid;
                     padding: 3px, 0px;
+                    color: #737373;
                     svg {
                         margin-left: 6px;
                     }
                     label {
                         margin-right: 6px;
+                    }
+                }
+                language {
+                    label::first-letter {
+                        text-transform: capitalize;
                     }
                 }
             }

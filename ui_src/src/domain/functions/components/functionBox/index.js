@@ -38,6 +38,7 @@ import pathDomains from '../../../../router';
 import Tag from '../../../../components/tag';
 import { OWNER } from '../../../../const/globalConst';
 import { FiChevronDown } from 'react-icons/fi';
+import { GoRepo } from 'react-icons/go';
 import TestFunctionModal from '../testFunctionModal';
 import Modal from '../../../../components/modal';
 
@@ -77,8 +78,9 @@ function FunctionBox({ funcDetails, integrated }) {
             <div
                 key={functionDetails?.function_name}
                 className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                onClick={() => handleDrawer(true)}
             >
-                <header is="x3d" onClick={() => handleDrawer(true)}>
+                <header is="x3d">
                     <div className="function-box-header">
                         <FunctionIcon alt="Function icon" height="40px" />
                         <div>
@@ -92,8 +94,21 @@ function FunctionBox({ funcDetails, integrated }) {
                                     {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
                                     <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
                                 </div>
-                                <Divider type="vertical" />
-                                <downloads is="x3d">
+                                {funcDetails.owner !== OWNER && (
+                                    <>
+                                        <Divider type="vertical" />
+                                        <repo is="x3d">
+                                            <GoRepo />
+                                            <label>{functionDetails?.repository}</label>
+                                        </repo>
+                                        <Divider type="vertical" />
+                                        <branch is="x3d">
+                                            <GithubBranchIcon />
+                                            <label>{functionDetails?.branch}</label>
+                                        </branch>
+                                    </>
+                                )}
+                                {/* <downloads is="x3d">
                                     <BiDownload className="download-icon" />
                                     <label>{Number(1940).toLocaleString()}</label>
                                 </downloads>
@@ -101,11 +116,11 @@ function FunctionBox({ funcDetails, integrated }) {
                                 <rate is="x3d">
                                     <Rate disabled defaultValue={2} className="stars-rate" />
                                     <label>(93)</label>
-                                </rate>
+                                </rate> */}
                                 <Divider type="vertical" />
                                 <commits is="x3d">
                                     <FiGitCommit />
-                                    <label>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                    <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
                                 </commits>
                             </deatils>
                         </div>

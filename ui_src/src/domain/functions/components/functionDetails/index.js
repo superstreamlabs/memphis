@@ -48,7 +48,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
-                            <downloads is="x3d">
+                            {/* <downloads is="x3d">
                                 <BiDownload className="download-icon" />
                                 <label>{Number(1940).toLocaleString()}</label>
                             </downloads>
@@ -57,10 +57,10 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 <Rate disabled defaultValue={2} className="stars-rate" />
                                 <label>(93)</label>
                             </rate>
-                            <Divider type="vertical" />
+                            <Divider type="vertical" /> */}
                             <commits is="x3d">
                                 <FiGitCommit />
-                                <label>Commits on {parsingDate(selectedFunction?.last_commit, false, false)}</label>
+                                <label>Last commit on {parsingDate(selectedFunction?.last_commit, false, false)}</label>
                             </commits>
                         </deatils>
                     </div>
@@ -116,8 +116,8 @@ function FunctionDetails({ selectedFunction, integrated }) {
                 </div>
             </div>
             <div>
-                <CustomTabs tabs={['Details', 'Code Function']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                <CustomTabs tabs={['Code', 'Versions']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                {tabValue === 'Code' && <CustomTabs tabs={['Code', 'Versions']} value={tabValue} onChange={(tabValue) => setCodeTabValue(tabValue)} />}
             </div>
         </div>
     );

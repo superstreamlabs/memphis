@@ -4,6 +4,31 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+
+    connectedRepos {
+        display: flex;
+        width: 260px;
+        height: 34px;
+        padding: 5px 10px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        border-radius: 32px;
+        background: #ffff;
+        box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+        svg {
+            height: 15px;
+            width: 15px;
+        }
+        .ant-divider-vertical {
+            margin: 0;
+        }
+        label {
+            font-family: InterSemiBold;
+            cursor: pointer;
+        }
+    }
     .button-content {
         display: flex;
         flex-direction: row;
@@ -32,7 +57,9 @@
         gap: 10px;
         justify-content: flex-end;
     }
-
+    .function-list-collapse {
+        width: 100%;
+    }
     .function-list {
         height: calc(95vh - 150px);
         width: 100%;
@@ -48,12 +75,6 @@
 
         .cards-wrapper {
             width: 100%;
-            // height: 100%;
-            // // display: grid;
-            // // grid-template-columns: repeat(auto-fill, 320px);
-            // // grid-auto-rows: 210px;
-            // // gap: 15px;
-            // align-items: center;
             overflow-y: auto;
         }
         .no-function-to-display {
@@ -91,18 +112,6 @@
         font-family: 'InterSemiBold';
         font-size: 18px;
     }
-    .ant-collapse {
-        background-color: transparent;
-        border: 0px;
-    }
-    .ant-collapse-item {
-        border: 0px;
-        background-color: transparent;
-    }
-    .ant-collapse-content {
-        background-color: transparent;
-        border: 0px;
-    }
     .ant-collapse-content-box {
         padding: 0;
     }
@@ -120,4 +129,75 @@
 
 .ant-drawer-header {
     border-bottom-color: #ececec;
+}
+.repos-popover {
+    width: 260px;
+    margin-top: 10px;
+}
+.repo-data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+}
+.git-refresh-title {
+    margin: 5px 0px;
+    cursor: pointer;
+    label {
+        cursor: pointer;
+    }
+}
+.git-refresh {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    font-family: 'InterSemiBold';
+    size: 14px;
+}
+.git-repos-list {
+    .git-repos-item {
+        height: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 15px;
+        .left-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            .repo-item-icon {
+                height: 25px;
+                width: 25px;
+            }
+            .last-modified {
+                color: #818c99;
+                font-size: 10px;
+                font-style: normal;
+            }
+        }
+
+        .refresh-icon {
+            border: 1px solid #e6e6e6;
+            padding: 4px;
+            border-radius: 50%;
+            height: 25px;
+            width: 25px;
+            cursor: pointer;
+        }
+        .refresh-icon:hover {
+            border: 2px solid #e6e6e6;
+            padding: 3px;
+        }
+    }
+    .ant-divider-horizontal {
+        margin: 0px;
+    }
+
+    .collapse-arrow {
+        transform: rotate(180deg);
+    }
+    .open {
+        transform: rotate(0deg);
+    }
 }
