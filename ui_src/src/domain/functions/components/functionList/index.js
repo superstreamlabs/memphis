@@ -119,6 +119,46 @@ function FunctionList() {
                         scm_type: '',
                         language: 'go',
                         is_installed: false
+                    },
+                    {
+                        function_name: 'installes function',
+                        description: 'This is a description',
+                        tags: ['tag1', 'tag2', 'tag3'],
+                        runtime: 'go1.19',
+                        memory: 128,
+                        storgae: 128,
+                        last_commit: '2023-10-01T08:43:23Z',
+                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
+                        repository: 'memphis-dev-functions',
+                        branch: 'master',
+                        owner: 'memphisdev',
+                        environment_vars: {
+                            name: 'ENV_1',
+                            value: 'env2'
+                        },
+                        scm_type: '',
+                        language: 'go',
+                        is_installed: true
+                    },
+                    {
+                        function_name: 'Test',
+                        description: 'This is a description',
+                        tags: ['tag1', 'tag2', 'tag3'],
+                        runtime: 'go1.19',
+                        memory: 128,
+                        storgae: 128,
+                        last_commit: '2023-10-01T08:43:23Z',
+                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
+                        repository: 'memphis-dev-functions',
+                        branch: 'master',
+                        owner: 'memphisdev',
+                        environment_vars: {
+                            name: 'ENV_1',
+                            value: 'env2'
+                        },
+                        scm_type: '',
+                        language: 'go',
+                        is_installed: false
                     }
                 ],
                 scm_integrated: true
@@ -222,26 +262,17 @@ function FunctionList() {
         } else {
             return (
                 <div>
-                    <Collapse accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
-                        <Panel header={'Installed'} key={1}>
+                    <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                        <Panel header={<div className="panel-header">Installed</div>} key={1}>
                             <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
                         </Panel>
                     </Collapse>
-                    <Collapse accordion={true}>
-                        <Panel header={'Other'} key={2}>
+                    <Collapse accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}>
+                        <Panel header={<div className="panel-header">Other</div>} key={2}>
                             <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
                         </Panel>
                     </Collapse>
                 </div>
-                // <div>
-                //     <div>
-                //         <label>Installed</label>
-                //         <CollapseArrowIcon alt="CollapseArrowIcon" />
-                //     </div>
-                //     <div>{functionBoxesContent || noFunctionsContent}</div>
-                //     <label>Other</label>
-                //     <div>{functionBoxesContent || noFunctionsContent}</div>
-                // </div>
             );
         }
     };

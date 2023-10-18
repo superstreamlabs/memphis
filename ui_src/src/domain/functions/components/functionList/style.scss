@@ -34,7 +34,7 @@
     }
 
     .function-list {
-        height: calc(95vh - 120px);
+        height: calc(95vh - 140px);
         width: 100%;
         position: relative;
         display: inline-flex;
@@ -87,11 +87,14 @@
             padding-left: 20px;
         }
     }
+    .panel-header {
+        font-family: 'InterSemiBold';
+        font-size: 18px;
+    }
     .ant-collapse {
         background-color: transparent;
         border: 0px;
     }
-    // .ant-collapse > .ant-collapse-item
     .ant-collapse-item {
         border: 0px;
         background-color: transparent;
@@ -102,6 +105,11 @@
     }
     .ant-collapse-content-box {
         padding: 0;
+    }
+    .ant-collapse-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 }
 

@@ -59,12 +59,7 @@ function FunctionBox({ funcDetails, integrated }) {
 
     useEffect(() => {
         setFunctionDetils(funcDetails);
-        console.log(functionDetails);
     }, [funcDetails]);
-
-    useEffect(() => {
-        console.log(selectedFunction);
-    }, [selectedFunction]);
 
     const handleDrawer = (flag) => {
         setOpen(flag);
