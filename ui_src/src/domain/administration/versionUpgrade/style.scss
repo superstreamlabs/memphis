@@ -13,8 +13,24 @@
     }
     .banner-section{
         display: flex;
-        padding-left: 3%;
-        align-items:center;
+        padding: 0 3% 0;
+        &-inner {
+            width: 100%;
+            display: flex;
+            align-items:center;
+            border-radius: 20px;
+            background: linear-gradient(
+                            to left,
+                            #46E9C8,
+                            #FFCA43 41.493%,
+                            #E6E4FB 100%
+            );
+            &-svg {
+                display: block;
+                width: auto;
+                margin-left: auto;
+            }
+        }
         .actions{
             position: absolute;
             left: 5%;

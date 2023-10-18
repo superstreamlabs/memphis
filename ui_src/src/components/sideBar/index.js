@@ -57,6 +57,8 @@ import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
 import UpgradePlans from '../upgradePlans';
+import {FaBook, FaDiscord} from "react-icons/fa";
+import {BiEnvelope} from "react-icons/bi";
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -65,7 +67,14 @@ const overlayStyles = {
     paddingBottom: '5px',
     marginBottom: '10px'
 };
+const supportContextMenuStyles = {
+    borderRadius: '8px',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
 const overlayStylesSupport = {
+    marginTop: '420px',
     borderRadius: '8px',
     width: '380px',
     padding: '15px',
@@ -78,6 +87,7 @@ function SideBar() {
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
     const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
+    const [popoverOpenSupportContextMenu, setPopoverOpenSupportContextMenu] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const getCompanyLogo = useCallback(async () => {
@@ -218,6 +228,56 @@ function SideBar() {
             </div>
         </div>
     );
+
+    const supportContextMenu = (
+        <div className="menu-content">
+            <div
+                className="item-wrap"
+                onClick={() => window.open('https://memphis.dev/docs', '_blank')}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <FaBook className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Documentation</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => window.open('https://memphis.dev/discord', '_blank')}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <FaDiscord className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Discord channel</p>
+                </div>
+            </div>
+            {isCloud() && (
+                <div
+                    className="item-wrap"
+                >
+                    <Popover
+                        overlayInnerStyle={overlayStylesSupport}
+                        placement="bottomRight"
+                        content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
+                        trigger="click"
+                        onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
+                        open={popoverOpenSupport}
+                        onClick={() => {setPopoverOpenSupportContextMenu(false)}}
+                    >
+                        <div className="item">
+                        <span className="icons">
+                            <BiEnvelope className="icons-sidebar" />
+                        </span>
+                            <p className="item-title">Open a service request</p>
+                        </div>
+                    </Popover>
+                </div>
+            )}
+        </div>
+    );
+
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
@@ -312,9 +372,11 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
                 </div>
+            </div>
+            <div className="bottom-icons">
                 {!isCloud() && (
                     <div
-                        className="item-wrapper"
+                        className="item-wrapper mb-15 cursor-pointer"
                         onMouseEnter={() => setHoveredItem('logs')}
                         onMouseLeave={() => setHoveredItem('')}
                         onClick={() => history.replace(pathDomains.sysLogs)}
@@ -328,52 +390,39 @@ function SideBar() {
                                 <LogsIcon alt="LogsIcon" width={20} height={20} />
                             )}
                         </div>
-                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
+                        <p className={state.route === 'logs' || hoveredItem === 'logs' ? 'sidebar-title ms-active' : 'sidebar-title'}>Logs</p>
                     </div>
                 )}
-            </div>
-            <div className="bottom-icons">
                 <div
                     className="integration-icon-wrapper"
                     onMouseEnter={() => setHoveredItem('integrations')}
                     onMouseLeave={() => setHoveredItem('')}
                     onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
                 >
-                    {hoveredItem === 'integrations' ? (
+                    {state.route === 'administration' ? (
+                        <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
+                    ) : hoveredItem === 'integrations' ? (
                         <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
                     ) : (
                         <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
                     )}
-                    <label className="icon-name">Integrations</label>
+                    <p className={state.route === 'administration' || hoveredItem === 'integrations' ? 'sidebar-title ms-active' : 'sidebar-title'}>Integrations</p>
                 </div>
-                {isCloud() && (
-                    <Popover
-                        overlayInnerStyle={overlayStylesSupport}
-                        placement="right"
-                        content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
-                        trigger="click"
-                        onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
-                        open={popoverOpenSupport}
+                <Popover
+                    overlayInnerStyle={supportContextMenuStyles}
+                    placement="right"
+                    content={supportContextMenu}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
+                    open={popoverOpenSupportContextMenu}
+                >
+                    <div
+                        className="integration-icon-wrapper"
                     >
-                        <div
-                            className="integration-icon-wrapper"
-                            onMouseEnter={() => setHoveredItem('support')}
-                            onMouseLeave={() => setHoveredItem('')}
-                            onClick={() => setPopoverOpenSupport(true)}
-                        >
-                            {hoveredItem === 'support' ? <SupportColorIcon alt="SupportColorIcon" /> : <SupportIcon alt="SupportIcon" />}
-                            <label className="icon-name">Support</label>
-                        </div>
-                    </Popover>
-                )}
-                {!isCloud() && (
-                    <Link to={{ pathname: DOC_URL }} target="_blank">
-                        <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
-                            {hoveredItem === 'documentation' ? <DocumentActiveIcon alt="DocumentActiveIcon" /> : <DocumentIcon alt="DocumentIcon" />}
-                            <label className="icon-name">Docs</label>
-                        </div>
-                    </Link>
-                )}
+                        <SupportIcon alt="SupportIcon" />
+                        <p className="sidebar-title">Support</p>
+                    </div>
+                </Popover>
 
                 <Popover
                     overlayInnerStyle={overlayStyles}
