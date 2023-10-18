@@ -28,6 +28,7 @@ import Input from '../../../../components/Input';
 import Modal from '../../../../components/modal';
 import { showMessages } from '../../../../services/genericServices';
 import { Form } from 'antd';
+import { LOCAL_STORAGE_USER_NAME } from '../../../../const/localStorageConsts';
 
 function Payments() {
     const [isOpen, setIsOpen] = useState(false);
@@ -229,7 +230,7 @@ function Payments() {
                                         pattern: /^[a-zA-Z0-9._%]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
                                     }
                                 ]}
-                                initialValue={formFields?.email || ''}
+                                initialValue={formFields?.email || localStorage.getItem(LOCAL_STORAGE_USER_NAME)}
                             >
                                 <Input
                                     placeholder="Type email"
