@@ -228,5 +228,8 @@
         align-items: center;
         justify-content: end;
         gap: 10px;
+        .install-btn {
+            display: flex;
+        }
     }
 }

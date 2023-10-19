@@ -21,8 +21,10 @@ import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
-
+import CloudOnly from '../../../../components/cloudOnly';
 import CustomTabs from '../../../../components/Tabs';
+import TestFunctionModal from '../testFunctionModal';
+import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { FiChevronDown } from 'react-icons/fi';
 import { GoRepo } from 'react-icons/go';
@@ -34,7 +36,6 @@ function FunctionDetails({ selectedFunction, integrated }) {
     const [tabValue, setTabValue] = useState('Details');
     const [codeTabValue, setCodeTabValue] = useState('Code');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
-
     return (
         <div className="function-drawer-container">
             <div className="drawer-header ">
@@ -81,23 +82,27 @@ function FunctionDetails({ selectedFunction, integrated }) {
                     </info>
                     <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
-                        <Button
-                            placeholder={
-                                <div className="button-content">
-                                    <span>{selectedFunction?.in_progress ? 'In progress' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}</span>
-                                    <div className="gradient" />
-                                    <FiChevronDown />
-                                </div>
-                            }
-                            backgroundColorType={'purple'}
-                            colorType={'white'}
-                            radiusType={'circle'}
-                            onClick={() => {
-                                // installFunction() - not implemented yet
-                                return;
-                            }}
-                            disabled={(isCloud() && !integrated) || !isCloud() || selectedFunction?.in_progress}
-                        />
+                        <div className="install-btn">
+                            <Button
+                                placeholder={
+                                    <div className="button-content">
+                                        <span>{selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}</span>
+                                        <div className="gradient" />
+                                        <FiChevronDown />
+                                    </div>
+                                }
+                                backgroundColorType={'purple'}
+                                colorType={'white'}
+                                radiusType={'circle'}
+                                onClick={() => {
+                                    // installFunction() - not implemented yet
+                                    return;
+                                }}
+                                isLoading={selectedFunction?.in_progress}
+                                disabled={(isCloud() && !integrated) || !isCloud() || selectedFunction?.in_progress}
+                            />
+                            {!isCloud() && <CloudOnly position={'relative'} />}
+                        </div>
                         <Button
                             placeholder={
                                 <div className="button-content">
@@ -119,6 +124,9 @@ function FunctionDetails({ selectedFunction, integrated }) {
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
                 {tabValue === 'Code' && <CustomTabs tabs={['Code', 'Versions']} value={tabValue} onChange={(tabValue) => setCodeTabValue(tabValue)} />}
             </div>
+            <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
+                <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
+            </Modal>
         </div>
     );
 }

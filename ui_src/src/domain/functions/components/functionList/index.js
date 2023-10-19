@@ -23,21 +23,21 @@ import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh
 import { ReactComponent as GitHubLogo } from '../../../../assets/images/githubLogo.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
 import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
+import { AddRounded } from '@material-ui/icons';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
-import { AddRounded } from '@material-ui/icons';
+import { isCloud } from '../../../../services/valueConvertor';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
-import FunctionBox from '../functionBox';
-import IntegrateFunction from '../integrateFunction';
 import SearchInput from '../../../../components/searchInput';
 import CustomTabs from '../../../../components/Tabs';
+import FunctionBox from '../functionBox';
+import IntegrateFunction from '../integrateFunction';
 import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../cloneModal';
 import { OWNER } from '../../../../const/globalConst';
-import { isCloud } from '../../../../services/valueConvertor';
 import { Collapse, Divider, Popover } from 'antd';
 const { Panel } = Collapse;
 
@@ -51,7 +51,7 @@ const TABS = [
         disabled: false
     },
     {
-        name: 'Custom',
+        name: 'Private',
         disabled: !isCloud()
     }
 ];
@@ -79,7 +79,7 @@ function FunctionList() {
                         <div className="left-section">
                             <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
                             <span className="repo-data">
-                                <label className="git-refresh">{repo?.repo_name}</label>
+                                <label className="git-repo">{repo?.repo_name}</label>
                                 <label className="last-modified">{repo?.branch}</label>
                             </span>
                         </div>
@@ -92,7 +92,7 @@ function FunctionList() {
                     <div className="left-section">
                         <RepoIcon alt="repo" className="repo-item-icon" />
                         <span className="repo-data">
-                            <label className="git-refresh">Show all</label>
+                            <label className="git-repo">Show all</label>
                         </span>
                     </div>
                 </div>
@@ -274,7 +274,7 @@ function FunctionList() {
 
     useEffect(() => {
         let results = functionList;
-        if (tabValue === 'Custom') {
+        if (tabValue === 'Private') {
             results = results.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
             results = results.filter((func) => func?.owner === OWNER);
@@ -335,7 +335,7 @@ function FunctionList() {
         );
 
     const drawCollapse = () => {
-        if (isCloud() && tabValue === 'Custom' && !integrated) return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
+        if (isCloud() && tabValue === 'Private' && !integrated) return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
         const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
         const installedFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
         const otherFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
@@ -344,7 +344,7 @@ function FunctionList() {
         return (
             <div className="function-list-collapse">
                 {!isCloud() && <div>{otherFunctionBoxesContent || noFunctionsContent}</div>}
-                {isCloud() && !integrated && tabValue !== 'Memphis' && (
+                {isCloud() && !integrated && tabValue === 'Private' && (
                     <div className="cards-wrapper">
                         <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
                     </div>
@@ -431,7 +431,7 @@ function FunctionList() {
                             title={
                                 connectedRepos?.length > 0 && (
                                     <div
-                                        className="git-refresh git-refresh-title"
+                                        className="git-repo git-refresh-title"
                                         onClick={() => {
                                             modalFlip(true);
                                             setClickedRefresh(false);

@@ -134,6 +134,7 @@
 .repos-popover {
     width: 260px;
     margin-top: 10px;
+    cursor: pointer;
 }
 .repo-data {
     display: flex;
@@ -148,13 +149,14 @@
         cursor: pointer;
     }
 }
-.git-refresh {
+.git-repo {
     display: flex;
     gap: 5px;
     align-items: center;
     justify-content: center;
     font-family: 'InterSemiBold';
     size: 14px;
+    cursor: pointer;
 }
 .git-repos-list {
     .filtered {
@@ -179,6 +181,7 @@
                 color: #818c99;
                 font-size: 10px;
                 font-style: normal;
+                cursor: pointer;
             }
         }
     }

@@ -12,40 +12,27 @@
 
 import './style.scss';
 
-import { IoClose, IoGitBranch } from 'react-icons/io5';
 import React, { useState, useEffect } from 'react';
-import { FiGitCommit } from 'react-icons/fi';
-import { FaCode } from 'react-icons/fa';
-import { BiDownload } from 'react-icons/bi';
-import { Divider, Drawer, Rate } from 'antd';
-import Button from '../../../../components/button';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
+import { FiGitCommit } from 'react-icons/fi';
+import { BiDownload } from 'react-icons/bi';
+import { IoClose } from 'react-icons/io5';
+import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
-import { ReactComponent as FunnctionBoxIcon } from '../../../../assets/images/functionBoxIcon.svg';
-import { ReactComponent as DownloadIcon } from '../../../../assets/images/donwloadIcon.svg';
+import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
 import TagsList from '../../../../components/tagList';
-import CustomTabs from '../../../../components/Tabs';
-import pathDomains from '../../../../router';
-import Tag from '../../../../components/tag';
+import CloudOnly from '../../../../components/cloudOnly';
+import Button from '../../../../components/button';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
-import { FiChevronDown } from 'react-icons/fi';
-import { GoRepo } from 'react-icons/go';
-import TestFunctionModal from '../testFunctionModal';
-import Modal from '../../../../components/modal';
 
 function FunctionBox({ funcDetails, integrated }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
-    const [tabValue, setTabValue] = useState('Code');
-    const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
 
     useEffect(() => {
         const url = window.location.href;
@@ -121,29 +108,29 @@ function FunctionBox({ funcDetails, integrated }) {
                             </deatils>
                         </div>
 
-                        {isCloud() && (
-                            <div
-                                onClick={(e) => {
-                                    e.stopPropagation();
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            className="install-button"
+                        >
+                            <Button
+                                width="100px"
+                                height="34px"
+                                placeholder={functionDetails?.in_progress ? '' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                disabled={(isCloud() && !integrated) || !isCloud() || functionDetails?.in_progress}
+                                isLoading={functionDetails?.in_progress} //Get indication after install function
+                                onClick={() => {
+                                    return;
                                 }}
-                            >
-                                <Button
-                                    width="100px"
-                                    height="34px"
-                                    placeholder={functionDetails?.in_progress ? 'In progress' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    disabled={(isCloud() && !integrated) || !isCloud() || functionDetails?.in_progress}
-                                    isLoading={false} //Get indication after install function
-                                    onClick={() => {
-                                        return;
-                                    }}
-                                />
-                            </div>
-                        )}
+                            />
+                            {!isCloud() && <CloudOnly position={'relative'} />}
+                        </div>
                     </div>
                 </header>
                 <description is="x3d">{functionDetails?.description}</description>
@@ -163,9 +150,6 @@ function FunctionBox({ funcDetails, integrated }) {
             >
                 <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} />
             </Drawer>
-            <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
-                <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
-            </Modal>
         </>
     );
 }
