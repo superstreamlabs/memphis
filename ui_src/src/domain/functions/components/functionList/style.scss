@@ -7,7 +7,7 @@
 
     connectedRepos {
         display: flex;
-        width: 260px;
+        width: 240px;
         height: 34px;
         padding: 5px 10px;
         justify-content: center;
@@ -27,6 +27,7 @@
         label {
             font-family: InterSemiBold;
             cursor: pointer;
+            font-size: 12px;
         }
     }
     .button-content {
@@ -61,7 +62,7 @@
         width: 100%;
     }
     .function-list {
-        height: calc(95vh - 150px);
+        height: calc(95vh - 160px);
         width: 100%;
         position: relative;
         display: inline-flex;
@@ -156,6 +157,10 @@
     size: 14px;
 }
 .git-repos-list {
+    .filtered {
+        border-radius: 50%;
+        border: 1px solid #6557ff;
+    }
     .git-repos-item {
         height: 40px;
         display: flex;
@@ -175,19 +180,6 @@
                 font-size: 10px;
                 font-style: normal;
             }
-        }
-
-        .refresh-icon {
-            border: 1px solid #e6e6e6;
-            padding: 4px;
-            border-radius: 50%;
-            height: 25px;
-            width: 25px;
-            cursor: pointer;
-        }
-        .refresh-icon:hover {
-            border: 2px solid #e6e6e6;
-            padding: 3px;
         }
     }
     .ant-divider-horizontal {

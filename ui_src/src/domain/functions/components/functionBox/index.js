@@ -125,7 +125,11 @@ function FunctionBox({ funcDetails, integrated }) {
                             </deatils>
                         </div>
 
-                        <div>
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                        >
                             <Button
                                 width="100px"
                                 height="34px"
@@ -137,7 +141,9 @@ function FunctionBox({ funcDetails, integrated }) {
                                 fontFamily="InterSemiBold"
                                 disabled={(isCloud() && !integrated) || !isCloud()}
                                 // isLoading={loader}
-                                onClick={() => console.log('clicked')}
+                                onClick={() => {
+                                    console.log('clicked');
+                                }}
                             />
                         </div>
                     </div>

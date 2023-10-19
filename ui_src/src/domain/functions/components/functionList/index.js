@@ -26,6 +26,7 @@ import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
+import { AddRounded } from '@material-ui/icons';
 import Loader from '../../../../components/loader';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
@@ -62,6 +63,7 @@ function FunctionList() {
     const [functionList, setFunctionList] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
+    const [filterItem, setFilterItem] = useState(null);
     const [tabValue, setTabValue] = useState('All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
@@ -73,19 +75,28 @@ function FunctionList() {
         <div className="git-repos-list">
             {connectedRepos?.map((repo, index) => (
                 <>
-                    <div className="git-repos-item" key={index}>
+                    <div className="git-repos-item" key={index} onClick={() => setFilterItem(index)}>
                         <div className="left-section">
-                            <RepoIcon alt="repo" className="repo-item-icon" />
+                            <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
                             <span className="repo-data">
-                                <label className="git-refresh">{repo?.repo}</label>
-                                <label className="last-modified">{repo?.owner}</label>
+                                <label className="git-refresh">{repo?.repo_name}</label>
+                                <label className="last-modified">{repo?.branch}</label>
                             </span>
                         </div>
-                        <RefreshIcon alt="refresh" className="refresh-icon" />
                     </div>
                     <Divider />
                 </>
             ))}
+            {filterItem !== null && (
+                <div className="git-repos-item" onClick={() => setFilterItem(null)}>
+                    <div className="left-section">
+                        <RepoIcon alt="repo" className="repo-item-icon" />
+                        <span className="repo-data">
+                            <label className="git-refresh">Show all</label>
+                        </span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
@@ -93,6 +104,10 @@ function FunctionList() {
         getAllFunctions();
         getIntegrationDetails();
     }, []);
+
+    useEffect(() => {
+        console.log(filterItem);
+    }, [filterItem]);
 
     const getIntegrationDetails = async () => {
         try {
@@ -106,7 +121,20 @@ function FunctionList() {
                         connected_repos: [
                             {
                                 branch: 'master',
-                                repo_name: 'memphis',
+                                repo_name: 'memphis-dev-functions',
+                                repo_owner: 'memphisdev',
+                                type: 'functions'
+                            },
+                            {
+                                branch: 'staging',
+                                repo_name: 'function-repo',
+                                repo_owner: 'memphisdev',
+                                type: 'functions'
+                            },
+                            ,
+                            {
+                                branch: 'function-repo',
+                                repo_name: 'memphis-dev-functions',
                                 repo_owner: 'memphisdev',
                                 type: 'functions'
                             }
@@ -117,28 +145,27 @@ function FunctionList() {
                                 repo_name: 'memphis-dev-functions',
                                 repo_owner: 'memphisdev',
                                 type: 'functions'
+                            },
+                            {
+                                branch: 'staging',
+                                repo_name: 'svetagim',
+                                repo_owner: 'memphisdev',
+                                type: 'functions'
                             }
                         ]
                     },
                     properties: null,
                     tenant_name: 'new-tenant'
                 },
-                repos: {}
-                // repos: {
-                //     'py-data-meetup': ['shohamroditimemphis'],
-                //     test: ['shohamroditimemphis'],
-                //     'test-github-integration': ['shohamroditimemphis'],
-                //     'test-memphis.py': ['shohamroditimemphis']
-                // }
-            };
-            let dataArray = [];
-
-            for (const key in data?.repos) {
-                if (data?.repos.hasOwnProperty(key)) {
-                    dataArray.push({ repo: key, owner: data?.repos[key] });
+                // repos: {}
+                repos: {
+                    'py-data-meetup': ['shohamroditimemphis'],
+                    test: ['shohamroditimemphis'],
+                    'test-github-integration': ['shohamroditimemphis'],
+                    'test-memphis.py': ['shohamroditimemphis']
                 }
-            }
-            setConnectedRepos(dataArray);
+            };
+            setConnectedRepos(data?.integration?.keys?.connected_repos || []);
         } catch (error) {}
     };
 
@@ -218,7 +245,7 @@ function FunctionList() {
                         last_commit: '2023-10-01T08:43:23Z',
                         link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
                         repository: 'memphis-dev-functions',
-                        branch: 'master',
+                        branch: 'function-repo',
                         owner: 'memphisdev',
                         environment_vars: {
                             name: 'ENV_1',
@@ -253,15 +280,16 @@ function FunctionList() {
         } else if (tabValue === 'Memphis') {
             results = results.filter((func) => func?.owner === OWNER);
         }
-
         if (searchInput.length > 0) {
             results = results.filter(
                 (func) => func?.function_name?.toLowerCase()?.includes(searchInput.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
-
+        if (filterItem) {
+            results = results.filter((func) => func?.repository === connectedRepos[filterItem]?.repo_name && func?.branch === connectedRepos[filterItem]?.branch);
+        }
         setFilteredData(results);
-    }, [tabValue, searchInput, functionList]);
+    }, [tabValue, searchInput, functionList, filterItem]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -308,6 +336,7 @@ function FunctionList() {
         );
 
     const drawCollapse = () => {
+        if (isCloud() && tabValue === 'Custom' && !integrated) return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
         const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
         const installedFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
         const otherFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
@@ -315,6 +344,11 @@ function FunctionList() {
         if (!installedFunctionBoxesContent && !otherFunctionBoxesContent) return null;
         return (
             <div className="function-list-collapse">
+                {isCloud() && !integrated && tabValue !== 'Memphis' && (
+                    <div className="cards-wrapper">
+                        <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
+                    </div>
+                )}
                 <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
                     <Panel header={<div className="panel-header">Installed</div>} key={1}>
                         <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
@@ -330,28 +364,7 @@ function FunctionList() {
     };
     const renderContent = () => {
         const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
-        const functionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes()}</div> : null;
-
-        if (!integrated) {
-            if (isCloud()) {
-                if (searchInput.length === 0) {
-                    return (
-                        <div className="cards-wrapper">
-                            <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
-                            {renderFunctionBoxes()}
-                        </div>
-                    );
-                }
-                return (
-                    <>
-                        {noFunctionsContent}
-                        {functionBoxesContent}
-                    </>
-                );
-            } else {
-                return functionBoxesContent || noFunctionsContent;
-            }
-        } else return drawCollapse() || noFunctionsContent;
+        return drawCollapse() || noFunctionsContent;
     };
 
     return (
@@ -392,28 +405,53 @@ function FunctionList() {
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
-                    <Popover
-                        placement="top"
-                        title={
-                            connectedRepos?.length > 0 && (
-                                <div className="git-refresh git-refresh-title">
-                                    <RefreshIcon alt="refresh" />
-                                    <label>Refresh All</label>
-                                </div>
-                            )
-                        }
-                        content={content}
-                        trigger="click"
-                        overlayClassName="repos-popover"
-                        onOpenChange={(open) => setClickedRefresh(open)}
-                    >
-                        <connectedRepos is="x3d">
-                            <GitHubLogo alt="github icon" />
-                            <label>Connected Git Repository</label>
-                            <Divider type="vertical" />
-                            <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
-                        </connectedRepos>
-                    </Popover>
+                    {isCloud() && !integrated && (
+                        <Button
+                            width="166px"
+                            height="34px"
+                            placeholder="Integrate with GitHub"
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType="white"
+                            boxShadowStyle="float"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            aria-controls="usecse-menu"
+                            aria-haspopup="true"
+                            onClick={() => setIsFunctionsGuideOpen(true)}
+                        />
+                    )}
+                    {isCloud() && integrated && (
+                        <Popover
+                            placement="top"
+                            title={
+                                connectedRepos?.length > 0 && (
+                                    <div
+                                        className="git-refresh git-refresh-title"
+                                        onClick={() => {
+                                            modalFlip(true);
+                                            setClickedRefresh(false);
+                                        }}
+                                    >
+                                        <label>Add repositories</label>
+                                        <AddRounded className="add" fontSize="small" />
+                                    </div>
+                                )
+                            }
+                            content={content}
+                            trigger="click"
+                            overlayClassName="repos-popover"
+                            open={clickedRefresh}
+                            onOpenChange={(open) => setClickedRefresh(open)}
+                        >
+                            <connectedRepos is="x3d">
+                                <GitHubLogo alt="github icon" />
+                                <label>Connected Git Repository</label>
+                                <Divider type="vertical" />
+                                <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
+                            </connectedRepos>
+                        </Popover>
+                    )}
                     <Button
                         width="166px"
                         height="34px"
