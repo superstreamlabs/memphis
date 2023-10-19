@@ -84,7 +84,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                         <Button
                             placeholder={
                                 <div className="button-content">
-                                    <span>Install</span>
+                                    <span>{selectedFunction?.in_progress ? 'In progress' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}</span>
                                     <div className="gradient" />
                                     <FiChevronDown />
                                 </div>
@@ -96,7 +96,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 // installFunction() - not implemented yet
                                 return;
                             }}
-                            disabled={!isCloud()}
+                            disabled={(isCloud() && !integrated) || !isCloud() || selectedFunction?.in_progress}
                         />
                         <Button
                             placeholder={

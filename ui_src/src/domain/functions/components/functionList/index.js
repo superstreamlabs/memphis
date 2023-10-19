@@ -188,7 +188,8 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'python',
-                        is_installed: true //check after implementing the backend
+                        is_installed: true, //check after implementing the backend,
+                        in_progress: false
                     },
                     {
                         function_name: 'function2',
@@ -208,7 +209,8 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'go',
-                        is_installed: false
+                        is_installed: false,
+                        in_progress: false
                     },
                     {
                         function_name: 'installes function',
@@ -228,7 +230,8 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'go',
-                        is_installed: true
+                        status: 'installed',
+                        in_progress: false
                     },
                     {
                         function_name: 'Test',
@@ -248,10 +251,11 @@ function FunctionList() {
                         },
                         scm_type: '',
                         language: 'go',
-                        is_installed: false
+                        status: 'installed',
+                        in_progress: true
                     }
                 ],
-                scm_integrated: true //if intefrated with github
+                scm_integrated: false //if intefrated with github
             };
             setIntegrated(data.scm_integrated);
             setFunctionList(data?.functions);
@@ -339,21 +343,26 @@ function FunctionList() {
         if (!installedFunctionBoxesContent && !otherFunctionBoxesContent) return null;
         return (
             <div className="function-list-collapse">
+                {!isCloud() && <div>{otherFunctionBoxesContent || noFunctionsContent}</div>}
                 {isCloud() && !integrated && tabValue !== 'Memphis' && (
                     <div className="cards-wrapper">
                         <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />
                     </div>
                 )}
-                <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                    <Panel header={<div className="panel-header">Installed</div>} key={1}>
-                        <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
-                    </Panel>
-                </Collapse>
-                <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                    <Panel header={<div className="panel-header">Other</div>} key={2}>
-                        <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
-                    </Panel>
-                </Collapse>
+                {isCloud() && (
+                    <>
+                        <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                            <Panel header={<div className="panel-header">Installed</div>} key={1}>
+                                <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
+                            </Panel>
+                        </Collapse>
+                        <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                            <Panel header={<div className="panel-header">Other</div>} key={2}>
+                                <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                            </Panel>
+                        </Collapse>
+                    </>
+                )}
             </div>
         );
     };

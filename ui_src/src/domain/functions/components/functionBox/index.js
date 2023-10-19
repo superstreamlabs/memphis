@@ -130,13 +130,13 @@ function FunctionBox({ funcDetails, integrated }) {
                                 <Button
                                     width="100px"
                                     height="34px"
-                                    placeholder={functionDetails?.is_installed ? 'Uninstall' : 'Install'}
+                                    placeholder={functionDetails?.in_progress ? 'In progress' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={(isCloud() && !integrated) || !isCloud()}
+                                    disabled={(isCloud() && !integrated) || !isCloud() || functionDetails?.in_progress}
                                     isLoading={false} //Get indication after install function
                                     onClick={() => {
                                         return;
