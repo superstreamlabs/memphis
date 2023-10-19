@@ -96,7 +96,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 // installFunction() - not implemented yet
                                 return;
                             }}
-                            disabled={isCloud() && !integrated}
+                            disabled={!isCloud()}
                         />
                         <Button
                             placeholder={
@@ -110,7 +110,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             colorType={'black'}
                             radiusType={'circle'}
                             onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!selectedFunction?.is_installed}
+                            disabled={!isCloud() || !selectedFunction?.is_installed}
                         />
                     </actions>
                 </div>

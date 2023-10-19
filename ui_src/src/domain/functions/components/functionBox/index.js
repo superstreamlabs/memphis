@@ -27,8 +27,6 @@ import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { ReactComponent as FunnctionBoxIcon } from '../../../../assets/images/functionBoxIcon.svg';
 import { ReactComponent as DownloadIcon } from '../../../../assets/images/donwloadIcon.svg';
-import { ReactComponent as StarFullIcon } from '../../../../assets/images/fullStarIcon.svg';
-import { ReactComponent as StarEmptyIcon } from '../../../../assets/images/emptyStarIcon.svg';
 import FunctionDetails from '../functionDetails';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -65,10 +63,8 @@ function FunctionBox({ funcDetails, integrated }) {
     const handleDrawer = (flag) => {
         setOpen(flag);
         if (flag) {
-            // history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
             setSelectedFunction(functionDetails);
         } else {
-            // history.push(`${pathDomains.functions}`);
             setSelectedFunction('');
         }
     };
@@ -125,27 +121,29 @@ function FunctionBox({ funcDetails, integrated }) {
                             </deatils>
                         </div>
 
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <Button
-                                width="100px"
-                                height="34px"
-                                placeholder={'Install'}
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                disabled={(isCloud() && !integrated) || !isCloud()}
-                                // isLoading={loader}
-                                onClick={() => {
-                                    console.log('clicked');
+                        {isCloud() && (
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                 }}
-                            />
-                        </div>
+                            >
+                                <Button
+                                    width="100px"
+                                    height="34px"
+                                    placeholder={functionDetails?.is_installed ? 'Uninstall' : 'Install'}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={(isCloud() && !integrated) || !isCloud()}
+                                    isLoading={false} //Get indication after install function
+                                    onClick={() => {
+                                        return;
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 </header>
                 <description is="x3d">{functionDetails?.description}</description>

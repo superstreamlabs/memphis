@@ -102,12 +102,8 @@ function FunctionList() {
 
     useEffect(() => {
         getAllFunctions();
-        getIntegrationDetails();
+        isCloud() && getIntegrationDetails();
     }, []);
-
-    useEffect(() => {
-        console.log(filterItem);
-    }, [filterItem]);
 
     const getIntegrationDetails = async () => {
         try {
@@ -157,7 +153,6 @@ function FunctionList() {
                     properties: null,
                     tenant_name: 'new-tenant'
                 },
-                // repos: {}
                 repos: {
                     'py-data-meetup': ['shohamroditimemphis'],
                     test: ['shohamroditimemphis'],
