@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.da0ecaa6.css",
-    "main.js": "/static/js/main.59298b1e.js",
+    "main.css": "/static/css/main.c70e36e8.css",
+    "main.js": "/static/js/main.3028e42f.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -242,7 +242,6 @@
     "static/media/notUsedIcon.svg": "/static/media/notUsedIcon.d34b2a8e7cd5f8c760477123f305b2ab.svg",
     "static/media/codeIconBlack.svg": "/static/media/codeIconBlack.e0488e37f910267edf5a64ba07c438c6.svg",
     "static/media/deleteIcon.svg": "/static/media/deleteIcon.fa438e877ea1cdfbbd5e49624303aecf.svg",
-    "static/media/documentIconActive.svg": "/static/media/documentIconActive.ab4e72d74aa4241e4fd6c43d35b47a30.svg",
     "static/media/collapseArrow.svg": "/static/media/collapseArrow.1eed198efd396a89d429c8ea1c3b6f56.svg",
     "static/media/codeIcon.svg": "/static/media/codeIcon.6ddd4e5ba7c67ec8dc850bc8255bbc78.svg",
     "static/media/TotalStations.svg": "/static/media/TotalStations.16e95265e663f4e33db9709a800c50c5.svg",
@@ -306,7 +305,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.da0ecaa6.css",
-    "static/js/main.59298b1e.js"
+    "static/css/main.c70e36e8.css",
+    "static/js/main.3028e42f.js"
   ]
 }

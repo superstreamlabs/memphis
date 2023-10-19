@@ -30,22 +30,19 @@ import {
 import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
 import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
 import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
-import { ReactComponent as DocumentActiveIcon } from '../../assets/images/documentIconActive.svg';
 import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueConvertor';
 import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
-import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
 import { ReactComponent as UsersActiveIcon } from '../../assets/images/usersIconActive.svg';
 import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
-import { ReactComponent as DocumentIcon } from '../../assets/images/documentIcon.svg';
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
-import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
+import { LATEST_RELEASE_URL } from '../../config';
 import { ReactComponent as UsersIcon } from '../../assets/images/usersIcon.svg';
 import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -74,7 +71,7 @@ const supportContextMenuStyles = {
     marginBottom: '10px'
 };
 const overlayStylesSupport = {
-    marginTop: '420px',
+    marginTop: window.innerHeight > 560 && 'calc(100vh - 560px)',
     borderRadius: '8px',
     width: '380px',
     padding: '15px',
@@ -233,7 +230,7 @@ function SideBar() {
         <div className="menu-content">
             <div
                 className="item-wrap"
-                onClick={() => window.open('https://memphis.dev/docs', '_blank')}
+                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/docs', '_blank')}}
             >
                 <div className="item">
                     <span className="icons">
@@ -244,7 +241,7 @@ function SideBar() {
             </div>
             <div
                 className="item-wrap"
-                onClick={() => window.open('https://memphis.dev/discord', '_blank')}
+                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/discord', '_blank')}}
             >
                 <div className="item">
                     <span className="icons">
