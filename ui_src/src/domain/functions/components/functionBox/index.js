@@ -110,7 +110,8 @@ function FunctionBox({ funcDetails, integrated }) {
 
                         <div
                             onClick={(e) => {
-                                !isCloud() && e.stopPropagation();
+                                e.stopPropagation();
+                                // installFunction() - not implemented yet
                             }}
                             className="install-button"
                         >
@@ -123,7 +124,7 @@ function FunctionBox({ funcDetails, integrated }) {
                                 backgroundColorType="purple"
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
-                                disabled={(isCloud() && !integrated) || !isCloud() || functionDetails?.in_progress}
+                                disabled={!isCloud() || functionDetails?.in_progress}
                                 isLoading={functionDetails?.in_progress} //Get indication after install function
                                 onClick={() => {
                                     return;

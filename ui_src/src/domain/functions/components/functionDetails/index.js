@@ -99,24 +99,27 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                     return;
                                 }}
                                 isLoading={selectedFunction?.in_progress}
-                                disabled={(isCloud() && !integrated) || !isCloud() || selectedFunction?.in_progress}
+                                disabled={!isCloud() || selectedFunction?.in_progress}
                             />
                             {!isCloud() && <CloudOnly position={'relative'} />}
                         </div>
-                        <Button
-                            placeholder={
-                                <div className="button-content">
-                                    <span>Test</span>
-                                    <div className="gradient" />
-                                    <FiChevronDown />
-                                </div>
-                            }
-                            backgroundColorType={'orange'}
-                            colorType={'black'}
-                            radiusType={'circle'}
-                            onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!isCloud() || !selectedFunction?.is_installed}
-                        />
+                        <div className="install-btn">
+                            <Button
+                                placeholder={
+                                    <div className="button-content">
+                                        <span>Test</span>
+                                        <div className="gradient" />
+                                        <FiChevronDown />
+                                    </div>
+                                }
+                                backgroundColorType={'orange'}
+                                colorType={'black'}
+                                radiusType={'circle'}
+                                onClick={() => setIsTestFunctionModalOpen(true)}
+                                disabled={!isCloud() || !selectedFunction?.is_installed}
+                            />
+                            {!isCloud() && <CloudOnly position={'relative'} />}
+                        </div>
                     </actions>
                 </div>
             </div>

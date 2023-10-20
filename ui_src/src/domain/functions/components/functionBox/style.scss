@@ -168,6 +168,12 @@
     }
 }
 
+.install-button {
+    .ant-btn-loading-icon {
+        padding: 0px !important;
+    }
+}
+
 .function-drawer-container {
     display: flex;
     width: 100%;

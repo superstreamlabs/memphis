@@ -33,6 +33,7 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import SearchInput from '../../../../components/searchInput';
 import CustomTabs from '../../../../components/Tabs';
+import CloudOnly from '../../../../components/cloudOnly';
 import FunctionBox from '../functionBox';
 import IntegrateFunction from '../integrateFunction';
 import FunctionsGuide from '../functionsGuide';
@@ -51,7 +52,13 @@ const TABS = [
         disabled: false
     },
     {
-        name: 'Private',
+        name: isCloud() ? (
+            'Private'
+        ) : (
+            <>
+                Private <CloudOnly position={'relative'} />
+            </>
+        ),
         disabled: !isCloud()
     }
 ];

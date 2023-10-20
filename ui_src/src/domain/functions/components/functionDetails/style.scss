@@ -223,6 +223,10 @@
         }
     }
 
+    .ant-btn > .ant-btn-loading-icon {
+        padding-right: 0px !important;
+    }
+
     actions {
         display: flex;
         align-items: center;
