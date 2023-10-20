@@ -110,7 +110,7 @@ function FunctionBox({ funcDetails, integrated }) {
 
                         <div
                             onClick={(e) => {
-                                e.stopPropagation();
+                                !isCloud() && e.stopPropagation();
                             }}
                             className="install-button"
                         >
