@@ -145,8 +145,8 @@ function FunctionBox({ funcDetails, integrated }) {
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
-                open={open}
-                // open={true}
+                // open={open}
+                open={true}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >

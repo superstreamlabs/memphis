@@ -16,6 +16,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import emoji from 'emoji-dictionary';
+import Editor from '@monaco-editor/react';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiLogoGoLang } from 'react-icons/bi';
 import { BiDownload } from 'react-icons/bi';
@@ -39,6 +40,7 @@ import { BsFileEarmarkCode } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
 import { CarryOutOutlined, CheckOutlined, FormOutlined } from '@ant-design/icons';
 import { Select, Switch, Tree } from 'antd';
+import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
 
 import { Language } from '@material-ui/icons';
 
@@ -209,17 +211,38 @@ function FunctionDetails({ selectedFunction, integrated }) {
                 </code>
             )}
             {tabValue === 'Code' && (
-                <div className="repos-section">
-                    <Tree
-                        showLine={false}
-                        showIcon={true}
-                        defaultExpandedKeys={['0-0-0']}
-                        treeData={treeData}
-                        onSelect={onSelect}
-                        switcherIcon={({ expanded }) => (
-                            <CollapseArrowIcon className={expanded ? 'collapse-arrow open arrow' : 'collapse-arrow arrow'} alt="collapse-arrow" />
-                        )}
-                    />
+                <div className="source-code">
+                    <div className="repos-section">
+                        <Tree
+                            showLine={false}
+                            showIcon={true}
+                            defaultExpandedKeys={['0-0-0']}
+                            treeData={treeData}
+                            onSelect={onSelect}
+                            switcherIcon={({ expanded }) => (
+                                <CollapseArrowIcon className={expanded ? 'collapse-arrow open arrow' : 'collapse-arrow arrow'} alt="collapse-arrow" />
+                            )}
+                        />
+                    </div>
+                    <div className="code-content">
+                        <Editor
+                            options={{
+                                minimap: { enabled: false },
+                                scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                scrollBeyondLastLine: false,
+                                roundedSelection: false,
+                                formatOnPaste: true,
+                                formatOnType: true,
+                                readOnly: true,
+                                fontSize: '12px',
+                                fontFamily: 'Inter'
+                            }}
+                            language={'javascript'}
+                            height="calc(100% - 10px)"
+                            width="calc(100% - 25px)"
+                            value={REST_CODE_EXAMPLE['.NET (C#)'].consumer}
+                        />
+                    </div>
                 </div>
             )}
         </div>
