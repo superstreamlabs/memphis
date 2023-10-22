@@ -114,59 +114,7 @@ function FunctionList() {
 
     const getIntegrationDetails = async () => {
         try {
-            // const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-            const data = {
-                integration: {
-                    id: 0,
-                    name: 'github',
-                    keys: {
-                        application_name: 'memphis-cloud-dev',
-                        connected_repos: [
-                            {
-                                branch: 'master',
-                                repo_name: 'memphis-dev-functions',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            },
-                            {
-                                branch: 'staging',
-                                repo_name: 'function-repo',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            },
-                            ,
-                            {
-                                branch: 'function-repo',
-                                repo_name: 'memphis-dev-functions',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            }
-                        ],
-                        memphis_functions: [
-                            {
-                                branch: 'master',
-                                repo_name: 'memphis-dev-functions',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            },
-                            {
-                                branch: 'staging',
-                                repo_name: 'svetagim',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            }
-                        ]
-                    },
-                    properties: null,
-                    tenant_name: 'new-tenant'
-                },
-                repos: {
-                    'py-data-meetup': ['shohamroditimemphis'],
-                    test: ['shohamroditimemphis'],
-                    'test-github-integration': ['shohamroditimemphis'],
-                    'test-memphis.py': ['shohamroditimemphis']
-                }
-            };
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
             setConnectedRepos(data?.integration?.keys?.connected_repos || []);
         } catch (error) {}
     };
@@ -174,96 +122,7 @@ function FunctionList() {
     const getAllFunctions = async () => {
         setisLoading(true);
         try {
-            // const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
-            const data = {
-                functions: [
-                    {
-                        function_name: 'Example function',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function/memphis.yaml',
-                        repository: 'function-repo',
-                        branch: 'staging',
-                        owner: 'svetagim',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'python',
-                        is_installed: true, //check after implementing the backend,
-                        in_progress: false
-                    },
-                    {
-                        function_name: 'function2',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'master',
-                        owner: 'memphisdev',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        is_installed: false,
-                        in_progress: false
-                    },
-                    {
-                        function_name: 'installes function',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'master',
-                        owner: 'memphisdev',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        status: 'installed',
-                        in_progress: false
-                    },
-                    {
-                        function_name: 'Test',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'function-repo',
-                        owner: 'memphisdev',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        status: 'installed',
-                        in_progress: true
-                    }
-                ],
-                scm_integrated: false //if intefrated with github
-            };
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data.scm_integrated);
             setFunctionList(data?.functions);
             setTimeout(() => {
