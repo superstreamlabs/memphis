@@ -11,14 +11,18 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import emoji from 'emoji-dictionary';
 import { FiGitCommit } from 'react-icons/fi';
+import { BiLogoGoLang } from 'react-icons/bi';
 import { BiDownload } from 'react-icons/bi';
+import { IoLogoJavascript, IoLogoPython } from 'react-icons/io';
+import { GoFileDirectoryFill } from 'react-icons/go';
 import { Divider, Rate } from 'antd';
+import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
 import Button from '../../../../components/button';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
@@ -31,19 +35,80 @@ import TestFunctionModal from '../testFunctionModal';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { FiChevronDown } from 'react-icons/fi';
+import { BsFileEarmarkCode } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
+import { CarryOutOutlined, CheckOutlined, FormOutlined } from '@ant-design/icons';
+import { Select, Switch, Tree } from 'antd';
 
 import { Language } from '@material-ui/icons';
 
 import { code } from './code';
 
+const files = ['domain', 'components', 'domain/functions/functionDetails/index.js', 'domain/functions/functionDetails/style.scss', 'domain/components/test.js'];
+
 function FunctionDetails({ selectedFunction, integrated }) {
     const [open, setOpen] = useState(false);
     const [tabValue, setTabValue] = useState('Details');
-    const [codeTabValue, setCodeTabValue] = useState('Code');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
     const [markdown, setMarkdown] = useState('');
+    const [treeData, setTreeData] = useState([]);
     const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
+
+    useEffect(() => {
+        buildTree(files);
+    }, []);
+
+    const buildTree = (files) => {
+        files = files.sort((a, b) => a.localeCompare(b));
+        let tree = [];
+        let root = {};
+        files.forEach((filePath, index) => {
+            const pathParts = filePath.split('/');
+            if (pathParts.length === 1) {
+                root = {
+                    title: pathParts[0],
+                    key: index,
+                    icon: <GoFileDirectoryFill style={{ color: '#B9DAF0' }} />,
+                    children: []
+                };
+                tree.push(root);
+            } else {
+                let parent = root;
+                for (let i = 1; i < pathParts.length; i++) {
+                    let found = false;
+                    for (let j = 0; j < parent.children.length; j++) {
+                        if (parent.children[j].title === pathParts[i]) {
+                            parent = parent.children[j];
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && i < pathParts.length - 1) {
+                        const newChild = {
+                            title: pathParts[i],
+                            key: index + '-' + i,
+                            icon: <GoFileDirectoryFill style={{ color: '#B9DAF0' }} />,
+                            children: []
+                        };
+                        parent.children.push(newChild);
+                        parent = newChild;
+                    }
+                    if (i === pathParts.length - 1) {
+                        parent.children.push({
+                            title: pathParts[i],
+                            key: index,
+                            icon: <BsFileEarmarkCode />
+                        });
+                    }
+                }
+            }
+        });
+        setTreeData(tree);
+    };
+
+    const onSelect = (selectedKeys, info) => {
+        !isNaN(selectedKeys[0]) ? console.log(files[selectedKeys[0]]) : console.log('not a file');
+    };
 
     return (
         <div className="function-drawer-container">
@@ -134,7 +199,6 @@ function FunctionDetails({ selectedFunction, integrated }) {
             </div>
             <div>
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                {tabValue === 'Code' && <CustomTabs tabs={['Code', 'Versions']} value={tabValue} onChange={(tabValue) => setCodeTabValue(tabValue)} />}
             </div>
             <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
                 <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
@@ -143,6 +207,20 @@ function FunctionDetails({ selectedFunction, integrated }) {
                 <code is="x3d">
                     <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(code.code)}</ReactMarkdown>
                 </code>
+            )}
+            {tabValue === 'Code' && (
+                <div className="repos-section">
+                    <Tree
+                        showLine={false}
+                        showIcon={true}
+                        defaultExpandedKeys={['0-0-0']}
+                        treeData={treeData}
+                        onSelect={onSelect}
+                        switcherIcon={({ expanded }) => (
+                            <CollapseArrowIcon className={expanded ? 'collapse-arrow open arrow' : 'collapse-arrow arrow'} alt="collapse-arrow" />
+                        )}
+                    />
+                </div>
             )}
         </div>
     );
