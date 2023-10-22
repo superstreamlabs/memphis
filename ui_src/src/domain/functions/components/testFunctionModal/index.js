@@ -43,15 +43,15 @@ const TestFunctionModal = ({ onCancel }) => {
     }, []);
 
     useEffect(() => {
-        if (isCheck.length === filteredEvents.length && filteredEvents.length > 0) {
+        if (isCheck?.length === filteredEvents?.length && filteredEvents?.length > 0) {
             setIsCheckAll(true);
         }
     }, [testEvents, isCheck]);
 
     useEffect(() => {
         let results = testEvents;
-        if (searchEvent.length > 0) {
-            results = results.filter((testEvent) => testEvent.name.toLowerCase().includes(searchEvent.toLowerCase()));
+        if (searchEvent?.length > 0) {
+            results = results?.filter((testEvent) => testEvent?.name.toLowerCase()?.includes(searchEvent?.toLowerCase()));
         }
         setFilteredEvents(results);
     }, [searchEvent, testEvents]);
@@ -193,7 +193,7 @@ const TestFunctionModal = ({ onCancel }) => {
                         backgroundColorType={'gray-light'}
                     />
                 </div>
-                {filteredEvents.length === 0 ? (
+                {filteredEvents?.length === 0 ? (
                     <div className="noEvent">
                         <EmptyEventsIcon />
                         <p className="noEvent-title">No Saved Events Found</p>
@@ -201,10 +201,10 @@ const TestFunctionModal = ({ onCancel }) => {
                     </div>
                 ) : (
                     <div className="eventslist-container">
-                        {filteredEvents.map((testEvent) => (
+                        {filteredEvents?.map((testEvent) => (
                             <TestItem
                                 data={testEvent}
-                                isCheck={isCheck?.includes(testEvent.name)}
+                                isCheck={isCheck?.includes(testEvent?.name)}
                                 handleCheckedClick={handleCheckedClick}
                                 handleDelete={handleDelete}
                                 handleEdit={handleEdit}
