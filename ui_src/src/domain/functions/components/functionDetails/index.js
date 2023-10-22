@@ -12,6 +12,10 @@
 
 import './style.scss';
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import emoji from 'emoji-dictionary';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
 import { Divider, Rate } from 'antd';
@@ -31,11 +35,16 @@ import { GoRepo } from 'react-icons/go';
 
 import { Language } from '@material-ui/icons';
 
+import { code } from './code';
+
 function FunctionDetails({ selectedFunction, integrated }) {
     const [open, setOpen] = useState(false);
     const [tabValue, setTabValue] = useState('Details');
     const [codeTabValue, setCodeTabValue] = useState('Code');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
+    const [markdown, setMarkdown] = useState('');
+    const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
+
     return (
         <div className="function-drawer-container">
             <div className="drawer-header ">
@@ -130,6 +139,11 @@ function FunctionDetails({ selectedFunction, integrated }) {
             <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
                 <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
             </Modal>
+            {tabValue === 'Details' && (
+                <code is="x3d">
+                    <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(code.code)}</ReactMarkdown>
+                </code>
+            )}
         </div>
     );
 }

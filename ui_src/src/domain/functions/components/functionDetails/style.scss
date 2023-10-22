@@ -236,4 +236,11 @@
             display: flex;
         }
     }
+    code {
+        height: calc(100% - 260px);
+        overflow-y: auto;
+        font-family: 'Inter';
+        color: #2e2c34;
+        padding: 0px 35px;
+    }
 }
