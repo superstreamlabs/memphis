@@ -51,8 +51,14 @@ var tieredStorageMapLock sync.Mutex
 func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
-			connInfo := &ConnzOptions{Limit: s.MemphisGlobalAccount().MaxActiveConnections()}
-			conns, _ := s.Connz(connInfo)
+			opts := &ConnzOptions{
+				Limit: s.opts.MaxConn,
+				Username: false,
+				Subscriptions: false,
+				SubscriptionsDetail: false,
+				State: ConnOpen,
+			}
+			conns, _ := s.Connz(opts)
 			connectionIds := make(map[string]string)
 			for _, conn := range conns.Conns {
 				connId := strings.Split(conn.Name, "::")[0]
