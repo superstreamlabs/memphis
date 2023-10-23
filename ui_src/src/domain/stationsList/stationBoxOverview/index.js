@@ -131,7 +131,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             <div className="station-meta">
                                 <div className="header">
                                     <PoisonMsgIcon />
-                                    <label className="data-labels total">Poison messages</label>
+                                    <label className="data-labels total">Dead-letter messages</label>
                                 </div>
 
                                 <p className="data-info">

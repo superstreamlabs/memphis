@@ -2211,3 +2211,7 @@ func validatePartitionNumber(partitionsList []int, partition int) bool {
 func GetStationAttachedFunctionsByPartitions(stationID int, partitionsList []int) ([]db.FunctionSchema, error) {
 	return []db.FunctionSchema{}, nil
 }
+
+func getInternalUserPassword() string {
+	return configuration.ROOT_PASSWORD
+}

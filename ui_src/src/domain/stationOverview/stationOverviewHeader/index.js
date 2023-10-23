@@ -372,7 +372,7 @@ const StationOverviewHeader = () => {
                         </div>
                         <div className="more-details">
                             <div className="topRow">
-                                <p className="title">Poison messages</p>
+                                <p className="title">Dead-letter messages</p>
                                 {dls && (
                                     <RedirectIcon
                                         width={15}
@@ -558,7 +558,7 @@ const StationOverviewHeader = () => {
                     open={disableModal}
                 >
                     <DeleteItemsModal
-                        title="Disabling dead-letter consumption will stop pushing new poison messages"
+                        title="Disabling dead-letter consumption will stop pushing new dead-letter messages"
                         desc={
                             <span>
                                 Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong className="dls-name">{dls} </strong>.

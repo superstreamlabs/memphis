@@ -544,7 +544,7 @@ const Messages = () => {
                 open={disableModal}
             >
                 <DeleteItemsModal
-                    title="Disabling dead-letter consumption will stop pushing new poison messages"
+                    title="Disabling dead-letter consumption will stop pushing new dead-letter messages"
                     desc={
                         <span>
                             Station <strong>{stationState?.stationMetaData?.name}</strong> will be disconnected from <strong>{dls} </strong>.

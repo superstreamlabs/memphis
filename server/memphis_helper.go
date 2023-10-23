@@ -1570,11 +1570,11 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	globalUsers := []UserConfig{{User: "$$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	globalUsers := []UserConfig{{User: "$$memphis", Password: getInternalUserPassword()}}
 	accounts := map[string]AccountConfig{
 		"$SYS": {
 			Users: []UserConfig{
-				{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
+				{User: "$SYS", Password: getInternalUserPassword()},
 			},
 			Limits: map[string]*int{"max_connections": &noLimit}},
 	}
@@ -1613,7 +1613,7 @@ func getAccountsAndUsersString() (string, error) {
 			return "", err
 		}
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
-		usrsList := []UserConfig{{User: "$" + t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
+		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
 			for _, usr := range usrMap {
 				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}
