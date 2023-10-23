@@ -362,6 +362,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS dls_station VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS functions_lock_held BOOL NOT NULL DEFAULT false;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS functions_locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -394,6 +396,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		partitions INTEGER[],
 		version INTEGER NOT NULL DEFAULT 0,
 		dls_station VARCHAR NOT NULL DEFAULT '',
+		functions_lock_held BOOL NOT NULL DEFAULT false,
+		functions_locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -593,7 +597,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, installedFunctionsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, installedFunctionsTable, attachedFunctionsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1557,6 +1561,8 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.PartitionsList,
 			&stationRes.Version,
 			&stationRes.DlsStation,
+			&stationRes.FunctionsLockHeld,
+			&stationRes.FunctionsLockedAt,
 			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
@@ -1783,6 +1789,8 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&stationRes.DlsConfigurationSchemaverse,
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
+			&stationRes.FunctionsLockHeld,
+			&stationRes.FunctionsLockedAt,
 			&producer.ID,
 			&producer.Name,
 			&producer.StationId,
@@ -6645,11 +6653,10 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	rows, err := tx.Query(ctx, stmt.Name, cgName, stationId)
+	_, err = tx.Query(ctx, stmt.Name, cgName, stationId)
 	if err != nil {
 		return err
 	}
-	rows.Close()
 
 	query = `DELETE FROM dls_messages WHERE message_type = 'poison' AND poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
 	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
@@ -6657,12 +6664,10 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	rows, err = tx.Query(ctx, stmt.Name)
+	_, err = tx.Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}
-
-	rows.Close()
 
 	err = tx.Commit(ctx)
 	if err != nil {
