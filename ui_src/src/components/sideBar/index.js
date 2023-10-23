@@ -54,8 +54,8 @@ import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
 import UpgradePlans from '../upgradePlans';
-import {FaBook, FaDiscord} from "react-icons/fa";
-import {BiEnvelope} from "react-icons/bi";
+import { FaBook, FaDiscord } from 'react-icons/fa';
+import { BiEnvelope } from 'react-icons/bi';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -230,7 +230,10 @@ function SideBar() {
         <div className="menu-content">
             <div
                 className="item-wrap"
-                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/docs', '_blank')}}
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/docs', '_blank');
+                }}
             >
                 <div className="item">
                     <span className="icons">
@@ -241,7 +244,10 @@ function SideBar() {
             </div>
             <div
                 className="item-wrap"
-                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/discord', '_blank')}}
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/discord', '_blank');
+                }}
             >
                 <div className="item">
                     <span className="icons">
@@ -251,9 +257,7 @@ function SideBar() {
                 </div>
             </div>
             {isCloud() && (
-                <div
-                    className="item-wrap"
-                >
+                <div className="item-wrap">
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
                         placement="bottomRight"
@@ -261,12 +265,14 @@ function SideBar() {
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
-                        onClick={() => {setPopoverOpenSupportContextMenu(false)}}
+                        onClick={() => {
+                            setPopoverOpenSupportContextMenu(false);
+                        }}
                     >
                         <div className="item">
-                        <span className="icons">
-                            <BiEnvelope className="icons-sidebar" />
-                        </span>
+                            <span className="icons">
+                                <BiEnvelope className="icons-sidebar" />
+                            </span>
                             <p className="item-title">Open a service request</p>
                         </div>
                     </Popover>
@@ -413,9 +419,7 @@ function SideBar() {
                     onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
                     open={popoverOpenSupportContextMenu}
                 >
-                    <div
-                        className="integration-icon-wrapper"
-                    >
+                    <div className="integration-icon-wrapper">
                         <SupportIcon alt="SupportIcon" />
                         <p className="sidebar-title">Support</p>
                     </div>

@@ -22,7 +22,9 @@ import { ReactComponent as CloneModalIcon } from '../../../../assets/images/clon
 import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
 import { ReactComponent as GitHubLogo } from '../../../../assets/images/githubLogo.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
 import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
+import { BiCode } from 'react-icons/bi';
 import { AddRounded } from '@material-ui/icons';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
@@ -40,6 +42,7 @@ import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../cloneModal';
 import { OWNER } from '../../../../const/globalConst';
 import { Collapse, Divider, Popover } from 'antd';
+import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';
 const { Panel } = Collapse;
 
 const TABS = [
@@ -110,11 +113,54 @@ function FunctionList() {
     useEffect(() => {
         getAllFunctions();
         isCloud() && getIntegrationDetails();
+        if (localStorage.getItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW) !== 'true') {
+            setIsFunctionsGuideOpen(true);
+            localStorage.setItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW, true);
+        }
     }, []);
 
     const getIntegrationDetails = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
+            // const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
+            const data = {
+                integration: {
+                    id: 0,
+                    name: 'github',
+                    keys: {
+                        application_name: 'memphis-cloud-dev',
+                        connected_repos: [
+                            {
+                                branch: 'master',
+                                repo_name: 'memphis',
+                                repo_owner: 'memphisdev',
+                                type: 'functions'
+                            },
+                            {
+                                branch: 'master',
+                                repo_name: 'memphis-dev-functions',
+                                repo_owner: 'svetaMemphis',
+                                type: 'functions'
+                            }
+                        ],
+                        memphis_functions: [
+                            {
+                                branch: 'master',
+                                repo_name: 'memphis-dev-functions',
+                                repo_owner: 'memphisdev',
+                                type: 'functions'
+                            }
+                        ]
+                    },
+                    properties: null,
+                    tenant_name: 'new-tenant'
+                },
+                repos: {
+                    'py-data-meetup': ['shohamroditimemphis'],
+                    test: ['shohamroditimemphis'],
+                    'test-github-integration': ['shohamroditimemphis'],
+                    'test-memphis.py': ['shohamroditimemphis']
+                }
+            };
             setConnectedRepos(data?.integration?.keys?.connected_repos || []);
         } catch (error) {}
     };
@@ -188,7 +234,7 @@ function FunctionList() {
                         image: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/function-button-724115.png?f=webp'
                     }
                 ],
-                scm_integrated: false
+                scm_integrated: true
             };
             setIntegrated(data.scm_integrated);
             setFunctionList(data?.functions);
@@ -312,7 +358,8 @@ function FunctionList() {
                         <label className="main-header-h1">
                             Functions <label className="length-list">{filteredData?.length > 0 && `(${filteredData?.length})`}</label>
                         </label>
-                        {isCloud() && integrated && (
+                        {isCloud() && <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />}
+                        {/* {isCloud() && integrated && (
                             <>
                                 <div className="integrated-wrapper">
                                     <GithubActiveConnectionIcon alt="integratedIcon" />
@@ -337,11 +384,26 @@ function FunctionList() {
                                     onClick={getAllFunctions}
                                 />
                             </>
-                        )}
+                        )} */}
                     </div>
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
+                    {isCloud() && integrated && (
+                        <Button
+                            width={'36px'}
+                            height={'34px'}
+                            placeholder={
+                                <div className="button-content">{isLoading ? <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} /> : ''}</div>
+                            }
+                            backgroundColorType={'white'}
+                            colorType="black"
+                            radiusType="circle"
+                            border={'gray-light'}
+                            isLoading={isLoading}
+                            onClick={getAllFunctions}
+                        />
+                    )}
                     {isCloud() && !integrated && (
                         <Button
                             width="166px"
@@ -390,9 +452,14 @@ function FunctionList() {
                         </Popover>
                     )}
                     <Button
-                        width="166px"
+                        width="100px"
                         height="34px"
-                        placeholder="Download template"
+                        placeholder={
+                            <span className="code-btn">
+                                <BiCode size={18} />
+                                <label>Code</label>
+                            </span>
+                        }
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"

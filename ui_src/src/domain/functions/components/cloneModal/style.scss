@@ -6,6 +6,7 @@
         font-family: 'InterSemiBold';
         font-size: 18px;
         line-height: 28px;
+        margin-bottom: 5px;
     }
     .subtitle {
         color: #475467;
@@ -60,5 +61,15 @@
         margin-right: -24px;
         margin-bottom: -8px;
         padding-top: 8px;
+    }
+    .ant-tabs-tab .tabs-name {
+        font-size: 12px;
+    }
+    .ant-tabs-tab + .ant-tabs-tab {
+        margin: 0 0 0 15px;
+    }
+    .ant-tabs-tab {
+        font-size: 12px;
+        padding: 8px 0px;
     }
 }

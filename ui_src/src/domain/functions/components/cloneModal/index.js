@@ -11,12 +11,15 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
+import React, { useState } from 'react';
 import Button from '../../../../components/button';
 import { FiDownload } from 'react-icons/fi';
 import Copy from '../../../../components/copy';
+import CustomTabs from '../../../../components/Tabs';
 import { githubUrls } from '../../../../const/globalConst';
 
 const CloneModal = () => {
+    const [tabValue, setTabValue] = useState('HTTPS');
     const downloadRepoArchive = async () => {
         window.open(githubUrls.DOWNLOAD_URL, '_blank');
     };
@@ -25,12 +28,26 @@ const CloneModal = () => {
         <div className="clone-wrapper">
             <p className="title"> Clone</p>
             <p className="subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-            <div className="url-wrapper">
-                <p className="url-text"> {githubUrls.MEMPHIS_GIT}</p>
-                <div className="icon">
-                    <Copy width="18" data={githubUrls.MEMPHIS_GIT} />
-                </div>
-            </div>
+            <CustomTabs tabs={['HTTPS', 'SSH']} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+            {tabValue === 'HTTPS' ? (
+                <>
+                    <div className="url-wrapper">
+                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_HTTPS}</p>
+                        <div className="icon">
+                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_HTTPS} />
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="url-wrapper">
+                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_SSH}</p>
+                        <div className="icon">
+                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_SSH} />
+                        </div>
+                    </div>
+                </>
+            )}
             <p className="secondary-text">Use Git or checkout with SVN using the web URL.</p>
 
             <div className="footer">
