@@ -142,7 +142,9 @@ function FunctionList() {
                             value: 'env2'
                         },
                         scm_type: '',
-                        language: 'go'
+                        language: 'go',
+                        is_installed: true,
+                        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOh5fHTHSH5C3RB1Rq5sMe8WXQD82j1t0ULQ&usqp=CAU'
                     },
                     {
                         function_name: 'function2',
@@ -161,7 +163,29 @@ function FunctionList() {
                             value: 'env2'
                         },
                         scm_type: '',
-                        language: 'go'
+                        language: 'go',
+                        is_installed: false
+                    },
+                    {
+                        function_name: 'function3',
+                        description: 'This is a description',
+                        tags: ['tag1', 'tag2', 'tag3'],
+                        runtime: 'go1.19',
+                        memory: 128,
+                        storgae: 128,
+                        last_commit: '2023-10-01T08:43:23Z',
+                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
+                        repository: 'memphis-dev-functions',
+                        branch: 'master',
+                        owner: 'svetaMemphis',
+                        environment_vars: {
+                            name: 'ENV_1',
+                            value: 'env2'
+                        },
+                        scm_type: '',
+                        language: 'go',
+                        is_installed: true,
+                        image: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/function-button-724115.png?f=webp'
                     }
                 ],
                 scm_integrated: false

@@ -32,6 +32,7 @@ import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeI
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import CloudOnly from '../../../../components/cloudOnly';
 import CustomTabs from '../../../../components/Tabs';
+import SelectComponent from '../../../../components/select';
 import TestFunctionModal from '../testFunctionModal';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
@@ -54,6 +55,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
     const [markdown, setMarkdown] = useState('');
     const [treeData, setTreeData] = useState([]);
+    const [selectedVersion, setSelectedVersion] = useState('latest');
     const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
 
     useEffect(() => {
@@ -115,7 +117,12 @@ function FunctionDetails({ selectedFunction, integrated }) {
     return (
         <div className="function-drawer-container">
             <div className="drawer-header ">
-                <FunctionIcon alt="Function icon" height="120px" width="120px" />
+                {selectedFunction?.image ? (
+                    <img src={selectedFunction?.image} alt="Function icon" height="120px" width="120px" />
+                ) : (
+                    <FunctionIcon alt="Function icon" height="120px" width="120px" />
+                )}
+
                 <div className="right-side">
                     <div className="title">{selectedFunction?.function_name}</div>
                     <div>
@@ -125,7 +132,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
-                            {/* <downloads is="x3d">
+                            <downloads is="x3d">
                                 <BiDownload className="download-icon" />
                                 <label>{Number(1940).toLocaleString()}</label>
                             </downloads>
@@ -134,7 +141,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 <Rate disabled defaultValue={2} className="stars-rate" />
                                 <label>(93)</label>
                             </rate>
-                            <Divider type="vertical" /> */}
+                            <Divider type="vertical" />
                             <commits is="x3d">
                                 <FiGitCommit />
                                 <label>Last commit on {parsingDate(selectedFunction?.last_commit, false, false)}</label>
@@ -158,44 +165,43 @@ function FunctionDetails({ selectedFunction, integrated }) {
                     </info>
                     <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
-                        <div className="install-btn">
-                            <Button
-                                placeholder={
-                                    <div className="button-content">
-                                        <span>{selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}</span>
-                                        <div className="gradient" />
-                                        <FiChevronDown />
-                                    </div>
-                                }
-                                backgroundColorType={'purple'}
-                                colorType={'white'}
-                                radiusType={'circle'}
-                                onClick={() => {
-                                    // installFunction() - not implemented yet
-                                    return;
-                                }}
-                                isLoading={selectedFunction?.in_progress}
-                                disabled={!isCloud() || selectedFunction?.in_progress}
-                            />
-                            {!isCloud() && <CloudOnly position={'relative'} />}
-                        </div>
-                        <div className="install-btn">
-                            <Button
-                                placeholder={
-                                    <div className="button-content">
-                                        <span>Test</span>
-                                        <div className="gradient" />
-                                        <FiChevronDown />
-                                    </div>
-                                }
-                                backgroundColorType={'orange'}
-                                colorType={'black'}
-                                radiusType={'circle'}
-                                onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!isCloud() || !selectedFunction?.is_installed}
-                            />
-                            {!isCloud() && <CloudOnly position={'relative'} />}
-                        </div>
+                        <Button
+                            placeholder={selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}
+                            width={'100px'}
+                            backgroundColorType={'purple'}
+                            colorType={'white'}
+                            radiusType={'circle'}
+                            onClick={() => {
+                                // installFunction() - not implemented yet
+                                return;
+                            }}
+                            isLoading={selectedFunction?.in_progress}
+                            disabled={!isCloud() || selectedFunction?.in_progress}
+                        />
+                        <SelectComponent
+                            colorType="black"
+                            backgroundColorType="none"
+                            radiusType="circle"
+                            borderColorType="gray"
+                            height="32px"
+                            width={'100px'}
+                            popupClassName="select-options"
+                            value={selectedVersion}
+                            disabled={!isCloud() || !selectedFunction?.is_installed}
+                            onChange={(e) => {
+                                setSelectedVersion(e);
+                            }}
+                            options={['latest', '1.0.0', '1.0.1', '1.0.2']}
+                        />
+                        <Button
+                            placeholder="Test"
+                            width={'100px'}
+                            backgroundColorType={'orange'}
+                            colorType={'black'}
+                            radiusType={'circle'}
+                            onClick={() => setIsTestFunctionModalOpen(true)}
+                            disabled={!isCloud() || !selectedFunction?.is_installed}
+                        />
                     </actions>
                 </div>
             </div>

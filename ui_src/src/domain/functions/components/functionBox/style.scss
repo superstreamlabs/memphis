@@ -18,8 +18,13 @@
         display: flex;
         flex-direction: column;
         .function-box-header {
-            display: grid;
-            grid-template-columns: 5% 85% 10%;
+            display: flex;
+            justify-content: space-between;
+            .details-section {
+                display: flex;
+                align-items: center;
+                gap: 20px;
+            }
             .function-name {
                 font-family: 'InterSemiBold';
                 font-size: 18px;
@@ -82,11 +87,10 @@
         }
     }
     description {
-        padding-left: 16px;
         color: #737373;
         font-size: 14px;
     }
-    tags {
+    footer {
         display: flex;
         margin-top: 5px;
         padding: 10px 16px;

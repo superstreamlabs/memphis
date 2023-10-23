@@ -61,53 +61,55 @@ function FunctionBox({ funcDetails, integrated }) {
             <div
                 key={functionDetails?.function_name}
                 className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
-                onClick={() => handleDrawer(true)}
+                onClick={() => isCloud() && handleDrawer(true)}
             >
                 <header is="x3d">
                     <div className="function-box-header">
-                        <FunctionIcon alt="Function icon" height="40px" />
-                        <div>
-                            <div className="function-name">
-                                <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
-                                    {functionDetails?.function_name}
-                                </OverflowTip>
-                            </div>
-                            <deatils is="x3d">
-                                <div className="function-owner">
-                                    {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
-                                    <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                        <div className="details-section">
+                            {funcDetails?.image ? <img src={funcDetails?.image} alt="Function icon" height="40px" /> : <FunctionIcon alt="Function icon" height="40px" />}
+                            <div>
+                                <div className="function-name">
+                                    <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                        {functionDetails?.function_name}
+                                    </OverflowTip>
                                 </div>
-                                {funcDetails.owner !== OWNER && (
-                                    <>
-                                        <Divider type="vertical" />
-                                        <repo is="x3d">
-                                            <GoRepo />
-                                            <label>{functionDetails?.repository}</label>
-                                        </repo>
-                                        <Divider type="vertical" />
-                                        <branch is="x3d">
-                                            <GithubBranchIcon />
-                                            <label>{functionDetails?.branch}</label>
-                                        </branch>
-                                    </>
-                                )}
-                                {/* <downloads is="x3d">
-                                    <BiDownload className="download-icon" />
-                                    <label>{Number(1940).toLocaleString()}</label>
-                                </downloads>
-                                <Divider type="vertical" />
-                                <rate is="x3d">
-                                    <Rate disabled defaultValue={2} className="stars-rate" />
-                                    <label>(93)</label>
-                                </rate> */}
-                                <Divider type="vertical" />
-                                <commits is="x3d">
-                                    <FiGitCommit />
-                                    <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
-                                </commits>
-                            </deatils>
+                                <deatils is="x3d">
+                                    <div className="function-owner">
+                                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                        <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                                    </div>
+                                    {funcDetails.owner !== OWNER && (
+                                        <>
+                                            <Divider type="vertical" />
+                                            <repo is="x3d">
+                                                <GoRepo />
+                                                <label>{functionDetails?.repository}</label>
+                                            </repo>
+                                            <Divider type="vertical" />
+                                            <branch is="x3d">
+                                                <GithubBranchIcon />
+                                                <label>{functionDetails?.branch}</label>
+                                            </branch>
+                                        </>
+                                    )}
+                                    <downloads is="x3d">
+                                        <BiDownload className="download-icon" />
+                                        <label>{Number(1940).toLocaleString()}</label>
+                                    </downloads>
+                                    <Divider type="vertical" />
+                                    <rate is="x3d">
+                                        <Rate disabled defaultValue={2} className="stars-rate" />
+                                        <label>(93)</label>
+                                    </rate>
+                                    <Divider type="vertical" />
+                                    <commits is="x3d">
+                                        <FiGitCommit />
+                                        <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                    </commits>
+                                </deatils>
+                                <description is="x3d">{functionDetails?.description}</description>
+                            </div>
                         </div>
-
                         <div
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -134,10 +136,9 @@ function FunctionBox({ funcDetails, integrated }) {
                         </div>
                     </div>
                 </header>
-                <description is="x3d">{functionDetails?.description}</description>
-                <tags is="x3d">
+                <footer is="x3d">
                     <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
-                </tags>
+                </footer>
             </div>
             <Drawer
                 placement="right"
@@ -145,8 +146,8 @@ function FunctionBox({ funcDetails, integrated }) {
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
-                // open={open}
-                open={true}
+                open={open}
+                // open={true}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
