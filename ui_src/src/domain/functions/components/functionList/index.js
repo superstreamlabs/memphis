@@ -13,7 +13,6 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
-
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import { ReactComponent as GithubActiveConnectionIcon } from '../../../../assets/images/githubActiveConnectionIcon.svg';
@@ -23,11 +22,14 @@ import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh
 import { ReactComponent as GitHubLogo } from '../../../../assets/images/githubLogo.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
 import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
+import { ReactComponent as MemphisLogo } from '../../../../assets/images/logo.svg';
 import CollapseArrow from '../../../../assets/images/collapseArrow.svg';
 import { BiCode } from 'react-icons/bi';
+import { MdDone } from 'react-icons/md';
 import { AddRounded } from '@material-ui/icons';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../services/http';
+import { parsingDate } from '../../../../services/valueConvertor';
 import { isCloud } from '../../../../services/valueConvertor';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import Loader from '../../../../components/loader';
@@ -66,7 +68,7 @@ const TABS = [
     }
 ];
 
-function FunctionList() {
+function FunctionList({ tabPrivate }) {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
     const [integrated, setIntegrated] = useState(false);
@@ -74,7 +76,7 @@ function FunctionList() {
     const [filteredData, setFilteredData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [filterItem, setFilterItem] = useState(null);
-    const [tabValue, setTabValue] = useState('All');
+    const [tabValue, setTabValue] = useState(tabPrivate ? 'Private' : 'All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
     const [connectedRepos, setConnectedRepos] = useState([]);
@@ -84,18 +86,30 @@ function FunctionList() {
     const content = (
         <div className="git-repos-list">
             {connectedRepos?.map((repo, index) => (
-                <>
-                    <div className="git-repos-item" key={index} onClick={() => setFilterItem(index)}>
+                <div key={index}>
+                    <div
+                        className="git-repos-item"
+                        // onClick={() => setFilterItem(index)}
+                    >
                         <div className="left-section">
-                            <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
+                            {repo?.repo_owner === OWNER ? (
+                                <MemphisLogo alt="repo" className={`repo-item-icon-memphis ${filterItem === index && 'filtered'}`} />
+                            ) : (
+                                <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
+                            )}
                             <span className="repo-data">
-                                <label className="git-repo">{repo?.repo_name}</label>
-                                <label className="last-modified">{repo?.branch}</label>
+                                <OverflowTip text={`${repo?.repo_name} | ${repo?.branch}`} width={'170px'} center={false}>
+                                    {repo?.repo_name}
+                                    {<Divider type="vertical" />}
+                                    {repo?.branch}
+                                </OverflowTip>
+                                <label className="last-modified">Last synced on {parsingDate(repo?.last_stnc, false, false)}</label>
                             </span>
+                            <MdDone alt="Healty" />
                         </div>
                     </div>
                     <Divider />
-                </>
+                </div>
             ))}
             {filterItem !== null && (
                 <div className="git-repos-item" onClick={() => setFilterItem(null)}>
@@ -113,7 +127,7 @@ function FunctionList() {
     useEffect(() => {
         getAllFunctions();
         isCloud() && getIntegrationDetails();
-        if (localStorage.getItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW) !== 'true') {
+        if (localStorage.getItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW) !== 'true' && isCloud()) {
             setIsFunctionsGuideOpen(true);
             localStorage.setItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW, true);
         }
@@ -394,7 +408,7 @@ function FunctionList() {
                             width={'36px'}
                             height={'34px'}
                             placeholder={
-                                <div className="button-content">{isLoading ? <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} /> : ''}</div>
+                                <div className="button-content">{isLoading ? '' : <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />}</div>
                             }
                             backgroundColorType={'white'}
                             colorType="black"
@@ -424,18 +438,16 @@ function FunctionList() {
                         <Popover
                             placement="top"
                             title={
-                                connectedRepos?.length > 0 && (
-                                    <div
-                                        className="git-repo git-refresh-title"
-                                        onClick={() => {
-                                            modalFlip(true);
-                                            setClickedRefresh(false);
-                                        }}
-                                    >
-                                        <label>Add repositories</label>
-                                        <AddRounded className="add" fontSize="small" />
-                                    </div>
-                                )
+                                <div
+                                    className="git-repo git-refresh-title"
+                                    onClick={() => {
+                                        modalFlip(true);
+                                        setClickedRefresh(false);
+                                    }}
+                                >
+                                    <label>Add repositories</label>
+                                    <AddRounded className="add" fontSize="small" />
+                                </div>
                             }
                             content={content}
                             trigger="click"
@@ -472,7 +484,7 @@ function FunctionList() {
                 </div>
             </div>
             <div className="function-tabs">
-                <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+                <CustomTabs tabs={TABS} defaultActiveKey={tabPrivate ? 'Private' : 'All'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
             <SearchInput
                 placeholder="Search here"
@@ -519,7 +531,7 @@ function FunctionList() {
             </Modal>
             <Modal
                 header={<CloneModalIcon alt="cloneModalIcon" />}
-                width="435px"
+                width="540px"
                 displayButtons={false}
                 clickOutside={() => setIsCloneModalOpen(false)}
                 open={isCloneModalOpen}

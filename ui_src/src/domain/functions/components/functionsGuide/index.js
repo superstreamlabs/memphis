@@ -113,7 +113,7 @@ const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
                 <Button
                     width={'100%'}
                     height={'34px'}
-                    placeholder={currentStep < steps.length - 1 ? 'Next' : 'Done'}
+                    placeholder={'Next'}
                     colorType={'white'}
                     backgroundColorType={'purple'}
                     radiusType={'circle'}

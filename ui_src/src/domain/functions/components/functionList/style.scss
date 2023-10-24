@@ -12,7 +12,7 @@
     }
     connectedRepos {
         display: flex;
-        width: 240px;
+        width: 260px;
         height: 34px;
         padding: 5px 10px;
         justify-content: center;
@@ -163,6 +163,8 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
+    font-family: 'InterSemiBold';
+    font-size: 12px;
 }
 .git-refresh-title {
     margin: 5px 0px;
@@ -177,7 +179,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'InterSemiBold';
-    size: 14px;
+    font-size: 12px;
     cursor: pointer;
 }
 .git-repos-list {
@@ -198,6 +200,13 @@
             .repo-item-icon {
                 height: 25px;
                 width: 25px;
+            }
+            .repo-item-icon-memphis {
+                height: 26px;
+                width: 26px;
+                padding: 3px;
+                border-radius: 50%;
+                background-color: rgba(101, 87, 255, 0.1);
             }
             .last-modified {
                 color: #818c99;

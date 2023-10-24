@@ -42,7 +42,8 @@ import {
     USER_IMAGE,
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_ENTITLEMENTS,
-    LOCAL_STORAGE_PLAN
+    LOCAL_STORAGE_PLAN,
+    LOCAL_STORAGE_FUNCTION_PAGE_VIEW
 } from '../const/localStorageConsts';
 import pathDomains from '../router';
 import { isCloud } from './valueConvertor';
@@ -87,7 +88,7 @@ const AuthService = (function () {
     };
     const clearLocalStorage = () => {
         Object.keys(localStorage).forEach((key) => {
-            if (key !== 'persistedNotifications' && key !== LOCAL_STORAGE_SKIP_GET_STARTED && key !== USER_IMAGE) {
+            if (key !== 'persistedNotifications' && key !== LOCAL_STORAGE_SKIP_GET_STARTED && key !== USER_IMAGE && key !== LOCAL_STORAGE_FUNCTION_PAGE_VIEW) {
                 localStorage.removeItem(key);
             }
         });

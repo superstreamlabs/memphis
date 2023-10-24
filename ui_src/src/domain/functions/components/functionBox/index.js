@@ -78,9 +78,9 @@ function FunctionBox({ funcDetails, integrated }) {
                                         {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
                                         <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
                                     </div>
+                                    <Divider type="vertical" />
                                     {funcDetails.owner !== OWNER && (
                                         <>
-                                            <Divider type="vertical" />
                                             <repo is="x3d">
                                                 <GoRepo />
                                                 <label>{functionDetails?.repository}</label>
@@ -90,6 +90,7 @@ function FunctionBox({ funcDetails, integrated }) {
                                                 <GithubBranchIcon />
                                                 <label>{functionDetails?.branch}</label>
                                             </branch>
+                                            <Divider type="vertical" />
                                         </>
                                     )}
                                     <downloads is="x3d">
@@ -147,7 +148,6 @@ function FunctionBox({ funcDetails, integrated }) {
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
                 open={open}
-                // open={true}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
