@@ -26,6 +26,8 @@ import { Divider, Rate } from 'antd';
 import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
 import Button from '../../../../components/button';
 import TagsList from '../../../../components/tagList';
+import Spinner from '../../../../components/spinner';
+
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
@@ -198,6 +200,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
             </Modal>
             {tabValue === 'Details' && (
                 <code is="x3d">
+                    {/* <Spinner /> */}
                     <span className="readme">
                         <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(code.code)}</ReactMarkdown>
                     </span>
@@ -248,6 +251,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
             )}
             {tabValue === 'Code' && (
                 <div className="source-code">
+                    {/* <Spinner /> */}
                     <div>
                         <label className="source-code-title">Code tree</label>
                         <div className="repos-section">
