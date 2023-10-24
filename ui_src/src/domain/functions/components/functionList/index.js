@@ -71,6 +71,7 @@ const TABS = [
 function FunctionList({ tabPrivate }) {
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
+    const [cloneTooltipIsOpen, cloneTooltipIsOpenFlip] = useState(false);
     const [integrated, setIntegrated] = useState(false);
     const [functionList, setFunctionList] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
@@ -98,12 +99,15 @@ function FunctionList({ tabPrivate }) {
                                 <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
                             )}
                             <span className="repo-data">
-                                <OverflowTip text={`${repo?.repo_name} | ${repo?.branch}`} width={'170px'} center={false}>
+                                <OverflowTip text={repo?.repo_name} center={false}>
                                     {repo?.repo_name}
-                                    {<Divider type="vertical" />}
-                                    {repo?.branch}
                                 </OverflowTip>
-                                <label className="last-modified">Last synced on {parsingDate(repo?.last_stnc, false, false)}</label>
+                                <OverflowTip text={`${repo?.repo_name} | ${repo?.branch}`} width={'170px'} center={false}>
+                                    <label className="last-modified">
+                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_stnc, false, false)}
+                                    </label>
+                                </OverflowTip>
+                                {/* <label className="last-modified">Last synced on {parsingDate(repo?.last_stnc, false, false)}</label> */}
                             </span>
                             <MdDone alt="Healty" />
                         </div>
@@ -345,12 +349,26 @@ function FunctionList({ tabPrivate }) {
                 {isCloud() && (
                     <>
                         <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel header={<div className="panel-header">Installed</div>} key={1}>
+                            <Panel
+                                header={
+                                    <div className="panel-header">{`Installed ${
+                                        filteredData?.length > 0 && `(${filteredData.filter((func) => func?.is_installed)?.length})`
+                                    }`}</div>
+                                }
+                                key={1}
+                            >
                                 <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
                         <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel header={<div className="panel-header">Other</div>} key={2}>
+                            <Panel
+                                header={
+                                    <div className="panel-header">{`Other ${
+                                        filteredData?.length > 0 && `(${filteredData.filter((func) => !func?.is_installed)?.length})`
+                                    }`}</div>
+                                }
+                                key={2}
+                            >
                                 <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
@@ -369,36 +387,8 @@ function FunctionList({ tabPrivate }) {
             <div className="header-wraper">
                 <div className="main-header-wrapper">
                     <div className="header-flex-wrapper">
-                        <label className="main-header-h1">
-                            Functions <label className="length-list">{filteredData?.length > 0 && `(${filteredData?.length})`}</label>
-                        </label>
+                        <label className="main-header-h1">Functions</label>
                         {isCloud() && <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />}
-                        {/* {isCloud() && integrated && (
-                            <>
-                                <div className="integrated-wrapper">
-                                    <GithubActiveConnectionIcon alt="integratedIcon" />
-                                    <OverflowTip text={'Integrated with GitHub'} maxWidth={'180px'}>
-                                        <span>{'Integrated with GitHub'}</span>
-                                    </OverflowTip>
-                                </div>
-                                <Button
-                                    width={'100px'}
-                                    height={'34px'}
-                                    placeholder={
-                                        <div className="button-content">
-                                            {!isLoading && <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />}
-                                            <span>Fetch</span>
-                                        </div>
-                                    }
-                                    backgroundColorType={'white'}
-                                    colorType="black"
-                                    radiusType="circle"
-                                    border={'gray-light'}
-                                    isLoading={isLoading}
-                                    onClick={getAllFunctions}
-                                />
-                            </>
-                        )} */}
                     </div>
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
@@ -445,8 +435,8 @@ function FunctionList({ tabPrivate }) {
                                         setClickedRefresh(false);
                                     }}
                                 >
-                                    <label>Add repositories</label>
                                     <AddRounded className="add" fontSize="small" />
+                                    <label>Add repositories</label>
                                 </div>
                             }
                             content={content}
@@ -463,24 +453,34 @@ function FunctionList({ tabPrivate }) {
                             </connectedRepos>
                         </Popover>
                     )}
-                    <Button
-                        width="100px"
-                        height="34px"
-                        placeholder={
-                            <span className="code-btn">
-                                <BiCode size={18} />
-                                <label>Code</label>
-                            </span>
-                        }
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType="purple"
-                        fontSize="12px"
-                        fontFamily="InterSemiBold"
-                        aria-controls="usecse-menu"
-                        aria-haspopup="true"
-                        onClick={() => setIsCloneModalOpen(true)}
-                    />
+                    <Popover
+                        placement="bottomLeft"
+                        content={<CloneModal />}
+                        width="540px"
+                        trigger="click"
+                        overlayClassName="clone-popover"
+                        open={cloneTooltipIsOpen}
+                        onOpenChange={(open) => cloneTooltipIsOpenFlip(open)}
+                    >
+                        <Button
+                            width="100px"
+                            height="34px"
+                            placeholder={
+                                <span className="code-btn">
+                                    <BiCode size={18} />
+                                    <label>Code</label>
+                                </span>
+                            }
+                            colorType="white"
+                            radiusType="circle"
+                            backgroundColorType="purple"
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            aria-controls="usecse-menu"
+                            aria-haspopup="true"
+                            onClick={() => cloneTooltipIsOpenFlip(true)}
+                        />
+                    </Popover>
                 </div>
             </div>
             <div className="function-tabs">

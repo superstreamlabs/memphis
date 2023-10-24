@@ -9,6 +9,9 @@
     min-width: 1370px;
     box-shadow: 0px 6px 18px 0px #0000000f;
     height: 140px;
+    .header-flex {
+        display: flex;
+    }
     cursor: pointer;
     p {
         margin: 0;
@@ -84,6 +87,8 @@
         .install-button {
             display: flex;
             justify-content: flex-end;
+            gap: 10px;
+            height: 40px;
         }
     }
     description {

@@ -28,6 +28,7 @@ import CloudOnly from '../../../../components/cloudOnly';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
+import AttachTooltip from '../AttachTooltip';
 
 function FunctionBox({ funcDetails, integrated }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
@@ -95,12 +96,12 @@ function FunctionBox({ funcDetails, integrated }) {
                                     )}
                                     <downloads is="x3d">
                                         <BiDownload className="download-icon" />
-                                        <label>{Number(1940).toLocaleString()}</label>
+                                        <label>{Number(180).toLocaleString()}</label>
                                     </downloads>
                                     <Divider type="vertical" />
                                     <rate is="x3d">
-                                        <Rate disabled defaultValue={2} className="stars-rate" />
-                                        <label>(93)</label>
+                                        <Rate disabled defaultValue={5} className="stars-rate" />
+                                        <label>(50)</label>
                                     </rate>
                                     <Divider type="vertical" />
                                     <commits is="x3d">
@@ -118,22 +119,28 @@ function FunctionBox({ funcDetails, integrated }) {
                             }}
                             className="install-button"
                         >
-                            <Button
-                                width="100px"
-                                height="34px"
-                                placeholder={functionDetails?.in_progress ? '' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                disabled={!isCloud() || functionDetails?.in_progress}
-                                isLoading={functionDetails?.in_progress} //Get indication after install function
-                                onClick={() => {
-                                    return;
-                                }}
-                            />
-                            {!isCloud() && <CloudOnly position={'relative'} />}
+                            <div className="header-flex">
+                                <Button
+                                    width="100px"
+                                    height="34px"
+                                    placeholder={functionDetails?.in_progress ? '' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={!isCloud() || functionDetails?.in_progress}
+                                    isLoading={functionDetails?.in_progress} //Get indication after install function
+                                    onClick={() => {
+                                        return;
+                                    }}
+                                />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
+                            <div className="header-flex">
+                                <AttachTooltip disabled={!isCloud() || functionDetails?.in_progress || !functionDetails?.is_installed} />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
                         </div>
                     </div>
                 </header>

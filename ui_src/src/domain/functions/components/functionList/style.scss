@@ -4,6 +4,7 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+
     .code-btn {
         display: flex;
         align-items: center;
@@ -30,9 +31,9 @@
             margin: 0;
         }
         label {
-            font-family: InterSemiBold;
-            cursor: pointer;
+            font-family: 'InterSemiBold';
             font-size: 12px;
+            cursor: pointer;
         }
     }
     .button-content {
@@ -75,6 +76,7 @@
             cursor: pointer;
         }
     }
+
     .action-section {
         display: flex;
         gap: 10px;
@@ -154,9 +156,7 @@
     border-bottom-color: #ececec;
 }
 .repos-popover {
-    width: 260px;
     margin-top: 10px;
-    cursor: pointer;
 }
 .repo-data {
     display: flex;
@@ -164,7 +164,7 @@
     align-items: flex-start;
     justify-content: center;
     font-family: 'InterSemiBold';
-    font-size: 12px;
+    font-size: 14px;
 }
 .git-refresh-title {
     margin: 5px 0px;
@@ -179,7 +179,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'InterSemiBold';
-    font-size: 12px;
+    font-size: 14px;
     cursor: pointer;
 }
 .git-repos-list {
@@ -212,7 +212,6 @@
                 color: #818c99;
                 font-size: 10px;
                 font-style: normal;
-                cursor: pointer;
             }
         }
     }
@@ -225,5 +224,10 @@
     }
     .open {
         transform: rotate(0deg);
+    }
+}
+.clone-popover {
+    .ant-popover-inner-content {
+        padding: 20px !important;
     }
 }

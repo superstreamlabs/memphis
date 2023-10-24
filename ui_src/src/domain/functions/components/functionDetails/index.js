@@ -35,6 +35,7 @@ import CloudOnly from '../../../../components/cloudOnly';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
 import TestFunctionModal from '../testFunctionModal';
+import AttachTooltip from '../AttachTooltip';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { FiChevronDown } from 'react-icons/fi';
@@ -135,12 +136,12 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             <Divider type="vertical" />
                             <downloads is="x3d">
                                 <BiDownload className="download-icon" />
-                                <label>{Number(1940).toLocaleString()}</label>
+                                <label>{Number(180).toLocaleString()}</label>
                             </downloads>
                             <Divider type="vertical" />
                             <rate is="x3d">
-                                <Rate disabled defaultValue={2} className="stars-rate" />
-                                <label>(93)</label>
+                                <Rate disabled defaultValue={5} className="stars-rate" />
+                                <label>(50)</label>
                             </rate>
                             <Divider type="vertical" />
                             <commits is="x3d">
@@ -149,38 +150,26 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             </commits>
                         </deatils>
                     </div>
-
-                    {/* <info is="x3d">
-                        <repo is="x3d">
-                            <GoRepo />
-                            <label>{selectedFunction?.repository}</label>
-                        </repo>
-                        <branch is="x3d">
-                            <GithubBranchIcon />
-                            <label>{selectedFunction?.branch}</label>
-                        </branch>
-                        <language is="x3d">
-                            <CodeBlackIcon />
-                            <label>{selectedFunction?.language}</label>
-                        </language>
-                    </info> */}
                     <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
-                        <Button
-                            placeholder={selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}
-                            width={'100px'}
-                            backgroundColorType={'purple'}
-                            colorType={'white'}
-                            radiusType={'circle'}
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => {
-                                // installFunction() - not implemented yet
-                                return;
-                            }}
-                            isLoading={selectedFunction?.in_progress}
-                            disabled={!isCloud() || selectedFunction?.in_progress}
-                        />
+                        <div className="action-section-btn">
+                            <Button
+                                placeholder={selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}
+                                width={'100px'}
+                                backgroundColorType={'purple'}
+                                colorType={'white'}
+                                radiusType={'circle'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => {
+                                    // installFunction() - not implemented yet
+                                    return;
+                                }}
+                                isLoading={selectedFunction?.in_progress}
+                                disabled={!isCloud() || selectedFunction?.in_progress}
+                            />
+                            <AttachTooltip disabled={!isCloud() || selectedFunction?.in_progress || !selectedFunction?.is_installed} />
+                        </div>
                         <SelectComponent
                             colorType="black"
                             backgroundColorType="none"
@@ -198,17 +187,6 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             }}
                             options={['latest', '1.0.0', '1.0.1', '1.0.2']}
                         />
-                        {/* <Button
-                            placeholder="Test"
-                            width={'100px'}
-                            backgroundColorType={'orange'}
-                            colorType={'black'}
-                            radiusType={'circle'}
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!isCloud() || !selectedFunction?.is_installed}
-                        /> */}
                     </actions>
                 </div>
             </div>
@@ -248,12 +226,12 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             <deatils is="x3d">
                                 <downloads is="x3d">
                                     <BiDownload className="download-icon" />
-                                    <label>{Number(1940).toLocaleString()}</label>
+                                    <label>{Number(180).toLocaleString()}</label>
                                 </downloads>
                                 <Divider type="vertical" />
                                 <rate is="x3d">
-                                    <Rate disabled defaultValue={2} className="stars-rate" />
-                                    <label>(93)</label>
+                                    <Rate disabled defaultValue={5} className="stars-rate" />
+                                    <label>(50)</label>
                                 </rate>
                                 <Divider type="vertical" />
                                 <commits is="x3d">

@@ -1,116 +1,9 @@
-.function-drawer {
-    .ant-drawer-content-wrapper {
-        width: 60vw !important;
-
-        box-shadow: none !important;
-    }
-    .ant-drawer-content {
-        border-top-left-radius: 8px;
-        border-bottom-left-radius: 8px;
-        background: #fff;
-        box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14);
-        .button-content {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            .gradient {
-                margin-left: 10px;
-                opacity: 0.3;
-                background: radial-gradient(163199.99% 35.29% at 50% 50%, #1d1d1d 41.46%, rgba(255, 255, 255, 0) 100%);
-                width: 1px;
-                height: 20px;
-            }
-            svg {
-                margin-left: 7px;
-                width: 20px;
-                height: 20px;
-            }
-        }
-    }
-    .ant-drawer-header {
-        padding-bottom: 0px !important;
-    }
-
-    .ant-drawer-header-title {
-        padding-bottom: 5px;
-        .ant-drawer-title {
-            font-family: 'InterSemiBold';
-            font-size: 24px;
-            p {
-                margin: 0;
-            }
-            .ant-tabs-top > .ant-tabs-nav::before,
-            .ant-tabs-top > .ant-tabs-nav {
-                border-bottom: none !important;
-                margin-bottom: 0px !important;
-            }
-        }
-    }
-}
-
 .function-drawer-container {
     display: flex;
     width: 100%;
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
-
-    header {
-        padding: 16px 16px 0px 16px;
-        display: flex;
-        flex-direction: column;
-        .function-box-header {
-            display: grid;
-            grid-template-columns: 5% 85% 10%;
-            .function-name {
-                font-family: 'InterSemiBold';
-                font-size: 18px;
-                line-height: 20px;
-            }
-            deatils {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                margin-top: 5px;
-                .ant-divider-vertical {
-                    margin: 0px;
-                    border-left-width: 1px;
-                    height: 18px;
-                    color: #e0e0e0;
-                }
-                .function-owner {
-                    font-family: 'InterSemiBold';
-                    font-size: 14px;
-                    color: #6557ff;
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                }
-                downloads,
-                commits,
-                rate {
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    color: #737373;
-                    font-size: 14px;
-                    .download-icon {
-                        color: #b0b0b0;
-                        font-size: 14px;
-                    }
-                    .stars-rate {
-                        font-size: 14px;
-                        color: #ffb10b;
-                    }
-                    .ant-rate-star:not(:last-child) {
-                        margin-right: 4px;
-                    }
-                }
-            }
-        }
-    }
-
     .drawer-header {
         height: 150px;
         display: flex;
@@ -119,7 +12,6 @@
         padding-left: 35px;
         padding-right: 24px;
         margin-top: 20px;
-        // margin-bottom: 20px;
         gap: 24px;
         width: 100%;
         min-width: 750px;
@@ -147,46 +39,6 @@
                 white-space: nowrap;
             }
         }
-        deatils {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 5px;
-            .ant-divider-vertical {
-                margin: 0px;
-                border-left-width: 1px;
-                height: 18px;
-                color: #e0e0e0;
-            }
-            .function-owner {
-                font-family: 'InterSemiBold';
-                font-size: 14px;
-                color: #6557ff;
-                display: flex;
-                align-items: center;
-                gap: 5px;
-            }
-            downloads,
-            commits,
-            rate {
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                color: #737373;
-                font-size: 14px;
-                .download-icon {
-                    color: #b0b0b0;
-                    font-size: 14px;
-                }
-                .stars-rate {
-                    font-size: 14px;
-                    color: #ffb10b;
-                }
-                .ant-rate-star:not(:last-child) {
-                    margin-right: 4px;
-                }
-            }
-        }
     }
     .ant-tabs-nav-wrap {
         margin-left: 24px;
@@ -206,9 +58,9 @@
         gap: 8px;
         margin-top: 5px;
         .ant-divider-vertical {
-            margin: 0px;
+            margin: 0px !important;
             border-left-width: 1px;
-            height: 18px;
+            height: 18px !important;
             color: #e0e0e0;
         }
         .function-owner {
@@ -280,6 +132,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 10px;
+        .action-section-btn {
+            display: flex;
+            gap: 10px;
+        }
     }
     code {
         font-family: 'Inter';
@@ -313,7 +169,6 @@
     }
     .source-code {
         display: flex;
-        // gap: 10px;
         height: calc(100% - 230px);
         position: relative;
         .source-code-title {
@@ -344,10 +199,7 @@
         .ant-tree .ant-tree-node-content-wrapper {
             padding: 0px;
         }
-        .arrow {
-            height: 10px;
-            width: 8px;
-        }
+
         .code-content-section {
             width: 100%;
             height: 100%;
@@ -357,7 +209,6 @@
             margin-right: 30px;
             position: relative;
             .code-content {
-                // box-sizing: border-box;
                 height: 100%;
                 width: 100%;
                 overflow: auto;
