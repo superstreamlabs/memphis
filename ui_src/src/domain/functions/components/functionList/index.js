@@ -15,7 +15,6 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
-import { ReactComponent as GithubActiveConnectionIcon } from '../../../../assets/images/githubActiveConnectionIcon.svg';
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
 import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
@@ -85,25 +84,37 @@ function FunctionList({ tabPrivate }) {
 
     const content = (
         <div className="git-repos-list">
+            <div>
+                <div className="git-repos-item">
+                    <div className="left-section">
+                        <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
+                        <span className="repo-data">
+                            <OverflowTip text="memphis-dev-functions" center={false}>
+                                memphis-dev-functions
+                            </OverflowTip>
+                            <OverflowTip text="master" width={'170px'} center={false}>
+                                <label className="last-modified">master</label>
+                            </OverflowTip>
+                        </span>
+                        <MdDone alt="Healty" />
+                    </div>
+                </div>
+                <Divider />
+            </div>
             {connectedRepos?.map((repo, index) => (
                 <div key={index}>
                     <div className="git-repos-item">
                         <div className="left-section">
-                            {repo?.repo_owner === OWNER ? (
-                                <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
-                            ) : (
-                                <RepoIcon alt="repo" className="repo-item-icon" />
-                            )}
+                            <RepoIcon alt="repo" className="repo-item-icon" />
                             <span className="repo-data">
                                 <OverflowTip text={repo?.repo_name} center={false}>
                                     {repo?.repo_name}
                                 </OverflowTip>
-                                <OverflowTip text={`${repo?.repo_name} | ${repo?.branch}`} width={'170px'} center={false}>
+                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_stnc, false, false)}`} width={'170px'} center={false}>
                                     <label className="last-modified">
                                         {repo?.branch} | Last synced on {parsingDate(repo?.last_stnc, false, false)}
                                     </label>
                                 </OverflowTip>
-                                {/* <label className="last-modified">Last synced on {parsingDate(repo?.last_stnc, false, false)}</label> */}
                             </span>
                             <MdDone alt="Healty" />
                         </div>
@@ -125,46 +136,7 @@ function FunctionList({ tabPrivate }) {
 
     const getIntegrationDetails = async () => {
         try {
-            // const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-            const data = {
-                integration: {
-                    id: 0,
-                    name: 'github',
-                    keys: {
-                        application_name: 'memphis-cloud-dev',
-                        connected_repos: [
-                            {
-                                branch: 'master',
-                                repo_name: 'memphis',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            },
-                            {
-                                branch: 'master',
-                                repo_name: 'memphis-dev-functions',
-                                repo_owner: 'svetaMemphis',
-                                type: 'functions'
-                            }
-                        ],
-                        memphis_functions: [
-                            {
-                                branch: 'master',
-                                repo_name: 'memphis-dev-functions',
-                                repo_owner: 'memphisdev',
-                                type: 'functions'
-                            }
-                        ]
-                    },
-                    properties: null,
-                    tenant_name: 'new-tenant'
-                },
-                repos: {
-                    'py-data-meetup': ['shohamroditimemphis'],
-                    test: ['shohamroditimemphis'],
-                    'test-github-integration': ['shohamroditimemphis'],
-                    'test-memphis.py': ['shohamroditimemphis']
-                }
-            };
+            const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
             setConnectedRepos(data?.integration?.keys?.connected_repos || []);
         } catch (error) {}
     };
@@ -172,77 +144,9 @@ function FunctionList({ tabPrivate }) {
     const getAllFunctions = async () => {
         setisLoading(true);
         try {
-            // const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
-            const data = {
-                functions: [
-                    {
-                        function_name: 'Example function',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'master',
-                        owner: 'memphisdev',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        is_installed: false,
-                        in_progress: true,
-                        image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOh5fHTHSH5C3RB1Rq5sMe8WXQD82j1t0ULQ&usqp=CAU'
-                    },
-                    {
-                        function_name: 'function2',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'master',
-                        owner: 'memphisdev',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        is_installed: false
-                    },
-                    {
-                        function_name: 'function3',
-                        description: 'This is a description',
-                        tags: ['tag1', 'tag2', 'tag3'],
-                        runtime: 'go1.19',
-                        memory: 128,
-                        storgae: 128,
-                        last_commit: '2023-10-01T08:43:23Z',
-                        link: 'https://github.com/memphisdev/memphis-dev-functions/blob/master/example-function2/memphis.yaml',
-                        repository: 'memphis-dev-functions',
-                        branch: 'master',
-                        owner: 'svetaMemphis',
-                        environment_vars: {
-                            name: 'ENV_1',
-                            value: 'env2'
-                        },
-                        scm_type: '',
-                        language: 'go',
-                        is_installed: true,
-                        image: 'https://cdn.iconscout.com/icon/premium/png-256-thumb/function-button-724115.png?f=webp'
-                    }
-                ],
-                scm_integrated: true
-            };
-            setIntegrated(data.scm_integrated);
-            setFunctionList(data?.functions);
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
+            setIntegrated(data?.scm_integrated);
+            setFunctionList(data?.functions || []);
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -265,7 +169,8 @@ function FunctionList({ tabPrivate }) {
         }
         if (searchInput.length > 0) {
             results = results.filter(
-                (func) => func?.function_name?.toLowerCase()?.includes(searchInput.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
+                (func) =>
+                    func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
         setFilteredData(results);

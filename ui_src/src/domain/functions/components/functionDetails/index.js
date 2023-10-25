@@ -18,10 +18,8 @@ import remarkGfm from 'remark-gfm';
 import emoji from 'emoji-dictionary';
 import Editor from '@monaco-editor/react';
 import { FiGitCommit } from 'react-icons/fi';
-import { BiLogoGoLang } from 'react-icons/bi';
 import { BiDownload } from 'react-icons/bi';
 import { MdOutlineFileDownloadOff } from 'react-icons/md';
-import { IoLogoJavascript, IoLogoPython } from 'react-icons/io';
 import { GoFileDirectoryFill } from 'react-icons/go';
 import { Divider, Rate } from 'antd';
 import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/collapseArrow.svg';
@@ -34,6 +32,7 @@ import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
+import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import CloudOnly from '../../../../components/cloudOnly';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
@@ -41,15 +40,10 @@ import TestFunctionModal from '../testFunctionModal';
 import AttachTooltip from '../AttachTooltip';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
-import { FiChevronDown } from 'react-icons/fi';
 import { BsFileEarmarkCode } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
-import { CarryOutOutlined, CheckOutlined, FormOutlined } from '@ant-design/icons';
-import { Select, Switch, Tree } from 'antd';
-import { REST_CODE_EXAMPLE, SDK_CODE_EXAMPLE } from '../../../../const/codeExample';
-
-import { Language } from '@material-ui/icons';
-
+import { Tree } from 'antd';
+import { REST_CODE_EXAMPLE } from '../../../../const/codeExample';
 import { code } from './code';
 
 const files = ['domain', 'components', 'domain/functions/functionDetails/index.js', 'domain/functions/functionDetails/style.scss', 'domain/components/test.js'];
@@ -66,6 +60,13 @@ function FunctionDetails({ selectedFunction, integrated }) {
     useEffect(() => {
         buildTree(files);
     }, []);
+
+    const renderNoFunctionDetails = (
+        <div className="no-function-to-display">
+            <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
+            <p className="title">No functions found</p>
+        </div>
+    );
 
     const buildTree = (files) => {
         files = files.sort((a, b) => a.localeCompare(b));
@@ -223,6 +224,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                 <code is="x3d">
                     {/* <Spinner /> */}
                     <span className="readme">
+                        {/* {renderNoFunctionDetails} */}
                         <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(code.code)}</ReactMarkdown>
                     </span>
                     <Divider type="vertical" />
@@ -290,36 +292,39 @@ function FunctionDetails({ selectedFunction, integrated }) {
                         </div>
                     </div>
                     <div className="code-content-section">
-                        <Button
-                            placeholder="Test"
-                            width={'100px'}
-                            backgroundColorType={'orange'}
-                            colorType={'black'}
-                            radiusType={'circle'}
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            onClick={() => setIsTestFunctionModalOpen(true)}
-                            disabled={!isCloud() || !selectedFunction?.is_installed}
-                        />
-                        <div className="code-content">
-                            <Editor
-                                options={{
-                                    minimap: { enabled: false },
-                                    scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                    scrollBeyondLastLine: false,
-                                    roundedSelection: false,
-                                    formatOnPaste: true,
-                                    formatOnType: true,
-                                    readOnly: true,
-                                    fontSize: '12px',
-                                    fontFamily: 'Inter'
-                                }}
-                                language={'javascript'}
-                                height="calc(100% - 10px)"
-                                width="calc(100% - 25px)"
-                                value={REST_CODE_EXAMPLE['.NET (C#)'].consumer}
+                        {/* {renderNoFunctionDetails} */}
+                        <>
+                            <Button
+                                placeholder="Test"
+                                width={'100px'}
+                                backgroundColorType={'orange'}
+                                colorType={'black'}
+                                radiusType={'circle'}
+                                fontSize="12px"
+                                fontFamily="InterSemiBold"
+                                onClick={() => setIsTestFunctionModalOpen(true)}
+                                disabled={!isCloud() || !selectedFunction?.is_installed}
                             />
-                        </div>
+                            <div className="code-content">
+                                <Editor
+                                    options={{
+                                        minimap: { enabled: false },
+                                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                        scrollBeyondLastLine: false,
+                                        roundedSelection: false,
+                                        formatOnPaste: true,
+                                        formatOnType: true,
+                                        readOnly: true,
+                                        fontSize: '12px',
+                                        fontFamily: 'Inter'
+                                    }}
+                                    language={'javascript'}
+                                    height="calc(100% - 10px)"
+                                    width="calc(100% - 25px)"
+                                    value={REST_CODE_EXAMPLE['.NET (C#)'].consumer}
+                                />
+                            </div>
+                        </>
                     </div>
                 </div>
             )}

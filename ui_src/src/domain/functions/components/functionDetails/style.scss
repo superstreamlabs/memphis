@@ -234,4 +234,14 @@
             }
         }
     }
+    .no-function-to-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        font-family: 'InterSemiBold';
+        font-size: 16px;
+        color: #2e2c34;
+    }
 }
