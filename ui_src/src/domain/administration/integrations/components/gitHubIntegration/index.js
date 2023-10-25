@@ -250,7 +250,7 @@ const GitHubIntegration = ({ close, value }) => {
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
                                 <div className="api-details">
-                                    {isIntegrated && (
+                                    {!isIntegrated && (
                                         <div className="noConnection-wrapper">
                                             <Button
                                                 height="35px"
@@ -285,7 +285,7 @@ const GitHubIntegration = ({ close, value }) => {
                                         //     />
                                         // </div>
                                     )}
-                                    {!isIntegrated && (
+                                    {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
                                             <div className="repos-container">
