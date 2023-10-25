@@ -24,6 +24,7 @@ import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
+import { showMessages } from '../../../../services/genericServices';
 import TagsList from '../../../../components/tagList';
 import CloudOnly from '../../../../components/cloudOnly';
 import Button from '../../../../components/button';
@@ -152,6 +153,7 @@ function FunctionBox({ funcDetails, integrated }) {
                                     disabled={!isCloud() || functionDetails?.in_progress}
                                     isLoading={functionDetails?.in_progress} //Get indication after install function
                                     onClick={() => {
+                                        showMessages('success', 'Install function');
                                         return;
                                     }}
                                 />
