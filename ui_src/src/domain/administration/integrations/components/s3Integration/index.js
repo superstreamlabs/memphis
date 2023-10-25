@@ -366,7 +366,7 @@ const S3Integration = ({ close, value }) => {
                         )}
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
-                                <Button
+                                {/* <Button
                                     width="80%"
                                     height="45px"
                                     placeholder="Close"
@@ -377,9 +377,9 @@ const S3Integration = ({ close, value }) => {
                                     fontSize="14px"
                                     fontFamily="InterSemiBold"
                                     onClick={() => close(value)}
-                                />
+                                /> */}
                                 <Button
-                                    width="80%"
+                                    width="500px"
                                     height="45px"
                                     placeholder={isValue ? 'Update' : 'Connect'}
                                     colorType="white"

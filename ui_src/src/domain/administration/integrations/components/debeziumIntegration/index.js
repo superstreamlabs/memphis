@@ -214,19 +214,6 @@ CMD ./run.sh`}
                                 </div>
                             </div>
                         )}
-                        <div className="close-btn">
-                            <Button
-                                width="300px"
-                                height="45px"
-                                placeholder="Close"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => close()}
-                            />
-                        </div>
                     </div>
                 </>
             )}

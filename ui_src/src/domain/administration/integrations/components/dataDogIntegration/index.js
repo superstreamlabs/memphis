@@ -230,7 +230,7 @@ EOF`}
                                 </div>
                             </div>
                         )}
-                        <div className="close-btn">
+                        {/* <div className="close-btn">
                             <Button
                                 width="300px"
                                 height="45px"
@@ -242,7 +242,7 @@ EOF`}
                                 fontFamily="InterSemiBold"
                                 onClick={() => close()}
                             />
-                        </div>
+                        </div> */}
                     </div>
                     {showModal && (
                         <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>

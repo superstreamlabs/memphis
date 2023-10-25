@@ -250,14 +250,11 @@ const GitHubIntegration = ({ close, value }) => {
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
                                 <div className="api-details">
-                                    {!isIntegrated && (
+                                    {isIntegrated && (
                                         <div className="noConnection-wrapper">
-                                            <GithubNoConnectionIcon />
-                                            <p className="noConnection-title">Connect to get more details</p>
-                                            <p className="noConnection-subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-
                                             <Button
                                                 height="35px"
+                                                width="300px"
                                                 placeholder="Connect"
                                                 colorType="white"
                                                 radiusType="circle"
@@ -269,8 +266,26 @@ const GitHubIntegration = ({ close, value }) => {
                                                 onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
                                             />
                                         </div>
+                                        // <div className="noConnection-wrapper">
+                                        //     <GithubNoConnectionIcon />
+                                        //     <p className="noConnection-title">Connect to get more details</p>
+                                        //     <p className="noConnection-subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+
+                                        //     <Button
+                                        //         height="35px"
+                                        //         placeholder="Connect"
+                                        //         colorType="white"
+                                        //         radiusType="circle"
+                                        //         backgroundColorType="purple"
+                                        //         border="none"
+                                        //         fontSize="12px"
+                                        //         fontFamily="InterSemiBold"
+                                        //         disabled={!applicationName}
+                                        //         onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
+                                        //     />
+                                        // </div>
                                     )}
-                                    {isIntegrated && (
+                                    {!isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
                                             <div className="repos-container">
@@ -329,23 +344,6 @@ const GitHubIntegration = ({ close, value }) => {
                                 </div>
                             </div>
                         )}
-                        <Form.Item className="button-container">
-                            <div className="button-wrapper button-wrapper-single-item  ">
-                                <div></div>
-                                <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                />
-                            </div>
-                        </Form.Item>
                     </Form>
                 </>
             )}

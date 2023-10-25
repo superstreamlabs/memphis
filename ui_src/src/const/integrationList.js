@@ -35,6 +35,7 @@ import { ReactComponent as GrafanaIcon } from '../assets/images/grafanaIcon.svg'
 import { ReactComponent as DebeziumIcon } from '../assets/images/debeziumIcon.svg';
 import { ReactComponent as ElasticIcon } from '../assets/images/elasticIcon.svg';
 import { ReactComponent as SlackLogo } from '../assets/images/slackLogo.svg';
+import { ReactComponent as MemphisVerifiedIcon } from '../assets/images/memphisFunctionIcon.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
 import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
 
@@ -196,7 +197,11 @@ export const INTEGRATION_LIST = {
                 <DatadogIcon alt="datadogIcon" />
                 <div className="details">
                     <p>Datadog</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -242,7 +247,11 @@ export const INTEGRATION_LIST = {
                 <SlackLogo alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source, Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -272,7 +281,11 @@ export const INTEGRATION_LIST = {
                 <S3Logo alt="s3Logo" />
                 <div className="details">
                     <p>S3 Compatible Object Storage</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source, Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -303,7 +316,11 @@ export const INTEGRATION_LIST = {
                 <ElasticIcon alt="elasticIcon" />
                 <div className="details">
                     <p>Elasticsearch observability</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -348,7 +365,11 @@ export const INTEGRATION_LIST = {
                 <GrafanaIcon alt="grafanaIcon" />
                 <div className="details">
                     <p>Grafana</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -389,7 +410,11 @@ export const INTEGRATION_LIST = {
                 <DebeziumIcon alt="debeziumIcon" />
                 <div className="details">
                     <p>Debezium and Postgres</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source, Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -430,7 +455,11 @@ export const INTEGRATION_LIST = {
                 <GithubIntegrationIcon alt="gitHubLogo" />
                 <div className="details">
                     <p>GitHub</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -460,7 +489,11 @@ export const INTEGRATION_LIST = {
                 <PageDutyIcon alt="pagerDutyIcon" />
                 <div className="details">
                     <p>PagerDuty</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -489,7 +522,11 @@ export const INTEGRATION_LIST = {
                 <NewRelicIcon alt="newrelicIcon" />
                 <div className="details">
                     <p>New Relic</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -518,7 +555,11 @@ export const INTEGRATION_LIST = {
                 <InfluxDBIcon alt="influxDBIcon" />
                 <div className="details">
                     <p>influxDB</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label>By memphis | Available on </label>
+                        <label>Open source</label>
+                    </span>
                 </div>
             </div>
         ),

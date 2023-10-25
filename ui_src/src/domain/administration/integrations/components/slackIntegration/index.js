@@ -328,19 +328,7 @@ const SlackIntegration = ({ close, value }) => {
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
                                 <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                />
-                                <Button
-                                    width="80%"
+                                    width="500px"
                                     height="45px"
                                     placeholder={isValue ? 'Update' : 'Connect'}
                                     colorType="white"

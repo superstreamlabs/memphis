@@ -19,6 +19,7 @@ import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
 import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
 import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
+import { ReactComponent as SoonBadgeIcon } from '../../../assets/images/soonBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { isCloud } from '../../../services/valueConvertor';
@@ -183,23 +184,23 @@ const Integrations = () => {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <CloudeBadgeIcon className="cloud-badge" alt="cloud badge" />
+                                        <SoonBadgeIcon className="cloud-badge" alt="cloud badge" />
                                     </div>
                                     {integrationElement}
                                 </div>
                             );
                         }
 
-                        if (integrationItem.experimental) {
-                            return (
-                                <div key={key}>
-                                    <div className="experimental-badge">
-                                        <ExperimentalIcon alt="experimental" />
-                                    </div>
-                                    {integrationElement}
-                                </div>
-                            );
-                        }
+                        // if (integrationItem.experimental) {
+                        //     return (
+                        //         <div key={key}>
+                        //             <div className="experimental-badge">
+                        //                 <ExperimentalIcon alt="experimental" />
+                        //             </div>
+                        //             {integrationElement}
+                        //         </div>
+                        //     );
+                        // }
 
                         return integrationElement;
                     })}
