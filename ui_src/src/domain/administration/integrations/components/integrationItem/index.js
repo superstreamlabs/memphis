@@ -28,6 +28,7 @@ import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
 import LockFeature from '../../../../../components/lockFeature';
+import { Drawer } from 'antd';
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     const [state] = useContext(Context);
@@ -160,9 +161,19 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                     <Tag tag={value?.category} />
                 </div>
             </integ-item>
-            <Modal className="integration-modal" width="720px" height={'95vh'} displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Drawer
+                placement="right"
+                onClose={() => modalFlip(false)}
+                destroyOnClose={true}
+                className="integration-modal"
+                width="720px"
+                clickOutside={() => modalFlip(false)}
+                open={modalIsOpen}
+                closeIcon={false}
+                headerStyle={{ display: 'none' }}
+            >
                 {modalContent()}
-            </Modal>
+            </Drawer>
         </>
     );
 };

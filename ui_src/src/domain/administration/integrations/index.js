@@ -144,12 +144,12 @@ const Integrations = () => {
             <div className="categories-list">
                 {Object.keys(CATEGORY_LIST).map((key) => {
                     const category = CATEGORY_LIST[key];
-                    const isCloudAndOsOnly = isCloud() && category.osOnly;
+                    // const isCloudAndOsOnly = isCloud() && category.osOnly;
                     const isCategoryFilter = categoryFilter === category.name;
 
-                    if (isCloudAndOsOnly) {
-                        return null;
-                    }
+                    // if (isCloudAndOsOnly) {
+                    //     return null;
+                    // }
 
                     return <Tag key={key} tag={category} onClick={(e) => setCategoryFilter(e)} border={isCategoryFilter} />;
                 })}
@@ -163,11 +163,11 @@ const Integrations = () => {
                 <div className="integration-list">
                     {Object.keys(filterList)?.map((integration) => {
                         const integrationItem = filterList[integration];
-                        const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
+                        // const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
 
-                        if (isCloudAndOsOnly) {
-                            return null;
-                        }
+                        // if (isCloudAndOsOnly) {
+                        //     return null;
+                        // }
 
                         const key = integrationItem.name;
                         const integrationElement = (
@@ -179,14 +179,11 @@ const Integrations = () => {
                             />
                         );
 
-                        if (integrationItem.comingSoon || (!isCloud() && integrationItem.cloudOnly)) {
+                        if (integrationItem.comingSoon) {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
                                         <CloudeBadgeIcon className="cloud-badge" alt="cloud badge" />
-                                        <div className="cloud-icon">
-                                            <CloudQueueRounded />
-                                        </div>
                                     </div>
                                     {integrationElement}
                                 </div>

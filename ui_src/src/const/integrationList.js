@@ -189,6 +189,7 @@ export const INTEGRATION_LIST = {
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        comingSoon: false,
         hasLogs: false,
         header: (
             <div className="header-left-side">
@@ -235,6 +236,7 @@ export const INTEGRATION_LIST = {
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         category: CATEGORY_LIST['Notifications'],
         hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <SlackLogo alt="slackLogo" />
@@ -264,6 +266,7 @@ export const INTEGRATION_LIST = {
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage Tiering'],
         hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <S3Logo alt="s3Logo" />
@@ -293,6 +296,7 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
         osOnly: true,
+        comingSoon: false,
         hasLogs: false,
         header: (
             <div className="header-left-side">
@@ -337,6 +341,7 @@ export const INTEGRATION_LIST = {
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        comingSoon: false,
         hasLogs: false,
         header: (
             <div className="header-left-side">
@@ -378,6 +383,7 @@ export const INTEGRATION_LIST = {
             'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
         category: CATEGORY_LIST['Change-Data-Capture'],
         hasLogs: false,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <DebeziumIcon alt="debeziumIcon" />
@@ -418,6 +424,7 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['SourceCode'],
         cloudOnly: true,
         hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <GithubIntegrationIcon alt="gitHubLogo" />
