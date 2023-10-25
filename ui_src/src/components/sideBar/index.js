@@ -39,6 +39,8 @@ import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIc
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
+import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
+
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
@@ -54,8 +56,9 @@ import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
 import UpgradePlans from '../upgradePlans';
-import {FaBook, FaDiscord} from "react-icons/fa";
-import {BiEnvelope} from "react-icons/bi";
+import { FaBook, FaDiscord } from 'react-icons/fa';
+import { BsFillChatSquareTextFill } from 'react-icons/bs';
+import { BiEnvelope } from 'react-icons/bi';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -176,7 +179,7 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
-                    history.replace(pathDomains.profile);
+                    history.replace(`${pathDomains.administration}/profile`);
                     setPopoverOpenSetting(false);
                 }}
             >
@@ -230,7 +233,10 @@ function SideBar() {
         <div className="menu-content">
             <div
                 className="item-wrap"
-                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/docs', '_blank')}}
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/docs', '_blank');
+                }}
             >
                 <div className="item">
                     <span className="icons">
@@ -241,7 +247,10 @@ function SideBar() {
             </div>
             <div
                 className="item-wrap"
-                onClick={() => {setPopoverOpenSupportContextMenu(false); window.open('https://memphis.dev/discord', '_blank')}}
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/discord', '_blank');
+                }}
             >
                 <div className="item">
                     <span className="icons">
@@ -250,10 +259,18 @@ function SideBar() {
                     <p className="item-title">Discord channel</p>
                 </div>
             </div>
+            {!isCloud() && (
+                <div className="item-wrap">
+                    <div className="item">
+                        <span className="icons">
+                            <BsFillChatSquareTextFill className="icons-sidebar" />
+                        </span>
+                        <p className="item-title">Open service request</p>
+                    </div>
+                </div>
+            )}
             {isCloud() && (
-                <div
-                    className="item-wrap"
-                >
+                <div className="item-wrap">
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
                         placement="bottomRight"
@@ -261,12 +278,14 @@ function SideBar() {
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
-                        onClick={() => {setPopoverOpenSupportContextMenu(false)}}
+                        onClick={() => {
+                            setPopoverOpenSupportContextMenu(false);
+                        }}
                     >
                         <div className="item">
-                        <span className="icons">
-                            <BiEnvelope className="icons-sidebar" />
-                        </span>
+                            <span className="icons">
+                                <BiEnvelope className="icons-sidebar" />
+                            </span>
                             <p className="item-title">Open a service request</p>
                         </div>
                     </Popover>
@@ -406,6 +425,12 @@ function SideBar() {
                     <p className={state.route === 'administration' || hoveredItem === 'integrations' ? 'sidebar-title ms-active' : 'sidebar-title'}>Integrations</p>
                 </div>
                 <Popover
+                    title={
+                        <span className="support-header">
+                            <SupportColorIcon alt="SupportIcon" width={18} height={18} />
+                            <label className="username">Support</label>
+                        </span>
+                    }
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
                     content={supportContextMenu}
@@ -413,11 +438,13 @@ function SideBar() {
                     onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
                     open={popoverOpenSupportContextMenu}
                 >
-                    <div
-                        className="integration-icon-wrapper"
-                    >
-                        <SupportIcon alt="SupportIcon" />
-                        <p className="sidebar-title">Support</p>
+                    <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
+                        {hoveredItem === 'support' ? (
+                            <SupportColorIcon alt="SupportIcon" width={20} height={20} />
+                        ) : (
+                            <SupportIcon alt="SupportIcon" width={20} height={20} />
+                        )}
+                        <p className={hoveredItem === 'support' ? 'sidebar-title ms-active' : 'sidebar-title'}>Support</p>
                     </div>
                 </Popover>
 

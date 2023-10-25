@@ -1,12 +1,6 @@
 .profile-page {
-    position: absolute;
-    height: calc(100% - 40px);
-    width: calc(100% - 130px);
-    top: 20px;
-    right: 20px;
-    background-color: #ffffff;
-    box-shadow: 0px 6px 18px rgba(0, 0, 0, 0.06);
-    border-radius: 8px;
+    height: 100%;
+    width: 100%;
     padding: 40px 2px 40px 40px;
     .profile-container {
         display: flex;
@@ -14,7 +8,7 @@
         gap: 20px;
         height: 100%;
         overflow-y: auto;
-        padding-right:38px;
+        padding-right: 38px;
         .header-preferences {
             .main-header {
                 font-family: 'InterSemiBold';
@@ -88,17 +82,17 @@
                 }
             }
         }
-        .organization-id-section{
+        .organization-id-section {
             min-height: 100px;
             display: flex;
             flex-direction: column;
-            .organization-id-description{
+            .organization-id-description {
                 font-family: 'Inter';
                 font-size: 12px;
                 color: #b4b4b4;
                 margin-bottom: 10px;
             }
-            .organization-id{
+            .organization-id {
                 display: flex;
                 width: fit-content;
                 min-width: 30px;
@@ -112,7 +106,7 @@
                 color: var(--purple);
                 align-items: center;
                 justify-content: center;
-                p{
+                p {
                     margin: 0;
                 }
             }

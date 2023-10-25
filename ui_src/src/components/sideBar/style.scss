@@ -16,7 +16,7 @@
     .sidebar-title {
         font-size: 11px;
         color: rgba(74, 73, 92, 0.8);
-        font-family: "InterSemiBold";
+        font-family: 'InterSemiBold';
         margin: 0;
         cursor: pointer;
         &.ms-active {
@@ -161,7 +161,12 @@
         }
     }
 }
-
+.support-header {
+    display: flex;
+    gap: 15px;
+    font-size: 13px;
+    font-weight: 'InterSemiBold';
+}
 .menu-content {
     .ant-divider-horizontal {
         margin: 0;

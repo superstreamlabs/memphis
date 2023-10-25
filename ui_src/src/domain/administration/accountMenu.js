@@ -20,6 +20,8 @@ import { ReactComponent as ClusterConfColorIcon } from '../../assets/images/sett
 import { ReactComponent as IntegrationColorIcon } from '../../assets/images/setting/integrationColor.svg';
 import { ReactComponent as ClusterConfGrayIcon } from '../../assets/images/setting/clusterConfGray.svg';
 import { ReactComponent as IntegrationGrayIcon } from '../../assets/images/setting/integrationGray.svg';
+import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
+
 import { isCloud } from '../../services/valueConvertor';
 import { Context } from '../../hooks/store';
 
@@ -40,6 +42,10 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                         </div>
                     </>
                 )}
+                <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('profile')}>
+                    <PersonOutlinedIcon alt="versionUpgrade" />
+                    Profile
+                </div>
                 <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
                     {selectedMenuItem === 'integrations' ? <IntegrationColorIcon alt="notifications" /> : <IntegrationGrayIcon alt="notifications" />}
                     Integrations
