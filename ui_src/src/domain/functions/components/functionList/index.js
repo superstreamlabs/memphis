@@ -398,6 +398,7 @@ function FunctionList({ tabPrivate }) {
                             <div
                                 className="git-repo git-refresh-title"
                                 onClick={() => {
+                                    if (!isCloud()) return; //Open cloud only banner
                                     modalFlip(true);
                                     setClickedRefresh(false);
                                 }}
