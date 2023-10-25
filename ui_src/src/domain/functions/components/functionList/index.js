@@ -76,7 +76,6 @@ function FunctionList({ tabPrivate }) {
     const [functionList, setFunctionList] = useState([]);
     const [filteredData, setFilteredData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
-    const [filterItem, setFilterItem] = useState(null);
     const [tabValue, setTabValue] = useState(tabPrivate ? 'Private' : 'All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
@@ -88,15 +87,12 @@ function FunctionList({ tabPrivate }) {
         <div className="git-repos-list">
             {connectedRepos?.map((repo, index) => (
                 <div key={index}>
-                    <div
-                        className="git-repos-item"
-                        // onClick={() => setFilterItem(index)}
-                    >
+                    <div className="git-repos-item">
                         <div className="left-section">
                             {repo?.repo_owner === OWNER ? (
-                                <MemphisLogo alt="repo" className={`repo-item-icon-memphis ${filterItem === index && 'filtered'}`} />
+                                <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
                             ) : (
-                                <RepoIcon alt="repo" className={`repo-item-icon ${filterItem === index && 'filtered'}`} />
+                                <RepoIcon alt="repo" className="repo-item-icon" />
                             )}
                             <span className="repo-data">
                                 <OverflowTip text={repo?.repo_name} center={false}>
@@ -115,16 +111,6 @@ function FunctionList({ tabPrivate }) {
                     <Divider />
                 </div>
             ))}
-            {filterItem !== null && (
-                <div className="git-repos-item" onClick={() => setFilterItem(null)}>
-                    <div className="left-section">
-                        <RepoIcon alt="repo" className="repo-item-icon" />
-                        <span className="repo-data">
-                            <label className="git-repo">Show all</label>
-                        </span>
-                    </div>
-                </div>
-            )}
         </div>
     );
 
@@ -207,7 +193,8 @@ function FunctionList({ tabPrivate }) {
                         },
                         scm_type: '',
                         language: 'go',
-                        is_installed: true,
+                        is_installed: false,
+                        in_progress: true,
                         image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOh5fHTHSH5C3RB1Rq5sMe8WXQD82j1t0ULQ&usqp=CAU'
                     },
                     {
@@ -281,11 +268,8 @@ function FunctionList({ tabPrivate }) {
                 (func) => func?.function_name?.toLowerCase()?.includes(searchInput.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
-        if (filterItem) {
-            results = results.filter((func) => func?.repository === connectedRepos[filterItem]?.repo_name && func?.branch === connectedRepos[filterItem]?.branch);
-        }
         setFilteredData(results);
-    }, [tabValue, searchInput, functionList, filterItem]);
+    }, [tabValue, searchInput, functionList]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -388,7 +372,7 @@ function FunctionList({ tabPrivate }) {
                 <div className="main-header-wrapper">
                     <div className="header-flex-wrapper">
                         <label className="main-header-h1">Functions</label>
-                        {isCloud() && <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />}
+                        <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setIsFunctionsGuideOpen(true)} />
                     </div>
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
@@ -408,51 +392,33 @@ function FunctionList({ tabPrivate }) {
                             onClick={getAllFunctions}
                         />
                     )}
-                    {isCloud() && !integrated && (
-                        <Button
-                            width="166px"
-                            height="34px"
-                            placeholder="Integrate with GitHub"
-                            colorType="black"
-                            radiusType="circle"
-                            backgroundColorType="white"
-                            boxShadowStyle="float"
-                            fontSize="12px"
-                            fontFamily="InterSemiBold"
-                            aria-controls="usecse-menu"
-                            aria-haspopup="true"
-                            onClick={() => setIsFunctionsGuideOpen(true)}
-                        />
-                    )}
-                    {isCloud() && integrated && (
-                        <Popover
-                            placement="top"
-                            title={
-                                <div
-                                    className="git-repo git-refresh-title"
-                                    onClick={() => {
-                                        modalFlip(true);
-                                        setClickedRefresh(false);
-                                    }}
-                                >
-                                    <AddRounded className="add" fontSize="small" />
-                                    <label>Add repositories</label>
-                                </div>
-                            }
-                            content={content}
-                            trigger="click"
-                            overlayClassName="repos-popover"
-                            open={clickedRefresh}
-                            onOpenChange={(open) => setClickedRefresh(open)}
-                        >
-                            <connectedRepos is="x3d">
-                                <GitHubLogo alt="github icon" />
-                                <label>Connected Git Repository</label>
-                                <Divider type="vertical" />
-                                <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
-                            </connectedRepos>
-                        </Popover>
-                    )}
+                    <Popover
+                        placement="top"
+                        title={
+                            <div
+                                className="git-repo git-refresh-title"
+                                onClick={() => {
+                                    modalFlip(true);
+                                    setClickedRefresh(false);
+                                }}
+                            >
+                                <AddRounded className="add" fontSize="small" />
+                                <label>Add repositories</label>
+                            </div>
+                        }
+                        content={content}
+                        trigger="click"
+                        overlayClassName="repos-popover"
+                        open={clickedRefresh}
+                        onOpenChange={(open) => setClickedRefresh(open)}
+                    >
+                        <connectedRepos is="x3d">
+                            <GitHubLogo alt="github icon" />
+                            <label>Connected Git Repository</label>
+                            <Divider type="vertical" />
+                            <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
+                        </connectedRepos>
+                    </Popover>
                     <Popover
                         placement="bottomLeft"
                         content={<CloneModal />}

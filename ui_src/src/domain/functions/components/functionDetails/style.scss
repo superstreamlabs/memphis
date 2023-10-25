@@ -4,6 +4,12 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
+    .code-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
     .drawer-header {
         height: 150px;
         display: flex;
@@ -15,7 +21,9 @@
         gap: 24px;
         width: 100%;
         min-width: 750px;
-
+        .header-flex {
+            display: flex;
+        }
         .right-side {
             display: flex;
             gap: 6px;

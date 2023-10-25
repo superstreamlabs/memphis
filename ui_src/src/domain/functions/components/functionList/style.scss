@@ -4,12 +4,11 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-
     .code-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 5px;
+        gap: 4px;
     }
     connectedRepos {
         display: flex;
@@ -157,6 +156,7 @@
 }
 .repos-popover {
     margin-top: 10px;
+    width: 260px;
 }
 .repo-data {
     display: flex;
@@ -183,10 +183,6 @@
     cursor: pointer;
 }
 .git-repos-list {
-    .filtered {
-        border-radius: 50%;
-        border: 1px solid #6557ff;
-    }
     .git-repos-item {
         height: 40px;
         display: flex;

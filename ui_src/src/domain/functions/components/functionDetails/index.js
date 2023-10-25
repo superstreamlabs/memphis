@@ -20,6 +20,7 @@ import Editor from '@monaco-editor/react';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiLogoGoLang } from 'react-icons/bi';
 import { BiDownload } from 'react-icons/bi';
+import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoLogoJavascript, IoLogoPython } from 'react-icons/io';
 import { GoFileDirectoryFill } from 'react-icons/go';
 import { Divider, Rate } from 'antd';
@@ -155,22 +156,42 @@ function FunctionDetails({ selectedFunction, integrated }) {
                     <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
                         <div className="action-section-btn">
-                            <Button
-                                placeholder={selectedFunction?.in_progress ? '' : selectedFunction?.is_installed ? 'Uninstall' : 'Install'}
-                                width={'100px'}
-                                backgroundColorType={'purple'}
-                                colorType={'white'}
-                                radiusType={'circle'}
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => {
-                                    // installFunction() - not implemented yet
-                                    return;
-                                }}
-                                isLoading={selectedFunction?.in_progress}
-                                disabled={!isCloud() || selectedFunction?.in_progress}
-                            />
-                            <AttachTooltip disabled={!isCloud() || selectedFunction?.in_progress || !selectedFunction?.is_installed} />
+                            <div className="header-flex">
+                                <AttachTooltip disabled={!isCloud() || selectedFunction?.in_progress || !selectedFunction?.is_installed} />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
+                            <div className="header-flex">
+                                <Button
+                                    placeholder={
+                                        selectedFunction?.in_progress ? (
+                                            ''
+                                        ) : selectedFunction?.is_installed ? (
+                                            <div className="code-btn">
+                                                <MdOutlineFileDownloadOff className="Uninstall" />
+                                                <label>Uninstall</label>
+                                            </div>
+                                        ) : (
+                                            <div className="code-btn">
+                                                <BiDownload className="Install" />
+                                                <label>Install</label>
+                                            </div>
+                                        )
+                                    }
+                                    width={'100px'}
+                                    backgroundColorType={selectedFunction?.is_installed ? 'purple-light' : 'purple'}
+                                    colorType={'white'}
+                                    radiusType={'circle'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => {
+                                        // installFunction() - not implemented yet
+                                        return;
+                                    }}
+                                    isLoading={selectedFunction?.in_progress}
+                                    disabled={!isCloud() || selectedFunction?.in_progress}
+                                />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
                         </div>
                         <SelectComponent
                             colorType="black"

@@ -16,6 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
+import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
@@ -62,7 +63,7 @@ function FunctionBox({ funcDetails, integrated }) {
             <div
                 key={functionDetails?.function_name}
                 className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
-                onClick={() => isCloud() && handleDrawer(true)}
+                onClick={() => handleDrawer(true)}
             >
                 <header is="x3d">
                     <div className="function-box-header">
@@ -120,13 +121,32 @@ function FunctionBox({ funcDetails, integrated }) {
                             className="install-button"
                         >
                             <div className="header-flex">
+                                <AttachTooltip disabled={!isCloud() || functionDetails?.in_progress || !functionDetails?.is_installed} />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
+                            <div className="header-flex">
                                 <Button
                                     width="100px"
                                     height="34px"
-                                    placeholder={functionDetails?.in_progress ? '' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
+                                    placeholder={
+                                        functionDetails?.in_progress ? (
+                                            ''
+                                        ) : functionDetails?.is_installed ? (
+                                            <div className="code-btn">
+                                                <MdOutlineFileDownloadOff className="Uninstall" />
+                                                <label>Uninstall</label>
+                                            </div>
+                                        ) : (
+                                            <div className="code-btn">
+                                                <BiDownload className="Install" />
+                                                <label>Install</label>
+                                            </div>
+                                        )
+                                    }
+                                    purple-light
                                     colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType="purple"
+                                    backgroundColorType={functionDetails?.is_installed ? 'purple-light' : 'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     disabled={!isCloud() || functionDetails?.in_progress}
@@ -135,10 +155,6 @@ function FunctionBox({ funcDetails, integrated }) {
                                         return;
                                     }}
                                 />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
-                            </div>
-                            <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || functionDetails?.in_progress || !functionDetails?.is_installed} />
                                 {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                         </div>
