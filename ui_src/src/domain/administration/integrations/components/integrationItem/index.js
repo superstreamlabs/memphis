@@ -13,7 +13,7 @@
 import './style.scss';
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
-
+import { useHistory } from 'react-router-dom';
 import { ReactComponent as IntegratedIcon } from '../../../../../assets/images/integrated.svg';
 import { ReactComponent as IntegrationFailedIcon } from '../../../../../assets/images/integrationFailed.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
@@ -37,6 +37,7 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
 
     const ref = useRef();
     ref.current = integrateValue;
+    const history = useHistory();
 
     useEffect(() => {
         modalFlip(isOpen);
@@ -71,6 +72,11 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);
+                            data !== ref.current &&
+                                history.push({
+                                    pathname: '/functions',
+                                    integrated: true
+                                });
                         }}
                         value={ref.current}
                     />

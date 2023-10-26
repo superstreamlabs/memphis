@@ -57,7 +57,6 @@ import Spinner from '../spinner';
 import Support from './support';
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
-import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { BiEnvelope } from 'react-icons/bi';
 
 const overlayStyles = {
@@ -439,6 +438,7 @@ function SideBar() {
                     open={popoverOpenSupportContextMenu}
                 >
                     <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
+                        {' '}
                         {hoveredItem === 'support' ? (
                             <SupportColorIcon alt="SupportIcon" width={20} height={20} />
                         ) : (

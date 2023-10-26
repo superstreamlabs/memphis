@@ -4,10 +4,15 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
-
+    .code-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
     connectedRepos {
         display: flex;
-        width: 240px;
+        width: 260px;
         height: 34px;
         padding: 5px 10px;
         justify-content: center;
@@ -25,9 +30,9 @@
             margin: 0;
         }
         label {
-            font-family: InterSemiBold;
-            cursor: pointer;
+            font-family: 'InterSemiBold';
             font-size: 12px;
+            cursor: pointer;
         }
     }
     .button-content {
@@ -39,7 +44,14 @@
     }
     .header-flex-wrapper {
         display: flex;
+        align-items: center;
         gap: 10px;
+        .ant-btn > .ant-btn-loading-icon {
+            padding-right: 0px;
+        }
+        .ant-btn > .ant-btn-loading-icon .anticon {
+            padding-right: 0px;
+        }
         .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
@@ -52,7 +64,18 @@
                 height: 15px;
             }
         }
+        .info-icon {
+            border-radius: 50%;
+            padding: 7px;
+            height: 30px;
+            width: 30px;
+            background-color: #ffffff;
+            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
     }
+
     .action-section {
         display: flex;
         gap: 10px;
@@ -132,15 +155,16 @@
     border-bottom-color: #ececec;
 }
 .repos-popover {
-    width: 260px;
     margin-top: 10px;
-    cursor: pointer;
+    width: 260px;
 }
 .repo-data {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
+    font-family: 'InterSemiBold';
+    font-size: 14px;
 }
 .git-refresh-title {
     margin: 5px 0px;
@@ -155,14 +179,10 @@
     align-items: center;
     justify-content: center;
     font-family: 'InterSemiBold';
-    size: 14px;
+    font-size: 14px;
     cursor: pointer;
 }
 .git-repos-list {
-    .filtered {
-        border-radius: 50%;
-        border: 1px solid #6557ff;
-    }
     .git-repos-item {
         height: 40px;
         display: flex;
@@ -177,11 +197,17 @@
                 height: 25px;
                 width: 25px;
             }
+            .repo-item-icon-memphis {
+                height: 26px;
+                width: 26px;
+                padding: 3px;
+                border-radius: 50%;
+                background-color: rgba(101, 87, 255, 0.1);
+            }
             .last-modified {
                 color: #818c99;
                 font-size: 10px;
                 font-style: normal;
-                cursor: pointer;
             }
         }
     }
@@ -194,5 +220,10 @@
     }
     .open {
         transform: rotate(0deg);
+    }
+}
+.clone-popover {
+    .ant-popover-inner-content {
+        padding: 20px !important;
     }
 }

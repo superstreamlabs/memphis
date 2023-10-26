@@ -75,8 +75,9 @@ export const planType = {
 };
 
 export const githubUrls = {
-    DOWNLOAD_URL: 'https://github.com/memphisdev/memphis/archive/refs/heads/master.zip',
-    MEMPHIS_GIT: 'https://github.com/memphisdev/memphis.git'
+    DOWNLOAD_URL: 'https://github.com/memphisdev/memphis-dev-functions/archive/refs/heads/master.zip',
+    MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/memphis-dev-functions.git',
+    MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/memphis-dev-functions.git'
 };
 
 export const OWNER = 'memphisdev';

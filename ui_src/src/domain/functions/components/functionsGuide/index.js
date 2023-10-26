@@ -14,29 +14,36 @@ import './style.scss';
 import { useState } from 'react';
 import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
 import { ReactComponent as CopyIcon } from '../../../../assets/images/copy.svg';
+import { MdDone } from 'react-icons/md';
 import VideoPlayer from '../../../../components/videoPlayer';
 import Button from '../../../../components/button';
 import { CONNECT_APP_VIDEO } from '../../../../config';
 import ConnectBG from '../../../../assets/images/connectBG.webp';
 
 const steps = [
-    { name: 'Create The Station', description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie' },
+    { name: 'Create new repo and clone', description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie' },
 
     {
-        name: 'Station Preparation',
+        name: 'Clone the template or Download zip',
         description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie'
     },
     {
-        name: 'Integration Control',
+        name: 'Copy the files to your repos',
         description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie'
     },
     {
-        name: 'Finalize',
+        name: 'Commit your new function',
         description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie'
-    }
+    },
+    { name: 'Add the new function to Memphis', description: 'Donec dictum tristique prota. Etiam convallis lorem lobortis nulla molestie' }
 ];
 
 const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
+    const [currentStep, setCurrentStep] = useState(0);
+
+    const handleNext = () => {
+        setCurrentStep(currentStep + 1);
+    };
     return (
         <div className="new-function-modal">
             <div className="header-icon">
@@ -55,9 +62,17 @@ const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
                 {steps.map((step, index) => (
                     <div className="step-container" key={index}>
                         <div className="step-header">
-                            <div className="icon">{index + 1}</div>
+                            {index < currentStep ? (
+                                <div className="done" onClick={() => setCurrentStep(index)}>
+                                    <MdDone width={12} height={12} alt="Done" />
+                                </div>
+                            ) : (
+                                <div className="icon" onClick={() => setCurrentStep(index)}>
+                                    {index + 1}
+                                </div>
+                            )}
                             <div className="step-name">{step.name}</div>
-                            {index === 2 && (
+                            {index === 1 && (
                                 <Button
                                     height={'23px'}
                                     width={'125px'}
@@ -75,7 +90,7 @@ const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
                                 />
                             )}
                         </div>
-                        <div className="step-body">
+                        <div className={`step-body ${index < currentStep && 'step-body-done'}`}>
                             <p className="description">{step.description}</p>
                         </div>
                     </div>
@@ -98,11 +113,11 @@ const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
                 <Button
                     width={'100%'}
                     height={'34px'}
-                    placeholder={'Start here'}
+                    placeholder={'Next'}
                     colorType={'white'}
                     backgroundColorType={'purple'}
                     radiusType={'circle'}
-                    onClick={handleConfirm}
+                    onClick={currentStep === steps.length - 1 ? handleConfirm : handleNext}
                     fontWeight={600}
                     fontSize={'12px'}
                 />
