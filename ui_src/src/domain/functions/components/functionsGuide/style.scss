@@ -63,7 +63,7 @@
         overflow-y: auto;
         padding: 10px;
         .step-container {
-            width: 50%;
+            width: 70%;
             .step-header {
                 display: flex;
                 align-items: center;
@@ -76,7 +76,22 @@
                     justify-content: center;
                     background-color: #6557ff;
                     border-radius: 100%;
-
+                    cursor: pointer;
+                    color: white;
+                    text-align: center;
+                    font-family: 'InterSemiBold';
+                    font-size: 11px;
+                    line-height: 16px;
+                }
+                .done {
+                    width: 18px;
+                    height: 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: #2ed47a;
+                    border-radius: 100%;
+                    cursor: pointer;
                     color: white;
                     text-align: center;
                     font-family: 'InterSemiBold';
@@ -126,6 +141,9 @@
             &:not(:last-child) {
                 .step-body {
                     border-left: 1px dashed #cdcdcd;
+                }
+                .step-body-done {
+                    border-left: 1px solid #2ed47a;
                 }
             }
         }

@@ -1,0 +1,42 @@
+.attach-function {
+    .info {
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        .step-container {
+            .step-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                .icon {
+                    width: 18px;
+                    height: 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background-color: #6557ff;
+                    border-radius: 100%;
+                    color: white;
+                    text-align: center;
+                    font-family: 'InterSemiBold';
+                    font-size: 11px;
+                    line-height: 16px;
+                }
+
+                .step-name {
+                    color: #1d1d1d;
+                    font-size: 14px;
+                    line-height: 24px;
+                }
+            }
+        }
+    }
+}
+.attach-function-popover {
+    width: 400px;
+    .ant-popover-title {
+        padding: 10px;
+    }
+}

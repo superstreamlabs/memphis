@@ -16,6 +16,7 @@ import React, { useState, useEffect } from 'react';
 import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
 import { BiDownload } from 'react-icons/bi';
+import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
@@ -23,11 +24,13 @@ import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
+import { showMessages } from '../../../../services/genericServices';
 import TagsList from '../../../../components/tagList';
 import CloudOnly from '../../../../components/cloudOnly';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
+import AttachTooltip from '../AttachTooltip';
 
 function FunctionBox({ funcDetails, integrated }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
@@ -65,49 +68,52 @@ function FunctionBox({ funcDetails, integrated }) {
             >
                 <header is="x3d">
                     <div className="function-box-header">
-                        <FunctionIcon alt="Function icon" height="40px" />
-                        <div>
-                            <div className="function-name">
-                                <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
-                                    {functionDetails?.function_name}
-                                </OverflowTip>
-                            </div>
-                            <deatils is="x3d">
-                                <div className="function-owner">
-                                    {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
-                                    <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                        <div className="details-section">
+                            {funcDetails?.image ? <img src={funcDetails?.image} alt="Function icon" height="40px" /> : <FunctionIcon alt="Function icon" height="40px" />}
+                            <div>
+                                <div className="function-name">
+                                    <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                        {functionDetails?.function_name}
+                                    </OverflowTip>
                                 </div>
-                                {funcDetails.owner !== OWNER && (
-                                    <>
-                                        <Divider type="vertical" />
-                                        <repo is="x3d">
-                                            <GoRepo />
-                                            <label>{functionDetails?.repository}</label>
-                                        </repo>
-                                        <Divider type="vertical" />
-                                        <branch is="x3d">
-                                            <GithubBranchIcon />
-                                            <label>{functionDetails?.branch}</label>
-                                        </branch>
-                                    </>
-                                )}
-                                {/* <downloads is="x3d">
-                                    <BiDownload className="download-icon" />
-                                    <label>{Number(1940).toLocaleString()}</label>
-                                </downloads>
-                                <Divider type="vertical" />
-                                <rate is="x3d">
-                                    <Rate disabled defaultValue={2} className="stars-rate" />
-                                    <label>(93)</label>
-                                </rate> */}
-                                <Divider type="vertical" />
-                                <commits is="x3d">
-                                    <FiGitCommit />
-                                    <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
-                                </commits>
-                            </deatils>
+                                <deatils is="x3d">
+                                    <div className="function-owner">
+                                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                        <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                                    </div>
+                                    <Divider type="vertical" />
+                                    {funcDetails.owner !== OWNER && (
+                                        <>
+                                            <repo is="x3d">
+                                                <GoRepo />
+                                                <label>{functionDetails?.repository}</label>
+                                            </repo>
+                                            <Divider type="vertical" />
+                                            <branch is="x3d">
+                                                <GithubBranchIcon />
+                                                <label>{functionDetails?.branch}</label>
+                                            </branch>
+                                            <Divider type="vertical" />
+                                        </>
+                                    )}
+                                    <downloads is="x3d">
+                                        <BiDownload className="download-icon" />
+                                        <label>{Number(180).toLocaleString()}</label>
+                                    </downloads>
+                                    <Divider type="vertical" />
+                                    <rate is="x3d">
+                                        <Rate disabled defaultValue={5} className="stars-rate" />
+                                        <label>(50)</label>
+                                    </rate>
+                                    <Divider type="vertical" />
+                                    <commits is="x3d">
+                                        <FiGitCommit />
+                                        <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                    </commits>
+                                </deatils>
+                                <description is="x3d">{functionDetails?.description}</description>
+                            </div>
                         </div>
-
                         <div
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -115,29 +121,50 @@ function FunctionBox({ funcDetails, integrated }) {
                             }}
                             className="install-button"
                         >
-                            <Button
-                                width="100px"
-                                height="34px"
-                                placeholder={functionDetails?.in_progress ? '' : functionDetails?.is_installed ? 'Uninstall' : 'Install'}
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                disabled={!isCloud() || functionDetails?.in_progress}
-                                isLoading={functionDetails?.in_progress} //Get indication after install function
-                                onClick={() => {
-                                    return;
-                                }}
-                            />
-                            {!isCloud() && <CloudOnly position={'relative'} />}
+                            <div className="header-flex">
+                                <AttachTooltip disabled={!isCloud() || functionDetails?.in_progress || !functionDetails?.is_installed} />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
+                            <div className="header-flex">
+                                <Button
+                                    width="100px"
+                                    height="34px"
+                                    placeholder={
+                                        functionDetails?.in_progress ? (
+                                            ''
+                                        ) : functionDetails?.is_installed ? (
+                                            <div className="code-btn">
+                                                <MdOutlineFileDownloadOff className="Uninstall" />
+                                                <label>Uninstall</label>
+                                            </div>
+                                        ) : (
+                                            <div className="code-btn">
+                                                <BiDownload className="Install" />
+                                                <label>Install</label>
+                                            </div>
+                                        )
+                                    }
+                                    purple-light
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType={functionDetails?.is_installed ? 'purple-light' : 'purple'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={!isCloud() || functionDetails?.in_progress}
+                                    isLoading={functionDetails?.in_progress} //Get indication after install function
+                                    onClick={() => {
+                                        showMessages('success', 'Install function');
+                                        return;
+                                    }}
+                                />
+                                {!isCloud() && <CloudOnly position={'relative'} />}
+                            </div>
                         </div>
                     </div>
                 </header>
-                <description is="x3d">{functionDetails?.description}</description>
-                <tags is="x3d">
+                <footer is="x3d">
                     <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
-                </tags>
+                </footer>
             </div>
             <Drawer
                 placement="right"
