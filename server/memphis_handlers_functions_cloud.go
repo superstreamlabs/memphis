@@ -50,7 +50,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 		}
 	}
 
-	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "functions": functionsResult.Functions})
+	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "other": functionsResult.Functions, "installed": []models.FunctionsRes{}, "connected_repos": []map[string]interface{}{}})
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
@@ -61,6 +61,9 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	functions, err := GetFunctionsDetails(contentDetailsOfSelectedRepos)
 	if err != nil {
 		return models.FunctionsRes{}, err
+	}
+	if len(functions) > 10 {
+		functions = functions[:10]
 	}
 	allFunctions := models.FunctionsRes{
 		Functions:     functions,
@@ -209,7 +212,7 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 	for _, functionDetails := range functionsDetails {
 		fucntionContentMap := functionDetails.ContentMap
 		commit := functionDetails.Commit
-		fileContent := functionDetails.Content
+		link := functionDetails.DirectoryUrl
 		repo := functionDetails.RepoName
 		branch := functionDetails.Branch
 		owner := functionDetails.Owner
@@ -253,20 +256,29 @@ func GetFunctionsDetails(functionsDetails []functionDetails) ([]models.Functions
 			language = strings.Trim(language, ".-edge")
 		}
 
+		byMemphis := false
+		if repo == memphisDevFunctionsRepoName {
+			byMemphis = true
+		}
+
 		functionDetails := models.FunctionsResult{
-			FunctionName:    fucntionContentMap["function_name"].(string),
-			Description:     description,
-			Tags:            tagsStrings,
-			RunTime:         runtime,
-			LastCommit:      *commit.Commit.Committer.Date,
-			Link:            *fileContent.HTMLURL,
-			Repository:      repo,
-			Branch:          branch,
-			Owner:           owner,
-			Memory:          fucntionContentMap["memory"].(int),
-			Storgae:         fucntionContentMap["storage"].(int),
-			EnvironmentVars: environmentVarsStrings,
-			Language:        language,
+			FunctionName:      fucntionContentMap["function_name"].(string),
+			Description:       description,
+			Tags:              tagsStrings,
+			RunTime:           runtime,
+			LastCommit:        *commit.Commit.Committer.Date,
+			Link:              link,
+			Repository:        repo,
+			Branch:            branch,
+			Owner:             owner,
+			Memory:            fucntionContentMap["memory"].(int),
+			Storgae:           fucntionContentMap["storage"].(int),
+			EnvironmentVars:   environmentVarsStrings,
+			Language:          language,
+			ScmType:           "github",
+			InstallInProgress: false,
+			UpdatesAvailable:  false,
+			ByMemphis:         byMemphis,
 		}
 
 		functions = append(functions, functionDetails)

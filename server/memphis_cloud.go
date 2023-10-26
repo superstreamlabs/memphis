@@ -2196,3 +2196,22 @@ func InitializeCloudFunctionRoutes(functionsHandler FunctionsHandler, functionsR
 func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 	c.IndentedJSON(401, "Unautorized")
 }
+
+func InitializeCloudStationRoutes(stationsHandler StationsHandler, stationsRoutes *gin.RouterGroup) {}
+
+func validatePartitionNumber(partitionsList []int, partition int) bool {
+	for _, val := range partitionsList {
+		if val == partition {
+			return true
+		}
+	}
+	return false
+}
+
+func GetStationAttachedFunctionsByPartitions(stationID int, partitionsList []int) ([]db.FunctionSchema, error) {
+	return []db.FunctionSchema{}, nil
+}
+
+func getInternalUserPassword() string {
+	return configuration.ROOT_PASSWORD
+}

@@ -21,6 +21,8 @@ import (
 	"github.com/memphisdev/memphis/models"
 )
 
+var zombieCandidates = make(map[string]map[string]interface{}, 0)
+
 func (srv *Server) removeStaleStations() {
 	// TODO - handle stale partition and deleting its resources
 	stations, err := db.GetActiveStations()
@@ -99,10 +101,25 @@ func killFunc(s *Server) {
 			return
 		}
 		for _, conn := range connections {
-			if _, exist := clientConnectionIds[conn]; exist { // existence check
+			if _, exist := clientConnectionIds[conn]; exist {
 				continue
 			} else {
-				zombieConnections = append(zombieConnections, conn)
+				if _, exist := zombieCandidates[conn]; !exist {
+					zombieCandidates[conn] = make(map[string]interface{}, 0)
+					zombieCandidates[conn]["count"] = 0
+				}
+				zombieCandidates[conn]["count"] = zombieCandidates[conn]["count"].(int) + 1
+				zombieCandidates[conn]["lastUpdate"] = time.Now()
+				if zombieCandidates[conn]["count"].(int) >= 3 {
+					zombieConnections = append(zombieConnections, conn)
+					delete(zombieCandidates, conn)
+				}
+			}
+		}
+
+		for k, v := range zombieCandidates {
+			if time.Since(v["lastUpdate"].(time.Time)).Minutes() >= 60 && v["count"].(int) < 3 {
+				delete(zombieCandidates, k)
 			}
 		}
 
@@ -141,6 +158,6 @@ func (s *Server) KillZombieResources() {
 			count = 0
 		}
 		firstIteration = false
-		count+=15
+		count += 15
 	}
 }

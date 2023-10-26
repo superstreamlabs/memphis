@@ -175,6 +175,12 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	_, err = db.DeleteAndGetAttachedFunctionsByStation(station.TenantName, station.ID, station.PartitionsList)
+	if err != nil {
+		return err
+	}
+	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
 	return nil
 }
 
@@ -566,6 +572,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		PartitionsList:       station.PartitionsList,
 		PartitionsNumber:     len(station.PartitionsList),
 		DlsStation:           station.DlsStation,
+		FunctionsLockHeld:    station.FunctionsLockHeld,
+		FunctionsLockedAt:    station.FunctionsLockedAt,
 	}
 
 	c.IndentedJSON(200, stationResponse)

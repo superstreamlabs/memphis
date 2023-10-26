@@ -64,6 +64,8 @@ type Station struct {
 	PartitionsList              []int     `json:"partitions_list"`
 	Version                     int       `json:"version"`
 	DlsStation                  string    `json:"dls_station"`
+	FunctionsLockHeld           bool      `json:"functions_lock_held"`
+	FunctionsLockedAt           time.Time `json:"functions_locked_at,omitempty"`
 }
 
 type GetStationResponseSchema struct {
@@ -87,6 +89,8 @@ type GetStationResponseSchema struct {
 	PartitionsList       []int            `json:"partitions_list"`
 	PartitionsNumber     int              `json:"partitions_number"`
 	DlsStation           string           `json:"dls_station"`
+	FunctionsLockHeld    bool             `json:"functions_lock_held"`
+	FunctionsLockedAt    time.Time        `json:"functions_locked_at"`
 }
 
 type ExtendedStation struct {
@@ -143,6 +147,8 @@ type ExtendedStationLight struct {
 	PartitionsList              []int       `json:"partitions_list"`
 	Version                     int         `json:"version"`
 	DlsStation                  string      `json:"dls_station"`
+	FunctionsLockHeld           bool        `json:"functions_lock_held"`
+	FunctionsLockedAt           time.Time   `json:"functions_locked_at"`
 }
 
 type StationLight struct {
