@@ -56,6 +56,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
+import GetStarted from '../getStartedModal';
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
@@ -492,6 +493,7 @@ function SideBar() {
                     />
                 )}
             </div>
+            <GetStarted />
         </div>
     );
 }
