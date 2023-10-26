@@ -183,7 +183,7 @@ export const REGIONS_OPTIONS = [
 export const INTEGRATION_LIST = {
     Datadog: {
         name: 'Datadog',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
         insideBanner: <img className="insideBanner" src={datadogBannerPopup} alt="datadogBannerPopup" />,
         icon: <DatadogIcon alt="datadogIcon" />,
@@ -199,8 +199,9 @@ export const INTEGRATION_LIST = {
                     <p>Datadog</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -234,7 +235,7 @@ export const INTEGRATION_LIST = {
     },
     Slack: {
         name: 'Slack',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
         icon: <SlackLogo alt="slackLogo" />,
@@ -249,8 +250,9 @@ export const INTEGRATION_LIST = {
                     <p>Slack</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source, Cloud</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="cloud">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -266,7 +268,7 @@ export const INTEGRATION_LIST = {
     },
     S3: {
         name: 'S3',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <S3Logo alt="s3Logo" />,
@@ -283,8 +285,9 @@ export const INTEGRATION_LIST = {
                     <p>S3 Compatible Object Storage</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source, Cloud</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="cloud">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -301,7 +304,7 @@ export const INTEGRATION_LIST = {
     },
     Elasticsearch: {
         name: 'Elasticsearch observability',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={elasticBanner} alt="elasticBanner" />,
         insideBanner: <img className="insideBanner" src={elasticBannerPopup} alt="elasticBannerPopup" />,
         icon: <ElasticIcon alt="elasticIcon" />,
@@ -318,8 +321,9 @@ export const INTEGRATION_LIST = {
                     <p>Elasticsearch observability</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -351,7 +355,7 @@ export const INTEGRATION_LIST = {
     },
     Grafana: {
         name: 'Grafana',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={grafanaBanner} alt="grafanaBanner" />,
         insideBanner: <img className="insideBanner" src={grafanaBannerPopup} alt="grafanaBannerPopup" />,
         icon: <GrafanaIcon alt="grafanaIcon" />,
@@ -367,8 +371,9 @@ export const INTEGRATION_LIST = {
                     <p>Grafana</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -396,7 +401,7 @@ export const INTEGRATION_LIST = {
     },
     'Debezium and Postgres': {
         name: 'Debezium and Postgres',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={debeziumBanner} alt="debeziumBanner" />,
         insideBanner: <img className="insideBanner" src={debeziumBannerPopup} alt="debeziumBannerPopup" />,
         icon: <DebeziumIcon alt="debeziumIcon" />,
@@ -412,8 +417,9 @@ export const INTEGRATION_LIST = {
                     <p>Debezium and Postgres</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source, Cloud</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="cloud">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -440,7 +446,7 @@ export const INTEGRATION_LIST = {
     },
     GitHub: {
         name: 'Github',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
         insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
         icon: <GithubIntegrationIcon alt="gitHubIcon" />,
@@ -457,8 +463,9 @@ export const INTEGRATION_LIST = {
                     <p>GitHub</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Cloud</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="disable">Open source</label>
+                        <label className="cloud">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -475,7 +482,7 @@ export const INTEGRATION_LIST = {
     },
     PagerDuty: {
         name: 'PagerDuty',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         icon: <PageDutyIcon alt="pagerDutyIcon" />,
@@ -491,8 +498,9 @@ export const INTEGRATION_LIST = {
                     <p>PagerDuty</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -508,7 +516,7 @@ export const INTEGRATION_LIST = {
     },
     'New Relic': {
         name: 'New Relic',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
         insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
         icon: <NewRelicIcon alt="newrelicIcon" />,
@@ -524,8 +532,9 @@ export const INTEGRATION_LIST = {
                     <p>New Relic</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -541,7 +550,7 @@ export const INTEGRATION_LIST = {
     },
     influxDB: {
         name: 'influxDB',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
         insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
         icon: <InfluxDBIcon alt="influxDBIcon" />,
@@ -557,8 +566,9 @@ export const INTEGRATION_LIST = {
                     <p>influxDB</p>
                     <span className="by">
                         <MemphisVerifiedIcon />
-                        <label>By memphis | Available on </label>
-                        <label>Open source</label>
+                        <label className="memphis">Mempis.dev</label>
+                        <label className="open-source">Open source</label>
+                        <label className="disable">Cloud</label>
                     </span>
                 </div>
             </div>

@@ -13,12 +13,8 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { CloudQueueRounded } from '@material-ui/icons';
-
 import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
-import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
-import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
 import { ReactComponent as SoonBadgeIcon } from '../../../assets/images/soonBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
@@ -145,13 +141,7 @@ const Integrations = () => {
             <div className="categories-list">
                 {Object.keys(CATEGORY_LIST).map((key) => {
                     const category = CATEGORY_LIST[key];
-                    // const isCloudAndOsOnly = isCloud() && category.osOnly;
                     const isCategoryFilter = categoryFilter === category.name;
-
-                    // if (isCloudAndOsOnly) {
-                    //     return null;
-                    // }
-
                     return <Tag key={key} tag={category} onClick={(e) => setCategoryFilter(e)} border={isCategoryFilter} />;
                 })}
             </div>
@@ -164,12 +154,6 @@ const Integrations = () => {
                 <div className="integration-list">
                     {Object.keys(filterList)?.map((integration) => {
                         const integrationItem = filterList[integration];
-                        // const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
-
-                        // if (isCloudAndOsOnly) {
-                        //     return null;
-                        // }
-
                         const key = integrationItem.name;
                         const integrationElement = (
                             <IntegrationItem
@@ -190,18 +174,6 @@ const Integrations = () => {
                                 </div>
                             );
                         }
-
-                        // if (integrationItem.experimental) {
-                        //     return (
-                        //         <div key={key}>
-                        //             <div className="experimental-badge">
-                        //                 <ExperimentalIcon alt="experimental" />
-                        //             </div>
-                        //             {integrationElement}
-                        //         </div>
-                        //     );
-                        // }
-
                         return integrationElement;
                     })}
                 </div>

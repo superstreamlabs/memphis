@@ -26,6 +26,7 @@ import {
     LOCAL_STORAGE_COMPANY_LOGO,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
+    LOCAL_STORAGE_SKIP_GET_STARTED,
     USER_IMAGE
 } from '../../const/localStorageConsts';
 import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
@@ -41,7 +42,7 @@ import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
-
+import { BsHouseHeartFill } from 'react-icons/bs';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
@@ -92,6 +93,8 @@ function SideBar() {
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
+    const [openGetStartedModal, setOpenGetStartedModal] = useState(false);
+
     const getCompanyLogo = useCallback(async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_COMPANY_LOGO);
@@ -263,7 +266,13 @@ function SideBar() {
             </div>
             {!isCloud() && (
                 <>
-                    <div className="item-wrap" onClick={() => setCloudModalOpen(true)}>
+                    <div
+                        className="item-wrap"
+                        onClick={() => {
+                            setCloudModalOpen(true);
+                            setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                        }}
+                    >
                         <div className="item">
                             <span className="icons">
                                 <BsFillChatSquareTextFill className="icons-sidebar" />
@@ -274,6 +283,7 @@ function SideBar() {
                     <CloudMoadl type="oss" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
+
             {isCloud() && (
                 <div className="item-wrap">
                     <Popover
@@ -296,6 +306,20 @@ function SideBar() {
                     </Popover>
                 </div>
             )}
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setOpenGetStartedModal(true);
+                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <BsHouseHeartFill className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Welcome info</p>
+                </div>
+            </div>
         </div>
     );
 
@@ -493,7 +517,7 @@ function SideBar() {
                     />
                 )}
             </div>
-            <GetStarted />
+            <GetStarted open={!localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) || openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
         </div>
     );
 }

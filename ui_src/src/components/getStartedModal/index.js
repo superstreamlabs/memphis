@@ -20,6 +20,10 @@ import { CONNECT_APP_VIDEO } from '../../config';
 import ConnectBG from '../../assets/images/connectBG.webp';
 import Modal from '../modal';
 import { Divider } from 'antd';
+import { ApiEndpoints } from '../../const/apiEndpoints';
+import { httpRequest } from '../../services/http';
+import { capitalizeFirst } from '../../services/valueConvertor';
+import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 
 const useCases = ['Microservices communication', 'Change data Capture', 'Real-time pipeline', 'Building a data lake'];
 const codeList = [
@@ -33,7 +37,7 @@ const codeList = [
     }
 ];
 
-const GetStartedModal = ({ handleClose, handleConfirm, handleCloneClick }) => {
+const GetStartedModal = ({ open, handleClose }) => {
     const [chosenUseCase, setUseCase] = useState('');
     const [manualUseCase, setManualUseCase] = useState('');
 
@@ -47,14 +51,24 @@ const GetStartedModal = ({ handleClose, handleConfirm, handleCloneClick }) => {
         setUseCase('');
     };
 
+    const skipGetStarted = async () => {
+        try {
+            await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
+            localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
+        } catch (error) {}
+    };
+
     return (
         <Modal
             className="get-started-modal"
             width={'600px'}
             height={'95vh'}
             displayButtons={false}
-            // clickOutside={handleCloseFunctionModal}
-            open={false}
+            clickOutside={() => {
+                skipGetStarted();
+                handleClose();
+            }}
+            open={open}
         >
             <div className="">
                 <div className="title-wrapper">
@@ -105,7 +119,7 @@ const GetStartedModal = ({ handleClose, handleConfirm, handleCloneClick }) => {
                                 <header is="x3s">TUTORIAL</header>
                                 <body is="x3s">
                                     <label className="title">{code.title}</label>
-                                    <label>{code.subtitle}</label>
+                                    <label className="subtitle">{code.subtitle}</label>
                                 </body>
                                 <footer is="x3s">
                                     <info is="x3s">
@@ -130,7 +144,7 @@ const GetStartedModal = ({ handleClose, handleConfirm, handleCloneClick }) => {
                         colorType={'white'}
                         backgroundColorType={'purple'}
                         radiusType={'circle'}
-                        // onClick={currentStep === steps.length - 1 ? handleConfirm : handleNext}
+                        onClick={() => skipGetStarted()} //Send to endpoint
                         fontWeight={600}
                         fontSize={'12px'}
                     />

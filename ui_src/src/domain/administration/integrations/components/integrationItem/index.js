@@ -16,6 +16,7 @@ import React, { useState, useEffect, useContext, useRef } from 'react';
 import { useHistory } from 'react-router-dom';
 import { ReactComponent as IntegratedIcon } from '../../../../../assets/images/integrated.svg';
 import { ReactComponent as IntegrationFailedIcon } from '../../../../../assets/images/integrationFailed.svg';
+import { ReactComponent as MemphisVerifiedIcon } from '../../../../../assets/images/memphisFunctionIcon.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
 import { Context } from '../../../../../hooks/store';
 import Modal from '../../../../../components/modal';
@@ -27,7 +28,6 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
-import LockFeature from '../../../../../components/lockFeature';
 import { Drawer } from 'antd';
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
@@ -147,20 +147,14 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                         <p>Integration Failed</p>
                     </div>
                 )}
-
-                {lockFeature && (
-                    <div className="lock-wrapper">
-                        <div className="opacity-background" />
-                        <div className="lock-integration">
-                            <LockFeature header="Storage tiering" />
-                        </div>
-                    </div>
-                )}
                 <div className="integration-name">
                     {value?.icon}
                     <div className="details">
                         <p>{value?.name}</p>
-                        <span>by {value?.by}</span>
+                        <span className="by">
+                            <MemphisVerifiedIcon />
+                            <label className="memphis">{value?.by}</label>
+                        </span>
                     </div>
                 </div>
                 <p className="integration-description">{value?.description} </p>

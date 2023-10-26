@@ -100,6 +100,19 @@ integ-item {
             font-family: 'InterMedium';
             color: rgba(74, 73, 92, 0.8);
         }
+        .by {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            svg {
+                width: 14px;
+                margin: 0px;
+            }
+        }
+        .memphis {
+            color: #6557ff;
+            font-weight: 'InterSemiBold';
+        }
     }
     .integration-description {
         margin: 0px 15px;
@@ -145,10 +158,33 @@ integ-item {
                 .by {
                     display: flex;
                     gap: 6px;
+                    align-items: center;
                     svg {
                         width: 14px;
                         margin: 0px;
                     }
+                }
+                .memphis {
+                    color: #6557ff;
+                    font-weight: 'InterSemiBold';
+                }
+                .open-source {
+                    color: #cc5de8;
+                    background: rgba(204, 93, 232, 0.15);
+                    border-radius: 4px;
+                    padding: 2px 5px;
+                }
+                .cloud {
+                    color: #6557ff;
+                    background: rgba(101, 87, 255, 0.15);
+                    border-radius: 4px;
+                    padding: 2px 5px;
+                }
+                .disable {
+                    color: #737373;
+                    background: rgba(115, 115, 115, 0.15);
+                    border-radius: 4px;
+                    padding: 2px 5px;
                 }
                 margin-left: 10px;
                 p {

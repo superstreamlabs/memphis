@@ -20,7 +20,6 @@ import {
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_FULL_NAME,
     LOCAL_STORAGE_USER_NAME,
-    LOCAL_STORAGE_SKIP_GET_STARTED,
     LOCAL_STORAGE_BROKER_HOST,
     LOCAL_STORAGE_ENV,
     LOCAL_STORAGE_ACCOUNT_ID,
@@ -200,7 +199,7 @@ function OverView() {
                     <Loader />
                 </div>
             )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) === 'true' && (
+            {!isLoading && (
                 <div className="overview-wrapper">
                     <div className="header">
                         <div className="header-welcome">
@@ -293,9 +292,6 @@ function OverView() {
                         <StreamLineage setExpended={(e) => setExpend(e)} expend={lineageExpend} />
                     )}
                 </div>
-            )}
-            {!isLoading && localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && (
-                <GetStarted username={username} dataSentence={dataSentence} skip={() => getOverviewData()} />
             )}
             <Modal
                 header={
