@@ -16,9 +16,10 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
+import { BsFillChatSquareTextFill } from 'react-icons/bs';
 import { useHistory, Link } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
-
+import CloudMoadl from '../cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_AVATAR_ID,
@@ -89,6 +90,7 @@ function SideBar() {
     const [popoverOpenSupportContextMenu, setPopoverOpenSupportContextMenu] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const getCompanyLogo = useCallback(async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_COMPANY_LOGO);
@@ -259,14 +261,17 @@ function SideBar() {
                 </div>
             </div>
             {!isCloud() && (
-                <div className="item-wrap">
-                    <div className="item">
-                        <span className="icons">
-                            <BsFillChatSquareTextFill className="icons-sidebar" />
-                        </span>
-                        <p className="item-title">Open service request</p>
+                <>
+                    <div className="item-wrap" onClick={() => setCloudModalOpen(true)}>
+                        <div className="item">
+                            <span className="icons">
+                                <BsFillChatSquareTextFill className="icons-sidebar" />
+                            </span>
+                            <p className="item-title">Open service request</p>
+                        </div>
                     </div>
-                </div>
+                    <CloudMoadl type="oss" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+                </>
             )}
             {isCloud() && (
                 <div className="item-wrap">
@@ -425,10 +430,10 @@ function SideBar() {
                 </div>
                 <Popover
                     title={
-                        <span className="support-header">
+                        <div className="support-header">
                             <SupportColorIcon alt="SupportIcon" width={18} height={18} />
                             <label className="username">Support</label>
-                        </span>
+                        </div>
                     }
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
@@ -438,7 +443,6 @@ function SideBar() {
                     open={popoverOpenSupportContextMenu}
                 >
                     <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                        {' '}
                         {hoveredItem === 'support' ? (
                             <SupportColorIcon alt="SupportIcon" width={20} height={20} />
                         ) : (
