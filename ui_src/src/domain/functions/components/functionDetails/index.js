@@ -48,7 +48,7 @@ import { code } from './code';
 
 const files = ['domain', 'components', 'domain/functions/functionDetails/index.js', 'domain/functions/functionDetails/style.scss', 'domain/components/test.js'];
 
-function FunctionDetails({ selectedFunction, integrated }) {
+function FunctionDetails({ selectedFunction, installed }) {
     const [open, setOpen] = useState(false);
     const [tabValue, setTabValue] = useState('Details');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
@@ -158,15 +158,15 @@ function FunctionDetails({ selectedFunction, integrated }) {
                     <actions is="x3d">
                         <div className="action-section-btn">
                             <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || selectedFunction?.in_progress || !selectedFunction?.is_installed} />
+                                <AttachTooltip disabled={!isCloud() || selectedFunction?.install_in_progress || !installed} />
                                 {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                             <div className="header-flex">
                                 <Button
                                     placeholder={
-                                        selectedFunction?.in_progress ? (
+                                        selectedFunction?.install_in_progress ? (
                                             ''
-                                        ) : selectedFunction?.is_installed ? (
+                                        ) : installed ? (
                                             <div className="code-btn">
                                                 <MdOutlineFileDownloadOff className="Uninstall" />
                                                 <label>Uninstall</label>
@@ -179,7 +179,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                         )
                                     }
                                     width={'100px'}
-                                    backgroundColorType={selectedFunction?.is_installed ? 'purple-light' : 'purple'}
+                                    backgroundColorType={installed ? 'purple-light' : 'purple'}
                                     colorType={'white'}
                                     radiusType={'circle'}
                                     fontSize="12px"
@@ -188,8 +188,8 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                         // installFunction() - not implemented yet
                                         return;
                                     }}
-                                    isLoading={selectedFunction?.in_progress}
-                                    disabled={!isCloud() || selectedFunction?.in_progress}
+                                    isLoading={selectedFunction?.install_in_progress}
+                                    disabled={!isCloud() || selectedFunction?.install_in_progress}
                                 />
                                 {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
@@ -205,7 +205,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             value={`Version: ${selectedVersion}`}
-                            disabled={!isCloud() || !selectedFunction?.is_installed}
+                            disabled={!isCloud() || !installed}
                             onChange={(e) => {
                                 setSelectedVersion(e);
                             }}
@@ -303,7 +303,7 @@ function FunctionDetails({ selectedFunction, integrated }) {
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!isCloud() || !selectedFunction?.is_installed}
+                                disabled={!isCloud() || !installed}
                             />
                             <div className="code-content">
                                 <Editor

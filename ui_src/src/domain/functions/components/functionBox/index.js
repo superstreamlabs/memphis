@@ -32,7 +32,7 @@ import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
 import AttachTooltip from '../AttachTooltip';
 
-function FunctionBox({ funcDetails, integrated }) {
+function FunctionBox({ funcDetails, integrated, installed }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
@@ -122,7 +122,7 @@ function FunctionBox({ funcDetails, integrated }) {
                             className="install-button"
                         >
                             <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || functionDetails?.in_progress || !functionDetails?.is_installed} />
+                                <AttachTooltip disabled={!isCloud() || functionDetails?.install_in_progress || !installed} />
                                 {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                             <div className="header-flex">
@@ -130,9 +130,9 @@ function FunctionBox({ funcDetails, integrated }) {
                                     width="100px"
                                     height="34px"
                                     placeholder={
-                                        functionDetails?.in_progress ? (
+                                        functionDetails?.install_in_progress ? (
                                             ''
-                                        ) : functionDetails?.is_installed ? (
+                                        ) : installed ? (
                                             <div className="code-btn">
                                                 <MdOutlineFileDownloadOff className="Uninstall" />
                                                 <label>Uninstall</label>
@@ -147,11 +147,11 @@ function FunctionBox({ funcDetails, integrated }) {
                                     purple-light
                                     colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType={functionDetails?.is_installed ? 'purple-light' : 'purple'}
+                                    backgroundColorType={installed ? 'purple-light' : 'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={!isCloud() || functionDetails?.in_progress}
-                                    isLoading={functionDetails?.in_progress} //Get indication after install function
+                                    disabled={!isCloud() || functionDetails?.install_in_progress}
+                                    isLoading={functionDetails?.install_in_progress} //Get indication after install function
                                     onClick={() => {
                                         showMessages('success', 'Install function');
                                         return;
@@ -176,7 +176,7 @@ function FunctionBox({ funcDetails, integrated }) {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} />
+                <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} installed={installed} />
             </Drawer>
         </>
     );
