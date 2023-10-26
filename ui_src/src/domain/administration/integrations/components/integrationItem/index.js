@@ -83,6 +83,7 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                             setIntegrateValue(data);
                         }}
                         value={ref.current}
+                        lockFeature={lockFeature}
                     />
                 );
             case 'Datadog':

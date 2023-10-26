@@ -27,8 +27,9 @@ import Loader from '../../../../../components/loader';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
+import { FaArrowUp } from 'react-icons/fa';
 
-const S3Integration = ({ close, value }) => {
+const S3Integration = ({ close, value, lockFeature }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
@@ -381,7 +382,16 @@ const S3Integration = ({ close, value }) => {
                                 <Button
                                     width="500px"
                                     height="45px"
-                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    placeholder={
+                                        isValue ? (
+                                            'Update'
+                                        ) : (
+                                            <span>
+                                                <label>Connect </label>
+                                                {lockFeature && <FaArrowUp />}
+                                            </span>
+                                        )
+                                    }
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"
