@@ -87,9 +87,10 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 		return functionsDetails, err
 	}
 
-	for k, directoryContent := range repoContent {
+	countFunctions := 0
+	for _, directoryContent := range repoContent {
 		// In order to restrict the api calls per repo
-		if k == 10 {
+		if countFunctions == 10 {
 			break
 		}
 		if directoryContent.GetType() == "dir" {
@@ -105,6 +106,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 				var commit *github.RepositoryCommit
 				var contentMap map[string]interface{}
 				if *fileContent.Type == "file" && *fileContent.Name == "memphis.yaml" {
+					countFunctions++
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, &github.RepositoryContentGetOptions{
 						Ref: branch})
 					if err != nil {
