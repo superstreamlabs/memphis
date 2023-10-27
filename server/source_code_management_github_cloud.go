@@ -106,7 +106,6 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 				var commit *github.RepositoryCommit
 				var contentMap map[string]interface{}
 				if *fileContent.Type == "file" && *fileContent.Name == "memphis.yaml" {
-					countFunctions++
 					content, _, _, err = client.Repositories.GetContents(context.Background(), owner, repo, *fileContent.Path, &github.RepositoryContentGetOptions{
 						Ref: branch})
 					if err != nil {
@@ -168,6 +167,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					}
 
 					if isValidFileYaml {
+						countFunctions++
 						fileDetails := functionDetails{
 							Commit:       commit,
 							ContentMap:   contentMap,
