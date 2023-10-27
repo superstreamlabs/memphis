@@ -50,7 +50,7 @@ func (fh FunctionsHandler) GetAllFunctions(c *gin.Context) {
 		}
 	}
 
-	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "other": functionsResult.OtherFunctions, "installed": functionsResult.InstallFunctions, "connected_repos": functionsResult.ConnectedRepos})
+	c.IndentedJSON(200, gin.H{"scm_integrated": functionsResult.ScmIntegrated, "other": functionsResult.OtherFunctions, "installed": functionsResult.InstalledFunctions, "connected_repos": functionsResult.ConnectedRepos})
 }
 
 func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes, error) {
@@ -62,12 +62,8 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	if err != nil {
 		return models.FunctionsRes{}, err
 	}
-	if len(functions) > 10 {
-		functions["install"] = functions["install"][:10]
-		functions["other"] = functions["other"][:10]
-	}
 
-	installedFunctions := functions["install"]
+	installedFunctions := functions["installed"]
 	OtherFunctions := functions["other"]
 	if len(installedFunctions) == 0 {
 		installedFunctions = []models.FunctionsResult{}
@@ -81,10 +77,10 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	memphisDevFucntions = append(memphisDevFucntions, memphisFunctions)
 
 	allFunctions := models.FunctionsRes{
-		InstallFunctions: installedFunctions,
-		OtherFunctions:   OtherFunctions,
-		ScmIntegrated:    scmIntegrated,
-		ConnectedRepos:   memphisDevFucntions,
+		InstalledFunctions: installedFunctions,
+		OtherFunctions:     OtherFunctions,
+		ScmIntegrated:      scmIntegrated,
+		ConnectedRepos:     memphisDevFucntions,
 	}
 
 	return allFunctions, nil
@@ -275,7 +271,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			}
 
 			byMemphis := false
-			if repo == memphisDevFunctionsRepoName {
+			if repo == memphisDevFunctionsRepoName && owner == memphisDevFunctionsOwnerName {
 				byMemphis = true
 			}
 

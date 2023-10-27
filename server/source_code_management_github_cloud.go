@@ -87,7 +87,11 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 		return functionsDetails, err
 	}
 
-	for _, directoryContent := range repoContent {
+	for k, directoryContent := range repoContent {
+		// In order to restrict the api calls per repo
+		if k == 10 {
+			break
+		}
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, &github.RepositoryContentGetOptions{
 				Ref: branch})
