@@ -40,7 +40,7 @@ import CloudOnly from '../../../../components/cloudOnly';
 import FunctionBox from '../functionBox';
 import IntegrateFunction from '../integrateFunction';
 import FunctionsGuide from '../functionsGuide';
-import CloneModal from '../cloneModal';
+import CloneModal from '../../../../components/cloneModal';
 import { OWNER } from '../../../../const/globalConst';
 import { Collapse, Divider, Popover } from 'antd';
 import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';

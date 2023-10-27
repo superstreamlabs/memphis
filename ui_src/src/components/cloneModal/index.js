@@ -12,11 +12,11 @@
 
 import './style.scss';
 import React, { useState } from 'react';
-import Button from '../../../../components/button';
+import Button from '../button';
 import { FiDownload } from 'react-icons/fi';
-import Copy from '../../../../components/copy';
-import CustomTabs from '../../../../components/Tabs';
-import { githubUrls } from '../../../../const/globalConst';
+import Copy from '../copy';
+import CustomTabs from '../Tabs';
+import { githubUrls } from '../../const/globalConst';
 
 const CloneModal = () => {
     const [tabValue, setTabValue] = useState('HTTPS');
