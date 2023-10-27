@@ -256,8 +256,6 @@ function FunctionList({ tabPrivate }) {
         );
     };
     const renderContent = () => {
-        console.log(filteredInstalledData);
-        console.log(filteredOtherData);
         const noFunctionsContent = filteredInstalledData?.length === 0 && filteredOtherData?.length ? renderNoFunctionsFound() : null;
         console.log(noFunctionsContent);
         return drawCollapse() || noFunctionsContent;
