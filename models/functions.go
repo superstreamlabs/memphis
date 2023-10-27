@@ -34,8 +34,10 @@ type FunctionsResult struct {
 }
 
 type FunctionsRes struct {
-	Functions     []FunctionsResult `json:"functions"`
-	ScmIntegrated bool              `json:"scm_integrated"`
+	InstallFunctions []FunctionsResult        `json:"install_functions"`
+	OtherFunctions   []FunctionsResult        `json:"other_functions"`
+	ScmIntegrated    bool                     `json:"scm_integrated"`
+	ConnectedRepos   []map[string]interface{} `json:"connected_repos"`
 }
 
 type GetFunctionDetails struct {

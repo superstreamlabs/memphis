@@ -73,7 +73,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -170,7 +170,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 							Owner:        owner,
 							DirectoryUrl: directoryContent.HTMLURL,
 						}
-						functionsDetails = append(functionsDetails, fileDetails)
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
 				}

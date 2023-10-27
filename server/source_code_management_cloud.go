@@ -35,7 +35,7 @@ func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, acti
 	return models.Integration{}, map[string]string{}, nil
 }
 
-func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails []functionDetails) ([]functionDetails, error) {
+func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
 	var err error
 	contentDetails, err = GetGithubContentFromConnectedRepo(connectedRepo, contentDetails)
 	if err != nil {
@@ -55,8 +55,8 @@ func getConnectedSourceCodeRepos(tenantName string) (map[string][]interface{}, b
 	return selectedReposPerSourceCodeIntegration, scmIntegrated
 }
 
-func GetContentOfSelectedRepos(tenantName string) ([]functionDetails, bool, error) {
-	contentDetails := []functionDetails{}
+func GetContentOfSelectedRepos(tenantName string) (map[string][]functionDetails, bool, error) {
+	contentDetails := map[string][]functionDetails{}
 	connectedRepos, scmIntegrated := getConnectedSourceCodeRepos(tenantName)
 	var err error
 	for _, connectedRepoPerIntegration := range connectedRepos {
