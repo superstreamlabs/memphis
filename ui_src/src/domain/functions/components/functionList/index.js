@@ -40,7 +40,7 @@ import CloudOnly from '../../../../components/cloudOnly';
 import FunctionBox from '../functionBox';
 import IntegrateFunction from '../integrateFunction';
 import FunctionsGuide from '../functionsGuide';
-import CloneModal from '../cloneModal';
+import CloneModal from '../../../../components/cloneModal';
 import { OWNER } from '../../../../const/globalConst';
 import { Collapse, Divider, Popover } from 'antd';
 import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';
@@ -72,8 +72,10 @@ function FunctionList({ tabPrivate }) {
     const [modalIsOpen, modalFlip] = useState(false);
     const [cloneTooltipIsOpen, cloneTooltipIsOpenFlip] = useState(false);
     const [integrated, setIntegrated] = useState(false);
-    const [functionList, setFunctionList] = useState([]);
-    const [filteredData, setFilteredData] = useState([]);
+    const [installedFunctionList, setInstalledFunctionList] = useState([]);
+    const [otherFunctionList, setOtherFunctionList] = useState([]);
+    const [filteredInstalledData, setFilteredInstalledData] = useState([]);
+    const [filteredOtherData, setFilteredOtherData] = useState([]);
     const [searchInput, setSearchInput] = useState('');
     const [tabValue, setTabValue] = useState(tabPrivate ? 'Private' : 'All');
     const [isFunctionsGuideOpen, setIsFunctionsGuideOpen] = useState(false);
@@ -127,26 +129,20 @@ function FunctionList({ tabPrivate }) {
 
     useEffect(() => {
         getAllFunctions();
-        isCloud() && getIntegrationDetails();
         if (localStorage.getItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW) !== 'true' && isCloud()) {
             setIsFunctionsGuideOpen(true);
             localStorage.setItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW, true);
         }
     }, []);
 
-    const getIntegrationDetails = async () => {
-        try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_INTEGRATION_DETAILS}?name=github`);
-            setConnectedRepos(data?.integration?.keys?.connected_repos || []);
-        } catch (error) {}
-    };
-
     const getAllFunctions = async () => {
         setisLoading(true);
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data?.scm_integrated);
-            setFunctionList(data?.functions || []);
+            setInstalledFunctionList(data?.installed);
+            setOtherFunctionList(data?.other);
+            setConnectedRepos(data?.connected_repos);
             setTimeout(() => {
                 setisLoading(false);
             }, 500);
@@ -161,20 +157,28 @@ function FunctionList({ tabPrivate }) {
     };
 
     useEffect(() => {
-        let results = functionList;
+        let resultsInstalled = installedFunctionList;
+        let resultsOther = otherFunctionList;
         if (tabValue === 'Private') {
-            results = results.filter((func) => func?.owner !== OWNER);
+            resultsInstalled = resultsInstalled.filter((func) => func?.owner !== OWNER);
+            resultsOther = resultsOther.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
-            results = results.filter((func) => func?.owner === OWNER);
+            resultsInstalled = resultsInstalled.filter((func) => func?.owner === OWNER);
+            resultsOther = resultsOther.filter((func) => func?.owner === OWNER);
         }
         if (searchInput.length > 0) {
-            results = results.filter(
+            resultsInstalled = resultsInstalled.filter(
+                (func) =>
+                    func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
+            );
+            resultsOther = resultsOther.filter(
                 (func) =>
                     func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) || func?.description?.toLowerCase()?.includes(searchInput.toLowerCase())
             );
         }
-        setFilteredData(results);
-    }, [tabValue, searchInput, functionList]);
+        setFilteredInstalledData(resultsInstalled);
+        setFilteredOtherData(resultsOther);
+    }, [tabValue, searchInput, installedFunctionList, otherFunctionList]);
 
     const handleSearch = (e) => {
         setSearchInput(e.target.value);
@@ -196,35 +200,31 @@ function FunctionList({ tabPrivate }) {
     );
 
     const renderFunctionBoxes = (filter) =>
-        !integrated ? (
+        !isCloud() ? (
             <>
-                {filteredData?.map((func, index) => (
+                {filteredOtherData?.map((func, index) => (
                     <FunctionBox key={index} funcDetails={func} integrated={integrated} />
                 ))}
             </>
         ) : filter === 'installed' ? (
             <>
-                {filteredData
-                    .filter((func) => func?.is_installed)
-                    ?.map((func, index) => (
-                        <FunctionBox key={index} funcDetails={func} integrated={integrated} />
-                    ))}
+                {filteredInstalledData?.map((func, index) => (
+                    <FunctionBox key={index} funcDetails={func} integrated={integrated} installed />
+                ))}
             </>
         ) : (
             <>
-                {filteredData
-                    .filter((func) => !func?.is_installed)
-                    ?.map((func, index) => (
-                        <FunctionBox key={index} funcDetails={func} integrated={integrated} />
-                    ))}
+                {filteredOtherData?.map((func, index) => (
+                    <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                ))}
             </>
         );
 
     const drawCollapse = () => {
         if (isCloud() && tabValue === 'Private' && !integrated) return <IntegrateFunction onClick={() => setIsFunctionsGuideOpen(true)} />;
-        const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
-        const installedFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
-        const otherFunctionBoxesContent = filteredData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
+        const noFunctionsContent = filteredInstalledData?.length === 0 && filteredOtherData === 0 ? renderNoFunctionsFound() : null;
+        const installedFunctionBoxesContent = filteredInstalledData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('installed')}</div> : null;
+        const otherFunctionBoxesContent = filteredOtherData?.length !== 0 ? <div className="cards-wrapper">{renderFunctionBoxes('other')}</div> : null;
 
         if (!installedFunctionBoxesContent && !otherFunctionBoxesContent) return null;
         return (
@@ -239,25 +239,14 @@ function FunctionList({ tabPrivate }) {
                     <>
                         <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
                             <Panel
-                                header={
-                                    <div className="panel-header">{`Installed ${
-                                        filteredData?.length > 0 && `(${filteredData.filter((func) => func?.is_installed)?.length})`
-                                    }`}</div>
-                                }
+                                header={<div className="panel-header">{`Installed ${filteredInstalledData?.length > 0 && `(${filteredInstalledData?.length})`}`}</div>}
                                 key={1}
                             >
                                 <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
                         <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel
-                                header={
-                                    <div className="panel-header">{`Other ${
-                                        filteredData?.length > 0 && `(${filteredData.filter((func) => !func?.is_installed)?.length})`
-                                    }`}</div>
-                                }
-                                key={2}
-                            >
+                            <Panel header={<div className="panel-header">{`Other ${filteredOtherData?.length > 0 && `(${filteredOtherData?.length})`}`}</div>} key={2}>
                                 <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
@@ -267,7 +256,7 @@ function FunctionList({ tabPrivate }) {
         );
     };
     const renderContent = () => {
-        const noFunctionsContent = filteredData?.length === 0 ? renderNoFunctionsFound() : null;
+        const noFunctionsContent = filteredInstalledData?.length === 0 && filteredOtherData?.length ? renderNoFunctionsFound() : null;
         return drawCollapse() || noFunctionsContent;
     };
 

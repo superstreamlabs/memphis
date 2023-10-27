@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.9998df55.css",
-    "main.js": "/static/js/main.074aa23f.js",
+    "main.css": "/static/css/main.0bc6844b.css",
+    "main.js": "/static/js/main.f8f1d067.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -148,7 +148,6 @@
     "static/media/integrationIconColor.svg": "/static/media/integrationIconColor.a55aa8f85e8499c0c2bcdc72e2dea1a2.svg",
     "static/media/DeadLetteredMessages.svg": "/static/media/DeadLetteredMessages.585f63bd9ae514421daf68c91edb41c1.svg",
     "static/media/Calendar.svg": "/static/media/Calendar.af439a1c292c3e762d5df5de98f89502.svg",
-    "static/media/githubActiveConnectionIcon.svg": "/static/media/githubActiveConnectionIcon.4abfbab3c31279e5ab8a42b0a92909cb.svg",
     "static/media/signup.svg": "/static/media/signup.c41faf7613261ce831d03037fb47806b.svg",
     "static/media/editIcon.svg": "/static/media/editIcon.1bc57053f82f152a5ea3301ae06862cd.svg",
     "static/media/githubBranchIcon.svg": "/static/media/githubBranchIcon.584358d0c1bebd525947ddc5abc29bf3.svg",
@@ -209,6 +208,7 @@
     "static/media/UIHostname.svg": "/static/media/UIHostname.b2ab65aacef8f92173d8a888cfba0978.svg",
     "static/media/errorModal.svg": "/static/media/errorModal.56ec5d38d44a26bcd6582fe4a2df085f.svg",
     "static/media/typeIcon.svg": "/static/media/typeIcon.e663a2d8562816001bdd4feae921295d.svg",
+    "static/media/purpleQuestionMark.svg": "/static/media/purpleQuestionMark.618465703f77864c6b5364e691143575.svg",
     "static/media/backIcon.svg": "/static/media/backIcon.be12eb6ec289ed5a4dc8d64dd8adec0f.svg",
     "static/media/repoPurple.svg": "/static/media/repoPurple.28e50d61834d16d583ffea7e2bc2fd49.svg",
     "static/media/disconAlertIcon.svg": "/static/media/disconAlertIcon.264ca4be9b5847e8305d5526a988f29c.svg",
@@ -308,7 +308,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.9998df55.css",
-    "static/js/main.074aa23f.js"
+    "static/css/main.0bc6844b.css",
+    "static/js/main.f8f1d067.js"
   ]
 }
