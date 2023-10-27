@@ -317,7 +317,7 @@ function SideBar() {
                     <span className="icons">
                         <BsHouseHeartFill className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Welcome info</p>
+                    <p className="item-title">Getting started</p>
                 </div>
             </div>
         </div>

@@ -18,7 +18,9 @@ import Button from '../button';
 import Input from '../Input';
 import { CONNECT_APP_VIDEO } from '../../config';
 import ConnectBG from '../../assets/images/connectBG.webp';
+import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
 import Modal from '../modal';
+import CloneModal from '../cloneModal';
 import { Divider } from 'antd';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
@@ -40,6 +42,7 @@ const codeList = [
 const GetStartedModal = ({ open, handleClose }) => {
     const [chosenUseCase, setUseCase] = useState('');
     const [manualUseCase, setManualUseCase] = useState('');
+    const [openCloneModal, setOpenCloneModal] = useState(false);
 
     const handleSelectUseCase = (useCase) => {
         setUseCase(useCase);
@@ -113,7 +116,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                 <Divider plain>Or start with an example application</Divider>
                 {codeList?.map((code, index) => {
                     return (
-                        <tutorial is="x3s" key={index}>
+                        <tutorial is="x3s" key={index} onClick={() => setOpenCloneModal(true)}>
                             <div className="left-purple"></div>
                             <data is="x3s">
                                 <header is="x3s">TUTORIAL</header>
@@ -150,6 +153,15 @@ const GetStartedModal = ({ open, handleClose }) => {
                     />
                 </div>
             </div>
+            <Modal
+                header={<CloneModalIcon alt="cloneModalIcon" />}
+                width="540px"
+                displayButtons={false}
+                clickOutside={() => setOpenCloneModal(false)}
+                open={openCloneModal}
+            >
+                <CloneModal />
+            </Modal>
         </Modal>
     );
 };
