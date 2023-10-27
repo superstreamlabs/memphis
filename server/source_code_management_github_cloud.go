@@ -73,7 +73,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -87,7 +87,12 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 		return functionsDetails, err
 	}
 
+	countFunctions := 0
 	for _, directoryContent := range repoContent {
+		// In order to restrict the api calls per repo
+		if countFunctions == 10 {
+			break
+		}
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, &github.RepositoryContentGetOptions{
 				Ref: branch})
@@ -138,6 +143,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					}
 
 					if isValidFileYaml {
+						countFunctions++
 						fileDetails := functionDetails{
 							Content:    content,
 							Commit:     commit,
@@ -146,7 +152,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 							Branch:     branch,
 							Owner:      owner,
 						}
-						functionsDetails = append(functionsDetails, fileDetails)
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
 				}
