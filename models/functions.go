@@ -14,25 +14,30 @@ package models
 import "time"
 
 type FunctionsResult struct {
-	FunctionName    string            `json:"function_name"`
-	Description     string            `json:"description"`
-	Tags            []string          `json:"tags"`
-	RunTime         string            `json:"runtime"`
-	Memory          int               `json:"memory"`
-	Storgae         int               `json:"storgae"`
-	LastCommit      time.Time         `json:"last_commit"`
-	Link            string            `json:"link"`
-	Repository      string            `json:"repository"`
-	Branch          string            `json:"branch"`
-	Owner           string            `json:"owner"`
-	EnvironmentVars map[string]string `json:"environment_vars"`
-	ScmType         string            `json:"scm_type"`
-	Language        string            `json:"language"`
+	FunctionName      string            `json:"function_name"`
+	Description       string            `json:"description"`
+	Tags              []string          `json:"tags"`
+	RunTime           string            `json:"runtime"`
+	Memory            int               `json:"memory"`
+	Storgae           int               `json:"storgae"`
+	LastCommit        time.Time         `json:"last_commit"`
+	Link              *string           `json:"link"`
+	Repository        string            `json:"repository"`
+	Branch            string            `json:"branch"`
+	Owner             string            `json:"owner"`
+	EnvironmentVars   map[string]string `json:"environment_vars"`
+	ScmType           string            `json:"scm_type"`
+	Language          string            `json:"language"`
+	InstallInProgress bool              `json:"install_in_progress"`
+	UpdatesAvailable  bool              `json:"updates_available"`
+	ByMemphis         bool              `json:"by_memphis"`
 }
 
 type FunctionsRes struct {
-	Functions     []FunctionsResult `json:"functions"`
-	ScmIntegrated bool              `json:"scm_integrated"`
+	InstalledFunctions []FunctionsResult        `json:"installed_functions"`
+	OtherFunctions     []FunctionsResult        `json:"other_functions"`
+	ScmIntegrated      bool                     `json:"scm_integrated"`
+	ConnectedRepos     []map[string]interface{} `json:"connected_repos"`
 }
 
 type GetFunctionDetails struct {

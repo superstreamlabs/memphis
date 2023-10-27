@@ -73,7 +73,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -87,7 +87,12 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 		return functionsDetails, err
 	}
 
+	countFunctions := 0
 	for _, directoryContent := range repoContent {
+		// In order to restrict the api calls per repo
+		if countFunctions == 10 {
+			break
+		}
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, &github.RepositoryContentGetOptions{
 				Ref: branch})
@@ -125,6 +130,30 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						contentMap["storage"] = int64(512) * 1024 * 1024
 					}
 
+					// TODO: need to add according to the cloud changes
+					// if contentMap["dependencies"].(string) == "" {
+					// 	switch contentMap["language"] {
+					// 	case "go":
+					// 		contentMap["dependencies"] = "go.mod"
+					// 	case "nodejs":
+					// 		contentMap["dependencies"] = "package.json"
+					// 	case "python":
+					// 		contentMap["dependencies"] = "req.txt"
+					// 	}
+					// }
+
+					// splitPath := strings.Split(*fileContent.Path, "/")
+					// path := strings.TrimSpace(splitPath[0])
+					// if path != contentMap["function_name"].(string) {
+					// 	// errMsg := fmt.Sprintf("In the repository %s, there was an incompatibility between the function name in the git %s and the function name in the YAML file %s", repo, splitPath[0], contentMap["function_name"].(string))
+					// 	continue
+					// }
+					// if strings.Contains(path, "") {
+					// 	// errMsg := fmt.Sprintf("In the repository %s, the function name in the yaml %s can't contains spaces", repo, contentMap["function_name"].(string))
+					// 	continue
+					// }
+					//
+
 					err = validateYamlContent(contentMap)
 					if err != nil {
 						isValidFileYaml = false
@@ -138,15 +167,16 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					}
 
 					if isValidFileYaml {
+						countFunctions++
 						fileDetails := functionDetails{
-							Content:    content,
-							Commit:     commit,
-							ContentMap: contentMap,
-							RepoName:   repo,
-							Branch:     branch,
-							Owner:      owner,
+							Commit:       commit,
+							ContentMap:   contentMap,
+							RepoName:     repo,
+							Branch:       branch,
+							Owner:        owner,
+							DirectoryUrl: directoryContent.HTMLURL,
 						}
-						functionsDetails = append(functionsDetails, fileDetails)
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
 				}
