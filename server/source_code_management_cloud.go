@@ -22,13 +22,13 @@ type GetSourceCodeBranchesSchema struct {
 }
 
 type functionDetails struct {
-	DirectoryUrl *string                  `json:"directory_content"`
-	Commit       *github.RepositoryCommit `json:"commit"`
-	ContentMap   map[string]interface{}   `json:"content_map"`
-	RepoName     string                   `json:"repo_name"`
-	Branch       string                   `json:"branch"`
-	Scm          string                   `json:"scm"`
-	Owner        string                   `json:"owner"`
+	Content    *github.RepositoryContent `json:"content"`
+	Commit     *github.RepositoryCommit  `json:"commit"`
+	ContentMap map[string]interface{}    `json:"content_map"`
+	RepoName   string                    `json:"repo_name"`
+	Branch     string                    `json:"branch"`
+	Scm        string                    `json:"scm"`
+	Owner      string                    `json:"owner"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
