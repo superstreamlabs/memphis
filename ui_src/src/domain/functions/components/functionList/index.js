@@ -86,35 +86,22 @@ function FunctionList({ tabPrivate }) {
 
     const content = (
         <div className="git-repos-list">
-            <div>
-                <div className="git-repos-item">
-                    <div className="left-section">
-                        <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
-                        <span className="repo-data">
-                            <OverflowTip text="memphis-dev-functions" center={false}>
-                                memphis-dev-functions
-                            </OverflowTip>
-                            <OverflowTip text="master" width={'170px'} center={false}>
-                                <label className="last-modified">master</label>
-                            </OverflowTip>
-                        </span>
-                        <MdDone alt="Healty" />
-                    </div>
-                </div>
-                <Divider />
-            </div>
             {connectedRepos?.map((repo, index) => (
                 <div key={index}>
                     <div className="git-repos-item">
                         <div className="left-section">
-                            <RepoIcon alt="repo" className="repo-item-icon" />
+                            {repo?.repo_owner === OWNER ? (
+                                <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
+                            ) : (
+                                <RepoIcon alt="repo" className="repo-item-icon" />
+                            )}
                             <span className="repo-data">
                                 <OverflowTip text={repo?.repo_name} center={false}>
                                     {repo?.repo_name}
                                 </OverflowTip>
-                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_stnc, false, false)}`} width={'170px'} center={false}>
+                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_sync, false, false)}`} width={'170px'} center={false}>
                                     <label className="last-modified">
-                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_stnc, false, false)}
+                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_sync, false, false)}
                                     </label>
                                 </OverflowTip>
                             </span>

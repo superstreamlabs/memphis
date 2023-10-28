@@ -125,90 +125,78 @@ function VersionUpgrade() {
 
     return (
         <div className="version-upgrade-container">
-            {state.isLatest ? (
-                <>
-                    {' '}
-                    <div className="uptodate-section">
-                        <UpdateIcon alt="updateIcon" />
-                        <div className="content">
-                            <p>You are up to date.</p>
-                            <span>Memphis.dev version v{state.currentVersion} is the latest version available.</span>
-                        </div>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <div className="banner-section">
-                        <div className="banner-section-inner">
-                            <UpgradeBannerIcon className="banner-section-inner-svg" alt="upgradeBannerIcon" width="100%" />
-                            <div className="actions">
-                                <div className="current-version-wrapper">
-                                    <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
-                                        <p className="current-version">Current Version: v{state.currentVersion}</p>
-                                    </version>
+            <>
+                <div className="banner-section">
+                    <div className="banner-section-inner">
+                        <UpgradeBannerIcon className="banner-section-inner-svg" alt="upgradeBannerIcon" width="100%" />
+                        <div className="actions">
+                            <div className="current-version-wrapper">
+                                <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
+                                    <p className="current-version">Current Version: v{state.currentVersion}</p>
+                                </version>
+                            </div>
+                            <div className="logo">
+                                <FullLogoIcon alt="fullLogoIcon" />
+                                <div className="version-wrapper">
+                                    <p>{latestVersion}</p>
                                 </div>
-                                <div className="logo">
-                                    <FullLogoIcon alt="fullLogoIcon" />
-                                    <div className="version-wrapper">
-                                        <p>{latestVersion}</p>
-                                    </div>
-                                </div>
-                                <p className="desc-vers">A new version is available to download</p>
-                                <div className="buttons">
-                                    <Button
-                                        width="180px"
-                                        height="40px"
-                                        placeholder="View Full Changes"
-                                        colorType="black"
-                                        radiusType="circle"
-                                        backgroundColorType="white"
-                                        fontSize="12px"
-                                        fontFamily="InterSemiBold"
-                                        onClick={() => window.open(versionUrl, '_blank')}
-                                    />
-                                    <Button
-                                        width="180px"
-                                        height="40px"
-                                        placeholder="How to upgrade"
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="12px"
-                                        fontFamily="InterSemiBold"
-                                        onClick={() => howToUpgrade()}
-                                    />
-                                </div>
+                            </div>
+                            <p className="desc-vers">A new version is available to download</p>
+                            <div className="buttons">
+                                <Button
+                                    width="180px"
+                                    height="40px"
+                                    placeholder="View Full Changes"
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType="white"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => window.open(versionUrl, '_blank')}
+                                />
+                                <Button
+                                    width="180px"
+                                    height="40px"
+                                    placeholder="How to upgrade"
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => howToUpgrade()}
+                                />
                             </div>
                         </div>
                     </div>
-                    <div className="feature-buttons">
-                        {Object.keys(features)?.map((key) => (
-                            <Button
-                                key={key}
-                                width="180px"
-                                height="40px"
-                                placeholder={key}
-                                colorType={selectedfeatures === key ? 'purple' : 'black'}
-                                radiusType="circle"
-                                border={selectedfeatures !== key && 'gray-light'}
-                                backgroundColorType={selectedfeatures !== key ? 'white' : 'purple-light'}
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => setSelectedfeatures(key)}
-                            />
-                        ))}
-                    </div>
-                    <div className="feature-list">
-                        {isLoading && (
-                            <div className="loading">
-                                <Loader background={false} />
-                            </div>
-                        )}
+                </div>
+                <div className="feature-buttons">
+                    {Object.keys(features)?.map((key) => (
+                        <Button
+                            key={key}
+                            width="180px"
+                            height="40px"
+                            placeholder={key}
+                            colorType={selectedfeatures === key ? 'purple' : 'black'}
+                            radiusType="circle"
+                            border={selectedfeatures !== key && 'gray-light'}
+                            backgroundColorType={selectedfeatures !== key ? 'white' : 'purple-light'}
+                            fontSize="12px"
+                            fontFamily="InterSemiBold"
+                            onClick={() => setSelectedfeatures(key)}
+                        />
+                    ))}
+                </div>
+                <div className="feature-list">
+                    {isLoading && (
+                        <div className="loading">
+                            <Loader background={false} />
+                        </div>
+                    )}
 
-                        {!isLoading && features[selectedfeatures]?.map((feature) => <NoteItem key={feature} feature={feature} />)}
-                    </div>
-                </>
-            )}
+                    {!isLoading && features[selectedfeatures]?.map((feature) => <NoteItem key={feature} feature={feature} />)}
+                </div>
+            </>
+            {/* )} */}
         </div>
     );
 }
