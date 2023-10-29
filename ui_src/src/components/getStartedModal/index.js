@@ -73,7 +73,7 @@ const GetStartedModal = ({ open, handleClose }) => {
             }}
             open={open}
         >
-            <div className="">
+            <div>
                 <div className="title-wrapper">
                     <p className="title">
                         Welcome to <span> Memphis.dev</span>
@@ -86,7 +86,6 @@ const GetStartedModal = ({ open, handleClose }) => {
                 <use-cases is="x3s">
                     <div className="header">
                         <label className="title">Tell us what brings you to Memphis.dev today</label>
-                        <label className="subtitle">We will guide through the system based on your choice</label>
                     </div>
                     <div className="use-cases">
                         {useCases?.map((useCase, index) => {
@@ -113,7 +112,9 @@ const GetStartedModal = ({ open, handleClose }) => {
                         onChange={(e) => handleManualUseCase(e.target.value)}
                     />
                 </use-cases>
-                <Divider plain>Or start with an example application</Divider>
+                <Divider plain>
+                    Or start with an <label className="example-app">example application</label>
+                </Divider>
                 {codeList?.map((code, index) => {
                     return (
                         <tutorial is="x3s" key={index} onClick={() => setOpenCloneModal(true)}>

@@ -239,6 +239,20 @@ function SideBar() {
             <div
                 className="item-wrap"
                 onClick={() => {
+                    setOpenGetStartedModal(true);
+                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <BsHouseHeartFill className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Getting started</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
                     window.open('https://memphis.dev/docs', '_blank');
                 }}
@@ -306,20 +320,6 @@ function SideBar() {
                     </Popover>
                 </div>
             )}
-            <div
-                className="item-wrap"
-                onClick={() => {
-                    setOpenGetStartedModal(true);
-                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
-                }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <BsHouseHeartFill className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Getting started</p>
-                </div>
-            </div>
         </div>
     );
 
