@@ -83,18 +83,23 @@ type ChangePasswordSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type SendTraceSchema struct {
+	TraceName   string                 `json:"trace_name" binding:"required"`
+	TraceParams map[string]interface{} `json:"trace_params" binding:"required"`
+}
+
 type FilteredGenericUser struct {
-	ID              int       `json:"id"`
-	Username        string    `json:"username"`
-	UserType        string    `json:"user_type"`
-	CreatedAt       time.Time `json:"created_at"`
-	AvatarId        int       `json:"avatar_id"`
-	FullName        string    `json:"full_name"`
-	Pending         bool      `json:"pending"`
-	Position        string    `json:"position"`
-	Team            string    `json:"team"`
-	Owner           string    `json:"owner"`
-	Description     string    `json:"description"`
+	ID          int       `json:"id"`
+	Username    string    `json:"username"`
+	UserType    string    `json:"user_type"`
+	CreatedAt   time.Time `json:"created_at"`
+	AvatarId    int       `json:"avatar_id"`
+	FullName    string    `json:"full_name"`
+	Pending     bool      `json:"pending"`
+	Position    string    `json:"position"`
+	Team        string    `json:"team"`
+	Owner       string    `json:"owner"`
+	Description string    `json:"description"`
 }
 
 type FilteredApplicationUser struct {
