@@ -79,9 +79,11 @@ const GetStartedModal = ({ open, handleClose }) => {
 
     const finsihGetStarted = async () => {
         userChosenUseCase();
+        setManualUseCase('');
         if (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') {
             skipGetStarted();
         }
+        handleClose();
     };
 
     return (
@@ -181,7 +183,10 @@ const GetStartedModal = ({ open, handleClose }) => {
                 header={<CloneModalIcon alt="cloneModalIcon" />}
                 width="540px"
                 displayButtons={false}
-                clickOutside={() => setOpenCloneModal(false)}
+                clickOutside={() => {
+                    setManualUseCase('');
+                    setOpenCloneModal(false);
+                }}
                 open={openCloneModal}
             >
                 <CloneModal />
