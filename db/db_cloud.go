@@ -12,7 +12,7 @@
 package db
 
 const testEventsTable = ``
-const installedFunctionsTable = ``
+const functionsTable = ``
 const attachedFunctionsTable = ``
 
 type FunctionSchema struct {

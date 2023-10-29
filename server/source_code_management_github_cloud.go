@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"strings"
 
 	"github.com/memphisdev/memphis/models"
 	"gopkg.in/yaml.v2"
@@ -130,29 +131,16 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						contentMap["storage"] = int64(512) * 1024 * 1024
 					}
 
-					// TODO: need to add according to the cloud changes
-					// if contentMap["dependencies"].(string) == "" {
-					// 	switch contentMap["language"] {
-					// 	case "go":
-					// 		contentMap["dependencies"] = "go.mod"
-					// 	case "nodejs":
-					// 		contentMap["dependencies"] = "package.json"
-					// 	case "python":
-					// 		contentMap["dependencies"] = "req.txt"
-					// 	}
-					// }
-
-					// splitPath := strings.Split(*fileContent.Path, "/")
-					// path := strings.TrimSpace(splitPath[0])
-					// if path != contentMap["function_name"].(string) {
-					// 	// errMsg := fmt.Sprintf("In the repository %s, there was an incompatibility between the function name in the git %s and the function name in the YAML file %s", repo, splitPath[0], contentMap["function_name"].(string))
-					// 	continue
-					// }
-					// if strings.Contains(path, "") {
-					// 	// errMsg := fmt.Sprintf("In the repository %s, the function name in the yaml %s can't contains spaces", repo, contentMap["function_name"].(string))
-					// 	continue
-					// }
-					//
+					if contentMap["dependencies"].(string) == "" {
+						switch contentMap["language"] {
+						case "go":
+							contentMap["dependencies"] = "go.mod"
+						case "nodejs":
+							contentMap["dependencies"] = "package.json"
+						case "python":
+							contentMap["dependencies"] = "requirements.txt"
+						}
+					}
 
 					err = validateYamlContent(contentMap)
 					if err != nil {
@@ -178,6 +166,16 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						}
 						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
+					}
+					splitPath := strings.Split(*fileContent.Path, "/")
+					path := strings.TrimSpace(splitPath[0])
+					if path != contentMap["function_name"].(string) {
+						serv.Warnf("In the repository %s, there was a function name incompatibility between the git %s and YAML file %s", repo, splitPath[0], contentMap["function_name"].(string))
+						continue
+					}
+					if strings.Contains(path, "") {
+						serv.Warnf("In the repository %s, the function name in the YAML file %s cannot contain spaces", repo, contentMap["function_name"].(string))
+						continue
 					}
 				}
 			}

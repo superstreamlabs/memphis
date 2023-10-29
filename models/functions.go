@@ -19,7 +19,7 @@ type FunctionsResult struct {
 	Tags              []string          `json:"tags"`
 	RunTime           string            `json:"runtime"`
 	Memory            int               `json:"memory"`
-	Storgae           int               `json:"storgae"`
+	Storage           int               `json:"storage"`
 	LastCommit        time.Time         `json:"last_commit"`
 	Link              *string           `json:"link"`
 	Repository        string            `json:"repository"`
@@ -31,6 +31,8 @@ type FunctionsResult struct {
 	InstallInProgress bool              `json:"install_in_progress"`
 	UpdatesAvailable  bool              `json:"updates_available"`
 	ByMemphis         bool              `json:"by_memphis"`
+	IsValid           bool              `json:"is_valid"`
+	InValidReason     string            `json:"invalid_reason"`
 }
 
 type FunctionsRes struct {

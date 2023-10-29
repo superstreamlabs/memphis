@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	"strings"
 
@@ -74,7 +75,14 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	}
 
 	memphisDevFucntions := []map[string]interface{}{}
-	memphisDevFucntions = append(memphisDevFucntions, memphisFunctions)
+	memphisFunc := map[string]interface{}{
+		"repo_name": memphisFunctions["repo_name"].(string),
+		"branch":    memphisFunctions["branch"].(string),
+		"owner":     memphisFunctions["repo_owner"].(string),
+		// TODO: get the last_modified from webhook
+		"last_modified": time.Now(),
+	}
+	memphisDevFucntions = append(memphisDevFucntions, memphisFunc)
 
 	allFunctions := models.FunctionsRes{
 		InstalledFunctions: installedFunctions,
@@ -244,7 +252,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			var environmentVarsStrings map[string]string
+			environmentVarsStrings := map[string]string{}
 			environmentVarsInterfaceSlice, ok := fucntionContentMap["environment_vars"].([]interface{})
 			if ok {
 				environmentVarsStrings = make(map[string]string, len(fucntionContentMap["environment_vars"].([]interface{})))
@@ -262,12 +270,15 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				description = ""
 			}
 
-			runtime := fucntionContentMap["runtime"].(string)
-			regex := regexp.MustCompile(`[0-9]+|\\.$`)
-			language := regex.ReplaceAllString(runtime, "")
-			language = strings.TrimRight(language, ".")
-			if strings.Contains(language, "-edge") {
-				language = strings.Trim(language, ".-edge")
+			runtime, ok := fucntionContentMap["runtime"].(string)
+			var language string
+			if ok {
+				regex := regexp.MustCompile(`[0-9]+|\\.$`)
+				language = regex.ReplaceAllString(runtime, "")
+				language = strings.TrimRight(language, ".")
+				if strings.Contains(language, "-edge") {
+					language = strings.Trim(language, ".-edge")
+				}
 			}
 
 			byMemphis := false
@@ -286,7 +297,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				Branch:            branch,
 				Owner:             owner,
 				Memory:            fucntionContentMap["memory"].(int),
-				Storgae:           fucntionContentMap["storage"].(int),
+				Storage:           fucntionContentMap["storage"].(int),
 				EnvironmentVars:   environmentVarsStrings,
 				Language:          language,
 				ScmType:           "github",
