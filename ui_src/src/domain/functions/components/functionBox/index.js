@@ -19,6 +19,7 @@ import { BiDownload } from 'react-icons/bi';
 import { MdOutlineFileDownloadOff } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { GoRepo } from 'react-icons/go';
+import { BsFillCloudyFill } from 'react-icons/bs';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
@@ -26,7 +27,6 @@ import { Divider, Drawer, Rate } from 'antd';
 import FunctionDetails from '../functionDetails';
 import { showMessages } from '../../../../services/genericServices';
 import TagsList from '../../../../components/tagList';
-import CloudOnly from '../../../../components/cloudOnly';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import { OWNER } from '../../../../const/globalConst';
@@ -122,8 +122,10 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                             className="install-button"
                         >
                             <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || functionDetails?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
+                                <AttachTooltip
+                                    disabled={isCloud() && (functionDetails?.install_in_progress || !installed)}
+                                    // disabled={!isCloud() || functionDetails?.install_in_progress || !installed}
+                                />
                             </div>
                             <div className="header-flex">
                                 <Button
@@ -134,12 +136,12 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                                             ''
                                         ) : installed ? (
                                             <div className="code-btn">
-                                                <MdOutlineFileDownloadOff className="Uninstall" />
+                                                {isCloud() ? <MdOutlineFileDownloadOff className="Uninstall" /> : <BsFillCloudyFill />}
                                                 <label>Uninstall</label>
                                             </div>
                                         ) : (
                                             <div className="code-btn">
-                                                <BiDownload className="Install" />
+                                                {isCloud() ? <BiDownload className="Install" /> : <BsFillCloudyFill />}
                                                 <label>Install</label>
                                             </div>
                                         )
@@ -150,14 +152,14 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                                     backgroundColorType={installed ? 'purple-light' : 'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={!isCloud() || functionDetails?.install_in_progress}
+                                    disabled={functionDetails?.install_in_progress}
+                                    // disabled={!isCloud() || functionDetails?.install_in_progress}
                                     isLoading={functionDetails?.install_in_progress} //Get indication after install function
                                     onClick={() => {
                                         showMessages('success', 'Install function');
                                         return;
                                     }}
                                 />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                         </div>
                     </div>

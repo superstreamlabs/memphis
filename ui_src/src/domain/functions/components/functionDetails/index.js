@@ -33,7 +33,6 @@ import { ReactComponent as FunctionIcon } from '../../../../assets/images/functi
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
-import CloudOnly from '../../../../components/cloudOnly';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
 import TestFunctionModal from '../testFunctionModal';
@@ -159,7 +158,6 @@ function FunctionDetails({ selectedFunction, installed }) {
                         <div className="action-section-btn">
                             <div className="header-flex">
                                 <AttachTooltip disabled={!isCloud() || selectedFunction?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                             <div className="header-flex">
                                 <Button
@@ -191,7 +189,6 @@ function FunctionDetails({ selectedFunction, installed }) {
                                     isLoading={selectedFunction?.install_in_progress}
                                     disabled={!isCloud() || selectedFunction?.install_in_progress}
                                 />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
                             </div>
                         </div>
                         <SelectComponent
@@ -231,7 +228,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                     <span className="function-details">
                         <div>
                             <deatils is="x3d">
-                                <label className="label-title">Info</label>
+                                <label className="label-title">Information</label>
                                 <info is="x3d">
                                     <repo is="x3d">
                                         <GoRepo />
@@ -248,7 +245,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                                 </info>
                             </deatils>
                             <Divider />
-                            <label className="label-title">Info</label>
+                            <label className="label-title">Social</label>
                             <deatils is="x3d">
                                 <downloads is="x3d">
                                     <BiDownload className="download-icon" />
@@ -266,7 +263,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                                 </commits>
                             </deatils>
                             <Divider />
-                            <label className="label-title">Info</label>
+                            <label className="label-title">Tags</label>
                             <TagsList tagsToShow={3} tags={selectedFunction?.tags} entityType="function" entityName={selectedFunction?.function_name} />
                         </div>
                     </span>

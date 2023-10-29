@@ -13,28 +13,47 @@
 import './style.scss';
 import { useState } from 'react';
 import { ReactComponent as FunctionIntegrateIcon } from '../../../../assets/images/functionIntegrate.svg';
+import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
 import { MdDone } from 'react-icons/md';
 import VideoPlayer from '../../../../components/videoPlayer';
 import Button from '../../../../components/button';
+import Modal from '../../../../components/modal';
+import CloneModal from '../../../../components/cloneModal';
 import { CONNECT_APP_VIDEO } from '../../../../config';
 import ConnectBG from '../../../../assets/images/connectBG.webp';
 import { LuInfo } from 'react-icons/lu';
 
-const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
+const FunctionsGuide = ({ handleClose, handleConfirm }) => {
     const [currentStep, setCurrentStep] = useState(0);
+    const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+    const [cloneType, setCloneType] = useState('functions');
+
+    const handleCloneClick = (type) => {
+        setCloneType(type);
+        setIsCloneModalOpen(true);
+    };
 
     const steps = [
         {
             name: (
                 <>
-                    <label className="link" onClick={handleCloneClick}>
+                    <label className="link" onClick={() => handleCloneClick('functions')}>
                         Clone or Download
                     </label>
                     <label> The Template Repository</label>
                 </>
             )
         },
-        { name: 'Code Your Function Based On One Of The Examples' },
+        {
+            name: (
+                <>
+                    <label>Code Your Function Based On One Of </label>
+                    <label className="link" onClick={() => handleCloneClick('onboard')}>
+                        The Examples
+                    </label>
+                </>
+            )
+        },
         { name: 'Commit Your Function To A New Repository (Currently In Github)' },
         { name: 'Connect The Newly Created Repository With Memphis' }
     ];
@@ -113,6 +132,15 @@ const FunctionsGuide = ({ handleClose, handleConfirm, handleCloneClick }) => {
                     fontSize={'12px'}
                 />
             </div>
+            <Modal
+                header={<CloneModalIcon alt="cloneModalIcon" />}
+                width="540px"
+                displayButtons={false}
+                clickOutside={() => setIsCloneModalOpen(false)}
+                open={isCloneModalOpen}
+            >
+                <CloneModal type={cloneType} />
+            </Modal>
         </div>
     );
 };

@@ -172,12 +172,14 @@
     label {
         cursor: pointer;
     }
+    .add {
+        color: #6557ff;
+    }
 }
 .git-repo {
     display: flex;
     gap: 5px;
     align-items: center;
-    justify-content: center;
     font-family: 'InterSemiBold';
     font-size: 14px;
     cursor: pointer;
@@ -188,7 +190,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin: 5px 15px;
+        margin: 8px 15px;
         .left-section {
             display: flex;
             align-items: center;
@@ -223,6 +225,7 @@
     }
 }
 .clone-popover {
+    width: 540px;
     .ant-popover-inner-content {
         padding: 20px !important;
     }

@@ -13,6 +13,8 @@
 import './style.scss';
 import React, { useState } from 'react';
 import Button from '../../../../components/button';
+import { BsFillCloudyFill } from 'react-icons/bs';
+import { isCloud } from '../../../../services/valueConvertor';
 import { Popover } from 'antd';
 
 const steps = [{ name: 'Step 1' }, { name: 'Step 2' }, { name: 'Step 3' }];
@@ -45,7 +47,12 @@ const AttachTooltip = ({ disabled }) => {
             onOpenChange={(open) => setOpen(open)}
         >
             <Button
-                placeholder="Attach"
+                placeholder={
+                    <div className="code-btn">
+                        {!isCloud() && <BsFillCloudyFill />}
+                        <label>Attach</label>
+                    </div>
+                }
                 width={'100px'}
                 backgroundColorType={'purple'}
                 colorType={'white'}

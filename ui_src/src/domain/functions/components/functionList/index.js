@@ -16,7 +16,6 @@ import React, { useEffect, useState } from 'react';
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
-import { ReactComponent as CloneModalIcon } from '../../../../assets/images/cloneModalIcon.svg';
 import { ReactComponent as RefreshIcon } from '../../../../assets/images/refresh.svg';
 import { ReactComponent as GitHubLogo } from '../../../../assets/images/githubLogo.svg';
 import { ReactComponent as RepoIcon } from '../../../../assets/images/repoPurple.svg';
@@ -60,10 +59,12 @@ const TABS = [
             'Private'
         ) : (
             <>
-                Private <CloudOnly position={'relative'} />
+                <CloudOnly position={'relative'} />
+                <label> Private</label>
             </>
         ),
-        disabled: !isCloud()
+        // disabled: !isCloud()
+        disabled: false
     }
 ];
 
@@ -303,7 +304,7 @@ function FunctionList({ tabPrivate }) {
                     </Popover>
                     <Popover
                         placement="bottomLeft"
-                        content={<CloneModal />}
+                        content={<CloneModal type="functions" />}
                         width="540px"
                         trigger="click"
                         overlayClassName="clone-popover"
@@ -375,16 +376,7 @@ function FunctionList({ tabPrivate }) {
                 clickOutside={handleCloseFunctionModal}
                 open={isFunctionsGuideOpen}
             >
-                <FunctionsGuide handleClose={handleCloseFunctionModal} handleConfirm={handleNewFunctionModal} handleCloneClick={() => setIsCloneModalOpen(true)} />
-            </Modal>
-            <Modal
-                header={<CloneModalIcon alt="cloneModalIcon" />}
-                width="540px"
-                displayButtons={false}
-                clickOutside={() => setIsCloneModalOpen(false)}
-                open={isCloneModalOpen}
-            >
-                <CloneModal />
+                <FunctionsGuide handleClose={handleCloseFunctionModal} handleConfirm={handleNewFunctionModal} />
             </Modal>
         </div>
     );

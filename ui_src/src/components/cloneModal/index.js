@@ -18,7 +18,7 @@ import Copy from '../copy';
 import CustomTabs from '../Tabs';
 import { githubUrls } from '../../const/globalConst';
 
-const CloneModal = () => {
+const CloneModal = ({ type }) => {
     const [tabValue, setTabValue] = useState('HTTPS');
     const downloadRepoArchive = async () => {
         window.open(githubUrls.DOWNLOAD_URL, '_blank');
@@ -26,24 +26,24 @@ const CloneModal = () => {
 
     return (
         <div className="clone-wrapper">
-            <p className="title"> Clone</p>
-            <p className="subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+            <p className="title">Clone</p>
+            <p className="subtitle">Kindly clone our explanatory repository to quickly start.</p>
             <CustomTabs tabs={['HTTPS', 'SSH']} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             {tabValue === 'HTTPS' ? (
                 <>
                     <div className="url-wrapper">
-                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_HTTPS}</p>
+                        <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_HTTPS}</p>
                         <div className="icon">
-                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_HTTPS} />
+                            <Copy width="18" data={githubUrls[type].MEMPHIS_GIT_HTTPS} />
                         </div>
                     </div>
                 </>
             ) : (
                 <>
                     <div className="url-wrapper">
-                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_SSH}</p>
+                        <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_SSH}</p>
                         <div className="icon">
-                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_SSH} />
+                            <Copy width="18" data={githubUrls[type].MEMPHIS_GIT_SSH} />
                         </div>
                     </div>
                 </>
