@@ -19,7 +19,6 @@ import { ReactComponent as IntegrationFailedIcon } from '../../../../../assets/i
 import { ReactComponent as MemphisVerifiedIcon } from '../../../../../assets/images/memphisFunctionIcon.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
 import { Context } from '../../../../../hooks/store';
-import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
 import Tag from '../../../../../components/tag';

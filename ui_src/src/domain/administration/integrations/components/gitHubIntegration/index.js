@@ -249,42 +249,24 @@ const GitHubIntegration = ({ close, value }) => {
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
+                                {!isIntegrated && (
+                                    <div className="noConnection-wrapper">
+                                        <Button
+                                            height="35px"
+                                            width="300px"
+                                            placeholder="Connect"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            border="none"
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            disabled={!applicationName}
+                                            onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
+                                        />
+                                    </div>
+                                )}
                                 <div className="api-details">
-                                    {!isIntegrated && (
-                                        <div className="noConnection-wrapper">
-                                            <Button
-                                                height="35px"
-                                                width="300px"
-                                                placeholder="Connect"
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="purple"
-                                                border="none"
-                                                fontSize="12px"
-                                                fontFamily="InterSemiBold"
-                                                disabled={!applicationName}
-                                                onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
-                                            />
-                                        </div>
-                                        // <div className="noConnection-wrapper">
-                                        //     <GithubNoConnectionIcon />
-                                        //     <p className="noConnection-title">Connect to get more details</p>
-                                        //     <p className="noConnection-subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-
-                                        //     <Button
-                                        //         height="35px"
-                                        //         placeholder="Connect"
-                                        //         colorType="white"
-                                        //         radiusType="circle"
-                                        //         backgroundColorType="purple"
-                                        //         border="none"
-                                        //         fontSize="12px"
-                                        //         fontFamily="InterSemiBold"
-                                        //         disabled={!applicationName}
-                                        //         onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
-                                        //     />
-                                        // </div>
-                                    )}
                                     {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
