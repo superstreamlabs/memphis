@@ -17,7 +17,7 @@ import Button from '../../../components/button';
 import { ReactComponent as LogoTexeMemphis } from '../../../assets/images/logoTexeMemphis.svg';
 import { ReactComponent as RedirectIcon } from '../../../assets/images/redirectIcon.svg';
 import { ReactComponent as RedirectWhiteIcon } from '../../../assets/images/exportWhite.svg';
-import HalfDoughnutChart from './components/halfDoughnutChart';
+import CustomGauge from './components/customGauge';
 const data = {
     labels: ['Red', 'Green', 'Blue'],
     datasets: [
@@ -102,7 +102,7 @@ function SoftwareUpates({}) {
                 <div className="charts">
                     <div className="item-component">
                         <label className="title">Amount of brokers</label>
-                        <HalfDoughnutChart />
+                        <CustomGauge />
                     </div>
                     <div className="item-component">
                         <label className="title">Amount of brokers</label>
