@@ -8,14 +8,32 @@
         display: grid;
         grid-template-rows: 20% 35% 45%;
         gap: 20px;
+
+        .title {
+            color: #6557ff;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
         .statistics {
             display: grid;
             grid-template-columns: 23% 23% 23% 23%;
             justify-content: space-between;
+            .wrapper {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 20px;
+            }
+            .numbers {
+                color: #171717;
+                font-size: 30px;
+                font-family: 'InterBold';
+            }
         }
         .charts {
             display: grid;
-            grid-template-columns: 32% 65%;
+            grid-template-columns: 32% 32% 32%;
             justify-content: space-between;
         }
         .item-component {
@@ -25,8 +43,34 @@
             background-color: #ffffff;
             box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
             border-radius: 8px;
+            padding: 30px;
         }
         .title-component {
+            height: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            .versions {
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                .curr-version {
+                    color: #6557ff;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border-radius: 32px;
+                    border: 1px solid #eaeaea;
+                    padding: 5px 10px;
+                }
+                .new-version {
+                    color: #6557ff;
+                    font-size: 14px;
+                    font-weight: 600;
+                    border-radius: 32px;
+                    background: rgba(101, 87, 255, 0.15);
+                    padding: 5px 10px;
+                }
+            }
         }
     }
 }
