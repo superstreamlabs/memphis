@@ -17,7 +17,7 @@ import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
 import { BsFillChatSquareTextFill } from 'react-icons/bs';
-import { useHistory, Link } from 'react-router-dom';
+import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
 import CloudMoadl from '../cloudModal';
 import {
@@ -385,7 +385,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                {/* <div
+                <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
@@ -399,32 +399,23 @@ function SideBar() {
                         <FunctionsIcon alt="functionsIcon" width="20" height="20" />
                     )}
                     <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div> */}
-                {isCloud() && (
-                    <div className="item-wrapper">
-                        <div className="icon not-available">
-                            <FunctionsIcon alt="StationsActiveIcon" width={20} height={20} />
-                        </div>
-                        <p className="not-available">Functions</p>
-                        <p className="coming-soon">Soon</p>
-                    </div>
-                )}
+                </div>
                 <div
                     className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('users')}
+                    onMouseEnter={() => setHoveredItem('integrations')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.users)}
+                    onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
                 >
                     <div className="icon">
-                        {state.route === 'users' ? (
-                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'users' ? (
-                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
+                        {state.route === 'administration' ? (
+                            <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
+                        ) : hoveredItem === 'integrations' ? (
+                            <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
                         ) : (
-                            <UsersIcon alt="UsersIcon" width={20} height={20} />
+                            <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
                         )}
                     </div>
-                    <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
+                    <p className={state.route === 'administration' ? 'checked' : 'name'}>Integrations</p>
                 </div>
             </div>
             <div className="bottom-icons">
@@ -448,19 +439,21 @@ function SideBar() {
                     </div>
                 )}
                 <div
-                    className="integration-icon-wrapper"
-                    onMouseEnter={() => setHoveredItem('integrations')}
+                    className="item-wrapper mb-15 cursor-pointer"
+                    onMouseEnter={() => setHoveredItem('users')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
+                    onClick={() => history.replace(pathDomains.users)}
                 >
-                    {state.route === 'administration' ? (
-                        <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
-                    ) : hoveredItem === 'integrations' ? (
-                        <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
-                    ) : (
-                        <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
-                    )}
-                    <p className={state.route === 'administration' || hoveredItem === 'integrations' ? 'sidebar-title ms-active' : 'sidebar-title'}>Integrations</p>
+                    <div className="icon">
+                        {state.route === 'users' ? (
+                            <UsersActiveIcon alt="LogsActiveIcon" width={20} height={20} />
+                        ) : hoveredItem === 'users' ? (
+                            <UsersActiveIcon alt="LogsActiveIcon" width={20} height={20} />
+                        ) : (
+                            <UsersIcon alt="LogsIcon" width={20} height={20} />
+                        )}
+                    </div>
+                    <p className={state.route === 'users' || hoveredItem === 'users' ? 'sidebar-title ms-active' : 'sidebar-title'}>Users</p>
                 </div>
                 <Popover
                     title={

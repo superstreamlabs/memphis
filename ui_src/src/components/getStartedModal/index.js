@@ -27,7 +27,7 @@ import { httpRequest } from '../../services/http';
 import { capitalizeFirst } from '../../services/valueConvertor';
 import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 
-const useCases = ['Microservices communication', 'Change data Capture', 'Real-time pipeline', 'Building a data lake'];
+const useCases = ['Microservices communication', 'Change data Capture', 'Real-time pipeline', 'Stream processing'];
 const codeList = [
     {
         title: 'Real-time pipeline',

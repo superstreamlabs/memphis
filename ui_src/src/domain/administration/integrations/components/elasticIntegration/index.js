@@ -17,6 +17,7 @@ import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import CustomTabs from '../../../../../components/Tabs';
 import Button from '../../../../../components/button';
 import Copy from '../../../../../components/copy';
@@ -121,16 +122,9 @@ const ElasticIntegration = ({ close }) => {
                     <div className="integrate-header">
                         {elasticConfiguration.header}
                         <div className="action-buttons flex-end">
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/elasticsearch-observability', '_blank')}
                             />
                         </div>

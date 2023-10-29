@@ -104,7 +104,7 @@
     }
 }
 .integration-guid-body {
-    height: calc(100% - 400px);
+    height: calc(100% - 415px);
     position: relative;
     .stepper-container {
         height: 100%;
@@ -270,20 +270,12 @@ dynamic-integration {
             }
         }
         .button-wrapper {
-            // display: grid;
-            // grid-template-columns: 50% 50%;
-            // text-align: -moz-center;
-            // text-align: -webkit-center;
             display: flex;
             justify-content: center;
             align-items: center;
-            // margin: 0 20px;
-            padding-top: 20px;
+            padding: 20px 0px;
             border-top: 1px solid #dedede;
         }
-        // .button-wrapper-single-item {
-        //     grid-template-columns: 2fr 50%;
-        // }
     }
 }
 

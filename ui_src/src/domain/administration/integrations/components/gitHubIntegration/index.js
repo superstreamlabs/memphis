@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message, Spin } from 'antd';
+import { Form, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import { FiPlus } from 'react-icons/fi';
@@ -26,7 +26,7 @@ import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
-import { ReactComponent as GithubNoConnectionIcon } from '../../../../../assets/images/noConnectionIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
@@ -213,16 +213,9 @@ const GitHubIntegration = ({ close, value }) => {
                     <div className="integrate-header">
                         {githubConfiguration.header}
                         <div className={'action-buttons flex-end'}>
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
                             />
                             {isIntegrated && (

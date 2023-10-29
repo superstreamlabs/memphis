@@ -155,6 +155,9 @@ integ-item {
                 width: 38px;
             }
             .details {
+                .ant-divider-vertical {
+                    margin: 0px;
+                }
                 .by {
                     display: flex;
                     gap: 6px;
@@ -168,21 +171,9 @@ integ-item {
                     color: #6557ff;
                     font-weight: 'InterSemiBold';
                 }
-                .open-source {
+                .oss-cloud-badge {
                     color: #cc5de8;
                     background: rgba(204, 93, 232, 0.15);
-                    border-radius: 4px;
-                    padding: 2px 5px;
-                }
-                .cloud {
-                    color: #6557ff;
-                    background: rgba(101, 87, 255, 0.15);
-                    border-radius: 4px;
-                    padding: 2px 5px;
-                }
-                .disable {
-                    color: #737373;
-                    background: rgba(115, 115, 115, 0.15);
                     border-radius: 4px;
                     padding: 2px 5px;
                 }
@@ -190,7 +181,7 @@ integ-item {
                 p {
                     font-family: 'InterSemiBold';
                     font-size: 20px;
-                    line-height: 20px;
+                    line-height: 30px;
                 }
                 span {
                     font-family: 'InterMedium';
@@ -209,6 +200,11 @@ integ-item {
             width: 250px;
             gap: 20px;
             justify-content: space-between;
+            .info-icon {
+                width: 25px;
+                height: 25px;
+                cursor: pointer;
+            }
         }
         .flex-end {
             flex-basis: min-content;

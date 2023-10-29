@@ -40,6 +40,7 @@ import s3Banner from '../assets/images/s3Banner.webp';
 import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
+import { Divider } from 'antd';
 
 export const getTabList = (intgrationName) => {
     return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs'] : ['Configuration'];
@@ -200,8 +201,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>
@@ -251,8 +252,9 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="cloud">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -286,8 +288,9 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="cloud">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -322,8 +325,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>
@@ -372,8 +375,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>
@@ -418,8 +421,9 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="cloud">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -464,8 +468,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="disable">Open source</label>
-                        <label className="cloud">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Cloud</label>
                     </span>
                 </div>
             </div>
@@ -499,8 +503,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>
@@ -533,8 +537,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>
@@ -567,8 +571,8 @@ export const INTEGRATION_LIST = {
                     <span className="by">
                         <MemphisVerifiedIcon />
                         <label className="memphis">Mempis.dev</label>
-                        <label className="open-source">Open source</label>
-                        <label className="disable">Cloud</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
                     </span>
                 </div>
             </div>

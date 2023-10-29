@@ -13,8 +13,7 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message } from 'antd';
-
+import { Form } from 'antd';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
@@ -24,6 +23,7 @@ import CustomTabs from '../../../../../components/Tabs';
 import Input from '../../../../../components/Input';
 import Checkbox from '../../../../../components/checkBox';
 import Loader from '../../../../../components/loader';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
@@ -171,16 +171,9 @@ const S3Integration = ({ close, value, lockFeature }) => {
                                     onClick={() => disconnect()}
                                 />
                             )}
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
                             />
                         </div>

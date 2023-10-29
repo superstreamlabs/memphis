@@ -18,6 +18,7 @@ import { Form, message } from 'antd';
 import { ReactComponent as PoisionAlertIcon } from '../../../../../assets/images/poisionAlertIcon.svg';
 import { ReactComponent as DisconAlertIcon } from '../../../../../assets/images/disconAlertIcon.svg';
 import { ReactComponent as SchemaAlertIcon } from '../../../../../assets/images/schemaAlertIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
@@ -183,16 +184,9 @@ const SlackIntegration = ({ close, value }) => {
                                     onClick={() => disconnect()}
                                 />
                             )}
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-ui/integrations/notifications/slack', '_blank')}
                             />
                         </div>

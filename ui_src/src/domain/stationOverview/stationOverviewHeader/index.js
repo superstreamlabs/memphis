@@ -205,7 +205,7 @@ const StationOverviewHeader = () => {
                         placeholder="Delete station"
                         colorType="white"
                         radiusType="circle"
-                        backgroundColorType="purple"
+                        backgroundColorType="red"
                         fontSize="12px"
                         fontWeight="600"
                         onClick={() => modalDeleteFlip(true)}

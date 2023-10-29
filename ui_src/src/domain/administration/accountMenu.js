@@ -44,11 +44,11 @@ function AccountMenu({ selectedMenuItem, setMenuItem }) {
                 )}
                 <div className={selectedMenuItem === 'profile' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('profile')}>
                     <PersonOutlinedIcon alt="versionUpgrade" />
-                    Profile
+                    Edit profile
                 </div>
                 <div className={selectedMenuItem === 'integrations' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('integrations')}>
                     {selectedMenuItem === 'integrations' ? <IntegrationColorIcon alt="notifications" /> : <IntegrationGrayIcon alt="notifications" />}
-                    Integrations
+                    Integrations center
                 </div>
                 <div className={selectedMenuItem === 'cluster_configuration' ? 'menu-item selected' : 'menu-item'} onClick={() => setMenuItem('cluster_configuration')}>
                     {selectedMenuItem === 'cluster_configuration' ? (

@@ -122,7 +122,7 @@ const Integrations = () => {
         <div className="alerts-integrations-container">
             <div className="header-preferences">
                 <div className="left">
-                    <p className="main-header">Integrations</p>
+                    <p className="main-header">Integrations center</p>
                     <p className="memphis-label">Integrations for notifications, monitoring, API calls, and more</p>
                 </div>
                 <Button
