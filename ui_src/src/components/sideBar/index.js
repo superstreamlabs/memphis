@@ -385,7 +385,7 @@ function SideBar() {
                     </div>
                     <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
                 </div>
-                <div
+                {/* <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
@@ -399,7 +399,16 @@ function SideBar() {
                         <FunctionsIcon alt="functionsIcon" width="20" height="20" />
                     )}
                     <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div>
+                </div> */}
+                {isCloud() && (
+                    <div className="item-wrapper">
+                        <div className="icon not-available">
+                            <FunctionsIcon alt="StationsActiveIcon" width={20} height={20} />
+                        </div>
+                        <p className="not-available">Functions</p>
+                        <p className="coming-soon">Soon</p>
+                    </div>
+                )}
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('users')}
