@@ -891,3 +891,25 @@ func CreateInternalApplicationUserForExistTenants() error {
 
 	return nil
 }
+
+func (umh UserMgmtHandler) SendTrace(c *gin.Context) {
+	var body models.SendTraceSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	traceName := strings.ToLower(body.TraceName)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]SendTrace at getUserDetailsFromMiddleware: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.TenantName, user.Username, body.TraceParams, traceName)
+	}
+
+	c.IndentedJSON(200, gin.H{})
+}
