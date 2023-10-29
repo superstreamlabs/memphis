@@ -54,11 +54,34 @@ const GetStartedModal = ({ open, handleClose }) => {
         setUseCase('');
     };
 
+    const userChosenUseCase = async () => {
+        const bodyRequest = {
+            trace_name: 'user-chosen-use-case',
+            trace_params: {
+                use_case: chosenUseCase !== '' ? chosenUseCase : manualUseCase
+            }
+        };
+        try {
+            await httpRequest('POST', ApiEndpoints.SEND_TRACE, bodyRequest);
+        } catch (error) {
+            return;
+        }
+    };
+
     const skipGetStarted = async () => {
         try {
             await httpRequest('POST', ApiEndpoints.SKIP_GET_STARTED, { username: capitalizeFirst(localStorage.getItem(LOCAL_STORAGE_USER_NAME)) });
             localStorage.setItem(LOCAL_STORAGE_SKIP_GET_STARTED, true);
-        } catch (error) {}
+        } catch (error) {
+            return;
+        }
+    };
+
+    const finsihGetStarted = async () => {
+        userChosenUseCase();
+        if (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') {
+            skipGetStarted();
+        }
     };
 
     return (
@@ -148,7 +171,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                         colorType={'white'}
                         backgroundColorType={'purple'}
                         radiusType={'circle'}
-                        onClick={() => skipGetStarted()} //Send to endpoint
+                        onClick={() => finsihGetStarted()}
                         fontWeight={600}
                         fontSize={'12px'}
                     />
