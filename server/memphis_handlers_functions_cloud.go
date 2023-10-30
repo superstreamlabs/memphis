@@ -75,6 +75,7 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	}
 
 	var lastModified *time.Time
+	OtherFunctions = []models.FunctionResult{}
 	for _, function := range functions["other"] {
 		if function.Owner == memphisDevFunctionsOwnerName && function.Repo == memphisDevFunctionsRepoName {
 			otherFunctionResult := models.FunctionResult{
@@ -93,14 +94,14 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 				Owner:            function.Owner,
 				Language:         function.Language,
 				Version:          -1,
-				IsValid:          true,
+				IsValid:          function.IsValid,
+				InvalidReason:    function.InvalidReason,
 				InProgress:       false,
 				UpdatesAvailable: false,
 				ByMemphis:        function.ByMemphis,
 				TenantName:       function.TenantName,
 			}
-
-			OtherFunctions = []models.FunctionResult{otherFunctionResult}
+			OtherFunctions = append(OtherFunctions, otherFunctionResult)
 			lastModified = function.LastCommit
 		}
 	}
@@ -269,6 +270,8 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			branch := funcDetailsPerInstalled.Branch
 			owner := funcDetailsPerInstalled.Owner
 			tenantName := funcDetailsPerInstalled.TenantName
+			isValid := funcDetailsPerInstalled.IsValid
+			invalidReason := funcDetailsPerInstalled.InvalidReason
 			tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
 			tagsStrings := []string{}
 			if ok {
@@ -346,6 +349,8 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				UpdatesAvailable: false,
 				ByMemphis:        byMemphis,
 				TenantName:       tenantName,
+				IsValid:          isValid,
+				InvalidReason:    invalidReason,
 			}
 
 			functions[key] = append(functions[key], functionDetails)

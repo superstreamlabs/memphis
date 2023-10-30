@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/memphisdev/memphis/models"
@@ -154,28 +155,38 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 
+					fileDetails := functionDetails{
+						Commit:       commit,
+						ContentMap:   contentMap,
+						RepoName:     repo,
+						Branch:       branch,
+						Owner:        owner,
+						DirectoryUrl: directoryContent.HTMLURL,
+						TenantName:   tenantName,
+					}
+
 					splitPath := strings.Split(*fileContent.Path, "/")
 					path := strings.TrimSpace(splitPath[0])
 					if path != contentMap["function_name"].(string) {
-						serv.Warnf("[tenant: %s]]GetGithubContentFromConnectedRepo: In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", tenantName, repo, splitPath[0], contentMap["function_name"].(string))
+						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						continue
 					}
-					if strings.Contains(path, "") {
-						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: In the repository %s, the function name %s in the YAML file cannot contain spaces", tenantName, repo, contentMap["function_name"].(string))
+					if strings.Contains(path, " ") {
+						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						continue
 					}
 
 					if isValidFileYaml {
 						countFunctions++
-						fileDetails := functionDetails{
-							Commit:       commit,
-							ContentMap:   contentMap,
-							RepoName:     repo,
-							Branch:       branch,
-							Owner:        owner,
-							DirectoryUrl: directoryContent.HTMLURL,
-							TenantName:   tenantName,
-						}
+						fileDetails.IsValid = true
 						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
