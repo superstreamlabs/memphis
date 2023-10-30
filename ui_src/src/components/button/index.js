@@ -54,8 +54,8 @@ const Button = ({
 
     const borderRadius = getBorderRadius(radiusType);
     const color = getFontColor(colorType);
-    const backgroundColor = getBackgroundColor(backgroundColorType);
-    const borderColor = border ? getBorderColor(border) : backgroundColor;
+    const background = getBackgroundColor(backgroundColorType);
+    const borderColor = border ? getBorderColor(border) : background;
     const opacity = disabled ? '0.5' : '1';
     const boxShadow = boxShadowStyle ? getBoxShadows(boxShadowStyle) : 'none';
     const styleButtonContainer = {
@@ -76,7 +76,7 @@ const Button = ({
         style: {
             borderRadius,
             color,
-            backgroundColor,
+            background,
             width,
             height,
             borderColor,

@@ -36,12 +36,16 @@ import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueC
 import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
-import { HiUsers, HiPlusSm } from 'react-icons/hi';
+import { HiUsers } from 'react-icons/hi';
 import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
+import { ReactComponent as NewStationIcon } from '../../assets/images/newStationIcon.svg';
+import { ReactComponent as NewSchemaIcon } from '../../assets/images/newSchemaIcon.svg';
+import { ReactComponent as NewUserIcon } from '../../assets/images/newUserIcon.svg';
+import { ReactComponent as NewIntegrationIcon } from '../../assets/images/newIntegrationIcon.svg';
 import { BsHouseHeartFill } from 'react-icons/bs';
 import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
 import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
@@ -166,6 +170,15 @@ function SideBar() {
         }
     };
 
+    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave }) => {
+        return (
+            <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+                <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
+                <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
+            </div>
+        );
+    };
+
     const contentQuickStart = (
         <div className="menu-content">
             <div
@@ -177,9 +190,9 @@ function SideBar() {
             >
                 <div className="item">
                     <span className="icons">
-                        <HiPlusSm className="icons-sidebar" />
+                        <NewStationIcon className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Station</p>
+                    <p className="item-title">Create a new station</p>
                 </div>
             </div>
             <div
@@ -191,9 +204,9 @@ function SideBar() {
             >
                 <div className="item">
                     <span className="icons">
-                        <HiPlusSm className="icons-sidebar" />
+                        <NewSchemaIcon className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Schema</p>
+                    <p className="item-title">Create a new schema</p>
                 </div>
             </div>
             <div
@@ -205,9 +218,9 @@ function SideBar() {
             >
                 <div className="item">
                     <span className="icons">
-                        <HiPlusSm className="icons-sidebar" />
+                        <NewUserIcon className="icons-sidebar" />
                     </span>
-                    <p className="item-title">User</p>
+                    <p className="item-title">Create a new user</p>
                 </div>
             </div>
             <div
@@ -219,9 +232,9 @@ function SideBar() {
             >
                 <div className="item">
                     <span className="icons">
-                        <HiPlusSm className="icons-sidebar" />
+                        <NewIntegrationIcon className="icons-sidebar" />
                     </span>
-                    <p className="item-title">Integration</p>
+                    <p className="item-title">Create a new integration</p>
                 </div>
             </div>
         </div>
@@ -415,7 +428,6 @@ function SideBar() {
                     trigger="click"
                     onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}
                     open={popoverQuickActoins}
-                    title={'Quick actions'}
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
@@ -423,133 +435,74 @@ function SideBar() {
                         </div>
                     </div>
                 </Popover>
-                <div
-                    className="item-wrapper"
+                <MenuItem
+                    icon={<OverviewIcon alt="OverviewIcon" width={20} height={20} />}
+                    activeIcon={<OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />}
+                    name="Overview"
+                    onClick={() => history.replace(pathDomains.overview)}
                     onMouseEnter={() => setHoveredItem('overview')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.overview)}
-                >
-                    <div className="icon">
-                        {state.route === 'overview' ? (
-                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'overview' ? (
-                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
-                        ) : (
-                            <OverviewIcon alt="OverviewIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
-                </div>
-                <div
-                    className="item-wrapper"
+                    route="overview"
+                />
+                <MenuItem
+                    icon={<StationsIcon alt="StationsIcon" width={20} height={20} />}
+                    activeIcon={<StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />}
+                    name="Stations"
+                    onClick={() => history.replace(pathDomains.stations)}
                     onMouseEnter={() => setHoveredItem('stations')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.stations)}
-                >
-                    <div className="icon">
-                        {state.route === 'stations' ? (
-                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'stations' ? (
-                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
-                        ) : (
-                            <StationsIcon alt="StationsIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
-                </div>
-                <div
-                    className="item-wrapper"
+                    route="stations"
+                />
+                <MenuItem
+                    icon={<SchemaIcon alt="SchemaIcon" width={20} height={20} />}
+                    activeIcon={<SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />}
+                    name="Schemaverse"
+                    onClick={() => history.replace(`${pathDomains.schemaverse}/list`)}
                     onMouseEnter={() => setHoveredItem('schemaverse')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(`${pathDomains.schemaverse}/list`)}
-                >
-                    <div className="icon">
-                        {state.route === 'schemaverse' ? (
-                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'schemaverse' ? (
-                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
-                        ) : (
-                            <SchemaIcon alt="SchemaIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
-                </div>
-                <div
-                    className="item-wrapper"
+                    route="schemaverse"
+                />
+                <MenuItem
+                    icon={<FunctionsIcon alt="functionsIcon" width="20" height="20" />}
+                    activeIcon={<FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />}
+                    name="Functions"
+                    onClick={() => history.replace(pathDomains.functions)}
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.functions)}
-                >
-                    {state.route === 'functions' ? (
-                        <FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />
-                    ) : hoveredItem === 'functions' ? (
-                        <FunctionsActiveIcon alt="functionsIcon" width="20" height="20" />
-                    ) : (
-                        <FunctionsIcon alt="functionsIcon" width="20" height="20" />
-                    )}
-                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div>
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('integrations')}
-                    onMouseLeave={() => setHoveredItem('')}
+                    route="functions"
+                />
+                <MenuItem
+                    icon={<IntegrationIcon alt="IntegrationIcon" width={20} height={20} />}
+                    activeIcon={<IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />}
+                    name="Integrations"
                     onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
-                >
-                    <div className="icon">
-                        {state.route === 'administration' ? (
-                            <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
-                        ) : hoveredItem === 'integrations' ? (
-                            <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
-                        ) : (
-                            <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'administration' ? 'checked' : 'name'}>Integrations</p>
-                </div>
+                    onMouseEnter={() => setHoveredItem('administration')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="administration"
+                />
             </div>
             <div className="bottom-icons">
                 {!isCloud() && (
-                    <div
-                        className="item-wrapper mb-15 cursor-pointer"
+                    <MenuItem
+                        icon={<LogsIcon alt="LogsIcon" width={20} height={20} />}
+                        activeIcon={<LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />}
+                        name="Logs"
+                        onClick={() => history.replace(pathDomains.sysLogs)}
                         onMouseEnter={() => setHoveredItem('logs')}
                         onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.replace(pathDomains.sysLogs)}
-                    >
-                        <div className="icon">
-                            {state.route === 'logs' ? (
-                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
-                            ) : hoveredItem === 'logs' ? (
-                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
-                            ) : (
-                                <LogsIcon alt="LogsIcon" width={20} height={20} />
-                            )}
-                        </div>
-                        <p className={state.route === 'logs' || hoveredItem === 'logs' ? 'sidebar-title ms-active' : 'sidebar-title'}>Logs</p>
-                    </div>
+                        route="logs"
+                    />
                 )}
-                <div
-                    className="integration-icon-wrapper mb-15 cursor-pointer"
+                <MenuItem
+                    icon={<HiUsers alt="LogsIcon" className="sidebar-title" size={'20px'} />}
+                    activeIcon={<HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" size={'20px'} />}
+                    name="Users"
+                    onClick={() => history.replace(pathDomains.users)}
                     onMouseEnter={() => setHoveredItem('users')}
                     onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.users)}
-                >
-                    <div className="icon">
-                        {state.route === 'users' ? (
-                            <HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" />
-                        ) : hoveredItem === 'users' ? (
-                            <HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" />
-                        ) : (
-                            <HiUsers alt="LogsIcon" className="sidebar-title" />
-                        )}
-                    </div>
-                    <p className={state.route === 'users' || hoveredItem === 'users' ? 'sidebar-title ms-active' : 'sidebar-title'}>Users</p>
-                </div>
+                    route="users"
+                />
                 <Popover
-                    title={
-                        <div className="support-header">
-                            <label className="username">Support</label>
-                        </div>
-                    }
                     overlayInnerStyle={supportContextMenuStyles}
                     placement="right"
                     content={supportContextMenu}
@@ -557,14 +510,14 @@ function SideBar() {
                     onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
                     open={popoverOpenSupportContextMenu}
                 >
-                    <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('support')} onMouseLeave={() => setHoveredItem('')}>
-                        {hoveredItem === 'support' ? (
-                            <SupportColorIcon alt="SupportIcon" width={20} height={20} />
-                        ) : (
-                            <SupportIcon alt="SupportIcon" width={20} height={20} />
-                        )}
-                        <p className={hoveredItem === 'support' ? 'sidebar-title ms-active' : 'sidebar-title'}>Support</p>
-                    </div>
+                    <MenuItem
+                        icon={<SupportIcon alt="SupportIcon" width={20} height={20} />}
+                        activeIcon={<SupportColorIcon alt="SupportIcon" width={20} height={20} />}
+                        name="Support"
+                        onMouseEnter={() => setHoveredItem('support')}
+                        onMouseLeave={() => setHoveredItem('')}
+                        route="support"
+                    />
                 </Popover>
 
                 <Popover

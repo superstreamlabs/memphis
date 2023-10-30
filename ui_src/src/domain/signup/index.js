@@ -167,7 +167,7 @@ const Signup = (props) => {
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Email can not be empty'
+                                        message: 'Email must not be left blank'
                                     },
                                     {
                                         type: 'email',
@@ -176,7 +176,7 @@ const Signup = (props) => {
                                 ]}
                             >
                                 <div className="field name">
-                                    <p>Your email</p>
+                                    <p>Email</p>
                                     <Input
                                         placeholder="name@gmail.com"
                                         type="text"
@@ -247,7 +247,7 @@ const Signup = (props) => {
                                     />
                                 </div>
                             </Form.Item>
-                            <p className="future-updates">Features and releases updates</p>
+                            <p className="future-updates">Product updates</p>
                             <div className="toggle-analytics">
                                 <Form.Item name="subscription" initialValue={formFields.subscription} style={{ marginBottom: '0' }}>
                                     <Switcher onChange={() => switchSubscription()} checked={formFields.subscription} checkedChildren="" unCheckedChildren="" />

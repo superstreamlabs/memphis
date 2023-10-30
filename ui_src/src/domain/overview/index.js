@@ -28,6 +28,7 @@ import {
 import { ReactComponent as StationIcon } from '../../assets/images/stationsIconActive.svg';
 import { ReactComponent as GraphOverview } from '../../assets/images/graphOverview.svg';
 import { ReactComponent as CloudTeaser } from '../../assets/images/cloudTeaser.svg';
+import { ReactComponent as PlusElement } from '../../assets/images/plusElement.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -248,10 +249,16 @@ function OverView() {
                                 className="modal-btn"
                                 width="160px"
                                 height="34px"
-                                placeholder={'Create new station'}
+                                placeholder={
+                                    <span className="create-new">
+                                        <PlusElement alt="add" />
+                                        <label>Create new station</label>
+                                    </span>
+                                }
+                                border={'none'}
                                 colorType="white"
                                 radiusType="circle"
-                                backgroundColorType="purple"
+                                backgroundColorType="gradient"
                                 fontSize="12px"
                                 fontWeight="600"
                                 aria-haspopup="true"

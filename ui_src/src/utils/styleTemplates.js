@@ -95,6 +95,8 @@ export function getBackgroundColor(backgroundColor) {
             return '#EBEDF0';
         case 'disabled':
             return '#F5F5F5';
+        case 'gradient':
+            return 'linear-gradient(257deg, #FFC633 -89.06%, #61DFC6 -4.22%, #6557FF 86.46%)';
         case 'none':
             return 'transparent';
         default:
