@@ -42,8 +42,9 @@ import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
-import { BsHouseHeartFill, BsFillPlusCircleFill } from 'react-icons/bs';
+import { BsHouseHeartFill } from 'react-icons/bs';
 import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
+import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
@@ -418,11 +419,7 @@ function SideBar() {
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
-                            {hoveredItem === 'actions' ? (
-                                <BsFillPlusCircleFill alt="OverviewActiveIcon" width={20} height={20} />
-                            ) : (
-                                <BsFillPlusCircleFill alt="OverviewIcon" width={20} height={20} />
-                            )}
+                            <QuickActionBtn alt="Quick actions" />
                         </div>
                     </div>
                 </Popover>

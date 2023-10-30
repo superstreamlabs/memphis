@@ -27,6 +27,7 @@ import {
 } from '../../const/localStorageConsts';
 import { ReactComponent as StationIcon } from '../../assets/images/stationsIconActive.svg';
 import { ReactComponent as GraphOverview } from '../../assets/images/graphOverview.svg';
+import { ReactComponent as CloudTeaser } from '../../assets/images/cloudTeaser.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -242,6 +243,7 @@ function OverView() {
                         </div>
                         <div className="btn-section">
                             <AsyncTasks height={'32px'} overView />
+                            {!isCloud() && <CloudTeaser alt="Cloud" className="cloud-teaser" />}
                             <Button
                                 className="modal-btn"
                                 width="160px"
