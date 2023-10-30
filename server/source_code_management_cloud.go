@@ -29,15 +29,16 @@ type functionDetails struct {
 	Branch       string                   `json:"branch"`
 	Scm          string                   `json:"scm"`
 	Owner        string                   `json:"owner"`
+	TenantName   string                   `json:"tenant_name"`
 }
 
 func getSourceCodeDetails(tenantName string, getAllReposSchema interface{}, actionType string) (models.Integration, interface{}, error) {
 	return models.Integration{}, map[string]string{}, nil
 }
 
-func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
+func GetContentOfSelectedRepo(connectedRepo map[string]interface{}, contentDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
 	var err error
-	contentDetails, err = GetGithubContentFromConnectedRepo(connectedRepo, contentDetails)
+	contentDetails, err = GetGithubContentFromConnectedRepo(connectedRepo, contentDetails, tenantName)
 	if err != nil {
 		return contentDetails, err
 	}
@@ -62,7 +63,7 @@ func GetContentOfSelectedRepos(tenantName string) (map[string][]functionDetails,
 	for _, connectedRepoPerIntegration := range connectedRepos {
 		for _, connectedRepo := range connectedRepoPerIntegration {
 			connectedRepoRes := connectedRepo.(map[string]interface{})
-			contentDetails, err = GetContentOfSelectedRepo(connectedRepoRes, contentDetails)
+			contentDetails, err = GetContentOfSelectedRepo(connectedRepoRes, contentDetails, tenantName)
 			if err != nil {
 				return contentDetails, scmIntegrated, err
 			}

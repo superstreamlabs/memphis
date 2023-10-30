@@ -74,7 +74,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -163,6 +163,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 							Branch:       branch,
 							Owner:        owner,
 							DirectoryUrl: directoryContent.HTMLURL,
+							TenantName:   tenantName,
 						}
 						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
@@ -170,11 +171,11 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					splitPath := strings.Split(*fileContent.Path, "/")
 					path := strings.TrimSpace(splitPath[0])
 					if path != contentMap["function_name"].(string) {
-						serv.Warnf("In the repository %s, there was a function name incompatibility between the git %s and YAML file %s", repo, splitPath[0], contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %v]]GetGithubContentFromConnectedRepo: In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", tenantName, repo, splitPath[0], contentMap["function_name"].(string))
 						continue
 					}
 					if strings.Contains(path, "") {
-						serv.Warnf("In the repository %s, the function name in the YAML file %s cannot contain spaces", repo, contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %v]GetGithubContentFromConnectedRepo: In the repository %s, the function name %s in the YAML file cannot contain spaces", tenantName, repo, contentMap["function_name"].(string))
 						continue
 					}
 				}

@@ -22,7 +22,6 @@ import (
 	"strings"
 
 	"github.com/memphisdev/memphis/conf"
-
 	"github.com/memphisdev/memphis/models"
 
 	"context"
