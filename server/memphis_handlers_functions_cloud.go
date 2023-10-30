@@ -74,7 +74,7 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 		OtherFunctions = []models.FunctionResult{}
 	}
 
-	var lastModified time.Time
+	var lastModified *time.Time
 	for _, function := range functions["other"] {
 		if function.Owner == memphisDevFunctionsOwnerName && function.Repo == memphisDevFunctionsRepoName {
 			otherFunctionResult := models.FunctionResult{
@@ -339,7 +339,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				Repo:             repo,
 				Branch:           branch,
 				Owner:            owner,
-				LastCommit:       *commit.Commit.Committer.Date,
+				LastCommit:       &*commit.Commit.Committer.Date,
 				Link:             link,
 				Language:         language,
 				InProgress:       false,

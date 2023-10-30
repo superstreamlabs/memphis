@@ -11,35 +11,33 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package models
 
-import (
-	"time"
-)
+import "time"
 
 type Function struct {
-	ID               int               `json:"id"`
-	FunctionName     string            `json:"function_name"`
-	Description      string            `json:"description"`
-	Tags             []string          `json:"tags"`
-	Runtime          string            `json:"runtime"`
-	Dependencies     string            `json:"dependencies"`
-	EnvironmentVars  map[string]string `json:"environment_vars"`
-	Memory           int               `json:"memory"`
-	Storage          int               `json:"storage"`
-	Handler          string            `json:"handler"`
-	TenantName       string            `json:"tenant_name"`
-	Scm              string            `json:"scm"`
-	Owner            string            `json:"owner"`
-	Repo             string            `json:"repo"`
-	Branch           string            `json:"branch"`
-	UpdatedAt        time.Time         `json:"installed_updated_at"`
-	Version          int               `json:"installed_version"`
-	InProgress       bool              `json:"installed_in_progress"`
-	ComputeEngine    string            `json:"compute_engine"`
-	Installed        bool              `json:"installed"`
-	IsValid          bool              `json:"is_valid"`
-	InvalidReason    string            `json:"invalid_reason"`
-	UpdatesAvailable bool              `json:"updates_available"`
-	ByMemphis        bool              `json:"by_memphis"`
+	ID               int                      `json:"id"`
+	FunctionName     string                   `json:"function_name"`
+	Description      string                   `json:"description"`
+	Tags             []string                 `json:"tags"`
+	Runtime          string                   `json:"runtime"`
+	Dependencies     string                   `json:"dependencies"`
+	EnvironmentVars  []map[string]interface{} `json:"environment_vars"`
+	Memory           int                      `json:"memory"`
+	Storage          int                      `json:"storage"`
+	Handler          string                   `json:"handler"`
+	TenantName       string                   `json:"tenant_name"`
+	Scm              string                   `json:"scm"`
+	Owner            string                   `json:"owner"`
+	Repo             string                   `json:"repo"`
+	Branch           string                   `json:"branch"`
+	UpdatedAt        time.Time                `json:"installed_updated_at"`
+	Version          int                      `json:"installed_version"`
+	InProgress       bool                     `json:"installed_in_progress"`
+	ComputeEngine    string                   `json:"compute_engine"`
+	Installed        bool                     `json:"installed"`
+	IsValid          bool                     `json:"is_valid"`
+	InvalidReason    string                   `json:"invalid_reason"`
+	UpdatesAvailable bool                     `json:"updates_available"`
+	ByMemphis        bool                     `json:"by_memphis"`
 }
 
 type FunctionResult struct {
@@ -69,7 +67,7 @@ type FunctionResult struct {
 	ByMemphis        bool                     `json:"by_memphis"`
 	Language         string                   `json:"language"`
 	Link             *string                  `json:"link,omitempty"`
-	LastCommit       time.Time                `json:"last_commit,omitempty"`
+	LastCommit       *time.Time               `json:"last_commit,omitempty"`
 }
 type FunctionsRes struct {
 	InstalledFunctions []FunctionResult         `json:"installed_functions"`
