@@ -31,7 +31,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             banner: CloudBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Schedule a call',
+            rightBtn: 'Claim a 50% discount',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         cloud: {

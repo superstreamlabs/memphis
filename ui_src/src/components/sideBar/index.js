@@ -12,7 +12,7 @@
 
 import './style.scss';
 
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
@@ -36,19 +36,18 @@ import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueC
 import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
-import { ReactComponent as UsersActiveIcon } from '../../assets/images/usersIconActive.svg';
-import { HiUsers } from 'react-icons/hi';
+import { HiUsers, HiPlusSm } from 'react-icons/hi';
 import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
 import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
-import { BsHouseHeartFill } from 'react-icons/bs';
+import { BsHouseHeartFill, BsFillPlusCircleFill } from 'react-icons/bs';
+import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
 import { LATEST_RELEASE_URL } from '../../config';
-import { ReactComponent as UsersIcon } from '../../assets/images/usersIcon.svg';
 import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
@@ -59,6 +58,10 @@ import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
 import GetStarted from '../getStartedModal';
+import Modal from '../modal';
+import CreateStationForm from '../createStationForm';
+import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
+
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
 import { BiEnvelope } from 'react-icons/bi';
@@ -87,14 +90,19 @@ const overlayStylesSupport = {
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
+    const createStationRef = useRef(null);
+
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
     const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
     const [popoverOpenSupportContextMenu, setPopoverOpenSupportContextMenu] = useState(false);
+    const [popoverQuickActoins, setPopoverQuickActions] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const [openGetStartedModal, setOpenGetStartedModal] = useState(false);
+    const [createStationModal, createStationModalFlip] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -156,6 +164,67 @@ function SideBar() {
             }, 1000);
         }
     };
+
+    const contentQuickStart = (
+        <div className="menu-content">
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setPopoverQuickActions(false);
+                    createStationModalFlip(true);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <HiPlusSm className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Station</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setPopoverQuickActions(false);
+                    history.replace(`${pathDomains.schemaverse}/create`);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <HiPlusSm className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Schema</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setPopoverQuickActions(false);
+                    history.replace(pathDomains.users);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <HiPlusSm className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">User</p>
+                </div>
+            </div>
+            <div
+                className="item-wrap"
+                onClick={() => {
+                    setPopoverQuickActions(false);
+                    history.replace(`${pathDomains.administration}/integrations`);
+                }}
+            >
+                <div className="item">
+                    <span className="icons">
+                        <HiPlusSm className="icons-sidebar" />
+                    </span>
+                    <p className="item-title">Integration</p>
+                </div>
+            </div>
+        </div>
+    );
 
     const contentSetting = (
         <div className="menu-content">
@@ -327,14 +396,36 @@ function SideBar() {
     return (
         <div className="sidebar-container">
             <div className="upper-icons">
-                <img
-                    src={isCloud() ? state?.companyLogo || Logo : Logo}
-                    width="45"
-                    height="45"
-                    className="logoimg"
-                    alt="logo"
-                    onClick={() => history.replace(pathDomains.overview)}
-                />
+                <span className="logo-wrapper">
+                    <img
+                        src={isCloud() ? state?.companyLogo || Logo : Logo}
+                        width="45"
+                        height="45"
+                        className="logoimg"
+                        alt="logo"
+                        onClick={() => history.replace(pathDomains.overview)}
+                    />
+                    <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
+                </span>
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="right"
+                    content={contentQuickStart}
+                    trigger="click"
+                    onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}
+                    open={popoverQuickActoins}
+                    title={'Quick actions'}
+                >
+                    <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
+                        <div className="icon">
+                            {hoveredItem === 'actions' ? (
+                                <BsFillPlusCircleFill alt="OverviewActiveIcon" width={20} height={20} />
+                            ) : (
+                                <BsFillPlusCircleFill alt="OverviewIcon" width={20} height={20} />
+                            )}
+                        </div>
+                    </div>
+                </Popover>
                 <div
                     className="item-wrapper"
                     onMouseEnter={() => setHoveredItem('overview')}
@@ -459,7 +550,6 @@ function SideBar() {
                 <Popover
                     title={
                         <div className="support-header">
-                            <SupportColorIcon alt="SupportIcon" width={18} height={18} />
                             <label className="username">Support</label>
                         </div>
                     }
@@ -521,6 +611,36 @@ function SideBar() {
                 )}
             </div>
             <GetStarted open={!localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) || openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <StationIcon className="headerImage" alt="stationImg" />
+                        </div>
+                        <p>Create new station</p>
+                        <label>A station is a distributed unit that stores the produced data.</label>
+                    </div>
+                }
+                height="65vh"
+                width="1020px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    createStationModalFlip(false);
+                }}
+                rBtnClick={() => {
+                    createStationRef.current();
+                }}
+                clickOutside={() => createStationModalFlip(false)}
+                open={createStationModal}
+                isLoading={creatingProsessd}
+            >
+                <CreateStationForm
+                    createStationFormRef={createStationRef}
+                    setLoading={(e) => setCreatingProsessd(e)}
+                    finishUpdate={(e) => createStationModalFlip(false)}
+                />
+            </Modal>
         </div>
     );
 }

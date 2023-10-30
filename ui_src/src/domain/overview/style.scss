@@ -159,6 +159,19 @@
                 min-height: 580px;
                 min-width: 430px;
                 align-content: space-between;
+                display: grid;
+                grid-template-rows: 60% 38%;
+                position: relative;
+                .graphview-section {
+                    height: calc(100% - 50px);
+                    position: relative;
+                    .graphview-img {
+                        height: 100%;
+                        width: 100%;
+                        position: relative;
+                        cursor: pointer;
+                    }
+                }
             }
             .free-cloud {
                 display: grid;

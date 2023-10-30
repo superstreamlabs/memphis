@@ -240,8 +240,10 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
             setLoading(true);
             const data = await httpRequest('POST', ApiEndpoints.CREATE_STATION, bodyRequest);
             if (data) {
-                if (!getStarted) !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
-                else finishUpdate(data);
+                if (!getStarted) {
+                    !noRedirect && history.push(`${pathDomains.stations}/${data.name}`);
+                }
+                finishUpdate(data);
             }
         } catch (error) {
         } finally {

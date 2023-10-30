@@ -26,6 +26,7 @@ import {
     USER_IMAGE
 } from '../../const/localStorageConsts';
 import { ReactComponent as StationIcon } from '../../assets/images/stationsIconActive.svg';
+import { ReactComponent as GraphOverview } from '../../assets/images/graphOverview.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -41,7 +42,6 @@ import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import AsyncTasks from '../../components/asyncTasks';
-import GetStarted from './getStarted';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
@@ -284,6 +284,17 @@ function OverView() {
 
                                     <div className="right-side">
                                         <SystemComponents />
+                                        <div className="overview-components-wrapper system-components-wrapper">
+                                            <div className="system-components-container">
+                                                <div className="overview-components-header">
+                                                    <p>System overview</p>
+                                                    <label>A dynamic, self-built graph visualization of your main system components</label>
+                                                </div>
+                                                <div className="graphview-section">
+                                                    <GraphOverview alt="Graph view" className="graphview-img" />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             )}
