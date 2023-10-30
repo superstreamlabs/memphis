@@ -49,6 +49,7 @@ import { ReactComponent as NewIntegrationIcon } from '../../assets/images/newInt
 import { BsHouseHeartFill } from 'react-icons/bs';
 import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
 import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
+import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
@@ -66,6 +67,7 @@ import GetStarted from '../getStartedModal';
 import Modal from '../modal';
 import CreateStationForm from '../createStationForm';
 import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
+import CreateUserDetails from '../../domain/users/createUserDetails';
 
 import UpgradePlans from '../upgradePlans';
 import { FaBook, FaDiscord } from 'react-icons/fa';
@@ -96,6 +98,7 @@ function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
     const createStationRef = useRef(null);
+    const createUserRef = useRef(null);
 
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
@@ -108,6 +111,8 @@ function SideBar() {
     const [openGetStartedModal, setOpenGetStartedModal] = useState(false);
     const [createStationModal, createStationModalFlip] = useState(false);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [addUserModalIsOpen, addUserModalFlip] = useState(false);
+    const [createUserLoader, setCreateUserLoader] = useState(false);
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -170,6 +175,11 @@ function SideBar() {
         }
     };
 
+    const handleAddUser = () => {
+        setCreateUserLoader(false);
+        addUserModalFlip(false);
+    };
+
     const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave }) => {
         return (
             <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
@@ -213,7 +223,7 @@ function SideBar() {
                 name="Create a new user"
                 onClick={() => {
                     setPopoverQuickActions(false);
-                    history.replace(pathDomains.users);
+                    addUserModalFlip(true);
                 }}
             />
             <PopoverActionItem
@@ -530,6 +540,36 @@ function SideBar() {
                     setLoading={(e) => setCreatingProsessd(e)}
                     finishUpdate={(e) => createStationModalFlip(false)}
                 />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <AddUserIcon className="headerImage" alt="stationImg" />
+                        </div>
+                        <p>Add a new user</p>
+                        <label>Enter user details to get started</label>
+                    </div>
+                }
+                width="450px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    addUserModalFlip(false);
+                    setCreateUserLoader(false);
+                }}
+                clickOutside={() => {
+                    setCreateUserLoader(false);
+                    addUserModalFlip(false);
+                }}
+                rBtnClick={() => {
+                    setCreateUserLoader(true);
+                    createUserRef.current();
+                }}
+                isLoading={createUserLoader}
+                open={addUserModalIsOpen}
+            >
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
             </Modal>
         </div>
     );
