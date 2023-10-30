@@ -328,7 +328,7 @@ function SideBar() {
                             setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                         }}
                     />
-                    <CloudMoadl type="oss" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+                    <CloudMoadl type="bundle" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
 

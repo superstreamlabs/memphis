@@ -13,44 +13,52 @@
 import './style.scss';
 
 import React from 'react';
-import CloudBanner from '../../assets/images/banners/cloudBanner.jpg';
+import { ReactComponent as FunctionIntegrateIcon } from '../../assets/images/functionIntegrate.svg';
+import { ReactComponent as BundleBanner } from '../../assets/images/banners/bundle1.svg';
+import { ReactComponent as CloudBanner } from '../../assets/images/banners/cloud2.svg';
+import { ReactComponent as FunctionsBanner } from '../../assets/images/banners/functions3.svg';
+import { ReactComponent as UpgradeBanner } from '../../assets/images/banners/upgrade4.svg';
+
 import Modal from '../modal';
 import Button from '../button';
 
 const CloudModal = ({ type, open, handleClose }) => {
     const content = {
-        oss: {
-            title: (
-                <>
-                    <label>Elevate Your Experience with Memphis.dev </label>
-                    <label className="cloud-gradient">Cloud</label>
-                    <label>!</label>
-                </>
-            ),
-            subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
-            banner: CloudBanner,
+        bundle: {
+            title: <label className="cloud-gradient">Enhance Your Journey</label>,
+            subtitle: 'Get Your Open-Source Support Bundle Today!',
+            banner: <BundleBanner className="banner" alt="benner" />,
             leftBtn: 'Learn More',
-            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Claim a 50% discount',
+            leftBtnLink: 'https://docs.memphis.dev/memphis/open-source-installation/open-source-support-bundle/',
+            rightBtn: 'Book a Call',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         cloud: {
-            title: 'Elevate Your Experience with Memphis.dev Cloud!',
+            title: 'Enhance Your Journey',
             subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
-            banner: CloudBanner,
+            banner: <CloudBanner className="banner" alt="benner" />,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Schedule a call',
+            rightBtn: 'Claim 50% discount',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         upgrade: {
-            title: 'Elevate Your Experience with Memphis.dev Cloud!',
-            subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
-            banner: CloudBanner,
+            title: 'Upgrade your plan',
+            subtitle: 'To Unlock More Features And Enhance Your Experience!',
+            banner: <UpgradeBanner className="banner" alt="benner" />,
+            leftBtn: 'Upgrade Now',
+            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            rightBtn: 'Talk to Sales',
+            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+        },
+        functions: {
+            title: 'The Future of Event-Driven',
+            subtitle: 'Discover A Faster And Smarter Way To Do Event-driven And Stream Processing',
+            banner: <FunctionsBanner className="banner" alt="benner" />,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Schedule a call',
-            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+            rightBtn: 'Book a demo',
+            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo/demo-for-memphis-functions'
         }
     };
 
@@ -58,10 +66,21 @@ const CloudModal = ({ type, open, handleClose }) => {
         <cloud-modal is="x3d">
             <Modal
                 header={
-                    <div>
-                        <span style={{ display: 'flex', justifyContent: 'center', fontFamily: 'InterSemiBold', fontSize: '16px', margin: 0 }}>
-                            {content[type]?.title}
-                        </span>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            fontFamily: 'InterSemiBold',
+                            fontSize: '16px',
+                            margin: 0
+                        }}
+                    >
+                        <div className="header-icon">
+                            <FunctionIntegrateIcon width={22} height={22} />
+                        </div>
+                        <span>{content[type]?.title}</span>
                         <label style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', fontFamily: 'Inter', fontSize: '14px' }}>
                             {content[type]?.subtitle}
                         </label>
@@ -74,7 +93,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                 open={open}
                 className="cloud-modal"
             >
-                <img src={content[type]?.banner} className="banner" alt="benner" />
+                {content[type]?.banner}
                 <span className="cloud-modal-btns">
                     <Button
                         width="230px"
