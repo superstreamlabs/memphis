@@ -247,8 +247,6 @@ function OverView() {
                                 width="160px"
                                 height="34px"
                                 placeholder={'Create new station'}
-                                border="gradient"
-                                borderWidth="6px"
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"

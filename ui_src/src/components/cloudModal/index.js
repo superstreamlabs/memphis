@@ -18,25 +18,53 @@ import Modal from '../modal';
 import Button from '../button';
 
 const CloudModal = ({ type, open, handleClose }) => {
+    const content = {
+        oss: {
+            title: (
+                <>
+                    <label>Elevate Your Experience with Memphis.dev </label>
+                    <label className="cloud-gradient">Cloud</label>
+                    <label>!</label>
+                </>
+            ),
+            subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
+            banner: CloudBanner,
+            leftBtn: 'Learn More',
+            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            rightBtn: 'Schedule a call',
+            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+        },
+        cloud: {
+            title: 'Elevate Your Experience with Memphis.dev Cloud!',
+            subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
+            banner: CloudBanner,
+            leftBtn: 'Learn More',
+            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            rightBtn: 'Schedule a call',
+            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+        },
+        upgrade: {
+            title: 'Elevate Your Experience with Memphis.dev Cloud!',
+            subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
+            banner: CloudBanner,
+            leftBtn: 'Learn More',
+            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            rightBtn: 'Schedule a call',
+            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+        }
+    };
+
     return (
         <cloud-modal is="x3d">
             <Modal
                 header={
                     <div>
-                        {type === 'oss' ? (
-                            <>
-                                <span style={{ display: 'flex', justifyContent: 'center', fontFamily: 'InterSemiBold', fontSize: '16px', margin: 0 }}>
-                                    <label>Elevate Your Experience with Memphis.dev </label>
-                                    <label className="cloud-gradient">Cloud</label>
-                                    <label>!</label>
-                                </span>
-                                <label style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', fontFamily: 'Inter', fontSize: '14px' }}>
-                                    Embrace serverless, enjoy peace of mind, and experience enhanced resilience.
-                                </label>
-                            </>
-                        ) : (
-                            <span>cloud</span>
-                        )}
+                        <span style={{ display: 'flex', justifyContent: 'center', fontFamily: 'InterSemiBold', fontSize: '16px', margin: 0 }}>
+                            {content[type]?.title}
+                        </span>
+                        <label style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', fontFamily: 'Inter', fontSize: '14px' }}>
+                            {content[type]?.subtitle}
+                        </label>
                     </div>
                 }
                 displayButtons={false}
@@ -46,35 +74,31 @@ const CloudModal = ({ type, open, handleClose }) => {
                 open={open}
                 className="cloud-modal"
             >
-                <img src={CloudBanner} className="banner" alt="benner" />
+                <img src={content[type]?.banner} className="banner" alt="benner" />
                 <span className="cloud-modal-btns">
                     <Button
                         width="230px"
                         height="40px"
-                        placeholder="Learn More"
+                        placeholder={content[type]?.leftBtn}
                         colorType="black"
                         radiusType="circle"
                         backgroundColorType={'white'}
                         border={'gray'}
                         fontSize="12px"
                         fontWeight="bold"
-                        onClick={() => window.open('https://memphis.dev/memphis-dev-cloud/', '_blank')}
+                        onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
                     />
                     <Button
                         width="230px"
                         height="40px"
-                        placeholder="Schedule a call"
+                        placeholder={content[type]?.rightBtn}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType={'purple'}
                         border={'gray'}
                         fontSize="12px"
                         fontWeight="bold"
-                        onClick={() =>
-                            type === 'oss'
-                                ? window.open('https://meetings.hubspot.com/yaniv-benhemo', '_blank')
-                                : window.open('https://memphisdev.github.io/memphis/', '_blank')
-                        }
+                        onClick={() => window.open(content[type]?.rightBtnLink, '_blank')}
                     />
                 </span>
             </Modal>

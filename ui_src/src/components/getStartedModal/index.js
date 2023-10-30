@@ -18,6 +18,7 @@ import Button from '../button';
 import Input from '../Input';
 import { CONNECT_APP_VIDEO } from '../../config';
 import ConnectBG from '../../assets/images/connectBG.webp';
+import { BsGithub } from 'react-icons/bs';
 import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
 import Modal from '../modal';
 import CloneModal from '../cloneModal';
@@ -90,7 +91,6 @@ const GetStartedModal = ({ open, handleClose }) => {
         <Modal
             className="get-started-modal"
             width={'600px'}
-            height={'95vh'}
             displayButtons={false}
             clickOutside={() => {
                 skipGetStarted();
@@ -145,7 +145,16 @@ const GetStartedModal = ({ open, handleClose }) => {
                         <tutorial is="x3s" key={index} onClick={() => setOpenCloneModal(true)}>
                             <div className="left-purple"></div>
                             <data is="x3s">
-                                <header is="x3s">TUTORIAL</header>
+                                <header is="x3s">
+                                    <label>TUTORIAL</label>
+                                    <BsGithub
+                                        alt="github"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.open('https://github.com/memphisdev/onboarding-app.git', '_blank');
+                                        }}
+                                    />
+                                </header>
                                 <body is="x3s">
                                     <label className="title">{code.title}</label>
                                     <label className="subtitle">{code.subtitle}</label>

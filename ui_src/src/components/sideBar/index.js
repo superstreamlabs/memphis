@@ -37,6 +37,7 @@ import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/funct
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
 import { ReactComponent as UsersActiveIcon } from '../../assets/images/usersIconActive.svg';
+import { HiUsers } from 'react-icons/hi';
 import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
@@ -439,18 +440,18 @@ function SideBar() {
                     </div>
                 )}
                 <div
-                    className="item-wrapper mb-15 cursor-pointer"
+                    className="integration-icon-wrapper mb-15 cursor-pointer"
                     onMouseEnter={() => setHoveredItem('users')}
                     onMouseLeave={() => setHoveredItem('')}
                     onClick={() => history.replace(pathDomains.users)}
                 >
                     <div className="icon">
                         {state.route === 'users' ? (
-                            <UsersActiveIcon alt="LogsActiveIcon" width={20} height={20} />
+                            <HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" />
                         ) : hoveredItem === 'users' ? (
-                            <UsersActiveIcon alt="LogsActiveIcon" width={20} height={20} />
+                            <HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" />
                         ) : (
-                            <UsersIcon alt="LogsIcon" width={20} height={20} />
+                            <HiUsers alt="LogsIcon" className="sidebar-title" />
                         )}
                     </div>
                     <p className={state.route === 'users' || hoveredItem === 'users' ? 'sidebar-title ms-active' : 'sidebar-title'}>Users</p>

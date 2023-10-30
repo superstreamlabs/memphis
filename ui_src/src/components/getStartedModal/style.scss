@@ -216,6 +216,14 @@
                 font-family: 'Inter';
                 font-size: 12px;
                 font-weight: 400;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                svg {
+                    cursor: pointer;
+                    height: 16px;
+                    width: 16px;
+                }
             }
             body {
                 display: flex;

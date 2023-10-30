@@ -197,8 +197,8 @@ integ-item {
         }
         .action-buttons {
             display: flex;
-            width: 250px;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
             justify-content: space-between;
             .info-icon {
                 width: 25px;

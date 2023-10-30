@@ -39,8 +39,6 @@ export function getBorderColor(borderColorType) {
             return '#5A4FE5';
         case 'white':
             return '#ffffff';
-        case 'gradient':
-            return 'linear-gradient(249deg, #FFC633 39.68%, #61DFC6 51.04%, #6557FF 60.07%)';
         default:
             return borderColorType;
     }
