@@ -154,6 +154,17 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						continue
 					}
 
+					splitPath := strings.Split(*fileContent.Path, "/")
+					path := strings.TrimSpace(splitPath[0])
+					if path != contentMap["function_name"].(string) {
+						serv.Warnf("[tenant: %s]]GetGithubContentFromConnectedRepo: In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", tenantName, repo, splitPath[0], contentMap["function_name"].(string))
+						continue
+					}
+					if strings.Contains(path, "") {
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: In the repository %s, the function name %s in the YAML file cannot contain spaces", tenantName, repo, contentMap["function_name"].(string))
+						continue
+					}
+
 					if isValidFileYaml {
 						countFunctions++
 						fileDetails := functionDetails{
@@ -167,16 +178,6 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						}
 						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
-					}
-					splitPath := strings.Split(*fileContent.Path, "/")
-					path := strings.TrimSpace(splitPath[0])
-					if path != contentMap["function_name"].(string) {
-						serv.Warnf("[tenant: %s]]GetGithubContentFromConnectedRepo: In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", tenantName, repo, splitPath[0], contentMap["function_name"].(string))
-						continue
-					}
-					if strings.Contains(path, "") {
-						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: In the repository %s, the function name %s in the YAML file cannot contain spaces", tenantName, repo, contentMap["function_name"].(string))
-						continue
 					}
 				}
 			}
