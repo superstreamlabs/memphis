@@ -179,64 +179,51 @@ function SideBar() {
         );
     };
 
+    const PopoverActionItem = ({ icon, name, onClick }) => {
+        return (
+            <div className="item-wrap" onClick={onClick}>
+                <div className="item">
+                    <span className="icons">{icon}</span>
+                    <p className="item-title">{name}</p>
+                </div>
+            </div>
+        );
+    };
+
     const contentQuickStart = (
         <div className="menu-content">
-            <div
-                className="item-wrap"
+            <PopoverActionItem
+                icon={<NewStationIcon className="icons-sidebar" />}
+                name="Create a new station"
                 onClick={() => {
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <NewStationIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Create a new station</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<NewSchemaIcon className="icons-sidebar" />}
+                name="Create a new schema"
                 onClick={() => {
                     setPopoverQuickActions(false);
                     history.replace(`${pathDomains.schemaverse}/create`);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <NewSchemaIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Create a new schema</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<NewUserIcon className="icons-sidebar" />}
+                name="Create a new user"
                 onClick={() => {
                     setPopoverQuickActions(false);
                     history.replace(pathDomains.users);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <NewUserIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Create a new user</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<NewIntegrationIcon className="icons-sidebar" />}
+                name="Create a new integration"
                 onClick={() => {
                     setPopoverQuickActions(false);
                     history.replace(`${pathDomains.administration}/integrations`);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <NewIntegrationIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Create a new integration</p>
-                </div>
-            </div>
+            />
         </div>
     );
 
@@ -265,119 +252,72 @@ function SideBar() {
                 </div>
             </div>
             <Divider />
-            <div
-                className="item-wrap"
+            <PopoverActionItem
+                icon={<PersonOutlinedIcon className="icons-sidebar" />}
+                name="Profile"
                 onClick={() => {
                     history.replace(`${pathDomains.administration}/profile`);
                     setPopoverOpenSetting(false);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <PersonOutlinedIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Profile</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<SettingOutlined className="icons-sidebar" />}
+                name="Administration"
                 onClick={() => {
                     history.replace(`${pathDomains.administration}/integrations`);
                     setPopoverOpenSetting(false);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <SettingOutlined className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Administration</p>
-                </div>
-            </div>
+            />
             {isCloud() && (
-                <div
-                    className="item-wrap"
+                <PopoverActionItem
+                    icon={<ExceptionOutlined className="icons-sidebar" />}
+                    name="Billing"
                     onClick={() => {
                         history.replace(`${pathDomains.administration}/usage`);
                         setPopoverOpenSetting(false);
                     }}
-                >
-                    <div className="item">
-                        <span className="icons">
-                            <ExceptionOutlined className="icons-sidebar" />
-                        </span>
-                        <p className="item-title">Billing</p>
-                    </div>
-                </div>
+                />
             )}
-            <div className="item-wrap" onClick={() => handleLogout()}>
-                <div className="item">
-                    <span className="icons">{logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />}</span>
-                    <p className="item-title">Log out</p>
-                </div>
-            </div>
+            <PopoverActionItem icon={logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />} name="Log out" onClick={() => handleLogout()} />
         </div>
     );
 
     const supportContextMenu = (
         <div className="menu-content">
-            <div
-                className="item-wrap"
+            <PopoverActionItem
+                icon={<BsHouseHeartFill className="icons-sidebar" />}
+                name="Getting started"
                 onClick={() => {
                     setOpenGetStartedModal(true);
                     setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <BsHouseHeartFill className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Getting started</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<FaBook className="icons-sidebar" />}
+                name="Documentation"
                 onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
                     window.open('https://memphis.dev/docs', '_blank');
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <FaBook className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Documentation</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<FaDiscord className="icons-sidebar" />}
+                name="Discord channel"
                 onClick={() => {
                     setPopoverOpenSupportContextMenu(false);
                     window.open('https://memphis.dev/discord', '_blank');
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <FaDiscord className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Discord channel</p>
-                </div>
-            </div>
+            />
             {!isCloud() && (
                 <>
-                    <div
-                        className="item-wrap"
+                    <PopoverActionItem
+                        icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
+                        name="Open service request"
                         onClick={() => {
                             setCloudModalOpen(true);
                             setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                         }}
-                    >
-                        <div className="item">
-                            <span className="icons">
-                                <BsFillChatSquareTextFill className="icons-sidebar" />
-                            </span>
-                            <p className="item-title">Open service request</p>
-                        </div>
-                    </div>
+                    />
                     <CloudMoadl type="oss" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
@@ -536,7 +476,7 @@ function SideBar() {
                             width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
                             height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
                             alt="avatar"
-                        ></img>
+                        />
                     </div>
                 </Popover>
                 {!isCloud() && (

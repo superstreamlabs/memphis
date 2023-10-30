@@ -91,7 +91,20 @@ const StationsList = () => {
                                 station={station}
                             />
                         ))}
-                        <StationsInstructions header="Add more stations" button="Add Station" newStation={() => modalFlip(true)} />
+                        <div className="stations-placeholder add-more">
+                            <Button
+                                className="modal-btn"
+                                width="220px"
+                                height="42px"
+                                placeholder="Add anothet station"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="16px"
+                                fontWeight="bold"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
                     </div>
                 );
             }

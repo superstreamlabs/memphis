@@ -247,12 +247,12 @@ function OverView() {
                             {!isCloud() && <CloudTeaser alt="Cloud" className="cloud-teaser" />}
                             <Button
                                 className="modal-btn"
-                                width="160px"
+                                width="170px"
                                 height="34px"
                                 placeholder={
                                     <span className="create-new">
                                         <PlusElement alt="add" />
-                                        <label>Create new station</label>
+                                        <label>Create a new station</label>
                                     </span>
                                 }
                                 border={'none'}
