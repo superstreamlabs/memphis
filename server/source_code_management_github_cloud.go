@@ -143,13 +143,28 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						}
 					}
 
+					splitPath := strings.Split(*fileContent.Path, "/")
+					path := strings.TrimSpace(splitPath[0])
+
 					err = validateYamlContent(contentMap)
 					if err != nil {
 						isValidFileYaml = false
+						fileDetails := functionDetails{
+							ContentMap:   contentMap,
+							RepoName:     repo,
+							Branch:       branch,
+							Owner:        owner,
+							DirectoryUrl: directoryContent.HTMLURL,
+							TenantName:   tenantName,
+						}
+						message := fmt.Sprintf("In the repository %s, the yaml file %s is invalid: %s", repo, splitPath[0], err.Error())
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						continue
 					}
 					isValidFileYaml = true
-
 					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
 					if err != nil {
 						continue
@@ -165,8 +180,6 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						TenantName:   tenantName,
 					}
 
-					splitPath := strings.Split(*fileContent.Path, "/")
-					path := strings.TrimSpace(splitPath[0])
 					if path != contentMap["function_name"].(string) {
 						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
 						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)

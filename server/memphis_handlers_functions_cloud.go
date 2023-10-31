@@ -327,6 +327,10 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			if _, ok := fucntionContentMap["handler"].(string); ok {
 				handler = fucntionContentMap["handler"].(string)
 			}
+			var lastCommit *time.Time
+			if commit != nil {
+				lastCommit = &*commit.Commit.Committer.Date
+			}
 
 			functionDetails := models.FunctionResult{
 				FunctionName:     fucntionContentMap["function_name"].(string),
@@ -342,7 +346,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				Repo:             repo,
 				Branch:           branch,
 				Owner:            owner,
-				LastCommit:       &*commit.Commit.Committer.Date,
+				LastCommit:       lastCommit,
 				Link:             link,
 				Language:         language,
 				InProgress:       false,
