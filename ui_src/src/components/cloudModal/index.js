@@ -76,24 +76,12 @@ const CloudModal = ({ type, open, handleClose }) => {
         <cloud-modal is="x3d">
             <Modal
                 header={
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            fontFamily: 'InterSemiBold',
-                            fontSize: '16px',
-                            margin: 0
-                        }}
-                    >
+                    <div className="header">
                         <div className="header-icon">
                             <FunctionIntegrateIcon width={22} height={22} />
                         </div>
                         <span>{content[type]?.title}</span>
-                        <label style={{ display: 'flex', justifyContent: 'center', textAlign: 'center', fontFamily: 'Inter', fontSize: '14px' }}>
-                            {content[type]?.subtitle}
-                        </label>
+                        <label className="subtitle">{content[type]?.subtitle}</label>
                     </div>
                 }
                 displayButtons={false}

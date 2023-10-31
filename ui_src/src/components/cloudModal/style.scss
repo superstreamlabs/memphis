@@ -5,31 +5,49 @@
     .ant-modal-body {
         padding-top: 0px;
     }
-    .header-icon {
-        margin: 0px auto;
-        width: 48px;
-        height: 48px;
+    .header {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
-        background: #6557ff1a;
-        border-radius: 100%;
-        margin-bottom: 17px;
-    }
-    .title-label {
-        font-size: 24px;
+        align-items: center;
         font-family: 'InterSemiBold';
-        line-height: 35px;
+        font-size: 16px;
+        margin: 0;
+        .header-icon {
+            margin: 0px auto;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #6557ff1a;
+            border-radius: 100%;
+            margin-bottom: 17px;
+        }
+
+        .title-label {
+            font-size: 24px;
+            font-family: 'InterSemiBold';
+            line-height: 35px;
+        }
+        .cloud-gradient {
+            background: -webkit-linear-gradient(249deg, #61dfc6 39.68%, #6557ff 60.07%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 24px;
+            font-family: 'InterSemiBold';
+            line-height: 35px;
+        }
+        .subtitle {
+            display: flex;
+            justify-content: center;
+            text-align: center;
+            font-family: 'Inter';
+            font-size: 14px;
+        }
     }
-    .cloud-gradient {
-        background: -webkit-linear-gradient(249deg, #61dfc6 39.68%, #6557ff 60.07%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 24px;
-        font-family: 'InterSemiBold';
-        line-height: 35px;
-    }
+
     .banner-container {
         width: 100%;
         display: flex;
