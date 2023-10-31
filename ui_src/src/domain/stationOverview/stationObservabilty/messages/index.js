@@ -53,7 +53,7 @@ const Messages = () => {
     const [resendProcced, setResendProcced] = useState(false);
     const [ignoreProcced, setIgnoreProcced] = useState(false);
     const [userScrolled, setUserScrolled] = useState(false);
-    const [subTabValue, setSubTabValue] = useState('Unacked');
+    const [subTabValue, setSubTabValue] = useState('Unacknowledged');
     const [tabValue, setTabValue] = useState('Messages');
     const [isCheck, setIsCheck] = useState([]);
     const [useDlsModal, setUseDlsModal] = useState(false);
@@ -61,9 +61,9 @@ const Messages = () => {
     const [disableLoader, setDisableLoader] = useState(false);
 
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
-    const tabs = ['Messages', 'Dead-letter', 'Details'];
+    const tabs = ['Messages', 'Dead-letter', 'Configuration'];
     const subTabs = [
-        { name: 'Unacked', disabled: false },
+        { name: 'Unacknowledged', disabled: false },
         { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
     ];
     const url = window.location.href;
@@ -123,7 +123,7 @@ const Messages = () => {
         setIsCheck([]);
 
         setTabValue(newValue);
-        subTabValue === 'Schema violation' && setSubTabValue('Unacked');
+        subTabValue === 'Schema violation' && setSubTabValue('Unacknowledged');
     };
 
     useEffect(() => {
@@ -260,7 +260,7 @@ const Messages = () => {
                             data={
                                 !isDls
                                     ? stationState?.stationSocketData?.messages
-                                    : subTabValue === 'Unacked'
+                                    : subTabValue === 'Unacknowledged'
                                     ? stationState?.stationSocketData?.poison_messages
                                     : stationState?.stationSocketData?.schema_failed_messages
                             }
@@ -307,10 +307,10 @@ const Messages = () => {
             ) {
                 return 'When retention is ack-based, messages will be auto-deleted if no consumers are connected to the station';
             } else {
-                return 'Start / Continue producing data.';
+                return 'Start / Continue producing data';
             }
         } else {
-            return 'Create your 1st producer and start producing data.';
+            return 'Create a producer to start producing messages';
         }
     };
 
@@ -339,7 +339,7 @@ const Messages = () => {
                             onClick={() => (isCheck.length === 0 ? modalPurgeFlip(true) : handleDrop())}
                         />
                     )}
-                    {tabValue === 'Dead-letter' && subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
+                    {tabValue === 'Dead-letter' && subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length > 0 && (
                         <Button
                             width="95px"
                             height="32px"
@@ -392,12 +392,12 @@ const Messages = () => {
             {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
                 <div className="waiting-placeholder msg-plc">
                     <WaitingMessagesIcon width={100} alt="waitingMessages" />
-                    <p>No messages</p>
+                    <p>Waiting for messages</p>
                     <span className="des">{getDescriptin()}</span>
                 </div>
             )}
             {tabValue === tabs[1] &&
-                ((subTabValue === 'Unacked' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
+                ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
                     (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
                     <div className="waiting-placeholder msg-plc">
                         <DeadLetterPlaceholderIcon width={80} alt="waitingMessages" />
@@ -410,7 +410,7 @@ const Messages = () => {
                         icon={<DlsEnableIcon width={24} alt="dlsEnableIcon" />}
                         title={
                             <>
-                                <span>Dead-letter station configuration</span>
+                                <span>Dead-letter</span>
                                 <Button
                                     width="130px"
                                     height="25px"
@@ -431,15 +431,14 @@ const Messages = () => {
                                 />
                             </>
                         }
-                        desc="Triggers for storing messages in the dead-letter station."
+                        desc="What events should flag messages as dead-lettered?"
                         rightSection={false}
                     >
                         <DlsConfig />
                     </DetailBox>
                     <DetailBox
                         icon={<PurgeIcon width={24} alt="purgeIcon" />}
-                        title={'Purge'}
-                        desc="Clean station from messages."
+                        title={'Purge all messages'}
                         data={[
                             <Button
                                 width="80px"
@@ -488,15 +487,7 @@ const Messages = () => {
 
                     <DetailBox
                         icon={<IdempotencyIcon width={24} alt="idempotencyIcon" />}
-                        title={'Idempotency'}
-                        desc={
-                            <span>
-                                Ensures messages with the same "msg-id" value will be produced only once for the configured time.{' '}
-                                <a href="https://docs.memphis.dev/memphis/memphis/concepts/idempotency" target="_blank">
-                                    Learn more
-                                </a>
-                            </span>
-                        }
+                        title={'Deduplication (Idempotency)'}
                         data={[msToUnits(stationState?.stationSocketData?.idempotency_window_in_ms)]}
                     />
                 </div>

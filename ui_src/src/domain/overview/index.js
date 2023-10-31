@@ -321,7 +321,7 @@ function OverView() {
                         <div className="header-img-container">
                             <StationIcon className="headerImage" alt="stationImg" />
                         </div>
-                        <p>Create new station</p>
+                        <p>Create a new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }

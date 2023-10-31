@@ -59,15 +59,15 @@ const DlsConfig = () => {
         <div className="dls-config-container">
             <div className="toggle-dls-config">
                 <div>
-                    <p className="header-dls">Unacked</p>
-                    <p className="sub-header-dls">Unacknowledged messages that passed "maxMsgDeliveries"</p>
+                    <p className="header-dls">Unacknowledged</p>
+                    <p className="sub-header-dls">Messages that exceeded the maximum delivery attempts</p>
                 </div>
                 <Switcher onChange={() => updateDlsConfigurations(true, false)} checked={dlsTypes?.poison} loading={dlsLoading?.poison} />
             </div>
             <div className="toggle-dls-config">
                 <div>
                     <p className="header-dls">Schema violation</p>
-                    <p className="sub-header-dls">Messages that did not pass schema validation</p>
+                    <p className="sub-header-dls">Messages that failed schema validation</p>
                 </div>
                 <Switcher
                     disabled={!stationState?.stationMetaData?.is_native}

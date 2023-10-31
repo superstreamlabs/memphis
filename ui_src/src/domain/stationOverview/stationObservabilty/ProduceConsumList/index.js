@@ -113,7 +113,7 @@ const ProduceConsumList = ({ producer }) => {
         let cgDetails = {
             details: [
                 {
-                    name: 'Unacked messages',
+                    name: 'Unacknowledged messages',
                     value: cgsList[rowIndex]?.poison_messages?.toLocaleString()
                 },
                 {
@@ -187,7 +187,7 @@ const ProduceConsumList = ({ producer }) => {
                 {!producer && cgsList.length > 0 && (
                     <div className="coulmns-table">
                         <span style={{ width: '80px' }}>Name</span>
-                        <span style={{ width: '80px', textAlign: 'center' }}>Unacked</span>
+                        <span style={{ width: '80px', textAlign: 'center' }}>Unacknowledged</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
                         <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
                     </div>
@@ -265,9 +265,11 @@ const ProduceConsumList = ({ producer }) => {
                 {((producer && producersList?.length === 0) || (!producer && cgsList?.length === 0)) && (
                     <div className="waiting-placeholder">
                         {producer ? <WaitingProducerIcon width={62} alt="producer" /> : <WaitingConsumerIcon width={62} alt="producer" />}
-                        <p>Waiting for the 1st {producer ? 'producer' : 'consumer'}</p>
-                        {producer && <span className="des">A producer is the source application that pushes data to the station</span>}
-                        {!producer && <span className="des">Consumer groups are a pool of consumers that divide the work of consuming and processing data</span>}
+                        <p>{`No ${producer ? 'producers' : 'consumers'} yet`}</p>
+                        {producer && (
+                            <span className="des">A producer represents the originating application or service responsible for sending messages to a station</span>
+                        )}
+                        {!producer && <span className="des">A consumer group is a group of clients responsible for retrieving messages from a station</span>}
                         <Button
                             className="open-sdk"
                             width="200px"

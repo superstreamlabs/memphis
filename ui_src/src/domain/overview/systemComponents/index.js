@@ -59,7 +59,7 @@ const SysComponents = () => {
             <div className="system-components-container">
                 <div className="overview-components-header">
                     <p>System components</p>
-                    <label>A list of Memphis system components</label>
+                    <label>An essential components list of your system</label>
                 </div>
                 <div className="component-list">
                     {state?.monitor_data?.system_components?.map((comp, i) => {

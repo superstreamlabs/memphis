@@ -172,7 +172,7 @@ const StationsList = () => {
                             Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
                         </label>
                         <span className="memphis-label">
-                            A station is a distributed unit that stores messages. More&nbsp;
+                            A station is a distributed storage for messages. More&nbsp;
                             <a className="learn-more" href=" https://docs.memphis.dev/memphis/memphis/key-concepts/station" target="_blank">
                                 here.
                             </a>
@@ -210,7 +210,7 @@ const StationsList = () => {
                         <Button
                             width="160px"
                             height="34px"
-                            placeholder={'Create new station'}
+                            placeholder={'Create a new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -236,7 +236,7 @@ const StationsList = () => {
                             <div className="header-img-container">
                                 <StationIcon alt="stationIcon" />
                             </div>
-                            <p>Create new station</p>
+                            <p>Create a new station</p>
                             <label>A station is a distributed unit that stores the produced data.</label>
                         </div>
                     }
