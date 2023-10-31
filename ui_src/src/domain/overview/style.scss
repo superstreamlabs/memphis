@@ -33,6 +33,19 @@
                     display: flex;
                     justify-content: center;
                     align-items: center;
+                    .edit-logo {
+                        position: absolute;
+                        bottom: 0px;
+                        right: -10px;
+                        color: #a9a9a9;
+                        cursor: pointer;
+                        display: none;
+                    }
+                }
+                .bot-wrapper:hover {
+                    .edit-logo {
+                        display: block;
+                    }
                 }
 
                 .dynamic-sentences {

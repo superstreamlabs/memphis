@@ -29,6 +29,7 @@ import { ReactComponent as StationIcon } from '../../assets/images/stationsIconA
 import { ReactComponent as GraphOverview } from '../../assets/images/graphOverview.svg';
 import { ReactComponent as CloudTeaser } from '../../assets/images/cloudTeaser.svg';
 import { ReactComponent as PlusElement } from '../../assets/images/plusElement.svg';
+import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
 import { ApiEndpoints } from '../../const/apiEndpoints';
@@ -217,6 +218,7 @@ function OverView() {
                                     alt="avatar"
                                     onClick={() => history.push(pathDomains.profile)}
                                 ></img>
+                                <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                             </div>
                             <div className="dynamic-sentences">
                                 {localStorage.getItem(LOCAL_STORAGE_ALREADY_LOGGED_IN) === 'true' ? (
