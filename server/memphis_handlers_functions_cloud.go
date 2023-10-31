@@ -102,17 +102,15 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 				TenantName:       function.TenantName,
 			}
 			OtherFunctions = append(OtherFunctions, otherFunctionResult)
-			// TODO: delete it once we will have the last_modified in connected repos map
 			lastModified = function.LastCommit
 		}
 	}
 
 	memphisDevFucntions := []map[string]interface{}{}
 	memphisFunc := map[string]interface{}{
-		"repo_name": memphisFunctions["repo_name"].(string),
-		"branch":    memphisFunctions["branch"].(string),
-		"owner":     memphisFunctions["repo_owner"].(string),
-		// TODO: delete it once we will have the last_modified in connected repos map
+		"repo_name":     memphisFunctions["repo_name"].(string),
+		"branch":        memphisFunctions["branch"].(string),
+		"owner":         memphisFunctions["repo_owner"].(string),
 		"last_modified": lastModified,
 	}
 	memphisDevFucntions = append(memphisDevFucntions, memphisFunc)
