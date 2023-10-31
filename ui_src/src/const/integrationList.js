@@ -15,6 +15,7 @@ import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
 import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
+import zapierBannerPopup from '../assets/images/zapierBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
 import newrelicBanner from '../assets/images/newrelicBanner.webp';
@@ -22,6 +23,7 @@ import elasticBanner from '../assets/images/elasticBanner.webp';
 import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
 import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
+import zapierBanner from '../assets/images/zapierBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import { ReactComponent as PageDutyIcon } from '../assets/images/pagerDutyIcon.svg';
 import { ReactComponent as GithubIntegrationIcon } from '../assets/images/githubIntegrationIcon.svg';
@@ -34,6 +36,7 @@ import { ReactComponent as DatadogIcon } from '../assets/images/datadogIcon.svg'
 import { ReactComponent as GrafanaIcon } from '../assets/images/grafanaIcon.svg';
 import { ReactComponent as DebeziumIcon } from '../assets/images/debeziumIcon.svg';
 import { ReactComponent as ElasticIcon } from '../assets/images/elasticIcon.svg';
+import { ReactComponent as ZapierIcon } from '../assets/images/zapierIcon.svg';
 import { ReactComponent as SlackLogo } from '../assets/images/slackLogo.svg';
 import { ReactComponent as MemphisVerifiedIcon } from '../assets/images/memphisFunctionIcon.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
@@ -59,6 +62,10 @@ export const CATEGORY_LIST = {
     Notifications: {
         name: 'Notifications',
         color: ColorPalette[0]
+    },
+    Processing: {
+        name: 'Processing',
+        color: ColorPalette[5]
     },
     'Storage Tiering': {
         name: 'Storage Tiering',
@@ -398,6 +405,55 @@ export const INTEGRATION_LIST = {
             },
             {
                 title: 'Step 2: Import Memphis dashboard',
+                key: 2
+            }
+        ]
+    },
+    Zapier: {
+        name: 'Zapier',
+        by: 'Memphis.dev',
+        banner: <img className="banner" src={zapierBanner} alt="zapierBanner" />,
+        insideBanner: <img className="insideBanner" src={zapierBannerPopup} alt="zapierBannerPopup" />,
+        icon: <ZapierIcon alt="ZapierIcon" />,
+        description: 'With Zapier / Memphis integration, you can create more robust automation workflows',
+        category: CATEGORY_LIST['Processing'],
+        comingSoon: false,
+        hasLogs: false,
+        header: (
+            <div className="header-left-side">
+                <ZapierIcon alt="ZapierIcon" />
+                <div className="details">
+                    <p>Zapier</p>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Cloud</label>
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    With Zapier / Memphis integration, you can create automation workflows that will be triggered by records ingested in a Memphis station or produce
+                    events from a Zapier “Zap” (Workflow) to a Memphis station for further processing.
+                </span>
+            </div>
+        ),
+        steps: [
+            {
+                title: `Step 1: Sign up for a free Zapier account`,
+                key: 0
+            },
+            {
+                title: 'Step 2: Create a Zap',
+                key: 1
+            },
+            {
+                title: 'Step 3: Integrate Memphis as a trigger or an action',
                 key: 2
             }
         ]

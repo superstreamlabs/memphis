@@ -27,6 +27,7 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
+import ZapierIntegration from '../zapierIntegration';
 import { Drawer } from 'antd';
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
@@ -119,6 +120,15 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
             case `Elasticsearch observability`:
                 return (
                     <ElasticIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
+                    />
+                );
+
+            case `Zapier`:
+                return (
+                    <ZapierIntegration
                         close={() => {
                             modalFlip(false);
                         }}
