@@ -18,7 +18,7 @@ import BundleBanner from '../../assets/images/banners/bundle1.png';
 import CloudBanner from '../../assets/images/banners/cloud2.png';
 import FunctionsBanner from '../../assets/images/banners/function3.png';
 import UpgradeBanner from '../../assets/images/banners/upgrade4.png';
-
+import UpgradePlans from '../upgradePlans';
 import Modal from '../modal';
 import Button from '../button';
 
@@ -52,7 +52,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             subtitle: 'To Unlock More Features And Enhance Your Experience!',
             banner: UpgradeBanner,
             leftBtn: 'Upgrade Now',
-            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            leftBtnLink: '',
             rightBtn: 'Talk to Sales',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
@@ -106,18 +106,38 @@ const CloudModal = ({ type, open, handleClose }) => {
                     <img src={content[type]?.banner} alt="banner" className="banner" />
                 </div>
                 <span className="cloud-modal-btns">
-                    <Button
-                        width="230px"
-                        height="40px"
-                        placeholder={content[type]?.leftBtn}
-                        colorType="black"
-                        radiusType="circle"
-                        backgroundColorType={'white'}
-                        border={'gray'}
-                        fontSize="12px"
-                        fontWeight="bold"
-                        onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
-                    />
+                    {type === 'upgrade' ? (
+                        <UpgradePlans
+                            content={
+                                <Button
+                                    width="230px"
+                                    height="40px"
+                                    placeholder={content[type]?.leftBtn}
+                                    colorType="black"
+                                    radiusType="circle"
+                                    backgroundColorType={'white'}
+                                    border={'gray'}
+                                    fontSize="12px"
+                                    fontWeight="bold"
+                                    onClick={() => type !== 'upgrade' && window.open(content[type]?.leftBtnLink, '_blank')}
+                                />
+                            }
+                            isExternal={false}
+                        />
+                    ) : (
+                        <Button
+                            width="230px"
+                            height="40px"
+                            placeholder={content[type]?.leftBtn}
+                            colorType="black"
+                            radiusType="circle"
+                            backgroundColorType={'white'}
+                            border={'gray'}
+                            fontSize="12px"
+                            fontWeight="bold"
+                            onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
+                        />
+                    )}
                     <Button
                         width="230px"
                         height="40px"

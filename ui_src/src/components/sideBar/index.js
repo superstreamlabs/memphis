@@ -330,7 +330,6 @@ function SideBar() {
                             setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                         }}
                     />
-                    <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
 
@@ -437,6 +436,7 @@ function SideBar() {
                     route="administration"
                 />
             </div>
+            <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
             <div className="bottom-icons">
                 {!isCloud() && (
                     <MenuItem
