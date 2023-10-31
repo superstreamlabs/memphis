@@ -504,7 +504,7 @@ const Messages = () => {
                     title="Purge"
                     desc="This action will clean the station from messages."
                     stationName={stationName}
-                    cancel={() => modalPurgeFlip(false)}
+                    close={() => modalPurgeFlip(false)}
                     msgsDisabled={stationState?.stationSocketData?.total_messages === 0}
                     dlsDisabled={stationState?.stationSocketData?.total_dls_messages === 0}
                 />
