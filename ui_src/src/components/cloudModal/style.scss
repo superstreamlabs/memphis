@@ -1,30 +1,9 @@
-.cloud-modal-btns {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-}
 .cloud-modal {
-    .cloud-gradient {
-        background: -webkit-linear-gradient(249deg, #61dfc6 39.68%, #6557ff 60.07%);
-        -webkit-background-clip: text;
-        background-clip: text;
-        -webkit-text-fill-color: transparent;
-        font-size: 20px;
-        font-family: 'InterSemiBold';
-        line-height: 30px;
-    }
-    .banner {
-        width: 100%;
-        border-radius: 16px;
-    }
     .ant-modal-header {
         padding: 24px;
     }
     .ant-modal-body {
-        padding-top: 0;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
+        padding-top: 0px;
     }
     .header-icon {
         margin: 0px auto;
@@ -36,5 +15,35 @@
         background: #6557ff1a;
         border-radius: 100%;
         margin-bottom: 17px;
+    }
+    .title-label {
+        font-size: 24px;
+        font-family: 'InterSemiBold';
+        line-height: 35px;
+    }
+    .cloud-gradient {
+        background: -webkit-linear-gradient(249deg, #61dfc6 39.68%, #6557ff 60.07%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 24px;
+        font-family: 'InterSemiBold';
+        line-height: 35px;
+    }
+    .banner-container {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        .banner {
+            width: 100%;
+            border-radius: 16px;
+        }
+    }
+    .cloud-modal-btns {
+        margin-top: 20px;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        position: relative;
     }
 }

@@ -22,11 +22,13 @@ import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import CustomTabs from '../../../../../components/Tabs';
 import Loader from '../../../../../components/loader';
+import CloudMoadl from '../../../../../components/cloudModal';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
 import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
+import { isCloud } from '../../../../../services/valueConvertor';
 
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
@@ -49,6 +51,7 @@ const GitHubIntegration = ({ close, value }) => {
     const [isChanged, setIsChanged] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const tabs = getTabList('GitHub');
 
     useEffect(() => {
@@ -254,8 +257,12 @@ const GitHubIntegration = ({ close, value }) => {
                                             border="none"
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            disabled={!applicationName}
-                                            onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
+                                            onClick={() => {
+                                                isCloud() &&
+                                                    applicationName() &&
+                                                    window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                !isCloud() && setCloudModalOpen(true);
+                                            }}
                                         />
                                     </div>
                                 )}
@@ -322,6 +329,7 @@ const GitHubIntegration = ({ close, value }) => {
                     </Form>
                 </>
             )}
+            <CloudMoadl type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

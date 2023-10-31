@@ -14,10 +14,10 @@ import './style.scss';
 
 import React from 'react';
 import { ReactComponent as FunctionIntegrateIcon } from '../../assets/images/functionIntegrate.svg';
-import { ReactComponent as BundleBanner } from '../../assets/images/banners/bundle1.svg';
-import { ReactComponent as CloudBanner } from '../../assets/images/banners/cloud2.svg';
-import { ReactComponent as FunctionsBanner } from '../../assets/images/banners/functions3.svg';
-import { ReactComponent as UpgradeBanner } from '../../assets/images/banners/upgrade4.svg';
+import BundleBanner from '../../assets/images/banners/bundle1.png';
+import CloudBanner from '../../assets/images/banners/cloud2.png';
+import FunctionsBanner from '../../assets/images/banners/function3.png';
+import UpgradeBanner from '../../assets/images/banners/upgrade4.png';
 
 import Modal from '../modal';
 import Button from '../button';
@@ -27,34 +27,44 @@ const CloudModal = ({ type, open, handleClose }) => {
         bundle: {
             title: <label className="cloud-gradient">Enhance Your Journey</label>,
             subtitle: 'Get Your Open-Source Support Bundle Today!',
-            banner: <BundleBanner className="banner" alt="benner" />,
+            banner: BundleBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://docs.memphis.dev/memphis/open-source-installation/open-source-support-bundle/',
             rightBtn: 'Book a Call',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         cloud: {
-            title: 'Enhance Your Journey',
+            title: <label className="cloud-gradient">Enhance Your Journey</label>,
             subtitle: 'Embrace serverless, enjoy peace of mind, and experience enhanced resilience.',
-            banner: <CloudBanner className="banner" alt="benner" />,
+            banner: CloudBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Claim 50% discount',
+            rightBtn: 'Claim 50% Discount',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         upgrade: {
-            title: 'Upgrade your plan',
+            title: (
+                <>
+                    <label className="cloud-gradient">Upgrade</label>
+                    <label className="title-label"> your plan</label>
+                </>
+            ),
             subtitle: 'To Unlock More Features And Enhance Your Experience!',
-            banner: <UpgradeBanner className="banner" alt="benner" />,
+            banner: UpgradeBanner,
             leftBtn: 'Upgrade Now',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
             rightBtn: 'Talk to Sales',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },
         functions: {
-            title: 'The Future of Event-Driven',
+            title: (
+                <>
+                    <label className="title-label">The Future of </label>
+                    <label className="cloud-gradient">Event-Driven</label>
+                </>
+            ),
             subtitle: 'Discover A Faster And Smarter Way To Do Event-driven And Stream Processing',
-            banner: <FunctionsBanner className="banner" alt="benner" />,
+            banner: FunctionsBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
             rightBtn: 'Book a demo',
@@ -87,13 +97,14 @@ const CloudModal = ({ type, open, handleClose }) => {
                     </div>
                 }
                 displayButtons={false}
-                width="550px"
-                height="380px"
+                width="685px"
                 clickOutside={handleClose}
                 open={open}
                 className="cloud-modal"
             >
-                {content[type]?.banner}
+                <div className="banner-container">
+                    <img src={content[type]?.banner} alt="banner" className="banner" />
+                </div>
                 <span className="cloud-modal-btns">
                     <Button
                         width="230px"

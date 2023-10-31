@@ -23,6 +23,7 @@ import CustomTabs from '../../../../../components/Tabs';
 import Input from '../../../../../components/Input';
 import Checkbox from '../../../../../components/checkBox';
 import Loader from '../../../../../components/loader';
+import CloudMoadl from '../../../../../components/cloudModal';
 import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
@@ -49,6 +50,7 @@ const S3Integration = ({ close, value, lockFeature }) => {
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const tabs = getTabList('Slack');
 
     useEffect(() => {
@@ -360,18 +362,6 @@ const S3Integration = ({ close, value, lockFeature }) => {
                         )}
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
-                                {/* <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                /> */}
                                 <Button
                                     width="500px"
                                     height="45px"
@@ -392,13 +382,16 @@ const S3Integration = ({ close, value, lockFeature }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     disabled={isValue && !creationForm.isFieldsTouched()}
-                                    onClick={handleSubmit}
+                                    onClick={() => {
+                                        lockFeature ? setCloudModalOpen(true) : handleSubmit();
+                                    }}
                                 />
                             </div>
                         </Form.Item>
                     </Form>
                 </>
             )}
+            <CloudMoadl type="upgrade" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

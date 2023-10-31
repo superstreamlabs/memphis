@@ -113,6 +113,7 @@ function SideBar() {
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [addUserModalIsOpen, addUserModalFlip] = useState(false);
     const [createUserLoader, setCreateUserLoader] = useState(false);
+    const [bannerType, setBannerType] = useState('');
 
     const getCompanyLogo = useCallback(async () => {
         try {
@@ -324,11 +325,12 @@ function SideBar() {
                         icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
                         name="Open service request"
                         onClick={() => {
+                            setBannerType('bundle');
                             setCloudModalOpen(true);
                             setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
                         }}
                     />
-                    <CloudMoadl type="bundle" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+                    <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
                 </>
             )}
 
@@ -416,7 +418,11 @@ function SideBar() {
                     icon={<FunctionsIcon alt="functionsIcon" width="20" height="20" />}
                     activeIcon={<FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />}
                     name="Functions"
-                    onClick={() => history.replace(pathDomains.functions)}
+                    onClick={() => {
+                        setBannerType('functions');
+                        setCloudModalOpen(true);
+                    }}
+                    // onClick={() => history.replace(pathDomains.functions)}
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
                     route="functions"

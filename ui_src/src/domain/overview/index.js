@@ -44,6 +44,7 @@ import Button from '../../components/button';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 import AsyncTasks from '../../components/asyncTasks';
+import CloudMoadl from '../../components/cloudModal';
 import Throughput from './throughput';
 import Copy from '../../components/copy';
 import StreamLineage from '../streamLineage';
@@ -67,6 +68,7 @@ function OverView() {
     const [isLoading, setisLoading] = useState(true);
     const [creatingProsessd, setCreatingProsessd] = useState(false);
     const [lineageExpend, setExpend] = useState(false);
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
 
     const [dataSentence, setDataSentence] = useState(dataSentences[0]);
     const history = useHistory();
@@ -244,7 +246,7 @@ function OverView() {
                         </div>
                         <div className="btn-section">
                             <AsyncTasks height={'32px'} overView />
-                            {!isCloud() && <CloudTeaser alt="Cloud" className="cloud-teaser" />}
+                            {!isCloud() && <CloudTeaser alt="Cloud" className="cloud-teaser" onClick={() => setCloudModalOpen(true)} />}
                             <Button
                                 className="modal-btn"
                                 width="170px"
@@ -299,7 +301,7 @@ function OverView() {
                                                     <p>System overview</p>
                                                     <label>A dynamic, self-built graph visualization of your main system components</label>
                                                 </div>
-                                                <div className="graphview-section">
+                                                <div className="graphview-section" onClick={() => setCloudModalOpen(true)}>
                                                     <GraphOverview alt="Graph view" className="graphview-img" />
                                                 </div>
                                             </div>
@@ -339,6 +341,7 @@ function OverView() {
             >
                 <CreateStationForm createStationFormRef={createStationRef} setLoading={(e) => setCreatingProsessd(e)} />
             </Modal>
+            <CloudMoadl type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </div>
     );
 }
