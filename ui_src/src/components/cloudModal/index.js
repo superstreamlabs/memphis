@@ -39,8 +39,8 @@ const CloudModal = ({ type, open, handleClose }) => {
             banner: CloudBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
-            rightBtn: 'Claim 50% Discount',
-            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+            rightBtn: 'Create a free account',
+            rightBtnLink: 'https://cloud.memphis.dev/'
         },
         upgrade: {
             title: (
@@ -51,10 +51,10 @@ const CloudModal = ({ type, open, handleClose }) => {
             ),
             subtitle: 'To Unlock More Features And Enhance Your Experience!',
             banner: UpgradeBanner,
-            leftBtn: 'Upgrade Now',
-            leftBtnLink: '',
-            rightBtn: 'Talk to Sales',
-            rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
+            leftBtn: 'Talk to Sales',
+            leftBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo',
+            rightBtn: 'Upgrade Now',
+            rightBtnLink: ''
         },
         functions: {
             title: (
@@ -66,7 +66,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             subtitle: 'Discover A Faster And Smarter Way To Do Event-driven And Stream Processing',
             banner: FunctionsBanner,
             leftBtn: 'Learn More',
-            leftBtnLink: 'https://memphis.dev/memphis-dev-cloud/',
+            leftBtnLink: 'https://functions.memphis.dev/',
             rightBtn: 'Book a demo',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo/demo-for-memphis-functions'
         }
@@ -94,50 +94,50 @@ const CloudModal = ({ type, open, handleClose }) => {
                     <img src={content[type]?.banner} alt="banner" className="banner" />
                 </div>
                 <span className="cloud-modal-btns">
+                    <Button
+                        width="300px"
+                        height="40px"
+                        placeholder={content[type]?.leftBtn}
+                        colorType="black"
+                        radiusType="circle"
+                        backgroundColorType={'white'}
+                        border={'gray'}
+                        fontSize="12px"
+                        fontWeight="bold"
+                        onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
+                    />
                     {type === 'upgrade' ? (
                         <UpgradePlans
                             content={
                                 <Button
-                                    width="230px"
+                                    width="300px"
                                     height="40px"
-                                    placeholder={content[type]?.leftBtn}
-                                    colorType="black"
+                                    placeholder={content[type]?.rightBtn}
+                                    colorType="white"
                                     radiusType="circle"
-                                    backgroundColorType={'white'}
+                                    backgroundColorType={'purple'}
                                     border={'gray'}
                                     fontSize="12px"
                                     fontWeight="bold"
-                                    onClick={() => type !== 'upgrade' && window.open(content[type]?.leftBtnLink, '_blank')}
+                                    onClick={() => type !== 'upgrade' && window.open(content[type]?.rightBtnLink, '_blank')}
                                 />
                             }
                             isExternal={false}
                         />
                     ) : (
                         <Button
-                            width="230px"
+                            width="300px"
                             height="40px"
-                            placeholder={content[type]?.leftBtn}
-                            colorType="black"
+                            placeholder={content[type]?.rightBtn}
+                            colorType="white"
                             radiusType="circle"
-                            backgroundColorType={'white'}
+                            backgroundColorType={'purple'}
                             border={'gray'}
                             fontSize="12px"
                             fontWeight="bold"
-                            onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
+                            onClick={() => window.open(content[type]?.rightBtnLink, '_blank')}
                         />
                     )}
-                    <Button
-                        width="230px"
-                        height="40px"
-                        placeholder={content[type]?.rightBtn}
-                        colorType="white"
-                        radiusType="circle"
-                        backgroundColorType={'purple'}
-                        border={'gray'}
-                        fontSize="12px"
-                        fontWeight="bold"
-                        onClick={() => window.open(content[type]?.rightBtnLink, '_blank')}
-                    />
                 </span>
             </Modal>
         </cloud-modal>

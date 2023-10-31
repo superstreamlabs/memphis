@@ -126,9 +126,9 @@ const Integrations = () => {
                     <p className="memphis-label">Integrations for notifications, monitoring, API calls, and more</p>
                 </div>
                 <Button
-                    width="140px"
+                    width="180px"
                     height="35px"
-                    placeholder="Request integration"
+                    placeholder="Request a new integration"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="purple"
