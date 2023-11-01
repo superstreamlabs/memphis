@@ -29,7 +29,7 @@ export const AUTHENTICATION_ERROR_STATUS_CODE = 401;
 export const DOC_URL = 'https://docs.memphis.dev/memphis/getting-started/readme';
 export const CONNECT_APP_VIDEO = 'https://www.youtube.com/watch?v=-5YmxYRQsdw';
 export const CONNECT_CLI_VIDEO = 'https://www.youtube.com/watch?v=awXwaU4rBBQ';
-export const WELCOME_VIDEO_OSS = 'https://youtu.be/FFIdkaV_RWo';
+export const WELCOME_VIDEO_OSS = 'https://youtu.be/MZABkm_MqLU';
 export const WELCOME_VIDEO_CLOUD = 'https://youtu.be/FFIdkaV_RWo';
 
 export const RELEASE_NOTES_URL = 'https://api.github.com/repos/Memphisdev/gitbook-backup/contents/release-notes/releases';

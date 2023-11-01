@@ -47,6 +47,7 @@ const Signup = (props) => {
     const [formFields, setFormFields] = useState({
         username: '',
         full_name: '',
+        organization: '',
         password: '',
         subscription: true,
         user_type: 'management'
@@ -63,6 +64,10 @@ const Signup = (props) => {
 
     const handleFullNameChange = (e) => {
         setFormFields({ ...formFields, full_name: e.target.value });
+    };
+
+    const handleOrganizationChange = (e) => {
+        setFormFields({ ...formFields, organization: e.target.value });
     };
 
     const handlePasswordChange = (e) => {
@@ -217,6 +222,33 @@ const Signup = (props) => {
                                         onBlur={handleFullNameChange}
                                         onChange={handleFullNameChange}
                                         value={formFields.full_name}
+                                    />
+                                </div>
+                            </Form.Item>
+                            <Form.Item
+                                name="organization"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Organization can not be empty'
+                                    }
+                                ]}
+                            >
+                                <div className="field">
+                                    <p>Organization</p>
+                                    <Input
+                                        placeholder="Type your organization name"
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="gray"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        width="470px"
+                                        height="43px"
+                                        minWidth="200px"
+                                        onBlur={handleOrganizationChange}
+                                        onChange={handleOrganizationChange}
+                                        value={formFields.organization}
                                     />
                                 </div>
                             </Form.Item>
