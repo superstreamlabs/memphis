@@ -377,6 +377,7 @@ function SideBar() {
                     />
                     <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                 </span>
+
                 <Popover
                     overlayInnerStyle={overlayStyles}
                     placement="right"
@@ -532,7 +533,7 @@ function SideBar() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="65vh"
+                height="70vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"

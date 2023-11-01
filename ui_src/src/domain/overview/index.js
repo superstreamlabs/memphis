@@ -269,7 +269,7 @@ function OverView() {
                                         <label>Create a new station</label>
                                     </span>
                                 }
-                                border={'none'}
+                                border="none"
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="gradient"
@@ -346,7 +346,7 @@ function OverView() {
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="65vh"
+                height="70vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"

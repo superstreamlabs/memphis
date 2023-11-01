@@ -79,7 +79,7 @@ const Button = ({
             background,
             width,
             height,
-            borderColor,
+            border: border === 'none' ? 'none' : '1px solid ' + borderColor,
             fontSize,
             fontWeight,
             fontFamily,
