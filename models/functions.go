@@ -13,29 +13,65 @@ package models
 
 import "time"
 
-type FunctionsResult struct {
-	FunctionName      string            `json:"function_name"`
-	Description       string            `json:"description"`
-	Tags              []string          `json:"tags"`
-	RunTime           string            `json:"runtime"`
-	Memory            int               `json:"memory"`
-	Storgae           int               `json:"storgae"`
-	LastCommit        time.Time         `json:"last_commit"`
-	Link              *string           `json:"link"`
-	Repository        string            `json:"repository"`
-	Branch            string            `json:"branch"`
-	Owner             string            `json:"owner"`
-	EnvironmentVars   map[string]string `json:"environment_vars"`
-	ScmType           string            `json:"scm_type"`
-	Language          string            `json:"language"`
-	InstallInProgress bool              `json:"install_in_progress"`
-	UpdatesAvailable  bool              `json:"updates_available"`
-	ByMemphis         bool              `json:"by_memphis"`
+type Function struct {
+	ID               int                      `json:"id"`
+	FunctionName     string                   `json:"function_name"`
+	Description      string                   `json:"description"`
+	Tags             []string                 `json:"tags"`
+	Runtime          string                   `json:"runtime"`
+	Dependencies     string                   `json:"dependencies"`
+	EnvironmentVars  []map[string]interface{} `json:"environment_vars"`
+	Memory           int                      `json:"memory"`
+	Storage          int                      `json:"storage"`
+	Handler          string                   `json:"handler"`
+	TenantName       string                   `json:"tenant_name"`
+	Scm              string                   `json:"scm"`
+	Owner            string                   `json:"owner"`
+	Repo             string                   `json:"repo"`
+	Branch           string                   `json:"branch"`
+	UpdatedAt        time.Time                `json:"installed_updated_at"`
+	Version          int                      `json:"installed_version"`
+	InProgress       bool                     `json:"installed_in_progress"`
+	ComputeEngine    string                   `json:"compute_engine"`
+	Installed        bool                     `json:"installed"`
+	IsValid          bool                     `json:"is_valid"`
+	InvalidReason    string                   `json:"invalid_reason"`
+	UpdatesAvailable bool                     `json:"updates_available"`
+	ByMemphis        bool                     `json:"by_memphis"`
 }
 
+type FunctionResult struct {
+	ID               int                      `json:"id"`
+	FunctionName     string                   `json:"function_name"`
+	Description      string                   `json:"description"`
+	Tags             []string                 `json:"tags"`
+	Runtime          string                   `json:"runtime"`
+	Dependencies     string                   `json:"dependencies"`
+	EnvironmentVars  []map[string]interface{} `json:"environment_vars"`
+	Memory           int                      `json:"memory"`
+	Storage          int                      `json:"storage"`
+	Handler          string                   `json:"handler"`
+	TenantName       string                   `json:"tenant_name"`
+	Scm              string                   `json:"scm"`
+	Owner            string                   `json:"owner"`
+	Repo             string                   `json:"repo"`
+	Branch           string                   `json:"branch"`
+	UpdatedAt        time.Time                `json:"installed_updated_at"`
+	Version          int                      `json:"installed_version"`
+	InProgress       bool                     `json:"installed_in_progress"`
+	ComputeEngine    string                   `json:"compute_engine"`
+	Installed        bool                     `json:"installed"`
+	IsValid          bool                     `json:"is_valid"`
+	InvalidReason    string                   `json:"invalid_reason"`
+	UpdatesAvailable bool                     `json:"updates_available"`
+	ByMemphis        bool                     `json:"by_memphis"`
+	Language         string                   `json:"language"`
+	Link             *string                  `json:"link,omitempty"`
+	LastCommit       *time.Time               `json:"last_commit,omitempty"`
+}
 type FunctionsRes struct {
-	InstalledFunctions []FunctionsResult        `json:"installed_functions"`
-	OtherFunctions     []FunctionsResult        `json:"other_functions"`
+	InstalledFunctions []FunctionResult         `json:"installed_functions"`
+	OtherFunctions     []FunctionResult         `json:"other_functions"`
 	ScmIntegrated      bool                     `json:"scm_integrated"`
 	ConnectedRepos     []map[string]interface{} `json:"connected_repos"`
 }
