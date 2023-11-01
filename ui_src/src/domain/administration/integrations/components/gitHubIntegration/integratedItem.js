@@ -120,7 +120,7 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                 {!type ? (
                     <Button
                         height={'30px'}
-                        width={'112px'}
+                        width={'95px'}
                         placeholder={
                             <div className="repo-button">
                                 <IoClose value={{ color: '#FC3400', size: '16' }} /> <span>Remove</span>

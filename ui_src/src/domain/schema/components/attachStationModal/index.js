@@ -137,7 +137,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                             className="modal-btn"
                             width="160px"
                             height="34px"
-                            placeholder={'Create new station'}
+                            placeholder={'Create a new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -211,7 +211,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                         <div className="header-img-container">
                             <StationsActiveIcon alt="stationsIconActive" className="headerImage" />
                         </div>
-                        <p>Create new station</p>
+                        <p>Create a new station</p>
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }

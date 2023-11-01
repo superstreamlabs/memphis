@@ -295,7 +295,6 @@ function Users() {
                         <img src={getAvatarSrc(record.avatar_id)} width={25} height={25} alt="avatar" />
                     </div>
                     <p>{text}</p>
-                    {record.user_type === 'root' && <ActiveBadge active={false} content={isCloud() ? 'Owner' : 'Root'} />}
                 </div>
             )
         },

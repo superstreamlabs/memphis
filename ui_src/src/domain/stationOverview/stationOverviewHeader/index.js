@@ -205,7 +205,7 @@ const StationOverviewHeader = () => {
                         placeholder="Delete station"
                         colorType="white"
                         radiusType="circle"
-                        backgroundColorType="purple"
+                        backgroundColorType="red"
                         fontSize="12px"
                         fontWeight="600"
                         onClick={() => modalDeleteFlip(true)}
@@ -266,11 +266,10 @@ const StationOverviewHeader = () => {
                         <div className="more-details schema-box">
                             <div className="schema-header">
                                 <div className="schema-version">
-                                    <p className="schema-title">Schema</p>
+                                    <p className="schema-title">Schema validation</p>
                                     {stationState?.stationSocketData?.schema !== undefined && Object.keys(stationState?.stationSocketData?.schema).length !== 0 && (
                                         <div className="schema-details sd-flex">
                                             {stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updates available" active={false} />}
-                                            {!stationState?.stationSocketData?.schema?.updates_available && <ActiveBadge content="Updated" active={true} />}
                                         </div>
                                     )}
                                 </div>

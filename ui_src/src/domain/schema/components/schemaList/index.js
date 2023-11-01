@@ -108,12 +108,7 @@ function SchemaList({ createNew }) {
                     <label className="main-header-h1">
                         Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
                     </label>
-                    <span className="memphis-label">
-                        The new way to enforce schemas! Get started&nbsp;
-                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
-                            here.
-                        </a>
-                    </span>
+                    <span className="memphis-label">A modern approach to schema enforcement and increased data quality!</span>
                 </div>
                 <div className="action-section">
                     <Button
@@ -147,7 +142,7 @@ function SchemaList({ createNew }) {
                     <Button
                         width="160px"
                         height="34px"
-                        placeholder={'Create from blank'}
+                        placeholder={'Create a new schema'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -179,7 +174,7 @@ function SchemaList({ createNew }) {
                             className="modal-btn"
                             width="160px"
                             height="34px"
-                            placeholder="Create from blank"
+                            placeholder="Create a new schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

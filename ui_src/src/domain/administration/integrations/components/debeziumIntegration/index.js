@@ -16,6 +16,7 @@ import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import Button from '../../../../../components/button';
 import Loader from '../../../../../components/loader';
 import Copy from '../../../../../components/copy';
@@ -171,16 +172,9 @@ CMD ./run.sh`}
                     <div className="integrate-header">
                         {debeziumConfiguration.header}
                         <div className="action-buttons flex-end">
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() =>
                                     window.open(
                                         'https://memphis.dev/blog/part-1-integrating-debezium-server-and-memphis-dev-for-streaming-change-data-capture-cdc-events.',
@@ -214,19 +208,6 @@ CMD ./run.sh`}
                                 </div>
                             </div>
                         )}
-                        <div className="close-btn">
-                            <Button
-                                width="300px"
-                                height="45px"
-                                placeholder="Close"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => close()}
-                            />
-                        </div>
                     </div>
                 </>
             )}

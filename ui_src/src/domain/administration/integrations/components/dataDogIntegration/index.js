@@ -17,6 +17,7 @@ import { Collapse } from 'antd';
 
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
 import Button from '../../../../../components/button';
 import CustomTabs from '../../../../../components/Tabs';
@@ -192,16 +193,9 @@ EOF`}
                     <div className="integrate-header">
                         {dataDogConfiguration.header}
                         <div className="action-buttons flex-end">
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/datadog', '_blank')}
                             />
                         </div>
@@ -230,7 +224,7 @@ EOF`}
                                 </div>
                             </div>
                         )}
-                        <div className="close-btn">
+                        {/* <div className="close-btn">
                             <Button
                                 width="300px"
                                 height="45px"
@@ -242,7 +236,7 @@ EOF`}
                                 fontFamily="InterSemiBold"
                                 onClick={() => close()}
                             />
-                        </div>
+                        </div> */}
                     </div>
                     {showModal && (
                         <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>

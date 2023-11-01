@@ -159,7 +159,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                         <div className="action-section-btn">
                             <div className="header-flex">
                                 <AttachTooltip disabled={!isCloud() || selectedFunction?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
+                                {!isCloud() && <CloudOnly />}
                             </div>
                             <div className="header-flex">
                                 <Button
@@ -191,7 +191,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                                     isLoading={selectedFunction?.install_in_progress}
                                     disabled={!isCloud() || selectedFunction?.install_in_progress}
                                 />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
+                                {!isCloud() && <CloudOnly />}
                             </div>
                         </div>
                         <SelectComponent

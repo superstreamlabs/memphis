@@ -16,7 +16,7 @@
     .sidebar-title {
         font-size: 11px;
         color: rgba(74, 73, 92, 0.8);
-        font-family: "InterSemiBold";
+        font-family: 'InterSemiBold';
         margin: 0;
         cursor: pointer;
         &.ms-active {
@@ -24,7 +24,24 @@
         }
     }
 
-    .upper-icons {
+    .upper-icons,
+    .bottom-icons {
+        .logo-wrapper {
+            position: relative;
+            .edit-logo {
+                position: absolute;
+                bottom: 0px;
+                right: -10px;
+                color: #a9a9a9;
+                cursor: pointer;
+                display: none;
+            }
+        }
+        .logo-wrapper:hover {
+            .edit-logo {
+                display: block;
+            }
+        }
         .logoimg {
             margin-top: 1vh;
             cursor: pointer;
@@ -161,7 +178,11 @@
         }
     }
 }
-
+.support-header {
+    display: flex;
+    gap: 15px;
+    font-size: 13px;
+}
 .menu-content {
     .ant-divider-horizontal {
         margin: 0;

@@ -75,9 +75,9 @@ export const planType = {
 };
 
 export const githubUrls = {
-    DOWNLOAD_URL: 'https://github.com/memphisdev/memphis-dev-functions/archive/refs/heads/master.zip',
-    MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/memphis-dev-functions.git',
-    MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/memphis-dev-functions.git'
+    DOWNLOAD_URL: 'https://github.com/memphisdev/onboarding-app/archive/refs/heads/master.zip',
+    MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/onboarding-app.git',
+    MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
 };
 
 export const OWNER = 'memphisdev';

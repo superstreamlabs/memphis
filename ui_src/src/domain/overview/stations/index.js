@@ -41,7 +41,7 @@ const Stations = ({ createStationTrigger }) => {
             <div className="stations-container">
                 <div className="overview-components-header stations-header">
                     <p> Stations {state?.monitor_data?.stations?.length > 0 && `(${state?.monitor_data?.stations?.length})`}</p>
-                    <label>A station is a distributed unit that stores messages</label>
+                    <label>A station is a distributed storage for messages</label>
                 </div>
                 <div className="err-stations-list">
                     {state?.monitor_data?.stations?.length > 0 ? (
@@ -111,7 +111,7 @@ const Stations = ({ createStationTrigger }) => {
                                 className="modal-btn"
                                 width="160px"
                                 height="34px"
-                                placeholder={'Create new station'}
+                                placeholder={'Create a new station'}
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
