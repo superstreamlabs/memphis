@@ -59,6 +59,7 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
+import { sendTrace } from '../../services/genericServices';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
@@ -207,6 +208,7 @@ function SideBar() {
                 icon={<NewStationIcon className="icons-sidebar" />}
                 name="Create a new station"
                 onClick={() => {
+                    sendTrace('quick-actions-station', {});
                     setPopoverQuickActions(false);
                     createStationModalFlip(true);
                 }}
@@ -215,6 +217,7 @@ function SideBar() {
                 icon={<NewSchemaIcon className="icons-sidebar" />}
                 name="Create a new schema"
                 onClick={() => {
+                    sendTrace('quick-actions-schema', {});
                     setPopoverQuickActions(false);
                     history.replace(`${pathDomains.schemaverse}/create`);
                 }}
@@ -223,6 +226,7 @@ function SideBar() {
                 icon={<NewUserIcon className="icons-sidebar" />}
                 name="Create a new user"
                 onClick={() => {
+                    sendTrace('quick-actions-user', {});
                     setPopoverQuickActions(false);
                     addUserModalFlip(true);
                 }}
@@ -231,6 +235,7 @@ function SideBar() {
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
                 name="Create a new integration"
                 onClick={() => {
+                    sendTrace('quick-actions-integration', {});
                     setPopoverQuickActions(false);
                     history.replace(`${pathDomains.administration}/integrations`);
                 }}
@@ -382,7 +387,7 @@ function SideBar() {
                 >
                     <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
                         <div className="icon">
-                            <QuickActionBtn alt="Quick actions" />
+                            <QuickActionBtn alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
                         </div>
                     </div>
                 </Popover>

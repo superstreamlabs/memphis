@@ -32,6 +32,7 @@ import { ReactComponent as PlusElement } from '../../assets/images/plusElement.s
 import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
 import CreateStationForm from '../../components/createStationForm';
 import { capitalizeFirst, isCloud } from '../../services/valueConvertor';
+import { sendTrace } from '../../services/genericServices';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import SystemComponents from './systemComponents';
@@ -248,7 +249,16 @@ function OverView() {
                         </div>
                         <div className="btn-section">
                             <AsyncTasks height={'32px'} overView />
-                            {!isCloud() && <CloudTeaser alt="Cloud" className="cloud-teaser" onClick={() => setCloudModalOpen(true)} />}
+                            {!isCloud() && (
+                                <CloudTeaser
+                                    alt="Cloud"
+                                    className="cloud-teaser"
+                                    onClick={() => {
+                                        sendTrace('overview-cloud-icon-click', {});
+                                        setCloudModalOpen(true);
+                                    }}
+                                />
+                            )}
                             <Button
                                 className="modal-btn"
                                 width="170px"
@@ -267,7 +277,10 @@ function OverView() {
                                 fontWeight="600"
                                 aria-haspopup="true"
                                 boxShadowStyle="float"
-                                onClick={() => modalFlip(true)}
+                                onClick={() => {
+                                    sendTrace('overview-create-station-click', {});
+                                    modalFlip(true);
+                                }}
                             />
                         </div>
                     </div>
@@ -303,7 +316,13 @@ function OverView() {
                                                     <p>System overview</p>
                                                     <label>A dynamic, self-built graph visualization of your main system components</label>
                                                 </div>
-                                                <div className="graphview-section" onClick={() => setCloudModalOpen(true)}>
+                                                <div
+                                                    className="graphview-section"
+                                                    onClick={() => {
+                                                        sendTrace('overview-graph-overview-oss-click', {});
+                                                        setCloudModalOpen(true);
+                                                    }}
+                                                >
                                                     <GraphOverview alt="Graph view" className="graphview-img" />
                                                 </div>
                                             </div>

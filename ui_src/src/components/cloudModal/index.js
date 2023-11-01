@@ -21,6 +21,7 @@ import UpgradeBanner from '../../assets/images/banners/upgrade4.png';
 import UpgradePlans from '../upgradePlans';
 import Modal from '../modal';
 import Button from '../button';
+import { sendTrace } from '../../services/genericServices';
 
 const CloudModal = ({ type, open, handleClose }) => {
     const content = {
@@ -104,7 +105,14 @@ const CloudModal = ({ type, open, handleClose }) => {
                         border={'gray'}
                         fontSize="12px"
                         fontWeight="bold"
-                        onClick={() => window.open(content[type]?.leftBtnLink, '_blank')}
+                        onClick={() => {
+                            sendTrace('banner-click-left', {
+                                banner: type,
+                                action: content[type]?.leftBtnLink,
+                                text: content[type]?.leftBtn
+                            });
+                            window.open(content[type]?.leftBtnLink, '_blank');
+                        }}
                     />
                     {type === 'upgrade' ? (
                         <UpgradePlans
@@ -119,7 +127,14 @@ const CloudModal = ({ type, open, handleClose }) => {
                                     border={'gray'}
                                     fontSize="12px"
                                     fontWeight="bold"
-                                    onClick={() => type !== 'upgrade' && window.open(content[type]?.rightBtnLink, '_blank')}
+                                    onClick={() => {
+                                        sendTrace('banner-click-left', {
+                                            banner: type,
+                                            action: content[type]?.rightBtnLink,
+                                            text: content[type]?.rightBtn
+                                        });
+                                        type !== 'upgrade' && window.open(content[type]?.rightBtnLink, '_blank');
+                                    }}
                                 />
                             }
                             isExternal={false}
@@ -135,7 +150,14 @@ const CloudModal = ({ type, open, handleClose }) => {
                             border={'gray'}
                             fontSize="12px"
                             fontWeight="bold"
-                            onClick={() => window.open(content[type]?.rightBtnLink, '_blank')}
+                            onClick={() => {
+                                sendTrace('banner-click-left', {
+                                    banner: type,
+                                    action: content[type]?.rightBtnLink,
+                                    text: content[type]?.rightBtn
+                                });
+                                window.open(content[type]?.rightBtnLink, '_blank');
+                            }}
                         />
                     )}
                 </span>

@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BiSolidTimeFive } from 'react-icons/bi';
 import { isCloud } from '../../services/valueConvertor';
 import VideoPlayer from '../videoPlayer';
@@ -26,6 +26,7 @@ import CloneModal from '../cloneModal';
 import { Divider } from 'antd';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
+import { sendTrace } from '../../services/genericServices';
 import { capitalizeFirst } from '../../services/valueConvertor';
 import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../const/localStorageConsts';
 
@@ -46,6 +47,10 @@ const GetStartedModal = ({ open, handleClose }) => {
     const [manualUseCase, setManualUseCase] = useState('');
     const [openCloneModal, setOpenCloneModal] = useState(false);
 
+    useEffect(() => {
+        sendTrace('user-opened-get-started-modal', {});
+    }, []);
+
     const handleSelectUseCase = (useCase) => {
         setUseCase(useCase);
         setManualUseCase('');
@@ -54,20 +59,6 @@ const GetStartedModal = ({ open, handleClose }) => {
     const handleManualUseCase = (useCase) => {
         setManualUseCase(useCase);
         setUseCase('');
-    };
-
-    const userChosenUseCase = async () => {
-        const bodyRequest = {
-            trace_name: 'user-chosen-use-case',
-            trace_params: {
-                use_case: chosenUseCase !== '' ? chosenUseCase : manualUseCase
-            }
-        };
-        try {
-            await httpRequest('POST', ApiEndpoints.SEND_TRACE, bodyRequest);
-        } catch (error) {
-            return;
-        }
     };
 
     const skipGetStarted = async () => {
@@ -80,7 +71,7 @@ const GetStartedModal = ({ open, handleClose }) => {
     };
 
     const finsihGetStarted = async () => {
-        userChosenUseCase();
+        sendTrace('user-chosen-use-case', { use_case: chosenUseCase !== '' ? chosenUseCase : manualUseCase });
         setManualUseCase('');
         if (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') {
             skipGetStarted();
@@ -94,7 +85,9 @@ const GetStartedModal = ({ open, handleClose }) => {
             width={'600px'}
             displayButtons={false}
             clickOutside={() => {
-                skipGetStarted();
+                if (localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true') {
+                    skipGetStarted();
+                }
                 handleClose();
             }}
             open={open}
@@ -143,7 +136,14 @@ const GetStartedModal = ({ open, handleClose }) => {
                 </Divider>
                 {codeList?.map((code, index) => {
                     return (
-                        <tutorial is="x3s" key={index} onClick={() => setOpenCloneModal(true)}>
+                        <tutorial
+                            is="x3s"
+                            key={index}
+                            onClick={() => {
+                                setOpenCloneModal(true);
+                                sendTrace('user-click-example-app', { app: code.title });
+                            }}
+                        >
                             <div className="left-purple"></div>
                             <data is="x3s">
                                 <header is="x3s">
