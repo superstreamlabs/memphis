@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"time"
 
 	"strings"
 
@@ -66,15 +67,53 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	installedFunctions := functions["installed"]
 	OtherFunctions := functions["other"]
 	if len(installedFunctions) == 0 {
-		installedFunctions = []models.FunctionsResult{}
+		installedFunctions = []models.FunctionResult{}
 	}
 
 	if len(OtherFunctions) == 0 {
-		OtherFunctions = []models.FunctionsResult{}
+		OtherFunctions = []models.FunctionResult{}
+	}
+
+	var lastModified *time.Time
+	OtherFunctions = []models.FunctionResult{}
+	for _, function := range functions["other"] {
+		if function.Owner == memphisDevFunctionsOwnerName && function.Repo == memphisDevFunctionsRepoName {
+			otherFunctionResult := models.FunctionResult{
+				FunctionName:     function.FunctionName,
+				Description:      function.Description,
+				Tags:             function.Tags,
+				Runtime:          function.Runtime,
+				Dependencies:     function.Dependencies,
+				EnvironmentVars:  function.EnvironmentVars,
+				Memory:           function.Memory,
+				Storage:          function.Storage,
+				Handler:          function.Handler,
+				Scm:              "github",
+				Repo:             function.Repo,
+				Branch:           function.Branch,
+				Owner:            function.Owner,
+				Language:         function.Language,
+				Version:          -1,
+				IsValid:          function.IsValid,
+				InvalidReason:    function.InvalidReason,
+				InProgress:       false,
+				UpdatesAvailable: false,
+				ByMemphis:        function.ByMemphis,
+				TenantName:       function.TenantName,
+			}
+			OtherFunctions = append(OtherFunctions, otherFunctionResult)
+			lastModified = function.LastCommit
+		}
 	}
 
 	memphisDevFucntions := []map[string]interface{}{}
-	memphisDevFucntions = append(memphisDevFucntions, memphisFunctions)
+	memphisFunc := map[string]interface{}{
+		"repo_name":     memphisFunctions["repo_name"].(string),
+		"branch":        memphisFunctions["branch"].(string),
+		"owner":         memphisFunctions["repo_owner"].(string),
+		"last_modified": lastModified,
+	}
+	memphisDevFucntions = append(memphisDevFucntions, memphisFunc)
 
 	allFunctions := models.FunctionsRes{
 		InstalledFunctions: installedFunctions,
@@ -220,8 +259,8 @@ func getRepoContent(url, accessToken string, body models.GetFunctionDetails) (in
 	return response, nil
 }
 
-func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[string][]models.FunctionsResult, error) {
-	functions := map[string][]models.FunctionsResult{}
+func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[string][]models.FunctionResult, error) {
+	functions := map[string][]models.FunctionResult{}
 	for key, functionDetails := range functionsDetails {
 		for _, funcDetailsPerInstalled := range functionDetails {
 			fucntionContentMap := funcDetailsPerInstalled.ContentMap
@@ -230,6 +269,9 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			repo := funcDetailsPerInstalled.RepoName
 			branch := funcDetailsPerInstalled.Branch
 			owner := funcDetailsPerInstalled.Owner
+			tenantName := funcDetailsPerInstalled.TenantName
+			isValid := funcDetailsPerInstalled.IsValid
+			invalidReason := funcDetailsPerInstalled.InvalidReason
 			tagsInterfaceSlice, ok := fucntionContentMap["tags"].([]interface{})
 			tagsStrings := []string{}
 			if ok {
@@ -244,17 +286,20 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			var environmentVarsStrings map[string]string
+			environmentVarsStrings := []map[string]interface{}{}
 			environmentVarsInterfaceSlice, ok := fucntionContentMap["environment_vars"].([]interface{})
 			if ok {
-				environmentVarsStrings = make(map[string]string, len(fucntionContentMap["environment_vars"].([]interface{})))
-				for _, environmentVar := range environmentVarsInterfaceSlice {
-					environmentVarMap := environmentVar.(map[interface{}]interface{})
+				for _, environmentVarInterface := range environmentVarsInterfaceSlice {
+					environmentVarMap, _ := environmentVarInterface.(map[interface{}]interface{})
+					environmentVar := make(map[string]interface{})
 					for k, v := range environmentVarMap {
-						if str, ok := v.(string); ok {
-							environmentVarsStrings[k.(string)] = str
+						if key, ok := k.(string); ok {
+							if val, ok := v.(string); ok {
+								environmentVar[key] = val
+							}
 						}
 					}
+					environmentVarsStrings = append(environmentVarsStrings, environmentVar)
 				}
 			}
 			description, ok := fucntionContentMap["description"].(string)
@@ -262,12 +307,15 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				description = ""
 			}
 
-			runtime := fucntionContentMap["runtime"].(string)
-			regex := regexp.MustCompile(`[0-9]+|\\.$`)
-			language := regex.ReplaceAllString(runtime, "")
-			language = strings.TrimRight(language, ".")
-			if strings.Contains(language, "-edge") {
-				language = strings.Trim(language, ".-edge")
+			runtime, ok := fucntionContentMap["runtime"].(string)
+			var language string
+			if ok {
+				regex := regexp.MustCompile(`[0-9]+|\\.$`)
+				language = regex.ReplaceAllString(runtime, "")
+				language = strings.TrimRight(language, ".")
+				if strings.Contains(language, "-edge") {
+					language = strings.Trim(language, ".-edge")
+				}
 			}
 
 			byMemphis := false
@@ -275,24 +323,38 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				byMemphis = true
 			}
 
-			functionDetails := models.FunctionsResult{
-				FunctionName:      fucntionContentMap["function_name"].(string),
-				Description:       description,
-				Tags:              tagsStrings,
-				RunTime:           runtime,
-				LastCommit:        *commit.Commit.Committer.Date,
-				Link:              link,
-				Repository:        repo,
-				Branch:            branch,
-				Owner:             owner,
-				Memory:            fucntionContentMap["memory"].(int),
-				Storgae:           fucntionContentMap["storage"].(int),
-				EnvironmentVars:   environmentVarsStrings,
-				Language:          language,
-				ScmType:           "github",
-				InstallInProgress: false,
-				UpdatesAvailable:  false,
-				ByMemphis:         byMemphis,
+			handler := ""
+			if _, ok := fucntionContentMap["handler"].(string); ok {
+				handler = fucntionContentMap["handler"].(string)
+			}
+			var lastCommit *time.Time
+			if commit != nil {
+				lastCommit = &*commit.Commit.Committer.Date
+			}
+
+			functionDetails := models.FunctionResult{
+				FunctionName:     fucntionContentMap["function_name"].(string),
+				Description:      description,
+				Tags:             tagsStrings,
+				Runtime:          runtime,
+				Dependencies:     fucntionContentMap["dependencies"].(string),
+				EnvironmentVars:  environmentVarsStrings,
+				Memory:           fucntionContentMap["memory"].(int),
+				Storage:          fucntionContentMap["storage"].(int),
+				Handler:          handler,
+				Scm:              "github",
+				Repo:             repo,
+				Branch:           branch,
+				Owner:            owner,
+				LastCommit:       lastCommit,
+				Link:             link,
+				Language:         language,
+				InProgress:       false,
+				UpdatesAvailable: false,
+				ByMemphis:        byMemphis,
+				TenantName:       tenantName,
+				IsValid:          isValid,
+				InvalidReason:    invalidReason,
 			}
 
 			functions[key] = append(functions[key], functionDetails)

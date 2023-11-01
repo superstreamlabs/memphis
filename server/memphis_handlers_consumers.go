@@ -339,7 +339,6 @@ func (s *Server) createConsumerDirect(c *client, reply string, msg []byte) {
 		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, err, &resp)
 		return
 	}
-
 	if len(partitions) == 0 && ccr.RequestVersion < 2 {
 		respondWithErr(serv.MemphisGlobalAccountString(), s, reply, err)
 	} else {
@@ -488,6 +487,9 @@ func (ch ConsumersHandler) GetDelayedCgsByTenant(tenantName string, streams []*S
 			return []models.DelayedCgResp{}, err
 		}
 		for _, consumer := range resp.Consumers {
+			if strings.HasPrefix(consumer.Config.FilterSubject, "$memphis") || !strings.HasSuffix(consumer.Config.FilterSubject, ".final") { // skip consumers that are not user consumers
+				continue
+			}
 			if strings.Contains(consumer.Stream, "$") {
 				consumer.Stream = strings.Split(consumer.Stream, "$")[0]
 			}

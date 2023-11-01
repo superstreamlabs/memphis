@@ -817,8 +817,13 @@ func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int)
 	}
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
+	req := JSApiStreamPurgeRequest{Subject: streamAndPartition+".final"}
+	rawRequest, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
 	var resp JSApiStreamPurgeResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, rawRequest, &resp)
 	if err != nil {
 		return err
 	}
@@ -861,7 +866,7 @@ func (s *Server) GetTotalMessagesInStation(tenantName string, streamName string)
 		return 0, err
 	}
 
-	return int(streamInfo.State.Msgs), nil
+	return int(streamInfo.State.Subjects[streamName+".final"]), nil
 }
 
 // low level call, call only with internal station name (i.e stream name)!
@@ -869,7 +874,12 @@ func (s *Server) memphisStreamInfo(tenantName string, streamName string) (*Strea
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
 	var resp JSApiStreamInfoResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindStreamInfo, []byte(_EMPTY_), &resp)
+	req := JSApiStreamInfoRequest{SubjectsFilter: streamName+".>"}
+	rawRequest, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	err = jsApiRequest(tenantName, s, requestSubject, kindStreamInfo, rawRequest, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -952,7 +962,7 @@ func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error)
 
 	offset := 0
 	offsetReq := ApiPagedRequest{Offset: offset}
-	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
+	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq, Subject: "*.>"}
 	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -1038,8 +1048,8 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
-	totalMessages := streamInfo.State.Msgs
-	lastStreamSeq := streamInfo.State.LastSeq
+	totalMessages := streamInfo.State.Subjects[streamName+".final"]
+	lastStreamSeq := streamInfo.State.SubjectsState[streamName+".final"].Last
 
 	var startSequence uint64 = 1
 	if totalMessages > uint64(messagesToFetch) {

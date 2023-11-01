@@ -392,7 +392,12 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := map[string]interface{}{"email": username, "newsletter": strconv.FormatBool(subscription)}
+		analyticsParams := map[string]interface{}{
+			"email":        username,
+			"newsletter":   strconv.FormatBool(subscription),
+			"organization": body.Organization,
+			"full_name":    body.FullName,
+		}
 		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
@@ -905,7 +910,7 @@ func (umh UserMgmtHandler) SendTrace(c *gin.Context) {
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 		return
 	}
-	
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analytics.SendEvent(user.TenantName, user.Username, body.TraceParams, traceName)
