@@ -60,7 +60,7 @@ const TABS = [
             'Private'
         ) : (
             <>
-                Private <CloudOnly position={'relative'} />
+                Private <CloudOnly />
             </>
         ),
         disabled: !isCloud()

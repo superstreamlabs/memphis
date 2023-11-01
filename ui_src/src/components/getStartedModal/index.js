@@ -13,10 +13,11 @@
 import './style.scss';
 import { useState } from 'react';
 import { BiSolidTimeFive } from 'react-icons/bi';
+import { isCloud } from '../../services/valueConvertor';
 import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 import Input from '../Input';
-import { CONNECT_APP_VIDEO } from '../../config';
+import { WELCOME_VIDEO_CLOUD, WELCOME_VIDEO_OSS } from '../../config';
 import ConnectBG from '../../assets/images/connectBG.webp';
 import { BsGithub } from 'react-icons/bs';
 import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
@@ -106,7 +107,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                     <p className="sub-title">It’s whole new streaming stack 🚀</p>
                 </div>
                 <div className="video-wrapper">
-                    <VideoPlayer url={CONNECT_APP_VIDEO} bgImg={ConnectBG} width={'540px'} height={'250px'} />
+                    <VideoPlayer url={isCloud() ? WELCOME_VIDEO_CLOUD : WELCOME_VIDEO_OSS} bgImg={ConnectBG} width={'540px'} height={'250px'} />
                 </div>
                 <use-cases is="x3s">
                     <div className="header">

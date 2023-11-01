@@ -85,7 +85,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                     </div>
                 }
                 displayButtons={false}
-                width="685px"
+                width="560px"
                 clickOutside={handleClose}
                 open={open}
                 className="cloud-modal"
@@ -95,7 +95,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                 </div>
                 <span className="cloud-modal-btns">
                     <Button
-                        width="300px"
+                        width="240px"
                         height="40px"
                         placeholder={content[type]?.leftBtn}
                         colorType="black"
@@ -110,7 +110,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                         <UpgradePlans
                             content={
                                 <Button
-                                    width="300px"
+                                    width="240px"
                                     height="40px"
                                     placeholder={content[type]?.rightBtn}
                                     colorType="white"
@@ -126,7 +126,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                         />
                     ) : (
                         <Button
-                            width="300px"
+                            width="240px"
                             height="40px"
                             placeholder={content[type]?.rightBtn}
                             colorType="white"
