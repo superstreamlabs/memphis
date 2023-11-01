@@ -12,45 +12,18 @@
 
 import './style.scss';
 
-import React, { useRef } from 'react';
-import { HiLockClosed } from 'react-icons/hi';
+import React, { useState } from 'react';
+import { FaArrowCircleUp } from 'react-icons/fa';
+import CloudModal from '../cloudModal/';
 
-import TooltipComponent from '../tooltip/tooltip';
-import UpgradePlans from '../upgradePlans';
-import { showUpgradePlan } from '../../services/valueConvertor';
-
-const LockFeature = ({ position, header }) => {
-    const style = {
-        position: position || 'absolute'
-    };
-
-    const tooltipRef = useRef(null);
+const LockFeature = ({}) => {
+    const [openCloudModal, setOpenCloudModal] = useState(false);
 
     return (
-        <TooltipComponent
-            className="lock-feature-tooltip"
-            style={style}
-            placement="right"
-            tooltipRef={tooltipRef}
-            text={
-                <div className="lock-tooltip-text">
-                    <p>{header || 'Upgrade needed'}</p>
-                    <span>Please upgrade your plan to unlock this feature</span>
-                    {showUpgradePlan() && (
-                        <UpgradePlans
-                            content={
-                                <div className="upgrade-button-wrapper" onClick={() => tooltipRef.current()}>
-                                    <p className="upgrade-plan">Upgrade now</p>
-                                </div>
-                            }
-                            isExternal={false}
-                        />
-                    )}
-                </div>
-            }
-        >
-            <HiLockClosed className="lock-feature-icon" />
-        </TooltipComponent>
+        <>
+            <FaArrowCircleUp className="lock-feature-icon" onClick={() => setOpenCloudModal(true)} />
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
+        </>
     );
 };
 
