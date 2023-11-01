@@ -216,7 +216,7 @@ function OverView() {
                                     width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 60 : 40}
                                     alt="avatar"
-                                    onClick={() => history.push(pathDomains.profile)}
+                                    onClick={() => history.replace(`${pathDomains.administration}/profile`)}
                                 ></img>
                                 <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
                             </div>
