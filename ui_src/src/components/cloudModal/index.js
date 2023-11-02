@@ -27,7 +27,11 @@ const CloudModal = ({ type, open, handleClose }) => {
     const content = {
         bundle: {
             title: <label className="cloud-gradient">Enhance Your Journey</label>,
-            subtitle: 'Get Your Open-Source Support Bundle Today!',
+            subtitle: (
+                <>
+                    Get Your Open-Source <label className="bold"> Support Bundle </label> Today!
+                </>
+            ),
             banner: BundleBanner,
             leftBtn: 'Learn More',
             leftBtnLink: 'https://docs.memphis.dev/memphis/open-source-installation/open-source-support-bundle/',

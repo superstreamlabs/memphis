@@ -215,7 +215,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                         <label>A station is a distributed unit that stores the produced data.</label>
                     </div>
                 }
-                height="65vh"
+                height="70vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"
