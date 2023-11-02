@@ -34,7 +34,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             ),
             banner: BundleBanner,
             leftBtn: 'Learn More',
-            leftBtnLink: 'https://docs.memphis.dev/memphis/open-source-installation/open-source-support-bundle/',
+            leftBtnLink: 'https://memphis.dev/open-source-support-bundle/',
             rightBtn: 'Book a Call',
             rightBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo'
         },

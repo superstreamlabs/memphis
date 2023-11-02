@@ -381,7 +381,7 @@ function SideBar() {
 
                 <Popover
                     overlayInnerStyle={overlayStyles}
-                    placement="right"
+                    placement="rightBottom"
                     content={contentQuickStart}
                     trigger="click"
                     onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}

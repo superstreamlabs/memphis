@@ -267,6 +267,7 @@
     flex-direction: column;
     gap: 8px;
 }
-.ant-popover-placement-right {
+.ant-popover-placement-right,
+.ant-popover-placement-rightTop {
     left: 60px !important;
 }
