@@ -282,12 +282,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
         <Form name="form" form={creationForm} autoComplete="off" className={'create-station-form-getstarted'}>
             <div className={getStarted ? 'left-side left-gs' : 'left-side'}>
                 <div className="station-name-section">
-                    <TitleComponent
-                        headerTitle="Enter station name"
-                        typeTitle="sub-header"
-                        headerDescription="RabbitMQ has queues, Kafka has topics, and Memphis has stations"
-                        required={true}
-                    />
+                    <TitleComponent headerTitle="Station name" typeTitle="sub-header" required={true} />
                     <Form.Item
                         name="station_name"
                         rules={[
@@ -309,7 +304,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         initialValue={getStartedStateRef?.formFieldsCreateStation?.name}
                     >
                         <Input
-                            placeholder="Type station name"
+                            placeholder=""
                             type="text"
                             maxLength="128"
                             radiusType="semi-round"
@@ -334,13 +329,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 <div className="replicas-partition-container" style={{ display: isCloud() ? 'block' : 'grid' }}>
                     {!isCloud() && (
                         <div className="replicas-container">
-                            <TitleComponent
-                                headerTitle="Replicas"
-                                typeTitle="sub-header"
-                                headerDescription="Amount of mirrors per message."
-                                learnMore={true}
-                                link="https://docs.memphis.dev/memphis/memphis/concepts/station#replicas-mirroring"
-                            />
+                            <TitleComponent headerTitle="Replicas" typeTitle="sub-header" headerDescription="Number of mirrors for each message" />
                             <div>
                                 <Form.Item
                                     name="replicas"
@@ -364,7 +353,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                     )}
                     <div className="replicas-container">
-                        <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Amount of partitions per station." learnMore={false} />
+                        <TitleComponent headerTitle="Partitions" typeTitle="sub-header" headerDescription="Number of partitions per station" learnMore={false} />
                         <div>
                             <Form.Item
                                 name="partitions_number"
@@ -423,7 +412,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                             <TitleComponent
                                 headerTitle="Deduplication (Idempotency)"
                                 typeTitle="sub-header"
-                                headerDescription={<span>Deduplication window for which producers will not produce the same message twice.</span>}
+                                headerDescription="A time-window for deduplication to prevent producers from generating duplicate messages"
                             />
                         </div>
                         <div className="idempotency-value">
@@ -478,9 +467,9 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <div>
                         <div className="toggle-add">
                             <TitleComponent
-                                headerTitle="Enforce schema"
+                                headerTitle="Schema validation"
                                 typeTitle="sub-header"
-                                headerDescription="Enforcing schema will increase produced data quality"
+                                headerDescription="Enforcing a schema will enhance the quality of the produced data"
                             />
                             <Switcher onChange={() => setUseSchema(!useSchema)} checked={useSchema} />
                         </div>
@@ -498,11 +487,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                 )}
                 <div>
                     <div className="toggle-add">
-                        <TitleComponent
-                            headerTitle="Dead-letter station"
-                            typeTitle="sub-header"
-                            headerDescription="Dead-letter stations are useful for debugging your application"
-                        />
+                        <TitleComponent headerTitle="Dead-letter station" typeTitle="sub-header" headerDescription='A "recylce bin" for messages' />
                         <Switcher onChange={() => setDlsConfiguration(!dlsConfiguration)} checked={dlsConfiguration} />
                     </div>
 
@@ -528,18 +513,13 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                     <div className="content">
                         {tabValue === tabs[0].name && (
                             <>
-                                <p className="description">
-                                    The criteria for which messages will be expelled from the station.&nbsp;
-                                    <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/concepts/station#retention" target="_blank">
-                                        Learn more
-                                    </a>
-                                </p>
+                                <p className="description">The criteria for which messages will be expelled from the station</p>
                             </>
                         )}
                         {tabValue === tabs[1].name && (
                             <p className="description">
-                                *Optional* For archiving and higher retention of ingested data. <br />
-                                Once a message passes the 1st storage tier, it will automatically be migrated to the 2nd storage tier, if defined.&nbsp;
+                                *Optional* To enhance data archiving and extend the retention period for ingested data, messages that surpass the first storage tier will
+                                undergo automatic migration to the second storage tier, if configured
                             </p>
                         )}
                         <div className="retention-type-section" style={{ display: tabValue === tabs[0].name ? 'block' : 'none' }}>
@@ -685,35 +665,7 @@ const CreateStationForm = ({ createStationFormRef, getStartedStateRef, finishUpd
                         </div>
                         {(!isCloud() || (isCloud() && tabValue === tabs[1].name)) && (
                             <div className="storage-container">
-                                <TitleComponent
-                                    headerTitle="Storage type"
-                                    typeTitle="sub-header"
-                                    headerDescription={
-                                        tabValue === tabs[0].name ? (
-                                            <span>
-                                                Type of storage for short retention.&nbsp;
-                                                <a
-                                                    className="learn-more"
-                                                    href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-1-hot-storage"
-                                                    target="_blank"
-                                                >
-                                                    Learn more
-                                                </a>
-                                            </span>
-                                        ) : (
-                                            <span>
-                                                Type of storage for long retention.&nbsp;
-                                                <a
-                                                    className="learn-more"
-                                                    href="https://docs.memphis.dev/memphis/memphis/concepts/storage-and-redundancy#tier-2-cold-storage"
-                                                    target="_blank"
-                                                >
-                                                    Learn more
-                                                </a>
-                                            </span>
-                                        )
-                                    }
-                                />
+                                <TitleComponent headerTitle="Storage type" typeTitle="sub-header" />
                                 <Form.Item
                                     name="storage_type"
                                     initialValue={getStarted ? getStartedStateRef?.formFieldsCreateStation?.storage_type : 'file'}

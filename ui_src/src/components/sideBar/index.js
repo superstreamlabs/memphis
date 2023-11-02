@@ -64,6 +64,7 @@ import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
+import LearnMore from '../learnMore';
 import GetStarted from '../getStartedModal';
 import Modal from '../modal';
 import CreateStationForm from '../createStationForm';
@@ -530,7 +531,10 @@ function SideBar() {
                             <StationIcon className="headerImage" alt="stationImg" />
                         </div>
                         <p>Create a new station</p>
-                        <label>A station is a distributed unit that stores the produced data.</label>
+                        <label>
+                            A station is a distributed unit that stores the produced data{' '}
+                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                        </label>
                     </div>
                 }
                 height="70vh"

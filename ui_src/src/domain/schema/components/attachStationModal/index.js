@@ -22,6 +22,7 @@ import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import Modal from '../../../../components/modal';
+import LearnMore from '../../../../components/learnMore';
 import CreateStationForm from '../../../../components/createStationForm';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName, update }) {
@@ -212,7 +213,10 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                             <StationsActiveIcon alt="stationsIconActive" className="headerImage" />
                         </div>
                         <p>Create a new station</p>
-                        <label>A station is a distributed unit that stores the produced data.</label>
+                        <label>
+                            A station is a distributed unit that stores the produced data{' '}
+                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                        </label>
                     </div>
                 }
                 height="70vh"
