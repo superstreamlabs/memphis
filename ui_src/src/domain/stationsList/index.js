@@ -36,6 +36,7 @@ import { httpRequest } from '../../services/http';
 import Button from '../../components/button';
 import Filter from '../../components/filter';
 import Loader from '../../components/loader';
+import LearnMore from '../../components/learnMore';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 
@@ -237,10 +238,13 @@ const StationsList = () => {
                                 <StationIcon alt="stationIcon" />
                             </div>
                             <p>Create a new station</p>
-                            <label>A station is a distributed unit that stores the produced data.</label>
+                            <label>
+                                A station is a distributed unit that stores the produced data{' '}
+                                <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                            </label>
                         </div>
                     }
-                    height="70vh"
+                    height="58vh"
                     width="1020px"
                     rBtnText="Create"
                     lBtnText="Cancel"

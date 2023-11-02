@@ -341,7 +341,7 @@ const ProduceConsumList = ({ producer }) => {
                 }
                 className={'modal-wrapper produce-modal'}
                 width="550px"
-                height="70vh"
+                height="58vh"
                 clickOutside={() => {
                     setOpenProduceMessages(false);
                 }}

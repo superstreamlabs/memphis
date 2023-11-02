@@ -25,6 +25,7 @@ import SearchInput from '../../../../components/searchInput';
 import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
+import LearnMore from '../../../../components/learnMore';
 import pathDomains from '../../../../router';
 import { StationStoreContext } from '../..';
 import SchemaItem from './schemaItem';
@@ -244,10 +245,13 @@ const UseSchemaModal = ({ stationName, handleSetSchema, close, type = 'schema' }
                             <StationIcon className="headerImage" alt="stationImg" />
                         </div>
                         <p>Create a new station</p>
-                        <label>A station is a distributed unit that stores the produced data.</label>
+                        <label>
+                            A station is a distributed unit that stores the produced data{' '}
+                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                        </label>
                     </div>
                 }
-                height="70vh"
+                height="58vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"
