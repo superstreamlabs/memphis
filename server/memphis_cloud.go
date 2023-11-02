@@ -2215,3 +2215,10 @@ func GetStationAttachedFunctionsByPartitions(stationID int, partitionsList []int
 func getInternalUserPassword() string {
 	return configuration.ROOT_PASSWORD
 }
+
+func sendDeleteAllFunctionsReqToMS(user models.User, tenantName, scmType, repo, branch, computeEngine, owner string, uninstall bool) error {
+	return nil
+}
+
+func sendCloneFunctionReqToMS(connectedRepo interface{}, user models.User, scm string, bodyToUpdate models.CreateIntegrationSchema, index int) {
+}

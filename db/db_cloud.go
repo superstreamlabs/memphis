@@ -44,3 +44,7 @@ func DeleteAndGetAttachedFunctionsByStation(tenantName string, stationId int, pa
 func DeleteAndGetAttachedFunctionsByTenant(tenantName string) ([]FunctionSchema, error) {
 	return []FunctionSchema{}, nil
 }
+
+func DeleteAllTestEvents(tenantName string) error {
+	return nil
+}

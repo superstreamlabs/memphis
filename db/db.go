@@ -571,6 +571,20 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			PRIMARY KEY (id)
         );`
 
+	sharedLocksTable := `
+		CREATE TABLE IF NOT EXISTS shared_locks(
+			id SERIAL NOT NULL,
+			name VARCHAR NOT NULL,
+			tenant_name VARCHAR NOT NULL,
+			lock_held BOOL NOT NULL DEFAULT false,
+			locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			PRIMARY KEY (id),
+			UNIQUE(name, tenant_name),
+		CONSTRAINT fk_tenant_name_shared_locks
+			FOREIGN KEY(tenant_name)
+			REFERENCES tenants(name)
+		);`
+
 	alterAsyncTasks := `DO $$
 	BEGIN
 		IF EXISTS (
@@ -597,7 +611,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable, sharedLocksTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -2703,7 +2717,6 @@ func DeleteProducerByNameStationIDAndConnID(name string, stationId int, connId s
 		return false, err
 	}
 	defer conn.Release()
-	// query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3 LIMIT 1`
 	query := `DELETE FROM producers WHERE name = $1 AND station_id = $2 AND connection_id = $3
 	AND EXISTS (
 		SELECT 1 FROM producers
@@ -4188,7 +4201,7 @@ func UpdateIntegration(tenantName string, name string, keys map[string]interface
 	VALUES($1, $2, $3, $4)
 	ON CONFLICT(name, tenant_name) DO UPDATE
 	SET keys = excluded.keys, properties = excluded.properties
-	RETURNING id, name, keys, properties, tenant_name
+	RETURNING id, name, keys, properties, tenant_name, is_valid
 `
 	stmt, err := conn.Conn().Prepare(ctx, "update_integration", query)
 	if err != nil {
@@ -7115,4 +7128,140 @@ func CountProudcersForStation(stationId int) (int64, error) {
 	}
 
 	return count, nil
+}
+
+// Shared Locks Functions
+func GetAndLockSharedLock(name string, tenantName string) (bool, bool, models.SharedLock, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	defer conn.Release()
+	tx, err := conn.Begin(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	if tenantName != conf.GlobalAccount {
+		tenantName = strings.ToLower(tenantName)
+	}
+
+	selectQuery := `SELECT * FROM shared_locks WHERE name = $1 AND tenant_name = $2 FOR UPDATE LIMIT 1`
+	stmt, err := tx.Prepare(ctx, "get_and_lock_shared_lock", selectQuery)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	rows, err := tx.Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return false, false, models.SharedLock{}, nil
+		} else {
+			return false, false, models.SharedLock{}, err
+		}
+	}
+	defer rows.Close()
+	sharedLocks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.SharedLock])
+	if err != nil && err != pgx.ErrNoRows {
+		return false, false, models.SharedLock{}, err
+	}
+	var sharedLock models.SharedLock
+	lockTime := time.Now()
+	newLock := false
+	if len(sharedLocks) == 0 || err == pgx.ErrNoRows {
+		insterQuery := `INSERT INTO shared_locks(name, tenant_name, lock_held, locked_at) VALUES($1, $2, $3, $4) RETURNING *`
+
+		stmt, err := conn.Conn().Prepare(ctx, "insert_new_shared_lock_and_lock", insterQuery)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+
+		newSharedLock := models.SharedLock{}
+		if tenantName != conf.GlobalAccount {
+			tenantName = strings.ToLower(tenantName)
+		}
+		rows, err := conn.Conn().Query(ctx, stmt.Name, name, tenantName, true, lockTime)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			err := rows.Scan(&newSharedLock.ID, &newSharedLock.Name, &newSharedLock.TenantName, &newSharedLock.LockHeld, &newSharedLock.LockedAt)
+			if err != nil {
+				return false, false, models.SharedLock{}, err
+			}
+		}
+		sharedLock = newSharedLock
+		newLock = true
+	} else {
+		sharedLock = sharedLocks[0]
+	}
+
+	if !sharedLock.LockHeld {
+		updateQuery := "UPDATE shared_locks SET lock_held = TRUE, locked_at = $1 WHERE id = $2"
+		lockStmt, err := tx.Prepare(ctx, "lock_shared_lock", updateQuery)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		_, err = tx.Exec(ctx, lockStmt.Name, lockTime, sharedLock.ID)
+		if err != nil {
+			return false, false, models.SharedLock{}, err
+		}
+		sharedLock.LockHeld = true
+		sharedLock.LockedAt = lockTime
+	} else if !newLock {
+		return true, false, sharedLock, nil
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return false, false, models.SharedLock{}, err
+	}
+	return true, true, sharedLock, nil
+}
+
+func SharedLockUnlock(name, tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	query := `UPDATE shared_locks SET lock_held = FALSE WHERE name = $1 AND tenant_name=$2`
+	stmt, err := conn.Conn().Prepare(ctx, "unlock_shared_lock", query)
+	if err != nil {
+		return err
+	}
+	tenantName = strings.ToLower(tenantName)
+	_, err = conn.Conn().Query(ctx, stmt.Name, name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func DeleteAllSharedLocks(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `DELETE FROM shared_locks WHERE tenant_name=$1`
+	stmt, err := conn.Conn().Prepare(ctx, "delete_all_shared_locks", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
 }

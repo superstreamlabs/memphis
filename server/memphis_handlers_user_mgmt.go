@@ -151,6 +151,11 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	err = db.DeleteAllTestEvents(tenantName)
+	if err != nil {
+		return err
+	}
+
 	_, err = db.DeleteAndGetAttachedFunctionsByTenant(tenantName)
 	if err != nil {
 		return err
@@ -158,6 +163,20 @@ func removeTenantResources(tenantName string, user models.User) error {
 	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
 
 	err = db.RemoveStationsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+
+	err = sendDeleteAllFunctionsReqToMS(user, tenantName, "github", "", "", "aws_lambda", "", true)
+	if err != nil {
+		return err
+	}
+	err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
+	if err != nil {
+		return err
+	}
+
+	err = db.DeleteIntegrationsByTenantName(tenantName)
 	if err != nil {
 		return err
 	}
@@ -174,7 +193,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.DeleteIntegrationsByTenantName(tenantName)
+	err = db.DeleteAllSharedLocks(tenantName)
 	if err != nil {
 		return err
 	}
