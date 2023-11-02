@@ -258,10 +258,10 @@ const GitHubIntegration = ({ close, value }) => {
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => {
-                                                isCloud() &&
-                                                    applicationName() &&
-                                                    window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
-                                                !isCloud() && setCloudModalOpen(true);
+                                                // isCloud() &&
+                                                //     applicationName() &&
+                                                //     window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                setCloudModalOpen(true);
                                             }}
                                         />
                                     </div>
