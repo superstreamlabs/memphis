@@ -42,6 +42,7 @@ const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
+const SLACK_CONSUMER = "$memphis_notifications_slack_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -176,7 +177,7 @@ func (s *Server) ListenForNotificationEvents() error {
 			if notification.Code != "" {
 				notificationMsg = notificationMsg + "\n```" + notification.Code + "```"
 			}
-			err = SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
+			err = s.SendNotification(tenantName, notification.Title, notificationMsg, notification.Type)
 			if err != nil {
 				return
 			}
@@ -333,6 +334,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
+	go s.ConsumeSlackMessages()
 
 	return nil
 }
@@ -765,4 +767,84 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) ConsumeSlackMessages() error {
+	const mAmount = 1000
+	for {
+		if !SLACK_STREAM_CREATED || !SLACK_CONSUMER_CREATED {
+			s.Warnf("ConsumeSlackMessages: waiting for slack stream and consumer to be created")
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
+		msgs, err := fetchMessages[slackMsg](s,
+			SLACK_CONSUMER,
+			slackStreamName,
+			mAmount,
+			3*time.Second,
+			createSlackMsg)
+
+		if err != nil {
+			s.Errorf("Failed to fetch slack messages: %v", err.Error())
+			continue
+		}
+
+		sendSlackNotifications(s, msgs)
+	}
+}
+
+func createSlackMsg(msg []byte, reply string) slackMsg {
+	return slackMsg{
+		Msg:          msg,
+		ReplySubject: reply,
+	}
+}
+
+func fetchMessages[T any](s *Server,
+	consumer,
+	streamName string,
+	mAmount int,
+	timeToWait time.Duration,
+	create func(msg []byte, reply string) T) ([]T, error) {
+
+	req := []byte(strconv.FormatUint(uint64(mAmount), 10))
+	resp := make(chan T)
+	replySubject := consumer + "_reply_" + s.memphis.nuid.Next()
+
+	timeout := time.NewTimer(timeToWait)
+	sub, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), replySubject, replySubject+"_sid", func(_ *client, subject string, reply string, msg []byte) {
+		go func(subject, reply string, msg []byte) {
+			if reply != "" {
+				m := create(msg, reply)
+				resp <- m
+			}
+		}(subject, reply, copyBytes(msg))
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	subject := fmt.Sprintf(JSApiRequestNextT, streamName, consumer)
+	s.sendInternalAccountMsgWithReply(s.MemphisGlobalAccount(), subject, replySubject, nil, req, true)
+
+	msgs := make([]T, 0)
+	stop := false
+	for {
+		if stop {
+			s.unsubscribeOnAcc(s.MemphisGlobalAccount(), sub)
+			break
+		}
+		select {
+		case m := <-resp:
+			msgs = append(msgs, m)
+			if len(msgs) == mAmount {
+				stop = true
+			}
+		case <-timeout.C:
+			stop = true
+		}
+	}
+
+	return msgs, nil
 }

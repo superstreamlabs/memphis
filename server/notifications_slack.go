@@ -14,10 +14,9 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"strings"
-
 	"github.com/memphisdev/memphis/db"
 	"github.com/memphisdev/memphis/models"
+	"strings"
 
 	"github.com/slack-go/slack"
 )
@@ -322,4 +321,91 @@ func hideSlackAuthToken(authToken string) string {
 		return authToken
 	}
 	return authToken
+}
+
+type slackMsg struct {
+	Msg          []byte
+	ReplySubject string
+}
+
+func sendSlackNotifications(s *Server, msgs []slackMsg) {
+	tenantMsgs := groupMessagesByTenant(msgs, s)
+	for tenantName, tMsgs := range tenantMsgs {
+		sendTenantSlackNotifications(s, tenantName, tMsgs)
+	}
+}
+
+func sendTenantSlackNotifications(s *Server, tenantName string, msgs []NotificationMsgWithReply) {
+	var ok bool
+	if _, ok := NotificationFunctionsMap[slackIntegrationName]; !ok {
+		s.Errorf("slack integration doesn't exist")
+		return
+	}
+
+	var tenantIntegrations map[string]any
+	if tenantIntegrations, ok = IntegrationsConcurrentCache.Load(tenantName); !ok {
+		// slack is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	var slackIntegration models.SlackIntegration
+	if slackIntegration, ok = tenantIntegrations[slackIntegrationName].(models.SlackIntegration); !ok {
+		// slack is either not enabled or have been disabled - just ack these messages
+		ackMsgs(s, msgs)
+		return
+	}
+
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		err := sendMessageToSlackChannel(slackIntegration, m.NotificationMsg.Title, m.NotificationMsg.Message)
+		if err != nil {
+			s.Errorf("failed to send slack notification: " + err.Error())
+			var rateLimit *slack.RateLimitedError
+			if errors.As(err, &rateLimit) {
+				// when we hit rate limit there's no point in trying to send further messages for this tenant
+				// instead retry them on the next run
+				return
+			}
+			continue
+		}
+
+		err = s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
+		if err != nil {
+			s.Errorf("failed to ack slack notification: ", err.Error())
+		}
+	}
+}
+
+func ackMsgs(s *Server, msgs []NotificationMsgWithReply) {
+	for i := 0; i < len(msgs); i++ {
+		m := msgs[i]
+		s.sendInternalAccountMsg(s.MemphisGlobalAccount(), m.ReplySubject, []byte(_EMPTY_))
+	}
+}
+
+func groupMessagesByTenant(msgs []slackMsg, l Logger) map[string][]NotificationMsgWithReply {
+	tenantMsgs := make(map[string][]NotificationMsgWithReply)
+	for _, message := range msgs {
+		msg := message.Msg
+		reply := message.ReplySubject
+		var nm NotificationMsg
+		err := json.Unmarshal(msg, &nm)
+		if err != nil {
+			// TODO: does it make sense to send ack for this message?
+			// TODO: it's malformed and won't be unmarshalled next time as well
+			l.Errorf("Failed to unmarshal slack message: %v", err)
+			continue
+		}
+		nmr := NotificationMsgWithReply{
+			NotificationMsg: &nm,
+			ReplySubject:    reply,
+		}
+		if _, ok := tenantMsgs[nm.TenantName]; !ok {
+			tenantMsgs[nm.TenantName] = []NotificationMsgWithReply{}
+		}
+		tenantMsgs[nm.TenantName] = append(tenantMsgs[nm.TenantName], nmr)
+	}
+
+	return tenantMsgs
 }

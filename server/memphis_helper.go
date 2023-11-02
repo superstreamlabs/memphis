@@ -59,6 +59,7 @@ const (
 	throughputStreamNameV1      = "$memphis-throughput-v1"
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
+	slackStreamName             = "$memphis_notifications_slack"
 )
 
 var noLimit = -1
@@ -138,6 +139,8 @@ var (
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
+	SLACK_STREAM_CREATED                   bool
+	SLACK_CONSUMER_CREATED                 bool
 )
 
 type Messages []models.MessageDetails
@@ -532,7 +535,60 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
 	}
 
+	// create Slack notifications stream
+	if !SLACK_STREAM_CREATED {
+		err = createSlackStream(s, slackStreamName, replicas, idempotencyWindow)
+		if err != nil && IsNatsErr(err, JSClusterNoPeersErrF) {
+			time.Sleep(1 * time.Second)
+			tryCreateInternalJetStreamResources(s, retentionDur, successCh, isCluster)
+			return
+		}
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+
+		SLACK_STREAM_CREATED = true
+	}
+
+	if !SLACK_CONSUMER_CREATED {
+		err = createSlackConsumer(s, SLACK_CONSUMER, slackStreamName)
+		if err != nil {
+			successCh <- err
+			return
+		}
+
+		SLACK_CONSUMER_CREATED = true
+	}
+
 	successCh <- nil
+}
+
+func createSlackConsumer(s *Server, consumer, stream string) error {
+	cc := ConsumerConfig{
+		DeliverPolicy: DeliverAll,
+		AckPolicy:     AckExplicit,
+		Durable:       consumer,
+		FilterSubject: stream + ".>",
+		AckWait:       time.Duration(10) * time.Second,
+		MaxAckPending: -1,
+		MaxDeliver:    10,
+	}
+	return serv.memphisAddConsumer(s.MemphisGlobalAccountString(), stream, &cc)
+}
+
+func createSlackStream(s *Server, streamName string, replicas int, idempotencyWindow time.Duration) error {
+	return s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+		Name:         streamName,
+		Subjects:     []string{streamName + ".>"},
+		Retention:    WorkQueuePolicy,
+		MaxAge:       0,
+		MaxConsumers: -1,
+		Discard:      DiscardOld,
+		Storage:      FileStorage,
+		Replicas:     replicas,
+		Duplicates:   idempotencyWindow,
+	})
 }
 
 func (s *Server) popFallbackLogs() {

@@ -1291,6 +1291,7 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 
 		// *** added by Memphis
 		switch mset.name() {
+
 		case tieredStorageStream:
 			TIERED_STORAGE_STREAM_CREATED = true
 		case dlsUnackedStream:
@@ -1305,6 +1306,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_SCHEMAVERSE_STREAM_CREATED = true
 		case integrationsAuditLogsStream:
 			INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
+		case slackStreamName:
+			SLACK_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 
@@ -1335,6 +1338,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_UNACKED_CONSUMER_CREATED = true
 		case dlsSchemaverseStream:
 			DLS_SCHEMAVERSE_CONSUMER_CREATED = true
+		case slackStreamName:
+			SLACK_CONSUMER_CREATED = true
 		}
 		// added by Memphis ***
 
