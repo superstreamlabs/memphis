@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/memphisdev/memphis/conf"
+
 	"github.com/memphisdev/memphis/models"
 
 	"context"
@@ -5920,7 +5921,7 @@ func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, err
 		query = `SELECT COUNT(*) from dls_messages where station_id=$1 AND partition_number = $2`
 	}
 
-	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition", query)
+	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition_1", query)
 	if err != nil {
 		return 0, err
 	}
