@@ -19,7 +19,6 @@ import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationLi
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import datadogMetricsps from '../../../../../assets/images/datadogMetricsps.png';
-import Button from '../../../../../components/button';
 import CustomTabs from '../../../../../components/Tabs';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';

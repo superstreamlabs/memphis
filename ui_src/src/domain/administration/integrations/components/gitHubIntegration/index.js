@@ -329,7 +329,7 @@ const GitHubIntegration = ({ close, value }) => {
                     </Form>
                 </>
             )}
-            <CloudMoadl type="cloud" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <CloudMoadl type="functions" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };
