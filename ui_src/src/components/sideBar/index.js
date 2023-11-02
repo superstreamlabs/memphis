@@ -220,7 +220,10 @@ function SideBar() {
                 onClick={() => {
                     sendTrace('quick-actions-schema', {});
                     setPopoverQuickActions(false);
-                    history.replace(`${pathDomains.schemaverse}/create`);
+                    history.replace({
+                        pathname: `${pathDomains.schemaverse}/create`,
+                        create: true
+                    });
                 }}
             />
             <PopoverActionItem
