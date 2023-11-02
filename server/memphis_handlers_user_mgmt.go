@@ -390,6 +390,26 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		env = "docker"
 	}
 
+	exist, tenant, err := db.GetTenantByName(newUser.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp at GetTenantByName: User %v: %v", newUser.TenantName, newUser.Username, body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user: %v]CreateUserSignUp: User %v: tenant %v does not exist", newUser.TenantName, newUser.Username, body.Username, newUser.TenantName)
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
 		analyticsParams := map[string]interface{}{
@@ -428,6 +448,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
 		"dls_retention":           serv.opts.DlsRetentionHours[newUser.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
 		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
