@@ -1937,6 +1937,7 @@ func (c *client) processRouteConnect(srv *Server, arg []byte, lang string) error
 	proto := &connectInfo{}
 
 	if err := json.Unmarshal(arg, proto); err != nil {
+		c.Errorf("processRouteConnect: ", err)
 		return err
 	}
 	// Reject if this has Gateway which means that it would be from a gateway

@@ -375,7 +375,7 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
                 <div className="schema-fields">
                     <div className="left">
-                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema structure</p>
+                        <p className={!versionSelected?.active ? 'tlt seperator' : 'tlt'}>Schema editor</p>
                         {!versionSelected?.active && (
                             <>
                                 <span>Diff : </span>
@@ -507,14 +507,14 @@ function SchemaDetails({ schemaName, closeDrawer }) {
                 </div>
                 <div className="used-stations">
                     <div className="header">
-                        <p>{schemaDetails?.used_stations?.length > 0 ? 'Used by stations' : 'Not in use'}</p>
+                        <p>{schemaDetails?.used_stations?.length > 0 ? 'Enforced stations' : 'Not in use'}</p>
                         <Button
-                            width="165px"
+                            width="130px"
                             height="30px"
                             placeholder={
                                 <div className="attach-button">
                                     <AddRounded className="add" />
-                                    <span>Enforce on Station</span>
+                                    <span>Enforce</span>
                                 </div>
                             }
                             radiusType="semi-round"

@@ -1,124 +1,330 @@
-.function-box-wrapper{
-    background: #FFFFFF;
-    border: 1px solid #E9E9E9;
+.function-box-wrapper {
+    box-sizing: border-box;
+    margin: 0;
+    margin-bottom: 15px;
+    background: #ffffff;
+    border: 1px solid #e9e9e9;
     border-radius: 8px;
-    width: 330px;
-    height: 265px;
+    width: 100%;
+    min-width: 1370px;
+    box-shadow: 0px 6px 18px 0px #0000000f;
+    height: 140px;
+    .header-flex {
+        display: flex;
+    }
     cursor: pointer;
-    p{
+    p {
         margin: 0;
     }
-    header{
-        padding: 20px 20px 0px 20px;
-        height: 95px;
-        border-bottom: 1px solid #F5F5F5;
+    header {
+        padding: 16px 16px 0px 16px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        .function-name{
-            font-family: 'InterSemiBold';
-            font-size: 20px;
-            line-height: 24px;
-        }
-        .function-details{
+        .function-box-header {
             display: flex;
-            gap: 7px;
-            .function-repo, .function-code-type{
+            justify-content: space-between;
+            .details-section {
                 display: flex;
-                padding: 3px 10px;
                 align-items: center;
-                border-radius: 32px;
-                border: 1px solid #E1E1E1;
-                gap: 3px;
-                font-size: 14px;
-                color: #737373;
-                svg{
-                    color: black;
-                    width: 15px;
-                    height: 15px;
+                gap: 20px;
+            }
+            .function-name {
+                font-family: 'InterSemiBold';
+                font-size: 18px;
+                line-height: 20px;
+            }
+            deatils {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 5px;
+                .ant-divider-vertical {
+                    margin: 0px;
+                    border-left-width: 1px;
+                    height: 18px;
+                    color: #e0e0e0;
+                }
+                .function-owner {
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
+                    color: #6557ff;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                downloads,
+                commits,
+                branch,
+                repo,
+                rate {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: #737373;
+                    font-size: 14px;
+                    cursor: pointer;
+                    label {
+                        cursor: pointer;
+                    }
+                    .download-icon {
+                        color: #b0b0b0;
+                        font-size: 14px;
+                    }
+                    .stars-rate {
+                        font-size: 14px;
+                        color: #ffb10b;
+                    }
+                    .ant-rate-star:not(:last-child) {
+                        margin-right: 4px;
+                    }
                 }
             }
         }
-    }
-    description{
-        display: flex;
-        padding-left: 20px;
-        padding-right: 20px;
-        height: 88px;
-        border-bottom: 1px solid #F5F5F5;
-        overflow-x:auto;
-        align-items:center;
-        span{
-            font-family: 'Inter';
-            font-size: 12px;
-            color: rgba(74, 73, 92, 0.80);
+        .button-container {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .install-button {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            height: 40px;
         }
     }
-    tags{
+    description {
+        color: #737373;
+        font-size: 14px;
+    }
+    footer {
         display: flex;
-        padding-left: 20px;
-        padding-right: 20px;
-        height: 40px;
-        border-bottom: 1px solid #F5F5F5;
-        overflow-x:auto;
-        .tag-wrapper{
-            max-width: 95px !important;
-        }
+        margin-top: 5px;
+        padding: 10px 16px;
+
+        border-top: 1px solid #f5f5f5;
+        overflow-x: auto;
     }
     date {
         display: flex;
-        height: 40px;
+        height: 32px;
         width: 100%;
         padding-right: 20px;
         padding-left: 20px;
         align-items: center;
         color: #737373;
         font-size: 12px;
-        justify-content:space-between;
-        .flex{
-            display: flex;
-        }
-        svg{
+        justify-content: space-between;
+
+        svg {
             width: 18px;
             height: 18px;
             margin-right: 5px;
         }
     }
 }
-.func-selected{
+.func-selected {
     border: 1px solid var(--purple);
-    box-shadow: 0px 2px 7px 0px rgba(101, 87, 255, 0.10);
+    box-shadow: 0px 2px 7px 0px rgba(101, 87, 255, 0.1);
 }
 
-.function-drawer{
-    .ant-drawer-content-wrapper{
-        height: 45vh !important;
-        width: calc(100vw - 130px) !important;
-        margin-left: 110px;
-        margin-bottom: 20px;
-        border-radius: 8px;
+.function-drawer {
+    .ant-drawer-content-wrapper {
+        width: 60vw !important;
+
         box-shadow: none !important;
     }
-    .ant-drawer-content{
-        border-radius: 8px;
-        background: #FFF;
+    .ant-drawer-content {
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
+        background: #fff;
         box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14);
-    }
-    .ant-drawer-header{
-        padding-bottom: 0px !important;
-    }
-    .ant-drawer-header-title{
-        flex-direction: row-reverse;
-        .ant-drawer-title{
-            font-family: 'InterSemiBold';
-            font-size: 24px;
-            p{
-                margin: 0;
+        .button-content {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            .gradient {
+                margin-left: 10px;
+                opacity: 0.3;
+                background: radial-gradient(163199.99% 35.29% at 50% 50%, #1d1d1d 41.46%, rgba(255, 255, 255, 0) 100%);
+                width: 1px;
+                height: 20px;
             }
-            .ant-tabs-top > .ant-tabs-nav::before, .ant-tabs-top > .ant-tabs-nav{
-                border-bottom: none !important;
-                margin-bottom: 0px !important;  
+            svg {
+                margin-left: 7px;
+                width: 20px;
+                height: 20px;
             }
         }
+    }
+    .ant-drawer-header {
+        padding-bottom: 0px !important;
+    }
+
+    .ant-drawer-header-title {
+        padding-bottom: 5px;
+        .ant-drawer-title {
+            font-family: 'InterSemiBold';
+            font-size: 24px;
+            p {
+                margin: 0;
+            }
+            .ant-tabs-top > .ant-tabs-nav::before,
+            .ant-tabs-top > .ant-tabs-nav {
+                border-bottom: none !important;
+                margin-bottom: 0px !important;
+            }
+        }
+    }
+}
+
+.install-button {
+    .ant-btn-loading-icon {
+        padding: 0px !important;
+    }
+}
+
+.function-drawer-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    flex-direction: column;
+
+    header {
+        padding: 16px 16px 0px 16px;
+        display: flex;
+        flex-direction: column;
+        .function-box-header {
+            display: grid;
+            grid-template-columns: 5% 85% 10%;
+            .function-name {
+                font-family: 'InterSemiBold';
+                font-size: 18px;
+                line-height: 20px;
+                cursor: pointer;
+            }
+            deatils {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 5px;
+                .ant-divider-vertical {
+                    margin: 0px;
+                    border-left-width: 1px;
+                    height: 18px;
+                    color: #e0e0e0;
+                }
+                .function-owner {
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
+                    color: #6557ff;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                downloads,
+                commits,
+                rate {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: #737373;
+                    font-size: 14px;
+                    .download-icon {
+                        color: #b0b0b0;
+                        font-size: 14px;
+                    }
+                    .stars-rate {
+                        font-size: 14px;
+                        color: #ffb10b;
+                    }
+                    .ant-rate-star:not(:last-child) {
+                        margin-right: 4px;
+                    }
+                }
+            }
+        }
+    }
+
+    .drawer-header {
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        padding-left: 35px;
+        padding-right: 24px;
+        margin-top: 10px;
+        gap: 24px;
+        width: 100%;
+        min-width: 750px;
+        .right-side {
+            display: flex;
+            flex-grow: 1;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+
+            .title {
+                color: #2e2c34;
+                font-family: 'InterSemiBold';
+                font-size: 28px;
+                margin-bottom: 0px;
+                line-height: 30px;
+            }
+            deatils {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                margin-top: 5px;
+                .ant-divider-vertical {
+                    margin: 0px;
+                    border-left-width: 1px;
+                    height: 18px;
+                    color: #e0e0e0;
+                }
+                .function-owner {
+                    font-family: 'InterSemiBold';
+                    font-size: 14px;
+                    color: #6557ff;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+                downloads,
+                commits,
+                rate {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: #737373;
+                    font-size: 14px;
+                    .download-icon {
+                        color: #b0b0b0;
+                        font-size: 14px;
+                    }
+                    .stars-rate {
+                        font-size: 14px;
+                        color: #ffb10b;
+                    }
+                    .ant-rate-star:not(:last-child) {
+                        margin-right: 4px;
+                    }
+                }
+            }
+            description {
+                color: #737373;
+                font-size: 14px;
+                margin-bottom: 10px;
+                overflow: hidden;
+                max-width: 35vw;
+                white-space: nowrap;
+            }
+        }
+    }
+    .ant-tabs-nav-wrap {
+        margin-left: 35px;
+    }
+    .ant-tabs-tab {
+        padding: 6px 0;
     }
 }

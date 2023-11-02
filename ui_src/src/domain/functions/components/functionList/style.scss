@@ -4,33 +4,88 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    .code-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+    connectedRepos {
+        display: flex;
+        width: 260px;
+        height: 34px;
+        padding: 5px 10px;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        border-radius: 32px;
+        background: #ffff;
+        box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+        cursor: pointer;
+        svg {
+            height: 15px;
+            width: 15px;
+        }
+        .ant-divider-vertical {
+            margin: 0;
+        }
+        label {
+            font-family: 'InterSemiBold';
+            font-size: 12px;
+            cursor: pointer;
+        }
+    }
+    .button-content {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+    }
     .header-flex-wrapper {
         display: flex;
+        align-items: center;
         gap: 10px;
+        .ant-btn > .ant-btn-loading-icon {
+            padding-right: 0px;
+        }
+        .ant-btn > .ant-btn-loading-icon .anticon {
+            padding-right: 0px;
+        }
         .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
             align-items: center;
-            border-radius: 32px;
-            border: 1px solid #e1e1e1;
-            gap: 3px;
+            gap: 6px;
             font-size: 14px;
             font-family: 'InterMedium';
             svg {
-                color: black;
                 width: 15px;
                 height: 15px;
             }
         }
+        .info-icon {
+            border-radius: 50%;
+            padding: 7px;
+            height: 30px;
+            width: 30px;
+            background-color: #ffffff;
+            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
     }
+
     .action-section {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
     }
-
+    .function-list-collapse {
+        width: 100%;
+    }
     .function-list {
-        height: calc(95vh - 80px);
+        height: calc(95vh - 160px);
         width: 100%;
         position: relative;
         display: inline-flex;
@@ -41,6 +96,11 @@
         padding: 3px;
         align-content: flex-start;
         flex-wrap: wrap;
+
+        .cards-wrapper {
+            width: 100%;
+            overflow-y: auto;
+        }
         .no-function-to-display {
             position: relative;
             display: flex;
@@ -72,6 +132,18 @@
             padding-left: 20px;
         }
     }
+    .panel-header {
+        font-family: 'InterSemiBold';
+        font-size: 18px;
+    }
+    .ant-collapse-content-box {
+        padding: 0;
+    }
+    .ant-collapse-header {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
 }
 
 .loader-uploading {
@@ -81,4 +153,77 @@
 
 .ant-drawer-header {
     border-bottom-color: #ececec;
+}
+.repos-popover {
+    margin-top: 10px;
+    width: 260px;
+}
+.repo-data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    font-family: 'InterSemiBold';
+    font-size: 14px;
+}
+.git-refresh-title {
+    margin: 5px 0px;
+    cursor: pointer;
+    label {
+        cursor: pointer;
+    }
+}
+.git-repo {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    font-family: 'InterSemiBold';
+    font-size: 14px;
+    cursor: pointer;
+}
+.git-repos-list {
+    .git-repos-item {
+        height: 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 5px 15px;
+        .left-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            .repo-item-icon {
+                height: 25px;
+                width: 25px;
+            }
+            .repo-item-icon-memphis {
+                height: 26px;
+                width: 26px;
+                padding: 3px;
+                border-radius: 50%;
+                background-color: rgba(101, 87, 255, 0.1);
+            }
+            .last-modified {
+                color: #818c99;
+                font-size: 10px;
+                font-style: normal;
+            }
+        }
+    }
+    .ant-divider-horizontal {
+        margin: 0px;
+    }
+
+    .collapse-arrow {
+        transform: rotate(180deg);
+    }
+    .open {
+        transform: rotate(0deg);
+    }
+}
+.clone-popover {
+    .ant-popover-inner-content {
+        padding: 20px !important;
+    }
 }

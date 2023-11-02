@@ -29,7 +29,7 @@ const TitleComponent = (props) => {
                         <span className="span-header">{spanHeader}</span>
                     </p>
                 )}
-                {cloudOnly && !isCloud() && <CloudOnly position={'relative'} />}
+                {cloudOnly && !isCloud() && <CloudOnly />}
             </div>
             {headerDescription && (
                 <p className="header-description" style={style?.description}>

@@ -273,7 +273,7 @@ function Throughput() {
                 </div>
             </div>
             <div className="external-monitoring">
-                <label>For historical monitoring, please connect Memphis to an external </label>
+                <label>To track historical data, link Memphis with an external </label>
                 <label className="link-to-integrations" onClick={() => history.push(`${pathDomains.administration}/integrations`)}>
                     monitoring tool
                 </label>

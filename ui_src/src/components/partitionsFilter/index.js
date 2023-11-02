@@ -38,10 +38,8 @@ const PartitionsFilter = ({ partitions_number }) => {
         for (let i = 0; i <= partitions_number; i++) {
             elements.push(
                 <div className="partition-item" key={i} onClick={() => handleApply(i)}>
-                    <span>
-                        <PartitionIcon alt="PartitionIcon" />
-                        {i == 0 ? 'All partitions' : `Partition ${i}`}
-                    </span>
+                    <PartitionIcon alt="PartitionIcon" />
+                    <label> {i == 0 ? 'All partitions' : `Partition ${i}`}</label>
                 </div>
             );
         }
@@ -52,12 +50,12 @@ const PartitionsFilter = ({ partitions_number }) => {
     };
 
     return (
-        <Popover placement="bottomLeft" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
+        <Popover placement="bottom" content={getContent()} trigger="click" onOpenChange={handleOpenChange} open={isOpen}>
             <div className="filter-partition-btn">
                 <div className="filter-partition-container">
-                    <PartitionIcon alt="PartitionIcon" className="partition-icon" />
+                    <PartitionIcon alt="PartitionIcon" />
                     <div>{selectedPartition == -1 ? `All partitions` : `Partition ${selectedPartition}`}</div>
-                    <CollapseArrowIcon alt="CollapseArrow" />
+                    <CollapseArrowIcon alt="CollapseArrow" className={isOpen ? 'collapse-arrow open' : 'collapse-arrow close'} />
                 </div>
             </div>
         </Popover>

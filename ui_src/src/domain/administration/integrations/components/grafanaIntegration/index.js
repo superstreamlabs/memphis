@@ -15,15 +15,17 @@ import './style.scss';
 import React, { useEffect, useState } from 'react';
 import { Collapse } from 'antd';
 
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import grafanaps from '../../../../../assets/images/grafanaps.png';
-
-import Button from '../../../../../components/button';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
 import Loader from '../../../../../components/loader';
+import CustomTabs from '../../../../../components/Tabs';
+import IntegrationDetails from '../integrationItem/integrationDetails';
+
 const { Panel } = Collapse;
 
 const ExpandIcon = ({ isActive }) => <CollapseArrowIcon className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} alt="collapse-arrow" />;
@@ -33,6 +35,8 @@ const GrafanaIntegration = ({ close }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [showModal, setShowModal] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
+    const [tabValue, setTabValue] = useState('Configuration');
+    const tabs = getTabList('Debezium and Postgres');
 
     useEffect(() => {
         const images = [];
@@ -160,50 +164,40 @@ exporter.enabled="true"`}
                     <div className="integrate-header">
                         {grafanaConfiguration.header}
                         <div className="action-buttons flex-end">
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/grafana', '_blank')}
                             />
                         </div>
                     </div>
-                    {grafanaConfiguration.integrateDesc}
-                    <div className="integration-guid-stepper">
-                        <Collapse
-                            activeKey={currentStep}
-                            onChange={(key) => setCurrentStep(Number(key))}
-                            accordion={true}
-                            expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
-                        >
-                            {grafanaConfiguration?.steps?.map((step) => {
-                                return (
-                                    <Panel header={step.title} key={step.key}>
-                                        {getContent(step.key)}
-                                    </Panel>
-                                );
-                            })}
-                        </Collapse>
-                        <div className="close-btn">
-                            <Button
-                                width="300px"
-                                height="45px"
-                                placeholder="Close"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => close()}
-                            />
-                        </div>
+
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
+                    <div className="integration-guid-body">
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={grafanaConfiguration.integrateDesc} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="stepper-container">
+                                <IntegrationDetails integrateDesc={grafanaConfiguration.integrateDesc} />
+                                <div className="integration-guid-stepper">
+                                    <Collapse
+                                        activeKey={currentStep}
+                                        onChange={(key) => setCurrentStep(Number(key))}
+                                        accordion={true}
+                                        expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />}
+                                    >
+                                        {grafanaConfiguration?.steps?.map((step) => {
+                                            return (
+                                                <Panel header={step.title} key={step.key}>
+                                                    {getContent(step.key)}
+                                                </Panel>
+                                            );
+                                        })}
+                                    </Collapse>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                     {showModal && (
                         <Modal className={'zoomin-modal'} width="1000px" displayButtons={false} clickOutside={() => setShowModal(false)} open={showModal}>
                             <img width={'100%'} src={grafanaps} alt="zoomable" />

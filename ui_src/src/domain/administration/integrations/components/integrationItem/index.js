@@ -13,11 +13,12 @@
 import './style.scss';
 
 import React, { useState, useEffect, useContext, useRef } from 'react';
-
+import { useHistory } from 'react-router-dom';
 import { ReactComponent as IntegratedIcon } from '../../../../../assets/images/integrated.svg';
+import { ReactComponent as IntegrationFailedIcon } from '../../../../../assets/images/integrationFailed.svg';
+import { ReactComponent as MemphisVerifiedIcon } from '../../../../../assets/images/memphisFunctionIcon.svg';
 import { capitalizeFirst } from '../../../../../services/valueConvertor';
 import { Context } from '../../../../../hooks/store';
-import Modal from '../../../../../components/modal';
 import SlackIntegration from '../slackIntegration';
 import S3Integration from '../s3Integration';
 import Tag from '../../../../../components/tag';
@@ -26,7 +27,8 @@ import GrafanaIntegration from '../grafanaIntegration';
 import ElasticIntegration from '../elasticIntegration';
 import DebeziumIntegration from '../debeziumIntegration';
 import GitHubIntegration from '../gitHubIntegration';
-import LockFeature from '../../../../../components/lockFeature';
+import ZapierIntegration from '../zapierIntegration';
+import { Drawer } from 'antd';
 
 const IntegrationItem = ({ value, lockFeature, isOpen }) => {
     const [state] = useContext(Context);
@@ -35,10 +37,12 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
 
     const ref = useRef();
     ref.current = integrateValue;
+    const history = useHistory();
 
     useEffect(() => {
         modalFlip(isOpen);
     }, [isOpen]);
+
     useEffect(() => {
         if (state.integrationsList?.length > 0) {
             checkIfUsed();
@@ -68,6 +72,11 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);
+                            // data !== ref.current &&
+                            //     history.push({
+                            //         pathname: '/functions',
+                            //         integrated: true
+                            //     });
                         }}
                         value={ref.current}
                     />
@@ -80,6 +89,7 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                             setIntegrateValue(data);
                         }}
                         value={ref.current}
+                        lockFeature={lockFeature}
                     />
                 );
             case 'Datadog':
@@ -116,6 +126,15 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                     />
                 );
 
+            case `Zapier`:
+                return (
+                    <ZapierIntegration
+                        close={() => {
+                            modalFlip(false);
+                        }}
+                    />
+                );
+
             default:
                 break;
         }
@@ -123,27 +142,28 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
 
     return (
         <>
-            <integ-item is="3xd" onClick={() => (value?.comingSoon || lockFeature ? null : modalFlip(true))}>
+            <integ-item is="3xd" onClick={() => (value?.comingSoon ? null : modalFlip(true))}>
                 {value?.banner}
-                {integrateValue && Object.keys(integrateValue)?.length !== 0 && (
+                {integrateValue && Object.keys(integrateValue)?.length !== 0 && integrateValue?.is_valid && (
                     <div className="integrate-icon">
                         <IntegratedIcon />
                         <p>Integrated</p>
                     </div>
                 )}
-                {lockFeature && (
-                    <div className="lock-wrapper">
-                        <div className="opacity-background" />
-                        <div className="lock-integration">
-                            <LockFeature header="Storage tiering" />
-                        </div>
+                {integrateValue && Object.keys(integrateValue)?.length !== 0 && !integrateValue?.is_valid && (
+                    <div className="broken-integration-icon">
+                        <IntegrationFailedIcon />
+                        <p>Integration Failed</p>
                     </div>
                 )}
                 <div className="integration-name">
                     {value?.icon}
                     <div className="details">
                         <p>{value?.name}</p>
-                        <span>by {value?.by}</span>
+                        <span className="by">
+                            <MemphisVerifiedIcon />
+                            <label className="memphis">{value?.by}</label>
+                        </span>
                     </div>
                 </div>
                 <p className="integration-description">{value?.description} </p>
@@ -151,9 +171,19 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                     <Tag tag={value?.category} />
                 </div>
             </integ-item>
-            <Modal className="integration-modal" width="720px" height={'95vh'} displayButtons={false} clickOutside={() => modalFlip(false)} open={modalIsOpen}>
+            <Drawer
+                placement="right"
+                onClose={() => modalFlip(false)}
+                destroyOnClose={true}
+                className="integration-modal"
+                width="720px"
+                clickOutside={() => modalFlip(false)}
+                open={modalIsOpen}
+                closeIcon={false}
+                headerStyle={{ display: 'none' }}
+            >
                 {modalContent()}
-            </Modal>
+            </Drawer>
         </>
     );
 };

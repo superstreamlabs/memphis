@@ -29,6 +29,7 @@ export const ApiEndpoints = {
     GET_SIGNUP_FLAG: '/usermgmt/getSignUpFlag',
     SKIP_GET_STARTED: '/usermgmt/skipGetStarted',
     GET_FILTER_DETAILS: '/usermgmt/getFilterDetails',
+    SEND_TRACE: '/usermgmt/sendTrace',
 
     //Station
     CREATE_STATION: '/stations/createStation',
@@ -81,6 +82,11 @@ export const ApiEndpoints = {
 
     //Functions
     GET_ALL_FUNCTIONS: '/functions/getAllFunctions',
+    GET_ALL_TEST_EVENTS: '/functions/events/getAllEvents',
+    CREATE_TEST_EVENT: '/functions/events/addEvent',
+    DELETE_TEST_EVENT: '/functions/events/deleteEvent',
+    GET_TEST_EVENT: '/functions/events/getEvent',
+    UPDATE_TEST_EVENT: '/functions/events/editEvent',
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',
@@ -90,6 +96,7 @@ export const ApiEndpoints = {
     DISCONNECT_INTEGRATION: '/integrations/disconnectIntegration',
     REQUEST_INTEGRATION: '/integrations/requestIntegration',
     GET_SOURCE_CODE_BRANCHES: '/integrations/getSourceCodeBranches',
+    GET_INTEGRATION_LOGS: '/integrations/getAuditLogs',
 
     //Configuration
     GET_CLUSTER_CONFIGURATION: '/configurations/getClusterConfig',

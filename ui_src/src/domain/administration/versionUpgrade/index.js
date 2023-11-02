@@ -139,43 +139,45 @@ function VersionUpgrade() {
             ) : (
                 <>
                     <div className="banner-section">
-                        <UpgradeBannerIcon alt="upgradeBannerIcon" width="97%" />
-                        <div className="actions">
-                            <div className="current-version-wrapper">
-                                <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
-                                    <p className="current-version">Current Version: v{state.currentVersion}</p>
-                                </version>
-                            </div>
-                            <div className="logo">
-                                <FullLogoIcon alt="fullLogoIcon" />
-                                <div className="version-wrapper">
-                                    <p>{latestVersion}</p>
+                        <div className="banner-section-inner">
+                            <UpgradeBannerIcon className="banner-section-inner-svg" alt="upgradeBannerIcon" width="100%" />
+                            <div className="actions">
+                                <div className="current-version-wrapper">
+                                    <version is="x3d" style={{ cursor: !state.isLatest ? 'pointer' : 'default' }}>
+                                        <p className="current-version">Current Version: v{state.currentVersion}</p>
+                                    </version>
                                 </div>
-                            </div>
-                            <p className="desc-vers">A new version is available to download</p>
-                            <div className="buttons">
-                                <Button
-                                    width="180px"
-                                    height="40px"
-                                    placeholder="View Full Changes"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => window.open(versionUrl, '_blank')}
-                                />
-                                <Button
-                                    width="180px"
-                                    height="40px"
-                                    placeholder="How to upgrade"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => howToUpgrade()}
-                                />
+                                <div className="logo">
+                                    <FullLogoIcon alt="fullLogoIcon" />
+                                    <div className="version-wrapper">
+                                        <p>{latestVersion}</p>
+                                    </div>
+                                </div>
+                                <p className="desc-vers">A new version is available to download</p>
+                                <div className="buttons">
+                                    <Button
+                                        width="180px"
+                                        height="40px"
+                                        placeholder="View Full Changes"
+                                        colorType="black"
+                                        radiusType="circle"
+                                        backgroundColorType="white"
+                                        fontSize="12px"
+                                        fontFamily="InterSemiBold"
+                                        onClick={() => window.open(versionUrl, '_blank')}
+                                    />
+                                    <Button
+                                        width="180px"
+                                        height="40px"
+                                        placeholder="How to upgrade"
+                                        colorType="white"
+                                        radiusType="circle"
+                                        backgroundColorType="purple"
+                                        fontSize="12px"
+                                        fontFamily="InterSemiBold"
+                                        onClick={() => howToUpgrade()}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

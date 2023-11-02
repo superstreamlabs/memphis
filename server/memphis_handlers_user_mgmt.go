@@ -151,6 +151,12 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
+	_, err = db.DeleteAndGetAttachedFunctionsByTenant(tenantName)
+	if err != nil {
+		return err
+	}
+	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
 	err = db.RemoveStationsByTenant(tenantName)
 	if err != nil {
 		return err
@@ -384,9 +390,34 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		env = "docker"
 	}
 
+	exist, tenant, err := db.GetTenantByName(newUser.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateUserSignUp at GetTenantByName: User %v: %v", newUser.TenantName, newUser.Username, body.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if !exist {
+		serv.Warnf("[tenant: %v][user: %v]CreateUserSignUp: User %v: tenant %v does not exist", newUser.TenantName, newUser.Username, body.Username, newUser.TenantName)
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	decriptionKey := getAESKey()
+	decryptedUserPassword, err := DecryptAES(decriptionKey, tenant.InternalWSPass)
+	if err != nil {
+		serv.Errorf("CreateUserSignUp: User " + body.Username + ": " + err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
 	shouldSendAnalytics, _ := shouldSendAnalytics()
 	if shouldSendAnalytics {
-		analyticsParams := map[string]interface{}{"email": username, "newsletter": strconv.FormatBool(subscription)}
+		analyticsParams := map[string]interface{}{
+			"email":        username,
+			"newsletter":   strconv.FormatBool(subscription),
+			"organization": body.Organization,
+			"full_name":    body.FullName,
+		}
 		analytics.SendEvent(newUser.TenantName, username, analyticsParams, "user-signup")
 	}
 
@@ -417,6 +448,8 @@ func (umh UserMgmtHandler) AddUserSignUp(c *gin.Context) {
 		"rest_gw_port":            serv.opts.RestGwPort,
 		"user_pass_based_auth":    configuration.USER_PASS_BASED_AUTH,
 		"connection_token":        configuration.CONNECTION_TOKEN,
+		"account_id":              tenant.ID,
+		"internal_ws_pass":        decryptedUserPassword,
 		"dls_retention":           serv.opts.DlsRetentionHours[newUser.TenantName],
 		"logs_retention":          serv.opts.LogsRetentionDays,
 		"max_msg_size_mb":         serv.opts.MaxPayload / 1024 / 1024,
@@ -884,4 +917,26 @@ func CreateInternalApplicationUserForExistTenants() error {
 	}
 
 	return nil
+}
+
+func (umh UserMgmtHandler) SendTrace(c *gin.Context) {
+	var body models.SendTraceSchema
+	ok := utils.Validate(c, &body, false, nil)
+	if !ok {
+		return
+	}
+	traceName := strings.ToLower(body.TraceName)
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]SendTrace at getUserDetailsFromMiddleware: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	shouldSendAnalytics, _ := shouldSendAnalytics()
+	if shouldSendAnalytics {
+		analytics.SendEvent(user.TenantName, user.Username, body.TraceParams, traceName)
+	}
+
+	c.IndentedJSON(200, gin.H{})
 }

@@ -11,20 +11,25 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message, Spin } from 'antd';
+import { Form, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
-import { ReactComponent as TickCircleIcon } from '../../../../../assets/images/tickCircle.svg';
 import { FiPlus } from 'react-icons/fi';
-import { INTEGRATION_LIST } from '../../../../../const/integrationList';
+import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
-import Input from '../../../../../components/Input';
+import CustomTabs from '../../../../../components/Tabs';
 import Loader from '../../../../../components/loader';
+import CloudMoadl from '../../../../../components/cloudModal';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
+import IntegrationDetails from '../integrationItem/integrationDetails';
+import IntegrationLogs from '../integrationItem/integrationLogs';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
+import { isCloud } from '../../../../../services/valueConvertor';
+
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
     const [creationForm] = Form.useForm();
@@ -45,6 +50,9 @@ const GitHubIntegration = ({ close, value }) => {
     const [addNew, setAddNew] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
+    const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
+    const tabs = getTabList('GitHub');
 
     useEffect(() => {
         value && Object.keys(value).length > 0 && setIsIntagrated(true);
@@ -208,19 +216,12 @@ const GitHubIntegration = ({ close, value }) => {
                     <div className="integrate-header">
                         {githubConfiguration.header}
                         <div className={'action-buttons flex-end'}>
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
                             />
-                            {isIntegrated ? (
+                            {isIntegrated && (
                                 <Button
                                     width="100px"
                                     height="35px"
@@ -234,101 +235,101 @@ const GitHubIntegration = ({ close, value }) => {
                                     isLoading={loadingDisconnect}
                                     onClick={() => disconnect()}
                                 />
-                            ) : (
-                                <Button
-                                    height="35px"
-                                    placeholder="Connect"
-                                    colorType="white"
-                                    radiusType="circle"
-                                    backgroundColorType="purple"
-                                    border="none"
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    disabled={!applicationName}
-                                    onClick={() => window.location.assign('https://github.com/apps/memphis-cloud-dev/installations/select_target')}
-                                />
                             )}
                         </div>
                     </div>
-                    {githubConfiguration.integrateDesc}
+                    <CustomTabs value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} tabs={tabs} />
                     <Form name="form" form={creationForm} autoComplete="off" className="integration-form">
-                        <div className="api-details">
-                            {isIntegrated && (
-                                <div className="input-field">
-                                    <p className="title">Repos</p>
-                                    <div className="repos-container">
-                                        <div className="repos-header">
-                                            <label></label>
-                                            <label>REPO NAME</label>
-                                            <label>BRANCH</label>
-                                        </div>
-                                        <div className="repos-body">
-                                            {loadingRepos && (
-                                                <div className="repos-loader">
-                                                    <Spin indicator={antIcon} />
-                                                </div>
-                                            )}
-                                            {formFields?.keys?.connected_repos?.map((repo, index) => {
-                                                return (
-                                                    <IntegrationItem
-                                                        key={index}
-                                                        index={index}
-                                                        repo={repo}
-                                                        reposList={repos || []}
-                                                        updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
-                                                        removeRepo={(i) => {
-                                                            removeRepoItem(i);
-                                                        }}
-                                                        type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
-                                                        updateIntegration={updateIntegration}
-                                                        addIsLoading={loadingSubmit}
-                                                    />
-                                                );
-                                            })}
-                                            {!addNew && (
-                                                <div
-                                                    className="add-more-repos"
-                                                    onClick={() => {
-                                                        updateKeysConnectedRepos(
-                                                            {
-                                                                type: 'functions',
-                                                                repo_name: '',
-                                                                repo_owner: '',
-                                                                branch: ''
-                                                            },
-                                                            formFields.keys?.connected_repos?.length
-                                                        );
-                                                        setAddNew((prev) => !prev);
-                                                    }}
-                                                >
-                                                    <FiPlus /> <label> {formFields?.keys?.connected_repos?.length === 0 ? `Add the first repo` : `Add more repos`}</label>
-                                                </div>
-                                            )}
-                                        </div>
+                        {tabValue === 'Details' && <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />}
+                        {tabValue === 'Logs' && <IntegrationLogs integrationName={'github'} />}
+                        {tabValue === 'Configuration' && (
+                            <div className="integration-body">
+                                <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
+                                {!isIntegrated && (
+                                    <div className="noConnection-wrapper">
+                                        <Button
+                                            height="35px"
+                                            width="300px"
+                                            placeholder="Connect"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            border="none"
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => {
+                                                // isCloud() &&
+                                                //     applicationName() &&
+                                                //     window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                setCloudModalOpen(true);
+                                            }}
+                                        />
                                     </div>
+                                )}
+                                <div className="api-details">
+                                    {isIntegrated && (
+                                        <div className="input-field">
+                                            <p className="title">Repos</p>
+                                            <div className="repos-container">
+                                                <div className="repos-header">
+                                                    <label></label>
+                                                    <label>REPO NAME</label>
+                                                    <label>BRANCH</label>
+                                                </div>
+                                                <div className="repos-body">
+                                                    {loadingRepos && (
+                                                        <div className="repos-loader">
+                                                            <Spin indicator={antIcon} />
+                                                        </div>
+                                                    )}
+                                                    {formFields?.keys?.connected_repos?.map((repo, index) => {
+                                                        return (
+                                                            <IntegrationItem
+                                                                key={index}
+                                                                index={index}
+                                                                repo={repo}
+                                                                reposList={repos || []}
+                                                                updateIntegrationList={(updatedFields, i) => updateKeysConnectedRepos(updatedFields, i)}
+                                                                removeRepo={(i) => {
+                                                                    removeRepoItem(i);
+                                                                }}
+                                                                type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
+                                                                updateIntegration={updateIntegration}
+                                                                addIsLoading={loadingSubmit}
+                                                            />
+                                                        );
+                                                    })}
+                                                    {!addNew && (
+                                                        <div
+                                                            className="add-more-repos"
+                                                            onClick={() => {
+                                                                updateKeysConnectedRepos(
+                                                                    {
+                                                                        type: 'functions',
+                                                                        repo_name: '',
+                                                                        repo_owner: '',
+                                                                        branch: ''
+                                                                    },
+                                                                    formFields.keys?.connected_repos?.length
+                                                                );
+                                                                setAddNew((prev) => !prev);
+                                                            }}
+                                                        >
+                                                            <FiPlus />
+                                                            <label> {formFields?.keys?.connected_repos?.length === 0 ? `Add the first repo` : `Add more repos`}</label>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        <Form.Item className="button-container">
-                            <div className="button-wrapper button-wrapper-single-item  ">
-                                <div></div>
-                                <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                />
                             </div>
-                        </Form.Item>
+                        )}
                     </Form>
                 </>
             )}
+            <CloudMoadl type="functions" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

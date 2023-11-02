@@ -22,6 +22,7 @@ import { httpRequest } from '../../../../services/http';
 import Button from '../../../../components/button';
 import OverflowTip from '../../../../components/tooltip/overflowtip';
 import Modal from '../../../../components/modal';
+import LearnMore from '../../../../components/learnMore';
 import CreateStationForm from '../../../../components/createStationForm';
 
 function AttachStationModal({ close, handleAttachedStations, attachedStations, schemaName, update }) {
@@ -137,7 +138,7 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                             className="modal-btn"
                             width="160px"
                             height="34px"
-                            placeholder={'Create new station'}
+                            placeholder={'Create a new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -211,11 +212,14 @@ function AttachStationModal({ close, handleAttachedStations, attachedStations, s
                         <div className="header-img-container">
                             <StationsActiveIcon alt="stationsIconActive" className="headerImage" />
                         </div>
-                        <p>Create new station</p>
-                        <label>A station is a distributed unit that stores the produced data.</label>
+                        <p>Create a new station</p>
+                        <label>
+                            A station is a distributed unit that stores the produced data{' '}
+                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                        </label>
                     </div>
                 }
-                height="65vh"
+                height="58vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"

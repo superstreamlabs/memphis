@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
+	"strings"
 
 	"github.com/memphisdev/memphis/models"
 	"gopkg.in/yaml.v2"
@@ -73,7 +75,7 @@ func containsElement(arr []string, val string) bool {
 	return false
 }
 
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails []functionDetails) ([]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -87,7 +89,12 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 		return functionsDetails, err
 	}
 
+	countFunctions := 0
 	for _, directoryContent := range repoContent {
+		// In order to restrict the api calls per repo
+		if countFunctions == 10 {
+			break
+		}
 		if directoryContent.GetType() == "dir" {
 			_, filesContent, _, err := client.Repositories.GetContents(context.Background(), owner, repo, *directoryContent.Path, &github.RepositoryContentGetOptions{
 				Ref: branch})
@@ -125,28 +132,75 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						contentMap["storage"] = int64(512) * 1024 * 1024
 					}
 
+					if contentMap["dependencies"].(string) == "" {
+						switch contentMap["language"] {
+						case "go":
+							contentMap["dependencies"] = "go.mod"
+						case "nodejs":
+							contentMap["dependencies"] = "package.json"
+						case "python":
+							contentMap["dependencies"] = "requirements.txt"
+						}
+					}
+
+					splitPath := strings.Split(*fileContent.Path, "/")
+					path := strings.TrimSpace(splitPath[0])
+
 					err = validateYamlContent(contentMap)
 					if err != nil {
 						isValidFileYaml = false
+						fileDetails := functionDetails{
+							ContentMap:   contentMap,
+							RepoName:     repo,
+							Branch:       branch,
+							Owner:        owner,
+							DirectoryUrl: directoryContent.HTMLURL,
+							TenantName:   tenantName,
+						}
+						message := fmt.Sprintf("In the repository %s, the yaml file %s is invalid: %s", repo, splitPath[0], err.Error())
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						continue
 					}
 					isValidFileYaml = true
-
 					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
 					if err != nil {
 						continue
 					}
 
+					fileDetails := functionDetails{
+						Commit:       commit,
+						ContentMap:   contentMap,
+						RepoName:     repo,
+						Branch:       branch,
+						Owner:        owner,
+						DirectoryUrl: directoryContent.HTMLURL,
+						TenantName:   tenantName,
+					}
+
+					if path != contentMap["function_name"].(string) {
+						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
+						continue
+					}
+					if strings.Contains(path, " ") {
+						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
+						continue
+					}
+
 					if isValidFileYaml {
-						fileDetails := functionDetails{
-							Content:    content,
-							Commit:     commit,
-							ContentMap: contentMap,
-							RepoName:   repo,
-							Branch:     branch,
-							Owner:      owner,
-						}
-						functionsDetails = append(functionsDetails, fileDetails)
+						countFunctions++
+						fileDetails.IsValid = true
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
 				}

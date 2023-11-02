@@ -13,12 +13,9 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
-import { CloudQueueRounded } from '@material-ui/icons';
-
 import { ReactComponent as IntegrationRequestIcon } from '../../../assets/images/integrationRequestIcon.svg';
 import { CATEGORY_LIST, INTEGRATION_LIST } from '../../../const/integrationList';
-import { ReactComponent as ExperimentalIcon } from '../../../assets/images/experimentalIcon.svg';
-import { ReactComponent as CloudeBadgeIcon } from '../../../assets/images/cloudeBadge.svg';
+import { ReactComponent as SoonBadgeIcon } from '../../../assets/images/soonBadge.svg';
 import IntegrationItem from './components/integrationItem';
 import { ApiEndpoints } from '../../../const/apiEndpoints';
 import { isCloud } from '../../../services/valueConvertor';
@@ -125,13 +122,13 @@ const Integrations = () => {
         <div className="alerts-integrations-container">
             <div className="header-preferences">
                 <div className="left">
-                    <p className="main-header">Integrations</p>
+                    <p className="main-header">Integrations center</p>
                     <p className="memphis-label">Integrations for notifications, monitoring, API calls, and more</p>
                 </div>
                 <Button
-                    width="140px"
+                    width="180px"
                     height="35px"
-                    placeholder="Request integration"
+                    placeholder="Request a new integration"
                     colorType="white"
                     radiusType="circle"
                     backgroundColorType="purple"
@@ -144,13 +141,7 @@ const Integrations = () => {
             <div className="categories-list">
                 {Object.keys(CATEGORY_LIST).map((key) => {
                     const category = CATEGORY_LIST[key];
-                    const isCloudAndOsOnly = isCloud() && category.osOnly;
                     const isCategoryFilter = categoryFilter === category.name;
-
-                    if (isCloudAndOsOnly) {
-                        return null;
-                    }
-
                     return <Tag key={key} tag={category} onClick={(e) => setCategoryFilter(e)} border={isCategoryFilter} />;
                 })}
             </div>
@@ -163,12 +154,6 @@ const Integrations = () => {
                 <div className="integration-list">
                     {Object.keys(filterList)?.map((integration) => {
                         const integrationItem = filterList[integration];
-                        const isCloudAndOsOnly = isCloud() && integrationItem.osOnly;
-
-                        if (isCloudAndOsOnly) {
-                            return null;
-                        }
-
                         const key = integrationItem.name;
                         const integrationElement = (
                             <IntegrationItem
@@ -179,31 +164,16 @@ const Integrations = () => {
                             />
                         );
 
-                        if (integrationItem.comingSoon || (!isCloud() && integrationItem.cloudOnly)) {
+                        if (integrationItem.comingSoon) {
                             return (
                                 <div key={key} className="cloud-wrapper">
                                     <div className="dark-background">
-                                        <CloudeBadgeIcon className="cloud-badge" alt="cloud badge" />
-                                        <div className="cloud-icon">
-                                            <CloudQueueRounded />
-                                        </div>
+                                        <SoonBadgeIcon className="cloud-badge" alt="cloud badge" />
                                     </div>
                                     {integrationElement}
                                 </div>
                             );
                         }
-
-                        if (integrationItem.experimental) {
-                            return (
-                                <div key={key}>
-                                    <div className="experimental-badge">
-                                        <ExperimentalIcon alt="experimental" />
-                                    </div>
-                                    {integrationElement}
-                                </div>
-                            );
-                        }
-
                         return integrationElement;
                     })}
                 </div>

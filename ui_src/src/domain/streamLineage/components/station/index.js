@@ -30,7 +30,7 @@ const Station = ({ stationName, dls_messages, total_messages, schema_name }) => 
         <div className="station-graph-wrapper" onClick={() => goToStation()}>
             <div className="yellow-background" />
             <div className="station-details">
-                <RedirectWhiteIcon alt="redirectWhite" />
+                <RedirectWhiteIcon alt="redirectWhite" className="redirect-icon" />
                 <div className="station-name">{stationName}</div>
                 {schema_name !== '' && (
                     <div className="station-messages schema-attached">

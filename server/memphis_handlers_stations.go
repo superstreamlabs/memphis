@@ -175,6 +175,12 @@ func removeStationResources(s *Server, station models.Station, shouldDeleteStrea
 		return err
 	}
 
+	_, err = db.DeleteAndGetAttachedFunctionsByStation(station.TenantName, station.ID, station.PartitionsList)
+	if err != nil {
+		return err
+	}
+	// TODO: send response of DeleteAndGetAttachedFunctionsByStation to microservice to delete
+
 	return nil
 }
 
@@ -566,6 +572,8 @@ func (sh StationsHandler) GetStation(c *gin.Context) {
 		PartitionsList:       station.PartitionsList,
 		PartitionsNumber:     len(station.PartitionsList),
 		DlsStation:           station.DlsStation,
+		FunctionsLockHeld:    station.FunctionsLockHeld,
+		FunctionsLockedAt:    station.FunctionsLockedAt,
 	}
 
 	c.IndentedJSON(200, stationResponse)
@@ -590,9 +598,9 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 			if !strings.Contains(streamName, "$memphis") {
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
-					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Msgs)
+					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Subjects[streamName+".final"])
 				} else {
-					stationTotalMsgs[streamName] = int(info.State.Msgs)
+					stationTotalMsgs[streamName] = int(info.State.Subjects[streamName+".final"])
 				}
 			}
 		}
@@ -671,114 +679,6 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 	}
 }
 
-// TODO: check if need to remove
-func (sh StationsHandler) GetAllStationsDetails(shouldGetTags bool, tenantName string) ([]models.ExtendedStation, uint64, uint64, error) {
-	var stations []models.ExtendedStation
-	totalMessages := uint64(0)
-	if tenantName == "" {
-		tenantName = serv.MemphisGlobalAccountString()
-	}
-	totalDlsMessages, err := db.GetTotalDlsMessages(tenantName)
-	if err != nil {
-		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-	}
-
-	stations, err = db.GetAllStationsDetailsPerTenant(tenantName)
-	if err != nil {
-		return stations, totalMessages, totalDlsMessages, err
-	}
-	if len(stations) == 0 {
-		return []models.ExtendedStation{}, totalMessages, totalDlsMessages, nil
-	} else {
-		stationTotalMsgs := make(map[string]int)
-		tagsHandler := TagsHandler{S: sh.S}
-		acc, err := sh.S.lookupAccount(tenantName)
-		if err != nil {
-			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-		}
-		accName := acc.Name
-		allStreamInfo, err := serv.memphisAllStreamsInfo(accName)
-		if err != nil {
-			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-		}
-		for _, info := range allStreamInfo {
-			streamName := info.Config.Name
-			if !strings.Contains(streamName, "$memphis") {
-				totalMessages += info.State.Msgs
-				stationTotalMsgs[streamName] = int(info.State.Msgs)
-			}
-		}
-
-		stationIdsDlsMsgs, err := db.GetStationIdsFromDlsMsgs(tenantName)
-		if err != nil {
-			return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-		}
-
-		var extStations []models.ExtendedStation
-		for i := 0; i < len(stations); i++ {
-			fullStationName, err := StationNameFromStr(stations[i].Name)
-			if err != nil {
-				return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-			}
-			_, hasDlsMsgs := stationIdsDlsMsgs[stations[i].ID]
-			if shouldGetTags {
-				tags, err := tagsHandler.GetTagsByEntityWithID("station", stations[i].ID)
-				if err != nil {
-					return []models.ExtendedStation{}, totalMessages, totalDlsMessages, err
-				}
-				stations[i].Tags = tags
-			}
-
-			stations[i].TotalMessages = stationTotalMsgs[fullStationName.Intern()]
-			stations[i].HasDlsMsgs = hasDlsMsgs
-
-			found := false
-			for _, p := range stations[i].Producers {
-				if p.IsActive {
-					stations[i].Activity = true
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				for _, c := range stations[i].Consumers {
-					if c.IsActive {
-						stations[i].Activity = true
-						break
-					}
-				}
-			}
-			if tenantInetgrations, ok := IntegrationsConcurrentCache.Load(tenantName); !ok {
-				stations[i].TieredStorageEnabled = false
-			} else {
-				_, ok = tenantInetgrations["s3"].(models.Integration)
-				if !ok {
-					stations[i].TieredStorageEnabled = false
-				} else if stations[i].TieredStorageEnabled {
-					stations[i].TieredStorageEnabled = true
-				} else {
-					stations[i].TieredStorageEnabled = false
-				}
-			}
-
-			stationRes := models.ExtendedStation{
-				ID:             stations[i].ID,
-				Name:           stations[i].Name,
-				CreatedAt:      stations[i].CreatedAt,
-				TotalMessages:  stations[i].TotalMessages,
-				HasDlsMsgs:     stations[i].HasDlsMsgs,
-				Activity:       stations[i].Activity,
-				IsNative:       stations[i].IsNative,
-				ResendDisabled: stations[i].ResendDisabled,
-			}
-
-			extStations = append(extStations, stationRes)
-		}
-		return extStations, totalMessages, totalDlsMessages, nil
-	}
-}
-
 func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantName string, streamsInfo []*StreamInfo) ([]models.ExtendedStationLight, uint64, uint64, error) {
 	var stations []models.ExtendedStationLight
 	totalMessages := uint64(0)
@@ -808,12 +708,12 @@ func (sh StationsHandler) GetAllStationsDetailsLight(shouldExtend bool, tenantNa
 		for _, info := range streamsInfo {
 			streamName := info.Config.Name
 			if !strings.Contains(streamName, "$memphis") {
-				totalMessages += info.State.Msgs
+				totalMessages += info.State.Subjects[streamName+".final"]
 				if strings.Contains(streamName, "$") {
 					stationNameAndPartition := strings.Split(streamName, "$")
-					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Msgs)
+					stationTotalMsgs[stationNameAndPartition[0]] += int(info.State.Subjects[streamName+".final"])
 				} else {
-					stationTotalMsgs[streamName] = int(info.State.Msgs)
+					stationTotalMsgs[streamName] = int(info.State.Subjects[streamName+".final"])
 				}
 			}
 		}

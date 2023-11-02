@@ -83,7 +83,6 @@ var memphisExportString = `[
 	{service: "$memphis_schemaverse_dls"},
 	{service: "$memphis_pm_acks"},
 	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
-	{service: "$memphis_integrations_audit_logs"},
 	{stream: "$memphis_ws_pubs.>"},
 	]
 `
@@ -104,7 +103,6 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_schemaverse_dls"}},
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
 	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
-	{service: {account: "$memphis", subject: "$memphis_integrations_audit_logs"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
 	]
 `
@@ -186,7 +184,11 @@ func jsApiRequest[R any](tenantName string, s *Server, subject, kind string, msg
 		return fmt.Errorf("[tenant name: %v]jsapi request timeout for request type %q on %q", tenantName, kind, subject)
 	}
 
-	return json.Unmarshal(rawResp, resp)
+	err = json.Unmarshal(rawResp, resp)
+	if err != nil {
+		s.Errorf("jsApiRequest: ", err)
+	}
+	return err
 }
 
 func (s *Server) getJsApiReplySubject() string {
@@ -871,8 +873,13 @@ func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int)
 	}
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
+	req := JSApiStreamPurgeRequest{Subject: streamAndPartition+".final"}
+	rawRequest, err := json.Marshal(req)
+	if err != nil {
+		return err
+	}
 	var resp JSApiStreamPurgeResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, []byte(_EMPTY_), &resp)
+	err = jsApiRequest(tenantName, s, requestSubject, kindPurgeStream, rawRequest, &resp)
 	if err != nil {
 		return err
 	}
@@ -915,7 +922,7 @@ func (s *Server) GetTotalMessagesInStation(tenantName string, streamName string)
 		return 0, err
 	}
 
-	return int(streamInfo.State.Msgs), nil
+	return int(streamInfo.State.Subjects[streamName+".final"]), nil
 }
 
 // low level call, call only with internal station name (i.e stream name)!
@@ -923,7 +930,12 @@ func (s *Server) memphisStreamInfo(tenantName string, streamName string) (*Strea
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
 	var resp JSApiStreamInfoResponse
-	err := jsApiRequest(tenantName, s, requestSubject, kindStreamInfo, []byte(_EMPTY_), &resp)
+	req := JSApiStreamInfoRequest{SubjectsFilter: streamName+".>"}
+	rawRequest, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	err = jsApiRequest(tenantName, s, requestSubject, kindStreamInfo, rawRequest, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -1006,7 +1018,7 @@ func (s *Server) memphisAllStreamsInfo(tenantName string) ([]*StreamInfo, error)
 
 	offset := 0
 	offsetReq := ApiPagedRequest{Offset: offset}
-	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq}
+	request := JSApiStreamListRequest{ApiPagedRequest: offsetReq, Subject: "*.>"}
 	rawRequest, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -1092,8 +1104,8 @@ func (s *Server) GetMessagesFromPartition(station models.Station, streamName str
 	if err != nil {
 		return []models.MessageDetails{}, err
 	}
-	totalMessages := streamInfo.State.Msgs
-	lastStreamSeq := streamInfo.State.LastSeq
+	totalMessages := streamInfo.State.Subjects[streamName+".final"]
+	lastStreamSeq := streamInfo.State.SubjectsState[streamName+".final"].Last
 
 	var startSequence uint64 = 1
 	if totalMessages > uint64(messagesToFetch) {
@@ -1509,6 +1521,10 @@ func GetMemphisOpts(opts *Options) (*Options, error) {
 		return nil, err
 	}
 
+	if opts.DlsRetentionHours == nil { // for cases the broker started without config file
+		opts.DlsRetentionHours = make(map[string]int)
+	}
+
 	for _, conf := range configs {
 		switch conf.Key {
 		case "dls_retention":
@@ -1546,6 +1562,7 @@ func (s *Server) getTenantNameAndMessage(msg []byte) (string, string, error) {
 	hdr := getHeader(ClientInfoHdr, msg)
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(hdr, &ci); err != nil {
+			s.Errorf("getTenantNameAndMessage: ", err)
 			return tenantName, message, err
 		}
 		tenantName = ci.Account
@@ -1619,11 +1636,11 @@ func getAccountsAndUsersString() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	globalUsers := []UserConfig{{User: "$$memphis", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}}
+	globalUsers := []UserConfig{{User: "$$memphis", Password: getInternalUserPassword()}}
 	accounts := map[string]AccountConfig{
 		"$SYS": {
 			Users: []UserConfig{
-				{User: "$SYS", Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD},
+				{User: "$SYS", Password: getInternalUserPassword()},
 			},
 			Limits: map[string]*int{"max_connections": &noLimit}},
 	}
@@ -1662,7 +1679,7 @@ func getAccountsAndUsersString() (string, error) {
 			return "", err
 		}
 		internalAppUser := fmt.Sprintf("$%s$%v", t.Name, t.ID) // for internal use
-		usrsList := []UserConfig{{User: "$" + t.Name, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
+		usrsList := []UserConfig{{User: "$" + t.Name, Password: getInternalUserPassword()}, {User: internalAppUser, Password: configuration.CONNECTION_TOKEN + "_" + configuration.ROOT_PASSWORD}, {User: MEMPHIS_USERNAME + "$" + strconv.Itoa(t.ID), Password: decryptedUserPassword}}
 		if usrMap, ok := tenantsToUsers[t.Name]; ok {
 			for _, usr := range usrMap {
 				usrChangeName := UserConfig{User: usr.User + "$" + strconv.Itoa(t.ID), Password: usr.Password}

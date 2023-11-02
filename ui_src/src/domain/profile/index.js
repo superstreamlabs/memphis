@@ -75,7 +75,7 @@ function Profile() {
         <div className="profile-page">
             <div className="profile-container">
                 <div className="header-preferences">
-                    <p className="main-header">Profile</p>
+                    <p className="main-header">Edit profile</p>
                     <p className="memphis-label">Modify your profile information and preferences</p>
                 </div>
                 <div className="avatar-section">

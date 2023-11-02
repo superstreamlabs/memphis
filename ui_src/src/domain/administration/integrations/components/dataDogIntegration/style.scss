@@ -2,7 +2,7 @@
     width: 95%;
     align-self: center;
     margin-top: 10px;
-    height: calc(100% - 420px);
+    margin-left: 20px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -11,7 +11,7 @@
         border: 1px solid #e6e6e6;
         box-shadow: 0px 0px 2px rgb(24 24 28 / 2%), 0px 1px 2px rgb(24 24 28 / 6%);
         border-radius: 8px;
-        max-height: calc(100% - 70px);
+        max-height: calc(100% - 20px);
         overflow: auto;
         .ant-collapse-header {
             flex-flow: row-reverse;
@@ -24,8 +24,9 @@
         .ant-collapse-content-box {
             padding: 0;
         }
+
         .steps-content {
-            max-height: 240px;
+            max-height: 265px;
             overflow: auto;
             padding: 16px;
             h3 {
@@ -95,14 +96,8 @@
     .ant-collapse::-webkit-scrollbar {
         display: none;
     }
-    .close-btn {
-        display: flex;
-        justify-content: flex-end;
-        border-top: 1px solid #dedede;
-        height: 60px;
-        padding: 10px 0px;
-    }
 }
+
 .zoomin-modal {
     .ant-modal-body {
         padding: 0 !important;

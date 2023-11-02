@@ -241,7 +241,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
                         <div className="header-flex">
                             <p className="field-title">Partition</p>
-                            {!isCloud() && <CloudOnly position={'relative'} />}
+                            {!isCloud() && <CloudOnly />}
                         </div>
                         <SelectComponent
                             value={formFields.partition_number || partitons[0]}
@@ -258,7 +258,7 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                     </Form.Item>
                     <div className="header-flex">
                         <p className="field-title">Number of records</p>
-                        {!isCloud() && <CloudOnly position={'relative'} />}
+                        {!isCloud() && <CloudOnly />}
                     </div>
                     <Form.Item className="form-input" name="amount" initialValue={1}>
                         <InputNumberComponent

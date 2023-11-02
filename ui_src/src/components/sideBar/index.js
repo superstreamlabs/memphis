@@ -12,51 +12,68 @@
 
 import './style.scss';
 
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState, useRef } from 'react';
 import { SettingOutlined, ExceptionOutlined } from '@ant-design/icons';
 import ExitToAppOutlined from '@material-ui/icons/ExitToAppOutlined';
 import PersonOutlinedIcon from '@material-ui/icons/PersonOutlined';
-import { useHistory, Link } from 'react-router-dom';
+import { BsFillChatSquareTextFill } from 'react-icons/bs';
+import { useHistory } from 'react-router-dom';
 import { Divider, Popover } from 'antd';
-
+import CloudMoadl from '../cloudModal';
 import {
     LOCAL_STORAGE_ACCOUNT_NAME,
     LOCAL_STORAGE_AVATAR_ID,
     LOCAL_STORAGE_COMPANY_LOGO,
     LOCAL_STORAGE_FULL_NAME,
-    LOCAL_STORAGE_PLAN,
     LOCAL_STORAGE_USER_NAME,
+    LOCAL_STORAGE_SKIP_GET_STARTED,
     USER_IMAGE
 } from '../../const/localStorageConsts';
 import { ReactComponent as IntegrationColorIcon } from '../../assets/images/integrationIconColor.svg';
 import { ReactComponent as OverviewActiveIcon } from '../../assets/images/overviewIconActive.svg';
 import { ReactComponent as StationsActiveIcon } from '../../assets/images/stationsIconActive.svg';
-import { ReactComponent as DocumentActiveIcon } from '../../assets/images/documentIconActive.svg';
 import { compareVersions, isCloud, showUpgradePlan } from '../../services/valueConvertor';
-import { ReactComponent as SupportColorIcon } from '../../assets/images/supportIconColor.svg';
+import { ReactComponent as FunctionsActiveIcon } from '../../assets/images/functionsIconActive.svg';
 import { ReactComponent as SchemaActiveIcon } from '../../assets/images/schemaIconActive.svg';
 import { ReactComponent as IntegrationIcon } from '../../assets/images/integrationIcon.svg';
-import { ReactComponent as UsersActiveIcon } from '../../assets/images/usersIconActive.svg';
+import { HiUsers } from 'react-icons/hi';
 import { ReactComponent as FunctionsIcon } from '../../assets/images/functionsIcon.svg';
-import { ReactComponent as DocumentIcon } from '../../assets/images/documentIcon.svg';
 import { ReactComponent as OverviewIcon } from '../../assets/images/overviewIcon.svg';
 import { ReactComponent as StationsIcon } from '../../assets/images/stationsIcon.svg';
 import { ReactComponent as SupportIcon } from '../../assets/images/supportIcon.svg';
+import { ReactComponent as SupportColorIcon } from '../../assets/images/supportColorIcon.svg';
+import { ReactComponent as NewStationIcon } from '../../assets/images/newStationIcon.svg';
+import { ReactComponent as NewSchemaIcon } from '../../assets/images/newSchemaIcon.svg';
+import { ReactComponent as NewUserIcon } from '../../assets/images/newUserIcon.svg';
+import { ReactComponent as NewIntegrationIcon } from '../../assets/images/newIntegrationIcon.svg';
+import { BsHouseHeartFill } from 'react-icons/bs';
+import { ReactComponent as EditIcon } from '../../assets/images/editIcon.svg';
+import { ReactComponent as QuickActionBtn } from '../../assets/images/quickActionBtn.svg';
+import { ReactComponent as AddUserIcon } from '../../assets/images/addUserIcon.svg';
 import { GithubRequest } from '../../services/githubRequests';
 import { ReactComponent as LogsActiveIcon } from '../../assets/images/logsActive.svg';
 import { ReactComponent as SchemaIcon } from '../../assets/images/schemaIcon.svg';
-import { DOC_URL, LATEST_RELEASE_URL } from '../../config';
-import { ReactComponent as UsersIcon } from '../../assets/images/usersIcon.svg';
+import { LATEST_RELEASE_URL } from '../../config';
 import { ReactComponent as LogsIcon } from '../../assets/images/logsIcon.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import Logo from '../../assets/images/logo.svg';
 import AuthService from '../../services/auth';
+import { sendTrace } from '../../services/genericServices';
 import { Context } from '../../hooks/store';
 import pathDomains from '../../router';
 import Spinner from '../spinner';
 import Support from './support';
+import LearnMore from '../learnMore';
+import GetStarted from '../getStartedModal';
+import Modal from '../modal';
+import CreateStationForm from '../createStationForm';
+import { ReactComponent as StationIcon } from '../../assets/images/stationIcon.svg';
+import CreateUserDetails from '../../domain/users/createUserDetails';
+
 import UpgradePlans from '../upgradePlans';
+import { FaBook, FaDiscord } from 'react-icons/fa';
+import { BiEnvelope } from 'react-icons/bi';
 
 const overlayStyles = {
     borderRadius: '8px',
@@ -65,7 +82,14 @@ const overlayStyles = {
     paddingBottom: '5px',
     marginBottom: '10px'
 };
+const supportContextMenuStyles = {
+    borderRadius: '8px',
+    paddingTop: '5px',
+    paddingBottom: '5px',
+    marginBottom: '10px'
+};
 const overlayStylesSupport = {
+    marginTop: window.innerHeight > 560 && 'calc(100vh - 560px)',
     borderRadius: '8px',
     width: '380px',
     padding: '15px',
@@ -75,11 +99,24 @@ const overlayStylesSupport = {
 function SideBar() {
     const [state, dispatch] = useContext(Context);
     const history = useHistory();
+    const createStationRef = useRef(null);
+    const createUserRef = useRef(null);
+
     const [avatarUrl, SetAvatarUrl] = useState(require('../../assets/images/bots/avatar1.svg'));
     const [popoverOpenSetting, setPopoverOpenSetting] = useState(false);
     const [popoverOpenSupport, setPopoverOpenSupport] = useState(false);
+    const [popoverOpenSupportContextMenu, setPopoverOpenSupportContextMenu] = useState(false);
+    const [popoverQuickActoins, setPopoverQuickActions] = useState(false);
     const [hoveredItem, setHoveredItem] = useState('');
     const [logoutLoader, setLogoutLoader] = useState(false);
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
+    const [openGetStartedModal, setOpenGetStartedModal] = useState(false);
+    const [createStationModal, createStationModalFlip] = useState(false);
+    const [creatingProsessd, setCreatingProsessd] = useState(false);
+    const [addUserModalIsOpen, addUserModalFlip] = useState(false);
+    const [createUserLoader, setCreateUserLoader] = useState(false);
+    const [bannerType, setBannerType] = useState('');
+
     const getCompanyLogo = useCallback(async () => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_COMPANY_LOGO);
@@ -141,6 +178,72 @@ function SideBar() {
         }
     };
 
+    const handleAddUser = () => {
+        setCreateUserLoader(false);
+        addUserModalFlip(false);
+    };
+
+    const MenuItem = ({ icon, activeIcon, name, route, onClick, onMouseEnter, onMouseLeave }) => {
+        return (
+            <div className="item-wrapper" onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={onClick}>
+                <div className="icon">{state.route === route ? activeIcon : hoveredItem === route ? activeIcon : icon}</div>
+                <p className={state.route === route ? 'checked' : 'name'}>{name}</p>
+            </div>
+        );
+    };
+
+    const PopoverActionItem = ({ icon, name, onClick }) => {
+        return (
+            <div className="item-wrap" onClick={onClick}>
+                <div className="item">
+                    <span className="icons">{icon}</span>
+                    <p className="item-title">{name}</p>
+                </div>
+            </div>
+        );
+    };
+
+    const contentQuickStart = (
+        <div className="menu-content">
+            <PopoverActionItem
+                icon={<NewStationIcon className="icons-sidebar" />}
+                name="Create a new station"
+                onClick={() => {
+                    sendTrace('quick-actions-station', {});
+                    setPopoverQuickActions(false);
+                    createStationModalFlip(true);
+                }}
+            />
+            <PopoverActionItem
+                icon={<NewSchemaIcon className="icons-sidebar" />}
+                name="Create a new schema"
+                onClick={() => {
+                    sendTrace('quick-actions-schema', {});
+                    setPopoverQuickActions(false);
+                    history.replace(`${pathDomains.schemaverse}/create`);
+                }}
+            />
+            <PopoverActionItem
+                icon={<NewUserIcon className="icons-sidebar" />}
+                name="Create a new user"
+                onClick={() => {
+                    sendTrace('quick-actions-user', {});
+                    setPopoverQuickActions(false);
+                    addUserModalFlip(true);
+                }}
+            />
+            <PopoverActionItem
+                icon={<NewIntegrationIcon className="icons-sidebar" />}
+                name="Create a new integration"
+                onClick={() => {
+                    sendTrace('quick-actions-integration', {});
+                    setPopoverQuickActions(false);
+                    history.replace(`${pathDomains.administration}/integrations`);
+                }}
+            />
+        </div>
+    );
+
     const contentSetting = (
         <div className="menu-content">
             <div className="item-wrap-header">
@@ -166,223 +269,219 @@ function SideBar() {
                 </div>
             </div>
             <Divider />
-            <div
-                className="item-wrap"
+            <PopoverActionItem
+                icon={<PersonOutlinedIcon className="icons-sidebar" />}
+                name="Profile"
                 onClick={() => {
-                    history.replace(pathDomains.profile);
+                    history.replace(`${pathDomains.administration}/profile`);
                     setPopoverOpenSetting(false);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <PersonOutlinedIcon className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Profile</p>
-                </div>
-            </div>
-            <div
-                className="item-wrap"
+            />
+            <PopoverActionItem
+                icon={<SettingOutlined className="icons-sidebar" />}
+                name="Administration"
                 onClick={() => {
                     history.replace(`${pathDomains.administration}/integrations`);
                     setPopoverOpenSetting(false);
                 }}
-            >
-                <div className="item">
-                    <span className="icons">
-                        <SettingOutlined className="icons-sidebar" />
-                    </span>
-                    <p className="item-title">Administration</p>
-                </div>
-            </div>
+            />
             {isCloud() && (
-                <div
-                    className="item-wrap"
+                <PopoverActionItem
+                    icon={<ExceptionOutlined className="icons-sidebar" />}
+                    name="Billing"
                     onClick={() => {
                         history.replace(`${pathDomains.administration}/usage`);
                         setPopoverOpenSetting(false);
                     }}
-                >
-                    <div className="item">
-                        <span className="icons">
-                            <ExceptionOutlined className="icons-sidebar" />
-                        </span>
-                        <p className="item-title">Billing</p>
-                    </div>
-                </div>
+                />
             )}
-            <div className="item-wrap" onClick={() => handleLogout()}>
-                <div className="item">
-                    <span className="icons">{logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />}</span>
-                    <p className="item-title">Log out</p>
-                </div>
-            </div>
+            <PopoverActionItem icon={logoutLoader ? <Spinner /> : <ExitToAppOutlined className="icons-sidebar" />} name="Log out" onClick={() => handleLogout()} />
         </div>
     );
-    return (
-        <div className="sidebar-container">
-            <div className="upper-icons">
-                <img
-                    src={isCloud() ? state?.companyLogo || Logo : Logo}
-                    width="45"
-                    height="45"
-                    className="logoimg"
-                    alt="logo"
-                    onClick={() => history.replace(pathDomains.overview)}
-                />
 
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('overview')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.overview)}
-                >
-                    <div className="icon">
-                        {state.route === 'overview' ? (
-                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'overview' ? (
-                            <OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />
-                        ) : (
-                            <OverviewIcon alt="OverviewIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'overview' ? 'checked' : 'name'}>Overview</p>
-                </div>
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('stations')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.stations)}
-                >
-                    <div className="icon">
-                        {state.route === 'stations' ? (
-                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'stations' ? (
-                            <StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />
-                        ) : (
-                            <StationsIcon alt="StationsIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'stations' ? 'checked' : 'name'}>Stations</p>
-                </div>
+    const supportContextMenu = (
+        <div className="menu-content">
+            <PopoverActionItem
+                icon={<BsHouseHeartFill className="icons-sidebar" />}
+                name="Getting started"
+                onClick={() => {
+                    setOpenGetStartedModal(true);
+                    setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                }}
+            />
+            <PopoverActionItem
+                icon={<FaBook className="icons-sidebar" />}
+                name="Documentation"
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/docs', '_blank');
+                }}
+            />
+            <PopoverActionItem
+                icon={<FaDiscord className="icons-sidebar" />}
+                name="Discord channel"
+                onClick={() => {
+                    setPopoverOpenSupportContextMenu(false);
+                    window.open('https://memphis.dev/discord', '_blank');
+                }}
+            />
+            {!isCloud() && (
+                <>
+                    <PopoverActionItem
+                        icon={<BsFillChatSquareTextFill className="icons-sidebar" />}
+                        name="Open service request"
+                        onClick={() => {
+                            setBannerType('bundle');
+                            setCloudModalOpen(true);
+                            setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu);
+                        }}
+                    />
+                </>
+            )}
 
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('schemaverse')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(`${pathDomains.schemaverse}/list`)}
-                >
-                    <div className="icon">
-                        {state.route === 'schemaverse' ? (
-                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'schemaverse' ? (
-                            <SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />
-                        ) : (
-                            <SchemaIcon alt="SchemaIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'schemaverse' ? 'checked' : 'name'}>Schemaverse</p>
-                </div>
-                {/* <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('functions')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.functions)}
-                >
-                    {state.route === 'functions' ? (
-                        <img src={functionsIconActive} alt="functionsIcon" width="20" height="20"></img>
-                    ) : (
-                        <img src={hoveredItem === 'functions' ? functionsIconActive : functionsIcon} alt="functionsIcon" width="20" height="20"></img>
-                    )}
-                    <p className={state.route === 'functions' ? 'checked' : 'name'}>Functions</p>
-                </div> */}
-                <div
-                    className="item-wrapper"
-                    onMouseEnter={() => setHoveredItem('users')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(pathDomains.users)}
-                >
-                    <div className="icon">
-                        {state.route === 'users' ? (
-                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
-                        ) : hoveredItem === 'users' ? (
-                            <UsersActiveIcon alt="UsersActiveIcon" width={20} height={20} />
-                        ) : (
-                            <UsersIcon alt="UsersIcon" width={20} height={20} />
-                        )}
-                    </div>
-                    <p className={state.route === 'users' ? 'checked' : 'name'}>Users</p>
-                </div>
-                {!isCloud() && (
-                    <div
-                        className="item-wrapper"
-                        onMouseEnter={() => setHoveredItem('logs')}
-                        onMouseLeave={() => setHoveredItem('')}
-                        onClick={() => history.replace(pathDomains.sysLogs)}
-                    >
-                        <div className="icon">
-                            {state.route === 'logs' ? (
-                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
-                            ) : hoveredItem === 'logs' ? (
-                                <LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />
-                            ) : (
-                                <LogsIcon alt="LogsIcon" width={20} height={20} />
-                            )}
-                        </div>
-                        <p className={state.route === 'logs' ? 'checked' : 'name'}>Logs</p>
-                    </div>
-                )}
-                {isCloud() && (
-                    <div className="item-wrapper">
-                        <div className="icon not-available">
-                            <FunctionsIcon alt="FunctionsIcon" width={20} height={20} />
-                        </div>
-                        <p className="not-available">Functions</p>
-                        <p className="coming-soon">Soon</p>
-                    </div>
-                )}
-            </div>
-            <div className="bottom-icons">
-                <div
-                    className="integration-icon-wrapper"
-                    onMouseEnter={() => setHoveredItem('integrations')}
-                    onMouseLeave={() => setHoveredItem('')}
-                    onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
-                >
-                    {hoveredItem === 'integrations' ? (
-                        <IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />
-                    ) : (
-                        <IntegrationIcon alt="IntegrationIcon" width={20} height={20} />
-                    )}
-                    <label className="icon-name">Integrations</label>
-                </div>
-                {isCloud() && (
+            {isCloud() && (
+                <div className="item-wrap">
                     <Popover
                         overlayInnerStyle={overlayStylesSupport}
-                        placement="right"
+                        placement="bottomRight"
                         content={<Support closeModal={(e) => setPopoverOpenSupport(e)} />}
                         trigger="click"
                         onOpenChange={() => setPopoverOpenSupport(!popoverOpenSupport)}
                         open={popoverOpenSupport}
+                        onClick={() => {
+                            setPopoverOpenSupportContextMenu(false);
+                        }}
                     >
-                        <div
-                            className="integration-icon-wrapper"
-                            onMouseEnter={() => setHoveredItem('support')}
-                            onMouseLeave={() => setHoveredItem('')}
-                            onClick={() => setPopoverOpenSupport(true)}
-                        >
-                            {hoveredItem === 'support' ? <SupportColorIcon alt="SupportColorIcon" /> : <SupportIcon alt="SupportIcon" />}
-                            <label className="icon-name">Support</label>
+                        <div className="item">
+                            <span className="icons">
+                                <BiEnvelope className="icons-sidebar" />
+                            </span>
+                            <p className="item-title">Open a service request</p>
                         </div>
                     </Popover>
-                )}
-                {!isCloud() && (
-                    <Link to={{ pathname: DOC_URL }} target="_blank">
-                        <div className="integration-icon-wrapper" onMouseEnter={() => setHoveredItem('documentation')} onMouseLeave={() => setHoveredItem('')}>
-                            {hoveredItem === 'documentation' ? <DocumentActiveIcon alt="DocumentActiveIcon" /> : <DocumentIcon alt="DocumentIcon" />}
-                            <label className="icon-name">Docs</label>
+                </div>
+            )}
+        </div>
+    );
+
+    return (
+        <div className="sidebar-container">
+            <div className="upper-icons">
+                <span className="logo-wrapper">
+                    <img
+                        src={isCloud() ? state?.companyLogo || Logo : Logo}
+                        width="45"
+                        height="45"
+                        className="logoimg"
+                        alt="logo"
+                        onClick={() => history.replace(pathDomains.overview)}
+                    />
+                    <EditIcon alt="edit" className="edit-logo" onClick={() => history.replace(`${pathDomains.administration}/profile`)} />
+                </span>
+
+                <Popover
+                    overlayInnerStyle={overlayStyles}
+                    placement="rightBottom"
+                    content={contentQuickStart}
+                    trigger="click"
+                    onOpenChange={() => setPopoverQuickActions(!popoverQuickActoins)}
+                    open={popoverQuickActoins}
+                >
+                    <div className="item-wrapper" onMouseEnter={() => setHoveredItem('actions')} onMouseLeave={() => setHoveredItem('')}>
+                        <div className="icon">
+                            <QuickActionBtn alt="Quick actions" onClick={() => sendTrace('quick-actions-click', {})} />
                         </div>
-                    </Link>
+                    </div>
+                </Popover>
+                <MenuItem
+                    icon={<OverviewIcon alt="OverviewIcon" width={20} height={20} />}
+                    activeIcon={<OverviewActiveIcon alt="OverviewActiveIcon" width={20} height={20} />}
+                    name="Overview"
+                    onClick={() => history.replace(pathDomains.overview)}
+                    onMouseEnter={() => setHoveredItem('overview')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="overview"
+                />
+                <MenuItem
+                    icon={<StationsIcon alt="StationsIcon" width={20} height={20} />}
+                    activeIcon={<StationsActiveIcon alt="StationsActiveIcon" width={20} height={20} />}
+                    name="Stations"
+                    onClick={() => history.replace(pathDomains.stations)}
+                    onMouseEnter={() => setHoveredItem('stations')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="stations"
+                />
+                <MenuItem
+                    icon={<SchemaIcon alt="SchemaIcon" width={20} height={20} />}
+                    activeIcon={<SchemaActiveIcon alt="SchemaActiveIcon" width={20} height={20} />}
+                    name="Schemaverse"
+                    onClick={() => history.replace(`${pathDomains.schemaverse}/list`)}
+                    onMouseEnter={() => setHoveredItem('schemaverse')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="schemaverse"
+                />
+                <MenuItem
+                    icon={<FunctionsIcon alt="functionsIcon" width="20" height="20" />}
+                    activeIcon={<FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />}
+                    name="Functions"
+                    onClick={() => {
+                        setBannerType('functions');
+                        setCloudModalOpen(true);
+                    }}
+                    // onClick={() => history.replace(pathDomains.functions)}
+                    onMouseEnter={() => setHoveredItem('functions')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="functions"
+                />
+                <MenuItem
+                    icon={<IntegrationIcon alt="IntegrationIcon" width={20} height={20} />}
+                    activeIcon={<IntegrationColorIcon alt="IntegrationColorIcon" width={20} height={20} />}
+                    name="Integrations"
+                    onClick={() => history.replace(`${pathDomains.administration}/integrations`)}
+                    onMouseEnter={() => setHoveredItem('administration')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="administration"
+                />
+            </div>
+            <CloudMoadl type={bannerType} open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
+            <div className="bottom-icons">
+                {!isCloud() && (
+                    <MenuItem
+                        icon={<LogsIcon alt="LogsIcon" width={20} height={20} />}
+                        activeIcon={<LogsActiveIcon alt="LogsActiveIcon" width={20} height={20} />}
+                        name="Logs"
+                        onClick={() => history.replace(pathDomains.sysLogs)}
+                        onMouseEnter={() => setHoveredItem('logs')}
+                        onMouseLeave={() => setHoveredItem('')}
+                        route="logs"
+                    />
                 )}
+                <MenuItem
+                    icon={<HiUsers alt="LogsIcon" className="sidebar-title" size={'20px'} />}
+                    activeIcon={<HiUsers alt="LogsActiveIcon" className="sidebar-title ms-active" size={'20px'} />}
+                    name="Users"
+                    onClick={() => history.replace(pathDomains.users)}
+                    onMouseEnter={() => setHoveredItem('users')}
+                    onMouseLeave={() => setHoveredItem('')}
+                    route="users"
+                />
+                <Popover
+                    overlayInnerStyle={supportContextMenuStyles}
+                    placement="right"
+                    content={supportContextMenu}
+                    trigger="click"
+                    onOpenChange={() => setPopoverOpenSupportContextMenu(!popoverOpenSupportContextMenu)}
+                    open={popoverOpenSupportContextMenu}
+                >
+                    <MenuItem
+                        icon={<SupportIcon alt="SupportIcon" width={20} height={20} />}
+                        activeIcon={<SupportColorIcon alt="SupportIcon" width={20} height={20} />}
+                        name="Support"
+                        onMouseEnter={() => setHoveredItem('support')}
+                        onMouseLeave={() => setHoveredItem('')}
+                        route="support"
+                    />
+                </Popover>
 
                 <Popover
                     overlayInnerStyle={overlayStyles}
@@ -400,7 +499,7 @@ function SideBar() {
                             width={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
                             height={localStorage.getItem(USER_IMAGE) && localStorage.getItem(USER_IMAGE) !== 'undefined' ? 35 : 25}
                             alt="avatar"
-                        ></img>
+                        />
                     </div>
                 </Popover>
                 {!isCloud() && (
@@ -424,6 +523,70 @@ function SideBar() {
                     />
                 )}
             </div>
+            <GetStarted open={!localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) || openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <StationIcon className="headerImage" alt="stationImg" />
+                        </div>
+                        <p>Create a new station</p>
+                        <label>
+                            A station is a distributed unit that stores the produced data{' '}
+                            <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                        </label>
+                    </div>
+                }
+                height="58vh"
+                width="1020px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    createStationModalFlip(false);
+                }}
+                rBtnClick={() => {
+                    createStationRef.current();
+                }}
+                clickOutside={() => createStationModalFlip(false)}
+                open={createStationModal}
+                isLoading={creatingProsessd}
+            >
+                <CreateStationForm
+                    createStationFormRef={createStationRef}
+                    setLoading={(e) => setCreatingProsessd(e)}
+                    finishUpdate={(e) => createStationModalFlip(false)}
+                />
+            </Modal>
+            <Modal
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <AddUserIcon className="headerImage" alt="stationImg" />
+                        </div>
+                        <p>Add a new user</p>
+                        <label>Enter user details to get started</label>
+                    </div>
+                }
+                width="450px"
+                rBtnText="Create"
+                lBtnText="Cancel"
+                lBtnClick={() => {
+                    addUserModalFlip(false);
+                    setCreateUserLoader(false);
+                }}
+                clickOutside={() => {
+                    setCreateUserLoader(false);
+                    addUserModalFlip(false);
+                }}
+                rBtnClick={() => {
+                    setCreateUserLoader(true);
+                    createUserRef.current();
+                }}
+                isLoading={createUserLoader}
+                open={addUserModalIsOpen}
+            >
+                <CreateUserDetails createUserRef={createUserRef} closeModal={(userData) => handleAddUser(userData)} handleLoader={(e) => setCreateUserLoader(e)} />
+            </Modal>
         </div>
     );
 }

@@ -189,7 +189,7 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 	if err != nil {
 		return slackIntegration, err
 	} else if !exist {
-		err := testSlackIntegration(keys["auth_token"].(string), keys["channel_id"].(string), "Slack integration with Memphis was added successfully")
+		err := testSlackIntegration(keys["auth_token"].(string))
 		if err != nil {
 			return slackIntegration, err
 		}
@@ -249,7 +249,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		}
 		authToken = token
 	}
-	err := testSlackIntegration(authToken, channelID, "Slack integration with Memphis was updated successfully")
+	err := testSlackIntegration(authToken)
 	if err != nil {
 		return slackIntegration, err
 	}
@@ -293,25 +293,13 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 	return slackIntegration, nil
 }
 
-func testSlackIntegration(authToken string, channelID string, message string) error {
+func testSlackIntegration(authToken string) error {
 	slackClientTemp := slack.New(authToken)
 	_, err := slackClientTemp.AuthTest()
 	if err != nil {
 		return errors.New("invalid auth token")
 	}
-	attachment := slack.Attachment{
-		AuthorName: "Memphis",
-		Text:       message,
-		Color:      "#6557FF",
-	}
-
-	_, _, err = slackClientTemp.PostMessage(
-		channelID,
-		slack.MsgOptionAttachments(attachment),
-	)
-	if err != nil {
-		return errors.New("invalid channel ID")
-	}
+	
 	return nil
 }
 

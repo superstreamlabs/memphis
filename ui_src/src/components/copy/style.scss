@@ -1,0 +1,13 @@
+.copy-wrapper {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    .copy-text {
+        font-family: 'InterSemiBold';
+        font-size: 14px !important;
+    }
+    .copied {
+        color: var(--purple) !important;
+    }
+}

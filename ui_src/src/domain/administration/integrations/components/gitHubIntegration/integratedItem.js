@@ -12,8 +12,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Divider, Form } from 'antd';
-import { FiMinusCircle } from 'react-icons/fi';
-
+import { IoClose } from 'react-icons/io5';
 import { ReactComponent as GithubBranchIcon } from '../../../../../assets/images/githubBranchIcon.svg';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
@@ -23,6 +22,7 @@ import { FiPlus } from 'react-icons/fi';
 
 const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, removeRepo, type, updateIntegration, addIsLoading }) => {
     const [isEditting, setIsEditting] = useState(false);
+    const [isRemoveLoading, setIsRemoveLoading] = useState(false);
     const [formFields, setFormFields] = useState({
         type: 'functions',
         repo_name: '',
@@ -66,6 +66,17 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
         } catch (error) {}
     };
 
+    const handleRemoveRepo = async () => {
+        setIsRemoveLoading(true);
+        try {
+            removeRepo(index);
+            updateIntegration();
+        } catch (error) {
+        } finally {
+            setIsRemoveLoading(false);
+        }
+    };
+
     return (
         <div>
             <div className="repos-item" repo={repo}>
@@ -105,20 +116,33 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         }}
                     />
                 </Form.Item>
+
                 {!type ? (
-                    <FiMinusCircle
-                        className="remove-icon"
-                        onClick={() => {
-                            removeRepo(index);
-                            updateIntegration();
-                        }}
+                    <Button
+                        height={'30px'}
+                        width={'95px'}
+                        placeholder={
+                            <div className="repo-button">
+                                <IoClose value={{ color: '#FC3400', size: '16' }} /> <span>Remove</span>
+                            </div>
+                        }
+                        borderColorType="red"
+                        colorType={'red'}
+                        backgroundColorType={'white'}
+                        radiusType={'circle'}
+                        fontFamily="InterSemiBold"
+                        onClick={handleRemoveRepo}
+                        isLoading={isRemoveLoading}
+                        disabled={!isRemoveLoading && addIsLoading}
+                        fontSize={'14px'}
+                        border={'red'}
                     />
                 ) : (
                     <Button
                         height={'30px'}
                         width={'90px'}
                         placeholder={
-                            <div className="add-repo-button">
+                            <div className="repo-button">
                                 <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
                             </div>
                         }

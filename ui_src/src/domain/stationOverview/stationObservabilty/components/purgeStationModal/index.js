@@ -20,7 +20,7 @@ import { StationStoreContext } from '../../..';
 import { httpRequest } from '../../../../../services/http';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 
-const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = false, dlsDisabled = false }) => {
+const PurgeStationModal = ({ title, desc, close, stationName, msgsDisabled = false, dlsDisabled = false }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [confirm, setConfirm] = useState('');
     const [loader, setLoader] = useState(false);
@@ -49,6 +49,8 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
             purgeDataPayload['partitions_list'] = [stationState?.stationPartition];
             await httpRequest('DELETE', `${ApiEndpoints.PURGE_STATION}`, purgeDataPayload);
             stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
+            setPurgeData({});
+            close();
         } catch (error) {
             setLoader(false);
         }
@@ -59,7 +61,7 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
             (stationState?.stationSocketData?.total_messages === 0 && purgeData.purge_station) ||
             (stationState?.stationSocketData?.total_dls_messages === 0 && purgeData.purge_dls)
         ) {
-            cancel();
+            close();
             setLoader(false);
             setPurgeData({});
         }
@@ -121,7 +123,7 @@ const PurgeStationModal = ({ title, desc, cancel, stationName, msgsDisabled = fa
                     backgroundColorType="none"
                     fontSize="12px"
                     fontFamily="InterSemiBold"
-                    onClick={cancel}
+                    onClick={close}
                 />
                 <Button
                     width="200px"

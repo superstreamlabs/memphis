@@ -181,7 +181,7 @@
                         gap: 3px;
                         max-width: 95%;
                         position: relative;
-                        .flex-section{
+                        .flex-section {
                             display: flex;
                             max-width: 60%;
                             align-items: center;
@@ -234,7 +234,7 @@
                         overflow: hidden;
                         text-overflow: ellipsis;
                     }
-                    .pointer .number{
+                    .pointer .number {
                         max-width: 40%;
                     }
 
@@ -421,7 +421,7 @@
     }
 }
 
-.delete-modal-wrapper .desc .dls-name{
+.delete-modal-wrapper .desc .dls-name {
     overflow: hidden;
     text-overflow: ellipsis;
     position: relative;

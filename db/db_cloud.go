@@ -12,3 +12,35 @@
 package db
 
 const testEventsTable = ``
+const functionsTable = ``
+const attachedFunctionsTable = ``
+
+type FunctionSchema struct {
+	ID               int    `json:"id"`
+	TenantName       string `json:"tenant_name"`
+	StationId        int    `json:"station_id"`
+	PartitionNumber  int    `json:"partition_number"`
+	Name             string `json:"function_name"`
+	Version          int    `json:"function_version"`
+	NextActiveStepId int    `json:"next_active_step_id"`
+	PrevActiveStepId int    `json:"prev_active_step_id"`
+	VisibleStep      int    `json:"visible_step"`
+	AddedBy          string `json:"added_by"`
+	Repo             string `json:"repo"`
+	Branch           string `json:"branch"`
+	Owner            string `json:"owner"`
+	Runtime          string `json:"runtime"`
+	OrderingMatter   bool   `json:"ordering_matter"`
+	Activated        bool   `json:"activated"`
+	ComputeEngine    string `json:"compute_engine"`
+	SCM              string `json:"scm"`
+	InstalledId      int    `json:"installed_id"`
+}
+
+func DeleteAndGetAttachedFunctionsByStation(tenantName string, stationId int, partitions []int) ([]FunctionSchema, error) {
+	return []FunctionSchema{}, nil
+}
+
+func DeleteAndGetAttachedFunctionsByTenant(tenantName string) ([]FunctionSchema, error) {
+	return []FunctionSchema{}, nil
+}

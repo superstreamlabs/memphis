@@ -15,6 +15,7 @@ import elasticBannerPopup from '../assets/images/elasticBannerPopup.webp';
 import grafanaBannerPopup from '../assets/images/grafanaBannerPopup.webp';
 import debeziumBannerPopup from '../assets/images/debeziumBannerPopup.webp';
 import slackBannerPopup from '../assets/images/slackBannerPopup.webp';
+import zapierBannerPopup from '../assets/images/zapierBannerPopup.webp';
 import pagerdutyBanner from '../assets/images/pagerdutyBanner.webp';
 import influxDBBanner from '../assets/images/influxDBBanner.webp';
 import newrelicBanner from '../assets/images/newrelicBanner.webp';
@@ -22,6 +23,7 @@ import elasticBanner from '../assets/images/elasticBanner.webp';
 import s3BannerPopup from '../assets/images/s3BannerPopup.webp';
 import datadogBanner from '../assets/images/datadogBanner.webp';
 import grafanaBanner from '../assets/images/grafanaBanner.webp';
+import zapierBanner from '../assets/images/zapierBanner.webp';
 import debeziumBanner from '../assets/images/debeziumBanner.webp';
 import { ReactComponent as PageDutyIcon } from '../assets/images/pagerDutyIcon.svg';
 import { ReactComponent as GithubIntegrationIcon } from '../assets/images/githubIntegrationIcon.svg';
@@ -34,11 +36,18 @@ import { ReactComponent as DatadogIcon } from '../assets/images/datadogIcon.svg'
 import { ReactComponent as GrafanaIcon } from '../assets/images/grafanaIcon.svg';
 import { ReactComponent as DebeziumIcon } from '../assets/images/debeziumIcon.svg';
 import { ReactComponent as ElasticIcon } from '../assets/images/elasticIcon.svg';
+import { ReactComponent as ZapierIcon } from '../assets/images/zapierIcon.svg';
 import { ReactComponent as SlackLogo } from '../assets/images/slackLogo.svg';
+import { ReactComponent as MemphisVerifiedIcon } from '../assets/images/memphisFunctionIcon.svg';
 import s3Banner from '../assets/images/s3Banner.webp';
 import { ReactComponent as S3Logo } from '../assets/images/s3Logo.svg';
 
 import { ColorPalette } from './globalConst';
+import { Divider } from 'antd';
+
+export const getTabList = (intgrationName) => {
+    return INTEGRATION_LIST[intgrationName]?.hasLogs ? ['Configuration', 'Logs'] : ['Configuration'];
+};
 
 export const CATEGORY_LIST = {
     All: {
@@ -53,6 +62,10 @@ export const CATEGORY_LIST = {
     Notifications: {
         name: 'Notifications',
         color: ColorPalette[0]
+    },
+    Processing: {
+        name: 'Processing',
+        color: ColorPalette[5]
     },
     'Storage Tiering': {
         name: 'Storage Tiering',
@@ -178,19 +191,26 @@ export const REGIONS_OPTIONS = [
 export const INTEGRATION_LIST = {
     Datadog: {
         name: 'Datadog',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={datadogBanner} alt="datadogBanner" />,
         insideBanner: <img className="insideBanner" src={datadogBannerPopup} alt="datadogBannerPopup" />,
         icon: <DatadogIcon alt="datadogIcon" />,
         description: 'Datadog is an end-to-end monitoring and observability platform. Memphis can integrate with your custom dashboard in datadog',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        comingSoon: false,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <DatadogIcon alt="datadogIcon" />
                 <div className="details">
                     <p>Datadog</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -223,18 +243,26 @@ export const INTEGRATION_LIST = {
     },
     Slack: {
         name: 'Slack',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={slackBanner} alt="slackBanner" />,
         insideBanner: <img className="insideBanner" src={slackBannerPopup} alt="slackBannerPopup" />,
         icon: <SlackLogo alt="slackLogo" />,
         description: 'Receive alerts and notifications directly to your chosen slack channel for faster response and better real-time observability',
         category: CATEGORY_LIST['Notifications'],
+        hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <SlackLogo alt="slackLogo" />
                 <div className="details">
                     <p>Slack</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -249,7 +277,7 @@ export const INTEGRATION_LIST = {
     },
     S3: {
         name: 'S3',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={s3Banner} alt="s3Banner" />,
         insideBanner: <img className="insideBanner" src={s3BannerPopup} alt="s3BannerPopup" />,
         icon: <S3Logo alt="s3Logo" />,
@@ -257,12 +285,20 @@ export const INTEGRATION_LIST = {
             'S3-compatible storage providers offer cost-efficient object storage and can act as a 2nd tier storage option for ingested messages—vendor examples: AWS S3, Backblaze B2, DigitalOcean Spaces, or Minio.',
         date: 'Jan 1, 2023',
         category: CATEGORY_LIST['Storage Tiering'],
+        hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <S3Logo alt="s3Logo" />
                 <div className="details">
                     <p>S3 Compatible Object Storage</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -278,7 +314,7 @@ export const INTEGRATION_LIST = {
     },
     Elasticsearch: {
         name: 'Elasticsearch observability',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={elasticBanner} alt="elasticBanner" />,
         insideBanner: <img className="insideBanner" src={elasticBannerPopup} alt="elasticBannerPopup" />,
         icon: <ElasticIcon alt="elasticIcon" />,
@@ -286,12 +322,19 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Monitoring'],
         experimental: true,
         osOnly: true,
+        comingSoon: false,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <ElasticIcon alt="elasticIcon" />
                 <div className="details">
                     <p>Elasticsearch observability</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -322,19 +365,26 @@ export const INTEGRATION_LIST = {
     },
     Grafana: {
         name: 'Grafana',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={grafanaBanner} alt="grafanaBanner" />,
         insideBanner: <img className="insideBanner" src={grafanaBannerPopup} alt="grafanaBannerPopup" />,
         icon: <GrafanaIcon alt="grafanaIcon" />,
         description: 'Visualize Memphis metrics using Grafana and prometheus',
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        comingSoon: false,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <GrafanaIcon alt="grafanaIcon" />
                 <div className="details">
                     <p>Grafana</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -359,21 +409,78 @@ export const INTEGRATION_LIST = {
             }
         ]
     },
+    Zapier: {
+        name: 'Zapier',
+        by: 'Memphis.dev',
+        banner: <img className="banner" src={zapierBanner} alt="zapierBanner" />,
+        insideBanner: <img className="insideBanner" src={zapierBannerPopup} alt="zapierBannerPopup" />,
+        icon: <ZapierIcon alt="ZapierIcon" />,
+        description: 'With Zapier / Memphis integration, you can create more robust automation workflows',
+        category: CATEGORY_LIST['Processing'],
+        comingSoon: false,
+        hasLogs: false,
+        header: (
+            <div className="header-left-side">
+                <ZapierIcon alt="ZapierIcon" />
+                <div className="details">
+                    <p>Zapier</p>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Cloud</label>
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
+                </div>
+            </div>
+        ),
+        integrateDesc: (
+            <div className="integrate-description">
+                <p>Description</p>
+                <span className="content">
+                    With Zapier / Memphis integration, you can create automation workflows that will be triggered by records ingested in a Memphis station or produce
+                    events from a Zapier “Zap” (Workflow) to a Memphis station for further processing.
+                </span>
+            </div>
+        ),
+        steps: [
+            {
+                title: `Step 1: Sign up for a free Zapier account`,
+                key: 0
+            },
+            {
+                title: 'Step 2: Create a Zap',
+                key: 1
+            },
+            {
+                title: 'Step 3: Integrate Memphis as a trigger or an action',
+                key: 2
+            }
+        ]
+    },
     'Debezium and Postgres': {
         name: 'Debezium and Postgres',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={debeziumBanner} alt="debeziumBanner" />,
         insideBanner: <img className="insideBanner" src={debeziumBannerPopup} alt="debeziumBannerPopup" />,
         icon: <DebeziumIcon alt="debeziumIcon" />,
         description:
             'Debezium is one of the most popular frameworks for collecting "Change Data Capture (CDC)" events from various databases and can now be easily integrated with Memphis.dev for collecting CDC events from various databases.',
         category: CATEGORY_LIST['Change-Data-Capture'],
+        hasLogs: false,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <DebeziumIcon alt="debeziumIcon" />
                 <div className="details">
                     <p>Debezium and Postgres</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                        <label className="oss-cloud-badge">Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -399,7 +506,7 @@ export const INTEGRATION_LIST = {
     },
     GitHub: {
         name: 'Github',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={githubBanner} alt="gitHubBanner" />,
         insideBanner: <img className="insideBanner" src={githubBannerPopup} alt="slackBannerPopup" />,
         icon: <GithubIntegrationIcon alt="gitHubIcon" />,
@@ -407,12 +514,19 @@ export const INTEGRATION_LIST = {
             'GitHub is an open source code repository and collaborative software development platform. Use GitHub repositories to manage your Schemaverse schemas and Functions source code.',
         category: CATEGORY_LIST['SourceCode'],
         cloudOnly: true,
+        hasLogs: true,
+        comingSoon: false,
         header: (
             <div className="header-left-side">
                 <GithubIntegrationIcon alt="gitHubLogo" />
                 <div className="details">
                     <p>GitHub</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Cloud</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -428,7 +542,7 @@ export const INTEGRATION_LIST = {
     },
     PagerDuty: {
         name: 'PagerDuty',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         insideBanner: <img className="insideBanner" src={pagerdutyBanner} alt="pagerdutyBanner" />,
         icon: <PageDutyIcon alt="pagerDutyIcon" />,
@@ -436,12 +550,18 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Notifications'],
         comingSoon: true,
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <PageDutyIcon alt="pagerDutyIcon" />
                 <div className="details">
                     <p>PagerDuty</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -456,7 +576,7 @@ export const INTEGRATION_LIST = {
     },
     'New Relic': {
         name: 'New Relic',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={newrelicBanner} alt="newrelicBanner" />,
         insideBanner: <img className="insideBanner" src={newrelicBanner} alt="newrelicBanner" />,
         icon: <NewRelicIcon alt="newrelicIcon" />,
@@ -464,12 +584,18 @@ export const INTEGRATION_LIST = {
         comingSoon: true,
         category: CATEGORY_LIST['Monitoring'],
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <NewRelicIcon alt="newrelicIcon" />
                 <div className="details">
                     <p>New Relic</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),
@@ -484,7 +610,7 @@ export const INTEGRATION_LIST = {
     },
     influxDB: {
         name: 'influxDB',
-        by: 'memphis',
+        by: 'Memphis.dev',
         banner: <img className="banner" src={influxDBBanner} alt="influxDBBanner" />,
         insideBanner: <img className="insideBanner" src={influxDBBanner} alt="influxDBBanner" />,
         icon: <InfluxDBIcon alt="influxDBIcon" />,
@@ -492,12 +618,18 @@ export const INTEGRATION_LIST = {
         category: CATEGORY_LIST['Monitoring'],
         comingSoon: true,
         osOnly: true,
+        hasLogs: false,
         header: (
             <div className="header-left-side">
                 <InfluxDBIcon alt="influxDBIcon" />
                 <div className="details">
                     <p>influxDB</p>
-                    <span>by memphis</span>
+                    <span className="by">
+                        <MemphisVerifiedIcon />
+                        <label className="memphis">Mempis.dev</label>
+                        <Divider type="vertical" />
+                        <label className="oss-cloud-badge">Open source</label>
+                    </span>
                 </div>
             </div>
         ),

@@ -38,4 +38,5 @@ func InitializeStationsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	stationsRoutes.POST("/produce", stationsHandler.Produce)
 	stationsRoutes.POST("/attachDlsStation", stationsHandler.AttachDlsStation)
 	stationsRoutes.DELETE("/detachDlsStation", stationsHandler.DetachDlsStation)
+	server.InitializeCloudStationRoutes(stationsHandler, stationsRoutes)
 }

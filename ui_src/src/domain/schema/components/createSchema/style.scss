@@ -33,6 +33,8 @@
                 }
                 .flex-title {
                     display: flex;
+                    align-items: center;
+                    gap: 5px;
                     p {
                         font-family: 'InterSemiBold';
                         font-size: 24px;

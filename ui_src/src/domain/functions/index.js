@@ -13,18 +13,20 @@
 import './style.scss';
 
 import React, { useEffect, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import { Context } from '../../hooks/store';
 import FunctionList from './components/functionList';
 
 function Functions() {
     const [state, dispatch] = useContext(Context);
+    const location = useLocation();
 
     useEffect(() => {
         dispatch({ type: 'SET_ROUTE', payload: 'functions' });
     }, []);
 
-    return <FunctionList />;
+    return <FunctionList tabPrivate={location?.integrated} />;
 }
 
 export default Functions;

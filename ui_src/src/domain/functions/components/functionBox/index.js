@@ -12,30 +12,30 @@
 
 import './style.scss';
 
-import { IoClose, IoGitBranch } from 'react-icons/io5';
 import React, { useState, useEffect } from 'react';
-import { useHistory } from 'react-router-dom';
+import { isCloud, parsingDate } from '../../../../services/valueConvertor';
 import { FiGitCommit } from 'react-icons/fi';
-import { FaCode } from 'react-icons/fa';
-import { Drawer } from 'antd';
-
-import { parsingDate } from '../../../../services/valueConvertor';
-import OverflowTip from '../../../../components/tooltip/overflowtip';
-import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
+import { BiDownload } from 'react-icons/bi';
+import { MdOutlineFileDownloadOff } from 'react-icons/md';
+import { IoClose } from 'react-icons/io5';
+import { GoRepo } from 'react-icons/go';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
-import { ApiEndpoints } from '../../../../const/apiEndpoints';
-import { httpRequest } from '../../../../services/http';
+import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
+import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
+import { Divider, Drawer, Rate } from 'antd';
+import FunctionDetails from '../functionDetails';
+import { showMessages } from '../../../../services/genericServices';
 import TagsList from '../../../../components/tagList';
-import CustomTabs from '../../../../components/Tabs';
-import pathDomains from '../../../../router';
-import Tag from '../../../../components/tag';
+import CloudOnly from '../../../../components/cloudOnly';
+import Button from '../../../../components/button';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
+import { OWNER } from '../../../../const/globalConst';
+import AttachTooltip from '../AttachTooltip';
 
-function FunctionBox({ funcDetails }) {
-    const history = useHistory();
+function FunctionBox({ funcDetails, integrated, installed }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState('');
-    const [tabValue, setTabValue] = useState('Code');
 
     useEffect(() => {
         const url = window.location.href;
@@ -51,79 +51,133 @@ function FunctionBox({ funcDetails }) {
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
-        // setOpen(flag);
-        // if (flag) {
-        //     history.push(`${pathDomains.functions}/${functionDetails?.function_name}`);
-        //     setSelectedFunction(functionDetails?.function_name);
-        // } else {
-        //     history.push(`${pathDomains.functions}`);
-        //     setSelectedFunction('');
-        // }
+        setOpen(flag);
+        if (flag) {
+            setSelectedFunction(functionDetails);
+        } else {
+            setSelectedFunction('');
+        }
     };
 
     return (
         <>
             <div
                 key={functionDetails?.function_name}
-                className={selectedFunction === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                onClick={() => handleDrawer(true)}
             >
-                <header is="x3d" onClick={() => handleDrawer(true)}>
-                    <div className="function-name">
-                        <OverflowTip text={functionDetails?.function_name} maxWidth={'300px'}>
-                            <span>{functionDetails?.function_name}</span>
-                        </OverflowTip>
-                    </div>
-                    <div className="function-details">
-                        <div className="function-repo">
-                            <GithubBranchIcon alt="github-branch-icon" />
-                            <OverflowTip text={functionDetails?.repository - functionDetails?.branch} maxWidth={'150px'}>
-                                <span>
-                                    {functionDetails?.repository} - {functionDetails?.branch}
-                                </span>
-                            </OverflowTip>
+                <header is="x3d">
+                    <div className="function-box-header">
+                        <div className="details-section">
+                            {funcDetails?.image ? <img src={funcDetails?.image} alt="Function icon" height="40px" /> : <FunctionIcon alt="Function icon" height="40px" />}
+                            <div>
+                                <div className="function-name">
+                                    <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                        {functionDetails?.function_name}
+                                    </OverflowTip>
+                                </div>
+                                <deatils is="x3d">
+                                    <div className="function-owner">
+                                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                        <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                                    </div>
+                                    <Divider type="vertical" />
+                                    {funcDetails.owner !== OWNER && (
+                                        <>
+                                            <repo is="x3d">
+                                                <GoRepo />
+                                                <label>{functionDetails?.repository}</label>
+                                            </repo>
+                                            <Divider type="vertical" />
+                                            <branch is="x3d">
+                                                <GithubBranchIcon />
+                                                <label>{functionDetails?.branch}</label>
+                                            </branch>
+                                            <Divider type="vertical" />
+                                        </>
+                                    )}
+                                    <downloads is="x3d">
+                                        <BiDownload className="download-icon" />
+                                        <label>{Number(180).toLocaleString()}</label>
+                                    </downloads>
+                                    <Divider type="vertical" />
+                                    <rate is="x3d">
+                                        <Rate disabled defaultValue={5} className="stars-rate" />
+                                        <label>(50)</label>
+                                    </rate>
+                                    <Divider type="vertical" />
+                                    <commits is="x3d">
+                                        <FiGitCommit />
+                                        <label>Last commit on {parsingDate(functionDetails?.last_commit, false, false)}</label>
+                                    </commits>
+                                </deatils>
+                                <description is="x3d">{functionDetails?.description}</description>
+                            </div>
                         </div>
-                        <div className="function-code-type">
-                            <CodeBlackIcon alt="code-icon" />
-                            <OverflowTip text={functionDetails?.language} maxWidth={'150px'}>
-                                <span>{functionDetails?.language}</span>
-                            </OverflowTip>
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                // installFunction() - not implemented yet
+                            }}
+                            className="install-button"
+                        >
+                            <div className="header-flex">
+                                <AttachTooltip disabled={!isCloud() || functionDetails?.install_in_progress || !installed} />
+                                {!isCloud() && <CloudOnly />}
+                            </div>
+                            <div className="header-flex">
+                                <Button
+                                    width="100px"
+                                    height="34px"
+                                    placeholder={
+                                        functionDetails?.install_in_progress ? (
+                                            ''
+                                        ) : installed ? (
+                                            <div className="code-btn">
+                                                <MdOutlineFileDownloadOff className="Uninstall" />
+                                                <label>Uninstall</label>
+                                            </div>
+                                        ) : (
+                                            <div className="code-btn">
+                                                <BiDownload className="Install" />
+                                                <label>Install</label>
+                                            </div>
+                                        )
+                                    }
+                                    purple-light
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType={installed ? 'purple-light' : 'purple'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={!isCloud() || functionDetails?.install_in_progress}
+                                    isLoading={functionDetails?.install_in_progress} //Get indication after install function
+                                    onClick={() => {
+                                        showMessages('success', 'Install function');
+                                        return;
+                                    }}
+                                />
+                                {!isCloud() && <CloudOnly />}
+                            </div>
                         </div>
                     </div>
                 </header>
-                <tags is="x3d">
+                <footer is="x3d">
                     <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
-                </tags>
-                <description is="x3d" onClick={() => handleDrawer(true)}>
-                    <span>
-                        <OverflowTip text={functionDetails?.description} maxWidth={'300px'}>
-                            <span>{functionDetails?.description}</span>
-                        </OverflowTip>
-                    </span>
-                </description>
-                <date is="x3d" onClick={() => handleDrawer(true)}>
-                    <div className="flex">
-                        <FiGitCommit />
-                        <p>Commits on {parsingDate(functionDetails?.last_commit, false, false)}</p>
-                    </div>
-                    <Tag editable={false} tag={{ name: 'Custom', color: '101, 87, 255' }} rounded={true} />
-                </date>
+                </footer>
             </div>
             <Drawer
-                title={
-                    <div>
-                        <p>{functionDetails?.function_name}</p>
-                        <CustomTabs tabs={['Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-                    </div>
-                }
-                placement="bottom"
+                placement="right"
                 size={'large'}
                 className="function-drawer"
                 onClose={() => handleDrawer(false)}
                 destroyOnClose={true}
-                open={false}
+                open={open}
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
-            ></Drawer>
+            >
+                <FunctionDetails selectedFunction={selectedFunction} integrated={integrated} installed={installed} />
+            </Drawer>
         </>
     );
 }

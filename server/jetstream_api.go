@@ -926,6 +926,9 @@ func (s *Server) getRequestInfo(c *client, raw []byte) (pci *ClientInfo, acc *Ac
 
 	if len(hdr) > 0 {
 		if err := json.Unmarshal(getHeader(ClientInfoHdr, hdr), &ci); err != nil {
+			// ** added by Memphis
+			s.Errorf("getRequestInfo: ", err)
+			// added by Memphis **
 			return nil, nil, nil, nil, err
 		}
 	}
@@ -1689,14 +1692,22 @@ func (s *Server) jsStreamListRequest(sub *subscription, c *client, _ *Account, s
 
 	for _, mset := range msets[offset:] {
 		config := mset.config()
-		resp.Streams = append(resp.Streams, &StreamInfo{
+
+		// ** added by Memphis
+		streamInfo := &StreamInfo{
 			Created: mset.createdTime(),
 			State:   mset.state(),
 			Config:  config,
 			Domain:  s.getOpts().JetStreamDomain,
 			Mirror:  mset.mirrorInfo(),
 			Sources: mset.sourcesInfo(),
-		})
+		}
+		if filter != _EMPTY_ {
+			streamInfo.State.Subjects = mset.store.SubjectsTotals(filter)
+		}
+		// ** added by Memphis
+
+		resp.Streams = append(resp.Streams, streamInfo) // ** changed by Memphis to streamInfo
 		if len(resp.Streams) >= JSApiListLimit {
 			break
 		}
@@ -1858,6 +1869,7 @@ func (s *Server) jsStreamInfoRequest(sub *subscription, c *client, a *Account, s
 	// Check if they have asked for subject details.
 	if subjects != _EMPTY_ {
 		st := mset.store.SubjectsTotals(subjects)
+		subjectsState := mset.store.SubjectsState(subjects) // ** added by Memphis
 		if lst := len(st); lst > 0 {
 			// Common for both cases.
 			resp.Offset = offset
@@ -1866,6 +1878,7 @@ func (s *Server) jsStreamInfoRequest(sub *subscription, c *client, a *Account, s
 
 			if offset == 0 && lst <= JSMaxSubjectDetails {
 				resp.StreamInfo.State.Subjects = st
+				resp.StreamInfo.State.SubjectsState = subjectsState // ** added by Memphis
 			} else {
 				// Here we have to filter list due to offset or maximum constraints.
 				subjs := make([]string, 0, len(st))
@@ -1885,14 +1898,18 @@ func (s *Server) jsStreamInfoRequest(sub *subscription, c *client, a *Account, s
 				}
 				actualSize := end - offset
 				var sd map[string]uint64
+				var subjState map[string]SimpleState // ** added by Memphis
 
 				if actualSize > 0 {
 					sd = make(map[string]uint64, actualSize)
+					subjState = make(map[string]SimpleState, actualSize)
 					for _, ss := range subjs[offset:end] {
 						sd[ss] = st[ss]
+						subjState[ss] = subjectsState[ss] // ** added by Memphis
 					}
 				}
 				resp.StreamInfo.State.Subjects = sd
+				resp.StreamInfo.State.SubjectsState = subjState // ** added by Memphis
 			}
 		}
 	}

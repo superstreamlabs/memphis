@@ -1313,7 +1313,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": usernameError.Error()})
 		return
 	}
-	exist, _, err := memphis_cache.GetUser(username, user.TenantName, false)
+	exist, _, err := memphis_cache.GetUser(username, user.TenantName, true)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]AddUser at GetUserByUsername: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -2195,4 +2195,23 @@ func InitializeCloudFunctionRoutes(functionsHandler FunctionsHandler, functionsR
 
 func (it IntegrationsHandler) GetSourecCodeBranches(c *gin.Context) {
 	c.IndentedJSON(401, "Unautorized")
+}
+
+func InitializeCloudStationRoutes(stationsHandler StationsHandler, stationsRoutes *gin.RouterGroup) {}
+
+func validatePartitionNumber(partitionsList []int, partition int) bool {
+	for _, val := range partitionsList {
+		if val == partition {
+			return true
+		}
+	}
+	return false
+}
+
+func GetStationAttachedFunctionsByPartitions(stationID int, partitionsList []int) ([]db.FunctionSchema, error) {
+	return []db.FunctionSchema{}, nil
+}
+
+func getInternalUserPassword() string {
+	return configuration.ROOT_PASSWORD
 }

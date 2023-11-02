@@ -12,30 +12,18 @@
 
 import './style.scss';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ReactComponent as CloudOnlyIcon } from '../../assets/images/cloudOnlyIcon.svg';
-import TooltipComponent from '../tooltip/tooltip';
+import CloudModal from '../cloudModal/';
 
-const CloudOnly = ({ position }) => {
-    const style = {
-        position: position || 'absolute'
-    };
+const CloudOnly = () => {
+    const [openCloudModal, setOpenCloudModal] = useState(false);
+
     return (
-        <TooltipComponent
-            className="cloud-only-tooltip"
-            style={style}
-            text={
-                <span className="cloudOnlyIcon">
-                    Available in
-                    <a className="a-link" href="https://cloud.memphis.dev" target="_blank">
-                        Memphis.dev
-                    </a>{' '}
-                    Cloud
-                </span>
-            }
-        >
-            <CloudOnlyIcon className="cloud-only" />
-        </TooltipComponent>
+        <>
+            <CloudOnlyIcon className="cloud-only" onClick={() => setOpenCloudModal(true)} />
+            <CloudModal type="cloud" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
+        </>
     );
 };
 

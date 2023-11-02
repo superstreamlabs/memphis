@@ -27,7 +27,7 @@ import { ReactComponent as ReplicasIcon } from '../../../assets/images/replicasI
 import { ReactComponent as TotalMsgIcon } from '../../../assets/images/totalMsgIcon.svg';
 import { ReactComponent as PoisonMsgIcon } from '../../../assets/images/poisonMsgIcon.svg';
 import { ReactComponent as RemoteStorageIcon } from '../../../assets/images/remoteStorage.svg';
-import { ReactComponent as ClockIcon } from '../../../assets/images/timeFill.svg';
+import { ReactComponent as ClockIcon } from '../../../assets/images/TimeFill.svg';
 import { ReactComponent as UserIcon } from '../../../assets/images/userPerson.svg';
 import { ReactComponent as SchemaIcon } from '../../../assets/images/schemaIconActive.svg';
 import { ReactComponent as StationIcon } from '../../../assets/images/stationsIconActive.svg';
@@ -131,7 +131,7 @@ const StationBoxOverview = ({ station, handleCheckedClick, isCheck }) => {
                             <div className="station-meta">
                                 <div className="header">
                                     <PoisonMsgIcon />
-                                    <label className="data-labels total">Poison messages</label>
+                                    <label className="data-labels total">Dead-letter messages</label>
                                 </div>
 
                                 <p className="data-info">

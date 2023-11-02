@@ -73,3 +73,11 @@ export const planType = {
     STARTER: 'plan-cloud-starter',
     FREE: 'plan-cloud-free'
 };
+
+export const githubUrls = {
+    DOWNLOAD_URL: 'https://github.com/memphisdev/onboarding-app/archive/refs/heads/master.zip',
+    MEMPHIS_GIT_HTTPS: 'https://github.com/memphisdev/onboarding-app.git',
+    MEMPHIS_GIT_SSH: 'git@github.com:memphisdev/onboarding-app.git'
+};
+
+export const OWNER = 'memphisdev';

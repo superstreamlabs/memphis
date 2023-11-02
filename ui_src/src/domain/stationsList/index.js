@@ -36,6 +36,7 @@ import { httpRequest } from '../../services/http';
 import Button from '../../components/button';
 import Filter from '../../components/filter';
 import Loader from '../../components/loader';
+import LearnMore from '../../components/learnMore';
 import { Context } from '../../hooks/store';
 import Modal from '../../components/modal';
 
@@ -91,7 +92,20 @@ const StationsList = () => {
                                 station={station}
                             />
                         ))}
-                        <StationsInstructions header="Add more stations" button="Add Station" newStation={() => modalFlip(true)} />
+                        <div className="stations-placeholder add-more">
+                            <Button
+                                className="modal-btn"
+                                width="220px"
+                                height="42px"
+                                placeholder="Add anothet station"
+                                colorType="white"
+                                radiusType="circle"
+                                backgroundColorType="purple"
+                                fontSize="16px"
+                                fontWeight="bold"
+                                onClick={() => modalFlip(true)}
+                            />
+                        </div>
                     </div>
                 );
             }
@@ -159,7 +173,7 @@ const StationsList = () => {
                             Stations <label className="length-list">{state?.stationFilteredList?.length > 0 && `(${state?.stationFilteredList?.length})`}</label>
                         </label>
                         <span className="memphis-label">
-                            A station is a distributed unit that stores messages. More&nbsp;
+                            A station is a distributed storage for messages. More&nbsp;
                             <a className="learn-more" href=" https://docs.memphis.dev/memphis/memphis/key-concepts/station" target="_blank">
                                 here.
                             </a>
@@ -197,7 +211,7 @@ const StationsList = () => {
                         <Button
                             width="160px"
                             height="34px"
-                            placeholder={'Create new station'}
+                            placeholder={'Create a new station'}
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"
@@ -223,11 +237,14 @@ const StationsList = () => {
                             <div className="header-img-container">
                                 <StationIcon alt="stationIcon" />
                             </div>
-                            <p>Create new station</p>
-                            <label>A station is a distributed unit that stores the produced data.</label>
+                            <p>Create a new station</p>
+                            <label>
+                                A station is a distributed unit that stores the produced data{' '}
+                                <LearnMore url="https://docs.memphis.dev/memphis/memphis-broker/concepts/station" />
+                            </label>
                         </div>
                     }
-                    height="65vh"
+                    height="58vh"
                     width="1020px"
                     rBtnText="Create"
                     lBtnText="Cancel"

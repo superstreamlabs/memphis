@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -361,6 +362,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS partitions INTEGER[];
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS version INTEGER NOT NULL DEFAULT 0;
 		ALTER TABLE stations ADD COLUMN IF NOT EXISTS dls_station VARCHAR NOT NULL DEFAULT '';
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS functions_lock_held BOOL NOT NULL DEFAULT false;
+		ALTER TABLE stations ADD COLUMN IF NOT EXISTS functions_locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW();
 		DROP INDEX IF EXISTS unique_station_name_deleted;
 		CREATE UNIQUE INDEX unique_station_name_deleted ON stations(name, is_deleted, tenant_name) WHERE is_deleted = false;
 		END IF;
@@ -393,6 +396,8 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		partitions INTEGER[],
 		version INTEGER NOT NULL DEFAULT 0,
 		dls_station VARCHAR NOT NULL DEFAULT '',
+		functions_lock_held BOOL NOT NULL DEFAULT false,
+		functions_locked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 		PRIMARY KEY (id),
 		CONSTRAINT fk_tenant_name_stations
 			FOREIGN KEY(tenant_name)
@@ -563,7 +568,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 			station_id INT NOT NULL,
 			created_by VARCHAR NOT NULL,
-			UNIQUE(name, tenant_name, station_id)
+			PRIMARY KEY (id)
         );`
 
 	alterAsyncTasks := `DO $$
@@ -573,12 +578,26 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		) THEN
 		ALTER TABLE async_tasks ADD COLUMN IF NOT EXISTS created_by VARCHAR NOT NULL;
 		END IF;
+		IF EXISTS (
+			SELECT 1 FROM information_schema.table_constraints
+			WHERE table_name = 'async_tasks' AND constraint_type = 'UNIQUE'
+			AND constraint_name = 'async_tasks_name_tenant_name_station_id_key'
+		) THEN
+			ALTER TABLE async_tasks DROP CONSTRAINT async_tasks_name_tenant_name_station_id_key;
+		END IF;
+
+		IF NOT EXISTS (
+			SELECT 1 FROM information_schema.table_constraints
+			WHERE table_name = 'async_tasks' AND constraint_type = 'PRIMARY KEY'
+		) THEN
+			ALTER TABLE async_tasks ADD PRIMARY KEY (id);
+		END IF;
 	END $$;`
 
 	db := MetadataDbClient.Client
 	ctx := MetadataDbClient.Ctx
 
-	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable}
+	tables := []string{alterTenantsTable, tenantsTable, alterUsersTable, usersTable, alterAuditLogsTable, auditLogsTable, alterConfigurationsTable, configurationsTable, alterIntegrationsTable, integrationsTable, alterSchemasTable, schemasTable, alterTagsTable, tagsTable, alterStationsTable, stationsTable, alterDlsMsgsTable, dlsMessagesTable, alterConsumersTable, consumersTable, alterSchemaVerseTable, schemaVersionsTable, alterProducersTable, producersTable, alterConnectionsTable, asyncTasksTable, alterAsyncTasks, testEventsTable, functionsTable, attachedFunctionsTable}
 
 	for _, table := range tables {
 		_, err := db.Exec(ctx, table)
@@ -1155,7 +1174,7 @@ func GetStationByName(name string, tenantName string) (bool, models.Station, err
 	return true, stations[0], nil
 }
 
-func GetStationById(messageId int, tenantName string) (bool, models.Station, error) {
+func GetStationById(stationId int, tenantName string) (bool, models.Station, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -1171,7 +1190,7 @@ func GetStationById(messageId int, tenantName string) (bool, models.Station, err
 	if tenantName != conf.GlobalAccount {
 		tenantName = strings.ToLower(tenantName)
 	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, messageId, tenantName)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, tenantName)
 	if err != nil {
 		return false, models.Station{}, err
 	}
@@ -1542,6 +1561,8 @@ func GetAllStationsDetailsLight(tenantName string) ([]models.ExtendedStationLigh
 			&stationRes.PartitionsList,
 			&stationRes.Version,
 			&stationRes.DlsStation,
+			&stationRes.FunctionsLockHeld,
+			&stationRes.FunctionsLockedAt,
 			&stationRes.Activity,
 		); err != nil {
 			return []models.ExtendedStationLight{}, err
@@ -1768,6 +1789,8 @@ func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 			&stationRes.DlsConfigurationSchemaverse,
 			&stationRes.TieredStorageEnabled,
 			&stationRes.TenantName,
+			&stationRes.FunctionsLockHeld,
+			&stationRes.FunctionsLockedAt,
 			&producer.ID,
 			&producer.Name,
 			&producer.StationId,
@@ -5898,7 +5921,7 @@ func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, err
 		query = `SELECT COUNT(*) from dls_messages where station_id=$1 AND partition_number = $2`
 	}
 
-	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition", query)
+	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition_1", query)
 	if err != nil {
 		return 0, err
 	}
@@ -6630,11 +6653,10 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	rows, err := tx.Query(ctx, stmt.Name, cgName, stationId)
+	_, err = tx.Query(ctx, stmt.Name, cgName, stationId)
 	if err != nil {
 		return err
 	}
-	rows.Close()
 
 	query = `DELETE FROM dls_messages WHERE message_type = 'poison' AND poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
 	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
@@ -6642,12 +6664,10 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	rows, err = tx.Query(ctx, stmt.Name)
+	_, err = tx.Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}
-
-	rows.Close()
 
 	err = tx.Commit(ctx)
 	if err != nil {
@@ -6718,7 +6738,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 	}
 	defer conn.Release()
 
-	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id, created_by) VALUES($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (name, tenant_name, station_id) DO NOTHING RETURNING *`
+	query := `INSERT INTO async_tasks (name, broker_in_charge, created_at, updated_at, tenant_name, station_id, created_by) VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING *`
 	stmt, err := conn.Conn().Prepare(ctx, "upsert_async_task", query)
 	if err != nil {
 		return models.AsyncTask{}, err
@@ -6759,7 +6779,7 @@ func UpsertAsyncTask(task, brokerInCharge string, createdAt time.Time, tenantNam
 				return models.AsyncTask{}, err
 			}
 
-			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId, username).Scan(
+			err = conn.Conn().QueryRow(ctx, existingStmt.Name, task, tenantName, stationId).Scan(
 				&asyncTask.ID,
 				&asyncTask.Name,
 				&asyncTask.BrokrInCharge,
@@ -6852,7 +6872,6 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 		return []models.AsyncTaskRes{}, err
 	}
 	defer conn.Release()
-
 	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name
 	FROM async_tasks AS a
 	LEFT JOIN stations AS s ON a.station_id = s.id
@@ -6869,8 +6888,32 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 	}
 	defer rows.Close()
 
-	asyncTasks, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.AsyncTaskRes])
-	if err != nil {
+	var asyncTasks []models.AsyncTaskRes
+	for rows.Next() {
+		var task models.AsyncTaskRes
+		var sName pgtype.Varchar
+
+		err := rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.CreatedAt,
+			&task.CreatedBy,
+			&sName,
+		)
+		if err != nil {
+			return []models.AsyncTaskRes{}, err
+		}
+
+		if sName.Status == pgtype.Present {
+			task.StationName = sName.String
+		} else {
+			task.StationName = "" // Handle NULL value
+		}
+
+		asyncTasks = append(asyncTasks, task)
+	}
+
+	if err := rows.Err(); err != nil {
 		return []models.AsyncTaskRes{}, err
 	}
 	if len(asyncTasks) == 0 {
