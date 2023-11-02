@@ -537,7 +537,7 @@ function SideBar() {
                         </label>
                     </div>
                 }
-                height="70vh"
+                height="58vh"
                 width="1020px"
                 rBtnText="Create"
                 lBtnText="Cancel"

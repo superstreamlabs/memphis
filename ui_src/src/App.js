@@ -676,6 +676,7 @@ const App = withRouter(() => {
                                     ></AppWrapper>
                                 }
                             />
+                            <PrivateRoute exact path={`${pathDomains.administration}/profile`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
                             <PrivateRoute exact path={`${pathDomains.administration}/integrations`} component={<AppWrapper content={<Administration />}></AppWrapper>} />
                             <PrivateRoute
                                 exact
