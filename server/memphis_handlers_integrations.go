@@ -196,6 +196,56 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		}
 		integration = s3Integration
 	case "github":
+		_, locked, _, err := db.GetAndLockSharedLock("functions", user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at GetAndLockSharedLock: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		exist, integrationFromDb, err := db.GetIntegration("github", user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at GetIntegration: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !exist {
+			serv.Warnf("[tenant: %v]UpdateIntegration: Integration does not exist %v", user.TenantName, body.Name)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Unsupported integration type - " + body.Name})
+			return
+		}
+		if !locked {
+			serv.Warnf("[tenant: %v]UpdateIntegration: Integration %v: Processing a branch is currently in progress. Please wait for the current processes to complete.", user.TenantName, body.Name)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "Processing a branch is currently in progress. Please wait for the current processes to complete."})
+			return
+		}
+		connectedRepos := integrationFromDb.Keys["connected_repos"].([]interface{})
+		connectedReposUpdated := body.Keys["connected_repos"].([]interface{})
+		for _, connectedRepo := range connectedRepos {
+			if !containsRepo(connectedReposUpdated, connectedRepo) {
+				connectedRepoName, repoNameOK := connectedRepo.(map[string]interface{})["repo_name"].(string)
+				connectedRepoBranch, branchNameOK := connectedRepo.(map[string]interface{})["branch"].(string)
+				repoOwner, repoOwnerOK := connectedRepo.(map[string]interface{})["repo_owner"].(string)
+				if !repoNameOK || !branchNameOK || !repoOwnerOK {
+					serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at handleUpdateGithubIntegration: %v", user.TenantName, user.Username, "Repo name, branch or owner name is missing")
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+				err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, connectedRepoName, connectedRepoBranch, "aws_lambda", repoOwner, false)
+				if err != nil {
+					serv.Errorf("[tenant: %v][user: %v]UpdateIntegration at deleteAllFunctionMs: Repo %v: %v", user.TenantName, user.Username, connectedRepoName, err.Error())
+					c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+					return
+				}
+			}
+		}
+		for i, connectedRepoUpdated := range connectedReposUpdated {
+			if !containsRepo(connectedRepos, connectedRepoUpdated) {
+				connectedRepoUpdated.(map[string]interface{})["in_progress"] = true
+				connectedReposUpdated[i] = connectedRepoUpdated
+				go sendCloneFunctionReqToMS(connectedRepoUpdated, user, integrationType, body, i)
+			}
+		}
+		body.Keys["connected_repos"] = connectedReposUpdated
 		githubIntegration, errorCode, err := it.handleUpdateGithubIntegration(user, body)
 		if err != nil {
 			if errorCode == 500 {
@@ -249,6 +299,18 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 
 	integrationType := strings.ToLower(body.Name)
 	if integrationType == "github" {
+		_, locked, _, err := db.GetAndLockSharedLock("functions", user.TenantName)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]DisconnectIntegration at GetAndLockSharedLock: %v", user.TenantName, user.Username, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		if !locked {
+			errMsg := "Processing a branch or a function is currently in progress. Please wait for the current process to complete."
+			serv.Warnf("[tenant: %v]DisconnectIntegration: %v", user.TenantName, errMsg)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		}
 		err = deleteInstallationForAuthenticatedGithubApp(user.TenantName)
 		if err != nil {
 			if strings.Contains(err.Error(), "does not exist") {
@@ -259,6 +321,12 @@ func (it IntegrationsHandler) DisconnectIntegration(c *gin.Context) {
 				return
 			}
 			serv.Errorf("[tenant:%v]DisconnectIntegration at deleteInstallationForAuthenticatedGithubApp: %v", user.TenantName, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		err = sendDeleteAllFunctionsReqToMS(user, user.TenantName, integrationType, "", "", "aws_lambda", "", false)
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]DisconnectIntegration at deleteAllFunctionMs: Repo %v: %v", user.TenantName, user.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
 			return
 		}
@@ -615,4 +683,24 @@ func (s *Server) PurgeIntegrationsAuditLogs(tenantName string) {
 	if respErr != nil {
 		serv.Errorf("[tenant: %v]PurgeIntegrationsAuditLogs at respErr: %v", tenantName, respErr.Error())
 	}
+}
+
+func SharedLockUnlock(name, tenantName string) {
+	err := db.SharedLockUnlock(name, tenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v] at SharedLockUnlock: %v", tenantName, err.Error())
+	}
+}
+
+func containsRepo(repos []interface{}, target interface{}) bool {
+	for _, repo := range repos {
+		mapBranch := repo.(map[string]interface{})["branch"].(string)
+		mapRepo := repo.(map[string]interface{})["repo_name"].(string)
+		targetBranch := target.(map[string]interface{})["branch"].(string)
+		targetRepo := target.(map[string]interface{})["repo_name"].(string)
+		if mapBranch == targetBranch && mapRepo == targetRepo {
+			return true
+		}
+	}
+	return false
 }
