@@ -29,7 +29,7 @@ const VideoPlayer = ({ url, bgImg, width, height }) => {
             className="video-player"
             controls={true}
             playing={playState}
-            light={true}
+            light={`url(${bgImg})`}
             playIcon={
                 <div onClick={() => setPlayState(true)}>
                     <PlayVideoIcon className="play-video-icon" />

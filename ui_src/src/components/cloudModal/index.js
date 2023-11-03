@@ -57,7 +57,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             subtitle: 'To Unlock More Features And Enhance Your Experience!',
             banner: UpgradeBanner,
             leftBtn: 'Chat With Your Account Manager',
-            leftBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo',
+            leftBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo/upgrade-call',
             rightBtn: 'Upgrade Now',
             rightBtnLink: ''
         },

@@ -23,7 +23,6 @@ import { BsGithub } from 'react-icons/bs';
 import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
 import Modal from '../modal';
 import CloneModal from '../cloneModal';
-import { Divider } from 'antd';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { httpRequest } from '../../services/http';
 import { sendTrace } from '../../services/genericServices';
@@ -33,9 +32,8 @@ import { LOCAL_STORAGE_SKIP_GET_STARTED, LOCAL_STORAGE_USER_NAME } from '../../c
 const useCases = ['Microservices communication', 'Change data Capture', 'Real-time pipeline', 'Stream processing'];
 const codeList = [
     {
-        title: 'Real-time pipeline',
-        subtitle:
-            'This guide will teach you how to use Bytewax to aggregate on a custom session window on streaming data using reduce and then calculate metrics downstream.',
+        title: 'Event-driven Application',
+        subtitle: 'To get you up and running with Memphis.dev in no time, we developed Fastmart - The Fastest Food Delivery App Ever Created. Take a look!',
         difficult: 'Easy',
         type: 'MICROSERVICES',
         time: '15-20 Min'
@@ -102,10 +100,10 @@ const GetStartedModal = ({ open, handleClose }) => {
                 <div className="video-wrapper">
                     <VideoPlayer url={isCloud() ? WELCOME_VIDEO_CLOUD : WELCOME_VIDEO_OSS} bgImg={ConnectBG} width={'540px'} height={'250px'} />
                 </div>
+                <div className="modal-titles">
+                    <label className="title">Tell us what brings you to Memphis.dev. We will help accordingly</label>
+                </div>
                 <use-cases is="x3s">
-                    <div className="header">
-                        <label className="title">Tell us what brings you to Memphis.dev today</label>
-                    </div>
                     <div className="use-cases">
                         {useCases?.map((useCase, index) => {
                             return (
@@ -131,9 +129,12 @@ const GetStartedModal = ({ open, handleClose }) => {
                         onChange={(e) => handleManualUseCase(e.target.value)}
                     />
                 </use-cases>
-                <Divider plain>
+                <div className="modal-titles">
+                    <label className="title">Start your journey with our onboarding application</label>
+                </div>
+                {/* <Divider plain>
                     Or start with an <label className="example-app">example application</label>
-                </Divider>
+                </Divider> */}
                 {codeList?.map((code, index) => {
                     return (
                         <tutorial

@@ -170,7 +170,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
 
                         <p>System overview</p>
                     </div>
-                    <label>A dynamic, self-built graph visualization of your main system components</label>
+                    <label>An interactive, user-generated graph representation of your Memphis.dev components</label>
                 </div>
                 {nodes?.length > 0 && (
                     <div className="refresh-wrapper" onClick={() => getGraphData()}>
@@ -260,8 +260,8 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             {!isLoading && nodes?.length === 0 && (
                 <div className="empty-connections-container">
                     <GraphPlaceholder alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
-                    <p>There are no entities to display</p>
-                    <span className="desc">Please create at least one entity, such as a station, to display the graph overview.</span>
+                    <p>No components to display</p>
+                    <span className="desc">Please create at least one entity, like a station, in order to present the graph.</span>
                     <Button
                         className="modal-btn"
                         height="34px"
