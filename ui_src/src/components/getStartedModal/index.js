@@ -17,8 +17,8 @@ import { isCloud } from '../../services/valueConvertor';
 import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 import Input from '../Input';
-import { WELCOME_VIDEO_CLOUD, WELCOME_VIDEO_OSS } from '../../config';
-import ConnectBG from '../../assets/images/connectBG.webp';
+import { WELCOME_VIDEO } from '../../config';
+import WelcomeImage from '../../assets/images/welcomeModalImage.webp';
 import { BsGithub } from 'react-icons/bs';
 import { ReactComponent as CloneModalIcon } from '../../assets/images/cloneModalIcon.svg';
 import Modal from '../modal';
@@ -98,7 +98,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                     <p className="sub-title">It’s whole new streaming stack 🚀</p>
                 </div>
                 <div className="video-wrapper">
-                    <VideoPlayer url={isCloud() ? WELCOME_VIDEO_CLOUD : WELCOME_VIDEO_OSS} bgImg={ConnectBG} width={'540px'} height={'250px'} />
+                    <VideoPlayer url={WELCOME_VIDEO} bgImg={WelcomeImage} width={'540px'} height={'250px'} />
                 </div>
                 <div className="modal-titles">
                     <label className="title">Tell us what brings you to Memphis.dev. We will help accordingly</label>
