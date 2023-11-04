@@ -13,7 +13,6 @@
 import './style.scss';
 import { useState, useEffect } from 'react';
 import { BiSolidTimeFive } from 'react-icons/bi';
-import { isCloud } from '../../services/valueConvertor';
 import VideoPlayer from '../videoPlayer';
 import Button from '../button';
 import Input from '../Input';
@@ -101,7 +100,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                     <VideoPlayer url={WELCOME_VIDEO} bgImg={WelcomeImage} width={'540px'} height={'250px'} />
                 </div>
                 <div className="modal-titles">
-                    <label className="title">Tell us what brings you to Memphis.dev. We will help accordingly</label>
+                    <label className="title">1. Tell us what brings you to Memphis.dev. We will help accordingly</label>
                 </div>
                 <use-cases is="x3s">
                     <div className="use-cases">
@@ -130,7 +129,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                     />
                 </use-cases>
                 <div className="modal-titles">
-                    <label className="title">Start your journey with our onboarding application</label>
+                    <label className="title">2. Start your journey with our onboarding application</label>
                 </div>
                 {/* <Divider plain>
                     Or start with an <label className="example-app">example application</label>

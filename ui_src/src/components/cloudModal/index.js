@@ -91,7 +91,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                 }
                 displayButtons={false}
                 width="560px"
-                height="575"
+                height="390px"
                 clickOutside={handleClose}
                 open={open}
                 className="cloud-modal"
