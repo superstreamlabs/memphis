@@ -5934,8 +5934,7 @@ func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, err
 		query = `SELECT COUNT(*) from dls_messages where station_id=$1 AND partition_number = $2`
 	}
 
-	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition", query)
-	defer conn.Conn().Deallocate(ctx, "count_dls_msgs_by_station_and_partition")
+	stmt, err := conn.Conn().Prepare(ctx, "count_dls_msgs_by_station_and_partition_1", query)
 	if err != nil {
 		return 0, err
 	}
@@ -7261,6 +7260,46 @@ func DeleteAllSharedLocks(tenantName string) error {
 		return err
 	}
 	_, err = conn.Conn().Query(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetLockHeldAtSharedLock(updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE shared_locks SET lock_held = false WHERE locked_at < $1 AND lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_lock_held_by_name_and_by_locked_at_shared_lock", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func SetFunctionLockHeldAtStation(updatedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE stations SET functions_lock_held = false WHERE functions_locked_at < $1 AND functions_lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_functions_lock_held_at_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt)
 	if err != nil {
 		return err
 	}
