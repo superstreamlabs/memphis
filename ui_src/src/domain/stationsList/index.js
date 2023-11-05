@@ -97,7 +97,7 @@ const StationsList = () => {
                                 className="modal-btn"
                                 width="220px"
                                 height="42px"
-                                placeholder="Add anothet station"
+                                placeholder="Add another station"
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
