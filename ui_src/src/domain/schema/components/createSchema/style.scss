@@ -209,8 +209,7 @@
                 place-items: end;
                 .ant-form-item-control-input-content {
                     display: flex;
-                    width: 250px;
-                    justify-content: space-between;
+                    gap: 10px;
                 }
             }
         }

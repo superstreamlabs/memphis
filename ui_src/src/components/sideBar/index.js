@@ -146,6 +146,7 @@ function SideBar() {
             !isCloud() && getSystemVersion().catch(console.error);
         }
         setAvatarImage(localStorage.getItem(LOCAL_STORAGE_AVATAR_ID) || state?.userData?.avatar_id);
+        localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) !== 'true' && setOpenGetStartedModal(true);
     }, []);
 
     useEffect(() => {
@@ -220,7 +221,10 @@ function SideBar() {
                 onClick={() => {
                     sendTrace('quick-actions-schema', {});
                     setPopoverQuickActions(false);
-                    history.replace(`${pathDomains.schemaverse}/create`);
+                    history.replace({
+                        pathname: `${pathDomains.schemaverse}/create`,
+                        create: true
+                    });
                 }}
             />
             <PopoverActionItem
@@ -234,7 +238,7 @@ function SideBar() {
             />
             <PopoverActionItem
                 icon={<NewIntegrationIcon className="icons-sidebar" />}
-                name="Create a new integration"
+                name="Connect a new integration"
                 onClick={() => {
                     sendTrace('quick-actions-integration', {});
                     setPopoverQuickActions(false);
@@ -523,7 +527,7 @@ function SideBar() {
                     />
                 )}
             </div>
-            <GetStarted open={!localStorage.getItem(LOCAL_STORAGE_SKIP_GET_STARTED) || openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
+            <GetStarted open={openGetStartedModal} handleClose={() => setOpenGetStartedModal(false)} />
             <Modal
                 header={
                     <div className="modal-header">

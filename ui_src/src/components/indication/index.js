@@ -12,9 +12,8 @@
 import './style.scss';
 import React from 'react';
 import TooltipComponent from '../tooltip/tooltip';
-import { DeleteForeverRounded } from '@material-ui/icons';
 
-const StatusIndication = ({ is_active, is_deleted, in_process }) => {
+const StatusIndication = ({ is_active, is_deleted }) => {
     if (is_active) {
         return (
             <TooltipComponent text="Connected" minWidth="35px">
