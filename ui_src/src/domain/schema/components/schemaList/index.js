@@ -13,6 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/placeholderSchema.svg';
 import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -36,6 +37,7 @@ function SchemaList({ createNew }) {
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         getAllSchemas();
@@ -44,6 +46,10 @@ function SchemaList({ createNew }) {
             dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
         };
     }, []);
+
+    useEffect(() => {
+        location?.create && createNew(true);
+    }, [location]);
 
     const getAllSchemas = async () => {
         setisLoading(true);
