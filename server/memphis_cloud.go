@@ -2153,7 +2153,6 @@ func (s *Server) CreateDefaultEntitiesOnMemphisAccount() error {
 }
 
 func ScheduledCloudCacheRefresh() {
-	return
 }
 
 func ValidataAccessToFeature(tenantName, featureName string) bool {
