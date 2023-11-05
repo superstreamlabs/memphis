@@ -753,21 +753,21 @@ func (s *Server) memphisRemoveConsumer(tenantName, streamName, cn string) error 
 	return resp.ToError()
 }
 
-func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionsList []int) (*ConsumerInfo, error) {
+func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName string, partitionsList []int) (ConsumerInfo, error) {
 	var resp JSApiConsumerInfoResponse
 	cgName = replaceDelimiters(cgName)
-	var cgInfo *ConsumerInfo
+	var cgInfo ConsumerInfo
 	if len(partitionsList) == 0 {
 		requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationName.Intern(), cgName)
 		err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
 		if err != nil {
-			return nil, err
+			return ConsumerInfo{}, err
 		}
 		err = resp.ToError()
 		if err != nil {
-			return nil, err
+			return ConsumerInfo{}, err
 		}
-		cgInfo = resp.ConsumerInfo
+		cgInfo = *resp.ConsumerInfo
 	} else {
 		init := false
 		for _, pl := range partitionsList {
@@ -775,14 +775,14 @@ func (s *Server) GetCgInfo(tenantName string, stationName StationName, cgName st
 			requestSubject := fmt.Sprintf(JSApiConsumerInfoT, stationWithPartition, cgName)
 			err := jsApiRequest(tenantName, s, requestSubject, kindConsumerInfo, []byte(_EMPTY_), &resp)
 			if err != nil {
-				return nil, err
+				return ConsumerInfo{}, err
 			}
 			err = resp.ToError()
 			if err != nil {
-				return nil, err
+				return ConsumerInfo{}, err
 			}
 			if !init {
-				cgInfo = resp.ConsumerInfo
+				cgInfo = *resp.ConsumerInfo
 				init = true
 			} else {
 				cgInfo.NumAckPending += resp.ConsumerInfo.NumAckPending
