@@ -424,9 +424,9 @@ func (ch ConsumersHandler) GetCgsByStation(stationName StationName, station mode
 			return []models.Cg{}, []models.Cg{}, []models.Cg{}, err
 		}
 
-		cg.InProcessMessages += cgInfo.NumAckPending
-		cg.UnprocessedMessages += int(cgInfo.NumPending)
-		cg.PoisonMessages += totalPoisonMsgs
+		cg.InProcessMessages = cgInfo.NumAckPending
+		cg.UnprocessedMessages = int(cgInfo.NumPending)
+		cg.PoisonMessages = totalPoisonMsgs
 
 		if len(cg.ConnectedConsumers) > 0 {
 			cg.IsActive = true
