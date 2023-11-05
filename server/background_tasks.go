@@ -339,7 +339,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
-	go s.ReleaseLockHeldFunctions()
+	go s.ReleaseStuckLocks()
 	return nil
 }
 
@@ -773,18 +773,14 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 	return nil
 }
 
-func (s *Server) ReleaseLockHeldFunctions() {
-	ticker := time.NewTicker(10 * time.Minute)
+func (s *Server) ReleaseStuckLocks() {
+	ticker := time.NewTicker(30 * time.Second)
 	for range ticker.C {
 		time := time.Now().Add(-10 * time.Minute)
-		err := db.SetLockHeldAtSharedLock(time)
+		err := db.UnlockStuckLocks(time)
 		if err != nil {
-			serv.Errorf("ReleaseLockHeldFunctions at SetLockHeldAtSharedLock: %v", err.Error())
+			serv.Errorf("ReleaseStuckLocks at UnlockStuckLocks: %v", err.Error())
 		}
 
-		err = db.SetFunctionLockHeldAtStation(time)
-		if err != nil {
-			serv.Errorf("ReleaseLockHeldFunctions at SetFunctionLockHeldAtStation: %v", err.Error())
-		}
 	}
 }

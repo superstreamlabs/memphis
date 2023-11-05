@@ -7267,7 +7267,7 @@ func DeleteAllSharedLocks(tenantName string) error {
 	return nil
 }
 
-func SetLockHeldAtSharedLock(updatedAt time.Time) error {
+func releaseStuckedStationLocks(lockedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -7280,14 +7280,14 @@ func SetLockHeldAtSharedLock(updatedAt time.Time) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt)
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func SetFunctionLockHeldAtStation(updatedAt time.Time) error {
+func releaseStuckedSharedLocks(lockedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -7300,9 +7300,21 @@ func SetFunctionLockHeldAtStation(updatedAt time.Time) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Conn().Query(ctx, stmt.Name, updatedAt)
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func UnlockStuckLocks(lockedAt time.Time) error {
+	err := releaseStuckedStationLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedStationLocks: %v", err)
+	}
+	err = releaseStuckedSharedLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedSharedLocks: %v", err)
 	}
 	return nil
 }
