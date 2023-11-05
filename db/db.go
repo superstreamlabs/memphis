@@ -7267,7 +7267,7 @@ func DeleteAllSharedLocks(tenantName string) error {
 	return nil
 }
 
-func releaseStuckedStationLocks(lockedAt time.Time) error {
+func releaseStuckedSharedLocks(lockedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
@@ -7287,7 +7287,7 @@ func releaseStuckedStationLocks(lockedAt time.Time) error {
 	return nil
 }
 
-func releaseStuckedSharedLocks(lockedAt time.Time) error {
+func releaseStuckedStationLocks(lockedAt time.Time) error {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
