@@ -6887,7 +6887,7 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 		return []models.AsyncTaskRes{}, err
 	}
 	defer conn.Release()
-	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name
+	query := `SELECT a.id, a.name, a.created_at, a.created_by, s.name, a.meta_data
 	FROM async_tasks AS a
 	LEFT JOIN stations AS s ON a.station_id = s.id
 	WHERE a.tenant_name = $1
@@ -6914,6 +6914,7 @@ func GetAllAsyncTasks(tenantName string) ([]models.AsyncTaskRes, error) {
 			&task.CreatedAt,
 			&task.CreatedBy,
 			&sName,
+			&task.Data,
 		)
 		if err != nil {
 			return []models.AsyncTaskRes{}, err
