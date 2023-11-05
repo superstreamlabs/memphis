@@ -75,35 +75,3 @@ type FunctionsRes struct {
 	ScmIntegrated      bool                     `json:"scm_integrated"`
 	ConnectedRepos     []map[string]interface{} `json:"connected_repos"`
 }
-
-type GetFunctionDetails struct {
-	Repository string `form:"repo" json:"repo"`
-	Branch     string `form:"branch" json:"branch"`
-	Owner      string `form:"owner" json:"owner"`
-	Scm        string `form:"scm" json:"scm"`
-	Type       string `form:"type" json:"type"`
-	Path       string `form:"path" json:"path"`
-}
-
-type GetFunctionDetailsSchema struct {
-	Repository   string `form:"repo" json:"repo"`
-	Branch       string `form:"branch" json:"branch"`
-	Owner        string `form:"owner" json:"owner"`
-	Scm          string `form:"scm" json:"scm"`
-	Username     string `json:"username"`
-	TenantName   string `json:"tenant_name"`
-	FunctionName string `form:"function_name" json:"function_name"`
-	Vesrion      int    `form:"version" json:"version"`
-}
-
-type GetFunctionFileCodeSchema struct {
-	Repository   string `form:"repo" json:"repo"`
-	Branch       string `form:"branch" json:"branch"`
-	Owner        string `form:"owner" json:"owner"`
-	Scm          string `form:"scm" json:"scm"`
-	TenantName   string `json:"tenant_name"`
-	FunctionName string `form:"function_name" json:"function_name"`
-	Version      int    `form:"version" json:"version"`
-	Username     string `json:"username"`
-	Path         string `form:"path" json:"path"`
-}
