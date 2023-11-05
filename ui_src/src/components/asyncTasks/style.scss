@@ -17,7 +17,7 @@
     color: #2e2c34;
     font-size: 12px;
     background-color: #ffc633;
-    padding: 2px 8px;
+    padding: 2px 5px;
     border-radius: 50%;
 }
 
@@ -26,7 +26,7 @@
     color: rgb(29, 29, 29);
     background-color: rgb(255, 255, 255);
     width: 200px;
-    height: 32px;
+    height: 34px;
     border-color: rgb(255, 255, 255);
     font-size: 14px;
     font-weight: bold;
@@ -37,9 +37,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
     .async-btn {
         display: flex;
         align-items: center;
+        gap: 10px;
 
         img {
             padding: 0px 10px;
@@ -73,6 +75,8 @@
     vertical-align: middle;
     display: flex;
     align-items: center;
+    gap: 10px;
+    padding: 20px;
     p {
         margin-bottom: 0;
     }
@@ -90,6 +94,7 @@
         font-size: 12px;
     }
 }
+
 .show-more-less-tasks {
     display: flex;
     justify-content: center;
