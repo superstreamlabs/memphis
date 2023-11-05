@@ -186,8 +186,8 @@ const ProduceConsumList = ({ producer }) => {
                 )}
                 {!producer && cgsList.length > 0 && (
                     <div className="coulmns-table">
-                        <span style={{ width: '80px' }}>Name</span>
-                        <span style={{ width: '80px', textAlign: 'center' }}>Unacknowledged</span>
+                        <span style={{ width: '60px' }}>Name</span>
+                        <span style={{ width: '100px', textAlign: 'center' }}>Unacknowledged</span>
                         <span style={{ width: '80px', textAlign: 'center' }}>Unprocessed</span>
                         <span style={{ width: '35px', textAlign: 'center' }}>Status</span>
                     </div>
