@@ -7268,3 +7268,55 @@ func DeleteAllSharedLocks(tenantName string) error {
 	}
 	return nil
 }
+
+func releaseStuckedSharedLocks(lockedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE shared_locks SET lock_held = false WHERE locked_at < $1 AND lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_lock_held_by_name_and_by_locked_at_shared_lock", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func releaseStuckedStationLocks(lockedAt time.Time) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+	query := `UPDATE stations SET functions_lock_held = false WHERE functions_locked_at < $1 AND functions_lock_held = true`
+	stmt, err := conn.Conn().Prepare(ctx, "set_functions_lock_held_at_station", query)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Query(ctx, stmt.Name, lockedAt)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func UnlockStuckLocks(lockedAt time.Time) error {
+	err := releaseStuckedStationLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedStationLocks: %v", err)
+	}
+	err = releaseStuckedSharedLocks(lockedAt)
+	if err != nil {
+		return fmt.Errorf("releaseStuckedSharedLocks: %v", err)
+	}
+	return nil
+}
