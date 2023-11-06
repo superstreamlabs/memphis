@@ -20,36 +20,38 @@ const MemphisGlobalAccountName = "$memphis"
 const GlobalAccount = "$G"
 
 type Configuration struct {
-	DEV_ENV                  string
-	LOCAL_CLUSTER_ENV        bool
-	DOCKER_ENV               string
-	ROOT_PASSWORD            string
-	ANALYTICS                string
-	JWT_SECRET               string
-	REFRESH_JWT_SECRET       string
-	EXPORTER                 bool
-	METADATA_DB_USER         string
-	METADATA_DB_PASS         string
-	METADATA_DB_DBNAME       string
-	METADATA_DB_HOST         string
-	METADATA_DB_PORT         string
-	METADATA_DB_MAX_CONNS    int
-	METADATA_DB_TLS_ENABLED  bool
-	METADATA_DB_TLS_MUTUAL   bool
-	METADATA_DB_TLS_KEY      string
-	METADATA_DB_TLS_CRT      string
-	METADATA_DB_TLS_CA       string
-	USER_PASS_BASED_AUTH     bool
-	CONNECTION_TOKEN         string
-	ENCRYPTION_SECRET_KEY    string
-	ENV                      string
-	PROVIDER                 string
-	REGION                   string
-	INSTALLATION_SOURCE      string
-	USER_CACHE_LIFE_MINUTES  int
-	USER_CACHE_CLEAN_MINUTES int
-	USER_CACHE_MAX_SIZE_MB   int
-	K8S_NAMESPACE            string
+	DEV_ENV                      string
+	LOCAL_CLUSTER_ENV            bool
+	DOCKER_ENV                   string
+	ROOT_PASSWORD                string
+	ANALYTICS                    string
+	JWT_SECRET                   string
+	REFRESH_JWT_SECRET           string
+	EXPORTER                     bool
+	METADATA_DB_USER             string
+	METADATA_DB_PASS             string
+	METADATA_DB_DBNAME           string
+	METADATA_DB_HOST             string
+	METADATA_DB_PORT             string
+	METADATA_DB_MAX_CONNS        int
+	METADATA_DB_TLS_ENABLED      bool
+	METADATA_DB_TLS_MUTUAL       bool
+	METADATA_DB_TLS_KEY          string
+	METADATA_DB_TLS_CRT          string
+	METADATA_DB_TLS_CA           string
+	USER_PASS_BASED_AUTH         bool
+	CONNECTION_TOKEN             string
+	ENCRYPTION_SECRET_KEY        string
+	ENV                          string
+	PROVIDER                     string
+	REGION                       string
+	INSTALLATION_SOURCE          string
+	USER_CACHE_LIFE_MINUTES      int
+	USER_CACHE_CLEAN_MINUTES     int
+	USER_CACHE_MAX_SIZE_MB       int
+	K8S_NAMESPACE                string
+	FUNCTIONS_ADMIN_SERVICE_HOST string
+	FUNCTIONS_ADMIN_SERVICE_PORT string
 }
 
 func GetConfig() Configuration {
@@ -90,6 +92,12 @@ func GetConfig() Configuration {
 	}
 	if configuration.USER_CACHE_MAX_SIZE_MB == 0 {
 		configuration.USER_CACHE_MAX_SIZE_MB = 10
+	}
+	if configuration.FUNCTIONS_ADMIN_SERVICE_HOST == "" {
+		configuration.FUNCTIONS_ADMIN_SERVICE_HOST = "localhost"
+	}
+	if configuration.FUNCTIONS_ADMIN_SERVICE_PORT == "" {
+		configuration.FUNCTIONS_ADMIN_SERVICE_PORT = "8880"
 	}
 
 	gin.SetMode(gin.ReleaseMode)

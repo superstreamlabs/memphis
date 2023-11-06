@@ -376,7 +376,7 @@ const StationOverviewHeader = () => {
                                     <RedirectIcon
                                         width={15}
                                         height={15}
-                                        className="redirect"
+                                        className="redirect dls-redirect"
                                         onClick={() => {
                                             history.push(`${pathDomains.stations}/${dls}`);
                                         }}

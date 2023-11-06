@@ -192,7 +192,6 @@ func main() {
     err = p.Produce([]byte("You have a message!"), memphis.MsgHeaders(hdrs), <producer-async>)
     if err != nil {
         fmt.Printf("Produce failed: %v", err)
-        os.Exit(1)
     }
 }
         `,

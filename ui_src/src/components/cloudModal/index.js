@@ -14,10 +14,10 @@ import './style.scss';
 
 import React from 'react';
 import { ReactComponent as FunctionIntegrateIcon } from '../../assets/images/functionIntegrate.svg';
-import BundleBanner from '../../assets/images/banners/bundle1.png';
-import CloudBanner from '../../assets/images/banners/cloud2.png';
-import FunctionsBanner from '../../assets/images/banners/function3.png';
-import UpgradeBanner from '../../assets/images/banners/upgrade4.png';
+import BundleBanner from '../../assets/images/banners/bundle1.webp';
+import CloudBanner from '../../assets/images/banners/cloud2.webp';
+import FunctionsBanner from '../../assets/images/banners/function3.webp';
+import UpgradeBanner from '../../assets/images/banners/upgrade4.webp';
 import UpgradePlans from '../upgradePlans';
 import Modal from '../modal';
 import Button from '../button';
@@ -57,7 +57,7 @@ const CloudModal = ({ type, open, handleClose }) => {
             subtitle: 'To Unlock More Features And Enhance Your Experience!',
             banner: UpgradeBanner,
             leftBtn: 'Chat With Your Account Manager',
-            leftBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo',
+            leftBtnLink: 'https://meetings.hubspot.com/yaniv-benhemo/upgrade-call',
             rightBtn: 'Upgrade Now',
             rightBtnLink: ''
         },
@@ -91,7 +91,7 @@ const CloudModal = ({ type, open, handleClose }) => {
                 }
                 displayButtons={false}
                 width="560px"
-                height="575"
+                height="390px"
                 clickOutside={handleClose}
                 open={open}
                 className="cloud-modal"

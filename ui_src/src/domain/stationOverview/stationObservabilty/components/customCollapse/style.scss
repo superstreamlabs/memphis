@@ -23,8 +23,11 @@
         .first-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             .title {
                 display: flex;
+                align-items: center;
+                gap: 10px;
                 .validation-image {
                     width: 20px !important;
                 }
@@ -38,7 +41,6 @@
             justify-content: center;
             border-radius: 20px;
             font-family: 'InterSemiBold';
-            margin-left: 10px;
             padding: 0 10px;
         }
     }

@@ -52,11 +52,11 @@ func (s *Server) ListenForZombieConnCheckRequests() error {
 	_, err := s.subscribeOnAcc(s.MemphisGlobalAccount(), CONN_STATUS_SUBJ, CONN_STATUS_SUBJ+"_sid", func(_ *client, subject, reply string, msg []byte) {
 		go func(msg []byte) {
 			opts := &ConnzOptions{
-				Limit: s.opts.MaxConn,
-				Username: false,
-				Subscriptions: false,
+				Limit:               s.opts.MaxConn,
+				Username:            false,
+				Subscriptions:       false,
 				SubscriptionsDetail: false,
-				State: ConnOpen,
+				State:               ConnOpen,
 			}
 			conns, _ := s.Connz(opts)
 			connectionIds := make(map[string]string)
@@ -339,7 +339,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go ScheduledCloudCacheRefresh()
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
-
+	go s.ReleaseStuckLocks()
 	return nil
 }
 
@@ -771,4 +771,16 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 		}
 	}
 	return nil
+}
+
+func (s *Server) ReleaseStuckLocks() {
+	ticker := time.NewTicker(30 * time.Second)
+	for range ticker.C {
+		time := time.Now().Add(-10 * time.Minute)
+		err := db.UnlockStuckLocks(time)
+		if err != nil {
+			serv.Errorf("ReleaseStuckLocks at UnlockStuckLocks: %v", err.Error())
+		}
+
+	}
 }
