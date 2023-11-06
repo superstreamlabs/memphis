@@ -89,12 +89,15 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                 isExternal ? onClose() : setUpgradeModalOpen(false);
                 localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }
-        } catch (error) {}
-        if (withReason) {
-            setDowngradeModalOpen(false);
-            setDowngradeLoader(false);
-            setReasonDowngrade('');
-            setIsCheck([]);
+        } catch (error) {
+            isExternal ? onClose() : setUpgradeModalOpen(false);
+        } finally {
+            if (withReason) {
+                setDowngradeModalOpen(false);
+                setDowngradeLoader(false);
+                setReasonDowngrade('');
+                setIsCheck([]);
+            }
         }
     };
 
