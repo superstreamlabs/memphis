@@ -1,8 +1,7 @@
-
 .modal-wrapper {
     .ant-modal-body {
-        padding-top:10px;
-        padding-bottom:20px;
+        padding-top: 10px;
+        padding-bottom: 20px;
     }
     .modal-header {
         .header-img-container {
@@ -19,7 +18,7 @@
                 height: 25px;
                 width: 25px;
             }
-            .headerIcon{
+            .headerIcon {
                 height: 25px;
                 width: 25px;
                 color: var(--purple);
@@ -127,10 +126,10 @@
 
 .ant-modal-header {
     border: none;
-    border-radius: 8px 8px 0px 0px;
+    border-radius: 30px 30px 0px 0px;
 }
 .ant-modal-content {
-    border-radius: 8px;
-    border: 1px solid #E4E4E4 !important;
+    border-radius: 30px;
+    border: 1px solid #e4e4e4 !important;
     box-shadow: 0px 23px 44px rgba(176, 183, 195, 0.15) !important;
 }

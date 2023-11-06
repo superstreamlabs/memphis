@@ -27,7 +27,7 @@ const CloneModal = () => {
     return (
         <div className="clone-wrapper">
             <p className="title"> Clone</p>
-            <p className="subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
+            <p className="subtitle">Kindly clone our explanatory repository to quickly start.</p>
             <CustomTabs tabs={['HTTPS', 'SSH']} size={'small'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             {tabValue === 'HTTPS' ? (
                 <>

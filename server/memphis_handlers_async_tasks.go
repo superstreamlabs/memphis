@@ -108,5 +108,23 @@ func (ash AsyncTasksHandler) GetAllAsyncTasks(tenantName string) ([]models.Async
 		serv.Errorf("GetAllAsyncTasks at GetAllAsyncTasks:  %v", err.Error())
 		return []models.AsyncTaskRes{}, err
 	}
+	for i, task := range asyncTasks {
+		if task.StationName == "" {
+			metaData, _ := task.Data.(map[string]interface{})
+			if len(metaData) > 0 {
+				data := metaData["name"].(string)
+				task.StationName = data
+			}
+		}
+		switch task.Name {
+		case "resend_all_dls_msgs":
+			task.Name = "Resend All DLS Messages"
+		case "clone_repo":
+			task.Name = "Add GitHub Repo"
+		case "install_function":
+			task.Name = "Function Installation"
+		}
+		asyncTasks[i] = task
+	}
 	return asyncTasks, nil
 }

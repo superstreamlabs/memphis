@@ -33,6 +33,7 @@ import { ReactComponent as StationsActiveIcon } from '../../../../assets/images/
 import { ReactComponent as ErrorModalIcon } from '../../../../assets/images/errorModal.svg';
 import { ReactComponent as BackIcon } from '../../../../assets/images/backIcon.svg';
 import { ReactComponent as TagsIcon } from '../../../../assets/images/tagsIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../assets/images/purpleQuestionMark.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import RadioButton from '../../../../components/radioButton';
 import SelectComponent from '../../../../components/select';
@@ -421,19 +422,14 @@ function CreateSchema({ createNew }) {
                     <div className="header">
                         <div className="flex-title">
                             <BackIcon onClick={() => goBack()} alt="backIcon" />
-                            <p>Create schema</p>
+                            <p>Create a new schema</p>
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
+                                onClick={() => window.open('https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management', '_blank')}
+                            />
                         </div>
-                        <span>
-                            Creating a schema will enable you to enforce standardization upon produced data and increase data quality.&nbsp;
-                            <a
-                                className="learn-more"
-                                href="https://docs.memphis.dev/memphis/memphis-schemaverse/schemaverse-schema-management"
-                                target="_blank"
-                                rel="noreferrer"
-                            >
-                                Learn more
-                            </a>
-                        </span>
+                        <span>Crafting a schema empowers you to enforce data standardization and enhance data quality.</span>
                     </div>
                     <Form.Item
                         name="name"
@@ -494,17 +490,7 @@ function CreateSchema({ createNew }) {
                                 <SchemaTypeIcon className="icon" alt="schemaTypeIcon" />
                                 <div className="title-desc">
                                     <p className="field-title">Data format</p>
-                                    <p className="desc">
-                                        Each format has its own syntax rules. Once chosen, only that format will be allowed to pass the schema validation.&nbsp;
-                                        <a
-                                            className="learn-more"
-                                            href="https://docs.memphis.dev/memphis/memphis-schemaverse/formats/produce-consume"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            Learn more
-                                        </a>
-                                    </p>
+                                    <p className="desc">Each format has unique syntax rules. Once selected, only that format can pass schema validation</p>
                                 </div>
                             </div>
                             <RadioButton
@@ -520,7 +506,7 @@ function CreateSchema({ createNew }) {
                 <div className="right-side">
                     <div className="schema-field schema">
                         <div className="title-wrapper">
-                            <p className="field-title">Schema structure</p>
+                            <p className="field-title">Schema editor</p>
                             <div className={formFields.type === 'Json' ? 'button-json space-between' : 'button-json'}>
                                 {formFields.type === 'Json' && (
                                     <Button
@@ -545,9 +531,9 @@ function CreateSchema({ createNew }) {
                                     width="115px"
                                     height="34px"
                                     placeholder="Validate"
-                                    colorType="white"
+                                    colorType="black"
                                     radiusType="circle"
-                                    backgroundColorType="purple"
+                                    backgroundColorType="orange"
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     htmlType="button"
@@ -585,9 +571,9 @@ function CreateSchema({ createNew }) {
                             onClick={() => goBack()}
                         />
                         <Button
-                            width="125px"
+                            width="145px"
                             height="34px"
-                            placeholder="Create schema"
+                            placeholder="Create a new schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

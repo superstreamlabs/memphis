@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
+	"strings"
 
 	"github.com/memphisdev/memphis/models"
 	"gopkg.in/yaml.v2"
@@ -23,21 +25,14 @@ var memphisFunctions = map[string]interface{}{
 	"repo_owner": memphisDevFunctionsOwnerName,
 }
 
-type githubRepoDetails struct {
-	RepoName  string `json:"repo_name"`
-	Branch    string `json:"branch"`
-	Type      string `json:"type"`
-	RepoOwner string `json:"repo_owner"`
-}
-
 func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
 }
 
 func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, body models.CreateIntegrationSchema) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
-
 }
+
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
 	return
 }
@@ -45,11 +40,6 @@ func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool,
 func getGithubClientWithoutAccessToken() *github.Client {
 	client := github.NewClient(nil)
 	return client
-}
-
-func getGithubClient(tenantName string) (string, string, *github.Client, error) {
-	client := getGithubClientWithoutAccessToken()
-	return "", "", client, nil
 }
 
 func testGithubIntegration(installationId string) error {
@@ -64,16 +54,7 @@ func (s *Server) getGithubBranches(integration models.Integration, body interfac
 	return models.Integration{}, nil, nil
 }
 
-func containsElement(arr []string, val string) bool {
-	for _, item := range arr {
-		if item == val {
-			return true
-		}
-	}
-	return false
-}
-
-func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails) (map[string][]functionDetails, error) {
+func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
 	branch := connectedRepo["branch"].(string)
 	repo := connectedRepo["repo_name"].(string)
 	owner := connectedRepo["repo_owner"].(string)
@@ -130,52 +111,74 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 						contentMap["storage"] = int64(512) * 1024 * 1024
 					}
 
-					// TODO: need to add according to the cloud changes
-					// if contentMap["dependencies"].(string) == "" {
-					// 	switch contentMap["language"] {
-					// 	case "go":
-					// 		contentMap["dependencies"] = "go.mod"
-					// 	case "nodejs":
-					// 		contentMap["dependencies"] = "package.json"
-					// 	case "python":
-					// 		contentMap["dependencies"] = "req.txt"
-					// 	}
-					// }
+					if contentMap["dependencies"].(string) == "" {
+						switch contentMap["language"] {
+						case "go":
+							contentMap["dependencies"] = "go.mod"
+						case "nodejs":
+							contentMap["dependencies"] = "package.json"
+						case "python":
+							contentMap["dependencies"] = "requirements.txt"
+						}
+					}
 
-					// splitPath := strings.Split(*fileContent.Path, "/")
-					// path := strings.TrimSpace(splitPath[0])
-					// if path != contentMap["function_name"].(string) {
-					// 	// errMsg := fmt.Sprintf("In the repository %s, there was an incompatibility between the function name in the git %s and the function name in the YAML file %s", repo, splitPath[0], contentMap["function_name"].(string))
-					// 	continue
-					// }
-					// if strings.Contains(path, "") {
-					// 	// errMsg := fmt.Sprintf("In the repository %s, the function name in the yaml %s can't contains spaces", repo, contentMap["function_name"].(string))
-					// 	continue
-					// }
-					//
+					splitPath := strings.Split(*fileContent.Path, "/")
+					path := strings.TrimSpace(splitPath[0])
 
 					err = validateYamlContent(contentMap)
 					if err != nil {
 						isValidFileYaml = false
-						continue
-					}
-					isValidFileYaml = true
-
-					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
-					if err != nil {
-						continue
-					}
-
-					if isValidFileYaml {
-						countFunctions++
 						fileDetails := functionDetails{
-							Commit:       commit,
 							ContentMap:   contentMap,
 							RepoName:     repo,
 							Branch:       branch,
 							Owner:        owner,
 							DirectoryUrl: directoryContent.HTMLURL,
+							TenantName:   tenantName,
 						}
+						message := fmt.Sprintf("In the repository %s, the yaml file %s is invalid: %s", repo, splitPath[0], err.Error())
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
+						continue
+					}
+					isValidFileYaml = true
+					commit, _, err = client.Repositories.GetCommit(context.Background(), owner, repo, branch)
+					if err != nil {
+						continue
+					}
+
+					fileDetails := functionDetails{
+						Commit:       commit,
+						ContentMap:   contentMap,
+						RepoName:     repo,
+						Branch:       branch,
+						Owner:        owner,
+						DirectoryUrl: directoryContent.HTMLURL,
+						TenantName:   tenantName,
+					}
+
+					if path != contentMap["function_name"].(string) {
+						message := fmt.Sprintf("In the repository %s, function name %s in git doesn't match the function_name field %s in YAML file.", repo, splitPath[0], contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
+						continue
+					}
+					if strings.Contains(path, " ") {
+						message := fmt.Sprintf("In the repository %s, the function name %s in the YAML file cannot contain spaces", repo, contentMap["function_name"].(string))
+						serv.Warnf("[tenant: %s]GetGithubContentFromConnectedRepo: %s", tenantName, message)
+						fileDetails.IsValid = false
+						fileDetails.InvalidReason = message
+						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
+						continue
+					}
+
+					if isValidFileYaml {
+						countFunctions++
+						fileDetails.IsValid = true
 						functionsDetails["other"] = append(functionsDetails["other"], fileDetails)
 						break
 					}
@@ -193,6 +196,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 func deleteInstallationForAuthenticatedGithubApp(tenantName string) error {
 	return nil
 }
+
 func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, repo, branch, repoType string) map[string]interface{} {
 	return map[string]interface{}{}
 }

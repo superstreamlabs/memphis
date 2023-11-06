@@ -20,6 +20,8 @@ import AccountMenu from './accountMenu';
 import BillingMenu from './billing/billingMenu';
 import Payments from './billing/payments';
 import Requests from './billing/requests';
+import Profile from '../profile';
+
 import ClusterConfiguration from './clusterConfiguration';
 import SoftwareUpates from './softwareUpdates';
 import { useHistory } from 'react-router-dom';
@@ -51,6 +53,8 @@ function Administration({ step }) {
 
     const renderSelectedComponent = () => {
         switch (selectedMenuItem) {
+            case 'profile':
+                return <Profile />;
             case 'integrations':
                 return <Integrations />;
             case 'cluster_configuration':

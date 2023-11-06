@@ -13,6 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ReactComponent as PlaceholderSchema } from '../../../../assets/images/placeholderSchema.svg';
 import { ReactComponent as DeleteWrapperIcon } from '../../../../assets/images/deleteWrapperIcon.svg';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
@@ -36,6 +37,7 @@ function SchemaList({ createNew }) {
     const [isLoading, setisLoading] = useState(true);
     const [deleteModal, setDeleteModal] = useState(false);
     const [deleteLoader, setDeleteLoader] = useState(false);
+    const location = useLocation();
 
     useEffect(() => {
         getAllSchemas();
@@ -44,6 +46,10 @@ function SchemaList({ createNew }) {
             dispatch({ type: 'SET_STATION_FILTERED_LIST', payload: [] });
         };
     }, []);
+
+    useEffect(() => {
+        location?.create && createNew(true);
+    }, [location]);
 
     const getAllSchemas = async () => {
         setisLoading(true);
@@ -108,12 +114,7 @@ function SchemaList({ createNew }) {
                     <label className="main-header-h1">
                         Schemaverse <label className="length-list">{state.schemaFilteredList?.length > 0 && `(${state.schemaFilteredList?.length})`}</label>
                     </label>
-                    <span className="memphis-label">
-                        The new way to enforce schemas! Get started&nbsp;
-                        <a className="learn-more" href="https://docs.memphis.dev/memphis/memphis/schemaverse-schema-management/getting-started" target="_blank">
-                            here.
-                        </a>
-                    </span>
+                    <span className="memphis-label">A modern approach to schema enforcement and increased data quality!</span>
                 </div>
                 <div className="action-section">
                     <Button
@@ -147,7 +148,7 @@ function SchemaList({ createNew }) {
                     <Button
                         width="160px"
                         height="34px"
-                        placeholder={'Create from blank'}
+                        placeholder={'Create a new schema'}
                         colorType="white"
                         radiusType="circle"
                         backgroundColorType="purple"
@@ -179,7 +180,7 @@ function SchemaList({ createNew }) {
                             className="modal-btn"
                             width="160px"
                             height="34px"
-                            placeholder="Create from blank"
+                            placeholder="Create a new schema"
                             colorType="white"
                             radiusType="circle"
                             backgroundColorType="purple"

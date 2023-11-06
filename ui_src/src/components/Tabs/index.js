@@ -34,7 +34,7 @@ const CustomTabs = ({ tabs, onChange, value, disabled, length, tooltip, icon = f
                         key: tab?.name || tab,
                         disabled: tab?.disabled || disabled,
                         label: (
-                            <label className="tabs-name" style={{ width: length && length[index] && '95px' }}>
+                            <label className="tabs-name" style={{ width: length && length[index] && '135px' }}>
                                 {checkbox && <CheckboxComponent checked={tab.checked} />}
                                 <TooltipComponent text={tooltip && tooltip[index]}>{tab?.name || tab} </TooltipComponent>
                                 {length && length[index] && icon && (

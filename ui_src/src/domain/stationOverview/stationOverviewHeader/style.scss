@@ -171,6 +171,10 @@
                         .redirect {
                             cursor: pointer;
                         }
+                        .dls-redirect {
+                            position: absolute;
+                            right: 0px;
+                        }
                     }
                     .midRow {
                         display: flex;
@@ -181,7 +185,7 @@
                         gap: 3px;
                         max-width: 95%;
                         position: relative;
-                        .flex-section{
+                        .flex-section {
                             display: flex;
                             max-width: 60%;
                             align-items: center;
@@ -191,7 +195,7 @@
                                 color: #1d1d1d;
                                 font-family: 'InterMedium';
                                 font-size: 12px;
-                                max-width: 85%;
+                                max-width: 155px;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
                             }
@@ -234,7 +238,7 @@
                         overflow: hidden;
                         text-overflow: ellipsis;
                     }
-                    .pointer .number{
+                    .pointer .number {
                         max-width: 40%;
                     }
 
@@ -421,7 +425,7 @@
     }
 }
 
-.delete-modal-wrapper .desc .dls-name{
+.delete-modal-wrapper .desc .dls-name {
     overflow: hidden;
     text-overflow: ellipsis;
     position: relative;

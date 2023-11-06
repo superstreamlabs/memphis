@@ -7707,6 +7707,10 @@ func (mset *stream) processClusterStreamInfoRequest(reply string) {
 		Mirror:  mset.mirrorInfo(),
 	}
 
+	// ** added by Memphis
+	si.State.Subjects = mset.store.SubjectsTotals("")
+	// ** added by Memphis
+
 	// Check for out of band catchups.
 	if mset.hasCatchupPeers() {
 		mset.checkClusterInfo(si.Cluster)

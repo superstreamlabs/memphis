@@ -18,8 +18,7 @@ import { Collapse } from 'antd';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ReactComponent as CollapseArrowIcon } from '../../../../../assets/images/collapseArrow.svg';
 import grafanaps from '../../../../../assets/images/grafanaps.png';
-
-import Button from '../../../../../components/button';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import Copy from '../../../../../components/copy';
 import Modal from '../../../../../components/modal';
 import { ZoomInRounded } from '@material-ui/icons';
@@ -165,16 +164,9 @@ exporter.enabled="true"`}
                     <div className="integrate-header">
                         {grafanaConfiguration.header}
                         <div className="action-buttons flex-end">
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations/monitoring/grafana', '_blank')}
                             />
                         </div>
@@ -204,19 +196,6 @@ exporter.enabled="true"`}
                                 </div>
                             </div>
                         )}
-                        <div className="close-btn">
-                            <Button
-                                width="300px"
-                                height="45px"
-                                placeholder="Close"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                fontSize="14px"
-                                fontFamily="InterSemiBold"
-                                onClick={() => close()}
-                            />
-                        </div>
                     </div>
 
                     {showModal && (

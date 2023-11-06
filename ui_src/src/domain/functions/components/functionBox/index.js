@@ -123,7 +123,7 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                         >
                             <div className="header-flex">
                                 <AttachTooltip disabled={!isCloud() || functionDetails?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
+                                {!isCloud() && <CloudOnly />}
                             </div>
                             <div className="header-flex">
                                 <Button
@@ -157,7 +157,7 @@ function FunctionBox({ funcDetails, integrated, installed }) {
                                         return;
                                     }}
                                 />
-                                {!isCloud() && <CloudOnly position={'relative'} />}
+                                {!isCloud() && <CloudOnly />}
                             </div>
                         </div>
                     </div>

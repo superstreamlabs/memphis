@@ -47,6 +47,7 @@ const Signup = (props) => {
     const [formFields, setFormFields] = useState({
         username: '',
         full_name: '',
+        organization: '',
         password: '',
         subscription: true,
         user_type: 'management'
@@ -63,6 +64,10 @@ const Signup = (props) => {
 
     const handleFullNameChange = (e) => {
         setFormFields({ ...formFields, full_name: e.target.value });
+    };
+
+    const handleOrganizationChange = (e) => {
+        setFormFields({ ...formFields, organization: e.target.value });
     };
 
     const handlePasswordChange = (e) => {
@@ -167,7 +172,7 @@ const Signup = (props) => {
                                 rules={[
                                     {
                                         required: true,
-                                        message: 'Email can not be empty'
+                                        message: 'Email must not be left blank'
                                     },
                                     {
                                         type: 'email',
@@ -176,7 +181,7 @@ const Signup = (props) => {
                                 ]}
                             >
                                 <div className="field name">
-                                    <p>Your email</p>
+                                    <p>Email</p>
                                     <Input
                                         placeholder="name@gmail.com"
                                         type="text"
@@ -221,6 +226,33 @@ const Signup = (props) => {
                                 </div>
                             </Form.Item>
                             <Form.Item
+                                name="organization"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: 'Organization can not be empty'
+                                    }
+                                ]}
+                            >
+                                <div className="field">
+                                    <p>Organization</p>
+                                    <Input
+                                        placeholder="Type your organization name"
+                                        type="text"
+                                        radiusType="semi-round"
+                                        colorType="gray"
+                                        backgroundColorType="none"
+                                        borderColorType="gray"
+                                        width="470px"
+                                        height="43px"
+                                        minWidth="200px"
+                                        onBlur={handleOrganizationChange}
+                                        onChange={handleOrganizationChange}
+                                        value={formFields.organization}
+                                    />
+                                </div>
+                            </Form.Item>
+                            <Form.Item
                                 name="password"
                                 rules={[
                                     {
@@ -247,7 +279,7 @@ const Signup = (props) => {
                                     />
                                 </div>
                             </Form.Item>
-                            <p className="future-updates">Features and releases updates</p>
+                            <p className="future-updates">Product updates</p>
                             <div className="toggle-analytics">
                                 <Form.Item name="subscription" initialValue={formFields.subscription} style={{ marginBottom: '0' }}>
                                     <Switcher onChange={() => switchSubscription()} checked={formFields.subscription} checkedChildren="" unCheckedChildren="" />

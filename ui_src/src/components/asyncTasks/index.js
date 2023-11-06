@@ -20,9 +20,9 @@ import { ApiEndpoints } from '../../const/apiEndpoints';
 import { ReactComponent as AsyncIcon } from '../../assets/images/asyncIcon.svg';
 import { ReactComponent as TaskIcon } from '../../assets/images/task.svg';
 import { httpRequest } from '../../services/http';
-import Button from '../button';
 import { ReactComponent as CollapseArrowIcon } from '../../assets/images/collapseArrow.svg';
 import { Context } from '../../hooks/store';
+import OverflowTip from '../tooltip/overflowtip';
 
 const AsyncTasks = ({ height, overView }) => {
     const [state, dispatch] = useContext(Context);
@@ -117,9 +117,12 @@ const AsyncTasks = ({ height, overView }) => {
                                             {overView && `${task?.station_name} | `}
                                             {task?.name}
                                         </p>
-                                        <label className="created">
-                                            Created by <b>{task?.created_by}</b> at {parsingDate(task?.created_at)}
-                                        </label>
+
+                                        <OverflowTip width={'240px'} className="created" text={`Created by ${task?.created_by} at ${parsingDate(task?.created_at)}`}>
+                                            <label className="created">
+                                                Created by <b>{task?.created_by}</b> at {parsingDate(task?.created_at)}
+                                            </label>
+                                        </OverflowTip>
                                     </div>
                                 </div>
                                 <Divider />
@@ -160,7 +163,7 @@ const AsyncTasks = ({ height, overView }) => {
                             <label className="async-title">Async tasks </label>
                             <label className="async-number">{asyncTasks.length}</label>
                         </div>
-                        <CollapseArrowIcon alt="CollapseArrowIcon" />
+                        <CollapseArrowIcon className={isOpen ? 'collapse-arrow open' : 'collapse-arrow'} alt="CollapseArrowIcon" />
                     </div>
                 </div>
             </Popover>

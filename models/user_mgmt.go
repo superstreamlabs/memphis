@@ -51,6 +51,7 @@ type AddUserSchema struct {
 	Position     string `json:"position"`
 	Owner        string `json:"owner"`
 	Description  string `json:"description"`
+	Organization string `json:"organization"`
 }
 
 type AuthenticateNatsSchema struct {

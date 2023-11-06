@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message, Spin } from 'antd';
+import { Form, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import { FiPlus } from 'react-icons/fi';
@@ -22,11 +22,13 @@ import Button from '../../../../../components/button';
 import { Context } from '../../../../../hooks/store';
 import CustomTabs from '../../../../../components/Tabs';
 import Loader from '../../../../../components/loader';
+import CloudMoadl from '../../../../../components/cloudModal';
 import IntegrationItem from './integratedItem';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
-import { ReactComponent as GithubNoConnectionIcon } from '../../../../../assets/images/noConnectionIcon.svg';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
+import { isCloud } from '../../../../../services/valueConvertor';
 
 const GitHubIntegration = ({ close, value }) => {
     const githubConfiguration = INTEGRATION_LIST['GitHub'];
@@ -49,6 +51,7 @@ const GitHubIntegration = ({ close, value }) => {
     const [isChanged, setIsChanged] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const tabs = getTabList('GitHub');
 
     useEffect(() => {
@@ -213,16 +216,9 @@ const GitHubIntegration = ({ close, value }) => {
                     <div className="integrate-header">
                         {githubConfiguration.header}
                         <div className={'action-buttons flex-end'}>
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/integrations-center/source-code/github', '_blank')}
                             />
                             {isIntegrated && (
@@ -249,27 +245,28 @@ const GitHubIntegration = ({ close, value }) => {
                         {tabValue === 'Configuration' && (
                             <div className="integration-body">
                                 <IntegrationDetails integrateDesc={githubConfiguration.integrateDesc} />
+                                {!isIntegrated && (
+                                    <div className="noConnection-wrapper">
+                                        <Button
+                                            height="35px"
+                                            width="300px"
+                                            placeholder="Connect"
+                                            colorType="white"
+                                            radiusType="circle"
+                                            backgroundColorType="purple"
+                                            border="none"
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => {
+                                                // isCloud() &&
+                                                //     applicationName() &&
+                                                //     window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                setCloudModalOpen(true);
+                                            }}
+                                        />
+                                    </div>
+                                )}
                                 <div className="api-details">
-                                    {!isIntegrated && (
-                                        <div className="noConnection-wrapper">
-                                            <GithubNoConnectionIcon />
-                                            <p className="noConnection-title">Connect to get more details</p>
-                                            <p className="noConnection-subtitle">Lorem Ipsum is simply dummy text of the printing and typesetting industry.</p>
-
-                                            <Button
-                                                height="35px"
-                                                placeholder="Connect"
-                                                colorType="white"
-                                                radiusType="circle"
-                                                backgroundColorType="purple"
-                                                border="none"
-                                                fontSize="12px"
-                                                fontFamily="InterSemiBold"
-                                                disabled={!applicationName}
-                                                onClick={() => window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`)}
-                                            />
-                                        </div>
-                                    )}
                                     {isIntegrated && (
                                         <div className="input-field">
                                             <p className="title">Repos</p>
@@ -329,26 +326,10 @@ const GitHubIntegration = ({ close, value }) => {
                                 </div>
                             </div>
                         )}
-                        <Form.Item className="button-container">
-                            <div className="button-wrapper button-wrapper-single-item  ">
-                                <div></div>
-                                <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                />
-                            </div>
-                        </Form.Item>
                     </Form>
                 </>
             )}
+            <CloudMoadl type="functions" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

@@ -12,7 +12,7 @@
 package db
 
 const testEventsTable = ``
-const installedFunctionsTable = ``
+const functionsTable = ``
 const attachedFunctionsTable = ``
 
 type FunctionSchema struct {
@@ -43,4 +43,8 @@ func DeleteAndGetAttachedFunctionsByStation(tenantName string, stationId int, pa
 
 func DeleteAndGetAttachedFunctionsByTenant(tenantName string) ([]FunctionSchema, error) {
 	return []FunctionSchema{}, nil
+}
+
+func DeleteAllTestEvents(tenantName string) error {
+	return nil
 }

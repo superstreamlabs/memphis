@@ -13,8 +13,7 @@
 import './style.scss';
 
 import React, { useState, useContext, useEffect } from 'react';
-import { Form, message } from 'antd';
-
+import { Form } from 'antd';
 import { INTEGRATION_LIST, getTabList } from '../../../../../const/integrationList';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
@@ -24,11 +23,14 @@ import CustomTabs from '../../../../../components/Tabs';
 import Input from '../../../../../components/Input';
 import Checkbox from '../../../../../components/checkBox';
 import Loader from '../../../../../components/loader';
+import CloudMoadl from '../../../../../components/cloudModal';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
 import { showMessages } from '../../../../../services/genericServices';
 import IntegrationDetails from '../integrationItem/integrationDetails';
 import IntegrationLogs from '../integrationItem/integrationLogs';
+import { FaArrowUp } from 'react-icons/fa';
 
-const S3Integration = ({ close, value }) => {
+const S3Integration = ({ close, value, lockFeature }) => {
     const isValue = value && Object.keys(value)?.length !== 0;
     const s3Configuration = INTEGRATION_LIST['S3'];
     const [creationForm] = Form.useForm();
@@ -48,6 +50,7 @@ const S3Integration = ({ close, value }) => {
     const [loadingDisconnect, setLoadingDisconnect] = useState(false);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
+    const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const tabs = getTabList('Slack');
 
     useEffect(() => {
@@ -82,15 +85,18 @@ const S3Integration = ({ close, value }) => {
         if (values?.errorFields) {
             return;
         } else {
-            setLoadingSubmit(true);
-            if (isValue) {
-                if (creationForm.isFieldTouched('secret_key')) {
-                    updateIntegration();
+            if (lockFeature) setCloudModalOpen(true);
+            else {
+                setLoadingSubmit(true);
+                if (isValue) {
+                    if (creationForm.isFieldTouched('secret_key')) {
+                        updateIntegration();
+                    } else {
+                        updateIntegration(false);
+                    }
                 } else {
-                    updateIntegration(false);
+                    createIntegration();
                 }
-            } else {
-                createIntegration();
             }
         }
     };
@@ -170,16 +176,9 @@ const S3Integration = ({ close, value }) => {
                                     onClick={() => disconnect()}
                                 />
                             )}
-                            <Button
-                                width="140px"
-                                height="35px"
-                                placeholder="Integration guide"
-                                colorType="white"
-                                radiusType="circle"
-                                backgroundColorType="purple"
-                                border="none"
-                                fontSize="12px"
-                                fontFamily="InterSemiBold"
+                            <PurpleQuestionMark
+                                className="info-icon"
+                                alt="Integration info"
                                 onClick={() => window.open('https://docs.memphis.dev/memphis/dashboard-gui/integrations/storage/amazon-s3', '_blank')}
                             />
                         </div>
@@ -367,21 +366,18 @@ const S3Integration = ({ close, value }) => {
                         <Form.Item className="button-container">
                             <div className="button-wrapper">
                                 <Button
-                                    width="80%"
+                                    width="500px"
                                     height="45px"
-                                    placeholder="Close"
-                                    colorType="black"
-                                    radiusType="circle"
-                                    backgroundColorType="white"
-                                    border="gray-light"
-                                    fontSize="14px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => close(value)}
-                                />
-                                <Button
-                                    width="80%"
-                                    height="45px"
-                                    placeholder={isValue ? 'Update' : 'Connect'}
+                                    placeholder={
+                                        isValue ? (
+                                            'Update'
+                                        ) : (
+                                            <span>
+                                                <label>Connect </label>
+                                                {lockFeature && <FaArrowUp />}
+                                            </span>
+                                        )
+                                    }
                                     colorType="white"
                                     radiusType="circle"
                                     backgroundColorType="purple"
@@ -396,6 +392,7 @@ const S3Integration = ({ close, value }) => {
                     </Form>
                 </>
             )}
+            <CloudMoadl type="upgrade" open={cloudModalOpen} handleClose={() => setCloudModalOpen(false)} />
         </dynamic-integration>
     );
 };

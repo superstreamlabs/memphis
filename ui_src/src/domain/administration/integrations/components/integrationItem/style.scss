@@ -92,13 +92,26 @@ integ-item {
         }
         p {
             font-size: 14px;
-            line-height: 14px;
+            line-height: 16px;
             font-family: 'InterMedium';
         }
         span {
             font-size: 12px;
             font-family: 'InterMedium';
             color: rgba(74, 73, 92, 0.8);
+        }
+        .by {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            svg {
+                width: 14px;
+                margin: 0px;
+            }
+        }
+        .memphis {
+            color: #6557ff;
+            font-weight: 'InterSemiBold';
         }
     }
     .integration-description {
@@ -122,28 +135,16 @@ integ-item {
 }
 
 .integration-modal {
-    .ant-modal-content {
-        border-radius: 16px !important;
-        .ant-modal-close-x {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            .anticon {
-                background: rgba(161, 161, 161, 0.3);
-                border-radius: 15px;
-                width: 25px;
-                height: 25px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                svg {
-                    color: white;
-                }
-            }
-        }
-    }
     .ant-modal-body {
-        padding: 0 !important;
+        padding: 0px;
+    }
+    .ant-drawer-content {
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background: #fff;
+        pointer-events: auto;
+        border-radius: 16px 0px 0px 16px;
     }
     .integrate-header {
         display: flex;
@@ -157,11 +158,33 @@ integ-item {
                 width: 38px;
             }
             .details {
+                .ant-divider-vertical {
+                    margin: 0px;
+                }
+                .by {
+                    display: flex;
+                    gap: 6px;
+                    align-items: center;
+                    svg {
+                        width: 14px;
+                        margin: 0px;
+                    }
+                }
+                .memphis {
+                    color: #6557ff;
+                    font-weight: 'InterSemiBold';
+                }
+                .oss-cloud-badge {
+                    color: #cc5de8;
+                    background: rgba(204, 93, 232, 0.15);
+                    border-radius: 4px;
+                    padding: 2px 5px;
+                }
                 margin-left: 10px;
                 p {
                     font-family: 'InterSemiBold';
                     font-size: 20px;
-                    line-height: 20px;
+                    line-height: 30px;
                 }
                 span {
                     font-family: 'InterMedium';
@@ -177,9 +200,14 @@ integ-item {
         }
         .action-buttons {
             display: flex;
-            width: 250px;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
             justify-content: space-between;
+            .info-icon {
+                width: 25px;
+                height: 25px;
+                cursor: pointer;
+            }
         }
         .flex-end {
             flex-basis: min-content;
@@ -222,6 +250,7 @@ integ-item {
         }
     }
 }
+
 .loader-wrapper {
     width: 100%;
     margin-top: 20px;

@@ -166,7 +166,7 @@ const MessageJourney = () => {
                     cgMembers: row.cg_members,
                     details: [
                         {
-                            name: 'Unacked messages',
+                            name: 'Unacknowledged messages',
                             value: row?.total_poison_messages?.toLocaleString()
                         },
                         {
@@ -196,7 +196,7 @@ const MessageJourney = () => {
                         value: 'consumer',
                         cgData: [
                             {
-                                name: 'Unacked messages',
+                                name: 'Unacknowledged messages',
                                 value: row.total_poison_messages?.toLocaleString()
                             },
                             {

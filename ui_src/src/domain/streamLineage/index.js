@@ -19,16 +19,15 @@ import { IoRefresh } from 'react-icons/io5';
 import { MdZoomOutMap } from 'react-icons/md';
 import { IoClose } from 'react-icons/io5';
 import { Divider } from 'antd';
-
-import graphPlaceholder from '../../assets/images/graphPlaceholder.svg';
 import { ApiEndpoints } from '../../const/apiEndpoints';
 import { ReactComponent as GraphPlaceholder } from '../../assets/images/graphPlaceholder.svg';
 import BackIcon from '../../assets/images/backIcon.svg';
-import LockFeature from '../../components/lockFeature';
 import { httpRequest } from '../../services/http';
 import Connection from './components/connection';
 import Button from '../../components/button';
 import Loader from '../../components/loader';
+import CloudModal from '../../components/cloudModal';
+import { FaArrowCircleUp } from 'react-icons/fa';
 import { Context } from '../../hooks/store';
 import Station from './components/station';
 
@@ -37,6 +36,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
     const [isLoading, setisLoading] = useState(false);
     const [nodes, setNodes] = useState([]);
     const [edges, setEdges] = useState([]);
+    const [openCloudModal, setOpenCloudModal] = useState(false);
     const ref = useRef(null);
 
     const getGraphData = async () => {
@@ -170,7 +170,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
 
                         <p>System overview</p>
                     </div>
-                    <label>A dynamic, self-built graph visualization of your main system components</label>
+                    <label>An interactive, user-generated graph representation of your Memphis.dev components</label>
                 </div>
                 {nodes?.length > 0 && (
                     <div className="refresh-wrapper" onClick={() => getGraphData()}>
@@ -181,19 +181,23 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                     <div className="actions-wrapper">
                         <div
                             className="close-wrapper"
-                            onClick={() =>
-                                expend
-                                    ? setExpended(false)
-                                    : state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview']
-                                    ? setExpended(true)
-                                    : null
-                            }
+                            onClick={() => {
+                                if (!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview']) {
+                                    setOpenCloudModal(true);
+                                } else {
+                                    if (expend) {
+                                        setExpended(false);
+                                    } else if (state?.userData?.entitlements && state?.userData?.entitlements['feature-graph-overview']) {
+                                        setExpended(true);
+                                    }
+                                }
+                            }}
                         >
                             {expend && <IoClose />}
 
                             {!expend && <MdZoomOutMap />}
                             {!expend && state?.userData?.entitlements && !state?.userData?.entitlements['feature-graph-overview'] && (
-                                <LockFeature header={'Full screen'} />
+                                <FaArrowCircleUp className="lock-feature-icon" />
                             )}
                         </div>
                         {expend && (
@@ -260,8 +264,8 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
             {!isLoading && nodes?.length === 0 && (
                 <div className="empty-connections-container">
                     <GraphPlaceholder alt="graphPlaceholder" onClick={() => createStationTrigger(true)} />
-                    <p>There are no entities to display</p>
-                    <span className="desc">Please create at least one entity, such as a station, to display the graph overview.</span>
+                    <p>No components to display</p>
+                    <span className="desc">Please create at least one entity, like a station, in order to present the graph.</span>
                     <Button
                         className="modal-btn"
                         height="34px"
@@ -276,6 +280,7 @@ const StreamLineage = ({ expend, setExpended, createStationTrigger }) => {
                     />
                 </div>
             )}
+            <CloudModal type="upgrade" open={openCloudModal} handleClose={() => setOpenCloudModal(false)} />
         </div>
     );
 };
