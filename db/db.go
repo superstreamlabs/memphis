@@ -6668,10 +6668,11 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	_, err = tx.Query(ctx, stmt.Name, cgName, stationId)
+	rows, err := tx.Query(ctx, stmt.Name, cgName, stationId)
 	if err != nil {
 		return err
 	}
+	rows.Close()
 
 	query = `DELETE FROM dls_messages WHERE message_type = 'poison' AND poisoned_cgs = '{}' OR poisoned_cgs IS NULL;`
 	stmt, err = tx.Prepare(ctx, "delete_dls_message", query)
@@ -6679,10 +6680,11 @@ func RemovePoisonedCg(stationId int, cgName string) error {
 		return err
 	}
 
-	_, err = tx.Query(ctx, stmt.Name)
+	rows, err = tx.Query(ctx, stmt.Name)
 	if err != nil {
 		return err
 	}
+	rows.Close()
 
 	err = tx.Commit(ctx)
 	if err != nil {
