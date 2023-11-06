@@ -46,6 +46,7 @@ type CreateIntegration struct {
 	Properties map[string]bool        `json:"properties"`
 	UIUrl      string                 `json:"ui_url"`
 	TenantName string                 `json:"tenant_name"`
+	IsValid    bool                   `json:"is_valid"`
 }
 
 type GetIntegrationDetailsSchema struct {
