@@ -216,6 +216,7 @@ func createS3Integration(tenantName string, keys map[string]interface{}, propert
 			Keys:       keys,
 			Properties: properties,
 			TenantName: tenantName,
+			IsValid:    integrationRes.IsValid,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -251,6 +252,7 @@ func updateS3Integration(tenantName string, keys map[string]interface{}, propert
 		Keys:       keys,
 		Properties: properties,
 		TenantName: tenantName,
+		IsValid:    s3Integration.IsValid,
 	}
 
 	msg, err := json.Marshal(integrationToUpdate)
