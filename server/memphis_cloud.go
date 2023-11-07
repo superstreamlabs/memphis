@@ -2221,3 +2221,7 @@ func sendDeleteAllFunctionsReqToMS(user models.User, tenantName, scmType, repo, 
 
 func sendCloneFunctionReqToMS(connectedRepo interface{}, user models.User, scm string, bodyToUpdate models.CreateIntegrationSchema, index int) {
 }
+
+func GetAllFirstActiveFunctionsIDByStationID(stationId int, tenantName string) (map[int]int, error) {
+	return map[int]int{}, nil
+}
