@@ -14,6 +14,8 @@ import './style.scss';
 
 import React, { useContext, useState, useEffect } from 'react';
 import Button from '../../../components/button';
+import CloudModal from '../../../components/cloudModal';
+import { Context } from '../../../hooks/store';
 import { ReactComponent as LogoTexeMemphis } from '../../../assets/images/logoTexeMemphis.svg';
 import { ReactComponent as RedirectWhiteIcon } from '../../../assets/images/exportWhite.svg';
 import { ReactComponent as DocumentIcon } from '../../../assets/images/documentGroupIcon.svg';
@@ -21,11 +23,17 @@ import { ReactComponent as DisordIcon } from '../../../assets/images/discordGrou
 import { ReactComponent as WindowIcon } from '../../../assets/images/windowGroupIcon.svg';
 
 function SoftwareUpates({}) {
-    const [version, setVersion] = useState({
-        currentVersion: 'v0.4.3 - Beta',
-        currentVersionURL: 'https://docs.memphis.dev/memphis/release-notes/releases/v0.4.3-beta',
-        isUpdateAvailable: true
-    });
+    const [state, dispatch] = useContext(Context);
+    const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
+    const [version, setVersion] = useState({});
+    console.log(state);
+
+    useEffect(() => {
+        setVersion({
+            currentVersion: 'v' + state?.currentVersion,
+            isUpdateAvailable: !state?.isLatest
+        });
+    }, [state]);
     return (
         <div className="softwate-updates-container">
             <div className="rows">
@@ -33,8 +41,8 @@ function SoftwareUpates({}) {
                     <div className="title-component">
                         <div className="versions">
                             <LogoTexeMemphis alt="Memphis logo" />
-                            <label className="curr-version">{version.currentVersion}</label>
-                            {version.isUpdateAvailable && <div className="red-dot" />}
+                            <label className="curr-version">{version?.currentVersion}</label>
+                            {version?.isUpdateAvailable && <div className="red-dot" />}
                         </div>
                         <Button
                             width="200px"
@@ -75,27 +83,43 @@ function SoftwareUpates({}) {
                     </div>
                 </div>
                 <div className="charts">
-                    <div className="item-component">
+                    <div
+                        className="item-component"
+                        onClick={() => {
+                            window.open('https://docs.memphis.dev/memphis/getting-started/readme', '_blank');
+                        }}
+                    >
                         <DocumentIcon />
                         <p>Read Our documentation</p>
                         <span>
-                            Read our documentation to learn more about <a href="https://docs.memphis.dev/memphis/getting-started/readme"> Memphis.dev</a>
+                            Read our documentation to learn more about <span> Memphis.dev</span>
                         </span>
                     </div>
-                    <div className="item-component">
+                    <div
+                        className="item-component"
+                        onClick={() => {
+                            window.open('https://memphis.dev/discord', '_blank');
+                        }}
+                    >
                         <DisordIcon />
                         <p>Join our Discord</p>
                         <span>
-                            Find <a href="https://memphis.dev/open-source-support-bundle/">Memphis.dev's</a> Open-Source contributors and maintainers here
+                            Find <span>Memphis.dev's</span> Open-Source contributors and maintainers here
                         </span>
                     </div>
-                    <div className="item-component">
+                    <div
+                        className="item-component"
+                        onClick={() => {
+                            setIsCloudModalOpen(true);
+                        }}
+                    >
                         <WindowIcon />
                         <p>Open a service request</p>
-                        <span>Lorem ipsum dolor sit amet, consectetur adipiscing elit. </span>
+                        <span>If you have any questions or need assistance. </span>
                     </div>
                 </div>
             </div>
+            <CloudModal type={'bundle'} open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
     );
 }

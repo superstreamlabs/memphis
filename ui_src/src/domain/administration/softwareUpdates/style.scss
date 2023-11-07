@@ -50,6 +50,8 @@
                 justify-content: center;
                 align-items: center;
 
+                cursor: pointer;
+
                 svg {
                     margin-bottom: 16px;
                 }
@@ -67,8 +69,9 @@
                     font-family: 'Inter';
                     font-size: 12px;
                     max-width: 60%;
+                    text-align: center;
 
-                    a {
+                    span {
                         color: #6557ff;
                         font-family: 'InterMedium';
                         font-size: 12px;
@@ -79,7 +82,6 @@
         }
         .item-component {
             width: 100%;
-            // height: 100%;
             border-radius: 8px;
             background-color: #ffffff;
             box-shadow: 0px 23px 44px 0px rgba(176, 183, 195, 0.14), 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
