@@ -184,6 +184,7 @@ func (it IntegrationsHandler) handleUpdateSlackIntegration(tenantName, integrati
 	}
 	return slackIntegration, 0, nil
 }
+
 func createSlackIntegration(tenantName string, keys map[string]interface{}, properties map[string]bool, uiUrl string) (models.Integration, error) {
 	var slackIntegration models.Integration
 	exist, slackIntegration, err := db.GetIntegration("slack", tenantName)
@@ -213,6 +214,7 @@ func createSlackIntegration(tenantName string, keys map[string]interface{}, prop
 			Properties: properties,
 			UIUrl:      uiUrl,
 			TenantName: tenantName,
+			IsValid:    integrationRes.IsValid,
 		}
 		msg, err := json.Marshal(integrationToUpdate)
 		if err != nil {
@@ -274,6 +276,7 @@ func updateSlackIntegration(tenantName string, authToken string, channelID strin
 		Properties: properties,
 		UIUrl:      uiUrl,
 		TenantName: tenantName,
+		IsValid:    slackIntegration.IsValid,
 	}
 	msg, err := json.Marshal(integrationToUpdate)
 	if err != nil {
@@ -300,6 +303,7 @@ func testSlackIntegration(authToken string) error {
 	if err != nil {
 		return errors.New("invalid auth token")
 	}
+
 	return nil
 }
 
