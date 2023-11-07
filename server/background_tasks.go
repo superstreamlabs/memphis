@@ -665,15 +665,15 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				}
 				err := testGithubIntegration(integration.Keys["installation_id"].(string))
 				if err != nil {
-					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testGithubIntegration: %v", integration.TenantName, err.Error())
+					serv.Errorf("CheckBrokenConnectedIntegrations at testGithubIntegration: %v", err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				}
 			case "slack":
@@ -686,19 +686,19 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				}
 				authToken, err := DecryptAES(key, integration.Keys["auth_token"].(string))
 				if err != nil {
-					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
+					serv.Errorf("CheckBrokenConnectedIntegrations at DecryptAES: %v", err.Error())
 				}
 				err = testSlackIntegration(authToken)
 				if err != nil {
 					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testSlackIntegration: %v", integration.TenantName, err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				}
 			case "s3":
@@ -724,16 +724,16 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				accessKey := integration.Keys["access_key"].(string)
 				secretKey, err := DecryptAES(key, integration.Keys["secret_key"].(string))
 				if err != nil {
-					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at DecryptAES: %v", integration.TenantName, err.Error())
+					serv.Errorf("CheckBrokenConnectedIntegrations at DecryptAES: %v", err.Error())
 				}
 
 				provider := credentials.NewStaticCredentialsProvider(accessKey, secretKey, "")
 				_, err = provider.Retrieve(context.Background())
 				if err != nil {
 					if strings.Contains(err.Error(), "static credentials are empty") {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at provider.Retrieve: credentials are empty %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at provider.Retrieve: credentials are empty %v", err.Error())
 					} else {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at provider.Retrieve: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at provider.Retrieve: %v", err.Error())
 					}
 				}
 				cfg, err := awsconfig.LoadDefaultConfig(context.Background(),
@@ -742,7 +742,7 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 					awsconfig.WithEndpointResolverWithOptions(getS3EndpointResolver(integration.Keys["region"].(string), integration.Keys["url"].(string))),
 				)
 				if err != nil {
-					serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at awsconfig.LoadDefaultConfig: %v", integration.TenantName, err.Error())
+					serv.Errorf("CheckBrokenConnectedIntegrations at awsconfig.LoadDefaultConfig: %v", err.Error())
 				}
 				var usePathStyle bool
 				svc := s3.NewFromConfig(cfg, func(o *s3.Options) {
@@ -756,15 +756,15 @@ func (s *Server) CheckBrokenConnectedIntegrations() error {
 				})
 				_, err = testS3Integration(svc, integration.Keys["bucket_name"].(string), integration.Keys["url"].(string))
 				if err != nil {
-					serv.Warnf("[tenant: %s]CheckBrokenConnectedIntegrations at testS3Integration: %v", integration.TenantName, err.Error())
+					serv.Errorf("CheckBrokenConnectedIntegrations at testS3Integration: %v", err.Error())
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, false)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				} else {
 					err = db.UpdateIsValidIntegration(integration.TenantName, integration.Name, true)
 					if err != nil {
-						serv.Errorf("[tenant: %s]CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", integration.TenantName, err.Error())
+						serv.Errorf("CheckBrokenConnectedIntegrations at UpdateIsValidIntegration: %v", err.Error())
 					}
 				}
 			}

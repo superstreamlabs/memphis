@@ -34,6 +34,7 @@ func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, bo
 }
 
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
+	return
 }
 
 func getGithubClientWithoutAccessToken() *github.Client {

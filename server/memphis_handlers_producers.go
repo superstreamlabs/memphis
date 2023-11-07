@@ -223,13 +223,6 @@ func (s *Server) createProducerDirect(c *client, reply string, msg []byte) {
 		return
 	}
 
-	firstFunctions, err := GetAllFirstActiveFunctionsIDByStationID(station.ID, tenantName)
-	if err != nil {
-		s.Errorf("[tenant: %v][user: %v]createProducerDirect at GetAllFirstActiveFunctionsIDByStationID: Producer %v at station %v: %v", cpr.TenantName, cpr.Username, cpr.Name, cpr.StationName, err.Error())
-		respondWithRespErr(s.MemphisGlobalAccountString(), s, reply, fmt.Errorf("got an error while getting the functions data"), &resp)
-	}
-	resp.StationPartitionsFirstFunctions = firstFunctions
-	resp.StationVersion = station.Version
 	partitions := models.PartitionsUpdate{PartitionsList: station.PartitionsList}
 	resp.PartitionsUpdate = partitions
 	resp.SchemaVerseToDls = schemaVerseToDls

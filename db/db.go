@@ -4138,9 +4138,8 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 		name, 
 		keys,
 		properties,
-		tenant_name,
-		is_valid) 
-    VALUES($1, $2, $3, $4, $5) RETURNING id`
+		tenant_name) 
+    VALUES($1, $2, $3, $4) RETURNING id`
 
 	stmt, err := conn.Conn().Prepare(ctx, "insert_new_integration", query)
 	if err != nil {
@@ -4148,7 +4147,7 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 	}
 
 	var integrationId int
-	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName, true)
+	rows, err := conn.Conn().Query(ctx, stmt.Name, name, keys, properties, tenantName)
 	if err != nil {
 		return models.Integration{}, err
 	}
@@ -4182,7 +4181,6 @@ func InsertNewIntegration(tenantName string, name string, keys map[string]interf
 		Keys:       keys,
 		Properties: properties,
 		TenantName: tenantName,
-		IsValid:    true,
 	}
 	return newIntegration, nil
 }

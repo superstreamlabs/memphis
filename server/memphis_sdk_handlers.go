@@ -87,13 +87,11 @@ type createConsumerResponseV1 struct {
 }
 
 type createProducerResponse struct {
-	SchemaUpdate                    models.SchemaUpdateInit `json:"schema_update"`
-	PartitionsUpdate                models.PartitionsUpdate `json:"partitions_update"`
-	SchemaVerseToDls                bool                    `json:"schemaverse_to_dls"`
-	ClusterSendNotification         bool                    `json:"send_notification"`
-	StationVersion                  int                     `json:"station_version"`
-	StationPartitionsFirstFunctions map[int]int             `json:"station_partitions_first_functions"`
-	Err                             string                  `json:"error"`
+	SchemaUpdate            models.SchemaUpdateInit         `json:"schema_update"`
+	PartitionsUpdate        models.PartitionsUpdate         `json:"partitions_update"`
+	SchemaVerseToDls        bool                            `json:"schemaverse_to_dls"`
+	ClusterSendNotification bool                            `json:"send_notification"`
+	Err                     string                          `json:"error"`
 }
 
 type destroyProducerRequestV0 struct {
