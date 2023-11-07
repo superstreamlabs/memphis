@@ -1,7 +1,12 @@
 {
   "files": {
+<<<<<<< HEAD
     "main.css": "/static/css/main.9f9e2080.css",
     "main.js": "/static/js/main.e8454a5c.js",
+=======
+    "main.css": "/static/css/main.5cc9e7a4.css",
+    "main.js": "/static/js/main.435d1c3e.js",
+>>>>>>> origin/master
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -308,7 +313,12 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
+<<<<<<< HEAD
     "static/css/main.9f9e2080.css",
     "static/js/main.e8454a5c.js"
+=======
+    "static/css/main.5cc9e7a4.css",
+    "static/js/main.435d1c3e.js"
+>>>>>>> origin/master
   ]
 }
