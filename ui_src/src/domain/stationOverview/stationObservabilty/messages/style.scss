@@ -282,6 +282,13 @@
         gap: 20px;
         height: calc(100% - 70px);
         overflow: scroll;
+
+        .horizontal-divider {
+            width: 100%;
+            height: 1px;
+            background: #979797;
+            opacity: 0.1;
+        }
     }
     .use-dls-button {
         display: flex;
