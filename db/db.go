@@ -4713,7 +4713,7 @@ func CountAllUsersByTenant(tenantName string) (int64, error) {
 		return 0, err
 	}
 	defer conn.Release()
-	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1`
+	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
 	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
 	if err != nil {
 		return 0, err
