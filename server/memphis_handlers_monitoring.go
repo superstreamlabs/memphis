@@ -1334,3 +1334,45 @@ func (mh MonitoringHandler) GetGraphOverview(c *gin.Context) {
 
 	c.IndentedJSON(200, res)
 }
+
+func (mh MonitoringHandler) GetSystemGeneralInfo(c *gin.Context) {
+	user, err := getUserDetailsFromMiddleware(c)
+	if err != nil {
+		serv.Errorf("GetSystemGeneralInfo at getUserDetailsFromMiddleware: %v", err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	totalAmountBrokers := 1
+
+	v, err := serv.Varz(nil)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at serv.Varz : %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	if len(v.Cluster.URLs) > 0 {
+		totalAmountBrokers = len(v.Cluster.URLs)
+	}
+
+	stationsCount, err := db.CountStationsByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at CountStationsByTenant: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	usersCount, err := db.CountAllUsersByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at CountAllUsersByTenant: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+
+	schemasCount, err := db.CountAllSchemasByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]GetSystemGeneralInfo at CountAllSchemasByTenant: %v", user.TenantName, user.Username, err.Error())
+		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+		return
+	}
+	c.IndentedJSON(200, gin.H{"total_amount_brokers": totalAmountBrokers, "total_stations": stationsCount, "total_users": usersCount, "total_schemas": schemasCount})
+}

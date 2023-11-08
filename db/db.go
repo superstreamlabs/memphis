@@ -1722,6 +1722,27 @@ func GetAllStations() ([]models.Station, error) {
 	return stations, nil
 }
 
+func CountStationsByTenant(tenantName string) (int, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM stations where tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_count_stations_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	var count int
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
 func GetAllStationsDetails() ([]models.ExtendedStation, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
@@ -4005,6 +4026,28 @@ func InsertNewSchemaVersion(schemaVersionNumber int, userId int, username string
 	return newSchemaVersion, rowsAffected, nil
 }
 
+func CountAllSchemasByTenant(tenantName string) (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM schemas WHERE tenant_name = $1`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_schemas_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
 // Integration Functions
 func GetIntegration(name string, tenantName string) (bool, models.Integration, error) {
 	if tenantName != conf.GlobalAccount {
@@ -4654,6 +4697,28 @@ func CountAllUsers() (int64, error) {
 		return 0, err
 	}
 	err = conn.Conn().QueryRow(ctx, stmt.Name).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func CountAllUsersByTenant(tenantName string) (int64, error) {
+	var count int64
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer conn.Release()
+	query := `SELECT COUNT(*) FROM users WHERE tenant_name = $1 AND username NOT LIKE '$%'` // filter memphis internal users`
+	stmt, err := conn.Conn().Prepare(ctx, "get_total_users_by_tenant", query)
+	if err != nil {
+		return 0, err
+	}
+	err = conn.Conn().QueryRow(ctx, stmt.Name, tenantName).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
