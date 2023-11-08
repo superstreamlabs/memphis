@@ -528,7 +528,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 
 	var totalMessages int
-	var partitionsList []int
 	if body.PartitionNumber == -1 {
 		totalMessages, err = stationsHandler.GetTotalMessages(station.TenantName, station.Name, station.PartitionsList)
 		if err != nil {
@@ -541,7 +540,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			}
 			return
 		}
-		partitionsList = station.PartitionsList
 	} else {
 		totalMessages, err = stationsHandler.GetTotalPartitionMessages(station.TenantName, station.Name, body.PartitionNumber)
 		if err != nil {
@@ -560,7 +558,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData: %v", user.TenantName, user.Username, errMsg)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 		}
-		partitionsList = []int{body.PartitionNumber}
 	}
 
 	var avgMsgSize int64
@@ -673,13 +670,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 	}
 	var response gin.H
 
-	functions, err := GetStationAttachedFunctionsByPartitions(station.ID, partitionsList)
-	if err != nil {
-		serv.Errorf("[tenant: %v][user: %v]GetStationOverviewData at GetAttachedFunctionsByStationIDAndPartitions: At station %v: %v", user.TenantName, user.Username, body.StationName, err.Error())
-		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
-		return
-	}
-
 	// Check when the schema object in station is not empty, not optional for non native stations
 	if station.SchemaName != "" && station.SchemaVersionNumber != 0 {
 
@@ -731,7 +721,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"tiered_storage_enabled":        station.TieredStorageEnabled,
 			"created_by_username":           station.CreatedByUsername,
 			"resend_disabled":               station.ResendDisabled,
-			"functions":                     functions,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -761,7 +750,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
-				"functions":                     functions,
 			}
 		} else {
 			response = gin.H{
@@ -788,7 +776,6 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
-				"functions":                     functions,
 			}
 		}
 	}
