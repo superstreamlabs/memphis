@@ -42,6 +42,7 @@ const (
 	ws_updates_interval_sec             = 20
 	memphisWS_subj_GetAllFunctions      = "get_all_functions"
 	memphisWS_subj_GetGraphOverview     = "get_graph_overview"
+	memphisWS_subj_GetFunctionsOverview = "get_functions_overview"
 )
 
 type memphisWSReqFiller func(tenantName string) (any, error)
@@ -249,7 +250,6 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 		return func(string) (any, error) {
 			return memphisWSGetSystemLogs(h, logLevel, logSource)
 		}, nil
-
 	case memphisWS_Subj_AllSchemasData:
 		return func(string) (any, error) {
 			return h.Schemas.GetAllSchemasDetails(tenantName)
@@ -269,6 +269,16 @@ func memphisWSGetReqFillerFromSubj(s *Server, h *Handlers, subj string, tenantNa
 	case memphisWS_subj_GetGraphOverview:
 		return func(string) (any, error) {
 			return h.Monitoring.getGraphOverview(tenantName)
+		}, nil
+	case memphisWS_subj_GetFunctionsOverview:
+		return func(string) (any, error) {
+			stationName := tokenAt(subj, 2)
+			partition := tokenAt(subj, 3)
+			partitionInt, err := strconv.Atoi(partition)
+			if err != nil {
+				return "", err
+			}
+			return h.Monitoring.GetFunctionsOverview(stationName, tenantName, partitionInt)
 		}, nil
 	default:
 		return nil, errors.New("invalid subject")
