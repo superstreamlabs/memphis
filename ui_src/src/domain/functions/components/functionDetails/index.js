@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -27,44 +27,76 @@ import Button from '../../../../components/button';
 import TagsList from '../../../../components/tagList';
 import Spinner from '../../../../components/spinner';
 
-import { isCloud, parsingDate } from '../../../../services/valueConvertor';
+import { parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
 import { ReactComponent as CodeBlackIcon } from '../../../../assets/images/codeIconBlack.svg';
 import { ReactComponent as GithubBranchIcon } from '../../../../assets/images/githubBranchIcon.svg';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
-import CloudOnly from '../../../../components/cloudOnly';
+import { ReactComponent as ArrowBackIcon } from '../../../../assets/images/arrowBackIcon.svg';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
 import TestFunctionModal from '../testFunctionModal';
-import AttachTooltip from '../AttachTooltip';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { BsFileEarmarkCode } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
 import { Tree } from 'antd';
-import { REST_CODE_EXAMPLE } from '../../../../const/codeExample';
-import { code } from './code';
+import { httpRequest } from '../../../../services/http';
+import { ApiEndpoints } from '../../../../const/apiEndpoints';
 
-const files = ['domain', 'components', 'domain/functions/functionDetails/index.js', 'domain/functions/functionDetails/style.scss', 'domain/components/test.js'];
-
-function FunctionDetails({ selectedFunction, installed }) {
-    const [open, setOpen] = useState(false);
+function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnInstall, clickApply, onBackToFunction = null }) {
     const [tabValue, setTabValue] = useState('Details');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
-    const [markdown, setMarkdown] = useState('');
     const [treeData, setTreeData] = useState([]);
     const [selectedVersion, setSelectedVersion] = useState('latest');
+    const [metaData, setMetaData] = useState({});
+    const [readme, setReadme] = useState('');
+    const [versions, setVersions] = useState([]);
+    const [files, setFiles] = useState([]);
+    const [fileContent, setFileContent] = useState(null);
+
+    const [isFileContentLoading, setIsFileContentLoading] = useState(false);
+
     const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
 
     useEffect(() => {
+        getFunctionDetails();
+    }, [selectedFunction]);
+
+    useEffect(() => {
         buildTree(files);
-    }, []);
+    }, [files]);
+
+    const getFunctionDetails = async () => {
+        try {
+            const response = await httpRequest(
+                'GET',
+                ApiEndpoints.GET_FUNCTION_DETAIL +
+                    '?repo=' +
+                    encodeURI(selectedFunction?.repo) +
+                    '&branch=' +
+                    encodeURI(selectedFunction?.branch) +
+                    '&owner=' +
+                    encodeURI(selectedFunction?.owner) +
+                    '&scm=' +
+                    encodeURI(selectedFunction?.scm) +
+                    '&function_name=' +
+                    encodeURI(selectedFunction?.function_name)
+            );
+            setMetaData(response?.metadata_function);
+            setReadme(response?.readme_content);
+            setVersions(response?.versions);
+            setFiles([...response?.s3_object_keys] || []);
+        } catch (e) {
+            return;
+        }
+    };
 
     const renderNoFunctionDetails = (
         <div className="no-function-to-display">
             <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
-            <p className="title">No functions found</p>
+            <p className="title">There is no available Reamde file</p>
         </div>
     );
 
@@ -77,7 +109,7 @@ function FunctionDetails({ selectedFunction, installed }) {
             if (pathParts.length === 1) {
                 root = {
                     title: pathParts[0],
-                    key: index,
+                    key: `index-${index}`,
                     icon: <GoFileDirectoryFill style={{ color: '#B9DAF0' }} />,
                     children: []
                 };
@@ -86,7 +118,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                 let parent = root;
                 for (let i = 1; i < pathParts.length; i++) {
                     let found = false;
-                    for (let j = 0; j < parent.children.length; j++) {
+                    for (let j = 0; j < parent.children?.length; j++) {
                         if (parent.children[j].title === pathParts[i]) {
                             parent = parent.children[j];
                             found = true;
@@ -116,12 +148,43 @@ function FunctionDetails({ selectedFunction, installed }) {
         setTreeData(tree);
     };
 
-    const onSelect = (selectedKeys, info) => {
-        !isNaN(selectedKeys[0]) ? console.log(files[selectedKeys[0]]) : console.log('not a file');
+    const onSelect = async (selectedKeys, info) => {
+        const path = !isNaN(selectedKeys[0]) ? files[selectedKeys[0]] : null;
+        if (!path) return;
+        try {
+            setIsFileContentLoading(true);
+            const response = await httpRequest(
+                'GET',
+                ApiEndpoints.GET_FUNCTION_FILE_CODE +
+                    '?repo=' +
+                    encodeURI(metaData?.repo) +
+                    '&branch=' +
+                    encodeURI(metaData?.branch) +
+                    '&owner=' +
+                    encodeURI(metaData?.owner) +
+                    '&scm=' +
+                    encodeURI(metaData?.scm) +
+                    '&function_name=' +
+                    encodeURI(metaData?.function_name) +
+                    '&path=' +
+                    encodeURI(path)
+            );
+            setFileContent(response?.content);
+        } catch (e) {
+        } finally {
+            setIsFileContentLoading(false);
+        }
     };
 
     return (
         <div className="function-drawer-container">
+            {onBackToFunction && (
+                <div className="back-to-function" onClick={onBackToFunction}>
+                    <ArrowBackIcon />
+                    <span>Back to Function</span>
+                </div>
+            )}
+
             <div className="drawer-header ">
                 {selectedFunction?.image ? (
                     <img src={selectedFunction?.image} alt="Function icon" height="120px" width="120px" />
@@ -134,7 +197,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                     <div>
                         <deatils is="x3d">
                             <div className="function-owner">
-                                {selectedFunction.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                {selectedFunction?.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
                                 <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
@@ -150,7 +213,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                             <Divider type="vertical" />
                             <commits is="x3d">
                                 <FiGitCommit />
-                                <label>Last commit on {parsingDate(selectedFunction?.last_commit, false, false)}</label>
+                                <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                             </commits>
                         </deatils>
                     </div>
@@ -158,8 +221,17 @@ function FunctionDetails({ selectedFunction, installed }) {
                     <actions is="x3d">
                         <div className="action-section-btn">
                             <div className="header-flex">
-                                <AttachTooltip disabled={!isCloud() || selectedFunction?.install_in_progress || !installed} />
-                                {!isCloud() && <CloudOnly />}
+                                <Button
+                                    placeholder="Attach"
+                                    width={'100px'}
+                                    backgroundColorType={'purple'}
+                                    colorType={'white'}
+                                    radiusType={'circle'}
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    onClick={() => clickApply('attach')}
+                                    disabled={selectedFunction?.install_in_progress || !installed}
+                                />
                             </div>
                             <div className="header-flex">
                                 <Button
@@ -179,19 +251,15 @@ function FunctionDetails({ selectedFunction, installed }) {
                                         )
                                     }
                                     width={'100px'}
-                                    backgroundColorType={installed ? 'purple-light' : 'purple'}
+                                    backgroundColorType="purple"
                                     colorType={'white'}
                                     radiusType={'circle'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    onClick={() => {
-                                        // installFunction() - not implemented yet
-                                        return;
-                                    }}
+                                    onClick={() => (installed ? handleUnInstall() : handleInstall())}
                                     isLoading={selectedFunction?.install_in_progress}
-                                    disabled={!isCloud() || selectedFunction?.install_in_progress}
+                                    disabled={selectedFunction?.install_in_progress}
                                 />
-                                {!isCloud() && <CloudOnly />}
                             </div>
                         </div>
                         <SelectComponent
@@ -205,11 +273,11 @@ function FunctionDetails({ selectedFunction, installed }) {
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             value={`Version: ${selectedVersion}`}
-                            disabled={!isCloud() || !installed}
+                            disabled={!installed}
                             onChange={(e) => {
                                 setSelectedVersion(e);
                             }}
-                            options={['latest', '1.0.0', '1.0.1', '1.0.2']}
+                            options={versions}
                         />
                     </actions>
                 </div>
@@ -224,18 +292,17 @@ function FunctionDetails({ selectedFunction, installed }) {
                 <code is="x3d">
                     {/* <Spinner /> */}
                     <span className="readme">
-                        {/* {renderNoFunctionDetails} */}
-                        <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(code.code)}</ReactMarkdown>
+                        {readme === '' ? renderNoFunctionDetails : <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(readme)}</ReactMarkdown>}
                     </span>
                     <Divider type="vertical" />
                     <span className="function-details">
                         <div>
                             <deatils is="x3d">
-                                <label className="label-title">Info</label>
+                                <label className="label-title">Information</label>
                                 <info is="x3d">
                                     <repo is="x3d">
                                         <GoRepo />
-                                        <label>{selectedFunction?.repository}</label>
+                                        <label>{selectedFunction?.repo}</label>
                                     </repo>
                                     <branch is="x3d">
                                         <GithubBranchIcon />
@@ -248,7 +315,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                                 </info>
                             </deatils>
                             <Divider />
-                            <label className="label-title">Info</label>
+                            <label className="label-title">Social</label>
                             <deatils is="x3d">
                                 <downloads is="x3d">
                                     <BiDownload className="download-icon" />
@@ -262,11 +329,11 @@ function FunctionDetails({ selectedFunction, installed }) {
                                 <Divider type="vertical" />
                                 <commits is="x3d">
                                     <FiGitCommit />
-                                    <label>Last commit on {parsingDate(selectedFunction?.last_commit, false, false)}</label>
+                                    <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                                 </commits>
                             </deatils>
                             <Divider />
-                            <label className="label-title">Info</label>
+                            <label className="label-title">Tags</label>
                             <TagsList tagsToShow={3} tags={selectedFunction?.tags} entityType="function" entityName={selectedFunction?.function_name} />
                         </div>
                     </span>
@@ -288,6 +355,7 @@ function FunctionDetails({ selectedFunction, installed }) {
                                     <CollapseArrowIcon className={expanded ? 'collapse-arrow open arrow' : 'collapse-arrow arrow'} alt="collapse-arrow" />
                                 )}
                                 defaultExpandAll={true}
+                                // selectedKeys={[selectedFileTreeKey]}
                             />
                         </div>
                     </div>
@@ -303,26 +371,30 @@ function FunctionDetails({ selectedFunction, installed }) {
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!isCloud() || !installed}
+                                disabled={!installed}
                             />
                             <div className="code-content">
-                                <Editor
-                                    options={{
-                                        minimap: { enabled: false },
-                                        scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
-                                        scrollBeyondLastLine: false,
-                                        roundedSelection: false,
-                                        formatOnPaste: true,
-                                        formatOnType: true,
-                                        readOnly: true,
-                                        fontSize: '12px',
-                                        fontFamily: 'Inter'
-                                    }}
-                                    language={'javascript'}
-                                    height="calc(100% - 10px)"
-                                    width="calc(100% - 25px)"
-                                    value={REST_CODE_EXAMPLE['.NET (C#)'].consumer}
-                                />
+                                {isFileContentLoading ? (
+                                    <Spinner />
+                                ) : (
+                                    <Editor
+                                        options={{
+                                            minimap: { enabled: false },
+                                            scrollbar: { verticalScrollbarSize: 0, horizontalScrollbarSize: 0 },
+                                            scrollBeyondLastLine: false,
+                                            roundedSelection: false,
+                                            formatOnPaste: true,
+                                            formatOnType: true,
+                                            readOnly: true,
+                                            fontSize: '12px',
+                                            fontFamily: 'Inter'
+                                        }}
+                                        language={'javascript'}
+                                        height="calc(100% - 10px)"
+                                        width="calc(100% - 25px)"
+                                        value={fileContent}
+                                    />
+                                )}
                             </div>
                         </>
                     </div>

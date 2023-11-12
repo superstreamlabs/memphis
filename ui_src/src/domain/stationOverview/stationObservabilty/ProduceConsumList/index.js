@@ -149,7 +149,7 @@ const ProduceConsumList = ({ producer }) => {
     };
 
     return (
-        <div>
+        <div className="station-observabilty-side">
             <div className="pubSub-list-container">
                 <div className="header">
                     {producer && (

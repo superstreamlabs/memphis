@@ -80,6 +80,16 @@
         display: flex;
         gap: 10px;
         justify-content: flex-end;
+        .update-refresh {
+            display: flex;
+            position: relative;
+            .ant-badge {
+                position: absolute;
+                right: 5px;
+                top: 5px;
+                z-index: 5;
+            }
+        }
     }
     .function-list-collapse {
         width: 100%;
@@ -193,6 +203,23 @@
             display: flex;
             align-items: center;
             gap: 10px;
+
+            .refresh {
+                cursor: pointer;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                border: 1px solid #e6e6e6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                .ant-spin {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+            }
             .repo-item-icon {
                 height: 25px;
                 width: 25px;
@@ -225,5 +252,6 @@
 .clone-popover {
     .ant-popover-inner-content {
         padding: 20px !important;
+        width: 540px;
     }
 }

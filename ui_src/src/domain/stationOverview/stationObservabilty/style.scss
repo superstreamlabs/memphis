@@ -1,42 +1,53 @@
 .station-observabilty-container {
     display: flex;
-    justify-content: space-between;
-    min-height: 220px;
-    align-items: center;
+    .station-observabilty-side {
+        flex: 1;
+        padding: 30px 0;
+    }
     .thunnel-from-sub,
     .thunnel-to-pub {
-        width: 10.5vw;
-        min-width: 80px;
-    }
-    .thunnel-to-pub{
+        overflow: hidden;
+        min-width: 90px;
+        width: 130px;
         display: flex;
-        flex-direction: column;
         justify-content: flex-end;
+        align-items: flex-start;
+        div {
+            min-width: 130px;
+            width: 130px;
+            margin-top: 137px;
+        }
     }
-        .ant-space-item {
-            width: 94%;
-            margin-left: 3%;
+    .thunnel-to-pub {
+        display: flex;
+        justify-content: flex-start;
+        div {
+            margin-top: 139px;
+        }
+    }
+    .ant-space-item {
+        width: 94%;
+        margin-left: 3%;
     }
     .ant-collapse-item.ant-collapse-no-arrow {
-        background: #FFFFFF;
-        border: 1px solid #EFEFEF;
+        background: #ffffff;
+        border: 1px solid #efefef;
         box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.06);
         border-radius: 8px;
     }
-    .collapse-header{
+    .collapse-header {
         display: flex;
         justify-content: space-between;
         width: 100%;
-        p{
+        p {
             margin: 0;
             font-family: 'InterSemiBold';
             font-size: 14px;
             display: flex;
         }
-        img{
+        img {
             width: 12px;
             margin-left: 10px;
         }
-        
     }
 }

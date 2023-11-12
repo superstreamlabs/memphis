@@ -199,7 +199,7 @@ const GetStartedModal = ({ open, handleClose }) => {
                 }}
                 open={openCloneModal}
             >
-                <CloneModal />
+                <CloneModal type="onboard" />
             </Modal>
         </Modal>
     );

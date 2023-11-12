@@ -13,6 +13,8 @@
 import './style.scss';
 
 import React, { useEffect, useState } from 'react';
+import { Spin } from 'antd';
+import { SyncOutlined } from '@ant-design/icons';
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
 import { ReactComponent as SearchIcon } from '../../../../assets/images/searchIcon.svg';
@@ -36,36 +38,16 @@ import Button from '../../../../components/button';
 import Modal from '../../../../components/modal';
 import SearchInput from '../../../../components/searchInput';
 import CustomTabs from '../../../../components/Tabs';
-import CloudOnly from '../../../../components/cloudOnly';
 import FunctionBox from '../functionBox';
 import IntegrateFunction from '../integrateFunction';
 import FunctionsGuide from '../functionsGuide';
 import CloneModal from '../../../../components/cloneModal';
+import CloudModal from '../../../../components/cloudModal';
 import { OWNER } from '../../../../const/globalConst';
-import { Collapse, Divider, Popover } from 'antd';
+import { Collapse, Divider, Popover, Badge } from 'antd';
 import { LOCAL_STORAGE_FUNCTION_PAGE_VIEW } from '../../../../const/localStorageConsts';
+import { getFunctionsTabs } from '../../../../services/valueConvertor';
 const { Panel } = Collapse;
-
-const TABS = [
-    {
-        name: 'All',
-        disabled: false
-    },
-    {
-        name: 'Memphis',
-        disabled: false
-    },
-    {
-        name: isCloud() ? (
-            'Private'
-        ) : (
-            <>
-                Private <CloudOnly />
-            </>
-        ),
-        disabled: !isCloud()
-    }
-];
 
 function FunctionList({ tabPrivate }) {
     const [isLoading, setisLoading] = useState(true);
@@ -82,43 +64,37 @@ function FunctionList({ tabPrivate }) {
     const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
     const [connectedRepos, setConnectedRepos] = useState([]);
     const [clickedRefresh, setClickedRefresh] = useState(false);
+    const [refreshIndeicator, setRefreshIndicator] = useState(false);
+    const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
     const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+
+    const TABS = getFunctionsTabs();
 
     const content = (
         <div className="git-repos-list">
-            <div>
-                <div className="git-repos-item">
-                    <div className="left-section">
-                        <MemphisLogo alt="repo" className="repo-item-icon-memphis" />
-                        <span className="repo-data">
-                            <OverflowTip text="memphis-dev-functions" center={false}>
-                                memphis-dev-functions
-                            </OverflowTip>
-                            <OverflowTip text="master" width={'170px'} center={false}>
-                                <label className="last-modified">master</label>
-                            </OverflowTip>
-                        </span>
-                        <MdDone alt="Healty" />
-                    </div>
-                </div>
-                <Divider />
-            </div>
             {connectedRepos?.map((repo, index) => (
                 <div key={index}>
                     <div className="git-repos-item">
                         <div className="left-section">
-                            <RepoIcon alt="repo" className="repo-item-icon" />
+                            {repo?.owner === OWNER ? <MemphisLogo alt="repo" className="repo-item-icon-memphis" /> : <RepoIcon alt="repo" className="repo-item-icon" />}
+
                             <span className="repo-data">
                                 <OverflowTip text={repo?.repo_name} center={false}>
                                     {repo?.repo_name}
                                 </OverflowTip>
-                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_stnc, false, false)}`} width={'170px'} center={false}>
+                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, false, false)}`} width={'170px'} center={false}>
                                     <label className="last-modified">
-                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_stnc, false, false)}
+                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_modified, false, false)}
                                     </label>
                                 </OverflowTip>
                             </span>
-                            <MdDone alt="Healty" />
+                            {repo?.in_progress ? (
+                                <div className="refresh">
+                                    <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                                </div>
+                            ) : (
+                                <MdDone alt="Healty" />
+                            )}
                         </div>
                     </div>
                     <Divider />
@@ -141,7 +117,7 @@ function FunctionList({ tabPrivate }) {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data?.scm_integrated);
             setInstalledFunctionList(data?.installed);
-            setOtherFunctionList(data?.other);
+            setOtherFunctionList(data?.other?.sort((a, b) => (a?.is_valid === b?.is_valid ? 0 : a?.is_valid ? -1 : 1)));
             setConnectedRepos(data?.connected_repos);
             setTimeout(() => {
                 setisLoading(false);
@@ -155,6 +131,25 @@ function FunctionList({ tabPrivate }) {
         getAllFunctions();
         modalFlip(false);
     };
+
+    useEffect(() => {
+        let shouldRefresh = false;
+        installedFunctionList.forEach((func) => {
+            if (func?.installed_in_progress) shouldRefresh = true;
+        });
+        if (!shouldRefresh) {
+            otherFunctionList.forEach((func) => {
+                if (func?.installed_in_progress) shouldRefresh = true;
+            });
+        }
+        if (!shouldRefresh) {
+            connectedRepos.forEach((repo) => {
+                if (repo?.in_progress) shouldRefresh = true;
+            });
+        }
+
+        setRefreshIndicator(shouldRefresh);
+    }, [installedFunctionList, otherFunctionList, connectedRepos]);
 
     useEffect(() => {
         let resultsInstalled = installedFunctionList;
@@ -191,6 +186,38 @@ function FunctionList({ tabPrivate }) {
         modalFlip(true);
     };
 
+    const doneUninstall = (index) => {
+        setFilteredOtherData((prev) => {
+            const data = [...prev];
+            let func = filteredInstalledData[index];
+            func.installed = false;
+            data.push(func);
+            return data;
+        });
+        setFilteredInstalledData((prev) => {
+            const data = [...prev];
+            data.splice(index, 1);
+            return data;
+        });
+    };
+
+    const startInstallation = (index) => {
+        setRefreshIndicator(true);
+        setFilteredInstalledData((prev) => {
+            const data = [...prev];
+            let func = filteredOtherData[index];
+            func.installed_in_progress = true;
+            func.installed = true;
+            data.push(func);
+            return data;
+        });
+        setFilteredOtherData((prev) => {
+            const data = [...prev];
+            data.splice(index, 1);
+            return data;
+        });
+    };
+
     const renderNoFunctionsFound = () => (
         <div className="no-function-to-display">
             <PlaceholderFunctionsIcon width={150} alt="placeholderFunctions" />
@@ -203,19 +230,33 @@ function FunctionList({ tabPrivate }) {
         !isCloud() ? (
             <>
                 {filteredOtherData?.map((func, index) => (
-                    <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                    <FunctionBox key={index} funcDetails={func} integrated={integrated} getAllFunctions={getAllFunctions} />
                 ))}
             </>
         ) : filter === 'installed' ? (
             <>
                 {filteredInstalledData?.map((func, index) => (
-                    <FunctionBox key={index} funcDetails={func} integrated={integrated} installed />
+                    <FunctionBox
+                        key={index}
+                        funcDetails={func}
+                        funcIndex={index}
+                        integrated={integrated}
+                        getAllFunctions={getAllFunctions}
+                        doneUninstall={doneUninstall}
+                    />
                 ))}
             </>
         ) : (
             <>
                 {filteredOtherData?.map((func, index) => (
-                    <FunctionBox key={index} funcDetails={func} integrated={integrated} />
+                    <FunctionBox
+                        key={index}
+                        funcDetails={func}
+                        integrated={integrated}
+                        funcIndex={index}
+                        getAllFunctions={getAllFunctions}
+                        startInstallation={startInstallation}
+                    />
                 ))}
             </>
         );
@@ -238,15 +279,12 @@ function FunctionList({ tabPrivate }) {
                 {isCloud() && (
                     <>
                         <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel
-                                header={<div className="panel-header">{`Installed ${filteredInstalledData?.length > 0 && `(${filteredInstalledData?.length})`}`}</div>}
-                                key={1}
-                            >
+                            <Panel header={<div className="panel-header">{`Installed ${`(${filteredInstalledData?.length || 0})`}`}</div>} key={1}>
                                 <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
                         <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel header={<div className="panel-header">{`Other ${filteredOtherData?.length > 0 && `(${filteredOtherData?.length})`}`}</div>} key={2}>
+                            <Panel header={<div className="panel-header">{`Other ${`(${filteredOtherData?.length || 0})`}`}</div>} key={2}>
                                 <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
                             </Panel>
                         </Collapse>
@@ -271,7 +309,8 @@ function FunctionList({ tabPrivate }) {
                     <span className="memphis-label">Serverless functions to process ingested events "on the fly"</span>
                 </div>
                 <div className="action-section">
-                    {isCloud() && integrated && (
+                    <span className="update-refresh">
+                        {refreshIndeicator && <Badge dot />}
                         <Button
                             width={'36px'}
                             height={'34px'}
@@ -285,7 +324,7 @@ function FunctionList({ tabPrivate }) {
                             isLoading={isLoading}
                             onClick={getAllFunctions}
                         />
-                    )}
+                    </span>
                     <Popover
                         placement="top"
                         title={
@@ -308,15 +347,19 @@ function FunctionList({ tabPrivate }) {
                         onOpenChange={(open) => setClickedRefresh(open)}
                     >
                         <connectedRepos is="x3d">
+                            {connectedRepos.some((repo) => repo?.in_progress) && (
+                                <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                            )}
+
                             <GitHubLogo alt="github icon" />
-                            <label>Connected Git Repository</label>
+                            <label>Connected Git Repositories</label>
                             <Divider type="vertical" />
                             <img src={CollapseArrow} alt="arrow" className={clickedRefresh ? 'open' : 'collapse-arrow'} />
                         </connectedRepos>
                     </Popover>
                     <Popover
                         placement="bottomLeft"
-                        content={<CloneModal />}
+                        content={<CloneModal type="functions" />}
                         width="540px"
                         trigger="click"
                         overlayClassName="clone-popover"
@@ -344,9 +387,8 @@ function FunctionList({ tabPrivate }) {
                     </Popover>
                 </div>
             </div>
-            <div className="function-tabs">
-                <CustomTabs tabs={TABS} defaultActiveKey={tabPrivate ? 'Private' : 'All'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
-            </div>
+            <CustomTabs tabs={TABS} defaultActiveKey={tabPrivate ? 'Private' : 'All'} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
+
             <SearchInput
                 placeholder="Search here"
                 colorType="navy"
@@ -397,8 +439,9 @@ function FunctionList({ tabPrivate }) {
                 clickOutside={() => setIsCloneModalOpen(false)}
                 open={isCloneModalOpen}
             >
-                <CloneModal />
+                <CloneModal type="functions" />
             </Modal>
+            <CloudModal type="cloud" open={isCloudModalOpen} handleClose={() => setIsCloudModalOpen(false)} />
         </div>
     );
 }

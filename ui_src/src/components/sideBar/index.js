@@ -428,11 +428,7 @@ function SideBar() {
                     icon={<FunctionsIcon alt="functionsIcon" width="20" height="20" />}
                     activeIcon={<FunctionsActiveIcon alt="FunctionsActiveIcon" width={20} height={20} />}
                     name="Functions"
-                    onClick={() => {
-                        setBannerType('functions');
-                        setCloudModalOpen(true);
-                    }}
-                    // onClick={() => history.replace(pathDomains.functions)}
+                    onClick={() => history.replace(pathDomains.functions)}
                     onMouseEnter={() => setHoveredItem('functions')}
                     onMouseLeave={() => setHoveredItem('')}
                     route="functions"

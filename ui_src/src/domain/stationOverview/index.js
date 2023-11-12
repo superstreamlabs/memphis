@@ -29,7 +29,8 @@ import { StringCodec, JSONCodec } from 'nats.ws';
 const initializeState = {
     stationMetaData: { is_native: true },
     stationSocketData: {},
-    stationPartition: -1
+    stationPartition: -1,
+    stationFunctions: {}
 };
 let sub;
 
@@ -57,6 +58,7 @@ const StationOverview = () => {
     const getStaionMetaData = async () => {
         try {
             let data = await httpRequest('GET', `${ApiEndpoints.GET_STATION}?station_name=${stationName}`);
+
             data.created_at = await parsingDate(data.created_at);
             stationDispatch({ type: 'SET_STATION_META_DATA', payload: data });
         } catch (error) {

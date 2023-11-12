@@ -52,7 +52,7 @@ const SearchInput = (props) => {
     };
 
     return (
-        <div className="search-input-container">
+        <div className={'search-input-container ' + className}>
             <Input {...fieldProps} bordered={false} prefix={<div className="search-icon">{iconComponent}</div>}></Input>
         </div>
     );

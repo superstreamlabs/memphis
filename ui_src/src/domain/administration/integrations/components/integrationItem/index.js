@@ -72,11 +72,11 @@ const IntegrationItem = ({ value, lockFeature, isOpen }) => {
                         close={(data) => {
                             modalFlip(false);
                             setIntegrateValue(data);
-                            // data !== ref.current &&
-                            //     history.push({
-                            //         pathname: '/functions',
-                            //         integrated: true
-                            //     });
+                            data !== ref.current &&
+                                history.push({
+                                    pathname: '/functions',
+                                    integrated: true
+                                });
                         }}
                         value={ref.current}
                     />

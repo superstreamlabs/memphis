@@ -13,6 +13,7 @@
 import { planType } from '../const/globalConst';
 import { decodeMessage } from './decoder';
 import { LOCAL_STORAGE_PLAN } from '../const/localStorageConsts';
+import CloudOnly from '../components/cloudOnly';
 
 export const convertDateToSeconds = (days, hours, minutes, seconds) => {
     let totalSeconds = 0;
@@ -549,4 +550,35 @@ export const isCheckoutCompletedTrue = (url) => {
 
 export const showUpgradePlan = () => {
     return isCloud() && localStorage.getItem(LOCAL_STORAGE_PLAN) !== planType.BUSINESS;
+};
+
+export const getFunctionsTabs = () => [
+    {
+        name: 'All',
+        disabled: false
+    },
+    {
+        name: 'Memphis',
+        disabled: false
+    },
+    {
+        name: isCloud() ? (
+            'Private'
+        ) : (
+            <>
+                Private <CloudOnly position={'relative'} />
+            </>
+        ),
+        disabled: !isCloud()
+    }
+];
+
+export const convertLongNumbers = (num) => {
+    if (num > 999999999) {
+        return (num / 1000000000).toFixed(0) + 'B';
+    } else if (num > 999999) {
+        return (num / 1000000).toFixed(0) + 'M';
+    } else if (num > 999) {
+        return (num / 1000).toFixed(0) + 'K';
+    } else return num;
 };
