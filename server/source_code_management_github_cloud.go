@@ -25,33 +25,20 @@ var memphisFunctions = map[string]interface{}{
 	"repo_owner": memphisDevFunctionsOwnerName,
 }
 
-type githubRepoDetails struct {
-	RepoName  string `json:"repo_name"`
-	Branch    string `json:"branch"`
-	Type      string `json:"type"`
-	RepoOwner string `json:"repo_owner"`
-}
-
 func (it IntegrationsHandler) handleCreateGithubIntegration(tenantName string, keys map[string]interface{}) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
 }
 
 func (it IntegrationsHandler) handleUpdateGithubIntegration(user models.User, body models.CreateIntegrationSchema) (models.Integration, int, error) {
 	return models.Integration{}, 0, nil
-
 }
+
 func cacheDetailsGithub(keys map[string]interface{}, properties map[string]bool, tenantName string) {
-	return
 }
 
 func getGithubClientWithoutAccessToken() *github.Client {
 	client := github.NewClient(nil)
 	return client
-}
-
-func getGithubClient(tenantName string) (string, string, *github.Client, error) {
-	client := getGithubClientWithoutAccessToken()
-	return "", "", client, nil
 }
 
 func testGithubIntegration(installationId string) error {
@@ -64,15 +51,6 @@ func (s *Server) getGithubRepositories(integration models.Integration, body inte
 
 func (s *Server) getGithubBranches(integration models.Integration, body interface{}) (models.Integration, interface{}, error) {
 	return models.Integration{}, nil, nil
-}
-
-func containsElement(arr []string, val string) bool {
-	for _, item := range arr {
-		if item == val {
-			return true
-		}
-	}
-	return false
 }
 
 func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, functionsDetails map[string][]functionDetails, tenantName string) (map[string][]functionDetails, error) {
@@ -217,6 +195,7 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 func deleteInstallationForAuthenticatedGithubApp(tenantName string) error {
 	return nil
 }
+
 func getGithubKeys(githubIntegrationDetails map[string]interface{}, repoOwner, repo, branch, repoType string) map[string]interface{} {
 	return map[string]interface{}{}
 }

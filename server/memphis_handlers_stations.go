@@ -2527,7 +2527,7 @@ func (s *Server) ResendAllDlsMsgs(stationName string, stationId int, tenantName 
 
 func (s *Server) handleResendAllFailure(user models.User, stationId int, tenantName, stationName string) {
 	systemMessage := SystemMessage{
-		MessageType:    "Error",
+		MessageType:    "error",
 		MessagePayload: fmt.Sprintf("Resend all unacked messages operation in station %s, triggered by user %s has failed due to an internal error:", stationName, user.Username),
 	}
 	err := serv.sendSystemMessageOnWS(user, systemMessage)

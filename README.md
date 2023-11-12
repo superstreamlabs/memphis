@@ -1,4 +1,4 @@
-<a href="https://memphis.dev/memphis-functions-private-beta"><img src="https://gcdnb.pbrd.co/images/v0fx7khYZiRh.png?o=1" alt="Docs-1" border="0"></a>
+[![Github (6)](https://github.com/memphisdev/memphis/assets/107035359/bc2feafc-946c-4569-ab8d-836bc0181890)](https://www.functions.memphis.dev/)
 <p align="center">
 <a href="https://memphis.dev/discord"><img src="https://img.shields.io/discord/963333392844328961?color=6557ff&label=discord" alt="Discord"></a>
 <a href="https://github.com/memphisdev/memphis/issues?q=is%3Aissue+is%3Aclosed"><img src="https://img.shields.io/github/issues-closed/memphisdev/memphis?color=6557ff"></a> 
@@ -50,7 +50,7 @@ docker compose -f docker-compose.yml -p memphis up
 
 </div>
 
-## ✨ Key Features [v1.3.0](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.0-latest)
+## ✨ Key Features [v1.3.1](https://docs.memphis.dev/memphis/release-notes/releases/v1.3.1-stable)
 
 [**Take part in our roadmap!**](https://memphis.dev/roadmap)
 

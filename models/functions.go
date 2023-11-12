@@ -75,12 +75,3 @@ type FunctionsRes struct {
 	ScmIntegrated      bool                     `json:"scm_integrated"`
 	ConnectedRepos     []map[string]interface{} `json:"connected_repos"`
 }
-
-type GetFunctionDetails struct {
-	Repository string `form:"repo" json:"repo"`
-	Branch     string `form:"branch" json:"branch"`
-	Owner      string `form:"owner" json:"owner"`
-	Scm        string `form:"scm" json:"scm"`
-	Type       string `form:"type" json:"type"`
-	Path       string `form:"path" json:"path"`
-}

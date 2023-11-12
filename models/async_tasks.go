@@ -15,11 +15,12 @@ type AsyncTask struct {
 }
 
 type AsyncTaskRes struct {
-	ID          int       `json:"id"`
-	Name        string    `json:"name"`
-	CreatedAt   time.Time `json:"created_at"`
-	CreatedBy   string    `json:"created_by"`
-	StationName string    `json:"station_name"`
+	ID          int         `json:"id"`
+	Name        string      `json:"name"`
+	CreatedAt   time.Time   `json:"created_at"`
+	CreatedBy   string      `json:"created_by"`
+	StationName string      `json:"station_name"`
+	Data        interface{} `json:"data"`
 }
 
 type MetaData struct {

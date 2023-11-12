@@ -388,6 +388,9 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"dls_configuration_poison":      station.DlsConfigurationPoison,
 				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 				"total_dls_messages":            totalDlsAmount,
+				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
+				"resend_disabled":               station.ResendDisabled,
 			}
 		} else {
 			response = map[string]any{
@@ -411,6 +414,9 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"dls_configuration_poison":      station.DlsConfigurationPoison,
 				"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 				"total_dls_messages":            totalDlsAmount,
+				"tiered_storage_enabled":        station.TieredStorageEnabled,
+				"created_by_username":           station.CreatedByUsername,
+				"resend_disabled":               station.ResendDisabled,
 			}
 		}
 
@@ -450,6 +456,9 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"dls_configuration_poison":      station.DlsConfigurationPoison,
 		"dls_configuration_schemaverse": station.DlsConfigurationSchemaverse,
 		"total_dls_messages":            totalDlsAmount,
+		"tiered_storage_enabled":        station.TieredStorageEnabled,
+		"created_by_username":           station.CreatedByUsername,
+		"resend_disabled":               station.ResendDisabled,
 	}
 
 	return response, nil

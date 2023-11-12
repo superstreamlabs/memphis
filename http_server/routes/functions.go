@@ -21,6 +21,5 @@ func InitializeFunctionsRoutes(router *gin.RouterGroup, h *server.Handlers) {
 	functionsHandler := h.Functions
 	functionsRoutes := router.Group("/functions")
 	functionsRoutes.GET("/getAllFunctions", functionsHandler.GetAllFunctions)
-	functionsRoutes.GET("/getFunctionDetails", functionsHandler.GetFunctionDetails)
 	server.InitializeCloudFunctionRoutes(functionsHandler, functionsRoutes)
 }
