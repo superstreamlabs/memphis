@@ -7389,3 +7389,32 @@ func UnlockStuckLocks(lockedAt time.Time) error {
 	}
 	return nil
 }
+
+func GetMemphisFunctionsByMemphis() ([]models.Function, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.Function{}, err
+	}
+	defer conn.Release()
+	query := `SELECT * FROM functions WHERE by_memphis = true`
+	stmt, err := conn.Conn().Prepare(ctx, "get_memphis_functions_by_memphis", query)
+	if err != nil {
+		return []models.Function{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name)
+	if err != nil {
+		return []models.Function{}, err
+	}
+
+	defer rows.Close()
+	functions, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.Function])
+	if err != nil {
+		return []models.Function{}, err
+	}
+	if len(functions) == 0 {
+		return []models.Function{}, err
+	}
+	return functions, nil
+}

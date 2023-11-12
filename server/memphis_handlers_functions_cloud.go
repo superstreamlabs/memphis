@@ -105,6 +105,7 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 		"branch":        memphisFunctions["branch"].(string),
 		"owner":         memphisFunctions["repo_owner"].(string),
 		"last_modified": lastModified,
+		"in_progress":   false,
 	}
 	memphisDevFucntions = append(memphisDevFucntions, memphisFunc)
 
@@ -116,6 +117,10 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 	}
 
 	return allFunctions, nil
+}
+
+func (mh MonitoringHandler) GetFunctionsOverview(sName, tenantName string, partition int) (FunctionsOverviewResponse, error) {
+	return FunctionsOverviewResponse{}, nil
 }
 
 func validateYamlContent(yamlMap map[string]interface{}) error {
@@ -213,8 +218,8 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				Runtime:          runtime,
 				Dependencies:     fucntionContentMap["dependencies"].(string),
 				EnvironmentVars:  environmentVarsStrings,
-				Memory:           fucntionContentMap["memory"].(int),
-				Storage:          fucntionContentMap["storage"].(int),
+				Memory:           int(fucntionContentMap["memory"].(int64)),
+				Storage:          int(fucntionContentMap["storage"].(int64)),
 				Handler:          handler,
 				Scm:              "github",
 				Repo:             repo,

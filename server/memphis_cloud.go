@@ -57,6 +57,46 @@ type LoginSchema struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type FunctionMetricsSchema struct {
+	AverageProcessingTime float64 `json:"average_processing_time"`
+	ErrorRate             float64 `json:"error_rate"`
+	TotalInvocations      float64 `json:"total_invocations"`
+}
+
+type FunctionOverviewSchema struct {
+	ID                int                   `json:"id"`
+	Name              string                `json:"name"`
+	StationId         int                   `json:"station_id"`
+	Version           int                   `json:"version"`
+	NextActiveStepId  int                   `json:"next_active_step_id"`
+	PrevActiveStepId  int                   `json:"prev_active_step_id"`
+	VisibleStep       int                   `json:"visible_step"`
+	PartitionNumber   int                   `json:"partition_number"`
+	Repo              string                `json:"repo"`
+	Branch            string                `json:"branch"`
+	Owner             string                `json:"owner"`
+	Runtime           string                `json:"runtime"`
+	OrderingMatter    bool                  `json:"ordering_matter"`
+	ComputeEngine     string                `json:"compute_engine"`
+	Activated         bool                  `json:"activated"`
+	AddedBy           string                `json:"added_by"`
+	SCM               string                `json:"scm"`
+	InstalledId       int                   `json:"installed_id"`
+	Metrics           FunctionMetricsSchema `json:"metrics"`
+	PendingMessages   int                   `json:"pending_messages"`
+	InProcessMessages int                   `json:"in_process_messages"`
+	TenantName        string                `json:"tenant_name"`
+}
+
+type FunctionsOverviewResponse struct {
+	Functions              []FunctionOverviewSchema `json:"functions"`
+	TotalAwaitingMessages  int                      `json:"total_awaiting_messages"`
+	TotalProcessedMessages int                      `json:"total_processed_messages"`
+	TotalInvocations       int                      `json:"total_invocations"`
+	AverageErrorRate       float64                  `json:"average_error_rate"`
+	FunctionsExists        bool                     `json:"functions_exists"`
+}
+
 var ErrUpgradePlan = errors.New("to continue using Memphis, please upgrade your plan to a paid plan")
 
 type MainOverviewData struct {

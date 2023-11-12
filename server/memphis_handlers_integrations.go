@@ -466,6 +466,20 @@ func (it IntegrationsHandler) GetIntegrationDetails(c *gin.Context) {
 		githubIntegration.TenantName = sourceCodeIntegration.TenantName
 		githubIntegration.IsValid = integration.IsValid
 		githubIntegration.Keys["connected_repos"] = sourceCodeIntegration.Keys["connected_repos"]
+		memphisFuncs, err := db.GetMemphisFunctionsByMemphis()
+		if err != nil {
+			serv.Errorf("[tenant: %v][user: %v]GetIntegrationDetails at GetMemphisFunctionsByMemphis: Integration %v: %v", user.TenantName, user.Username, body.Name, err.Error())
+			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+			return
+		}
+		for _, memphisFunc := range memphisFuncs {
+			if memphisFunc.Installed {
+				memphisFunctions["in_progress"] = memphisFunc.InProgress
+				break
+			} else {
+				memphisFunctions["in_progress"] = memphisFunc.InProgress
+			}
+		}
 		githubIntegration.Keys["memphis_functions"] = memphisFunctions
 		githubIntegration.Keys["application_name"] = applicationName
 		c.IndentedJSON(200, gin.H{"integration": githubIntegration, "repos": branchesMap})
@@ -498,6 +512,20 @@ func (it IntegrationsHandler) GetAllIntegrations(c *gin.Context) {
 			integrations[i].Keys["secret_key"] = hideIntegrationSecretKey(integrations[i].Keys["secret_key"].(string))
 		}
 		if integrations[i].Name == "github" && integrations[i].Keys["installation_id"] != "" {
+			memphisFuncs, err := db.GetMemphisFunctionsByMemphis()
+			if err != nil {
+				serv.Errorf("[tenant: %v][user: %v]GetAllIntegrations at GetMemphisFunctionsByMemphis: %v", user.TenantName, user.Username, err.Error())
+				c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
+				return
+			}
+			for _, memphisFunc := range memphisFuncs {
+				if memphisFunc.Installed {
+					memphisFunctions["in_progress"] = memphisFunc.InProgress
+					break
+				} else {
+					memphisFunctions["in_progress"] = memphisFunc.InProgress
+				}
+			}
 			integrations[i].Keys["memphis_functions"] = memphisFunctions
 			delete(integrations[i].Keys, "installation_id")
 		}
