@@ -298,6 +298,13 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		return map[string]any{}, errors.New("Station " + stationName + " does not exist")
 	}
 
+	var functionsEnabled bool
+	if station.Version >= 2 {
+		functionsEnabled = true
+	} else {
+		functionsEnabled = false
+	}
+
 	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = h.Producers.GetProducersByStation(station)
@@ -401,6 +408,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
+				"functions_enabled":             functionsEnabled,
 			}
 		} else {
 			response = map[string]any{
@@ -427,6 +435,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
+				"functions_enabled":             functionsEnabled,
 			}
 		}
 

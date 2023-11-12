@@ -380,7 +380,7 @@ func (s *Server) createStationDirectIntern(c *client,
 
 	if shouldCreateStream {
 		for p := 1; p <= csr.PartitionsNumber; p++ {
-			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p)
+			err = s.CreateStream(csr.TenantName, stationName, retentionType, retentionValue, storageType, csr.IdempotencyWindow, replicas, csr.TieredStorageEnabled, p, true)
 			if err != nil {
 				if IsNatsErr(err, JSStreamReplicasNotSupportedErr) {
 					serv.Warnf("[tenant: %v][user:%v]CreateStationDirect: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", csr.TenantName, csr.Username, stationName.Ext())
@@ -456,7 +456,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		}
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 1, csr.DlsStation)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, retentionValue, storageType, replicas, schemaDetails.SchemaName, schemaDetails.VersionNumber, csr.IdempotencyWindow, isNative, csr.DlsConfiguration, csr.TieredStorageEnabled, user.TenantName, partitionsList, 2, csr.DlsStation)
 	if err != nil {
 		if !strings.Contains(err.Error(), "already exist") {
 			serv.Errorf("[tenant: %v][user:%v]createStationDirect at InsertNewStation: Station %v: %v", csr.TenantName, csr.Username, csr.StationName, err.Error())
@@ -963,7 +963,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 	}
 
 	for p := 1; p <= body.PartitionsNumber; p++ {
-		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p)
+		err = sh.S.CreateStream(tenantName, stationName, retentionType, body.RetentionValue, body.StorageType, body.IdempotencyWindow, body.Replicas, body.TieredStorageEnabled, p, true)
 		if err != nil {
 			if IsNatsErr(err, JSInsufficientResourcesErr) {
 				serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: Station can not be created, probably since replicas count is larger than the cluster size", user.TenantName, user.Username, body.Name)
@@ -1028,7 +1028,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		}
 	}
 
-	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 1, body.DlsStation)
+	newStation, rowsUpdated, err := db.InsertNewStation(stationName.Ext(), user.ID, user.Username, retentionType, body.RetentionValue, body.StorageType, body.Replicas, schemaName, schemaVersionNumber, body.IdempotencyWindow, true, body.DlsConfiguration, body.TieredStorageEnabled, tenantName, partitionsList, 2, body.DlsStation)
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]CreateStation at db.InsertNewStation: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
