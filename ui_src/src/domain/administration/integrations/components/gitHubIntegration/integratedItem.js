@@ -142,9 +142,11 @@ const IntegrationItem = ({ index, repo, reposList, updateIntegrationList, remove
                         height={'30px'}
                         width={'90px'}
                         placeholder={
-                            <div className="repo-button">
-                                <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
-                            </div>
+                            !addIsLoading && (
+                                <div className="repo-button">
+                                    <FiPlus style={{ marginRight: '5px' }} /> <span>Add</span>
+                                </div>
+                            )
                         }
                         colorType={'white'}
                         radiusType={'circle'}

@@ -49,6 +49,7 @@ const GitHubIntegration = ({ close, value }) => {
     const [repos, setRepos] = useState([]);
     const [addNew, setAddNew] = useState(false);
     const [isChanged, setIsChanged] = useState(false);
+    const [inProgressFlag, setInProgressFlag] = useState(false);
     const [isIntegrated, setIsIntagrated] = useState(false);
     const [tabValue, setTabValue] = useState('Configuration');
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
@@ -160,7 +161,9 @@ const GitHubIntegration = ({ close, value }) => {
                 } else {
                     setIsIntagrated(false);
                 }
-
+                data?.integration?.keys?.connected_repos?.forEach((repo) => {
+                    repo?.in_progress && setInProgressFlag(true);
+                });
                 updateKeysState('connected_repos', data?.integration?.keys?.connected_repos || []);
                 setRepos(data?.repos);
                 setApplicationName(data?.application_name);
@@ -258,10 +261,10 @@ const GitHubIntegration = ({ close, value }) => {
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => {
-                                                // isCloud() &&
-                                                //     applicationName() &&
-                                                //     window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
-                                                setCloudModalOpen(true);
+                                                isCloud() &&
+                                                    applicationName &&
+                                                    window.location.assign(`https://github.com/apps/${applicationName}/installations/select_target`);
+                                                !isCloud() && setCloudModalOpen(true);
                                             }}
                                         />
                                     </div>
@@ -295,11 +298,16 @@ const GitHubIntegration = ({ close, value }) => {
                                                                 }}
                                                                 type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
                                                                 updateIntegration={updateIntegration}
-                                                                addIsLoading={loadingSubmit}
+                                                                addIsLoading={loadingSubmit || repo?.in_progress}
                                                             />
                                                         );
                                                     })}
-                                                    {!addNew && (
+                                                    {inProgressFlag && (
+                                                        <div className="add-more-repos" onClick={getIntegration}>
+                                                            <label>We are updating integration. Please refersh in few minutes.</label>
+                                                        </div>
+                                                    )}
+                                                    {!addNew && !inProgressFlag && (
                                                         <div
                                                             className="add-more-repos"
                                                             onClick={() => {

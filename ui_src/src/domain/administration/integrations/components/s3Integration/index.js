@@ -85,15 +85,18 @@ const S3Integration = ({ close, value, lockFeature }) => {
         if (values?.errorFields) {
             return;
         } else {
-            setLoadingSubmit(true);
-            if (isValue) {
-                if (creationForm.isFieldTouched('secret_key')) {
-                    updateIntegration();
+            if (lockFeature) setCloudModalOpen(true);
+            else {
+                setLoadingSubmit(true);
+                if (isValue) {
+                    if (creationForm.isFieldTouched('secret_key')) {
+                        updateIntegration();
+                    } else {
+                        updateIntegration(false);
+                    }
                 } else {
-                    updateIntegration(false);
+                    createIntegration();
                 }
-            } else {
-                createIntegration();
             }
         }
     };
@@ -382,9 +385,7 @@ const S3Integration = ({ close, value, lockFeature }) => {
                                     fontFamily="InterSemiBold"
                                     isLoading={loadingSubmit}
                                     disabled={isValue && !creationForm.isFieldsTouched()}
-                                    onClick={() => {
-                                        lockFeature ? setCloudModalOpen(true) : handleSubmit();
-                                    }}
+                                    onClick={handleSubmit}
                                 />
                             </div>
                         </Form.Item>

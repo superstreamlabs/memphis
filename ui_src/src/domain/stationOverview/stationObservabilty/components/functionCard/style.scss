@@ -1,0 +1,259 @@
+.ms-function-card {
+    display: flex;
+    justify-content: center;
+    align-items: self-start;
+    position: relative;
+    min-width: 250px;
+
+    &.deactivated {
+        .ms-function-card-badge-top {
+            visibility: hidden;
+        }
+        .ms-function-card-badge-left {
+            visibility: hidden;
+        }
+        .ms-function-card-header {
+            svg {
+                circle {
+                    fill: #d8d8d8;
+                }
+            }
+        }
+    }
+    &-top {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    &-inner {
+        cursor: pointer;
+        position: relative;
+        border-radius: 8px;
+        border: 1px solid #e6e6e6;
+        background: var(--colors-white-white, #fff);
+        box-shadow: 0px 5px 8px -5px rgba(10, 9, 11, 0.04), 0px 1px 4px 1px rgba(10, 9, 11, 0.02);
+
+        &.selected {
+            border: 1px solid #6557ff;
+        }
+    }
+
+    &-badge {
+        &-top {
+            border-radius: 22.557px;
+            background: rgba(101, 87, 255, 0.15);
+            color: var(--Purply-blue, #6557ff);
+            text-align: justify;
+            font-family: Inter;
+            font-size: 9.869px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 170%;
+            padding: 2px 10px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-bottom: 15px;
+        }
+
+        &-left {
+            border-radius: 16px;
+            background: rgba(255, 198, 51, 0.15);
+            padding: 2px 10px;
+            color: var(--Sunglow, #ffc633);
+            text-align: justify;
+            leading-trim: both;
+            text-edge: cap;
+            font-family: Inter;
+            font-size: 7px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 170%;
+            gap: 2px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 45px;
+            margin-right: 10px;
+            width: 45px;
+        }
+    }
+
+    &-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 10px 7px;
+
+        &-title {
+            color: var(--Black, #171717);
+            font-family: Inter;
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: normal;
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        &-action {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            svg {
+                fill: #918fab;
+            }
+        }
+    }
+
+    &-body {
+        display: flex;
+        border-top: 1px solid #ececec;
+        background: #f6f6f6;
+        border-bottom-right-radius: 7px;
+        border-bottom-left-radius: 7px;
+
+        &-left {
+            border-right: 1px solid #ececec;
+        }
+
+        &-right {
+        }
+    }
+
+    &-info-box {
+        padding: 6px 10px;
+
+        .title {
+            color: #a2a2a2;
+            font-family: Inter;
+            font-size: 10px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 14px; /* 140% */
+        }
+
+        .subtitle {
+            color: #1d1d1d;
+            font-family: Inter;
+            font-size: 12px;
+            font-style: normal;
+            font-weight: 600;
+            line-height: 14px; /* 116.667% */
+        }
+    }
+}
+
+.messages-container {
+    overflow-y: auto;
+    .functions-empty {
+        z-index: 1;
+        &-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 124px;
+        }
+
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 22px;
+        border-radius: 8px;
+        border: 1px solid #e6e6e6;
+        background: var(--colors-white-white, #fff);
+        box-shadow: 0px 5px 8px -5px rgba(10, 9, 11, 0.04), 0px 1px 4px 1px rgba(10, 9, 11, 0.02);
+
+        span {
+            color: var(--Purply-blue, #6557ff);
+            font-feature-settings: 'clig' off, 'liga' off;
+            font-family: Inter;
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 500;
+            line-height: 20px; /* 142.857% */
+            white-space: nowrap;
+        }
+    }
+
+    .tab-general {
+        .functions-empty {
+            margin: 0 10px;
+            border-style: dashed;
+
+            &.disabled {
+                cursor: not-allowed;
+                span {
+                    color: #171717;
+                }
+                svg {
+                    circle {
+                        fill: #d8d8d8;
+                    }
+                    path {
+                        fill: #a2a2a2;
+                    }
+                }
+            }
+        }
+        &-functions {
+            justify-content: flex-start;
+            border-top: 1px solid #eff0f2;
+            border-bottom: 1px solid #eff0f2;
+            padding: 12px 0;
+            margin-bottom: 10px;
+            overflow: auto;
+            display: flex;
+            &-add {
+                margin: 0 15px 0;
+                border-style: dashed;
+                min-width: 200px;
+            }
+
+            &-cards {
+                display: flex;
+                align-items: center;
+                .ms-function-card {
+                    min-width: 200px;
+                    &-header {
+                        align-items: flex-start;
+                        &-title {
+                            align-items: flex-start;
+                            span {
+                                color: var(--Black, #171717);
+                                font-family: Inter;
+                                font-size: 12px;
+                                font-style: normal;
+                                font-weight: 600;
+                                line-height: normal;
+                                margin-bottom: 4px;
+                                display: block;
+                            }
+                            p {
+                                color: #000;
+                                font-family: Inter;
+                                font-size: 10px;
+                                font-style: normal;
+                                font-weight: 400;
+                                line-height: normal;
+                            }
+                        }
+
+                        &-action {
+                            display: flex;
+                            align-items: center;
+                            cursor: pointer;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

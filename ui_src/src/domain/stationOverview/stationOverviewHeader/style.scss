@@ -171,6 +171,10 @@
                         .redirect {
                             cursor: pointer;
                         }
+                        .dls-redirect {
+                            position: absolute;
+                            right: 0px;
+                        }
                     }
                     .midRow {
                         display: flex;
@@ -191,7 +195,7 @@
                                 color: #1d1d1d;
                                 font-family: 'InterMedium';
                                 font-size: 12px;
-                                max-width: 85%;
+                                max-width: 155px;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
                             }

@@ -171,16 +171,16 @@
             }
         }
     }
-    .loader-uploading{
+    .loader-uploading {
         height: 100%;
         position: relative !important;
-        max-height:unset !important;
-        .loader-container{
+        max-height: unset !important;
+        .loader-container {
             position: relative;
-            .gif-wrapper{
+            .gif-wrapper {
                 position: relative;
             }
-            .memphis-gif{
+            .memphis-gif {
                 position: relative !important;
                 transform: unset !important;
                 left: unset !important;
@@ -191,11 +191,11 @@
 .generator-modal {
     padding: 0;
     .ant-modal-body {
-        padding:10px 24px;
+        padding: 10px 24px;
     }
-    .ant-modal-content{
+    .ant-modal-content {
         border-radius: 8px;
-        border: 1px solid #F0F0F0;
+        border: 1px solid #f0f0f0;
         box-shadow: 0px 10px 10px rgba(16, 10, 85, 0.1);
     }
 }

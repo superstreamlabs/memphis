@@ -18,10 +18,10 @@ import Copy from '../copy';
 import CustomTabs from '../Tabs';
 import { githubUrls } from '../../const/globalConst';
 
-const CloneModal = () => {
+const CloneModal = ({ type }) => {
     const [tabValue, setTabValue] = useState('HTTPS');
     const downloadRepoArchive = async () => {
-        window.open(githubUrls.DOWNLOAD_URL, '_blank');
+        window.open(githubUrls[type].DOWNLOAD_URL, '_blank');
     };
 
     return (
@@ -32,18 +32,18 @@ const CloneModal = () => {
             {tabValue === 'HTTPS' ? (
                 <>
                     <div className="url-wrapper">
-                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_HTTPS}</p>
+                        <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_HTTPS}</p>
                         <div className="icon">
-                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_HTTPS} />
+                            <Copy width="18" data={githubUrls[type].MEMPHIS_GIT_HTTPS} />
                         </div>
                     </div>
                 </>
             ) : (
                 <>
                     <div className="url-wrapper">
-                        <p className="url-text"> {githubUrls.MEMPHIS_GIT_SSH}</p>
+                        <p className="url-text"> {githubUrls[type].MEMPHIS_GIT_SSH}</p>
                         <div className="icon">
-                            <Copy width="18" data={githubUrls.MEMPHIS_GIT_SSH} />
+                            <Copy width="18" data={githubUrls[type].MEMPHIS_GIT_SSH} />
                         </div>
                     </div>
                 </>

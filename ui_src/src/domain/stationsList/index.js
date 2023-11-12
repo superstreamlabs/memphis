@@ -97,7 +97,7 @@ const StationsList = () => {
                                 className="modal-btn"
                                 width="220px"
                                 height="42px"
-                                placeholder="Add anothet station"
+                                placeholder="Add another station"
                                 colorType="white"
                                 radiusType="circle"
                                 backgroundColorType="purple"
@@ -124,7 +124,15 @@ const StationsList = () => {
                 />
             );
         }
-        return <StationsInstructions header="You don’t have any station yet" button="Create New Station" image={stationsIcon} newStation={() => modalFlip(true)} />;
+        return (
+            <StationsInstructions
+                header="You don’t have any station yet"
+                button="Create a new station
+        "
+                image={stationsIcon}
+                newStation={() => modalFlip(true)}
+            />
+        );
     };
 
     const onCheckedAll = (e) => {

@@ -4,6 +4,29 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
+
+    .back-to-function {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        opacity: 0.5;
+        padding-left: 24px;
+        padding-top: 18px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #e0e0e0;
+
+        span {
+            color: #000929;
+            font-family: 'InterSemiBold';
+            font-size: 14px;
+        }
+
+        span,
+        svg {
+            cursor: pointer;
+        }
+    }
+
     .code-btn {
         display: flex;
         align-items: center;
@@ -220,9 +243,9 @@
                 height: 100%;
                 width: 100%;
                 overflow: auto;
-                align-items: flex-start;
+                align-items: center;
                 display: flex;
-                justify-content: space-evenly;
+                justify-content: center;
                 padding-top: 10px;
                 p {
                     margin: 0;
@@ -238,6 +261,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
         height: 100%;
         width: 100%;
         font-family: 'InterSemiBold';

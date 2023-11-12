@@ -93,11 +93,11 @@
 }
 .request-integration-modal {
     .ant-modal-content {
-        border-radius: 16px;
+        border-radius: 30px;
     }
     .ant-modal-header {
         border-bottom: unset !important;
-        border-radius: 16px;
+        border-radius: 30px;
     }
     .ant-modal-body {
         padding-top: 0px;
@@ -154,7 +154,7 @@ dynamic-integration {
         }
 
         .api-details {
-            height: calc(100% - 80px);
+            height: 100%;
             overflow: scroll;
             margin: 0 20px;
             margin-right: 2px;
