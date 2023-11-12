@@ -68,9 +68,9 @@ type FunctionResult struct {
 	Language                   string                   `json:"language"`
 	Link                       *string                  `json:"link,omitempty"`
 	LastCommit                 *time.Time               `json:"last_commit,omitempty"`
-	ClonedUpdatesAvailable     bool                     `json:"cloned_updates_available,omitempty"`
-	ClonedUpdatesIsValid       bool                     `json:"cloned_updates_is_valid,omitempty"`
-	ClonedUpdatesInvalidReason string                   `json:"cloned_updates_invalid_reason,omitempty"`
+	ClonedUpdatesAvailable     bool                     `json:"cloned_updates_available"`
+	ClonedUpdatesIsValid       bool                     `json:"cloned_updates_is_valid"`
+	ClonedUpdatesInvalidReason string                   `json:"cloned_updates_invalid_reason"`
 }
 type FunctionsRes struct {
 	InstalledFunctions []FunctionResult         `json:"installed_functions"`
