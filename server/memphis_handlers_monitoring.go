@@ -510,6 +510,13 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		return
 	}
 
+	var functionsEnabled bool
+	if station.Version >= 2 {
+		functionsEnabled = true
+	} else {
+		functionsEnabled = false
+	}
+
 	connectedProducers, disconnectedProducers, deletedProducers := make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0), make([]models.ExtendedProducer, 0)
 	if station.IsNative {
 		connectedProducers, disconnectedProducers, deletedProducers, err = producersHandler.GetProducersByStation(station)
@@ -721,6 +728,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"tiered_storage_enabled":        station.TieredStorageEnabled,
 			"created_by_username":           station.CreatedByUsername,
 			"resend_disabled":               station.ResendDisabled,
+			"functions_enabled":             functionsEnabled,
 		}
 	} else {
 		var emptyResponse struct{}
@@ -750,6 +758,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
+				"functions_enabled":             functionsEnabled,
 			}
 		} else {
 			response = gin.H{
@@ -776,6 +785,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"tiered_storage_enabled":        station.TieredStorageEnabled,
 				"created_by_username":           station.CreatedByUsername,
 				"resend_disabled":               station.ResendDisabled,
+				"functions_enabled":             functionsEnabled,
 			}
 		}
 	}

@@ -199,66 +199,6 @@ func RemoveUser(username string) error {
 	return nil
 }
 
-func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, partition_number int) error {
-	var maxMsgs int
-	if retentionType == "messages" && retentionValue > 0 {
-		maxMsgs = retentionValue
-	} else {
-		maxMsgs = -1
-	}
-
-	var maxBytes int
-	if retentionType == "bytes" && retentionValue > 0 {
-		maxBytes = retentionValue
-	} else {
-		maxBytes = -1
-	}
-
-	maxAge := GetStationMaxAge(retentionType, tenantName, retentionValue)
-	retentionPolicy := getRetentionPolicy(retentionType)
-
-	var storage StorageType
-	if storageType == "memory" {
-		storage = MemoryStorage
-	} else {
-		storage = FileStorage
-	}
-
-	var idempotencyWindow time.Duration
-	if idempotencyW <= 0 {
-		idempotencyWindow = 2 * time.Minute // default
-	} else if idempotencyW < 100 {
-		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
-	} else {
-		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
-	}
-
-	var internName string
-	if partition_number > 0 {
-		internName = fmt.Sprintf("%v$%v", sn.Intern(), partition_number)
-	} else {
-		internName = sn.Intern()
-	}
-
-	return s.
-		memphisAddStream(tenantName, &StreamConfig{
-			Name:                 internName,
-			Subjects:             []string{internName + ".>"},
-			Retention:            retentionPolicy,
-			MaxConsumers:         -1,
-			MaxMsgs:              int64(maxMsgs),
-			MaxBytes:             int64(maxBytes),
-			Discard:              DiscardOld,
-			MaxAge:               maxAge,
-			MaxMsgsPer:           -1,
-			Storage:              storage,
-			Replicas:             replicas,
-			NoAck:                false,
-			Duplicates:           idempotencyWindow,
-			TieredStorageEnabled: tieredStorageEnabled,
-		})
-}
-
 func (s *Server) WaitForLeaderElection() {
 	if !s.JetStreamIsClustered() {
 		return
@@ -817,7 +757,7 @@ func (s *Server) PurgeStream(tenantName, streamName string, partitionNumber int)
 	}
 	requestSubject := fmt.Sprintf(JSApiStreamPurgeT, streamAndPartition)
 
-	req := JSApiStreamPurgeRequest{Subject: streamAndPartition+".final"}
+	req := JSApiStreamPurgeRequest{Subject: streamAndPartition + ".final"}
 	rawRequest, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -874,7 +814,7 @@ func (s *Server) memphisStreamInfo(tenantName string, streamName string) (*Strea
 	requestSubject := fmt.Sprintf(JSApiStreamInfoT, streamName)
 
 	var resp JSApiStreamInfoResponse
-	req := JSApiStreamInfoRequest{SubjectsFilter: streamName+".>"}
+	req := JSApiStreamInfoRequest{SubjectsFilter: streamName + ".>"}
 	rawRequest, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -1706,7 +1646,7 @@ func (s *Server) MoveResourcesFromOldToNewDefaultAcc() error {
 			return err
 		}
 		stationsMap[station.ID] = station
-		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled, 0)
+		err = s.CreateStream(MEMPHIS_GLOBAL_ACCOUNT, stationName, station.RetentionType, station.RetentionValue, station.StorageType, station.IdempotencyWindow, station.Replicas, station.TieredStorageEnabled, 0, false)
 		if err != nil {
 			return err
 		}

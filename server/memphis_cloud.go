@@ -2265,3 +2265,63 @@ func sendCloneFunctionReqToMS(connectedRepo interface{}, user models.User, scm s
 func GetAllFirstActiveFunctionsIDByStationID(stationId int, tenantName string) (map[int]int, error) {
 	return map[int]int{}, nil
 }
+
+func (s *Server) CreateStream(tenantName string, sn StationName, retentionType string, retentionValue int, storageType string, idempotencyW int64, replicas int, tieredStorageEnabled bool, partition_number int, functionsEnabled bool) error {
+	var maxMsgs int
+	if retentionType == "messages" && retentionValue > 0 {
+		maxMsgs = retentionValue
+	} else {
+		maxMsgs = -1
+	}
+
+	var maxBytes int
+	if retentionType == "bytes" && retentionValue > 0 {
+		maxBytes = retentionValue
+	} else {
+		maxBytes = -1
+	}
+
+	maxAge := GetStationMaxAge(retentionType, tenantName, retentionValue)
+	retentionPolicy := getRetentionPolicy(retentionType)
+
+	var storage StorageType
+	if storageType == "memory" {
+		storage = MemoryStorage
+	} else {
+		storage = FileStorage
+	}
+
+	var idempotencyWindow time.Duration
+	if idempotencyW <= 0 {
+		idempotencyWindow = 2 * time.Minute // default
+	} else if idempotencyW < 100 {
+		idempotencyWindow = time.Duration(100) * time.Millisecond // minimum is 100 millis
+	} else {
+		idempotencyWindow = time.Duration(idempotencyW) * time.Millisecond
+	}
+
+	var internName string
+	if partition_number > 0 {
+		internName = fmt.Sprintf("%v$%v", sn.Intern(), partition_number)
+	} else {
+		internName = sn.Intern()
+	}
+
+	return s.
+		memphisAddStream(tenantName, &StreamConfig{
+			Name:                 internName,
+			Subjects:             []string{internName + ".>"},
+			Retention:            retentionPolicy,
+			MaxConsumers:         -1,
+			MaxMsgs:              int64(maxMsgs),
+			MaxBytes:             int64(maxBytes),
+			Discard:              DiscardOld,
+			MaxAge:               maxAge,
+			MaxMsgsPer:           -1,
+			Storage:              storage,
+			Replicas:             replicas,
+			NoAck:                false,
+			Duplicates:           idempotencyWindow,
+			TieredStorageEnabled: tieredStorageEnabled,
+		})
+}
