@@ -1684,3 +1684,8 @@ func (s *Server) getIp() string {
 	}
 	return string(ip)
 }
+
+func (s *Server) SendReloadSignal() error {
+	err := s.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	return err
+}
