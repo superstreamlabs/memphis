@@ -151,6 +151,12 @@ func runMemphis(s *server.Server) {
 	} else {
 		env = "K8S"
 	}
+
+	err = s.SendReloadSignal()
+	if err != nil {
+		s.Errorf("Failed signaling other brokers to reload")
+	}
+
 	s.Noticef("*** Memphis broker is ready, ENV: %s :-) ***", env)
 }
 
