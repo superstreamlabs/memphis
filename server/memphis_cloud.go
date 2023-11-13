@@ -1128,7 +1128,7 @@ func (ch ConfigurationsHandler) EditClusterConfig(c *gin.Context) {
 	}
 
 	// send signal to reload config
-	err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+	err = serv.SendReloadSignal()
 	if err != nil {
 		serv.Errorf("[tenant: %v][user: %v]EditConfigurations at sendInternalAccountMsgWithReply: %v", user.TenantName, user.Username, err.Error())
 		c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1451,7 +1451,7 @@ func (umh UserMgmtHandler) AddUser(c *gin.Context) {
 
 	if userType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]AddUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
@@ -1532,7 +1532,7 @@ func (umh UserMgmtHandler) RemoveUser(c *gin.Context) {
 
 	if userToRemove.UserType == "application" && configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]RemoveUser at sendInternalAccountMsgWithReply: User %v: %v", user.TenantName, user.Username, body.Username, err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})

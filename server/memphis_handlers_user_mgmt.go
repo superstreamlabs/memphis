@@ -215,7 +215,7 @@ func removeTenantResources(tenantName string, user models.User) error {
 
 	if configuration.USER_PASS_BASED_AUTH {
 		// send signal to reload config
-		err = serv.sendInternalAccountMsgWithReply(serv.MemphisGlobalAccount(), CONFIGURATIONS_RELOAD_SIGNAL_SUBJ, _EMPTY_, nil, _EMPTY_, true)
+		err = serv.SendReloadSignal()
 		if err != nil {
 			return err
 		}
