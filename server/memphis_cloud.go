@@ -2021,7 +2021,7 @@ func (s *Server) Force3ReplicationsForExistingStations() error {
 	return nil
 }
 
-func getStationReplicas(replicas int) int {
+func GetStationReplicas(replicas int) int {
 	if replicas <= 0 {
 		return 1
 	} else if replicas == 2 || replicas == 4 {

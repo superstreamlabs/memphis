@@ -16,9 +16,10 @@ import (
 	"regexp"
 	"time"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
 	"github.com/memphisdev/memphis/models"
-	"strings"
 )
 
 type FunctionsHandler struct{}
@@ -77,7 +78,7 @@ func (fh FunctionsHandler) GetFunctions(tenantName string) (models.FunctionsRes,
 				Tags:                       function.Tags,
 				Runtime:                    function.Runtime,
 				Dependencies:               function.Dependencies,
-				EnvironmentVars:            function.EnvironmentVars,
+				Inputs:                     function.Inputs,
 				Memory:                     function.Memory,
 				Storage:                    function.Storage,
 				Handler:                    function.Handler,
@@ -168,10 +169,10 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			environmentVarsStrings := []map[string]interface{}{}
-			environmentVarsInterfaceSlice, ok := fucntionContentMap["environment_vars"].([]interface{})
+			inputs := []map[string]interface{}{}
+			inputsInterfaceSlice, ok := fucntionContentMap["inputs"].([]interface{})
 			if ok {
-				for _, environmentVarInterface := range environmentVarsInterfaceSlice {
+				for _, environmentVarInterface := range inputsInterfaceSlice {
 					environmentVarMap, _ := environmentVarInterface.(map[interface{}]interface{})
 					environmentVar := make(map[string]interface{})
 					for k, v := range environmentVarMap {
@@ -181,7 +182,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 							}
 						}
 					}
-					environmentVarsStrings = append(environmentVarsStrings, environmentVar)
+					inputs = append(inputs, environmentVar)
 				}
 			}
 			description, ok := fucntionContentMap["description"].(string)
@@ -220,7 +221,7 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				Tags:                       tagsStrings,
 				Runtime:                    runtime,
 				Dependencies:               fucntionContentMap["dependencies"].(string),
-				EnvironmentVars:            environmentVarsStrings,
+				Inputs:            inputs,
 				Memory:                     int(fucntionContentMap["memory"].(int64)),
 				Storage:                    int(fucntionContentMap["storage"].(int64)),
 				Handler:                    handler,
