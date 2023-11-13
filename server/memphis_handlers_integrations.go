@@ -241,6 +241,7 @@ func (it IntegrationsHandler) UpdateIntegration(c *gin.Context) {
 		for i, connectedRepoUpdated := range connectedReposUpdated {
 			if !containsRepo(connectedRepos, connectedRepoUpdated) {
 				connectedRepoUpdated.(map[string]interface{})["in_progress"] = true
+				connectedRepoUpdated.(map[string]interface{})["time_updated"] = time.Now()
 				connectedReposUpdated[i] = connectedRepoUpdated
 				go sendCloneFunctionReqToMS(connectedRepoUpdated, user, integrationType, body, i)
 			}

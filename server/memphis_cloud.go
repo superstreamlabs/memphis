@@ -1595,6 +1595,10 @@ func shouldPersistSysLogs() bool {
 	return true
 }
 
+func shouldCreateSystemTasksStream() bool {
+	return false
+}
+
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)
@@ -2021,7 +2025,7 @@ func (s *Server) Force3ReplicationsForExistingStations() error {
 	return nil
 }
 
-func getStationReplicas(replicas int) int {
+func GetStationReplicas(replicas int) int {
 	if replicas <= 0 {
 		return 1
 	} else if replicas == 2 || replicas == 4 {

@@ -355,7 +355,7 @@ func (s *Server) createStationDirectIntern(c *client,
 		storageType = "file"
 	}
 
-	replicas := getStationReplicas(csr.Replicas)
+	replicas := GetStationReplicas(csr.Replicas)
 	err = validateReplicas(replicas)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect at validateReplicas: %v", csr.TenantName, csr.Username, err.Error())
@@ -941,7 +941,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		storageTypeForResponse = body.StorageType
 	}
 
-	body.Replicas = getStationReplicas(body.Replicas)
+	body.Replicas = GetStationReplicas(body.Replicas)
 	err = validateReplicas(body.Replicas)
 	if err != nil {
 		serv.Warnf("[tenant: %v][user: %v]CreateStation at validateReplicas: Station %v: %v", user.TenantName, user.Username, body.Name, err.Error())

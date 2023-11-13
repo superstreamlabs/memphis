@@ -20,7 +20,7 @@ type Function struct {
 	Tags             []string                 `json:"tags"`
 	Runtime          string                   `json:"runtime"`
 	Dependencies     string                   `json:"dependencies"`
-	EnvironmentVars  []map[string]interface{} `json:"environment_vars"`
+	Inputs           []map[string]interface{} `json:"inputs"`
 	Memory           int                      `json:"memory"`
 	Storage          int                      `json:"storage"`
 	Handler          string                   `json:"handler"`
@@ -47,7 +47,7 @@ type FunctionResult struct {
 	Tags                       []string                 `json:"tags"`
 	Runtime                    string                   `json:"runtime"`
 	Dependencies               string                   `json:"dependencies"`
-	EnvironmentVars            []map[string]interface{} `json:"environment_vars"`
+	Inputs                     []map[string]interface{} `json:"inputs"`
 	Memory                     int                      `json:"memory"`
 	Storage                    int                      `json:"storage"`
 	Handler                    string                   `json:"handler"`

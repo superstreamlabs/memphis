@@ -59,6 +59,7 @@ const (
 	throughputStreamNameV1      = "$memphis-throughput-v1"
 	MEMPHIS_GLOBAL_ACCOUNT      = "$memphis"
 	integrationsAuditLogsStream = "$memphis_integrations_audit_logs"
+	systemTasksStreamName       = "$memphis_system_tasks"
 )
 
 var noLimit = -1
@@ -136,6 +137,7 @@ var (
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
+	SYSTEM_TASKS_STREAM_CREATED            bool
 )
 
 type Messages []models.MessageDetails
@@ -472,6 +474,26 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
+	}
+
+	// create system tasks stream
+	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         systemTasksStreamName,
+			Subjects:     []string{systemTasksStreamName + ".>"},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24 * 3, // 3 days
+			MaxConsumers: -1,
+			MaxMsgsPer:   -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		SYSTEM_TASKS_STREAM_CREATED = true
 	}
 
 	successCh <- nil
@@ -1097,7 +1119,7 @@ func getHdrLastIdxFromRaw(msg []byte) int {
 func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, startSeq uint64, amount int, timeout time.Duration, findHeader, isAckBasedStation bool, consumerReplicas int) ([]StoredMsg, error) {
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
-	replicas := 1
+	replicas := GetStationReplicas(1)
 	if isAckBasedStation {
 		replicas = consumerReplicas
 	}
