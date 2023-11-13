@@ -1305,6 +1305,8 @@ func (a *Account) EnableJetStream(limits map[string]JetStreamAccountLimits) erro
 			DLS_SCHEMAVERSE_STREAM_CREATED = true
 		case integrationsAuditLogsStream:
 			INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED = true
+		case systemTasksStreamName:
+			SYSTEM_TASKS_STREAM_CREATED = true
 		}
 		// added by Memphis ***
 

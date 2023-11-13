@@ -1595,6 +1595,10 @@ func shouldPersistSysLogs() bool {
 	return true
 }
 
+func shouldCreateSystemTasksStream() bool {
+	return false
+}
+
 func (umh UserMgmtHandler) EditAnalytics(c *gin.Context) {
 	var body models.EditAnalyticsSchema
 	ok := utils.Validate(c, &body, false, nil)

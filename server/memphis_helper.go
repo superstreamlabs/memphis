@@ -477,7 +477,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// create system tasks stream
-	if !SYSTEM_TASKS_STREAM_CREATED {
+	if shouldCreateSystemTasksStream() && !SYSTEM_TASKS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         systemTasksStreamName,
 			Subjects:     []string{systemTasksStreamName + ".>"},
