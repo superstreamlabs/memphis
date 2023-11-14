@@ -66,7 +66,7 @@ node {
 			if (env.BRANCH_NAME ==~ /(latest)/) {
         sh "docker-compose -f ./memphis-docker/docker-compose-latest-tests-broker.yml -p memphis up -d"
 			}
-			if (env.BRANCH_NAME ==~ /(master)/ {
+			if (env.BRANCH_NAME ==~ /(master)/) {
 				sh "docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis up -d"
 			}
     }
@@ -87,7 +87,7 @@ node {
           docker volume prune -f
         """
 			}
-			if (env.BRANCH_NAME ==~ /(master)/ {
+			if (env.BRANCH_NAME ==~ /(master)/) {
 				sh """
           docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis down
           docker volume prune -f
