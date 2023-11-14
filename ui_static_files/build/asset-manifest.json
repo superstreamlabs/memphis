@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.0d47b86b.css",
-    "main.js": "/static/js/main.3cfbf2b5.js",
+    "main.css": "/static/css/main.58ae5e60.css",
+    "main.js": "/static/js/main.736dc645.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -134,7 +134,6 @@
     "static/media/githubBanner.webp": "/static/media/githubBanner.45709cc90340feff943f.webp",
     "static/media/noStations.svg": "/static/media/noStations.8dc1367d04b5a51dd65e12292ceddd68.svg",
     "static/media/elasticBanner.webp": "/static/media/elasticBanner.5137ba7446b120da38b2.webp",
-    "static/media/emptyEvents.svg": "/static/media/emptyEvents.fbfba73c785f06b4d3b018b1b882aa5e.svg",
     "static/media/graphPlaceholder.svg": "/static/media/graphPlaceholder.b250ab6ee837fc52e8721fe43efe74c6.svg",
     "static/media/grafanaBannerPopup.webp": "/static/media/grafanaBannerPopup.04ea20c13ab4520bc130.webp",
     "static/media/datadogBannerPopup.webp": "/static/media/datadogBannerPopup.5c4ebccdb6a2be226735.webp",
@@ -173,7 +172,6 @@
     "static/media/cloneModalIcon.svg": "/static/media/cloneModalIcon.f9522487915d285a76b8a47597b6fe40.svg",
     "static/media/grafanaBanner.webp": "/static/media/grafanaBanner.3de6be0653754ff1052e.webp",
     "static/media/poisionAlertIcon.svg": "/static/media/poisionAlertIcon.a0ce3405b297208589c9fac5f5cd3880.svg",
-    "static/media/binIcon.svg": "/static/media/binIcon.b4f1f1d4ef1c74747e553e7bffe3ee8e.svg",
     "static/media/TotalMessages.svg": "/static/media/TotalMessages.6d75ac5bd3a106f6ac4e37800d4c25aa.svg",
     "static/media/pagerdutyBanner.webp": "/static/media/pagerdutyBanner.3a702b9db3201eba99a4.webp",
     "static/media/newStationIcon.svg": "/static/media/newStationIcon.e8efb5fbfc96be5bd728bc9448ef7a48.svg",
@@ -319,7 +317,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.0d47b86b.css",
-    "static/js/main.3cfbf2b5.js"
+    "static/css/main.58ae5e60.css",
+    "static/js/main.736dc645.js"
   ]
 }

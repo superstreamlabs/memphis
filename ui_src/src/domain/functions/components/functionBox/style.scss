@@ -140,6 +140,11 @@
             margin-right: 5px;
         }
     }
+    .ant-skeleton-element {
+        display: flex;
+        align-items: center;
+        height: 22px;
+    }
 }
 .func-selected {
     border: 1px solid var(--purple);

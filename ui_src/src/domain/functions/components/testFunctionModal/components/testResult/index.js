@@ -11,42 +11,124 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-
+import React, { useEffect, useState } from 'react';
 import { ReactComponent as StatusIcon } from '../../../../../../assets/images/statusIcon.svg';
 import Tag from '../../../../../../components/tag';
+import RadioButton from '../../../../../../components/radioButton';
+import Spinner from '../../../../../../components/spinner';
+import Copy from '../../../../../../components/copy';
+
 import { ColorPalette } from '../../../../../../const/globalConst';
 
-const TestResult = ({ name }) => {
+const options = [
+    {
+        label: 'All',
+        value: 'All'
+    },
+    {
+        label: 'Success',
+        value: 'Success'
+    },
+    {
+        label: 'Failure',
+        value: 'Failure'
+    },
+    {
+        label: 'Logs',
+        value: 'Logs'
+    }
+];
+
+const TestResult = ({ testResultData, loading }) => {
+    const [responseTab, setResponseTab] = useState('All');
+    const [testResult, setTestResult] = useState(null);
+
+    useEffect(() => {
+        setTestResult(testResultData);
+    }, [testResultData]);
+
+    const getCopyData = () => {
+        if (responseTab === 'All') {
+            return JSON.stringify(testResult, undefined, 2);
+        } else if (responseTab === 'Success') {
+            return JSON.stringify(testResult?.messages, undefined, 2);
+        } else if (responseTab === 'Failure') {
+            return JSON.stringify(testResult?.failed_messages, undefined, 2);
+        } else {
+            return testResult?.logs;
+        }
+    };
     return (
         <div className="result-wrapper">
-            <div className="header">
-                <p className="title">EXECUTION RESULT</p>
+            <RadioButton
+                vertical={false}
+                height="25px"
+                fontFamily="InterSemiBold"
+                options={options}
+                radioStyle="radiobtn-capitalize"
+                radioValue={responseTab}
+                onChange={(e) => setResponseTab(e.target.value)}
+            />
+            <div className="result-container">
+                <div className="header">
+                    <p className="title">EXECUTION RESULT</p>
 
-                <div className="rightSide">
-                    <StatusIcon />
+                    <div className="rightSide">
+                        <StatusIcon />
 
-                    <span className="status">Status:</span>
-                    <Tag tag={{ name: 'Successful', color: ColorPalette[9] }} editable={false} rounded={false} />
+                        {testResult && (
+                            <>
+                                <span className="status">Status:</span>
+                                <Tag
+                                    tag={{
+                                        name: testResult?.failed_messages ? 'Failed' : 'Successful',
+                                        color: testResult?.failed_messages ? ColorPalette[7] : ColorPalette[9]
+                                    }}
+                                    editable={false}
+                                    rounded={false}
+                                />
+                            </>
+                        )}
+                    </div>
                 </div>
-            </div>
-            <div className="result">
-                <p>
-                    <strong>Test Event Name</strong>{' '}
-                </p>
-                <p>{name}</p>
-                <br />
-                <p>
-                    <strong>Responses</strong>
-                </p>
-                <p>
-                    {`"errorTypee: "SyntaxError"
-"errorMessage": "Unexpected token u in JSON at position O" ,
-trace"
-"SyntaxError: Unexpected token u in at position ø" ,
-at JSON. parse ,
-at Runtime *handler
-at Runtime *handleOnceNonStreaming`}
-                </p>
+                {!loading && (
+                    <div className="result">
+                        <div className="copy-section">
+                            <Copy data={getCopyData()} />
+                        </div>
+
+                        {responseTab === 'All' && (
+                            <span>
+                                {testResult?.messages && (
+                                    <>
+                                        <p className="title">Success</p>
+                                        <p>{JSON.stringify(testResult?.messages, undefined, 2)}</p>
+                                    </>
+                                )}
+                                {testResult?.failed_messages && (
+                                    <>
+                                        <p className="title">Failure</p>
+                                        <p>{JSON.stringify(testResult?.failed_messages, undefined, 2)}</p>
+                                    </>
+                                )}
+                                {testResult?.logs && (
+                                    <>
+                                        <p className="title">Logs</p>
+                                        <p>{testResult?.logs}</p>
+                                    </>
+                                )}
+                            </span>
+                        )}
+                        {responseTab === 'Success' && <p>{testResult?.messages && JSON.stringify(testResult?.messages, undefined, 2)}</p>}
+                        {responseTab === 'Failure' && <p>{testResult?.failed_messages && JSON.stringify(testResult?.failed_messages, undefined, 2)}</p>}
+                        {responseTab === 'Logs' && <p>{testResult?.logs}</p>}
+                    </div>
+                )}
+                {loading && (
+                    <div className="loader-wrapper">
+                        <Spinner />
+                    </div>
+                )}
             </div>
         </div>
     );
