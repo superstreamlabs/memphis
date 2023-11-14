@@ -61,14 +61,14 @@ node {
     stage('Tests - Docker compose install') {
       sh "rm -rf memphis-docker"
       dir ('memphis-devops'){
-        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-devops.git', branch: gitBranch
+        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-devops.git', branch: 'master'
       }
-			if (env.BRANCH_NAME ==~ /(latest)/) {
-        sh "docker-compose -f ./memphis-docker/docker-compose-latest-tests-broker.yml -p memphis up -d"
-			}
-			if (env.BRANCH_NAME ==~ /(master)/) {
-				sh "docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis up -d"
-			}
+	if (env.BRANCH_NAME ==~ /(latest)/) {
+        sh "docker-compose -f ./memphis-devops/docker/docker-compose-latest-tests-broker.yml -p memphis up -d"
+	}
+	if (env.BRANCH_NAME ==~ /(master)/) {
+	sh "docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis up -d"
+	}
     }
 
     stage('Tests - Run e2e tests over Docker') {
@@ -83,13 +83,13 @@ node {
     stage('Tests - Remove Docker compose') {
 			if (env.BRANCH_NAME ==~ /(latest)/) {
         sh """
-          docker-compose -f ./memphis-docker/docker-compose-latest-tests-broker.yml -p memphis down
+          docker-compose -f ./memphis-devops/docker/docker-compose-latest-tests-broker.yml -p memphis down
           docker volume prune -f
         """
 			}
 			if (env.BRANCH_NAME ==~ /(master)/) {
 				sh """
-          docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis down
+          docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis down
           docker volume prune -f
         """
 			}
