@@ -2329,3 +2329,6 @@ func (s *Server) CreateStream(tenantName string, sn StationName, retentionType s
 			TieredStorageEnabled: tieredStorageEnabled,
 		})
 }
+
+func (s *Server) ConsumeFunctionTasks() {
+}

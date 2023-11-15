@@ -14,6 +14,8 @@ package db
 const testEventsTable = ``
 const functionsTable = ``
 const attachedFunctionsTable = ``
+const functionsEngineWorkersTable = ``
+const scheduledFunctionWorkersTable = ``
 
 type FunctionSchema struct {
 	ID               int    `json:"id"`

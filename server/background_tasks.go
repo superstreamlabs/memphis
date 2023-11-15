@@ -42,6 +42,7 @@ const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
+const FUNCTION_TASKS_CONSUMER = "$memphis_function_tasks_consumer"
 
 var LastReadThroughputMap map[string]models.Throughput
 var LastWriteThroughputMap map[string]models.Throughput
@@ -340,6 +341,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.SendBillingAlertWhenNeeded()
 	go s.CheckBrokenConnectedIntegrations()
 	go s.ReleaseStuckLocks()
+	go s.ConsumeFunctionTasks()
 	return nil
 }
 

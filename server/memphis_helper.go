@@ -138,6 +138,7 @@ var (
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
 	INTEGRATIONS_AUDIT_LOGS_STREAM_CREATED bool
 	SYSTEM_TASKS_STREAM_CREATED            bool
+	FUNCTIONS_TASKS_CONSUMER_CREATED       bool
 )
 
 type Messages []models.MessageDetails
@@ -494,6 +495,27 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 			return
 		}
 		SYSTEM_TASKS_STREAM_CREATED = true
+	}
+
+	// create function tasks consumer
+	if shouldCreateSystemTasksStream() && !FUNCTIONS_TASKS_CONSUMER_CREATED {
+		replicas := GetStationReplicas(1)
+		cc := ConsumerConfig{
+			Durable:       FUNCTION_TASKS_CONSUMER,
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			MaxAckPending: 1,
+			Replicas:      replicas,
+			FilterSubject: systemTasksStreamName + ".functions",
+			AckWait:       time.Duration(90) * time.Second,
+			MaxDeliver:    5,
+		}
+		err := serv.memphisAddConsumer(serv.MemphisGlobalAccountString(), systemTasksStreamName, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		FUNCTIONS_TASKS_CONSUMER_CREATED = true
 	}
 
 	successCh <- nil
@@ -1120,9 +1142,6 @@ func (s *Server) memphisGetMsgs(tenantName, filterSubj, streamName string, start
 	uid, _ := uuid.NewV4()
 	durableName := "$memphis_fetch_messages_consumer_" + uid.String()
 	replicas := GetStationReplicas(1)
-	if isAckBasedStation {
-		replicas = consumerReplicas
-	}
 
 	cc := ConsumerConfig{
 		FilterSubject: filterSubj,
