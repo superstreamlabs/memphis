@@ -101,6 +101,7 @@ export const ApiEndpoints = {
     UNINSTALL_FUNCTION: '/functions/uninstall',
     GET_FUNCTION_DETAIL: '/functions/getFunctionDetails',
     GET_FUNCTION_FILE_CODE: '/functions/getFunctionFileCode',
+    TEST_FUNCTION: '/functions/testFunction',
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',

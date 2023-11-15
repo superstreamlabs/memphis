@@ -36,7 +36,7 @@ import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/i
 import { ReactComponent as ArrowBackIcon } from '../../../../assets/images/arrowBackIcon.svg';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
-import TestFunctionModal from '../testFunctionModal';
+import TestMockEvent from '../testFunctionModal/components/testMockEvent';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { BsFileEarmarkCode } from 'react-icons/bs';
@@ -201,16 +201,20 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                 <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
-                            <downloads is="x3d">
-                                <BiDownload className="download-icon" />
-                                <label>{Number(180).toLocaleString()}</label>
-                            </downloads>
-                            <Divider type="vertical" />
-                            <rate is="x3d">
-                                <Rate disabled defaultValue={5} className="stars-rate" />
-                                <label>(50)</label>
-                            </rate>
-                            <Divider type="vertical" />
+                            {selectedFunction.owner === OWNER && (
+                                <>
+                                    <downloads is="x3d">
+                                        <BiDownload className="download-icon" />
+                                        <label>{Number(180).toLocaleString()}</label>
+                                    </downloads>
+                                    <Divider type="vertical" />
+                                    <rate is="x3d">
+                                        <Rate disabled defaultValue={5} className="stars-rate" />
+                                        <label>(50)</label>
+                                    </rate>
+                                    <Divider type="vertical" />
+                                </>
+                            )}
                             <commits is="x3d">
                                 <FiGitCommit />
                                 <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
@@ -258,7 +262,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                     fontFamily="InterSemiBold"
                                     onClick={() => (installed ? handleUnInstall() : handleInstall())}
                                     isLoading={selectedFunction?.install_in_progress}
-                                    disabled={selectedFunction?.install_in_progress}
+                                    disabled={!selectedFunction?.is_valid || selectedFunction?.install_in_progress}
                                 />
                             </div>
                         </div>
@@ -285,8 +289,8 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
             <div>
                 <CustomTabs tabs={['Details', 'Code']} value={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
             </div>
-            <Modal width={'95vw'} height={'95vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
-                <TestFunctionModal onCancel={() => setIsTestFunctionModalOpen(false)} />
+            <Modal width={'75vw'} height={'80vh'} clickOutside={() => setIsTestFunctionModalOpen(false)} open={isTestFunctionModalOpen} displayButtons={false}>
+                <TestMockEvent functionDetails={selectedFunction} open={isTestFunctionModalOpen} />
             </Modal>
             {tabValue === 'Details' && (
                 <code is="x3d">
@@ -308,33 +312,43 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                         <GithubBranchIcon />
                                         <label>{selectedFunction?.branch}</label>
                                     </branch>
-                                    <language is="x3d">
-                                        <CodeBlackIcon />
-                                        <label>{selectedFunction?.language}</label>
-                                    </language>
+                                    {selectedFunction?.is_valid && (
+                                        <language is="x3d">
+                                            <CodeBlackIcon />
+                                            <label>{selectedFunction?.language}</label>
+                                        </language>
+                                    )}
                                 </info>
                             </deatils>
                             <Divider />
                             <label className="label-title">Social</label>
                             <deatils is="x3d">
-                                <downloads is="x3d">
-                                    <BiDownload className="download-icon" />
-                                    <label>{Number(180).toLocaleString()}</label>
-                                </downloads>
-                                <Divider type="vertical" />
-                                <rate is="x3d">
-                                    <Rate disabled defaultValue={5} className="stars-rate" />
-                                    <label>(50)</label>
-                                </rate>
-                                <Divider type="vertical" />
+                                {selectedFunction.owner === OWNER && (
+                                    <>
+                                        <downloads is="x3d">
+                                            <BiDownload className="download-icon" />
+                                            <label>{Number(180).toLocaleString()}</label>
+                                        </downloads>
+                                        <Divider type="vertical" />
+                                        <rate is="x3d">
+                                            <Rate disabled defaultValue={5} className="stars-rate" />
+                                            <label>(50)</label>
+                                        </rate>
+                                        <Divider type="vertical" />
+                                    </>
+                                )}
                                 <commits is="x3d">
                                     <FiGitCommit />
                                     <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                                 </commits>
                             </deatils>
-                            <Divider />
-                            <label className="label-title">Tags</label>
-                            <TagsList tagsToShow={3} tags={selectedFunction?.tags} entityType="function" entityName={selectedFunction?.function_name} />
+                            {selectedFunction?.is_valid && (
+                                <>
+                                    <Divider />
+                                    <label className="label-title">Tags</label>
+                                    <TagsList tagsToShow={3} tags={selectedFunction?.tags} entityType="function" entityName={selectedFunction?.function_name} />
+                                </>
+                            )}
                         </div>
                     </span>
                 </code>

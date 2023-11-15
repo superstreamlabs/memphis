@@ -110,65 +110,82 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
 
     return (
         <>
-            {isValid ? (
-                <div
-                    key={functionDetails?.function_name}
-                    className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
-                    onClick={() => (onClick ? onClick() : isCloud() && handleDrawer(true))}
-                >
-                    <header is="x3d">
-                        <div className={`function-box-header ${!isTagsOn && 'station'}`}>
-                            <div className="details-section">
-                                {funcDetails?.image ? (
-                                    <img src={funcDetails?.image} alt="Function icon" height="40px" />
-                                ) : (
-                                    <FunctionIcon alt="Function icon" height="40px" />
-                                )}
-                                <div>
-                                    <div className="function-name">
-                                        <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
-                                            {functionDetails?.function_name}
-                                        </OverflowTip>
-                                    </div>
-                                    <deatils is="x3d">
-                                        <div className="function-owner">
-                                            {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
-                                            <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
-                                        </div>
-                                        <Divider type="vertical" />
-                                        {funcDetails.owner !== OWNER && (
-                                            <>
-                                                <repo is="x3d">
-                                                    <GoRepo />
-                                                    <label>{functionDetails?.repo}</label>
-                                                </repo>
-                                                <Divider type="vertical" />
-                                                <branch is="x3d">
-                                                    <GithubBranchIcon />
-                                                    <label>{functionDetails?.branch}</label>
-                                                </branch>
-                                                <Divider type="vertical" />
-                                            </>
-                                        )}
-                                        <downloads is="x3d">
-                                            <BiDownload className="download-icon" />
-                                            <label>{Number(180).toLocaleString()}</label>
-                                        </downloads>
-                                        <Divider type="vertical" />
-                                        <rate is="x3d">
-                                            <Rate disabled defaultValue={5} className="stars-rate" />
-                                            <label>(50)</label>
-                                        </rate>
-                                        <Divider type="vertical" />
-                                        <commits is="x3d">
-                                            <FiGitCommit />
-                                            <label>Last commit on {parsingDate(functionDetails?.installed_updated_at, false, false)}</label>
-                                        </commits>
-                                    </deatils>
-                                    <description is="x3d">{functionDetails?.description}</description>
+            <div
+                key={functionDetails?.function_name}
+                className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                onClick={() => (onClick ? onClick() : isCloud() && handleDrawer(true))}
+            >
+                <header is="x3d">
+                    <div className={`function-box-header ${!isTagsOn && 'station'}`}>
+                        <div className="details-section">
+                            {funcDetails?.image ? <img src={funcDetails?.image} alt="Function icon" height="40px" /> : <FunctionIcon alt="Function icon" height="40px" />}
+                            <div>
+                                <div className="function-name">
+                                    <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
+                                        {functionDetails?.function_name}
+                                    </OverflowTip>
                                 </div>
+                                <deatils is="x3d">
+                                    <div className="function-owner">
+                                        {funcDetails.owner === OWNER && <MemphisFunctionIcon alt="Memphis function icon" height="15px" />}
+                                        <owner is="x3d">{functionDetails?.owner === OWNER ? 'Memphis.dev' : functionDetails?.owner}</owner>
+                                    </div>
+                                    <Divider type="vertical" />
+                                    {funcDetails.owner !== OWNER && (
+                                        <>
+                                            <repo is="x3d">
+                                                <GoRepo />
+                                                <label>{functionDetails?.repo}</label>
+                                            </repo>
+                                            <Divider type="vertical" />
+                                            <branch is="x3d">
+                                                <GithubBranchIcon />
+                                                <label>{functionDetails?.branch}</label>
+                                            </branch>
+                                            <Divider type="vertical" />
+                                        </>
+                                    )}
+                                    {functionDetails?.owner === OWNER && (
+                                        <>
+                                            <downloads is="x3d">
+                                                <BiDownload className="download-icon" />
+                                                <label>{Number(180).toLocaleString()}</label>
+                                            </downloads>
+                                            <Divider type="vertical" />
+                                            <rate is="x3d">
+                                                <Rate disabled defaultValue={5} className="stars-rate" />
+                                                <label>(50)</label>
+                                            </rate>
+                                            <Divider type="vertical" />
+                                        </>
+                                    )}
+                                    <commits is="x3d">
+                                        <FiGitCommit />
+                                        <label>Last commit on {parsingDate(functionDetails?.installed_updated_at, false, false)}</label>
+                                    </commits>
+                                </deatils>
+                                <description is="x3d">
+                                    {isValid ? (
+                                        functionDetails?.description
+                                    ) : (
+                                        <Skeleton.Button
+                                            active={false}
+                                            style={{ width: '200px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
+                                        />
+                                    )}
+                                </description>
                             </div>
-                            <div onClick={(e) => e.stopPropagation()} className="install-button">
+                        </div>
+                        <div onClick={(e) => e.stopPropagation()} className="install-button">
+                            {!isValid && (
+                                <div className="warning">
+                                    <IoIosInformationCircle style={{ fontSize: '20px', color: '#6557FF' }} />
+                                    <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'}>
+                                        <label className="warning-message">{functionDetails?.invalid_reason}</label>
+                                    </OverflowTip>
+                                </div>
+                            )}
+                            {isValid && (
                                 <Button
                                     width="100px"
                                     height="34px"
@@ -187,159 +204,58 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                         else onApply();
                                     }}
                                 />
-                                {isCloud() && (
-                                    <Button
-                                        width="100px"
-                                        height="34px"
-                                        placeholder={
-                                            functionDetails?.installed_in_progress ? (
-                                                ''
-                                            ) : installed ? (
-                                                <div className="code-btn">
-                                                    {functionDetails?.updates_available ? (
-                                                        <BiDownload className="Install" />
-                                                    ) : (
-                                                        <MdOutlineFileDownloadOff className="Uninstall" />
-                                                    )}
-                                                    {functionDetails?.updates_available ? <label>Update</label> : <label>Uninstall</label>}
-                                                </div>
-                                            ) : (
-                                                <div className="code-btn">
+                            )}
+                            {isCloud() && (
+                                <Button
+                                    width="100px"
+                                    height="34px"
+                                    placeholder={
+                                        functionDetails?.installed_in_progress ? (
+                                            ''
+                                        ) : installed ? (
+                                            <div className="code-btn">
+                                                {functionDetails?.updates_available ? (
                                                     <BiDownload className="Install" />
-                                                    <label>Install</label>
-                                                </div>
-                                            )
-                                        }
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="12px"
-                                        fontFamily="InterSemiBold"
-                                        disabled={functionDetails?.installed_in_progress}
-                                        isLoading={loader || functionDetails?.installed_in_progress}
-                                        onClick={() => {
-                                            !installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall();
-                                        }}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </header>
-                    {isTagsOn && (
-                        <footer is="x3d">
-                            <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
-                        </footer>
-                    )}
-                </div>
-            ) : (
-                <div className="function-box-wrapper">
-                    <header is="x3d">
-                        <div className="function-box-header">
-                            <div className="details-section">
-                                <Skeleton.Avatar active={false} size={45} shape="circle" />
-                                <div>
-                                    <div className="function-name">
-                                        <OverflowTip text={functionDetails?.function_name} maxWidth={'250px'}>
-                                            {functionDetails?.function_name}
-                                        </OverflowTip>
-                                    </div>
-                                    <deatils is="x3d">
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '100px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
-                                        />
-                                        <Skeleton.Avatar active={false} size={7} shape="circle" />
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '76px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
-                                        />
-                                        <Skeleton.Avatar active={false} size={7} shape="circle" />
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '76px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
-                                        />
-                                        <Skeleton.Avatar active={false} size={7} shape="circle" />
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '76px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
-                                        />
-                                    </deatils>
-                                    <description is="x3d">
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '124px', height: '7px', borderRadius: '2px', background: '#e8e8e8', marginRight: '12px', minWidth: '40px' }}
-                                        />
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '124px', height: '7px', borderRadius: '2px', background: '#e8e8e8', marginRight: '12px', minWidth: '40px' }}
-                                        />
-                                        <Skeleton.Input
-                                            active={false}
-                                            style={{ width: '124px', height: '7px', borderRadius: '2px', background: '#e8e8e8', minWidth: '40px' }}
-                                        />
-                                    </description>
-                                </div>
-                            </div>
-                            <div
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                }}
-                                className="install-button"
-                            >
-                                <div className="warning">
-                                    <IoIosInformationCircle style={{ fontSize: '20px', color: '#6557FF' }} />
-                                    <OverflowTip text={functionDetails?.invalid_reason} maxWidth={'260px'}>
-                                        <label className="warning-message">{functionDetails?.invalid_reason}</label>
-                                    </OverflowTip>
-                                </div>
-
-                                {isCloud() && (
-                                    <Button
-                                        width="100px"
-                                        height="34px"
-                                        placeholder={
-                                            isValid ? (
-                                                functionDetails?.installed_in_progress ? (
-                                                    ''
-                                                ) : installed ? (
-                                                    <div className="code-btn">
-                                                        <MdOutlineFileDownloadOff className="Uninstall" />
-                                                        <label>Uninstall</label>
-                                                    </div>
                                                 ) : (
-                                                    <div className="code-btn">
-                                                        <BiDownload className="Install" />
-                                                        <label>Install</label>
-                                                    </div>
-                                                )
-                                            ) : (
+                                                    <MdOutlineFileDownloadOff className="Uninstall" />
+                                                )}
+                                                {functionDetails?.updates_available ? <label>Update</label> : <label>Uninstall</label>}
+                                            </div>
+                                        ) : (
+                                            <div className="code-btn">
+                                                <BiDownload className="Install" />
                                                 <label>Install</label>
-                                            )
-                                        }
-                                        colorType="white"
-                                        radiusType="circle"
-                                        backgroundColorType="purple"
-                                        fontSize="12px"
-                                        fontFamily="InterSemiBold"
-                                        disabled={functionDetails?.installed_in_progress || !isValid}
-                                        isLoading={functionDetails?.installed_in_progress} //Get indication after install function
-                                        onClick={() => {
-                                            showMessages('success', 'Install function');
-                                            return;
-                                        }}
-                                    />
-                                )}
-                            </div>
+                                            </div>
+                                        )
+                                    }
+                                    colorType="white"
+                                    radiusType="circle"
+                                    backgroundColorType="purple"
+                                    fontSize="12px"
+                                    fontFamily="InterSemiBold"
+                                    disabled={!isValid || functionDetails?.installed_in_progress}
+                                    isLoading={loader || functionDetails?.installed_in_progress}
+                                    onClick={() => {
+                                        !installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall();
+                                    }}
+                                />
+                            )}
                         </div>
-                    </header>
-
+                    </div>
+                </header>
+                {isTagsOn && isValid && (
+                    <footer is="x3d">
+                        <TagsList tagsToShow={3} tags={functionDetails?.tags} entityType="function" entityName={functionDetails?.function_name} />
+                    </footer>
+                )}
+                {isTagsOn && !isValid && (
                     <footer is="x3d">
                         <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8', marginRight: '8px' }} />
                         <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8', marginRight: '8px' }} />
                         <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8' }} />
                     </footer>
-                </div>
-            )}
+                )}
+            </div>
             <Modal
                 header={
                     <div className="modal-header">
