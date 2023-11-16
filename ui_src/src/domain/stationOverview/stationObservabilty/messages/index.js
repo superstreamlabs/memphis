@@ -65,10 +65,16 @@ const Messages = () => {
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
-    const subTabs = [
-        { name: 'Unacknowledged', disabled: false },
-        { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
-    ];
+    const subTabs = isCloud()
+        ? [
+              { name: 'Unacknowledged', disabled: false },
+              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native },
+              { name: 'Functions', disabled: !stationState?.stationMetaData?.functions_enabled }
+          ]
+        : [
+              { name: 'Unacknowledged', disabled: false },
+              { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native }
+          ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
 
@@ -163,11 +169,11 @@ const Messages = () => {
                 });
             } else {
                 await httpRequest('POST', `${ApiEndpoints.DROP_DLS_MESSAGE}`, {
-                    dls_type: subTabValue === subTabs[0].name ? 'poison' : 'schema',
+                    dls_type: subTabValue === subTabs[0]?.name ? 'poison' : 'schema',
                     dls_message_ids: isCheck,
                     station_name: stationName
                 });
-                messages = subTabValue === subTabs[0].name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
+                messages = subTabValue === subTabs[0]?.name ? stationState?.stationSocketData?.poison_messages : stationState?.stationSocketData?.schema_failed_messages;
                 isCheck.map((messageId, index) => {
                     messages = messages?.filter((item) => {
                         return item.id !== messageId;
@@ -178,7 +184,7 @@ const Messages = () => {
                 setIgnoreProcced(false);
                 tabValue === tabs[0]
                     ? stationDispatch({ type: 'SET_MESSAGES', payload: messages })
-                    : subTabValue === subTabs[0].name
+                    : subTabValue === subTabs[0]?.name
                     ? stationDispatch({ type: 'SET_POISON_MESSAGES', payload: messages })
                     : stationDispatch({ type: 'SET_FAILED_MESSAGES', payload: messages });
                 stationDispatch({ type: 'SET_SELECTED_ROW_ID', payload: null });
@@ -265,6 +271,8 @@ const Messages = () => {
                                     ? stationState?.stationSocketData?.messages
                                     : subTabValue === 'Unacknowledged'
                                     ? stationState?.stationSocketData?.poison_messages
+                                    : subTabValue === 'Functions'
+                                    ? stationState?.stationSocketData?.functions_failed_messages
                                     : stationState?.stationSocketData?.schema_failed_messages
                             }
                             onScroll={() => handleScroll()}
@@ -272,7 +280,7 @@ const Messages = () => {
                             itemContent={(index, message) => listGenerator(index, message)}
                         />
                     </div>
-                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} />
+                    <MessageDetails isDls={isDls} isFailedSchemaMessage={subTabValue === 'Schema violation'} isFailedFunctionMessage={subTabValue === 'Functions'} />
                 </div>
             </div>
         );
@@ -281,9 +289,9 @@ const Messages = () => {
     const showLastMsg = () => {
         let amount = 0;
         if (tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) amount = stationState?.stationSocketData?.messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0)
             amount = stationState?.stationSocketData?.poison_messages?.length;
-        else if (tabValue === tabs[1] && subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
+        else if (tabValue === tabs[1] && subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)
             amount = stationState?.stationSocketData?.schema_failed_messages?.length;
         return (
             amount > 0 && (
@@ -357,8 +365,9 @@ const Messages = () => {
                         <div className="right-side">
                             {((tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0) ||
                                 (tabValue === tabs[1] &&
-                                    ((subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
-                                        (subTabValue === subTabs[1].name && stationState?.stationSocketData?.schema_failed_messages?.length > 0)))) && (
+                                    ((subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0) ||
+                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.schema_failed_messages?.length > 0) ||
+                                        (subTabValue === subTabs[1]?.name && stationState?.stationSocketData?.functions_failed_messages?.length > 0)))) && (
                                 <Button
                                     width="80px"
                                     height="32px"
@@ -397,7 +406,10 @@ const Messages = () => {
                             tabs={tabs}
                             length={[
                                 null,
-                                stationState?.stationSocketData?.poison_messages?.length || stationState?.stationSocketData?.schema_failed_messages?.length || null,
+                                stationState?.stationSocketData?.poison_messages?.length ||
+                                    stationState?.stationSocketData?.schema_failed_messages?.length ||
+                                    stationState?.stationSocketData?.functions_failed_messages?.length ||
+                                    null,
                                 null
                             ]}
                             icon
@@ -412,17 +424,22 @@ const Messages = () => {
                                 tabs={subTabs}
                                 length={[
                                     stationState?.stationSocketData?.poison_messages?.length || null,
-                                    stationState?.stationSocketData?.schema_failed_messages?.length || null
+                                    stationState?.stationSocketData?.schema_failed_messages?.length || null,
+                                    stationState?.stationSocketData?.functions_failed_messages?.length || null
                                 ]}
                                 tooltip={[null, !stationState?.stationMetaData?.is_native && 'Supported only by using Memphis SDKs']}
                             />
                         </div>
                     )}
                     {tabValue === tabs[0] && stationState?.stationSocketData?.messages?.length > 0 && listGeneratorWrapper()}
-                    {tabValue === tabs[1] && subTabValue === subTabs[0].name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
+                    {tabValue === tabs[1] && subTabValue === subTabs[0]?.name && stationState?.stationSocketData?.poison_messages?.length > 0 && listGeneratorWrapper()}
                     {tabValue === tabs[1] &&
-                        subTabValue === subTabs[1].name &&
+                        subTabValue === subTabs[1]?.name &&
                         stationState?.stationSocketData?.schema_failed_messages?.length > 0 &&
+                        listGeneratorWrapper()}
+                    {tabValue === tabs[1] &&
+                        subTabValue === subTabs[2]?.name &&
+                        stationState?.stationSocketData?.functions_failed_messages?.length > 0 &&
                         listGeneratorWrapper()}
 
                     {tabValue === tabs[0] && (stationState?.stationSocketData?.messages === null || stationState?.stationSocketData?.messages?.length === 0) && (
@@ -434,7 +451,8 @@ const Messages = () => {
                     )}
                     {tabValue === tabs[1] &&
                         ((subTabValue === 'Unacknowledged' && stationState?.stationSocketData?.poison_messages?.length === 0) ||
-                            (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0)) && (
+                            (subTabValue === 'Schema violation' && stationState?.stationSocketData?.schema_failed_messages?.length === 0) ||
+                            (subTabValue === 'Functions' && stationState?.stationSocketData?.functions_failed_messages?.length === 0)) && (
                             <div className="waiting-placeholder msg-plc">
                                 <DeadLetterPlaceholderIcon width={80} alt="waitingMessages" />
                                 <p>Hooray! No messages</p>

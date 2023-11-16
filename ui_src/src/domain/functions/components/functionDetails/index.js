@@ -181,7 +181,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
             {onBackToFunction && (
                 <div className="back-to-function" onClick={onBackToFunction}>
                     <ArrowBackIcon />
-                    <span>Back to Function</span>
+                    <span>Back to function</span>
                 </div>
             )}
 
