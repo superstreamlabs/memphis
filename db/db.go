@@ -6656,7 +6656,7 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
 	batch := &pgx.Batch{}
-	for _, q := range queries { // TODO to be returned once we fix the producer limitation
+	for _, q := range queries {
 		batch.Queue(q, timeInterval)
 	}
 
