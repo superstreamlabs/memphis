@@ -76,7 +76,7 @@ const GitHubIntegration = ({ close, value }) => {
             setImagesLoaded(true);
         });
         getIntegration();
-    }, [value]);
+    }, []);
 
     function areEqual(arr1, arr2) {
         if (arr1?.length !== arr2?.length) {
@@ -118,8 +118,9 @@ const GitHubIntegration = ({ close, value }) => {
 
     const removeRepoItem = (index) => {
         let updatedValue = { ...formFields.keys };
-        updatedValue.connected_repos.splice(index, 1);
+        updatedValue?.connected_repos?.splice(index, 1);
         setFormFields((formFields) => ({ ...formFields, keys: updatedValue }));
+        updateIntegration(updatedValue);
     };
 
     const updateKeysState = (field, value) => {
@@ -138,8 +139,7 @@ const GitHubIntegration = ({ close, value }) => {
         showMessages('success', disconnect ? 'The integration was successfully disconnected' : 'The integration connected successfully');
     };
 
-    const updateIntegration = async () => {
-        setLoadingSubmit(true);
+    const updateIntegration = async (updatedValue) => {
         const updatedFields = cleanEmptyFields();
         try {
             const data = await httpRequest('POST', ApiEndpoints.UPDATE_INTEGRATION, updatedFields);
@@ -161,9 +161,7 @@ const GitHubIntegration = ({ close, value }) => {
                 } else {
                     setIsIntagrated(false);
                 }
-                data?.integration?.keys?.connected_repos?.forEach((repo) => {
-                    repo?.in_progress && setInProgressFlag(true);
-                });
+                setInProgressFlag(data?.integration?.keys?.connected_repos?.some((repo) => repo?.in_progress));
                 updateKeysState('connected_repos', data?.integration?.keys?.connected_repos || []);
                 setRepos(data?.repos);
                 setApplicationName(data?.application_name);
@@ -296,9 +294,14 @@ const GitHubIntegration = ({ close, value }) => {
                                                                 removeRepo={(i) => {
                                                                     removeRepoItem(i);
                                                                 }}
-                                                                type={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
                                                                 updateIntegration={updateIntegration}
                                                                 addIsLoading={loadingSubmit || repo?.in_progress}
+                                                                inProgressFlag={inProgressFlag}
+                                                                disabled={
+                                                                    (addNew && index !== formFields?.keys?.connected_repos?.length - 1) || !addNew || repo?.in_progress
+                                                                }
+                                                                isEdittingIntegration={addNew}
+                                                                isNew={index === formFields?.keys?.connected_repos?.length - 1 && addNew}
                                                             />
                                                         );
                                                     })}

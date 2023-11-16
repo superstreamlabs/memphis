@@ -23,13 +23,16 @@ import SearchInput from '../../../../../components/searchInput';
 import { ApiEndpoints } from '../../../../../const/apiEndpoints';
 import { httpRequest } from '../../../../../services/http';
 import FunctionsApplyModal from '../functionsApplyModal';
+import FunctionInputsModal from '../functionInputsModal';
 import Modal from '../../../../../components/modal';
 import { ReactComponent as SearchIcon } from '../../../../../assets/images/searchIcon.svg';
 import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
 import { ReactComponent as FunctionsModalIcon } from '../../../../../assets/images/vueSaxIcon.svg';
+import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIcon.svg';
 import { StationStoreContext } from '../../../';
 
 import { OWNER } from '../../../../../const/globalConst';
+import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
 const FunctionsModal = ({ applyFunction }) => {
     const [functionList, setFunctionList] = useState([]);
@@ -38,6 +41,7 @@ const FunctionsModal = ({ applyFunction }) => {
     const [tabValue, setTabValue] = useState('all');
     const [searchInput, setSearchInput] = useState('');
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
+    const [isInputsModalOpen, setIsInputsModalOpen] = useState(false);
     const [filteredData, setFilteredData] = useState([]);
     const [clickedFunction, setClickedFunction] = useState(null);
     const [selectedFunction, setSelectedFunction] = useState(null);
@@ -88,7 +92,8 @@ const FunctionsModal = ({ applyFunction }) => {
             function_id: selectedFunction?.id,
             visible_step: stationState?.stationFunctions?.functions?.length + 1,
             ordering_matter: ordering,
-            activate: true
+            activate: true,
+            inputs: selectedFunction?.inputs
         };
         applyFunction(requestBodey);
     };
@@ -113,6 +118,12 @@ const FunctionsModal = ({ applyFunction }) => {
 
     const TABS = getFunctionsTabs();
 
+    const handleInputsChange = (inputs) => {
+        const newFunction = { ...selectedFunction };
+        newFunction.inputs = inputs;
+        setSelectedFunction(newFunction);
+    };
+
     const antIcon = (
         <LoadingOutlined
             style={{
@@ -123,7 +134,7 @@ const FunctionsModal = ({ applyFunction }) => {
         />
     );
     return (
-        <>
+        <div className="function-modal-container">
             {clickedFunction ? (
                 <FunctionDetails
                     selectedFunction={clickedFunction}
@@ -178,7 +189,7 @@ const FunctionsModal = ({ applyFunction }) => {
                                         installed={true}
                                         onApply={() => {
                                             setSelectedFunction(functionItem);
-                                            stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(functionItem);
+                                            setIsInputsModalOpen(true);
                                         }}
                                         onClick={() => {
                                             setClickedFunction(functionItem);
@@ -215,7 +226,33 @@ const FunctionsModal = ({ applyFunction }) => {
                     successText={'Apply'}
                 />
             </Modal>
-        </>
+            <Modal
+                width={'1000px'}
+                height={'40vh'}
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <CheckShieldIcon />
+                        </div>
+                        <span className="flex-label">
+                            <p>Function Inputs Variables</p>
+                            <TooltipComponent text="The values entered in the following fields will be encrypted at-rest using AES256 encryption">
+                                <LockIcon alt="secure data" />
+                            </TooltipComponent>
+                        </span>
+                    </div>
+                }
+                open={isInputsModalOpen}
+                clickOutside={() => setIsInputsModalOpen(false)}
+                rBtnClick={() => {
+                    stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(selectedFunction);
+                    setIsInputsModalOpen(false);
+                }}
+                rBtnText={stationState?.stationFunctions?.functions?.length === 0 ? 'Next' : 'Apply'}
+            >
+                <FunctionInputsModal functionInputsChange={(inputs) => handleInputsChange(inputs)} />
+            </Modal>
+        </div>
     );
 };
 

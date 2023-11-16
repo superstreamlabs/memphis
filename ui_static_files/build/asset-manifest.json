@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.58ae5e60.css",
-    "main.js": "/static/js/main.736dc645.js",
+    "main.css": "/static/css/main.0e89e5ff.css",
+    "main.js": "/static/js/main.84a373e2.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -241,6 +241,7 @@
     "static/media/disconnectDls.svg": "/static/media/disconnectDls.5919be2177c77e749c1d7265961db0a3.svg",
     "static/media/functionsIcon.svg": "/static/media/functionsIcon.1052ea4c00c13b94c6241fba568acb26.svg",
     "static/media/redeliver.svg": "/static/media/redeliver.3caf70ae4dec01ad025a11d1408c6a4f.svg",
+    "static/media/lockIcon.svg": "/static/media/lockIcon.0fcb835b856c632481721799ab5a2515.svg",
     "static/media/messageIcon.svg": "/static/media/messageIcon.4cc0325f976f4989d1d815bd3032bdc0.svg",
     "static/media/task.svg": "/static/media/task.e71baa37fcbd85f3c691d282c9276b84.svg",
     "static/media/idempotencyIcon.svg": "/static/media/idempotencyIcon.2118e5c7e2a9ff3521e7e283db57de46.svg",
@@ -317,7 +318,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.58ae5e60.css",
-    "static/js/main.736dc645.js"
+    "static/css/main.0e89e5ff.css",
+    "static/js/main.84a373e2.js"
   ]
 }

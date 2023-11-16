@@ -33,12 +33,13 @@ import dataPassLineEmptyLottie from '../../../../../assets/lotties/dataPassLineE
 import Lottie from 'lottie-react';
 import FunctionCard from '../functionCard';
 import FunctionsModal from '../functionsModal';
+import FunctionLogs from '../functionLogs';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
 let sub;
 
-const FunctionsOberview = () => {
+const FunctionsOverview = () => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [currentFunction, setCurrentFunction] = useState(null);
     const [functionDetails, setFunctionDetails] = useState(null);
@@ -143,8 +144,8 @@ const FunctionsOberview = () => {
     }, [currentFunction]);
 
     const handleAddFunction = async (requestBody) => {
-        requestBody['station_name'] = stationState?.stationMetaData?.name;
-        requestBody['partition'] = stationState?.stationMetaData?.partitions_number;
+        requestBody.station_name = stationState?.stationMetaData?.name;
+        requestBody.partition = stationState?.stationMetaData?.partitions_number;
         try {
             await httpRequest('POST', ApiEndpoints.ADD_FUNCTION, requestBody);
             getFunctionsOverview();
@@ -212,8 +213,7 @@ const FunctionsOberview = () => {
         {
             key: '2',
             label: 'Logs',
-            children: 'Content of Tab Pane 3',
-            disabled: true
+            children: <FunctionLogs functionId={currentFunction?.id} />
         }
     ];
 
@@ -350,12 +350,16 @@ const FunctionsOberview = () => {
                 displayButtons={false}
                 className="ms-function-details-modal"
                 height="95vh"
-                width="70vw"
+                width="1200px"
             >
-                <FunctionsModal applyFunction={(requestBody) => handleAddFunction(requestBody)} />
+                <FunctionsModal
+                    applyFunction={(requestBody) => {
+                        handleAddFunction(requestBody);
+                    }}
+                />
             </Modal>
         </div>
     );
 };
 
-export default FunctionsOberview;
+export default FunctionsOverview;

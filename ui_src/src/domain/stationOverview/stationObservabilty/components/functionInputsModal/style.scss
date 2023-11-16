@@ -1,0 +1,31 @@
+.function-inputs-modal {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    height: 100%;
+    overflow-y: auto;
+    .info {
+        width: 300px;
+        font-family: 'Inter';
+        font-size: 14px;
+        font-style: normal;
+        font-weight: 400;
+        .link {
+            color: #6557ff;
+            cursor: pointer;
+        }
+    }
+    .inputs-container {
+        // height: calc(100% - 60px);
+        height: 100%;
+        overflow-y: auto;
+        margin-left: 30px;
+        .input-row {
+            display: flex;
+            // justify-content: space-between;
+            margin-bottom: 10px;
+            gap: 10px;
+            // height: calc(100% - 60px);
+        }
+    }
+}

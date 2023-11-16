@@ -12,8 +12,9 @@
 
 import './style.scss';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { Spin } from 'antd';
+import { Context } from '../../../../hooks/store';
 import { SyncOutlined } from '@ant-design/icons';
 import GitHubIntegration from '../../../administration/integrations/components/gitHubIntegration';
 import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/images/placeholderFunctions.svg';
@@ -50,6 +51,7 @@ import { getFunctionsTabs } from '../../../../services/valueConvertor';
 const { Panel } = Collapse;
 
 function FunctionList({ tabPrivate }) {
+    const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(true);
     const [modalIsOpen, modalFlip] = useState(false);
     const [cloneTooltipIsOpen, cloneTooltipIsOpenFlip] = useState(false);
@@ -66,42 +68,28 @@ function FunctionList({ tabPrivate }) {
     const [clickedRefresh, setClickedRefresh] = useState(false);
     const [refreshIndeicator, setRefreshIndicator] = useState(false);
     const [isCloudModalOpen, setIsCloudModalOpen] = useState(false);
-    const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
+    const [githubIntegrationData, setGithubIntegrationData] = useState({});
 
+    const ExpandIcon = ({ isActive }) => <img className={isActive ? 'collapse-arrow open' : 'collapse-arrow close'} src={CollapseArrow} alt="collapse-arrow" />;
     const TABS = getFunctionsTabs();
 
-    const content = (
-        <div className="git-repos-list">
-            {connectedRepos?.map((repo, index) => (
-                <div key={index}>
-                    <div className="git-repos-item">
-                        <div className="left-section">
-                            {repo?.owner === OWNER ? <MemphisLogo alt="repo" className="repo-item-icon-memphis" /> : <RepoIcon alt="repo" className="repo-item-icon" />}
+    useEffect(() => {
+        findAndUpdateGithubIntegration();
+    }, [state?.integrationsList]);
 
-                            <span className="repo-data">
-                                <OverflowTip text={repo?.repo_name} center={false}>
-                                    {repo?.repo_name}
-                                </OverflowTip>
-                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, false, false)}`} width={'170px'} center={false}>
-                                    <label className="last-modified">
-                                        {repo?.branch} | Last synced on {parsingDate(repo?.last_modified, false, false)}
-                                    </label>
-                                </OverflowTip>
-                            </span>
-                            {repo?.in_progress ? (
-                                <div className="refresh">
-                                    <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
-                                </div>
-                            ) : (
-                                <MdDone alt="Healty" />
-                            )}
-                        </div>
-                    </div>
-                    <Divider />
-                </div>
-            ))}
-        </div>
-    );
+    const findAndUpdateGithubIntegration = () => {
+        const integrationData = state?.integrationsList?.find((integration) => integration?.name === 'github');
+        setGithubIntegrationData(integrationData);
+    };
+
+    const getAllIntegrations = async () => {
+        try {
+            const data = await httpRequest('GET', ApiEndpoints.GET_ALL_INTEGRATION);
+            dispatch({ type: 'SET_INTEGRATIONS', payload: data || [] });
+        } catch (err) {
+            return;
+        }
+    };
 
     useEffect(() => {
         getAllFunctions();
@@ -109,6 +97,7 @@ function FunctionList({ tabPrivate }) {
             setIsFunctionsGuideOpen(true);
             localStorage.setItem(LOCAL_STORAGE_FUNCTION_PAGE_VIEW, true);
         }
+        getAllIntegrations();
     }, []);
 
     const getAllFunctions = async () => {
@@ -217,6 +206,39 @@ function FunctionList({ tabPrivate }) {
             return data;
         });
     };
+
+    const content = (
+        <div className="git-repos-list">
+            {connectedRepos?.map((repo, index) => (
+                <div key={index}>
+                    <div className="git-repos-item">
+                        <div className="left-section">
+                            {repo?.owner === OWNER ? <MemphisLogo alt="repo" className="repo-item-icon-memphis" /> : <RepoIcon alt="repo" className="repo-item-icon" />}
+
+                            <span className="repo-data">
+                                <OverflowTip text={repo?.repo_name} width={'170px'} center={false}>
+                                    {repo?.repo_name}
+                                </OverflowTip>
+                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, false, false)}`} width={'170px'} center={false}>
+                                    <label className="last-modified">
+                                        {repo?.branch} | Synced on {parsingDate(repo?.last_modified, false, false)}
+                                    </label>
+                                </OverflowTip>
+                            </span>
+                            {repo?.in_progress ? (
+                                <div className="refresh">
+                                    <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                                </div>
+                            ) : (
+                                <MdDone alt="Healty" />
+                            )}
+                        </div>
+                    </div>
+                    <Divider />
+                </div>
+            ))}
+        </div>
+    );
 
     const renderNoFunctionsFound = () => (
         <div className="no-function-to-display">
@@ -419,7 +441,7 @@ function FunctionList({ tabPrivate }) {
                             modalFlip(false);
                         }
                     }}
-                    value={{}}
+                    value={githubIntegrationData}
                 />
             </Modal>
             <Modal

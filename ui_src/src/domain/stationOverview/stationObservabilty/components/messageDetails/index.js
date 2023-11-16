@@ -28,7 +28,7 @@ import CustomCollapse from '../customCollapse';
 import MultiCollapse from '../multiCollapse';
 import StatusIndication from '../../../../../components/indication';
 
-const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
+const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunctionMessage = false }) => {
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
     const [stationState, stationDispatch] = useContext(StationStoreContext);
@@ -46,7 +46,9 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
 
     useEffect(() => {
         if ((isDls && stationState?.selectedRowId && stationState?.selectedRowPartition && !loadMessageData) || (stationState?.selectedRowId && !loadMessageData)) {
-            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
+            isFailedFunctionMessage
+                ? getAttachedFunctionDlsMsgs(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition)
+                : getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
         }
     }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
@@ -61,6 +63,24 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                 }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
                     isDls ? -1 : selectedRow
                 }`
+            );
+            arrangeData(data);
+        } catch (error) {
+            setLoadMessageData(false);
+        }
+    };
+
+    const getAttachedFunctionDlsMsgs = async (selectedRow, selectedRowPartition) => {
+        setMessageDetails({});
+        setLoadMessageData(true);
+        try {
+            const data = await httpRequest(
+                'GET',
+                `${
+                    ApiEndpoints.GET_ATTACHED_FUNCTION_DLS_MSG
+                }?dls_type=functions&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${
+                    isDls ? parseInt(selectedRow) : -1
+                }&message_seq=${isDls ? -1 : selectedRow}`
             );
             arrangeData(data);
         } catch (error) {
@@ -161,6 +181,9 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false }) => {
                             <Space direction="vertical">
                                 {messageDetails?.validationError !== '' && (
                                     <CustomCollapse status={false} header="Validation error" data={messageDetails?.validationError} message={true} />
+                                )}
+                                {isFailedFunctionMessage && messageDetails?.function_name !== '' && (
+                                    <CustomCollapse status={false} header="Function" data={messageDetails?.function_name} message={true} />
                                 )}
                                 <div className="info-box">
                                     <div>

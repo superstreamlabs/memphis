@@ -49,22 +49,73 @@ const TestResult = ({ testResultData, loading }) => {
 
     const getCopyData = () => {
         if (responseTab === 'All') {
-            return JSON.stringify(testResult, undefined, 2);
+            return JSON.stringify(testResult, null, 2);
         } else if (responseTab === 'Success') {
-            return JSON.stringify(testResult?.messages, undefined, 2);
+            return JSON.stringify(testResult?.messages, null, 2);
         } else if (responseTab === 'Failure') {
-            return JSON.stringify(testResult?.failed_messages, undefined, 2);
-        } else {
+            return JSON.stringify(testResult?.failed_messages, null, 2);
+        } else if (responseTab === 'Logs') {
             return testResult?.logs;
+        } else {
+            return testResult?.error;
         }
     };
+
+    const getSuccessMessages = () => {
+        return (
+            testResult?.messages && (
+                <>
+                    <p className="title">Success</p>
+                    {testResult?.messages?.map((message, index) => {
+                        return <p key={`message-${index}`}>{message?.payload}</p>;
+                    })}
+                </>
+            )
+        );
+    };
+
+    const getFailedMessages = () => {
+        return (
+            testResult?.failed_messages && (
+                <>
+                    <p className="title">Failure</p>
+                    {testResult?.failed_messages?.map((message, index) => {
+                        return <p key={`failed_messages-${index}`}>{message?.payload}</p>;
+                    })}
+                </>
+            )
+        );
+    };
+
+    const getLogs = () => {
+        return (
+            testResult?.logs && (
+                <>
+                    <p className="title">Logs</p>
+                    <p>{testResult?.logs}</p>
+                </>
+            )
+        );
+    };
+
+    const getErrors = () => {
+        return (
+            testResult?.error && (
+                <>
+                    <p className="title">Error</p>
+                    <p>{testResult?.error}</p>
+                </>
+            )
+        );
+    };
+
     return (
         <div className="result-wrapper">
             <RadioButton
                 vertical={false}
                 height="25px"
                 fontFamily="InterSemiBold"
-                options={options}
+                options={!testResult || testResult?.error === '' ? options : [{ label: 'Error', value: 'Error' }]}
                 radioStyle="radiobtn-capitalize"
                 radioValue={responseTab}
                 onChange={(e) => setResponseTab(e.target.value)}
@@ -96,32 +147,17 @@ const TestResult = ({ testResultData, loading }) => {
                         <div className="copy-section">
                             <Copy data={getCopyData()} />
                         </div>
-
+                        {responseTab === 'Error' && getErrors()}
                         {responseTab === 'All' && (
                             <span>
-                                {testResult?.messages && (
-                                    <>
-                                        <p className="title">Success</p>
-                                        <p>{JSON.stringify(testResult?.messages, undefined, 2)}</p>
-                                    </>
-                                )}
-                                {testResult?.failed_messages && (
-                                    <>
-                                        <p className="title">Failure</p>
-                                        <p>{JSON.stringify(testResult?.failed_messages, undefined, 2)}</p>
-                                    </>
-                                )}
-                                {testResult?.logs && (
-                                    <>
-                                        <p className="title">Logs</p>
-                                        <p>{testResult?.logs}</p>
-                                    </>
-                                )}
+                                {getSuccessMessages()}
+                                {getFailedMessages()}
+                                {getLogs()}
                             </span>
                         )}
-                        {responseTab === 'Success' && <p>{testResult?.messages && JSON.stringify(testResult?.messages, undefined, 2)}</p>}
-                        {responseTab === 'Failure' && <p>{testResult?.failed_messages && JSON.stringify(testResult?.failed_messages, undefined, 2)}</p>}
-                        {responseTab === 'Logs' && <p>{testResult?.logs}</p>}
+                        {responseTab === 'Success' && getSuccessMessages()}
+                        {responseTab === 'Failure' && getFailedMessages()}
+                        {responseTab === 'Logs' && getLogs()}
                     </div>
                 )}
                 {loading && (
