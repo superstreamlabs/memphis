@@ -198,10 +198,6 @@ func removeTenantResources(tenantName string, user models.User) error {
 		return err
 	}
 
-	err = db.DeleteAttachedFunctionsByTenant(tenantName)
-	if err != nil {
-		return err
-	}
 	if tenantName != MEMPHIS_GLOBAL_ACCOUNT {
 		err = db.RemoveTenant(tenantName)
 		if err != nil {

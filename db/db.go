@@ -7475,27 +7475,3 @@ func GetMemphisFunctionsByMemphis() ([]models.Function, error) {
 	}
 	return functions, nil
 }
-
-func DeleteAttachedFunctionsByTenant(tenantName string) error {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return err
-	}
-	defer conn.Release()
-
-	removeUserQuery := `DELETE FROM attached_functions WHERE tenant_name = $1`
-
-	stmt, err := conn.Conn().Prepare(ctx, "remove_attached_functions_by_tenant", removeUserQuery)
-	if err != nil {
-		return err
-	}
-	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
