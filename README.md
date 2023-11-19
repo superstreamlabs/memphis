@@ -198,7 +198,7 @@ Schema deserialization | :white_check_mark: | :white_check_mark: | :white_check_
 
 ## Support 🙋‍♂️🤝
 
-### Ask a question ❓ about Memphis.dev. or something related to us:
+### Have any questions ❓
 
 We welcome you to our discord server with your questions, doubts and feedback.
 
