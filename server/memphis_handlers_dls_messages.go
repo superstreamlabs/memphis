@@ -196,21 +196,22 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 	}
 }
 
-func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
+func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station, partitionNumber int) ([]models.LightDlsMessageResponse, []models.LightDlsMessageResponse, []models.LightDlsMessageResponse, int, error) {
 	poisonMessages := make([]models.LightDlsMessageResponse, 0)
 	schemaMessages := make([]models.LightDlsMessageResponse, 0)
+	functionsMessages := make([]models.LightDlsMessageResponse, 0)
 
-	var dlsMsgs []models.DlsMessage
+	var dlsMsgs []models.DlsMessageRes
 	var err error
 	if partitionNumber == -1 {
 		dlsMsgs, err = db.GetDlsMsgsByStationId(station.ID)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	} else {
 		dlsMsgs, err = db.GetDlsMsgsByStationAndPartition(station.ID, partitionNumber)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	}
 
@@ -227,10 +228,12 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 		}
 		switch v.MessageType {
 		case "poison":
-			poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails})
+			poisonMessages = append(poisonMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: messageDetails, FunctionName: v.FunctionName})
 		case "schema":
 			messageDetails.Size = len(v.MessageDetails.Data) + len(v.MessageDetails.Headers)
-			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails})
+			schemaMessages = append(schemaMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails, FunctionName: v.FunctionName})
+		case "functions":
+			functionsMessages = append(functionsMessages, models.LightDlsMessageResponse{MessageSeq: v.MessageSeq, ID: v.ID, Message: v.MessageDetails, FunctionName: v.FunctionName})
 		}
 	}
 
@@ -239,7 +242,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	if len(dlsMsgs) >= 0 {
 		totalDlsAmount, err = db.CountDlsMsgsByStationAndPartition(station.ID, partitionNumber)
 		if err != nil {
-			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
+			return []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, []models.LightDlsMessageResponse{}, 0, err
 		}
 	}
 
@@ -258,7 +261,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	if lenSchema > 1000 {
 		schemaMessages = schemaMessages[:1000]
 	}
-	return poisonMessages, schemaMessages, totalDlsAmount, nil
+	return poisonMessages, schemaMessages, functionsMessages, totalDlsAmount, nil
 }
 
 func (pmh PoisonMessagesHandler) GetDlsMessageDetailsById(messageId int, dlsType string, tenantName string) (models.DlsMessageResponse, error) {

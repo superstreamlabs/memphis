@@ -514,6 +514,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS function_id INT NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -546,6 +547,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
 		partition_number INTEGER NOT NULL DEFAULT -1,
+		function_id INT NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -5745,7 +5747,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
-					if !strings.Contains(pgErr.Detail, "already exists") {
+					if strings.Contains(pgErr.Detail, "already exists") {
 						return 0, updated, errors.New("dls_messages row already exists")
 					} else {
 						return 0, updated, errors.New(pgErr.Detail)
@@ -5930,59 +5932,114 @@ func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	return nil
 }
 
-func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
+func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessageRes, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
+	query := `SELECT
+			dlsm.id,
+			dlsm.station_id,
+			dlsm.message_seq,
+			dlsm.poisoned_cgs,
+			dlsm.message_details,
+			dlsm.updated_at,
+			dlsm.message_type,
+			dlsm.validation_error,
+			dlsm.tenant_name,
+			dlsm.producer_name,
+			dlsm.partition_number,
+			dlsm.function_id,
+			CASE
+				WHEN dlsm.function_id != -1 THEN s.function_name
+				ELSE ''
+			END AS function_name
+			FROM
+			dls_messages AS dlsm
+			LEFT JOIN
+			attached_functions AS s
+			ON
+			dlsm.station_id = s.station_id
+			AND dlsm.function_id = s.id
+			WHERE
+			dlsm.station_id = $1
+			ORDER BY updated_at DESC limit 1000
+			`
 	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessageRes])
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
+		return []models.DlsMessageRes{}, nil
 	}
 
 	return dlsMsgs, nil
 }
 
-func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
+func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessageRes, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
 	defer cancelfunc()
 	conn, err := MetadataDbClient.Client.Acquire(ctx)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 2000`
+	query := `SELECT
+			dlsm.id,
+			dlsm.station_id,
+			dlsm.message_seq,
+			dlsm.poisoned_cgs,
+			dlsm.message_details,
+			dlsm.updated_at,
+			dlsm.message_type,
+			dlsm.validation_error,
+			dlsm.tenant_name,
+			dlsm.producer_name,
+			dlsm.partition_number,
+			dlsm.function_id,
+			CASE
+				WHEN dlsm.function_id != -1 THEN s.function_name
+				ELSE '' 
+			END AS function_name
+			FROM
+			dls_messages AS dlsm
+			LEFT JOIN
+			attached_functions AS s
+			ON
+			dlsm.station_id = s.station_id
+			AND dlsm.function_id = s.id
+			WHERE
+			dlsm.station_id = $1
+			AND dlsm.partition_number = $2
+			ORDER BY updated_at DESC limit 1000;
+			`
 	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessageRes])
 	if err != nil {
-		return []models.DlsMessage{}, err
+		return []models.DlsMessageRes{}, err
 	}
 	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
+		return []models.DlsMessageRes{}, nil
 	}
 
 	return dlsMsgs, nil
@@ -6655,10 +6712,14 @@ func DeleteOldProducersAndConsumers(timeInterval time.Time) ([]models.LightCG, e
 	queries = append(queries, "DELETE FROM producers WHERE is_active = false AND updated_at < $1")
 	queries = append(queries, "WITH deleted AS (DELETE FROM consumers WHERE is_active = false AND updated_at < $1 RETURNING *) SELECT deleted.consumers_group, s.name as station_name, deleted.station_id , deleted.tenant_name, deleted.partitions FROM deleted INNER JOIN stations s ON deleted.station_id = s.id GROUP BY deleted.consumers_group, s.name, deleted.station_id, deleted.tenant_name, deleted.partitions")
 
+	timeIntervalTemp := time.Now().Add(time.Duration(time.Hour * -time.Duration(2))) // TODO to be deleted once we fix the producer limitation
+
 	batch := &pgx.Batch{}
-	for _, q := range queries {
-		batch.Queue(q, timeInterval)
-	}
+	batch.Queue(queries[0], timeIntervalTemp) // TODO to be deleted once we fix the producer limitation
+	batch.Queue(queries[1], timeInterval)     // TODO to be deleted once we fix the producer limitation
+	// for _, q := range queries { // TODO to be returned once we fix the producer limitation
+	// 	batch.Queue(q, timeInterval)
+	// }
 
 	br := conn.SendBatch(ctx, batch)
 
@@ -7413,4 +7474,28 @@ func GetMemphisFunctionsByMemphis() ([]models.Function, error) {
 		return []models.Function{}, err
 	}
 	return functions, nil
+}
+
+func DeleteAttachedFunctionsByTenant(tenantName string) error {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
+
+	removeUserQuery := `DELETE FROM attached_functions WHERE tenant_name = $1`
+
+	stmt, err := conn.Conn().Prepare(ctx, "remove_attached_functions_by_tenant", removeUserQuery)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Conn().Exec(ctx, stmt.Name, tenantName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
