@@ -10,8 +10,8 @@
 
 <div align="center">
   
-  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/color/cncf-member-silver-color.svg#gh-light-mode-only">
-  <img width="200" alt="CNCF Silver Member" src="https://github.com/cncf/artwork/raw/master/other/cncf-member/silver/white/cncf-member-silver-white.svg#gh-dark-mode-only">
+  <img width="200" alt="CNCF Silver Member" src="https://www.cncf.io/wp-content/uploads//2021/06/cncf-black.svg#gh-light-mode-only">
+  <img width="200" alt="CNCF Silver Member" src="https://www.cncf.io/wp-content/uploads/2022/07/cncf-white-logo.svg#gh-dark-mode-only">
   
 </div>
  
