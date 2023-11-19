@@ -104,11 +104,11 @@ func GetGithubContentFromConnectedRepo(connectedRepo map[string]interface{}, fun
 					}
 
 					if _, ok := contentMap["memory"]; !ok || contentMap["memory"] == "" {
-						contentMap["memory"] = int64(128) * 1024 * 1024
+						contentMap["memory"] = 128 * 1024 * 1024
 					}
 
 					if _, ok := contentMap["storage"]; !ok || contentMap["storage"] == "" {
-						contentMap["storage"] = int64(512) * 1024 * 1024
+						contentMap["storage"] = 512 * 1024 * 1024
 					}
 
 					dependenciesMissing := false
