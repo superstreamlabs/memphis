@@ -185,19 +185,51 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 					inputs = append(inputs, environmentVar)
 				}
 			}
-			description, ok := fucntionContentMap["description"].(string)
-			if !ok {
-				description = ""
+
+			description := ""
+			descriptionInterface, ok := fucntionContentMap["description"]
+			if ok {
+				description = descriptionInterface.(string)
 			}
 
-			runtime, ok := fucntionContentMap["runtime"].(string)
-			var language string
-			if ok {
-				regex := regexp.MustCompile(`[0-9]+|\\.$`)
-				language = regex.ReplaceAllString(runtime, "")
-				language = strings.TrimRight(language, ".")
-				if strings.Contains(language, "-edge") {
-					language = strings.Trim(language, ".-edge")
+			functionName := ""
+			if functionNameInterface, ok := fucntionContentMap["function_name"]; !ok || functionNameInterface == nil || functionNameInterface.(string) == "" {
+				errMsg := fmt.Errorf("function in %s repository is invalid since its memphis.yaml file is missing the function_name field", repo)
+				return functions, errMsg
+			} else {
+				functionName = functionNameInterface.(string)
+			}
+
+			runtime := ""
+			if runtimeInterface, ok := fucntionContentMap["runtime"]; !ok || runtimeInterface == nil || runtimeInterface.(string) == "" {
+				errMsg := fmt.Errorf("function %s placed in %s repository is invalid since its memphis.yaml file is missing the runtime field", repo, functionName)
+				return functions, errMsg
+			} else {
+				runtime = runtimeInterface.(string)
+			}
+			regex := regexp.MustCompile(`[0-9]+|\\.$`)
+			language := regex.ReplaceAllString(runtime, "")
+			language = strings.TrimRight(language, ".")
+			if strings.Contains(language, "-edge") {
+				language = strings.Trim(language, ".-edge")
+			}
+
+			dependencies := ""
+			dependenciesMissing := false
+			if dependenciesInterface, ok := fucntionContentMap["dependencies"]; !ok || dependenciesInterface == nil || dependenciesInterface.(string) == "" {
+				dependenciesMissing = true
+			} else {
+				dependencies = dependenciesInterface.(string)
+			}
+
+			if dependenciesMissing {
+				switch language {
+				case "go":
+					dependencies = "go.mod"
+				case "nodejs":
+					dependencies = "package.json"
+				case "python":
+					dependencies = "requirements.txt"
 				}
 			}
 
@@ -214,16 +246,25 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			if commit != nil {
 				lastCommit = commit.Commit.Committer.Date
 			}
+			memory := 128 * 1024 * 1024
+			if memoryInterface, ok := fucntionContentMap["memory"]; ok && memoryInterface != nil {
+				memory = memoryInterface.(int)
+			}
+
+			storage := 512 * 1024 * 1024
+			if storageInterface, ok := fucntionContentMap["storage"]; ok && storageInterface != nil {
+				storage = storageInterface.(int)
+			}
 
 			functionDetails := models.FunctionResult{
-				FunctionName:               fucntionContentMap["function_name"].(string),
+				FunctionName:               functionName,
 				Description:                description,
 				Tags:                       tagsStrings,
 				Runtime:                    runtime,
-				Dependencies:               fucntionContentMap["dependencies"].(string),
-				Inputs:            inputs,
-				Memory:                     int(fucntionContentMap["memory"].(int64)),
-				Storage:                    int(fucntionContentMap["storage"].(int64)),
+				Dependencies:               dependencies,
+				Inputs:                     inputs,
+				Memory:                     memory,
+				Storage:                    storage,
 				Handler:                    handler,
 				Scm:                        "github",
 				Repo:                       repo,
