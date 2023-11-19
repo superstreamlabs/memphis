@@ -248,12 +248,12 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 			}
 			memory := 128 * 1024 * 1024
 			if memoryInterface, ok := fucntionContentMap["memory"]; ok && memoryInterface != nil {
-				memory = memoryInterface.(int)
+				memory = int(memoryInterface.(int64))
 			}
 
 			storage := 512 * 1024 * 1024
 			if storageInterface, ok := fucntionContentMap["storage"]; ok && storageInterface != nil {
-				storage = storageInterface.(int)
+				storage = int(storageInterface.(int64))
 			}
 
 			functionDetails := models.FunctionResult{
