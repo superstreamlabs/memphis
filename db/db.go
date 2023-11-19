@@ -514,7 +514,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
-			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS function_id INT NOT NULL DEFAULT -1;
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS attached_function_id INT NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -547,7 +547,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
 		partition_number INTEGER NOT NULL DEFAULT -1,
-		function_id INT NOT NULL DEFAULT -1,
+		attached_function_id INT NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -5952,9 +5952,9 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessageRes, error) {
 			dlsm.tenant_name,
 			dlsm.producer_name,
 			dlsm.partition_number,
-			dlsm.function_id,
+			dlsm.attached_function_id,
 			CASE
-				WHEN dlsm.function_id != -1 THEN s.function_name
+				WHEN dlsm.attached_function_id != -1 THEN s.function_name
 				ELSE ''
 			END AS function_name
 			FROM
@@ -5963,7 +5963,7 @@ func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessageRes, error) {
 			attached_functions AS s
 			ON
 			dlsm.station_id = s.station_id
-			AND dlsm.function_id = s.id
+			AND dlsm.attached_function_id = s.id
 			WHERE
 			dlsm.station_id = $1
 			ORDER BY updated_at DESC limit 1000
@@ -6008,9 +6008,9 @@ func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.D
 			dlsm.tenant_name,
 			dlsm.producer_name,
 			dlsm.partition_number,
-			dlsm.function_id,
+			dlsm.attached_function_id,
 			CASE
-				WHEN dlsm.function_id != -1 THEN s.function_name
+				WHEN dlsm.attached_function_id != -1 THEN s.function_name
 				ELSE '' 
 			END AS function_name
 			FROM
@@ -6019,7 +6019,7 @@ func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.D
 			attached_functions AS s
 			ON
 			dlsm.station_id = s.station_id
-			AND dlsm.function_id = s.id
+			AND dlsm.attached_function_id = s.id
 			WHERE
 			dlsm.station_id = $1
 			AND dlsm.partition_number = $2
