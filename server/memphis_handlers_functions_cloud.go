@@ -169,12 +169,12 @@ func GetFunctionsDetails(functionsDetails map[string][]functionDetails) (map[str
 				}
 			}
 
-			inputs := []map[string]interface{}{}
+			inputs := []map[string]string{}
 			inputsInterfaceSlice, ok := fucntionContentMap["inputs"].([]interface{})
 			if ok {
 				for _, environmentVarInterface := range inputsInterfaceSlice {
 					environmentVarMap, _ := environmentVarInterface.(map[interface{}]interface{})
-					environmentVar := make(map[string]interface{})
+					environmentVar := make(map[string]string)
 					for k, v := range environmentVarMap {
 						if key, ok := k.(string); ok {
 							if val, ok := v.(string); ok {
