@@ -10,7 +10,6 @@
 
 <div align="center">
   
-  <img width="200" alt="CNCF Silver Member" src="https://www.cncf.io/wp-content/uploads//2021/06/cncf-black.svg#gh-light-mode-only">
   <img width="200" alt="CNCF Silver Member" src="https://www.cncf.io/wp-content/uploads/2022/07/cncf-white-logo.svg#gh-dark-mode-only">
   
 </div>
