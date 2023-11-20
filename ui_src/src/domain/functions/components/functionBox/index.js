@@ -37,7 +37,7 @@ import { httpRequest } from '../../../../services/http';
 import AttachFunctionModal from '../attachFunctionModal';
 import CloudModal from '../../../../components/cloudModal';
 
-function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex }) {
+function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null, onApply, doneUninstall, startInstallation, funcIndex, referredFunction }) {
     const [functionDetails, setFunctionDetils] = useState(funcDetails);
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState(null);
@@ -112,7 +112,11 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
         <>
             <div
                 key={functionDetails?.function_name}
-                className={selectedFunction?.function_name === functionDetails.function_name ? 'function-box-wrapper func-selected' : 'function-box-wrapper'}
+                className={
+                    selectedFunction?.function_name === functionDetails.function_name || referredFunction?.function_name === functionDetails.function_name
+                        ? 'function-box-wrapper func-selected'
+                        : 'function-box-wrapper'
+                }
                 onClick={() => (onClick ? onClick() : isCloud() && handleDrawer(true))}
             >
                 <header is="x3d">
@@ -161,7 +165,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     )}
                                     <commits is="x3d">
                                         <FiGitCommit />
-                                        <label>Last commit on {parsingDate(functionDetails?.installed_updated_at, false, false)}</label>
+                                        <label>Last commit on {parsingDate(functionDetails?.installed_updated_at, true, true)}</label>
                                     </commits>
                                 </deatils>
                                 <description is="x3d">
@@ -197,7 +201,6 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
                                     disabled={isCloud() && (functionDetails?.installed_in_progress || !installed)}
-                                    isLoading={functionDetails?.installed_in_progress}
                                     onClick={() => {
                                         if (!isCloud()) setCloudModal(true);
                                         else if (isTagsOn) setChooseStationModal(true);
@@ -250,9 +253,9 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                 )}
                 {isTagsOn && !isValid && (
                     <footer is="x3d">
-                        <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8', marginRight: '8px' }} />
-                        <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8', marginRight: '8px' }} />
-                        <Skeleton.Button active={false} style={{ width: '75px', height: '22px', borderRadius: '4px', background: '#e8e8e8' }} />
+                        <Skeleton.Button active={false} />
+                        <Skeleton.Button active={false} />
+                        <Skeleton.Button active={false} />
                     </footer>
                 )}
             </div>
@@ -270,7 +273,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                 hr={true}
                 className="use-schema-modal"
             >
-                <AttachFunctionModal />
+                <AttachFunctionModal selectedFunction={functionDetails} />
             </Modal>
             <CloudModal open={cloudModal} handleClose={() => setCloudModal(false)} type={'cloud'} />
             <Drawer

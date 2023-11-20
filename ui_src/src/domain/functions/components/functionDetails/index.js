@@ -11,7 +11,7 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 
 import './style.scss';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
@@ -26,7 +26,6 @@ import { ReactComponent as CollapseArrowIcon } from '../../../../assets/images/c
 import Button from '../../../../components/button';
 import TagsList from '../../../../components/tagList';
 import Spinner from '../../../../components/spinner';
-
 import { parsingDate } from '../../../../services/valueConvertor';
 import { ReactComponent as MemphisFunctionIcon } from '../../../../assets/images/memphisFunctionIcon.svg';
 import { ReactComponent as FunctionIcon } from '../../../../assets/images/functionIcon.svg';
@@ -36,6 +35,7 @@ import { ReactComponent as PlaceholderFunctionsIcon } from '../../../../assets/i
 import { ReactComponent as ArrowBackIcon } from '../../../../assets/images/arrowBackIcon.svg';
 import CustomTabs from '../../../../components/Tabs';
 import SelectComponent from '../../../../components/select';
+import Input from '../../../../components/Input';
 import TestMockEvent from '../testFunctionModal/components/testMockEvent';
 import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
@@ -44,8 +44,9 @@ import { GoRepo } from 'react-icons/go';
 import { Tree } from 'antd';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
+import { getCodingLanguage } from '../../../../utils/languages';
 
-function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnInstall, clickApply, onBackToFunction = null }) {
+function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnInstall, clickApply, onBackToFunction = null, stationView }) {
     const [tabValue, setTabValue] = useState('Details');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
     const [treeData, setTreeData] = useState([]);
@@ -55,14 +56,15 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
     const [versions, setVersions] = useState([]);
     const [files, setFiles] = useState([]);
     const [fileContent, setFileContent] = useState(null);
-
+    const [selectedLanguage, setSelectedLanguage] = useState(null);
     const [isFileContentLoading, setIsFileContentLoading] = useState(false);
 
     const emojiSupport = (text) => text.replace(/:\w+:/gi, (name) => emoji.getUnicode(name));
+    const formattedMarkdownContent = (text) => text.replace((/`/g, '\\`'));
 
     useEffect(() => {
         getFunctionDetails();
-    }, [selectedFunction]);
+    }, [selectedFunction, selectedVersion]);
 
     useEffect(() => {
         buildTree(files);
@@ -82,7 +84,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                     '&scm=' +
                     encodeURI(selectedFunction?.scm) +
                     '&function_name=' +
-                    encodeURI(selectedFunction?.function_name)
+                    encodeURI(selectedFunction?.function_name || selectedFunction?.name)
             );
             setMetaData(response?.metadata_function);
             setReadme(response?.readme_content);
@@ -151,6 +153,8 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
     const onSelect = async (selectedKeys, info) => {
         const path = !isNaN(selectedKeys[0]) ? files[selectedKeys[0]] : null;
         if (!path) return;
+        const lang = path?.split('.');
+        lang?.length > 1 && setSelectedLanguage(lang[lang.length - 1]);
         try {
             setIsFileContentLoading(true);
             const response = await httpRequest(
@@ -193,7 +197,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                 )}
 
                 <div className="right-side">
-                    <div className="title">{selectedFunction?.function_name}</div>
+                    <div className="title">{selectedFunction?.function_name || selectedFunction?.name}</div>
                     <div>
                         <deatils is="x3d">
                             <div className="function-owner">
@@ -201,7 +205,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                 <owner is="x3d">{selectedFunction?.owner === OWNER ? 'Memphis.dev' : selectedFunction?.owner}</owner>
                             </div>
                             <Divider type="vertical" />
-                            {selectedFunction.owner === OWNER && (
+                            {selectedFunction?.owner === OWNER && (
                                 <>
                                     <downloads is="x3d">
                                         <BiDownload className="download-icon" />
@@ -223,49 +227,57 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                     </div>
                     <description is="x3d">{selectedFunction?.description}</description>
                     <actions is="x3d">
-                        <div className="action-section-btn">
-                            <div className="header-flex">
-                                <Button
-                                    placeholder="Attach"
-                                    width={'100px'}
-                                    backgroundColorType={'purple'}
-                                    colorType={'white'}
-                                    radiusType={'circle'}
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => clickApply('attach')}
-                                    disabled={selectedFunction?.install_in_progress || !installed}
-                                />
-                            </div>
-                            <div className="header-flex">
-                                <Button
-                                    placeholder={
-                                        selectedFunction?.install_in_progress ? (
-                                            ''
-                                        ) : installed ? (
-                                            <div className="code-btn">
-                                                <MdOutlineFileDownloadOff className="Uninstall" />
-                                                <label>Uninstall</label>
-                                            </div>
-                                        ) : (
-                                            <div className="code-btn">
-                                                <BiDownload className="Install" />
-                                                <label>Install</label>
-                                            </div>
-                                        )
-                                    }
-                                    width={'100px'}
-                                    backgroundColorType="purple"
-                                    colorType={'white'}
-                                    radiusType={'circle'}
-                                    fontSize="12px"
-                                    fontFamily="InterSemiBold"
-                                    onClick={() => (installed ? handleUnInstall() : handleInstall())}
-                                    isLoading={selectedFunction?.install_in_progress}
-                                    disabled={!selectedFunction?.is_valid || selectedFunction?.install_in_progress}
-                                />
-                            </div>
-                        </div>
+                        {!stationView && (
+                            <>
+                                <div className="action-section-btn">
+                                    <div className="header-flex">
+                                        <Button
+                                            placeholder="Attach"
+                                            width={'100px'}
+                                            backgroundColorType={'purple'}
+                                            colorType={'white'}
+                                            radiusType={'circle'}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => clickApply('attach')}
+                                            disabled={selectedFunction?.installed_in_progress || !installed}
+                                        />
+                                    </div>
+                                    <div className="header-flex">
+                                        <Button
+                                            placeholder={
+                                                selectedFunction?.installed_in_progress ? (
+                                                    ''
+                                                ) : installed ? (
+                                                    <div className="code-btn">
+                                                        {selectedFunction?.updates_available ? (
+                                                            <BiDownload className="Install" />
+                                                        ) : (
+                                                            <MdOutlineFileDownloadOff className="Uninstall" />
+                                                        )}
+                                                        {selectedFunction?.updates_available ? <label>Update</label> : <label>Uninstall</label>}
+                                                    </div>
+                                                ) : (
+                                                    <div className="code-btn">
+                                                        <BiDownload className="Install" />
+                                                        <label>Install</label>
+                                                    </div>
+                                                )
+                                            }
+                                            width={'100px'}
+                                            backgroundColorType="purple"
+                                            colorType={'white'}
+                                            radiusType={'circle'}
+                                            fontSize="12px"
+                                            fontFamily="InterSemiBold"
+                                            onClick={() => (installed ? handleUnInstall() : handleInstall())}
+                                            isLoading={selectedFunction?.installed_in_progress}
+                                            disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
+                                        />
+                                    </div>
+                                </div>
+                            </>
+                        )}
                         <SelectComponent
                             colorType="black"
                             backgroundColorType="none"
@@ -296,7 +308,15 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                 <code is="x3d">
                     {/* <Spinner /> */}
                     <span className="readme">
-                        {readme === '' ? renderNoFunctionDetails : <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{emojiSupport(readme)}</ReactMarkdown>}
+                        {readme === '' ? (
+                            renderNoFunctionDetails
+                        ) : (
+                            <div>
+                                <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{formattedMarkdownContent(emojiSupport(readme))}</ReactMarkdown>
+                            </div>
+                            // <ReactMarkdown
+                            // rehypePlugins={[rehypeRaw, remarkGfm, rehypePrism]}>{emojiSupport(readme)}</ReactMarkdown>
+                        )}
                     </span>
                     <Divider type="vertical" />
                     <span className="function-details">
@@ -342,14 +362,44 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                     <label>Last commit on {parsingDate(selectedFunction?.installed_updated_at, false, false)}</label>
                                 </commits>
                             </deatils>
+                            <Divider />
                             {selectedFunction?.is_valid && (
                                 <>
-                                    <Divider />
                                     <label className="label-title">Tags</label>
-                                    <TagsList tagsToShow={3} tags={selectedFunction?.tags} entityType="function" entityName={selectedFunction?.function_name} />
+                                    <TagsList
+                                        tagsToShow={3}
+                                        tags={selectedFunction?.tags}
+                                        entityType="function"
+                                        entityName={selectedFunction?.function_name || selectedFunction?.name}
+                                    />
+                                    <Divider />
                                 </>
                             )}
                         </div>
+                        {metaData?.inputs && metaData?.inputs?.length > 0 && (
+                            <>
+                                <label className="label-title">Expected inputs</label>
+                                <inputsSection is="x3d">
+                                    {metaData?.inputs?.map((input, index) => (
+                                        <div className="input-row" key={`${input?.name}${index}`}>
+                                            <Input
+                                                placeholder={input?.name}
+                                                type="text"
+                                                radiusType="semi-round"
+                                                colorType="gray"
+                                                backgroundColorType="light-gray"
+                                                borderColorType="gray"
+                                                height="30px"
+                                                width="100px"
+                                                fontSize="12px"
+                                                value={input?.name}
+                                                disabled
+                                            />
+                                        </div>
+                                    ))}
+                                </inputsSection>
+                            </>
+                        )}
                     </span>
                 </code>
             )}
@@ -385,12 +435,12 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => setIsTestFunctionModalOpen(true)}
-                                disabled={!installed}
+                                // disabled={!installed}
                             />
                             <div className="code-content">
                                 {isFileContentLoading ? (
                                     <Spinner />
-                                ) : (
+                                ) : fileContent ? (
                                     <Editor
                                         options={{
                                             minimap: { enabled: false },
@@ -403,12 +453,12 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                             fontSize: '12px',
                                             fontFamily: 'Inter'
                                         }}
-                                        language={'javascript'}
+                                        language={getCodingLanguage(selectedLanguage)?.toLocaleLowerCase()}
                                         height="calc(100% - 10px)"
                                         width="calc(100% - 25px)"
                                         value={fileContent}
                                     />
-                                )}
+                                ) : null}
                             </div>
                         </>
                     </div>

@@ -16,16 +16,13 @@
         }
     }
     .inputs-container {
-        // height: calc(100% - 60px);
         height: 100%;
+        width: auto;
         overflow-y: auto;
-        margin-left: 30px;
         .input-row {
             display: flex;
-            // justify-content: space-between;
             margin-bottom: 10px;
             gap: 10px;
-            // height: calc(100% - 60px);
         }
     }
 }

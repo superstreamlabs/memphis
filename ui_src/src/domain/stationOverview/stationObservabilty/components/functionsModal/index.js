@@ -14,7 +14,7 @@ import './style.scss';
 
 import { useState, useEffect, useContext } from 'react';
 import { LoadingOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
+import { Spin, Badge } from 'antd';
 import CustomTabs from '../../../../../components/Tabs';
 import FunctionBox from '../../../../functions/components/functionBox';
 import FunctionDetails from '../../../../functions/components/functionDetails';
@@ -29,27 +29,39 @@ import { ReactComponent as SearchIcon } from '../../../../../assets/images/searc
 import { ReactComponent as CheckShieldIcon } from '../../../../../assets/images/checkShieldIcon.svg';
 import { ReactComponent as FunctionsModalIcon } from '../../../../../assets/images/vueSaxIcon.svg';
 import { ReactComponent as LockIcon } from '../../../../../assets/images/lockIcon.svg';
+import { ReactComponent as RefreshIcon } from '../../../../../assets/images/refresh.svg';
 import { StationStoreContext } from '../../../';
+import { SyncOutlined } from '@ant-design/icons';
 
 import { OWNER } from '../../../../../const/globalConst';
 import TooltipComponent from '../../../../../components/tooltip/tooltip';
 
-const FunctionsModal = ({ applyFunction }) => {
+const FunctionsModal = ({ applyFunction, referredFunction }) => {
     const [functionList, setFunctionList] = useState([]);
     const [isIntegrated, setIsIntegrated] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [refreshIndeicator, setRefreshIndicator] = useState(false);
     const [tabValue, setTabValue] = useState('all');
     const [searchInput, setSearchInput] = useState('');
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [isInputsModalOpen, setIsInputsModalOpen] = useState(false);
+    const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
     const [filteredData, setFilteredData] = useState([]);
     const [clickedFunction, setClickedFunction] = useState(null);
     const [selectedFunction, setSelectedFunction] = useState(null);
+    const [ordering, setOrdering] = useState(false);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
 
     useEffect(() => {
         getAllFunctions();
     }, []);
+    useEffect(() => {
+        let shouldRefresh = false;
+        shouldRefresh = functionList?.some((func) => {
+            return func?.installed_in_progress;
+        });
+        setRefreshIndicator(shouldRefresh);
+    }, [functionList]);
 
     useEffect(() => {
         let result = functionList;
@@ -88,12 +100,16 @@ const FunctionsModal = ({ applyFunction }) => {
     };
 
     const onFunctionApply = async (selectedFunction, ordering) => {
+        let inputsObject = {};
+        selectedFunction?.inputs?.forEach((item) => {
+            inputsObject[item.name] = item.value;
+        });
         const requestBodey = {
             function_id: selectedFunction?.id,
             visible_step: stationState?.stationFunctions?.functions?.length + 1,
             ordering_matter: ordering,
             activate: true,
-            inputs: selectedFunction?.inputs
+            inputs: inputsObject
         };
         applyFunction(requestBodey);
     };
@@ -156,7 +172,19 @@ const FunctionsModal = ({ applyFunction }) => {
                             <FunctionsModalIcon />
                         </div>
                         <p>Functions</p>
-                        <label>Say Goodbye to Manual Business Logic! Use Functions Instead of Building Complicated Clients.</label>
+                        <span className="title-section">
+                            <label>Say Goodbye to Manual Business Logic! Use Functions Instead of Building Complicated Clients.</label>
+                            <span className="update-refresh">
+                                {refreshIndeicator && <Badge dot />}
+                                <div className="refresh-btn">
+                                    {isLoading ? (
+                                        <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                                    ) : (
+                                        <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} onClick={getAllFunctions} />
+                                    )}
+                                </div>
+                            </span>
+                        </span>
                     </div>
                     <div className="fdm-body">
                         <CustomTabs tabs={TABS} tabValue={tabValue} onChange={(tabValue) => setTabValue(tabValue)} />
@@ -185,11 +213,16 @@ const FunctionsModal = ({ applyFunction }) => {
                                         key={index}
                                         funcDetails={functionItem}
                                         integrated={isIntegrated}
+                                        referredFunction={referredFunction}
                                         isTagsOn={false}
                                         installed={true}
                                         onApply={() => {
                                             setSelectedFunction(functionItem);
-                                            setIsInputsModalOpen(true);
+                                            functionItem?.inputs?.length > 0
+                                                ? setIsInputsModalOpen(true)
+                                                : stationState?.stationFunctions?.functions?.length === 0
+                                                ? setIsApplyModalOpen(true)
+                                                : onFunctionApply(selectedFunction);
                                         }}
                                         onClick={() => {
                                             setClickedFunction(functionItem);
@@ -203,7 +236,7 @@ const FunctionsModal = ({ applyFunction }) => {
             )}
 
             <Modal
-                width={'403px'}
+                width={'400px'}
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">
@@ -220,11 +253,32 @@ const FunctionsModal = ({ applyFunction }) => {
                 <FunctionsApplyModal
                     onCancel={() => setIsApplyModalOpen(false)}
                     onApply={(e) => {
-                        onFunctionApply(selectedFunction, e);
+                        setOrdering(e);
                         setIsApplyModalOpen(false);
+                        setIsWarningModalOpen(true);
                     }}
-                    successText={'Apply'}
+                    successText={'Next'}
                 />
+            </Modal>
+            <Modal
+                width={'400px'}
+                header={
+                    <div className="modal-header">
+                        <div className="header-img-container">
+                            <CheckShieldIcon />
+                        </div>
+                        <p>Please note</p>
+                    </div>
+                }
+                open={isWarningModalOpen}
+                clickOutside={() => setIsWarningModalOpen(false)}
+                rBtnText={'Apply'}
+                rBtnClick={() => {
+                    onFunctionApply(selectedFunction, ordering);
+                    setIsWarningModalOpen(false);
+                }}
+            >
+                <label> When applying a function, the function might cause changes in the event.</label>
             </Modal>
             <Modal
                 width={'1000px'}
@@ -250,7 +304,7 @@ const FunctionsModal = ({ applyFunction }) => {
                 }}
                 rBtnText={stationState?.stationFunctions?.functions?.length === 0 ? 'Next' : 'Apply'}
             >
-                <FunctionInputsModal functionInputsChange={(inputs) => handleInputsChange(inputs)} />
+                <FunctionInputsModal clickedFunction={selectedFunction} functionInputsChange={(inputs) => handleInputsChange(inputs)} />
             </Modal>
         </div>
     );

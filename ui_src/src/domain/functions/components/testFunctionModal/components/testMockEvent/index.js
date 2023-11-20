@@ -15,6 +15,7 @@ import './style.scss';
 import { useState, useEffect } from 'react';
 import { ReactComponent as TestEventModalIcon } from '../../../../../../assets/images/testEventModalcon.svg';
 import Button from '../../../../../../components/button';
+import Input from '../../../../../../components/Input';
 import Editor from '@monaco-editor/react';
 import TestResult from '../testResult';
 import { httpRequest } from '../../../../../../services/http';
@@ -32,6 +33,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
            { "name": "country", "type": "string", "default": "NONE" }
             ]
         }`);
+    const [inputs, setInputs] = useState(null);
     const [testResultData, setTestResult] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     useEffect(() => {
@@ -39,9 +41,13 @@ const TestMockEvent = ({ functionDetails, open }) => {
     }, [open]);
 
     const testEvent = async () => {
+        let inputsObject = {};
+        inputs.forEach((item) => {
+            inputsObject[item.name] = item.value;
+        });
         setIsLoading(true);
         const body = {
-            function_name: functionDetails?.function_name,
+            function_name: functionDetails?.function_name || functionDetails?.name,
             function_version: functionDetails?.installed_version,
             scm_type: functionDetails?.scm,
             branch: functionDetails?.branch,
@@ -50,7 +56,8 @@ const TestMockEvent = ({ functionDetails, open }) => {
             test_event: {
                 headers: {},
                 content: testMock
-            }
+            },
+            inputs: inputsObject
         };
         try {
             const res = await httpRequest('POST', ApiEndpoints.TEST_FUNCTION, body);
@@ -59,6 +66,16 @@ const TestMockEvent = ({ functionDetails, open }) => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    useEffect(() => {
+        functionDetails?.inputs && functionDetails?.inputs?.length > 0 && setInputs(functionDetails?.inputs);
+    }, []);
+
+    const handleChange = (e, index) => {
+        const newInputs = [...inputs];
+        newInputs[index].value = e.target.value;
+        setInputs(newInputs);
     };
 
     return (
@@ -74,10 +91,9 @@ const TestMockEvent = ({ functionDetails, open }) => {
                     width="120px"
                     height="40px"
                     placeholder={'Test'}
-                    colorType="white"
+                    colorType="black"
                     radiusType="circle"
-                    backgroundColorType={'purple'}
-                    border={'gray'}
+                    backgroundColorType={'orange'}
                     fontSize="12px"
                     fontWeight="bold"
                     onClick={() => {
@@ -113,6 +129,42 @@ const TestMockEvent = ({ functionDetails, open }) => {
                             onChange={(value) => setTestMock(value)}
                         />
                     </div>
+                    {inputs && inputs?.length > 0 && (
+                        <>
+                            <label className="title">Inputs</label>
+                            <div className="inputs-section">
+                                {inputs.map((input, index) => (
+                                    <span className="input-row" key={`${input?.name}${index}`}>
+                                        <Input
+                                            placeholder={input?.name}
+                                            type="text"
+                                            radiusType="semi-round"
+                                            colorType="gray"
+                                            backgroundColorType="light-gray"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            width="220px"
+                                            value={input?.name}
+                                            disabled
+                                        />
+                                        <Input
+                                            placeholder={'Type here'}
+                                            type="text"
+                                            radiusType="semi-round"
+                                            colorType="black"
+                                            backgroundColorType="none"
+                                            borderColorType="gray"
+                                            height="40px"
+                                            width="220px"
+                                            onBlur={(e) => handleChange(e, index)}
+                                            onChange={(e) => handleChange(e, index)}
+                                            value={input?.value}
+                                        />
+                                    </span>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
                 <TestResult testResultData={testResultData} loading={isLoading} />
             </div>

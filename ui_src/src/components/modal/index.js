@@ -40,7 +40,6 @@ const TransitionsModal = ({
 }) => {
     const contentStyle = {
         height: height,
-        overflowY: 'auto',
         borderTop: hr ? '1px solid #EAEAEA' : null
     };
 

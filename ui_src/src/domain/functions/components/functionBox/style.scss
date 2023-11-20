@@ -122,6 +122,14 @@
         padding: 10px 16px;
         border-top: 1px solid #f5f5f5;
         overflow-x: auto;
+        .ant-skeleton-button {
+            width: 45px;
+            min-width: 45px;
+            margin-right: 5px;
+            height: 22px;
+            border-radius: 4px;
+            background: #e8e8e8;
+        }
     }
     date {
         display: flex;

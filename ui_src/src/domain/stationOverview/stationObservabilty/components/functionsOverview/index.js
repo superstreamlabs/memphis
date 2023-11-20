@@ -23,29 +23,35 @@ import { ReactComponent as PlusIcon } from '../../../../../assets/images/plusIco
 import { ReactComponent as ProcessedIcon } from '../../../../../assets/images/processIcon.svg';
 import { ReactComponent as GitIcon } from '../../../../../assets/images/gitIcon.svg';
 import { ReactComponent as CodeGrayIcon } from '../../../../../assets/images/codeGrayIcon.svg';
-import { ReactComponent as CloseIcon } from '../../../../../assets/images/close.svg';
-import { ReactComponent as MetricsIcon } from '../../../../../assets/images/metricsIcon.svg';
-import { ReactComponent as MetricsClockIcon } from '../../../../../assets/images/metricsClockIcon.svg';
-import { ReactComponent as MetricsErrorIcon } from '../../../../../assets/images/metricsErrorIcon.svg';
-import { Tabs } from 'antd';
+import { ReactComponent as PurpleQuestionMark } from '../../../../../assets/images/purpleQuestionMark.svg';
+import { IoClose } from 'react-icons/io5';
+import { Drawer } from 'antd';
 import dataPassLineLottie from '../../../../../assets/lotties/dataPassLine.json';
 import dataPassLineEmptyLottie from '../../../../../assets/lotties/dataPassLineEmpty.json';
 import Lottie from 'lottie-react';
 import FunctionCard from '../functionCard';
 import FunctionsModal from '../functionsModal';
-import FunctionLogs from '../functionLogs';
+import FunctionData from '../functionData';
+import FunctionDetails from '../../../../functions/components/functionDetails';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import { StringCodec, JSONCodec } from 'nats.ws';
 
 let sub;
 
-const FunctionsOverview = () => {
+const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [currentFunction, setCurrentFunction] = useState(null);
     const [functionDetails, setFunctionDetails] = useState(null);
     const [openFunctionsModal, setOpenFunctionsModal] = useState(false);
+    const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
+    const [openBottomDetails, setOpenBottomDetails] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
     const [state, dispatch] = useContext(Context);
+
+    useEffect(() => {
+        getFunctionsOverview();
+        referredFunction && setOpenFunctionsModal(true);
+    }, []);
 
     useEffect(() => {
         if (socketOn) {
@@ -120,7 +126,6 @@ const FunctionsOverview = () => {
         try {
             const data = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}`);
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
-            setOpenFunctionsModal(false);
         } catch (e) {
             return;
         }
@@ -136,10 +141,6 @@ const FunctionsOverview = () => {
     };
 
     useEffect(() => {
-        getFunctionsOverview();
-    }, []);
-
-    useEffect(() => {
         currentFunction && getFunctionDetails();
     }, [currentFunction]);
 
@@ -152,6 +153,8 @@ const FunctionsOverview = () => {
         } catch (e) {
         } finally {
             setFunctionDetails(null);
+            setOpenFunctionsModal(false);
+            dismissFunction();
         }
     };
 
@@ -168,54 +171,6 @@ const FunctionsOverview = () => {
     const handleDeleteFunction = async () => {
         setCurrentFunction(null);
     };
-
-    const items = [
-        {
-            key: '1',
-            label: 'Metrics',
-            children: (
-                <div className="metrics-wrapper">
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Total invocations</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.total_invocations?.toLocaleString() || 0}</div>
-                        </div>
-                    </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsClockIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Av. Processing time</div>
-                            <div className="metrics-body-subtitle">
-                                {functionDetails?.avg_processing_time}
-                                <span>/sec</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="metrics-divider"></div>
-                    <div className="metrics">
-                        <div className="metrics-img">
-                            <MetricsErrorIcon />
-                        </div>
-                        <div className="metrics-body">
-                            <div className="metrics-body-title">Error rate</div>
-                            <div className="metrics-body-subtitle">{functionDetails?.error_rate}%</div>
-                        </div>
-                    </div>
-                </div>
-            )
-        },
-        {
-            key: '2',
-            label: 'Logs',
-            children: <FunctionLogs functionId={currentFunction?.id} />
-        }
-    ];
 
     const statisticsData = [
         { name: 'Awaiting msgs', data: stationState?.stationFunctions?.total_awaiting_messages?.toLocaleString() },
@@ -273,12 +228,16 @@ const FunctionsOverview = () => {
                                                 functionItem={functionItem}
                                                 stationName={stationState?.stationMetaData?.name}
                                                 partiotionNumber={stationState?.stationMetaData?.partitions_number}
-                                                onClick={() => setCurrentFunction(functionItem)}
+                                                onClick={() => {
+                                                    setCurrentFunction(functionItem);
+                                                    setOpenBottomDetails(true);
+                                                }}
                                                 updatedFunctionList={(data) => stationDispatch({ type: 'UPDATE_FUNCTION_LIST', payload: data?.functions['1'] })}
-                                                key={`function-tab-2-${functionItem.id}`}
-                                                changeActivition={(e) => changeActivition(functionItem.id, e)}
+                                                key={`function-tab-2-${functionItem?.id}`}
+                                                changeActivition={(e) => changeActivition(functionItem?.id, e)}
                                                 onDeleteFunction={() => handleDeleteFunction(index)}
-                                                selected={currentFunction?.id === functionItem.id}
+                                                selected={currentFunction?.id === functionItem?.id}
+                                                requestInfo={() => setOpenFunctionDetails(true)}
                                             />
                                         ))}
                                         <div
@@ -311,42 +270,12 @@ const FunctionsOverview = () => {
                     </div>
                 </div>
             </functions-list>
-            {currentFunction && functionDetails && (
-                <div className={`ms-function-details ${currentFunction ? 'ms-function-details-entered' : 'ms-function-details-exited'}`}>
-                    <div className="ms-function-details-top">
-                        <div className="left">
-                            <OverflowTip text={functionDetails?.function_name}>
-                                <span>{functionDetails?.function_name}</span>
-                            </OverflowTip>
-                            <div className="ms-function-details-badge">
-                                <GitIcon />
-                                <OverflowTip text={functionDetails?.repo}>{functionDetails?.repo}</OverflowTip>
-                            </div>
-                            <div className="ms-function-details-badge">
-                                <CodeGrayIcon />
-                                {functionDetails?.language}
-                            </div>
-                        </div>
-                        <div className="right">
-                            <CloseIcon
-                                onClick={() => {
-                                    setTimeout(() => {
-                                        setCurrentFunction(null);
-                                    }, 500);
-                                }}
-                            />
-                        </div>
-                    </div>
-                    <div className="ms-function-details-body">
-                        <div className="tabs-container">
-                            <Tabs defaultActiveKey="1" items={items} size="small" />
-                        </div>
-                    </div>
-                </div>
-            )}
             <Modal
                 open={openFunctionsModal}
-                clickOutside={() => setOpenFunctionsModal(false)}
+                clickOutside={() => {
+                    setOpenFunctionsModal(false);
+                    dismissFunction();
+                }}
                 displayButtons={false}
                 className="ms-function-details-modal"
                 height="95vh"
@@ -356,8 +285,55 @@ const FunctionsOverview = () => {
                     applyFunction={(requestBody) => {
                         handleAddFunction(requestBody);
                     }}
+                    referredFunction={referredFunction}
                 />
             </Modal>
+            <Drawer
+                placement="right"
+                size={'large'}
+                className="function-drawer"
+                onClose={() => setOpenFunctionDetails(false)}
+                destroyOnClose={true}
+                open={openFunctionDetails}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
+            >
+                <FunctionDetails selectedFunction={currentFunction} integrated={true} installed={true} stationView />
+            </Drawer>
+            <Drawer
+                placement="bottom"
+                open={openBottomDetails}
+                height={'300px'}
+                onClose={() => setOpenBottomDetails(false)}
+                closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
+                maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
+                headerStyle={{ padding: '0px' }}
+                bodyStyle={{ padding: '0 20px' }}
+                title={
+                    <>
+                        <div className="ms-function-details-top">
+                            <div className="left">
+                                <OverflowTip text={functionDetails?.function?.function_name}>
+                                    <span>{functionDetails?.function?.function_name}</span>
+                                </OverflowTip>
+                                <div className="ms-function-details-badge">
+                                    <GitIcon />
+                                    <OverflowTip text={functionDetails?.function?.repo}>{functionDetails?.function?.repo}</OverflowTip>
+                                </div>
+                                <div className="ms-function-details-badge">
+                                    <CodeGrayIcon />
+                                    {functionDetails?.function?.language}
+                                </div>
+                            </div>
+                            <div className="right">
+                                <PurpleQuestionMark className="info-icon" alt="Integration info" onClick={() => setOpenFunctionDetails(true)} />
+                            </div>
+                        </div>
+                    </>
+                }
+            >
+                <FunctionData functionDetails={functionDetails} />
+            </Drawer>
         </div>
     );
 };

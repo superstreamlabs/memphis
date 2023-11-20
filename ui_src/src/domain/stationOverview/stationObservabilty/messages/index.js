@@ -45,9 +45,9 @@ import UseSchemaModal from '../../components/useSchemaModal';
 import DeleteItemsModal from '../../../../components/deleteItemsModal';
 import { ReactComponent as DisableIcon } from '../../../../assets/images/disableIcon.svg';
 import { Divider } from 'antd';
-import FunctionsOberview from '../components/functionsOverview';
+import FunctionsOverview from '../components/functionsOverview';
 import CloudModal from '../../../../components/cloudModal';
-const Messages = () => {
+const Messages = ({ referredFunction }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [selectedRowIndex, setSelectedRowIndex] = useState(null);
     const [selectedRowPartition, setSelectedRowPartition] = useState(null);
@@ -63,6 +63,7 @@ const Messages = () => {
     const [disableLoader, setDisableLoader] = useState(false);
     const [activeTab, setActiveTab] = useState('general');
     const [cloudModalOpen, setCloudModalOpen] = useState(false);
+    const [choseReferredFunction, setChoseReferredFunction] = useState(false);
     const dls = stationState?.stationMetaData?.dls_station === '' ? null : stationState?.stationMetaData?.dls_station;
     const tabs = ['Messages', 'Dead-letter', 'Configuration'];
     const subTabs = isCloud()
@@ -77,6 +78,11 @@ const Messages = () => {
           ];
     const url = window.location.href;
     const stationName = url.split('stations/')[1];
+
+    useEffect(() => {
+        referredFunction && setActiveTab('functions');
+        setChoseReferredFunction(referredFunction);
+    }, [referredFunction]);
 
     const onSelectedRow = (id, partition) => {
         setUserScrolled(false);
@@ -330,7 +336,6 @@ const Messages = () => {
             <div className="top">
                 <div className="top-header">
                     <div className="left">
-                        <div className="top-title">View by :</div>
                         <div className="top-switcher">
                             <div className={`top-switcher-btn ${activeTab === 'general' ? 'ms-active' : ''}`} onClick={() => setActiveTab('general')}>
                                 General
@@ -557,7 +562,7 @@ const Messages = () => {
                     )}
                 </div>
             )}
-            {activeTab === 'functions' && <FunctionsOberview />}
+            {activeTab === 'functions' && <FunctionsOverview referredFunction={choseReferredFunction} dismissFunction={() => setChoseReferredFunction(null)} />}
 
             <Modal
                 header={<PurgeWrapperIcon alt="deleteWrapperIcon" />}
