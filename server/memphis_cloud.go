@@ -2404,3 +2404,11 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 func (s *Server) ScaleFunctionWorkers() {
 	return
 }
+
+func (s *Server) ListenForFunctionsDlsEvents() error {
+	return nil
+}
+
+func (s *Server) ConsumeFunctionsDlsMessages() {
+
+}

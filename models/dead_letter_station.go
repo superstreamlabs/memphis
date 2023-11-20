@@ -64,6 +64,20 @@ type SchemaVerseDlsMessageSdk struct {
 	PartitionNumber int             `json:"partition_number"`
 }
 
+type FunctionsMessagePayload struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     []byte            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
+type FunctionsDlsMessage struct {
+	StationID       int            `json:"station_id"`
+	Message         MessagePayload `json:"message"`
+	Err             string         `json:"err"`
+	PartitionNumber int            `json:"partition_number"`
+}
+
 type DlsMessage struct {
 	ID              int            `json:"id"`
 	StationId       int            `json:"station_id"`
