@@ -514,6 +514,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS tenant_name VARCHAR NOT NULL DEFAULT '$memphis';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS producer_name VARCHAR NOT NULL DEFAULT '';
 			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS partition_number INTEGER NOT NULL DEFAULT -1;
+			ALTER TABLE dls_messages ADD COLUMN IF NOT EXISTS attached_function_id INT NOT NULL DEFAULT -1;
 			DROP INDEX IF EXISTS dls_producer_id;
 			IF EXISTS (
 				SELECT 1 FROM information_schema.columns WHERE table_name = 'dls_messages' AND column_name = 'producer_id'
@@ -546,6 +547,7 @@ func createTables(MetadataDbClient MetadataStorage) error {
 		tenant_name VARCHAR NOT NULL DEFAULT '$memphis',
 		producer_name VARCHAR NOT NULL,
 		partition_number INTEGER NOT NULL DEFAULT -1,
+		attached_function_id INT NOT NULL DEFAULT -1,
 		PRIMARY KEY (id),
 		CONSTRAINT fk_station_id
 			FOREIGN KEY(station_id)
@@ -5745,7 +5747,7 @@ func StorePoisonMsg(stationId, messageSeq int, cgName string, producerName strin
 			var pgErr *pgconn.PgError
 			if errors.As(err, &pgErr) {
 				if pgErr.Detail != "" {
-					if !strings.Contains(pgErr.Detail, "already exists") {
+					if strings.Contains(pgErr.Detail, "already exists") {
 						return 0, updated, errors.New("dls_messages row already exists")
 					} else {
 						return 0, updated, errors.New(pgErr.Detail)
@@ -5928,64 +5930,6 @@ func RemoveCgFromDlsMsg(msgId int, cgName string, tenantName string) error {
 	}
 
 	return nil
-}
-
-func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
-}
-
-func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 2000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
 }
 
 func CountDlsMsgsByStationAndPartition(stationId, partitionNumber int) (int, error) {

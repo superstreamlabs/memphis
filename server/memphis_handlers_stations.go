@@ -670,7 +670,12 @@ func (sh StationsHandler) GetStationsDetails(tenantName string) ([]models.Extend
 				Version:              station.Version,
 			}
 
-			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity})
+			totalDlsMsgs, err := db.CountDlsMsgsByStationAndPartition(station.ID, -1)
+			if err != nil {
+				return []models.ExtendedStationDetails{}, err
+			}
+
+			exStations = append(exStations, models.ExtendedStationDetails{Station: stationRes, HasDlsMsgs: hasDlsMsgs, TotalMessages: totalMsgInfo, Tags: tags, Activity: activity, PoisonMessages: totalDlsMsgs})
 		}
 		if exStations == nil {
 			return []models.ExtendedStationDetails{}, nil

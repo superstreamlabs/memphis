@@ -76,6 +76,7 @@ type DlsMessage struct {
 	TenantName      string         `json:"tenant_name"`
 	ProducerName    string         `json:"producer_name"`
 	PartitionNumber int            `json:"partition_number"`
+	FunctionId      int            `json:"function_id"`
 }
 
 type DlsMsgResendAll struct {
@@ -107,9 +108,10 @@ type LightDlsMessage struct {
 }
 
 type LightDlsMessageResponse struct {
-	MessageSeq int            `json:"message_seq"`
-	ID         int            `json:"id"`
-	Message    MessagePayload `json:"message"`
+	MessageSeq   int            `json:"message_seq"`
+	ID           int            `json:"id"`
+	Message      MessagePayload `json:"message"`
+	FunctionName string         `json:"function_name"`
 }
 
 type RetentionIntervalData struct {

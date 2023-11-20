@@ -622,7 +622,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 		}
 	}
 
-	poisonMessages, schemaFailedMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station, body.PartitionNumber)
+	poisonMessages, schemaFailedMessages, functionsMessages, totalDlsAmount, err := poisonMsgsHandler.GetDlsMsgsByStationLight(station, body.PartitionNumber)
 	if err != nil {
 		if IsNatsErr(err, JSStreamNotFoundErr) {
 			serv.Warnf("[tenant: %v][user: %v]GetStationOverviewData at GetDlsMsgsByStationLight: nats error At station %v: does not exist", user.TenantName, user.Username, body.StationName)
@@ -717,6 +717,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 			"messages":                      messages,
 			"poison_messages":               poisonMessages,
 			"schema_failed_messages":        schemaFailedMessages,
+			"functions_failed_messages":     functionsMessages,
 			"tags":                          tags,
 			"leader":                        leader,
 			"followers":                     followers,
@@ -747,6 +748,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"messages":                      messages,
 				"poison_messages":               poisonMessages,
 				"schema_failed_messages":        schemaFailedMessages,
+				"functions_failed_messages":     functionsMessages,
 				"tags":                          tags,
 				"leader":                        leader,
 				"followers":                     followers,
@@ -774,6 +776,7 @@ func (mh MonitoringHandler) GetStationOverviewData(c *gin.Context) {
 				"messages":                      messages,
 				"poison_messages":               poisonMessages,
 				"schema_failed_messages":        schemaFailedMessages,
+				"functions_failed_messages":     functionsMessages,
 				"tags":                          tags,
 				"leader":                        leader,
 				"followers":                     followers,

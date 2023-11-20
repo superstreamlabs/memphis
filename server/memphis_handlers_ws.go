@@ -350,7 +350,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		}
 	}
 
-	poisonMessages, schemaFailMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station, partitionNumber)
+	poisonMessages, schemaFailMessages, functionsMessages, totalDlsAmount, err := h.PoisonMsgs.GetDlsMsgsByStationLight(station, partitionNumber)
 	if err != nil {
 		return map[string]any{}, err
 	}
@@ -397,6 +397,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"messages":                      messages,
 				"poison_messages":               poisonMessages,
 				"schema_failed_messages":        schemaFailMessages,
+				"functions_failed_messages":     functionsMessages,
 				"tags":                          tags,
 				"leader":                        leader,
 				"followers":                     followers,
@@ -424,6 +425,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 				"messages":                      messages,
 				"poison_messages":               poisonMessages,
 				"schema_failed_messages":        schemaFailMessages,
+				"functions_failed_messages":     functionsMessages,
 				"tags":                          tags,
 				"leader":                        leader,
 				"followers":                     followers,
@@ -467,6 +469,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"messages":                      messages,
 		"poison_messages":               poisonMessages,
 		"schema_failed_messages":        schemaFailMessages,
+		"functions_failed_messages":     functionsMessages,
 		"tags":                          tags,
 		"leader":                        leader,
 		"followers":                     followers,
