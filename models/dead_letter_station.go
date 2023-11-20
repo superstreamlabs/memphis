@@ -79,22 +79,6 @@ type DlsMessage struct {
 	FunctionId      int            `json:"function_id"`
 }
 
-type DlsMessageRes struct {
-	ID              int            `json:"id"`
-	StationId       int            `json:"station_id"`
-	MessageSeq      int            `json:"message_seq"`
-	PoisonedCgs     []string       `json:"poisoned_cgs"`
-	MessageDetails  MessagePayload `json:"message_details"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	MessageType     string         `json:"message_type"`
-	ValidationError string         `json:"validation_error"`
-	TenantName      string         `json:"tenant_name"`
-	ProducerName    string         `json:"producer_name"`
-	PartitionNumber int            `json:"partition_number"`
-	FunctionId      int            `json:"function_id"`
-	FunctionName    string         `json:"function_name"`
-}
-
 type DlsMsgResendAll struct {
 	MinId int `json:"min_id"`
 	MaxId int `json:"max_id"`
