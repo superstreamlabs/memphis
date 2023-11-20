@@ -2400,3 +2400,7 @@ func (pmh PoisonMessagesHandler) GetDlsMsgsByStationLight(station models.Station
 	}
 	return poisonMessages, schemaMessages, functionsMessages, totalDlsAmount, nil
 }
+
+func (s *Server) ScaleFunctionWorkers() {
+	return
+}
