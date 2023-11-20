@@ -69,9 +69,10 @@ export const labelType = {
 };
 
 export const planType = {
+    ENTERPRISE: 'plan-cloud-enterprise',
     BUSINESS: 'plan-cloud-business',
-    STARTER: 'plan-cloud-starter',
-    FREE: 'plan-cloud-free'
+    GROWTH: 'plan-cloud-growth-buckets',
+    FREE: 'plan-cloud-free',
 };
 
 export const githubUrls = {

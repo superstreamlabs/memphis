@@ -67,6 +67,11 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 	integrationType := strings.ToLower(body.Name)
 	switch integrationType {
 	case "slack":
+		if !ValidataAccessToFeature(user.TenantName, "feature-integration-slack") {
+			serv.Warnf("[tenant: %v][user: %v]CreateIntegration at ValidataAccessToFeature: %v", user.TenantName, user.Username, "feature-notifications")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This feature is not available on your current pricing plan, in order to enjoy it you will have to upgrade your plan"})
+			return
+		}
 		_, _, slackIntegration, errorCode, err := it.handleCreateSlackIntegration(user.TenantName, body)
 		if err != nil {
 			if errorCode == 500 {
@@ -104,6 +109,11 @@ func (it IntegrationsHandler) CreateIntegration(c *gin.Context) {
 		}
 		integration = s3Integration
 	case "github":
+		if !ValidataAccessToFeature(user.TenantName, "feature-git-hub-integration") {
+			serv.Warnf("[tenant: %v][user: %v]CreateIntegration at ValidataAccessToFeature: %v", user.TenantName, user.Username, "feature-git-hub-integration")
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": "This feature is not available on your current pricing plan, in order to enjoy it you will have to upgrade your plan"})
+			return
+		}
 		githubIntegration, errorCode, err := it.handleCreateGithubIntegration(user.TenantName, body.Keys)
 		if err != nil {
 			if errorCode == 500 {

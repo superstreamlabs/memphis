@@ -120,6 +120,7 @@ func (ms *memStore) storeRawMsg(subj string, hdr, msg []byte, seq uint64, ts int
 	if ms.msgs == nil {
 		return ErrStoreClosed
 	}
+
 	// Tracking by subject.
 	var ss *SimpleState
 	var asl bool

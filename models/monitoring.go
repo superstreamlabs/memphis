@@ -107,3 +107,4 @@ type Throughput struct {
 	Bytes       int64 `json:"bytes"`
 	BytesPerSec int64 `json:"bytes_per_sec"`
 }
+

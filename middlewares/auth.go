@@ -73,12 +73,12 @@ func verifyToken(tokenString string, secret string) (models.User, error) {
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return models.User{}, errors.New("f")
+		return models.User{}, err
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok && !token.Valid {
-		return models.User{}, errors.New("f")
+		return models.User{}, err
 	}
 
 	if claims["tenant_name"] == nil {

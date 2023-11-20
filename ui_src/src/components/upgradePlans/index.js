@@ -50,7 +50,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
     const cancel_url = window.location.href;
 
     const handlePlanSelected = async (plan) => {
-        const isDowngrade = plan.intentionType === 'DOWNGRADE_PLAN';
+        let isDowngrade = plan.intentionType === 'DOWNGRADE_PLAN';
         setPlanSelected(plan);
         if (isDowngrade) {
             try {
@@ -80,12 +80,18 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
             }
         }
         try {
-            const data = await httpRequest('POST', ApiEndpoints.UPGRADE_PLAN, { plan: plan.plan.id, success_url, cancel_url, reason: reason });
+            let quantity = 0;
+            if (plan.billableFeatures.length > 0) {
+                quantity = plan.billableFeatures[0].quantity;
+            }
+            const data = await httpRequest('POST', ApiEndpoints.UPGRADE_PLAN, { plan: plan.plan.id, success_url, cancel_url, reason: reason, unit_quantity: quantity });
             if (data.resp_type === 'payment') window.open(data.stripe_url, '_self');
             else {
                 dispatch({ type: 'SET_ENTITLEMENTS', payload: data.entitlements });
                 await refreshData();
-                showMessages('success', 'Your plan has been successfully updatead.');
+                setTimeout(() => {
+                    showMessages('success', 'Your plan has been successfully updatead.');
+                }, 1000);
                 isExternal ? onClose() : setUpgradeModalOpen(false);
                 localStorage.setItem(LOCAL_STORAGE_PLAN, data.plan);
             }
@@ -150,7 +156,7 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                             <FiArrowUpRight />
                         </div>
                     </div>
-                    <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-starter-new" />
+                    <Paywall onPlanSelected={(plan) => handlePlanSelected(plan)} highlightedPlanId="plan-cloud-growth-buckets" />
                     <div className="paywall-footer">
                         <label>*Coming soon</label>
                         <div className="question-info">
@@ -209,7 +215,8 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                         )}
                         {(downgradeInstructions['feature-partitions-per-station'] ||
                             downgradeInstructions['feature-storage-retention'] ||
-                            downgradeInstructions['feature-storage-tiering']) && (
+                            downgradeInstructions['feature-storage-tiering'] ||
+                            downgradeInstructions['feature-stations-limitation']) && (
                             <div className="redirect-section">
                                 <p className="violation-title">Some stations are violating the new plan </p>
                                 <div className="hint-line">
@@ -257,6 +264,17 @@ const UpgradePlans = ({ open, onClose, content, isExternal = true }) => {
                                             <span>
                                                 The plan you are about to downgrade to allows {downgradeInstructions['feature-partitions-per-station']?.limits} partitons
                                                 per station
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+                                {downgradeInstructions['feature-stations-limitation'] && (
+                                    <div className="violations-list">
+                                        <p className="violation-title">You have more stations than the allowed amount of stations in the new plan</p>
+                                        <div className="hint-line">
+                                            <HiOutlineExclamationCircle />
+                                            <span>
+                                                The plan you are about to downgrade to allows {downgradeInstructions['feature-stations-limitation']?.limits} stations
                                             </span>
                                         </div>
                                     </div>

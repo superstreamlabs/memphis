@@ -258,6 +258,30 @@ func (s *Server) createStationDirectIntern(c *client,
 		return
 	}
 
+	stationsCount, err := db.CountStationsByTenant(csr.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", csr.TenantName, csr.Username, err.Error())
+	}
+	canCreate, stationsLimit := ValidataUsageLimitOfFeature(csr.TenantName, "feature-stations-limitation", stationsCount+1)
+	if !canCreate {
+		errMsg := fmt.Errorf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+		jsApiResp.Error = NewJSStreamCreateError(errMsg)
+		respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, errMsg)
+		return
+	}
+
+	if csr.DlsStation != "" {
+		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-dls-consumption-linkage")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+	}
+
 	if csr.PartitionsNumber == 0 && isNative {
 		errMsg := fmt.Errorf("you are using an old SDK, make sure to update your SDK")
 		serv.Warnf("[tenant: %v][user:%v]createStationDirect -  tried to use an old SDK", csr.TenantName, csr.Username)
@@ -296,6 +320,15 @@ func (s *Server) createStationDirectIntern(c *client,
 		if !exist {
 			errMsg := fmt.Sprintf("Schema %v does not exist", csr.SchemaName)
 			serv.Warnf("[tenant: %v][user:%v]createStationDirect: %v", csr.TenantName, csr.Username, errMsg)
+			jsApiResp.Error = NewJSStreamCreateError(err)
+			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
+			return
+		}
+
+		canCreate := ValidataAccessToFeature(csr.TenantName, "feature-schemaverse-enforcement")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with schema enforcement, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", csr.TenantName, csr.Username, errMsg)
 			jsApiResp.Error = NewJSStreamCreateError(err)
 			respondWithErrOrJsApiRespWithEcho(!isNative, c, memphisGlobalAcc, _EMPTY_, reply, _EMPTY_, jsApiResp, err)
 			return
@@ -839,6 +872,28 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		return
 	}
 
+	stationsCount, err := db.CountStationsByTenant(user.TenantName)
+	if err != nil {
+		serv.Errorf("[tenant: %v][user: %v]CreateStation at CountStationsByTenant: %v", user.TenantName, user.Username, err.Error())
+	}
+	canCreate, stationsLimit := ValidataUsageLimitOfFeature(tenantName, "feature-stations-limitation", stationsCount+1)
+	if !canCreate {
+		errMsg := fmt.Sprintf("cannot create station (max amount of stations for this plan :%v)", stationsLimit)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+		return
+	}
+
+	if body.DlsStation != "" {
+		canCreate := ValidataAccessToFeature(tenantName, "feature-dls-consumption-linkage")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with DLS linkage, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		}
+	}
+
 	canCreate, partitionLimit := ValidataUsageLimitOfFeature(tenantName, "feature-partitions-per-station", body.PartitionsNumber)
 
 	if !canCreate || body.PartitionsNumber < 1 {
@@ -848,7 +903,7 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		} else {
 			errMsg = fmt.Errorf("this amount of partitions you are trying to create for a single station is not supported on your pricing plan")
 		}
-		serv.Errorf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
+		serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 		c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg.Error()})
 		return
 	}
@@ -887,6 +942,14 @@ func (sh StationsHandler) CreateStation(c *gin.Context) {
 		if !exist {
 			errMsg := fmt.Sprintf("Schema %v does not exist", schemaName)
 			serv.Warnf("[tenant: %v][user: %v]CreateStation: Station %v: %v", user.TenantName, user.Username, body.Name, errMsg)
+			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
+			return
+		}
+
+		canCreate := ValidataAccessToFeature(tenantName, "feature-schemaverse-enforcement")
+		if !canCreate {
+			errMsg := fmt.Sprintf("cannot create station with schema enforcement, please upgrade your plan to enjoy this feature")
+			serv.Warnf("[tenant: %v][user:%v]CreateStation %v", user.TenantName, user.Username, errMsg)
 			c.AbortWithStatusJSON(SHOWABLE_ERROR_STATUS_CODE, gin.H{"message": errMsg})
 			return
 		}
