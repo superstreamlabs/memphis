@@ -1,6 +1,11 @@
 .function-modal-container {
+    position: relative;
     .fdm {
+        position: relative;
         &-body {
+            position: relative;
+            height: calc(100% - 350px);
+            position: relative;
             flex: 1;
             padding: 0px 24px;
 
@@ -21,6 +26,7 @@
             }
             .functions-list {
                 overflow-y: auto;
+                height: calc(100% - 150px);
             }
         }
 
@@ -105,6 +111,33 @@
                     }
                 }
             }
+        }
+    }
+    .title-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .update-refresh {
+        display: flex;
+        position: relative;
+        margin-right: 15px;
+        .ant-badge {
+            position: absolute;
+            right: 5px;
+            top: 5px;
+            z-index: 5;
+        }
+        .refresh-btn {
+            background-color: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
     }
 }

@@ -12,24 +12,11 @@
 
 import './style.scss';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Input from '../../../../../components/Input';
 
-const FunctionInputsModal = ({ functionInputsChange }) => {
-    const [inputs, setInputs] = useState([
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' },
-        { name: 'API_KEY', type: 'string' }
-    ]);
+const FunctionInputsModal = ({ clickedFunction, functionInputsChange }) => {
+    const [inputs, setInputs] = useState([]);
 
     const handleChange = (e, index) => {
         const newInputs = [...inputs];
@@ -38,6 +25,9 @@ const FunctionInputsModal = ({ functionInputsChange }) => {
         functionInputsChange(newInputs);
     };
 
+    useEffect(() => {
+        setInputs(clickedFunction?.inputs);
+    }, []);
     return (
         <div className="function-inputs-modal">
             <span className="info">
@@ -65,7 +55,7 @@ const FunctionInputsModal = ({ functionInputsChange }) => {
                             disabled
                         />
                         <Input
-                            placeholder={input?.type}
+                            placeholder={'Type here'}
                             type="text"
                             radiusType="semi-round"
                             colorType="black"

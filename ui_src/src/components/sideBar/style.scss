@@ -146,6 +146,9 @@
             }
         }
     }
+    .align-items-center {
+        display: flex;
+    }
 }
 
 .menu-content {
@@ -270,4 +273,89 @@
 .ant-popover-placement-right,
 .ant-popover-placement-rightTop {
     left: 60px !important;
+}
+.support-container {
+    a {
+        color: #6557ff;
+    }
+    a:hover {
+        text-decoration: underline;
+    }
+    p {
+        margin-bottom: 0;
+    }
+    .support-image {
+        width: 40px;
+        height: 40px;
+        background-color: #e2e0fc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 5px;
+        img {
+            width: 20px;
+            height: 20px;
+        }
+    }
+    .popover-header {
+        color: #101828;
+        font-weight: 'InterSemiBold';
+        font-size: 18px;
+        margin: 0;
+    }
+    label {
+        color: var(--purple);
+        font-family: 'Inter';
+    }
+    .support-span {
+        border-radius: 8px;
+        background: rgba(74, 73, 92, 0.05);
+        padding: 10px 10px;
+        margin: 15px 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 65px;
+    }
+    .support-content-header {
+        color: #475467;
+        font-family: 'Inter';
+        margin: 20px 0;
+    }
+    .support-content {
+        color: #475467;
+        font-weight: 400;
+        margin-bottom: 0;
+        display: flex;
+        justify-content: space-between;
+        .flex {
+            display: flex;
+            gap: 5px;
+        }
+        a {
+            text-decoration: underline;
+            font-family: 'InterSemiBold';
+        }
+        span {
+            font-family: 'InterSemiBold';
+        }
+    }
+    .support-title {
+        color: #101828;
+        font-size: 16px;
+        font-family: 'InterMedium';
+        margin-top: 15px;
+        margin-bottom: 5px;
+    }
+    .close-button {
+        margin-top: 25px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        .button-container button {
+            font-size: 12px !important;
+            font-family: 'InterSemiBold' !important;
+        }
+    }
 }

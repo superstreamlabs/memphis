@@ -28,7 +28,7 @@ import SchemaItem from '../../../stationOverview/components/useSchemaModal/schem
 import { ReactComponent as StationIcon } from '../../../../assets/images/stationsIconActive.svg';
 import CreateStationForm from '../../../../components/createStationForm';
 
-const AttachFunctionModal = () => {
+const AttachFunctionModal = ({ selectedFunction }) => {
     const createStationRef = useRef(null);
     const [searchInput, setSearchInput] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -127,7 +127,12 @@ const AttachFunctionModal = () => {
                             fontSize="13px"
                             fontFamily="InterSemiBold"
                             disabled={!selected}
-                            onClick={() => history.push(`${pathDomains.stations}/${selected}`)}
+                            onClick={() =>
+                                history.push({
+                                    pathname: `${pathDomains.stations}/${selected}`,
+                                    selectedFunction: selectedFunction
+                                })
+                            }
                         />
                     </div>
                 </>

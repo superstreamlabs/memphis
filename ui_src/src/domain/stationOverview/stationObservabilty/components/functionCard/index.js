@@ -31,7 +31,8 @@ export default function FunctionCard({
     isGeneralView,
     isDeactive = false,
     selected,
-    changeActivition
+    changeActivition,
+    requestInfo
 }) {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [isActive, setIsActive] = useState(true);
@@ -109,7 +110,8 @@ export default function FunctionCard({
             <div
                 className="item-wrap"
                 style={{ width: 'initial' }}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     setPopoverFunctionContextMenu(false);
                     functionItem?.activated ? handleDeactivate() : handleActivate();
                 }}
@@ -121,7 +123,8 @@ export default function FunctionCard({
             <div
                 className="item-wrap"
                 style={{ width: 'initial' }}
-                onClick={() => {
+                onClick={(e) => {
+                    e.stopPropagation();
                     setPopoverFunctionContextMenu(false);
                     handleDelete();
                 }}
@@ -130,24 +133,33 @@ export default function FunctionCard({
                     <p className="item-title">Delete</p>
                 </div>
             </div>
+            <div
+                className="item-wrap"
+                style={{ width: 'initial' }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setPopoverFunctionContextMenu(false);
+                    requestInfo();
+                }}
+            >
+                <div className="item">
+                    <p className="item-title">Information</p>
+                </div>
+            </div>
         </div>
     );
 
     return (
         <div className={`ms-function-card ${!functionItem?.activated ? 'deactivated' : undefined}`} onClick={() => isActive && onClick && onClick()}>
-            {!isGeneralView && (
-                <div className="ms-function-card-badge-left">
-                    <FunctionProcessingWarningIcon />
-                    {convertLongNumbers(functionItem?.pending_messages || 0)}
-                </div>
-            )}
+            <div className="ms-function-card-badge-left">
+                <FunctionProcessingWarningIcon />
+                {convertLongNumbers(functionItem?.pending_messages || 0)}
+            </div>
             <div className="ms-function-card-top">
-                {!isGeneralView && (
-                    <div className="ms-function-card-badge-top">
-                        <FunctionProcessingIcon />
-                        {convertLongNumbers(functionItem?.in_process_messages || 0)}
-                    </div>
-                )}
+                <div className="ms-function-card-badge-top">
+                    <FunctionProcessingIcon />
+                    {convertLongNumbers(functionItem?.in_process_messages || 0)}
+                </div>
                 <div className={`ms-function-card-inner ${selected ? 'selected' : undefined}`}>
                     <div className="ms-function-card-header">
                         <div className="ms-function-card-header-title">
@@ -163,29 +175,33 @@ export default function FunctionCard({
                                 placement="bottom"
                                 content={functionContextMenu}
                                 trigger="click"
-                                onOpenChange={() => setPopoverFunctionContextMenu(!popoverFunctionContextMenu)}
+                                onOpenChange={() => {
+                                    setPopoverFunctionContextMenu(!popoverFunctionContextMenu);
+                                }}
                                 open={popoverFunctionContextMenu}
                             >
-                                <HiEllipsisVertical size={16} />
+                                <HiEllipsisVertical size={16} onClick={(e) => e.stopPropagation()} />
                             </Popover>
                         </div>
                     </div>
-                    {!isGeneralView && (
-                        <div className="ms-function-card-body">
-                            <div className="ms-function-card-body-left">
-                                <div className="ms-function-card-info-box">
-                                    <div className="title">Av. Processing Time</div>
-                                    <div className="subtitle">{functionItem.metrics?.average_processing_time}s</div>
-                                </div>
-                            </div>
-                            <div className="ms-function-card-body-right">
-                                <div className="ms-function-card-info-box">
-                                    <div className="title">Error Rate</div>
-                                    <div className="subtitle">{functionItem.metrics?.error_rate}%</div>
-                                </div>
+                    <div className="ms-function-card-body">
+                        <div className="ms-function-card-body-left">
+                            <div className="ms-function-card-info-box">
+                                <div className="title">Av. Processing Time</div>
+                                <div className="subtitle">{functionItem.metrics?.average_processing_time}s</div>
                             </div>
                         </div>
-                    )}
+                        <div className="ms-function-card-body-right">
+                            <div className="ms-function-card-info-box">
+                                <div className="title">Error Rate</div>
+                                <div className="subtitle">{functionItem.metrics?.error_rate}%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div className="ms-function-card-badge-bottom">
+                    <FunctionProcessingIcon />
+                    {convertLongNumbers(functionItem?.in_process_messages || 0)}
                 </div>
             </div>
         </div>

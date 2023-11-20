@@ -4,7 +4,6 @@
     height: 100%;
     overflow-y: auto;
     flex-direction: column;
-
     .back-to-function {
         display: flex;
         align-items: center;
@@ -32,6 +31,10 @@
         align-items: center;
         justify-content: center;
         gap: 4px;
+        cursor: pointer;
+        label {
+            cursor: pointer;
+        }
     }
     .drawer-header {
         height: 150px;
@@ -168,6 +171,12 @@
             gap: 10px;
         }
     }
+    inputsSection {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
     code {
         font-family: 'Inter';
         color: #2e2c34;
@@ -183,6 +192,7 @@
         }
         .function-details {
             height: 100%;
+            overflow-y: auto;
             width: 250px;
             .label-title {
                 font-family: 'InterSemiBold';
@@ -212,10 +222,11 @@
         .repos-section {
             border-radius: 4px;
             border: 1px solid #e6e6e6;
-            height: calc(100% - 30px);
+            height: calc(100% - 40px);
             width: 30%;
             min-width: 250px;
-            margin: 0px 10px;
+            min-width: 250px;
+            margin: 16px 10px;
             padding: 10px;
             overflow-y: auto;
             overflow-x: auto;
@@ -247,6 +258,9 @@
                 display: flex;
                 justify-content: center;
                 padding-top: 10px;
+                border-radius: 4px;
+                border: 1px solid #e6e6e6;
+                margin-top: 10px;
                 p {
                     margin: 0;
                     white-space: pre-line;

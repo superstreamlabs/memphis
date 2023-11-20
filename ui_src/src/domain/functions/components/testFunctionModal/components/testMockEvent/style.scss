@@ -64,6 +64,17 @@
                 padding: 3px;
                 overflow-y: auto;
             }
+            .inputs-section {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                min-height: 250px;
+                overflow-y: auto;
+                .input-row {
+                    display: flex;
+                    justify-content: space-between;
+                }
+            }
         }
     }
 }

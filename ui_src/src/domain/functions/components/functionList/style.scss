@@ -4,6 +4,10 @@
     padding: 1vw;
     min-width: 700px;
     height: 100%;
+    .ant-btn > .ant-btn-loading-icon .anticon {
+        padding-right: 0px !important;
+        color: var(--purple);
+    }
     .code-btn {
         display: flex;
         align-items: center;
@@ -46,12 +50,6 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        .ant-btn > .ant-btn-loading-icon {
-            padding-right: 0px;
-        }
-        .ant-btn > .ant-btn-loading-icon .anticon {
-            padding-right: 0px;
-        }
         .integrated-wrapper {
             display: flex;
             padding: 3px 10px;
@@ -88,6 +86,17 @@
                 right: 5px;
                 top: 5px;
                 z-index: 5;
+            }
+            .refresh-btn {
+                background-color: #ffffff;
+                border-radius: 50%;
+                box-shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+                width: 34px;
+                height: 34px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
             }
         }
     }

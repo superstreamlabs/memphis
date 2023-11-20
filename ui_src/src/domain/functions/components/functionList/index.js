@@ -123,20 +123,9 @@ function FunctionList({ tabPrivate }) {
 
     useEffect(() => {
         let shouldRefresh = false;
-        installedFunctionList.forEach((func) => {
-            if (func?.installed_in_progress) shouldRefresh = true;
-        });
-        if (!shouldRefresh) {
-            otherFunctionList.forEach((func) => {
-                if (func?.installed_in_progress) shouldRefresh = true;
-            });
-        }
-        if (!shouldRefresh) {
-            connectedRepos.forEach((repo) => {
-                if (repo?.in_progress) shouldRefresh = true;
-            });
-        }
-
+        shouldRefresh = installedFunctionList.some((func) => func?.installed_in_progress);
+        if (!shouldRefresh) shouldRefresh = otherFunctionList.some((func) => func?.installed_in_progress);
+        if (!shouldRefresh) shouldRefresh = connectedRepos.some((repo) => repo?.in_progress);
         setRefreshIndicator(shouldRefresh);
     }, [installedFunctionList, otherFunctionList, connectedRepos]);
 
@@ -219,9 +208,9 @@ function FunctionList({ tabPrivate }) {
                                 <OverflowTip text={repo?.repo_name} width={'170px'} center={false}>
                                     {repo?.repo_name}
                                 </OverflowTip>
-                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, false, false)}`} width={'170px'} center={false}>
+                                <OverflowTip text={`${repo?.branch} | ${parsingDate(repo?.last_modified, true, true)}`} width={'170px'} center={false}>
                                     <label className="last-modified">
-                                        {repo?.branch} | Synced on {parsingDate(repo?.last_modified, false, false)}
+                                        {repo?.branch} | Synced on {parsingDate(repo?.last_modified, true, true)}
                                     </label>
                                 </OverflowTip>
                             </span>
@@ -300,16 +289,22 @@ function FunctionList({ tabPrivate }) {
                 )}
                 {isCloud() && (
                     <>
-                        <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel header={<div className="panel-header">{`Installed ${`(${filteredInstalledData?.length || 0})`}`}</div>} key={1}>
-                                <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
-                            </Panel>
-                        </Collapse>
-                        <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
-                            <Panel header={<div className="panel-header">{`Other ${`(${filteredOtherData?.length || 0})`}`}</div>} key={2}>
-                                <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
-                            </Panel>
-                        </Collapse>
+                        {filteredInstalledData?.length > 0 && (
+                            <Collapse defaultActiveKey={['1']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                                <Panel header={<div className="panel-header">{`Installed ${`(${filteredInstalledData?.length || 0})`}`}</div>} key={1}>
+                                    <div>{installedFunctionBoxesContent || noFunctionsContent}</div>
+                                </Panel>
+                            </Collapse>
+                        )}
+                        {filteredInstalledData?.length > 0 ? (
+                            <Collapse defaultActiveKey={['2']} accordion={true} expandIcon={({ isActive }) => <ExpandIcon isActive={isActive} />} ghost>
+                                <Panel header={<div className="panel-header">{`Other ${`(${filteredOtherData?.length || 0})`}`}</div>} key={2}>
+                                    <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                                </Panel>
+                            </Collapse>
+                        ) : (
+                            <div>{otherFunctionBoxesContent || noFunctionsContent}</div>
+                        )}
                     </>
                 )}
             </div>
@@ -333,19 +328,13 @@ function FunctionList({ tabPrivate }) {
                 <div className="action-section">
                     <span className="update-refresh">
                         {refreshIndeicator && <Badge dot />}
-                        <Button
-                            width={'36px'}
-                            height={'34px'}
-                            placeholder={
-                                <div className="button-content">{isLoading ? '' : <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} />}</div>
-                            }
-                            backgroundColorType={'white'}
-                            colorType="black"
-                            radiusType="circle"
-                            border={'gray-light'}
-                            isLoading={isLoading}
-                            onClick={getAllFunctions}
-                        />
+                        <div className="refresh-btn">
+                            {isLoading ? (
+                                <Spin indicator={<SyncOutlined style={{ color: '#6557FF', fontSize: '16px' }} spin />} />
+                            ) : (
+                                <RefreshIcon alt="refreshIcon" style={{ path: { color: '#6557FF' } }} onClick={getAllFunctions} />
+                            )}
+                        </div>
                     </span>
                     <Popover
                         placement="top"

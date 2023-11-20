@@ -13,8 +13,7 @@
 import './style.scss';
 
 import React, { useEffect, useContext, useState, createContext, useReducer } from 'react';
-import { useHistory } from 'react-router-dom';
-
+import { useHistory, useLocation } from 'react-router-dom';
 import { extractValueFromURL, parsingDate } from '../../services/valueConvertor';
 import StationOverviewHeader from './stationOverviewHeader';
 import StationObservabilty from './stationObservabilty';
@@ -33,7 +32,6 @@ const initializeState = {
     stationFunctions: {}
 };
 let sub;
-
 const StationOverview = () => {
     const [stationState, stationDispatch] = useReducer(Reducer);
     const url = window.location.href;
@@ -42,6 +40,7 @@ const StationOverview = () => {
     const [state, dispatch] = useContext(Context);
     const [isLoading, setisLoading] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const location = useLocation();
 
     const sortData = (data) => {
         data.audit_logs?.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -175,7 +174,7 @@ const StationOverview = () => {
                             <StationOverviewHeader />
                         </div>
                         <div className="station-observability">
-                            <StationObservabilty />
+                            <StationObservabilty referredFunction={location?.selectedFunction} />
                         </div>
                     </div>
                 )}
