@@ -37,7 +37,7 @@ pipeline {
     }
 
     stage('Tests - Install/upgrade Memphis cli - BETA') {
-        when { anyOf { branch 'master'; branch 'qa'; branch 'valera'}}
+        when { anyOf { branch 'master'; branch 'qa'}}
         steps {
             sh """
             sudo npm uninstall memphis-dev-cli-beta -g
@@ -82,18 +82,6 @@ pipeline {
             sh "docker-compose -f ./memphis-devops/docker/docker-compose-qa-tests-broker.yml -p memphis up -d"
         }
     }
-
-    stage('Tests - Docker compose install') {
-        when { branch 'valera' }
-        steps {
-            sh "rm -rf memphis-docker"
-            dir ('memphis-devops'){
-                git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-devops.git', branch: 'master'
-            }
-            sh "docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis up -d"
-        }
-    }
-
 	  
     stage('Tests - Docker compose install - Latest') {
         when { branch 'latest' }
@@ -132,16 +120,6 @@ pipeline {
         steps {
             sh """
             docker-compose -f ./memphis-docker/docker-compose-qa-tests-broker.yml -p memphis down
-            docker volume prune -f
-            """
-        }
-    }
-
-    stage('Tests - Remove Docker compose') {
-        when { branch 'valera' }
-        steps {
-            sh """
-            docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
