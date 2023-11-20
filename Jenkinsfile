@@ -62,7 +62,7 @@ pipeline {
     //////////// Docker-Compose ////////////
     ////////////////////////////////////////
 
-    stage('Tests - Docker compose install') {
+    stage('Tests - Docker compose install - Master') {
         when { branch 'master' }
         steps {
             sh "rm -rf memphis-docker"
@@ -72,7 +72,7 @@ pipeline {
             sh "docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis up -d"
         }
     }
-    stage('Tests - Docker compose install') {
+    stage('Tests - Docker compose install - QA') {
         when { branch 'qa' }
         steps {
             sh "rm -rf memphis-docker"
@@ -95,7 +95,7 @@ pipeline {
     }
 
 	  
-    stage('Tests - Docker compose install') {
+    stage('Tests - Docker compose install - Latest') {
         when { branch 'latest' }
         steps {
             sh "rm -rf memphis-docker"
@@ -118,7 +118,7 @@ pipeline {
         }
     }
 
-    stage('Tests - Remove Docker compose') {
+    stage('Tests - Remove Docker compose - Master') {
         when { branch 'master' }
         steps {
             sh """
@@ -127,7 +127,7 @@ pipeline {
             """
         }
     }
-    stage('Tests - Remove Docker compose') {
+    stage('Tests - Remove Docker compose - QA') {
         when { branch 'qa' }
         steps {
             sh """
@@ -147,7 +147,7 @@ pipeline {
         }
     }
 
-    stage('Tests - Remove Docker compose') {
+    stage('Tests - Remove Docker compose - Latest') {
         when { branch 'latest' }
         steps {
             sh """
@@ -173,7 +173,7 @@ pipeline {
     }
 
 
-    stage('Open port forwarding to memphis service') {
+    stage('Open port forwarding to memphis service - Minikube') {
         steps {
             sh """
                 until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done
@@ -182,7 +182,7 @@ pipeline {
         }
     }
 
-    stage('Tests - Run e2e tests over kubernetes') {
+    stage('Tests - Run e2e tests over kubernetes - Minikube') {
         steps {
             sh """
                 npm install --prefix ./memphis-e2e-tests
@@ -244,7 +244,7 @@ pipeline {
         }
     }
 
-    stage('Open port forwarding to memphis service') {
+    stage('Open port forwarding to memphis service - K8s') {
         when { not {branch 'latest'}}
         steps {
             sh """
@@ -254,7 +254,7 @@ pipeline {
         }
     }
 
-    stage('Tests - Run e2e tests over kubernetes') {
+    stage('Tests - Run e2e tests over kubernetes - K8s') {
         when { not {branch 'latest'}}
         steps {
             sh """
@@ -330,8 +330,8 @@ pipeline {
 	            """
             }
         }
-	}
-
+    }
+  }
     post {
         always {
             cleanWs()
@@ -344,7 +344,6 @@ pipeline {
             notifyFailed()
         }
     }
-  }
 }
 def notifySuccessful() {
     emailext (
