@@ -110,7 +110,7 @@ pipeline {
         when { branch 'master' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
@@ -119,7 +119,7 @@ pipeline {
         when { branch 'qa' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-qa-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-qa-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
@@ -129,7 +129,7 @@ pipeline {
         when { branch 'latest' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-latest-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-latest-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
