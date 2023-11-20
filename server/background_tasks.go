@@ -342,6 +342,7 @@ func (s *Server) StartBackgroundTasks() error {
 	go s.CheckBrokenConnectedIntegrations()
 	go s.ReleaseStuckLocks()
 	go s.ConsumeFunctionTasks()
+	go s.ScaleFunctionWorkers()
 	return nil
 }
 
