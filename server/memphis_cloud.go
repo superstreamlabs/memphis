@@ -2344,3 +2344,25 @@ func (s *Server) ConsumeFunctionsDlsMessages() {
 func shouldCreateFunctionDlsStream() bool {
 	return false
 }
+
+func (pmh PoisonMessagesHandler) GetDlsMessageDetails(messageId int, dlsType string, tenantName string) (models.DlsMessageResponseWithFunc, error) {
+	dlsMsg, err := pmh.GetDlsMessageDetailsById(messageId, dlsType, tenantName)
+	if err != nil {
+		return models.DlsMessageResponseWithFunc{}, err
+	}
+
+	dlsMsgResponse := models.DlsMessageResponseWithFunc{
+		ID:              dlsMsg.ID,
+		StationName:     dlsMsg.StationName,
+		SchemaType:      dlsMsg.SchemaType,
+		MessageSeq:      dlsMsg.MessageSeq,
+		Producer:        dlsMsg.Producer,
+		PoisonedCgs:     dlsMsg.PoisonedCgs,
+		Message:         dlsMsg.Message,
+		UpdatedAt:       dlsMsg.UpdatedAt,
+		ValidationError: dlsMsg.ValidationError,
+		FunctionName:    "",
+	}
+
+	return dlsMsgResponse, nil
+}

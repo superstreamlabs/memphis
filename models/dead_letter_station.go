@@ -133,3 +133,16 @@ type LightDlsMessageResponse struct {
 type RetentionIntervalData struct {
 	Updated_at time.Time `json:"updated_at"`
 }
+
+type DlsMessageResponseWithFunc struct {
+	ID              int                 `json:"id"`
+	StationName     string              `json:"station_name"`
+	SchemaType      string              `json:"schema_type"`
+	MessageSeq      int                 `json:"message_seq"`
+	Producer        ProducerDetailsResp `json:"producer"`
+	PoisonedCgs     []PoisonedCg        `json:"poisoned_cgs"`
+	Message         MessagePayload      `json:"message"`
+	UpdatedAt       time.Time           `json:"updated_at"`
+	ValidationError string              `json:"validation_error"`
+	FunctionName    string              `json:"function_name"`
+}
