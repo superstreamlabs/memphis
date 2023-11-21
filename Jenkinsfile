@@ -8,7 +8,10 @@ pipeline {
       test_suffix = "test"
   }
 
-  agent any
+  agent {
+    label 'memphis-jenkins-big-fleet'
+  }
+
   stages {
     stage('Login to Docker Hub') {
         steps {
@@ -200,7 +203,7 @@ pipeline {
     stage('Reset STG-OSS environment') {
         when { not {branch 'latest'}}
         steps {
-            sh """aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"""
+            sh """gcloud container clusters get-credentials memphis-staging-gke --region europe-west3 --project memphis-k8s-staging"""
 	    catchError(buildResult: 'SUCCESS', message: 'helm uninstall failed because memphis was not deployed to this namespace') {
 	      sh """helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"""
             }
@@ -214,7 +217,7 @@ pipeline {
             dir ('memphis-k8s'){
        	        git credentialsId: 'main-github', url: 'git@github.com:memphisdev/memphis-k8s.git', branch: 'master'
 	            sh """
-                    aws s3 cp s3://memphis-jenkins-backup-bucket/memphis-staging-oss.yaml .
+                    gsutil cp gs://memphis-jenkins-backup-bucket/memphis-staging-oss.yaml .
                     helm install my-memphis memphis --set memphis.image=${repoUrlPrefix}/${imageName}-${gitBranch} -f ./memphis-staging-oss.yaml --create-namespace --namespace memphis --wait
 	            """
 	        }
