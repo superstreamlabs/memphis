@@ -85,7 +85,6 @@ var memphisExportString = `[
 	{service: "$memphis_pm_acks"},
 	{service: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"},
 	{stream: "$memphis_ws_pubs.>"},
-	{service: "$memphis_functions_dls"},
 	]
 `
 
@@ -106,7 +105,6 @@ var memphisImportString = `[
 	{service: {account: "$memphis", subject: "$memphis_pm_acks"}},
 	{service: {account: "$memphis", subject: "$JS.EVENT.ADVISORY.CONSUMER.MAX_DELIVERIES.>"}},
 	{stream: {account: "$memphis", subject: "$memphis_ws_pubs.>"}},
-	{service: {account: "$memphis", subject: "$memphis_functions_dls"}},
 	]
 `
 
@@ -433,7 +431,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// create functions dls stream
-	if !DLS_FUNCTIONS_STREAM_CREATED {
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_STREAM_CREATED {
 		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
 			Name:         dlsFunctionsStream,
 			Subjects:     []string{FUNCTIONS_DLS_INNER_SUBJ},
@@ -452,7 +450,7 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 	}
 
 	// create functions dls consumer
-	if !DLS_FUNCTIONS_CONSUMER_CREATED {
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_CONSUMER_CREATED {
 		cc := ConsumerConfig{
 			DeliverPolicy: DeliverAll,
 			AckPolicy:     AckExplicit,

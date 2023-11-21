@@ -2405,10 +2405,10 @@ func (s *Server) ScaleFunctionWorkers() {
 	return
 }
 
-func (s *Server) ListenForFunctionsDlsEvents() error {
-	return nil
-}
-
 func (s *Server) ConsumeFunctionsDlsMessages() {
 
+}
+
+func shouldCreateFunctionDlsStream() bool {
+	return false
 }

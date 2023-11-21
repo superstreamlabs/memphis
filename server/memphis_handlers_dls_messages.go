@@ -134,7 +134,7 @@ func (s *Server) handleNewUnackedMsg(msg []byte) error {
 		return err
 	}
 	if !updated {
-		err = s.sendToDlsStation(station, data, headersJson, "unacked")
+		err = s.sendToDlsStation(station, data, headersJson, "unacked", "")
 		if err != nil {
 			serv.Errorf("[tenant: %v]handleNewUnackedMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", station.TenantName, station.DlsStation, err.Error())
 			return err
@@ -189,7 +189,7 @@ func (s *Server) handleSchemaverseDlsMsg(msg []byte) {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at DecodeString: %v", tenantName, err.Error())
 		return
 	}
-	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema")
+	err = s.sendToDlsStation(station, data, message.Message.Headers, "failed_schema", "")
 	if err != nil {
 		serv.Errorf("[tenant: %v]handleSchemaverseDlsMsg at sendToDlsStation: station: %v, Error while getting notified about a poison message: %v", tenantName, station.DlsStation, err.Error())
 		return
@@ -366,7 +366,7 @@ func GetPoisonedCgsByMessage(station models.Station, messageSeq, partitionNumber
 	return poisonedCgs, nil
 }
 
-func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType string) error {
+func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte, headers map[string]string, dlsType, functionName string) error {
 	if station.DlsStation != "" {
 		exist, dlsStation, err := db.GetStationByName(station.DlsStation, station.TenantName)
 		if err != nil {
@@ -397,6 +397,9 @@ func (s *Server) sendToDlsStation(station models.Station, messagePayload []byte,
 			}
 			headers["station"] = station.Name
 			headers["type"] = dlsType
+			if dlsType == "functions" {
+				headers["function_name"] = functionName
+			}
 			s.sendInternalAccountMsgWithHeadersWithEcho(acc, subject, messagePayload, headers)
 		}
 	}

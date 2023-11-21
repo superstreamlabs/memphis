@@ -39,8 +39,8 @@ const TIERED_STORAGE_CONSUMER = "$memphis_tiered_storage_consumer"
 const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
-const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
+const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
 const FUNCTIONS_DLS_CONSUMER = "$memphis_functions_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
@@ -308,12 +308,6 @@ func (s *Server) StartBackgroundTasks() error {
 	err = s.ListenForSchemaverseDlsEvents()
 	if err != nil {
 		return errors.New("Failed to subscribing for schemaverse dls" + err.Error())
-	}
-
-	err = s.ListenForFunctionsDlsEvents()
-	if err != nil {
-		errMsg := fmt.Errorf("Failed to subscribing for functions dls %s ", err.Error())
-		return errMsg
 	}
 
 	err = s.ListenForPoisonMsgAcks()
