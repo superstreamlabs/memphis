@@ -836,7 +836,7 @@ func (sh StationsHandler) GetStations(c *gin.Context) {
 	}
 
 	c.IndentedJSON(200, gin.H{
-		"stations": stations,
+		"stations":           stations,
 	})
 }
 
