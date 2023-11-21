@@ -6154,6 +6154,73 @@ func GetDlsMsgsBatch(tenantName string, min, max, stationId int) (bool, []models
 	return true, dlsMsgs, nil
 }
 
+func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT *
+			FROM dls_messages AS dlsm
+			WHERE
+			dlsm.station_id = $1
+			ORDER BY dlsm.updated_at DESC limit 1000
+			`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_id", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+}
+
+func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
+	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
+	defer cancelfunc()
+	conn, err := MetadataDbClient.Client.Acquire(ctx)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer conn.Release()
+	query := `SELECT *
+			FROM dls_messages AS dlsm
+			WHERE dlsm.station_id = $1 AND dlsm.partition_number = $2
+			ORDER BY updated_at DESC limit 1000;
+			`
+	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	defer rows.Close()
+	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
+	if err != nil {
+		return []models.DlsMessage{}, err
+	}
+	if len(dlsMsgs) == 0 {
+		return []models.DlsMessage{}, nil
+	}
+
+	return dlsMsgs, nil
+}
+
 // Tenants functions
 func UpsertTenant(name string, encryptrdInternalWSPass string) (models.Tenant, error) {
 	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
