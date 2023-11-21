@@ -105,7 +105,8 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        height: calc(100%);
+        height: calc(100% - 10px);
+        overflow-y: auto;
         .remove-icon {
             color: #a9a9a9;
             cursor: pointer;
@@ -144,6 +145,17 @@
             gap: 5px;
             p {
                 margin: 0;
+            }
+        }
+        .partition-records-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+
+            .form-input {
+                width: 100%;
+                position: relative;
             }
         }
     }

@@ -46,9 +46,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
 
     useEffect(() => {
         if ((isDls && stationState?.selectedRowId && stationState?.selectedRowPartition && !loadMessageData) || (stationState?.selectedRowId && !loadMessageData)) {
-            isFailedFunctionMessage
-                ? getAttachedFunctionDlsMsgs(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition)
-                : getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
+            getMessageDetails(stationState?.selectedRowId, stationState?.selectedRowPartition === 0 ? -1 : stationState?.selectedRowPartition);
         }
     }, [stationState?.selectedRowId, stationState?.selectedRowPartition]);
 
@@ -59,28 +57,10 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
             const data = await httpRequest(
                 'GET',
                 `${ApiEndpoints.GET_MESSAGE_DETAILS}?dls_type=${
-                    isFailedSchemaMessage ? 'schema' : 'poison'
+                    isFailedFunctionMessage ? 'functions' : isFailedSchemaMessage ? 'schema' : 'poison'
                 }&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${isDls ? parseInt(selectedRow) : -1}&message_seq=${
                     isDls ? -1 : selectedRow
                 }`
-            );
-            arrangeData(data);
-        } catch (error) {
-            setLoadMessageData(false);
-        }
-    };
-
-    const getAttachedFunctionDlsMsgs = async (selectedRow, selectedRowPartition) => {
-        setMessageDetails({});
-        setLoadMessageData(true);
-        try {
-            const data = await httpRequest(
-                'GET',
-                `${
-                    ApiEndpoints.GET_ATTACHED_FUNCTION_DLS_MSG
-                }?dls_type=functions&station_name=${stationName}&is_dls=${isDls}&partition_number=${selectedRowPartition}&message_id=${
-                    isDls ? parseInt(selectedRow) : -1
-                }&message_seq=${isDls ? -1 : selectedRow}`
             );
             arrangeData(data);
         } catch (error) {
@@ -193,7 +173,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                                     <StatusIndication is_active={messageDetails?.producer.is_active} />
                                 </div>
 
-                                {!isFailedSchemaMessage && (
+                                {!isFailedSchemaMessage && !isFailedFunctionMessage && (
                                     <MultiCollapse
                                         header="Failed CGs"
                                         tooltip={!stationState?.stationMetaData?.is_native && 'Not supported without using the native Memphis SDK’s'}
@@ -214,7 +194,7 @@ const MessageDetails = ({ isDls, isFailedSchemaMessage = false, isFailedFunction
                                 />
                             </Space>
                         </div>
-                        {isDls && !isFailedSchemaMessage && (
+                        {isDls && !isFailedSchemaMessage && !isFailedFunctionMessage && (
                             <Button
                                 width="96%"
                                 height="40px"

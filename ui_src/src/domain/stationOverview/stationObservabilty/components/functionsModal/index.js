@@ -45,11 +45,9 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
     const [searchInput, setSearchInput] = useState('');
     const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
     const [isInputsModalOpen, setIsInputsModalOpen] = useState(false);
-    const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
     const [filteredData, setFilteredData] = useState([]);
     const [clickedFunction, setClickedFunction] = useState(null);
     const [selectedFunction, setSelectedFunction] = useState(null);
-    const [ordering, setOrdering] = useState(false);
     const [stationState, stationDispatch] = useContext(StationStoreContext);
 
     useEffect(() => {
@@ -66,14 +64,14 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
     useEffect(() => {
         let result = functionList;
         if (tabValue === 'Private') {
-            result = result.filter((func) => func?.owner !== OWNER && func?.is_valid);
+            result = result?.filter((func) => func?.owner !== OWNER && func?.is_valid);
         } else if (tabValue === 'Memphis') {
-            result = result.filter((func) => func?.owner === OWNER && func?.is_valid);
+            result = result?.filter((func) => func?.owner === OWNER && func?.is_valid);
         } else {
-            result = result.filter((func) => func?.is_valid);
+            result = result?.filter((func) => func?.is_valid);
         }
         if (searchInput.length > 0) {
-            result = result.filter(
+            result = result?.filter(
                 (func) =>
                     (func?.function_name?.toLowerCase()?.includes(searchInput?.toLowerCase()) && func?.is_valid) ||
                     (func?.description?.toLowerCase()?.includes(searchInput.toLowerCase()) && func?.is_valid)
@@ -87,7 +85,12 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIsIntegrated(data?.scm_integrated);
-            setFunctionList([...data?.installed, ...data?.other] || []);
+            setFunctionList(
+                [
+                    ...data?.installed?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1)),
+                    ...data?.other?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1))
+                ] || []
+            );
             setTimeout(() => {
                 setIsLoading(false);
             }, 500);
@@ -104,14 +107,14 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
         selectedFunction?.inputs?.forEach((item) => {
             inputsObject[item.name] = item.value;
         });
-        const requestBodey = {
+        const requestBody = {
             function_id: selectedFunction?.id,
             visible_step: stationState?.stationFunctions?.functions?.length + 1,
             ordering_matter: ordering,
             activate: true,
             inputs: inputsObject
         };
-        applyFunction(requestBodey);
+        applyFunction(requestBody);
     };
 
     const handleUnInstall = async (clickedFunction) => {
@@ -155,13 +158,16 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                 <FunctionDetails
                     selectedFunction={clickedFunction}
                     integrated={false}
-                    installed={true}
                     onBackToFunction={() => {
                         setClickedFunction(null);
                     }}
                     clickApply={() => {
                         setSelectedFunction(clickedFunction);
-                        stationState?.stationFunctions?.functions?.length === 0 ? setIsApplyModalOpen(true) : onFunctionApply(clickedFunction);
+                        clickedFunction?.inputs?.length > 0
+                            ? setIsInputsModalOpen(true)
+                            : stationState?.stationFunctions?.functions?.length === 0
+                            ? setIsApplyModalOpen(true)
+                            : onFunctionApply(clickedFunction);
                     }}
                     handleUnInstall={() => handleUnInstall(clickedFunction)}
                 />
@@ -215,18 +221,18 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                                         integrated={isIntegrated}
                                         referredFunction={referredFunction}
                                         isTagsOn={false}
-                                        installed={true}
                                         onApply={() => {
                                             setSelectedFunction(functionItem);
                                             functionItem?.inputs?.length > 0
                                                 ? setIsInputsModalOpen(true)
                                                 : stationState?.stationFunctions?.functions?.length === 0
                                                 ? setIsApplyModalOpen(true)
-                                                : onFunctionApply(selectedFunction);
+                                                : onFunctionApply(functionItem);
                                         }}
                                         onClick={() => {
                                             setClickedFunction(functionItem);
                                         }}
+                                        startInstallation={() => getAllFunctions()}
                                     />
                                 ))}
                             </div>
@@ -253,36 +259,15 @@ const FunctionsModal = ({ applyFunction, referredFunction }) => {
                 <FunctionsApplyModal
                     onCancel={() => setIsApplyModalOpen(false)}
                     onApply={(e) => {
-                        setOrdering(e);
+                        onFunctionApply(selectedFunction, e);
                         setIsApplyModalOpen(false);
-                        setIsWarningModalOpen(true);
                     }}
                     successText={'Next'}
                 />
             </Modal>
-            <Modal
-                width={'400px'}
-                header={
-                    <div className="modal-header">
-                        <div className="header-img-container">
-                            <CheckShieldIcon />
-                        </div>
-                        <p>Please note</p>
-                    </div>
-                }
-                open={isWarningModalOpen}
-                clickOutside={() => setIsWarningModalOpen(false)}
-                rBtnText={'Apply'}
-                rBtnClick={() => {
-                    onFunctionApply(selectedFunction, ordering);
-                    setIsWarningModalOpen(false);
-                }}
-            >
-                <label> When applying a function, the function might cause changes in the event.</label>
-            </Modal>
+
             <Modal
                 width={'1000px'}
-                height={'40vh'}
                 header={
                     <div className="modal-header">
                         <div className="header-img-container">

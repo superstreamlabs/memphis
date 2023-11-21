@@ -52,7 +52,10 @@ export default function FunctionCard({
 
     const getFunctionsOverview = async () => {
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || -1}`
+            );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
         } catch (e) {
             return;
@@ -91,7 +94,7 @@ export default function FunctionCard({
 
     const handleDelete = async () => {
         const bodyRequest = {
-            function_id: functionItem?.installed_id,
+            function_id: functionItem?.id,
             station_name: stationName,
             partition: partiotionNumber,
             visible_step: functionItem?.visible_step
@@ -107,6 +110,19 @@ export default function FunctionCard({
 
     const functionContextMenu = (
         <div className="menu-content">
+            <div
+                className="item-wrap"
+                style={{ width: 'initial' }}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    setPopoverFunctionContextMenu(false);
+                    requestInfo();
+                }}
+            >
+                <div className="item">
+                    <p className="item-title">Information</p>
+                </div>
+            </div>
             <div
                 className="item-wrap"
                 style={{ width: 'initial' }}
@@ -133,19 +149,6 @@ export default function FunctionCard({
                     <p className="item-title">Delete</p>
                 </div>
             </div>
-            <div
-                className="item-wrap"
-                style={{ width: 'initial' }}
-                onClick={(e) => {
-                    e.stopPropagation();
-                    setPopoverFunctionContextMenu(false);
-                    requestInfo();
-                }}
-            >
-                <div className="item">
-                    <p className="item-title">Information</p>
-                </div>
-            </div>
         </div>
     );
 
@@ -162,13 +165,6 @@ export default function FunctionCard({
                 </div>
                 <div className={`ms-function-card-inner ${selected ? 'selected' : undefined}`}>
                     <div className="ms-function-card-header">
-                        <div className="ms-function-card-header-title">
-                            <FunctionBoxTitleIcon />
-                            <div>
-                                <span>{functionItem.name}</span>
-                                {isGeneralView && <p>Avg. processing time : {functionItem.metrics?.average_processing_time}s</p>}
-                            </div>
-                        </div>
                         <div className="ms-function-card-header-action">
                             <Popover
                                 overlayInnerStyle={functionContextMenuStyles}
@@ -184,24 +180,17 @@ export default function FunctionCard({
                             </Popover>
                         </div>
                     </div>
-                    <div className="ms-function-card-body">
-                        <div className="ms-function-card-body-left">
-                            <div className="ms-function-card-info-box">
-                                <div className="title">Av. Processing Time</div>
-                                <div className="subtitle">{functionItem.metrics?.average_processing_time}s</div>
-                            </div>
-                        </div>
-                        <div className="ms-function-card-body-right">
-                            <div className="ms-function-card-info-box">
-                                <div className="title">Error Rate</div>
-                                <div className="subtitle">{functionItem.metrics?.error_rate}%</div>
-                            </div>
+                    <div className="ms-function-card-title">
+                        <FunctionBoxTitleIcon />
+                        <div>
+                            <span>{functionItem.name}</span>
+                            {isGeneralView && <p>Avg. processing time : {functionItem.metrics?.average_processing_time}s</p>}
                         </div>
                     </div>
                 </div>
                 <div className="ms-function-card-badge-bottom">
                     <FunctionProcessingIcon />
-                    {convertLongNumbers(functionItem?.in_process_messages || 0)}
+                    {convertLongNumbers(functionItem?.dls_msgs_count || 0)}
                 </div>
             </div>
         </div>

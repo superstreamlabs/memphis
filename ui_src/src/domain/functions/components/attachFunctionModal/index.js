@@ -47,7 +47,7 @@ const AttachFunctionModal = ({ selectedFunction }) => {
         if (searchInput === '') {
             setFilteredStations(allStations);
         } else {
-            setFilteredStations(allStations.filter((station) => station.name.toLowerCase().includes(searchInput.toLowerCase())));
+            setFilteredStations(allStations?.filter((station) => station.name.toLowerCase().includes(searchInput.toLowerCase())));
         }
     }, [allStations, searchInput]);
 
@@ -55,7 +55,7 @@ const AttachFunctionModal = ({ selectedFunction }) => {
         setIsLoading(true);
         try {
             const res = await httpRequest('GET', `${ApiEndpoints.GET_ALL_STATIONS}`);
-            let native_station = res.filter((station) => station.is_native);
+            let native_station = res.filter((station) => station.is_native)?.filter((station) => station?.version >= 2);
             setAllStations(native_station);
             setIsLoading(false);
         } catch (err) {

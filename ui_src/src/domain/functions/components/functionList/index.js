@@ -105,8 +105,10 @@ function FunctionList({ tabPrivate }) {
         try {
             const data = await httpRequest('GET', ApiEndpoints.GET_ALL_FUNCTIONS);
             setIntegrated(data?.scm_integrated);
-            setInstalledFunctionList(data?.installed);
-            setOtherFunctionList(data?.other?.sort((a, b) => (a?.is_valid === b?.is_valid ? 0 : a?.is_valid ? -1 : 1)));
+            setInstalledFunctionList(data?.installed?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1)));
+            setOtherFunctionList(
+                data?.other?.sort((a, b) => (a.function_name > b.function_name ? 1 : -1))?.sort((a, b) => (a?.is_valid === b?.is_valid ? 0 : a?.is_valid ? -1 : 1))
+            );
             setConnectedRepos(data?.connected_repos);
             setTimeout(() => {
                 setisLoading(false);
@@ -133,7 +135,7 @@ function FunctionList({ tabPrivate }) {
         let resultsInstalled = installedFunctionList;
         let resultsOther = otherFunctionList;
         if (tabValue === 'Private') {
-            resultsInstalled = resultsInstalled.filter((func) => func?.owner !== OWNER);
+            resultsInstalled = resultsInstalled?.filter((func) => func?.owner !== OWNER);
             resultsOther = resultsOther.filter((func) => func?.owner !== OWNER);
         } else if (tabValue === 'Memphis') {
             resultsInstalled = resultsInstalled.filter((func) => func?.owner === OWNER);

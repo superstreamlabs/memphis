@@ -13,16 +13,23 @@
 import './style.scss';
 
 import React, { useState, useEffect } from 'react';
+import { Form } from 'antd';
 import Input from '../../../../../components/Input';
 
 const FunctionInputsModal = ({ clickedFunction, functionInputsChange }) => {
     const [inputs, setInputs] = useState([]);
+    const [inputsForm] = Form.useForm();
 
-    const handleChange = (e, index) => {
-        const newInputs = [...inputs];
-        newInputs[index].value = e.target.value;
-        setInputs(newInputs);
-        functionInputsChange(newInputs);
+    const handleChange = async (e, index) => {
+        try {
+            await inputsForm.validateFields();
+            const newInputs = [...inputs];
+            newInputs[index].value = e.target.value;
+            setInputs(newInputs);
+            functionInputsChange(newInputs);
+        } catch (e) {
+            return;
+        }
     };
 
     useEffect(() => {
@@ -40,35 +47,48 @@ const FunctionInputsModal = ({ clickedFunction, functionInputsChange }) => {
                 </p>
             </span>
             <div className="inputs-container">
-                {inputs.map((input, index) => (
-                    <span className="input-row" key={`${input?.name}${index}`}>
-                        <Input
-                            placeholder={input?.name}
-                            type="text"
-                            radiusType="semi-round"
-                            colorType="gray"
-                            backgroundColorType="light-gray"
-                            borderColorType="gray"
-                            height="40px"
-                            width="240px"
-                            value={input?.name}
-                            disabled
-                        />
-                        <Input
-                            placeholder={'Type here'}
-                            type="text"
-                            radiusType="semi-round"
-                            colorType="black"
-                            backgroundColorType="none"
-                            borderColorType="gray"
-                            height="40px"
-                            width="240px"
-                            onBlur={(e) => handleChange(e, index)}
-                            onChange={(e) => handleChange(e, index)}
-                            value={input?.value}
-                        />
-                    </span>
-                ))}
+                <Form name="form" form={inputsForm}>
+                    {inputs.map((input, index) => (
+                        <span className="input-row" key={`${input?.name}${index}`}>
+                            <Input
+                                placeholder={input?.name}
+                                type="text"
+                                radiusType="semi-round"
+                                colorType="gray"
+                                backgroundColorType="light-gray"
+                                borderColorType="gray"
+                                height="40px"
+                                width="240px"
+                                value={input?.name}
+                                disabled
+                            />
+                            <Form.Item
+                                name={input?.name}
+                                validateTrigger="onChange"
+                                rules={[
+                                    {
+                                        required: true,
+                                        message: `Please input ${input?.name}!`
+                                    }
+                                ]}
+                            >
+                                <Input
+                                    placeholder={'Value'}
+                                    type="text"
+                                    radiusType="semi-round"
+                                    colorType="black"
+                                    backgroundColorType="none"
+                                    borderColorType="gray"
+                                    height="40px"
+                                    width="240px"
+                                    onBlur={(e) => handleChange(e, index)}
+                                    onChange={(e) => handleChange(e, index)}
+                                    value={input?.value}
+                                />
+                            </Form.Item>
+                        </span>
+                    ))}
+                </Form>
             </div>
         </div>
     );

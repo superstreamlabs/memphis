@@ -69,7 +69,6 @@
                 font-size: 14px;
                 margin-bottom: 0px;
                 overflow: hidden;
-                max-width: 35vw;
                 white-space: nowrap;
             }
         }
@@ -174,8 +173,15 @@
     inputsSection {
         margin-top: 10px;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-direction: column;
+        gap: 5px;
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #737373;
+            font-size: 14px;
+        }
     }
     code {
         font-family: 'Inter';

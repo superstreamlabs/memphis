@@ -42,7 +42,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
 
     const testEvent = async () => {
         let inputsObject = {};
-        inputs.forEach((item) => {
+        inputs?.forEach((item) => {
             inputsObject[item.name] = item.value;
         });
         setIsLoading(true);
@@ -123,6 +123,7 @@ const TestMockEvent = ({ functionDetails, open }) => {
                             }}
                             language={'json'}
                             height="calc(100%)"
+                            overflowY={'auto'}
                             defaultValue={testMock}
                             value={testMock}
                             key={'tested'}
@@ -143,19 +144,17 @@ const TestMockEvent = ({ functionDetails, open }) => {
                                             backgroundColorType="light-gray"
                                             borderColorType="gray"
                                             height="40px"
-                                            width="220px"
                                             value={input?.name}
                                             disabled
                                         />
                                         <Input
-                                            placeholder={'Type here'}
+                                            placeholder={'Value'}
                                             type="text"
                                             radiusType="semi-round"
                                             colorType="black"
                                             backgroundColorType="none"
                                             borderColorType="gray"
                                             height="40px"
-                                            width="220px"
                                             onBlur={(e) => handleChange(e, index)}
                                             onChange={(e) => handleChange(e, index)}
                                             value={input?.value}

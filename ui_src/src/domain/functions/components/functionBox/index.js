@@ -42,7 +42,6 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
     const [open, setOpen] = useState(false);
     const [selectedFunction, setSelectedFunction] = useState(null);
     const [isValid, setIsValid] = useState(false);
-    const [installed, setInstalled] = useState(false);
     const [chooseStationModal, setChooseStationModal] = useState(false);
     const [cloudModal, setCloudModal] = useState(false);
     const [loader, setLoader] = useState(false);
@@ -59,7 +58,6 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
     useEffect(() => {
         setFunctionDetils(funcDetails);
         setIsValid(funcDetails?.is_valid);
-        setInstalled(funcDetails?.installed);
     }, [funcDetails]);
 
     const handleDrawer = (flag) => {
@@ -189,7 +187,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     </OverflowTip>
                                 </div>
                             )}
-                            {isValid && (
+                            {isValid && (!isCloud() || functionDetails?.installed) && (
                                 <Button
                                     width="100px"
                                     height="34px"
@@ -200,7 +198,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     backgroundColorType={'purple'}
                                     fontSize="12px"
                                     fontFamily="InterSemiBold"
-                                    disabled={isCloud() && (functionDetails?.installed_in_progress || !installed)}
+                                    disabled={isCloud() && functionDetails?.installed_in_progress}
                                     onClick={() => {
                                         if (!isCloud()) setCloudModal(true);
                                         else if (isTagsOn) setChooseStationModal(true);
@@ -208,6 +206,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     }}
                                 />
                             )}
+
                             {isCloud() && (
                                 <Button
                                     width="100px"
@@ -215,7 +214,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     placeholder={
                                         functionDetails?.installed_in_progress ? (
                                             ''
-                                        ) : installed ? (
+                                        ) : functionDetails?.installed ? (
                                             <div className="code-btn">
                                                 {functionDetails?.updates_available ? (
                                                     <BiDownload className="Install" />
@@ -239,7 +238,7 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                                     disabled={!isValid || functionDetails?.installed_in_progress}
                                     isLoading={loader || functionDetails?.installed_in_progress}
                                     onClick={() => {
-                                        !installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall();
+                                        !functionDetails?.installed || functionDetails?.updates_available ? handleInstall() : handleUnInstall();
                                     }}
                                 />
                             )}
@@ -290,7 +289,6 @@ function FunctionBox({ funcDetails, integrated, isTagsOn = true, onClick = null,
                     <FunctionDetails
                         selectedFunction={selectedFunction}
                         integrated={integrated}
-                        installed={installed}
                         handleUnInstall={handleUnInstall}
                         handleInstall={handleInstall}
                         clickApply={() => setChooseStationModal(true)}

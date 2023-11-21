@@ -80,7 +80,12 @@ const TestResult = ({ testResultData, loading }) => {
                 <>
                     <p className="title">Failure</p>
                     {testResult?.failed_messages?.map((message, index) => {
-                        return <p key={`failed_messages-${index}`}>{message?.payload}</p>;
+                        return (
+                            <span key={`failed_messages-${index}`}>
+                                <p>{message?.payload}</p>
+                                <p>{message?.error}</p>
+                            </span>
+                        );
                     })}
                 </>
             )

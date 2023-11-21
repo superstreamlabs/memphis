@@ -6,13 +6,17 @@
     overflow: auto;
     display: flex;
     flex-direction: column;
-    // gap: 70px;
-    gap: 30px;
+    justify-content: space-between;
     .overview-header {
         min-width: 1370px;
     }
     .station-observability {
+        margin-top: 20px;
         min-width: 1280px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     .overview-top {
         display: flex;
