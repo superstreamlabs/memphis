@@ -125,10 +125,9 @@ type LightDlsMessage struct {
 }
 
 type LightDlsMessageResponse struct {
-	MessageSeq   int            `json:"message_seq"`
-	ID           int            `json:"id"`
-	Message      MessagePayload `json:"message"`
-	FunctionName string         `json:"function_name"`
+	MessageSeq int            `json:"message_seq"`
+	ID         int            `json:"id"`
+	Message    MessagePayload `json:"message"`
 }
 
 type RetentionIntervalData struct {

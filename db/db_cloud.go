@@ -11,14 +11,6 @@
 // A "Service" is a commercial offering, product, hosted, or managed service, that allows third parties (other than your own employees and contractors acting on your behalf) to access and/or use the Licensed Work or a substantial set of the features or functionality of the Licensed Work to third parties as a software-as-a-service, platform-as-a-service, infrastructure-as-a-service or other similar services that compete with Licensor products or services.
 package db
 
-import (
-	"context"
-	"time"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/memphisdev/memphis/models"
-)
-
 const testEventsTable = ``
 const functionsTable = ``
 const attachedFunctionsTable = ``
@@ -57,63 +49,4 @@ func DeleteAndGetAttachedFunctionsByTenant(tenantName string) ([]FunctionSchema,
 
 func DeleteAllTestEvents(tenantName string) error {
 	return nil
-}
-
-func GetDlsMsgsByStationId(stationId int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 ORDER BY updated_at DESC limit 1000`
-
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
-}
-
-func GetDlsMsgsByStationAndPartition(stationId, partitionNumber int) ([]models.DlsMessage, error) {
-	ctx, cancelfunc := context.WithTimeout(context.Background(), DbOperationTimeout*time.Second)
-	defer cancelfunc()
-	conn, err := MetadataDbClient.Client.Acquire(ctx)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer conn.Release()
-	query := `SELECT * from dls_messages where station_id=$1 AND partition_number = $2 ORDER BY updated_at DESC limit 2000`
-	stmt, err := conn.Conn().Prepare(ctx, "get_dls_msg_by_station_and_partition", query)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	rows, err := conn.Conn().Query(ctx, stmt.Name, stationId, partitionNumber)
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	defer rows.Close()
-	dlsMsgs, err := pgx.CollectRows(rows, pgx.RowToStructByPos[models.DlsMessage])
-	if err != nil {
-		return []models.DlsMessage{}, err
-	}
-	if len(dlsMsgs) == 0 {
-		return []models.DlsMessage{}, nil
-	}
-
-	return dlsMsgs, nil
 }

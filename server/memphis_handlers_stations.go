@@ -1720,7 +1720,7 @@ func (sh StationsHandler) GetMessageDetails(c *gin.Context) {
 
 	poisonMsgsHandler := PoisonMessagesHandler{S: sh.S}
 	if body.IsDls {
-		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetailsById(body.MessageId, body.DlsType, user.TenantName)
+		dlsMessage, err := poisonMsgsHandler.GetDlsMessageDetails(body.MessageId, body.DlsType, user.TenantName)
 		if err != nil {
 			serv.Errorf("[tenant: %v][user: %v]GetMessageDetails at GetDlsMessageDetailsById: Message ID: %v :%v", user.TenantName, user.Username, strconv.Itoa(msgId), err.Error())
 			c.AbortWithStatusJSON(500, gin.H{"message": "Server error"})
