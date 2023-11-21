@@ -481,6 +481,7 @@ func memphisWSGetStationOverviewData(s *Server, h *Handlers, stationName string,
 		"tiered_storage_enabled":        station.TieredStorageEnabled,
 		"created_by_username":           station.CreatedByUsername,
 		"resend_disabled":               station.ResendDisabled,
+		"functions_enabled":             functionsEnabled,
 	}
 
 	return response, nil

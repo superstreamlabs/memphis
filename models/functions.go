@@ -78,3 +78,14 @@ type FunctionsRes struct {
 	ScmIntegrated      bool                     `json:"scm_integrated"`
 	ConnectedRepos     []map[string]interface{} `json:"connected_repos"`
 }
+
+type ScheduledFunctionWorker struct {
+	ID                 int    `json:"id"`
+	PodName            string `json:"pod_name"`
+	StationID          int    `json:"station_id"`
+	PartitionNumber    int    `json:"partition_number"`
+	FunctionName       string `json:"function_name"`
+	TenantName         string `json:"tenant_name"`
+	OrderingMatter     bool   `json:"ordering_matter"`
+	AttachedFunctionID int    `json:"attached_function_id"`
+}
