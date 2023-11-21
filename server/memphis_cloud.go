@@ -2219,6 +2219,10 @@ func (s *Server) ListenForCloudCacheUpdates() error {
 	return nil
 }
 
+func (s *Server) ListenToFunctionsCounterUpdates() error {
+	return nil
+}
+
 func (c *client) AccountConnExceeded() {
 	c.sendErrAndErr(ErrTooManyAccountConnections.Error())
 }

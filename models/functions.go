@@ -89,3 +89,9 @@ type ScheduledFunctionWorker struct {
 	OrderingMatter     bool   `json:"ordering_matter"`
 	AttachedFunctionID int    `json:"attached_function_id"`
 }
+
+type FunctionCounterMsg struct {
+	TenantName       string `json:"tenant_name"`
+	TotalInvocations int64  `json:"total_invocations"`
+	TotalDuration    int64  `json:"total_duration"`
+}
