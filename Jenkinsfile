@@ -200,11 +200,11 @@ pipeline {
     stage('Reset STG-OSS environment') {
         when { not {branch 'latest'}}
         steps {
-            sh """
-	            aws eks --region eu-central-1 update-kubeconfig --name staging-cluster
-                helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis
-	            kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done
-	        """
+            sh """aws eks --region eu-central-1 update-kubeconfig --name staging-cluster"""
+	    catchError(buildResult: 'SUCCESS', message: 'helm uninstall failed because memphis was not deployed to this namespace') {
+	      sh """helm uninstall my-memphis --kubeconfig ~/.kube/config -n memphis"""
+            }
+	    sh """kubectl get pvc -n memphis | grep -v NAME| awk '{print\$1}' | while read vol; do kubectl delete pvc \$vol -n memphis; done"""
         }
     }
 
@@ -227,7 +227,6 @@ pipeline {
         steps {
             sh """
                 until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.containerStatuses[*].ready}" -n memphis  | grep -v "false" ; do sleep 1; done
-                sleep 5
                 nohup kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis &
             """
         }
