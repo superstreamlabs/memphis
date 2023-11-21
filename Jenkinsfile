@@ -9,7 +9,7 @@ pipeline {
   }
 
   agent {
-    label 'memphis-jenkins-big-fleet'
+    label 'memphis-jenkins-big-fleet,'
   }
 
   stages {
