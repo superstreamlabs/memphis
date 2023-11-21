@@ -40,6 +40,13 @@ type MessagePayload struct {
 	Headers  map[string]string `json:"headers"`
 }
 
+type MessagePayloadFunctionDls struct {
+	TimeSent time.Time         `json:"time_sent"`
+	Size     int               `json:"size"`
+	Data     []byte            `json:"data"`
+	Headers  map[string]string `json:"headers"`
+}
+
 type PoisonedCg struct {
 	CgName              string     `json:"cg_name"`
 	UnprocessedMessages int        `json:"unprocessed_messages"`
@@ -62,6 +69,16 @@ type SchemaVerseDlsMessageSdk struct {
 	Message         MessagePayload  `json:"message"`
 	ValidationError string          `json:"validation_error"`
 	PartitionNumber int             `json:"partition_number"`
+}
+
+type FunctionsDlsMessage struct {
+	StationID       int                       `json:"station_id"`
+	TenantName      string                    `json:"tenant_name"`
+	Message         MessagePayloadFunctionDls `json:"message"`
+	Err             string                    `json:"err"`
+	PartitionNumber int                       `json:"partition_number"`
+	FunctionID      int                       `json:"function_id"`
+	FunctionName    string                    `json:"function_name"`
 }
 
 type DlsMessage struct {

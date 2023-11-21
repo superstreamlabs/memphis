@@ -40,6 +40,8 @@ const DLS_UNACKED_CONSUMER = "$memphis_dls_unacked_consumer"
 const SCHEMAVERSE_DLS_SUBJ = "$memphis_schemaverse_dls"
 const SCHEMAVERSE_DLS_INNER_SUBJ = "$memphis_schemaverse_inner_dls"
 const SCHEMAVERSE_DLS_CONSUMER = "$memphis_schemaverse_dls_consumer"
+const FUNCTIONS_DLS_INNER_SUBJ = "$memphis_functions_inner_dls"
+const FUNCTIONS_DLS_CONSUMER = "$memphis_functions_dls_consumer"
 const CACHE_UDATES_SUBJ = "$memphis_cache_updates"
 const INTEGRATIONS_AUDIT_LOGS_CONSUMER = "$memphis_integrations_audit_logs_consumer"
 const FUNCTION_TASKS_CONSUMER = "$memphis_function_tasks_consumer"
@@ -330,6 +332,7 @@ func (s *Server) StartBackgroundTasks() error {
 
 	go s.ConsumeSchemaverseDlsMessages()
 	go s.ConsumeUnackedMsgs()
+	go s.ConsumeFunctionsDlsMessages()
 	go s.ConsumeTieredStorageMsgs()
 	go s.RemoveOldDlsMsgs()
 	go s.uploadMsgsToTier2Storage()

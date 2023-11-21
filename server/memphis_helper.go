@@ -54,6 +54,7 @@ const (
 	dlsStreamName               = "$memphis-%s-dls"
 	dlsUnackedStream            = "$memphis_dls_unacked"
 	dlsSchemaverseStream        = "$memphis_dls_schemaverse"
+	dlsFunctionsStream          = "$memphis_dls_functions"
 	tieredStorageStream         = "$memphis_tiered_storage"
 	throughputStreamName        = "$memphis-throughput"
 	throughputStreamNameV1      = "$memphis-throughput-v1"
@@ -133,6 +134,8 @@ var (
 	DLS_UNACKED_STREAM_CREATED             bool
 	DLS_SCHEMAVERSE_STREAM_CREATED         bool
 	DLS_SCHEMAVERSE_CONSUMER_CREATED       bool
+	DLS_FUNCTIONS_STREAM_CREATED           bool
+	DLS_FUNCTIONS_CONSUMER_CREATED         bool
 	SYSLOGS_STREAM_CREATED                 bool
 	THROUGHPUT_STREAM_CREATED              bool
 	THROUGHPUT_LEGACY_STREAM_EXIST         bool
@@ -427,6 +430,42 @@ func tryCreateInternalJetStreamResources(s *Server, retentionDur time.Duration, 
 		DLS_SCHEMAVERSE_CONSUMER_CREATED = true
 	}
 
+	// create functions dls stream
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_STREAM_CREATED {
+		err = s.memphisAddStream(s.MemphisGlobalAccountString(), &StreamConfig{
+			Name:         dlsFunctionsStream,
+			Subjects:     []string{FUNCTIONS_DLS_INNER_SUBJ},
+			Retention:    WorkQueuePolicy,
+			MaxAge:       time.Hour * 24,
+			MaxConsumers: -1,
+			Discard:      DiscardOld,
+			Storage:      FileStorage,
+			Replicas:     replicas,
+		})
+		if err != nil && !IsNatsErr(err, JSStreamNameExistErr) {
+			successCh <- err
+			return
+		}
+		DLS_FUNCTIONS_STREAM_CREATED = true
+	}
+
+	// create functions dls consumer
+	if shouldCreateFunctionDlsStream() && !DLS_FUNCTIONS_CONSUMER_CREATED {
+		cc := ConsumerConfig{
+			DeliverPolicy: DeliverAll,
+			AckPolicy:     AckExplicit,
+			Durable:       FUNCTIONS_DLS_CONSUMER,
+			AckWait:       time.Duration(80) * time.Second,
+			MaxAckPending: -1,
+			MaxDeliver:    10,
+		}
+		err = serv.memphisAddConsumer(s.MemphisGlobalAccountString(), dlsFunctionsStream, &cc)
+		if err != nil {
+			successCh <- err
+			return
+		}
+		DLS_FUNCTIONS_CONSUMER_CREATED = true
+	}
 	// delete the old version throughput stream
 	if THROUGHPUT_LEGACY_STREAM_EXIST {
 		err = s.memphisDeleteStream(s.MemphisGlobalAccountString(), throughputStreamName)
