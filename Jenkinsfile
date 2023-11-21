@@ -110,7 +110,7 @@ pipeline {
         when { branch 'master' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-master-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-master-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
@@ -119,7 +119,7 @@ pipeline {
         when { branch 'qa' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-qa-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-qa-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
@@ -129,7 +129,7 @@ pipeline {
         when { branch 'latest' }
         steps {
             sh """
-            docker-compose -f ./memphis-docker/docker-compose-latest-tests-broker.yml -p memphis down
+            docker-compose -f ./memphis-devops/docker/docker-compose-latest-tests-broker.yml -p memphis down
             docker volume prune -f
             """
         }
@@ -154,7 +154,7 @@ pipeline {
     stage('Open port forwarding to memphis service - Minikube') {
         steps {
             sh """
-                until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis-$unique_id  | grep -q "Running" ; do sleep 1; done
+                until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.containerStatuses[*].ready}" -n memphis-$unique_id  | grep -v "false" ; do sleep 1; done
                 nohup kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis-$unique_id &
             """
         }
@@ -173,8 +173,8 @@ pipeline {
         steps {
             sh """
                 helm uninstall memphis-tests -n memphis-$unique_id
-                kubectl delete ns memphis-$unique_id &
-                /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+                kubectl delete ns memphis-$unique_id
+                lsof -i :6666,9000,7770 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
             """
         }
     }
@@ -226,7 +226,8 @@ pipeline {
         when { not {branch 'latest'}}
         steps {
             sh """
-                until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.phase}" -n memphis  | grep -q "Running" ; do sleep 1; done
+                until kubectl get pods --selector=app.kubernetes.io/name=memphis -o=jsonpath="{.items[*].status.containerStatuses[*].ready}" -n memphis  | grep -v "false" ; do sleep 1; done
+                sleep 5
                 nohup kubectl port-forward service/memphis 6666:6666 9000:9000 7770:7770 --namespace memphis &
             """
         }
@@ -258,7 +259,7 @@ pipeline {
    	        sh """
      	        mem connect -s localhost -u root -p \$(kubectl get secret memphis-creds  -n memphis -o jsonpath="{.data.ROOT_PASSWORD}" | base64 --decode)
      	        mem user add -u staging -p $staging_pass
-    	        /usr/sbin/lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
+    	        lsof -i :6666,9000 | grep kubectl | awk '{print \"kill -9 \"\$2}' | sh
     	    """
             }
    	    }
