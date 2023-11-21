@@ -35,10 +35,11 @@ import FunctionData from '../functionData';
 import FunctionDetails from '../../../../functions/components/functionDetails';
 import OverflowTip from '../../../../../components/tooltip/overflowtip';
 import { StringCodec, JSONCodec } from 'nats.ws';
+import Spinner from '../../../../../components/spinner';
 
 let sub;
 
-const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
+const FunctionsOverview = ({ referredFunction, dismissFunction, moveToGenralView }) => {
     const [stationState, stationDispatch] = useContext(StationStoreContext);
     const [currentFunction, setCurrentFunction] = useState(null);
     const [functionDetails, setFunctionDetails] = useState(null);
@@ -46,6 +47,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
     const [openFunctionDetails, setOpenFunctionDetails] = useState(false);
     const [openBottomDetails, setOpenBottomDetails] = useState(false);
     const [socketOn, setSocketOn] = useState(false);
+    const [isLoading, setLoading] = useState(false);
     const [state, dispatch] = useContext(Context);
 
     useEffect(() => {
@@ -116,6 +118,11 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
     }, [state.socket, stationState?.stationMetaData?.name]);
 
     useEffect(() => {
+        stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: [] });
+        getFunctionsOverview();
+    }, [stationState?.stationPartition]);
+
+    useEffect(() => {
         if (sub && socketOn) {
             stopListen();
             startListen();
@@ -123,10 +130,16 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
     }, [stationState?.stationPartition, stationState?.stationMetaData?.name]);
 
     const getFunctionsOverview = async () => {
+        setLoading(true);
         try {
-            const data = await httpRequest('GET', `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}`);
+            const data = await httpRequest(
+                'GET',
+                `${ApiEndpoints.GET_FUNCTIONS_OVERVIEW}?station_name=${stationState?.stationMetaData?.name}&partition=${stationState?.stationPartition || -1}`
+            );
             stationDispatch({ type: 'SET_STATION_FUNCTIONS', payload: data });
+            setLoading(false);
         } catch (e) {
+            setLoading(false);
             return;
         }
     };
@@ -146,7 +159,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
 
     const handleAddFunction = async (requestBody) => {
         requestBody.station_name = stationState?.stationMetaData?.name;
-        requestBody.partition = stationState?.stationMetaData?.partitions_number;
+        requestBody.partition = stationState?.stationPartition || -1;
         try {
             await httpRequest('POST', ApiEndpoints.ADD_FUNCTION, requestBody);
             getFunctionsOverview();
@@ -218,11 +231,15 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
                                 </>
                             )}
                         </div>
-                        {stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions.length === 1 && <div></div>}
+                        {(!stationState?.stationFunctions?.functions || isLoading) && (
+                            <div className="loading">
+                                <Spinner />
+                            </div>
+                        )}
                         {stationState?.stationFunctions?.functions && stationState?.stationFunctions?.functions?.length > 0 && (
                             <div className="function-overview">
                                 <div className="tab-functions-inner-left">
-                                    <div className="tab-functions-inner-cards">
+                                    <div className={stationState?.stationFunctions?.functions?.length < 2 ? `tab-functions-inner-one-card` : `tab-functions-inner-cards`}>
                                         {stationState?.stationFunctions?.functions?.map((functionItem, index) => (
                                             <FunctionCard
                                                 functionItem={functionItem}
@@ -250,7 +267,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
                                         </div>
                                     </div>
                                     <div className="tab-functions-inner-right">
-                                        <div className="processed">
+                                        <div className="processed" onClick={moveToGenralView}>
                                             <div className="processed-title">Processed</div>
                                             <ProcessedIcon />
                                             <span>{stationState?.stationFunctions?.total_processed_messages?.toLocaleString() || 0}</span>
@@ -298,7 +315,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 closeIcon={<IoClose style={{ color: '#D1D1D1', width: '25px', height: '25px' }} />}
             >
-                <FunctionDetails selectedFunction={currentFunction} integrated={true} installed={true} stationView />
+                <FunctionDetails selectedFunction={currentFunction} integrated={true} stationView />
             </Drawer>
             <Drawer
                 placement="bottom"
@@ -309,6 +326,7 @@ const FunctionsOverview = ({ referredFunction, dismissFunction }) => {
                 maskStyle={{ background: 'rgba(16, 16, 16, 0.2)' }}
                 headerStyle={{ padding: '0px' }}
                 bodyStyle={{ padding: '0 20px' }}
+                destroyOnClose={true}
                 title={
                     <>
                         <div className="ms-function-details-top">

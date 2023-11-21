@@ -74,6 +74,12 @@
                 padding: 0 15px;
                 position: relative;
                 width: 100%;
+                .loading {
+                    width: 100%;
+                    display: flex;
+                    justify-content: center;
+                    margin-top: 20px;
+                }
 
                 &-line {
                     width: 100%;
@@ -101,7 +107,13 @@
                 &-cards {
                     display: flex;
                     padding-bottom: 4px;
+                    width: 100%;
+                    overflow-x: scroll;
+                }
+                &-one-card {
+                    display: flex;
                     justify-content: center;
+                    padding-bottom: 4px;
                     width: 100%;
                     overflow-x: scroll;
                 }
@@ -154,6 +166,7 @@
                         font-style: normal;
                         font-weight: 600;
                         line-height: 170%; /* 23.8px */
+                        cursor: pointer;
                     }
                 }
                 .function-overview {

@@ -39,7 +39,6 @@ export const ApiEndpoints = {
     GET_STATIONS: '/stations/getStations',
     GET_POISON_MESSAGE_JOURNEY: '/stations/getPoisonMessageJourney',
     GET_MESSAGE_DETAILS: '/stations/getMessageDetails',
-    GET_ATTACHED_FUNCTION_DLS_MSG: '/getAttachedFunctionDlsMsgs',
     DROP_DLS_MESSAGE: '/stations/dropDlsMessages',
     REMOVE_MESSAGES: '/stations/removeMessages',
     PURGE_STATION: '/stations/purgeStation',
@@ -104,6 +103,7 @@ export const ApiEndpoints = {
     GET_FUNCTION_FILE_CODE: '/functions/getFunctionFileCode',
     TEST_FUNCTION: '/functions/testFunction',
     GET_ATTACHED_FUNCTION_LOGS: '/monitoring/stations/getAttachedFunctionLogs',
+    GET_ATTACHED_FUNCTION_DLS_MSG: `/monitoring/stations/getAttachedFunctionDlsMsgs`,
 
     //Integrations
     CREATE_INTEGRATION: '/integrations/createIntegration',

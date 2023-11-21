@@ -1,5 +1,76 @@
-.logs-container {
-    white-space: pre;
-    height: 150px;
-    overflow-y: scroll;
+.function-data-container {
+    .logs-container {
+        white-space: pre;
+        height: 150px;
+        overflow-y: scroll;
+        position: relative;
+    }
+    dls {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        position: relative;
+        height: 150px;
+        list {
+            width: calc(100% - 600px);
+            padding-right: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            .messages-list {
+                height: calc(100% - 10px);
+                overflow-y: auto;
+            }
+            .msg-item-header {
+                border-bottom: #eff0f2 1px solid;
+                display: flex;
+                margin-bottom: 5px;
+                .date {
+                    width: 200px;
+                }
+                .text {
+                    width: calc(100% - 200px);
+                }
+            }
+            .msg-item {
+                display: flex;
+                width: 100%;
+                position: relative;
+                width: 100%;
+                padding: 5px;
+                cursor: pointer;
+                border-radius: 4px;
+                margin-bottom: 5px;
+                label {
+                    cursor: pointer;
+                }
+                .date {
+                    width: 200px;
+                }
+                .text {
+                    width: calc(100% - 200px);
+                    text-overflow: ellipsis;
+                    overflow: hidden;
+                }
+            }
+            .even {
+                background-color: #f8f8f8;
+            }
+            .odd {
+                background-color: #ffff;
+            }
+            .selected {
+                border: #6557ff 1px solid;
+                background-color: #e3e0ff;
+            }
+        }
+        preview {
+            width: 600px;
+            height: 100%;
+            overflow-y: auto;
+            border-radius: 8px;
+            padding: 10px;
+            border: #f8f8f8 solid;
+            border-width: 1px 1px 0px 1px;
+        }
+    }
 }

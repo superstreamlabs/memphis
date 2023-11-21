@@ -70,7 +70,7 @@ const Messages = ({ referredFunction }) => {
         ? [
               { name: 'Unacknowledged', disabled: false },
               { name: 'Schema violation', disabled: !stationState?.stationMetaData?.is_native },
-              { name: 'Functions', disabled: !stationState?.stationMetaData?.functions_enabled }
+              { name: 'Functions', disabled: !stationState?.stationSocketData?.functions_enabled }
           ]
         : [
               { name: 'Unacknowledged', disabled: false },
@@ -562,7 +562,13 @@ const Messages = ({ referredFunction }) => {
                     )}
                 </div>
             )}
-            {activeTab === 'functions' && <FunctionsOverview referredFunction={choseReferredFunction} dismissFunction={() => setChoseReferredFunction(null)} />}
+            {activeTab === 'functions' && (
+                <FunctionsOverview
+                    referredFunction={choseReferredFunction}
+                    dismissFunction={() => setChoseReferredFunction(null)}
+                    moveToGenralView={() => setActiveTab('general')}
+                />
+            )}
 
             <Modal
                 header={<PurgeWrapperIcon alt="deleteWrapperIcon" />}

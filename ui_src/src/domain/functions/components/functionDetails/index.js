@@ -41,12 +41,14 @@ import Modal from '../../../../components/modal';
 import { OWNER } from '../../../../const/globalConst';
 import { BsFileEarmarkCode } from 'react-icons/bs';
 import { GoRepo } from 'react-icons/go';
+import { RxDotFilled } from 'react-icons/rx';
 import { Tree } from 'antd';
 import { httpRequest } from '../../../../services/http';
 import { ApiEndpoints } from '../../../../const/apiEndpoints';
 import { getCodingLanguage } from '../../../../utils/languages';
+import OverflowTip from '../../../../components/tooltip/overflowtip';
 
-function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnInstall, clickApply, onBackToFunction = null, stationView }) {
+function FunctionDetails({ selectedFunction, handleInstall, handleUnInstall, clickApply, onBackToFunction = null, stationView }) {
     const [tabValue, setTabValue] = useState('Details');
     const [isTestFunctionModalOpen, setIsTestFunctionModalOpen] = useState(false);
     const [treeData, setTreeData] = useState([]);
@@ -150,11 +152,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
         setTreeData(tree);
     };
 
-    const onSelect = async (selectedKeys, info) => {
-        const path = !isNaN(selectedKeys[0]) ? files[selectedKeys[0]] : null;
-        if (!path) return;
-        const lang = path?.split('.');
-        lang?.length > 1 && setSelectedLanguage(lang[lang.length - 1]);
+    const getFileContent = async (path) => {
         try {
             setIsFileContentLoading(true);
             const response = await httpRequest(
@@ -178,6 +176,14 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
         } finally {
             setIsFileContentLoading(false);
         }
+    };
+
+    const onSelect = async (selectedKeys, info) => {
+        const path = !isNaN(selectedKeys[0]) ? files[selectedKeys[0]] : null;
+        if (!path) return;
+        const lang = path?.split('.');
+        lang?.length > 1 && setSelectedLanguage(lang[lang.length - 1]);
+        getFileContent(path);
     };
 
     return (
@@ -225,7 +231,11 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                             </commits>
                         </deatils>
                     </div>
-                    <description is="x3d">{selectedFunction?.description}</description>
+                    <description is="x3d">
+                        <OverflowTip text={selectedFunction?.description} width={'520px'}>
+                            {selectedFunction?.description}
+                        </OverflowTip>
+                    </description>
                     <actions is="x3d">
                         {!stationView && (
                             <>
@@ -240,7 +250,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
                                             onClick={() => clickApply('attach')}
-                                            disabled={selectedFunction?.installed_in_progress || !installed}
+                                            disabled={selectedFunction?.installed_in_progress || !selectedFunction?.installed}
                                         />
                                     </div>
                                     <div className="header-flex">
@@ -248,7 +258,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                             placeholder={
                                                 selectedFunction?.installed_in_progress ? (
                                                     ''
-                                                ) : installed ? (
+                                                ) : selectedFunction?.installed ? (
                                                     <div className="code-btn">
                                                         {selectedFunction?.updates_available ? (
                                                             <BiDownload className="Install" />
@@ -270,7 +280,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                             radiusType={'circle'}
                                             fontSize="12px"
                                             fontFamily="InterSemiBold"
-                                            onClick={() => (installed ? handleUnInstall() : handleInstall())}
+                                            onClick={() => (selectedFunction?.installed ? handleUnInstall() : handleInstall())}
                                             isLoading={selectedFunction?.installed_in_progress}
                                             disabled={!selectedFunction?.is_valid || selectedFunction?.installed_in_progress}
                                         />
@@ -289,7 +299,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                             fontSize="12px"
                             fontFamily="InterSemiBold"
                             value={`Version: ${selectedVersion}`}
-                            disabled={!installed}
+                            disabled={!selectedFunction?.installed}
                             onChange={(e) => {
                                 setSelectedVersion(e);
                             }}
@@ -306,7 +316,6 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
             </Modal>
             {tabValue === 'Details' && (
                 <code is="x3d">
-                    {/* <Spinner /> */}
                     <span className="readme">
                         {readme === '' ? (
                             renderNoFunctionDetails
@@ -314,8 +323,6 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                             <div>
                                 <ReactMarkdown rehypePlugins={[rehypeRaw, remarkGfm]}>{formattedMarkdownContent(emojiSupport(readme))}</ReactMarkdown>
                             </div>
-                            // <ReactMarkdown
-                            // rehypePlugins={[rehypeRaw, remarkGfm, rehypePrism]}>{emojiSupport(readme)}</ReactMarkdown>
                         )}
                     </span>
                     <Divider type="vertical" />
@@ -382,19 +389,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                 <inputsSection is="x3d">
                                     {metaData?.inputs?.map((input, index) => (
                                         <div className="input-row" key={`${input?.name}${index}`}>
-                                            <Input
-                                                placeholder={input?.name}
-                                                type="text"
-                                                radiusType="semi-round"
-                                                colorType="gray"
-                                                backgroundColorType="light-gray"
-                                                borderColorType="gray"
-                                                height="30px"
-                                                width="100px"
-                                                fontSize="12px"
-                                                value={input?.name}
-                                                disabled
-                                            />
+                                            <RxDotFilled /> <label>{input?.name}</label>
                                         </div>
                                     ))}
                                 </inputsSection>
@@ -435,7 +430,7 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                 fontSize="12px"
                                 fontFamily="InterSemiBold"
                                 onClick={() => setIsTestFunctionModalOpen(true)}
-                                // disabled={!installed}
+                                disabled={!selectedFunction?.installed}
                             />
                             <div className="code-content">
                                 {isFileContentLoading ? (
@@ -458,7 +453,9 @@ function FunctionDetails({ selectedFunction, installed, handleInstall, handleUnI
                                         width="calc(100% - 25px)"
                                         value={fileContent}
                                     />
-                                ) : null}
+                                ) : (
+                                    <p>Please choose a file from the tree on the left.</p>
+                                )}
                             </div>
                         </>
                     </div>

@@ -1,10 +1,12 @@
 .function-modal-container {
     position: relative;
+    height: 100%;
     .fdm {
         position: relative;
+        height: 100%;
         &-body {
             position: relative;
-            height: calc(100% - 350px);
+            height: calc(100% - 140px);
             position: relative;
             flex: 1;
             padding: 0px 24px;
@@ -80,27 +82,6 @@
                         min-width: 179px;
                         &-header {
                             align-items: flex-start;
-                            &-title {
-                                align-items: flex-start;
-                                span {
-                                    color: var(--Black, #171717);
-                                    font-family: Inter;
-                                    font-size: 12px;
-                                    font-style: normal;
-                                    font-weight: 600;
-                                    line-height: normal;
-                                    margin-bottom: 4px;
-                                    display: block;
-                                }
-                                p {
-                                    color: #000;
-                                    font-family: Inter;
-                                    font-size: 10px;
-                                    font-style: normal;
-                                    font-weight: 400;
-                                    line-height: normal;
-                                }
-                            }
 
                             &-action {
                                 display: flex;

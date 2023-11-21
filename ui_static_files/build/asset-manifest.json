@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.9a1a7633.css",
-    "main.js": "/static/js/main.9f32bb80.js",
+    "main.css": "/static/css/main.2c1adeae.css",
+    "main.js": "/static/js/main.a6789b50.js",
     "static/js/617.a5f8c4fc.chunk.js": "/static/js/617.a5f8c4fc.chunk.js",
     "static/js/2542.27de8743.chunk.js": "/static/js/2542.27de8743.chunk.js",
     "static/js/1737.e134cfd4.chunk.js": "/static/js/1737.e134cfd4.chunk.js",
@@ -276,7 +276,6 @@
     "static/media/paymentsGray.svg": "/static/media/paymentsGray.5b47c51db2ea9b6ac864da7c7f1963f8.svg",
     "static/media/redirectIcon.svg": "/static/media/redirectIcon.fd4af1a8971f8bd9499888ffd8dd2a43.svg",
     "static/media/deleteWrapperIcon.svg": "/static/media/deleteWrapperIcon.d0f3e104cb36f0d99b55178735730d84.svg",
-    "static/media/close.svg": "/static/media/close.7166d6af9df86b25f4fdae11eaaeca3b.svg",
     "static/media/paymentsColor.svg": "/static/media/paymentsColor.5d1339878ec45e734fff414b719b1124.svg",
     "static/media/usedIcon.svg": "/static/media/usedIcon.3ee64ce6307a6d01fec9e9b29d96674d.svg",
     "static/media/stopUsingIcon.svg": "/static/media/stopUsingIcon.7e0db2ab31e9777c5ec29a204dd7a982.svg",
@@ -318,7 +317,7 @@
     "static/media/closeNotification.svg": "/static/media/closeNotification.7551e8366682f9c6585bb1a694c4112a.svg"
   },
   "entrypoints": [
-    "static/css/main.9a1a7633.css",
-    "static/js/main.9f32bb80.js"
+    "static/css/main.2c1adeae.css",
+    "static/js/main.a6789b50.js"
   ]
 }

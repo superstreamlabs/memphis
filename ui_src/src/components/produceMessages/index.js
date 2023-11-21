@@ -238,38 +238,43 @@ const ProduceMessages = ({ stationName, cancel, produceMessagesRef, setLoading }
                         </Form.Item>
                     </div>
                     <Divider className="seperator" />
-                    <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
-                        <div className="header-flex">
-                            <p className="field-title">Partition</p>
-                            {!isCloud() && <CloudOnly />}
-                        </div>
-                        <SelectComponent
-                            value={formFields.partition_number || partitons[0]}
-                            colorType="navy"
-                            backgroundColorType={isCloud() ? 'none' : 'disabled'}
-                            borderColorType="gray"
-                            radiusType="semi-round"
-                            height="45px"
-                            options={partitons}
-                            onChange={(e) => updateFormState('partition_number', e.target.value)}
-                            popupClassName="select-options"
-                            disabled={!isCloud()}
-                        />
-                    </Form.Item>
-                    <div className="header-flex">
-                        <p className="field-title">Number of records</p>
-                        {!isCloud() && <CloudOnly />}
+                    <div className="partition-records-section">
+                        <Form.Item className="form-input" name="partition_number" initialValue={partitons[0]}>
+                            <div className="header-flex">
+                                <p className="field-title">Partition</p>
+                                {!isCloud() && <CloudOnly />}
+                            </div>
+                            <SelectComponent
+                                value={formFields.partition_number || partitons[0]}
+                                colorType="navy"
+                                backgroundColorType={isCloud() ? 'none' : 'disabled'}
+                                borderColorType="gray"
+                                radiusType="semi-round"
+                                height="45px"
+                                width="100%"
+                                options={partitons}
+                                onChange={(e) => updateFormState('partition_number', e.target.value)}
+                                popupClassName="select-options"
+                                disabled={!isCloud()}
+                            />
+                        </Form.Item>
+
+                        <Form.Item className="form-input" name="amount" initialValue={1}>
+                            <div className="header-flex">
+                                <p className="field-title">Number of records</p>
+                                {!isCloud() && <CloudOnly />}
+                            </div>
+                            <InputNumberComponent
+                                min={1}
+                                max={isCloud() ? 1000 : 1}
+                                onChange={(e) => updateFormState('amount', e)}
+                                value={formFields.amount}
+                                placeholder={formFields.amount || 1}
+                                disabled={!isCloud()}
+                                width="100%"
+                            />
+                        </Form.Item>
                     </div>
-                    <Form.Item className="form-input" name="amount" initialValue={1}>
-                        <InputNumberComponent
-                            min={1}
-                            max={isCloud() ? 1000 : 1}
-                            onChange={(e) => updateFormState('amount', e)}
-                            value={formFields.amount}
-                            placeholder={formFields.amount || 1}
-                            disabled={!isCloud()}
-                        />
-                    </Form.Item>
                 </div>
             </Form>
         </div>
